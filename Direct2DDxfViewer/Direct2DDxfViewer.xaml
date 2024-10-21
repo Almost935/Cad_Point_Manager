@@ -1,0 +1,15 @@
+﻿<UserControl x:Class="Direct2DDXFViewer.Direct2DDxfViewer"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="clr-namespace:Direct2DDXFViewer"
+             mc:Ignorable="d"
+             RenderOptions.BitmapScalingMode="HighQuality"
+             DataContext="{Binding Mode=OneWay, RelativeSource={RelativeSource Self}}">
+    <Grid>
+        <local:Direct2DDxfControl x:Name="dxfControl"
+                                  RenderOptions.BitmapScalingMode="HighQuality" 
+                                  Cursor="Cross"/>
+    </Grid>
+</UserControl>
