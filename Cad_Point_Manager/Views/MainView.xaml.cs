@@ -22,10 +22,11 @@ namespace Cad_Point_Manager.Views
     /// </summary>
     public partial class MainView : Page
     {
-        private string dxfFilePath = @"C:\Users\fcraw\source\repos\Cad-Point-Manager\CadPointManager\Resources\DXF\SmallDxf.dxf";
+        private string dxfFilePath = @"C:\Users\Tim\source\repos\Cad_Point_Manager\Cad_Point_Manager\Resources\DXF\SmallDxf.dxf";
 
         public MainView()
         {
+            this.DataContext = this;
             InitializeComponent();
 
             DxfDocument dxfDoc = DxfDocument.Load(dxfFilePath);

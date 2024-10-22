@@ -1,6 +1,6 @@
-﻿using Direct2DControl;
-using netDxf;
+﻿using netDxf;
 using netDxf.Entities;
+using SharpDX;
 using SharpDX.Direct2D1;
 using SharpDX.Mathematics.Interop;
 using System;
@@ -23,9 +23,8 @@ using Brush = SharpDX.Direct2D1.Brush;
 using PathGeometry = SharpDX.Direct2D1.PathGeometry;
 using ArcSegment = SharpDX.Direct2D1.ArcSegment;
 using SweepDirection = SharpDX.Direct2D1.SweepDirection;
-using System.Windows.Media.Imaging;
-using System.Windows.Media.Media3D;
-using SharpDX;
+using Direct2DDxfViewer.Direct2DControl;
+using Matrix = System.Windows.Media.Matrix;
 
 namespace Direct2DDXFViewer.DrawingObjects
 {

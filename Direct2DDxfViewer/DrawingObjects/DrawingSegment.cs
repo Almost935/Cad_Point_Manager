@@ -1,5 +1,4 @@
-﻿using Direct2DControl;
-using netDxf.Entities;
+﻿using netDxf.Entities;
 using SharpDX.Direct2D1;
 using SharpDX.Mathematics.Interop;
 using System;

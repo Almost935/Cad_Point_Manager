@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using Cad_Point_Manager.Views;
+using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -19,6 +20,16 @@ namespace Cad_Point_Manager
         public MainWindow()
         {
             InitializeComponent();
+            Loaded += MainWindow_Loaded;
+
+            StyleProperty.OverrideMetadata(typeof(Window), new FrameworkPropertyMetadata
+            {
+                DefaultValue = FindResource(typeof(Window))
+            });
+        }
+        private void MainWindow_Loaded(object sender, RoutedEventArgs e)
+        {
+            mainFrame.NavigationService.Navigate(new MainView());
         }
     }
 }

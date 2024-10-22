@@ -8,7 +8,6 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Diagnostics;
-using Direct2DControl;
 using System.Xml.Linq;
 using System.Windows.Media;
 using Direct2DDXFViewer.DrawingObjects;

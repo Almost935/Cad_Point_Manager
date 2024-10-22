@@ -11,6 +11,7 @@ using FeatureLevel = SharpDX.Direct3D.FeatureLevel;
 using System.Net;
 using System.Windows;
 using SharpDX;
+using Point = System.Windows.Point;
 
 namespace Direct2DDXFViewer.Helpers
 {
