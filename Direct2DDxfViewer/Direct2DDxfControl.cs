@@ -1,43 +1,21 @@
 ﻿using SharpDX;
 using SharpDX.Direct2D1;
 using SharpDX.Mathematics.Interop;
-using SharpDX.Mathematics;
-using SharpDX.DXGI;
 using netDxf;
-using System;
-using System.Configuration;
 using System.Diagnostics;
 using System.Windows.Input;
-using SharpDX.Direct2D1.Effects;
 using System.Windows;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using System.Collections.ObjectModel;
 using System.Windows.Media;
 using Direct2DDXFViewer.DrawingObjects;
-using netDxf.Entities;
-using System.Drawing;
-using System.Xml.Linq;
-using System.IO;
-using Direct2DDXFViewer.BitmapHelpers;
 using Direct2DDXFViewer.Helpers;
-using System.Windows.Controls;
-using static netDxf.Entities.HatchBoundaryPath;
-using System.Windows.Media.Animation;
 using Direct2DDxfViewer.Direct2DControl;
 
 using Point = System.Windows.Point;
 using Brush = SharpDX.Direct2D1.Brush;
-using Geometry = SharpDX.Direct2D1.Geometry;
 using SolidColorBrush = SharpDX.Direct2D1.SolidColorBrush;
-using PathGeometry = SharpDX.Direct2D1.PathGeometry;
-using RectangleGeometry = SharpDX.Direct2D1.RectangleGeometry;
-using DashStyle = SharpDX.Direct2D1.DashStyle;
-using PixelFormat = SharpDX.Direct2D1.PixelFormat;
-using AlphaMode = SharpDX.Direct2D1.AlphaMode;
 using Factory1 = SharpDX.Direct2D1.Factory1;
-using Bitmap = SharpDX.Direct2D1.Bitmap;
-using BitmapCache = Direct2DDXFViewer.BitmapHelpers.BitmapCache;
 using Matrix = System.Windows.Media.Matrix;
 using Border = System.Windows.Controls.Border;
 
@@ -349,7 +327,7 @@ namespace Direct2DDXFViewer
                 {
                     if (layer.GeometryGroup is not null)
                     {
-                        _offscreenRenderTarget.DrawGeometry(layer.GeometryGroup, layer.LayerBrush, 0.25f, layer.HairlineStrokeStyle);
+                        _offscreenRenderTarget.DrawGeometry(layer.GeometryGroup, layer.LayerBrush, 1, layer.HairlineStrokeStyle);
                     }
                 });
 
@@ -435,8 +413,8 @@ namespace Direct2DDXFViewer
             _highlightedOuterEdgeBrush?.Dispose();
             _highlightedOuterEdgeBrush = null;
 
-            ExtentsMatrix = GetInitialMatrix();
-            _overallMatrix = ExtentsMatrix;
+            //ExtentsMatrix = GetInitialMatrix();
+            //_overallMatrix = ExtentsMatrix;
 
             _offscreenBitmapIsDirty = true;
             UpdateOffscreenRenderTarget();
