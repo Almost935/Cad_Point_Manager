@@ -18,6 +18,7 @@ using SolidColorBrush = SharpDX.Direct2D1.SolidColorBrush;
 using Factory1 = SharpDX.Direct2D1.Factory1;
 using Matrix = System.Windows.Media.Matrix;
 using Border = System.Windows.Controls.Border;
+using System.Net;
 
 
 namespace Direct2DDXFViewer
@@ -25,10 +26,10 @@ namespace Direct2DDXFViewer
     public class Direct2DDxfControl : Direct2DControl, INotifyPropertyChanged, IDisposable
     {
         #region Fields
-        private const int _zoomPrecision = 3;
-        private const int _bitmapReuseFactor = 2;
         private const float _zoomFactor = 1.3f;
-        private const float _snappedThickness = 5;
+        private const float _baseLineThickness = 1;
+        private const float _baseSnappedThickness = 5;
+        private const float _baseHighlightedThickness = 2;
 
         // Offscreen bitmap fields
         private BitmapRenderTarget _offscreenRenderTarget;
@@ -45,7 +46,6 @@ namespace Direct2DDXFViewer
         private bool _updateOffscreenBitmapThreadRunning = false;
 
         // Zooming and panning matrices
-        private RawMatrix3x2 _rawExtentsMatrix = new();
         private Matrix _transformMatrix = new();
         private Matrix _overallMatrix = new();
 
@@ -63,6 +63,9 @@ namespace Direct2DDXFViewer
         private Brush _highlightedBrush;
         private Brush _highlightedOuterEdgeBrush;
         private bool _clipSet = false;
+        private float _lineThickness;
+        private float _snappedThickness;
+        private float _highlightedThickness;
 
         // Hit testing fields
         private Point _lastHitTestPos = new();
@@ -186,7 +189,9 @@ namespace Direct2DDXFViewer
                 Extents = DxfHelpers.GetExtentsFromHeader(DxfDoc);
                 ExtentsMatrix = GetInitialMatrix();
                 _overallMatrix = ExtentsMatrix;
-                _rawExtentsMatrix = new((float)ExtentsMatrix.M11, (float)ExtentsMatrix.M12, (float)ExtentsMatrix.M21, (float)ExtentsMatrix.M22, (float)ExtentsMatrix.OffsetX, (float)ExtentsMatrix.OffsetY);
+
+                UpdateLineThicknesses();
+
                 LayerManager = DxfHelpers.GetLayers(DxfDoc, deviceContext, factory, resCache);
                 _hittestStrokeThickness = (float)(8 / ExtentsMatrix.M11);
 
@@ -256,7 +261,7 @@ namespace Direct2DDXFViewer
                     _maxDistFromOffscreenBitmapUpdate = new(((_offscreenRenderTarget.Size.Width / 2) - (d2DDeviceContext.Size.Width / 2)), ((_offscreenRenderTarget.Size.Height / 2) - (d2DDeviceContext.Size.Height / 2)));
                     _offscreenBitmapCenteringOffset = ((float)_maxDistFromOffscreenBitmapUpdate.X, (float)_maxDistFromOffscreenBitmapUpdate.Y);
                 }
-                
+
                 if (!_dxfLoaded)
                 {
                     LoadDxf(resCache.Factory, d2DDeviceContext, resCache);
@@ -289,10 +294,10 @@ namespace Direct2DDXFViewer
         {
             var parent = VisualTreeHelper.GetParent(this);
             while (parent is not null)
-            { 
+            {
                 if (parent is Border border && border.Name == "dxfBorder")
                 {
-                    this.Clip = new System.Windows.Media.RectangleGeometry(new Rect(0, 0, border.ActualWidth, border.ActualHeight), 
+                    this.Clip = new System.Windows.Media.RectangleGeometry(new Rect(0, 0, border.ActualWidth, border.ActualHeight),
                         border.CornerRadius.TopRight, border.CornerRadius.TopRight);
                     _clipSet = true;
                     break;
@@ -323,11 +328,13 @@ namespace Direct2DDXFViewer
                 RawMatrix3x2 rawMatrix = new((float)matrix.M11, (float)matrix.M12, (float)matrix.M21, (float)matrix.M22, (float)matrix.OffsetX, (float)matrix.OffsetY);
                 _offscreenRenderTarget.Transform = rawMatrix;
 
+                float thickness = (float)(_baseLineThickness / _overallMatrix.M11);
+
                 Parallel.ForEach(LayerManager.Layers.Values, layer =>
                 {
                     if (layer.GeometryGroup is not null)
                     {
-                        _offscreenRenderTarget.DrawGeometry(layer.GeometryGroup, layer.LayerBrush, 1, layer.HairlineStrokeStyle);
+                        _offscreenRenderTarget.DrawGeometry(layer.GeometryGroup, layer.LayerBrush, thickness);
                     }
                 });
 
@@ -383,7 +390,7 @@ namespace Direct2DDXFViewer
             var objCopy = SnappedObject;
             if (objCopy is not null)
             {
-                objCopy.DrawToDeviceContext(deviceContext, _snappedThickness, objCopy.OuterEdgeBrush, objCopy.FixedStrokeStyle);
+                objCopy.DrawToDeviceContext(deviceContext, _snappedThickness, objCopy.OuterEdgeBrush);
             }
         }
         private void RenderHighlightedObjects(DeviceContext1 deviceContext)
@@ -391,7 +398,7 @@ namespace Direct2DDXFViewer
             var copy = HighlightedObjects.ToList();
             foreach (var obj in copy)
             {
-                obj.DrawToDeviceContext(deviceContext, 2, _highlightedBrush, obj.FixedStrokeStyle);
+                obj.DrawToDeviceContext(deviceContext, 2, _highlightedBrush);
             }
         }
 
@@ -413,8 +420,7 @@ namespace Direct2DDXFViewer
             _highlightedOuterEdgeBrush?.Dispose();
             _highlightedOuterEdgeBrush = null;
 
-            //ExtentsMatrix = GetInitialMatrix();
-            //_overallMatrix = ExtentsMatrix;
+            UpdateLineThicknesses();
 
             _offscreenBitmapIsDirty = true;
             UpdateOffscreenRenderTarget();
@@ -633,6 +639,7 @@ namespace Direct2DDXFViewer
                 _overallMatrix.ScaleAt(zoom, zoom, PointerCoords.X, PointerCoords.Y);
                 _transformMatrix.ScaleAt(zoom, zoom, PointerCoords.X, PointerCoords.Y);
 
+                UpdateLineThicknesses();
                 UpdateCurrentView();
                 ResetSnappedObjects();
 
@@ -664,7 +671,9 @@ namespace Direct2DDXFViewer
         }
         private void UpdateLineThicknesses()
         {
-
+            _lineThickness = (float)(_baseLineThickness / _overallMatrix.M11);
+            _snappedThickness = (float)(_baseSnappedThickness / _overallMatrix.M11);
+            _highlightedThickness = (float)(_baseHighlightedThickness / _overallMatrix.M11);
         }
         private void UpdateCurrentView()
         {
