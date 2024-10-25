@@ -77,7 +77,7 @@ namespace Direct2DDXFViewer
         private Point _pointerCoords = new();
         private Point _dxfPointerCoords = new();
         private Rect _extents = new();
-        //private ObjectLayerManager _layerManager;
+        private ObjectLayerManager _layerManager;
         private DrawingObject _snappedObject;
         private int _currentZoomStep = 0;
 
@@ -124,21 +124,7 @@ namespace Direct2DDXFViewer
                 _extents = value;
                 OnPropertyChanged(nameof(Extents));
             }
-        }
-        public ObjectLayerManager LayerManager
-        {
-            get { return _layerManager; }
-            set
-            {
-                _layerManager = value;
-                OnPropertyChanged(nameof(LayerManager));
-            }
-        }
-        public Dictionary<string, ObjectLayer> Layers
-        {
-            get { return (Dictionary<string, ObjectLayer>)GetValue(LayerProperty); }
-            set { SetValue(LayerProperty, value); }
-        }
+        }  
         
         public DrawingObject SnappedObject
         {
@@ -165,12 +151,17 @@ namespace Direct2DDXFViewer
         #endregion
 
         #region Dependency Properties
-        public static readonly DependencyProperty LayerProperty =
+        public ObjectLayerManager LayerManager
+        {
+            get { return (ObjectLayerManager)GetValue(LayerManagerProperty); }
+            set { SetValue(LayerManagerProperty, value); }
+        }
+        public static readonly DependencyProperty LayerManagerProperty =
         DependencyProperty.Register(
-            nameof(Layers),            // Property name
-            typeof(ObservableCollection<ObjectLayer>),            // Property type
-            typeof(Direct2DControl),   // Owner type
-            new PropertyMetadata(null, OnLayersChanged));
+            nameof(LayerManager),           
+            typeof(ObjectLayerManager),           
+            typeof(Direct2DControl),   
+            new PropertyMetadata("Default"));
         #endregion
 
         #region Constructor

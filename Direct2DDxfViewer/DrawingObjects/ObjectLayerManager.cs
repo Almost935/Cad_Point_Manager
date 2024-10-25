@@ -91,27 +91,6 @@ namespace Direct2DDXFViewer.DrawingObjects
             return drawingObjects;
         }
 
-        public void LoadGeometryRealizations()
-        {
-            Stopwatch stopwatch = Stopwatch.StartNew();
-
-            //await Task.Run(() =>
-            //{
-
-            Parallel.ForEach(Layers.Values, layer =>
-            {
-                layer.LoadDrawingRealizations();
-            });
-            //foreach (var layer in Layers.Values)
-            //{
-            //    layer.LoadDrawingRealizations();
-            //}
-            //});
-
-            stopwatch.Stop();
-            Debug.WriteLine($"\nLoadGeometryRealizations Time: {stopwatch.ElapsedMilliseconds}");
-        }
-
         public void Dispose()
         {
             Dispose(true);

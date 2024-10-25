@@ -82,6 +82,12 @@ namespace Direct2DDxfViewer.Direct2DControl
             set { SetValue(RenderWaitProperty, value); }
         }
 
+        public DeviceContext1 D2DDeviceContext
+        {
+            get { return d2DDeviceContext; }
+            set { d2DDeviceContext = value; }
+        }
+
         // - public methods --------------------------------------------------------------
 
         public Direct2DControl()

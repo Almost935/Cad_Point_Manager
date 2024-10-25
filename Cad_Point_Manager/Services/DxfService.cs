@@ -8,6 +8,7 @@ using Ellipse = netDxf.Entities.Ellipse;
 using System.Diagnostics;
 using Cad_Point_Manager.Models.DrawingObjects;
 using Direct2DDxfViewer.Direct2DControl;
+using Cad_Point_Manager.Helpers;
 
 namespace Cad_Point_Manager.Services
 {
@@ -50,7 +51,7 @@ namespace Cad_Point_Manager.Services
             {
                 foreach (var drawingObject in layer.DrawingObjects)
                 {
-                    extents = Rect.Union(extents, drawingObject.Extents);
+                    extents = Rect.Union(extents, drawingObject.);
                 }
             }
 

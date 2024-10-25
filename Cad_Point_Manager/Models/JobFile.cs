@@ -1,5 +1,4 @@
 ﻿using Cad_Point_Manager.Models.DrawingObjects;
-using Cad_Point_Manager.Services;
 using netDxf;
 using System;
 using System.Collections.Generic;
@@ -58,7 +57,6 @@ namespace Cad_Point_Manager.Models
             }
         }
 
-        DxfService DxfService { get; set; } = new();
         #endregion
 
         #region Constructors
@@ -69,16 +67,16 @@ namespace Cad_Point_Manager.Models
         #endregion
 
         #region Methods
-        public void LoadDxf(string dxfFilePath)
-        {
-            var dxfDoc = DxfDocument.Load(dxfFilePath);
-            if (dxfDoc is not null) 
-            { 
-                DxfDoc = dxfDoc; 
-                bool extentsFound = DxfService.TryGetExtentsFromDxfDoc(dxfDoc, out Rect extents);
-                Layers = DxfService.LoadLayers(dxfDoc, extents);
-            }
-        }
+        //public void LoadDxf(string dxfFilePath)
+        //{
+        //    var dxfDoc = DxfDocument.Load(dxfFilePath);
+        //    if (dxfDoc is not null) 
+        //    { 
+        //        DxfDoc = dxfDoc; 
+        //        bool extentsFound = DxfService.TryGetExtentsFromDxfDoc(dxfDoc, out Rect extents);
+        //        Layers = DxfService.LoadLayers(dxfDoc, extents);
+        //    }
+        //}
         #endregion
     }
 }
