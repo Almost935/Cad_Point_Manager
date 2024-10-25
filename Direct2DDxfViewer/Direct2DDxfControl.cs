@@ -134,9 +134,9 @@ namespace Direct2DDXFViewer
                 OnPropertyChanged(nameof(LayerManager));
             }
         }
-        public ObservableCollection<ObjectLayer> Layers
+        public Dictionary<string, ObjectLayer> Layers
         {
-            get { return (Dictionary<ObjectLayer>)GetValue(LayerProperty); }
+            get { return (Dictionary<string, ObjectLayer>)GetValue(LayerProperty); }
             set { SetValue(LayerProperty, value); }
         }
         
@@ -170,7 +170,7 @@ namespace Direct2DDXFViewer
             nameof(Layers),            // Property name
             typeof(ObservableCollection<ObjectLayer>),            // Property type
             typeof(Direct2DControl),   // Owner type
-            new PropertyMetadata(string.Empty, OnLayersChanged));
+            new PropertyMetadata(null, OnLayersChanged));
         #endregion
 
         #region Constructor
