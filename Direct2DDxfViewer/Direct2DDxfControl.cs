@@ -19,6 +19,7 @@ using Factory1 = SharpDX.Direct2D1.Factory1;
 using Matrix = System.Windows.Media.Matrix;
 using Border = System.Windows.Controls.Border;
 using System.Net;
+using System.Collections.ObjectModel;
 
 
 namespace Direct2DDXFViewer
@@ -76,7 +77,7 @@ namespace Direct2DDXFViewer
         private Point _pointerCoords = new();
         private Point _dxfPointerCoords = new();
         private Rect _extents = new();
-        private ObjectLayerManager _layerManager;
+        //private ObjectLayerManager _layerManager;
         private DrawingObject _snappedObject;
         private int _currentZoomStep = 0;
 
@@ -133,6 +134,12 @@ namespace Direct2DDXFViewer
                 OnPropertyChanged(nameof(LayerManager));
             }
         }
+        public ObservableCollection<ObjectLayer> Layers
+        {
+            get { return (Dictionary<ObjectLayer>)GetValue(LayerProperty); }
+            set { SetValue(LayerProperty, value); }
+        }
+        
         public DrawingObject SnappedObject
         {
             get { return _snappedObject; }
@@ -155,6 +162,15 @@ namespace Direct2DDXFViewer
         public List<DrawingObject> HighlightedObjects { get; set; } = new();
         public Matrix ExtentsMatrix { get; set; } = new();
         public Rect InitialView { get; set; }
+        #endregion
+
+        #region Dependency Properties
+        public static readonly DependencyProperty LayerProperty =
+        DependencyProperty.Register(
+            nameof(Layers),            // Property name
+            typeof(ObservableCollection<ObjectLayer>),            // Property type
+            typeof(Direct2DControl),   // Owner type
+            new PropertyMetadata(string.Empty, OnLayersChanged));
         #endregion
 
         #region Constructor

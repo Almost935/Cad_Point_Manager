@@ -1,4 +1,5 @@
 ﻿using Cad_Point_Manager.Models.DrawingObjects;
+using Cad_Point_Manager.Services;
 using netDxf;
 using System;
 using System.Collections.Generic;
@@ -6,6 +7,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
 
 namespace Cad_Point_Manager.Models
 {
@@ -15,6 +17,7 @@ namespace Cad_Point_Manager.Models
         private string _dxfFilePath;
         private DxfDocument _dxfDoc;
         private ObservableCollection<ObjectLayer> _layers = new();
+        private Rect _extents = new();
         #endregion
 
         #region Properties
@@ -45,6 +48,17 @@ namespace Cad_Point_Manager.Models
                 OnPropertyChanged();
             }
         }
+        public Rect Extents
+        {
+           get { return _extents; }
+            set
+            {
+                _extents = value;
+                OnPropertyChanged();
+            }
+        }
+
+        DxfService DxfService { get; set; } = new();
         #endregion
 
         #region Constructors
@@ -61,6 +75,8 @@ namespace Cad_Point_Manager.Models
             if (dxfDoc is not null) 
             { 
                 DxfDoc = dxfDoc; 
+                bool extentsFound = DxfService.TryGetExtentsFromDxfDoc(dxfDoc, out Rect extents);
+                Layers = DxfService.LoadLayers(dxfDoc, extents);
             }
         }
         #endregion
