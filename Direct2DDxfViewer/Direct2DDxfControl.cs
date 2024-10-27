@@ -77,7 +77,7 @@ namespace Direct2DDXFViewer
         private Point _pointerCoords = new();
         private Point _dxfPointerCoords = new();
         private Rect _extents = new();
-        private ObjectLayerManager _layerManager;
+        //private ObjectLayerManager _layerManager;
         private DrawingObject _snappedObject;
         private int _currentZoomStep = 0;
 
@@ -161,7 +161,7 @@ namespace Direct2DDXFViewer
             nameof(LayerManager),           
             typeof(ObjectLayerManager),           
             typeof(Direct2DControl),   
-            new PropertyMetadata("Default"));
+            new PropertyMetadata(default(ObjectLayerManager)));
         #endregion
 
         #region Constructor
@@ -170,7 +170,6 @@ namespace Direct2DDXFViewer
             _overallMatrix = new((float)_overallMatrix.M11, (float)_overallMatrix.M12, (float)_overallMatrix.M21, (float)_overallMatrix.M22, (float)_overallMatrix.OffsetX, (float)_overallMatrix.OffsetY);
 
             UpdateDxfCoordsAsync();
-            RunGetVisibleObjectsAsync();
             RunHitTestAsync();
 
             //Window window = Application.Current.MainWindow;
@@ -273,7 +272,6 @@ namespace Direct2DDXFViewer
                 {
                     LoadDxf(resCache.Factory, d2DDeviceContext, resCache);
                     GetInitialView();
-                    GetVisibleObjects();
 
                     UpdateOffscreenRenderTarget();
 
@@ -324,6 +322,12 @@ namespace Direct2DDXFViewer
         {
             if (_offscreenBitmapIsDirty && _offscreenRenderTarget is not null && !_offscreenRenderTarget.IsDisposed)
             {
+                if (!Dispatcher.CheckAccess())
+                {
+                    Dispatcher.Invoke(() => UpdateOffscreenRenderTarget());
+                    return;
+                }
+
                 Stopwatch stopwatch = Stopwatch.StartNew();
 
                 _offscreenRenderTarget.BeginDraw();
@@ -531,6 +535,12 @@ namespace Direct2DDXFViewer
         }
         private void HitTestGeometry()
         {
+            if (!Dispatcher.CheckAccess())
+            {
+                Dispatcher.Invoke(() => HitTestGeometry());
+                return;
+            }
+
             Stopwatch stopwatch = Stopwatch.StartNew();
 
             if (_offscreenBitmapIsDirty) { return; }
@@ -589,42 +599,42 @@ namespace Direct2DDXFViewer
         }
 
 
-        private async Task RunGetVisibleObjectsAsync()
-        {
-            while (true)
-            {
-                await Task.Delay(500);
-                await Task.Run(() => GetVisibleObjects());
-            }
-        }
-        private void GetVisibleObjects()
-        {
-            Stopwatch stopwatch = Stopwatch.StartNew();
+        //private async Task RunGetVisibleObjectsAsync()
+        //{
+        //    while (true)
+        //    {
+        //        await Task.Delay(500);
+        //        await Task.Run(() => GetVisibleObjects());
+        //    }
+        //}
+        //private void GetVisibleObjects()
+        //{
+        //    Stopwatch stopwatch = Stopwatch.StartNew();
 
 
-            if (LayerManager is not null && _visibleObjectsDirty && _drawingObjectTree is not null)
-            {
-                _visibleDrawingObjects.Clear();
-                var views = _drawingObjectTree.GetIntersectingNodes(_currentDxfView);
-                foreach (var view in views)
-                {
-                    foreach (var obj in view.DrawingObjects)
-                    {
-                        if (obj.Layer.IsVisible)
-                        {
-                            obj.IsInView = obj.DrawingObjectIsInRect(_currentDxfView);
-                            if (obj.IsInView)
-                            {
-                                _visibleDrawingObjects.Add(obj);
-                            }
-                        }
-                    }
-                }
-                //Debug.WriteLine($"New get visibile objects: {stopwatch.ElapsedMilliseconds}");
+        //    if (LayerManager is not null && _visibleObjectsDirty && _drawingObjectTree is not null)
+        //    {
+        //        _visibleDrawingObjects.Clear();
+        //        var views = _drawingObjectTree.GetIntersectingNodes(_currentDxfView);
+        //        foreach (var view in views)
+        //        {
+        //            foreach (var obj in view.DrawingObjects)
+        //            {
+        //                if (obj.Layer.IsVisible)
+        //                {
+        //                    obj.IsInView = obj.DrawingObjectIsInRect(_currentDxfView);
+        //                    if (obj.IsInView)
+        //                    {
+        //                        _visibleDrawingObjects.Add(obj);
+        //                    }
+        //                }
+        //            }
+        //        }
+        //        //Debug.WriteLine($"New get visibile objects: {stopwatch.ElapsedMilliseconds}");
 
-                _visibleObjectsDirty = false;
-            }
-        }
+        //        _visibleObjectsDirty = false;
+        //    }
+        //}
         private async void UpdateDxfCoordsAsync()
         {
             while (true)

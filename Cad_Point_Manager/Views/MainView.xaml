@@ -7,9 +7,14 @@
       xmlns:d2dDxf="clr-namespace:Direct2DDXFViewer;assembly=Direct2DDXFViewer"
       xmlns:ui="http://schemas.modernwpf.com/2019"
       xmlns:fa="http://schemas.fontawesome.io/icons/"
+      xmlns:viewModels="clr-namespace:Cad_Point_Manager.ViewModels"
       mc:Ignorable="d"
       Title="MainView"
       Background="{StaticResource MainBackgroundBrush}">
+
+    <Page.DataContext>
+        <viewModels:MainViewModel />
+    </Page.DataContext>
 
     <Page.Resources>
         <Style TargetType="fa:FontAwesome">
@@ -23,6 +28,7 @@
             <RowDefinition Height="*" />
             <RowDefinition Height="4*" />
         </Grid.RowDefinitions>
+
 
         <Grid x:Name="menuGrid"
               Grid.Row="0">

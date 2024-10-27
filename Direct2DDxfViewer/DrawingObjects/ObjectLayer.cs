@@ -131,30 +131,6 @@ namespace Direct2DDXFViewer.DrawingObjects
             }
         }
 
-        public void LoadDrawingRealizations()
-        {
-            Stopwatch stopwatch = Stopwatch.StartNew();
-
-            //await Task.Run(() =>
-            //{
-            List<(List<GeometryRealization>, Brush)> geometryRealizations = new();
-
-            Parallel.ForEach(DrawingObjects, drawingObject =>
-            {
-                List<GeometryRealization> objRealizations = drawingObject.GetGeometryRealization(0.5f);
-
-                geometryRealizations.Add((objRealizations, drawingObject.Brush));
-            });
-
-            GeometryRealizations.Add(0, geometryRealizations);
-
-            Debug.WriteLine($"\ngeometryRealizations.Count: {geometryRealizations.Count}");
-            //});
-
-            stopwatch.Stop();
-            Debug.WriteLine($"LoadDrawingRealizations for layer {_name}: {stopwatch.ElapsedMilliseconds}");
-        }
-
         public void LoadGeometryGroup()
         {
             List<Geometry> geometries = new();

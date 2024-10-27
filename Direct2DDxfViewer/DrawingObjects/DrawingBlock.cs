@@ -48,6 +48,7 @@ namespace Direct2DDXFViewer.DrawingObjects
             ResCache = resCache;
             Layer = layer;
 
+            Initialize();
             GetStrokeStyle();
             UpdateBrush();
         }
@@ -108,16 +109,24 @@ namespace Direct2DDXFViewer.DrawingObjects
             }
             return false;
         }
-
-        public override async Task UpdateGeometriesAsync()
+        public override void Initialize()
         {
-            await Task.Run(() => InitializeGeometries());
+            foreach (var e in DxfBlock.Explode())
+            {
+                var obj = DxfHelpers.GetDrawingObject(e, Layer, Factory, DeviceContext, ResCache);
+
+                if (obj is not null)
+                {
+                    EntityCount += obj.EntityCount;
+                    DrawingObjects.Add(obj);
+                }
+            }
         }
-        public override void InitializeGeometries()
+        public override void UpdateGeometry()
         {
             foreach (var obj in DrawingObjects)
             {
-                obj.InitializeGeometries();
+                obj.UpdateGeometry();
 
                 if (Bounds.IsEmpty)
                 {
@@ -129,17 +138,7 @@ namespace Direct2DDXFViewer.DrawingObjects
                 }
             }
         }
-        public override List<GeometryRealization> GetGeometryRealization(float thickness)
-        {
-            List<GeometryRealization> geometryRealizations = [];
-
-            foreach (var obj in DrawingObjects)
-            {
-                geometryRealizations.AddRange(obj.GetGeometryRealization(thickness));
-            }
-
-            return geometryRealizations;
-        }
+   
         public override bool Hittest(RawVector2 p, float thickness)
         {
             foreach (var obj in DrawingObjects)

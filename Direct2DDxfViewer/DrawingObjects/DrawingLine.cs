@@ -77,11 +77,7 @@ namespace Direct2DDXFViewer.DrawingObjects
             return Bounds.IntersectsWith(rect) || Bounds.Contains(rect);
         }
 
-        public override async Task UpdateGeometriesAsync()
-        {
-            await Task.Run(() => InitializeGeometries());
-        }
-        public async override void InitializeGeometries()
+        public async override void UpdateGeometry()
         {
             PathGeometry pathGeometry = new(Factory);
             using (var sink = pathGeometry.Open())
@@ -98,17 +94,6 @@ namespace Direct2DDXFViewer.DrawingObjects
             }
         }
 
-        public override List<GeometryRealization> GetGeometryRealization(float thickness)
-        {
-            List<GeometryRealization> geometryRealizations = [];
-
-            if (Geometry is not null)
-            {
-                geometryRealizations.Add(new(DeviceContext, Geometry, 0.5f, thickness, HairlineStrokeStyle));
-            }
-
-            return geometryRealizations;
-        }
         public override bool Hittest(RawVector2 p, float thickness)
         {
             return Geometry.StrokeContainsPoint(p, thickness); ;

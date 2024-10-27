@@ -4,12 +4,20 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Cad_Point_Manager"
+        xmlns:ui="http://schemas.modernwpf.com/2019"
+        ui:WindowHelper.UseModernWindowStyle="False"
         mc:Ignorable="d"
         Title="MainWindow"
         Width="600"
         Height="400"
-        WindowState="Maximized">
+        WindowState="Maximized"
+        ui:ThemeManager.IsThemeAware="True"
+        ui:ThemeManager.RequestedTheme="Dark">
+
+
+
     <Grid>
-        <Frame x:Name="mainFrame" />
+        <Frame x:Name="mainFrame"
+               Grid.Row="1" />
     </Grid>
 </Window>

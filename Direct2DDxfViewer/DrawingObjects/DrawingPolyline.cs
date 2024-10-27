@@ -26,21 +26,10 @@ namespace Direct2DDXFViewer.DrawingObjects
         #region Methods
         public abstract void GetDrawingSegments();
 
-        public override void InitializeGeometries()
+        public override void UpdateGeometry()
         {
             // Implement logic to update the geometry of the polyline
             throw new NotImplementedException();
-        }
-        public override List<GeometryRealization> GetGeometryRealization(float thickness)
-        {
-            List<GeometryRealization> geometryRealizations = [];
-
-            foreach (var segment in DrawingSegments)
-            {
-                geometryRealizations.AddRange(segment.GetGeometryRealization(thickness));
-            }
-
-            return geometryRealizations;
         }
 
         public override void DrawToDeviceContext(DeviceContext1 deviceContext, float thickness, Brush brush)

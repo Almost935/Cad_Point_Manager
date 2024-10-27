@@ -22,10 +22,12 @@ namespace Cad_Point_Manager
             InitializeComponent();
             Loaded += MainWindow_Loaded;
 
-            StyleProperty.OverrideMetadata(typeof(Window), new FrameworkPropertyMetadata
-            {
-                DefaultValue = FindResource(typeof(Window))
-            });
+            
+
+            //StyleProperty.OverrideMetadata(typeof(Window), new FrameworkPropertyMetadata
+            //{
+            //    DefaultValue = FindResource(typeof(Window))
+            //});
         }
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {

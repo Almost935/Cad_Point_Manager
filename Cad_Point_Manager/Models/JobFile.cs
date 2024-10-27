@@ -1,4 +1,4 @@
-﻿using Cad_Point_Manager.Models.DrawingObjects;
+﻿using Direct2DDXFViewer.DrawingObjects;
 using netDxf;
 using System;
 using System.Collections.Generic;
@@ -15,7 +15,7 @@ namespace Cad_Point_Manager.Models
         #region Fields
         private string _dxfFilePath;
         private DxfDocument _dxfDoc;
-        private ObservableCollection<ObjectLayer> _layers = new();
+        private ObjectLayerManager _layerManager;
         private Rect _extents = new();
         #endregion
 
@@ -38,12 +38,12 @@ namespace Cad_Point_Manager.Models
                 OnPropertyChanged();
             }
         }
-        public ObservableCollection<ObjectLayer> Layers 
+        public ObjectLayerManager LayerManager 
         {
-            get { return _layers; }
+            get { return _layerManager; }
             set
             {
-                _layers = value;
+                _layerManager = value;
                 OnPropertyChanged();
             }
         }

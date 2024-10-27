@@ -85,7 +85,7 @@ namespace Direct2DDXFViewer.DrawingObjects
         }
 
 
-        public override void InitializeGeometries()
+        public override void UpdateGeometry()
         {
             if (DxfEllipse.IsFullEllipse)
             {
@@ -194,21 +194,7 @@ namespace Direct2DDXFViewer.DrawingObjects
                 return ellipseGeometry;
             }
         }
-        public override async Task UpdateGeometriesAsync()
-        {
-            await Task.Run(() => InitializeGeometries());
-        }
-        public override List<GeometryRealization> GetGeometryRealization(float thickness)
-        {
-            List<GeometryRealization> geometryRealizations = [];
-
-            if (Geometry is not null)
-            {
-                geometryRealizations.Add(new(DeviceContext, Geometry, 0.5f, thickness, HairlineStrokeStyle));
-            }
-
-            return geometryRealizations;
-        }
+    
         public override bool Hittest(RawVector2 p, float thickness)
         {
             return Geometry.StrokeContainsPoint(p, thickness);

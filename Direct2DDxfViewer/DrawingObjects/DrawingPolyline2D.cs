@@ -64,11 +64,7 @@ namespace Direct2DDXFViewer.DrawingObjects
             }
         }
 
-        public override async Task UpdateGeometriesAsync()
-        {
-            await Task.Run(() => InitializeGeometries());
-        }
-        public override void InitializeGeometries()
+        public override void UpdateGeometry()
         {
             //foreach (var segment in DrawingSegments)
             //{
@@ -86,7 +82,7 @@ namespace Direct2DDXFViewer.DrawingObjects
 
             Parallel.ForEach(DrawingSegments, segment =>
             {
-                segment.InitializeGeometries();
+                segment.UpdateGeometry();
 
                 if (Bounds.IsEmpty)
                 {

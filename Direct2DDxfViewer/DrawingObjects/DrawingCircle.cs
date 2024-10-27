@@ -72,7 +72,7 @@ namespace Direct2DDXFViewer.DrawingObjects
         }
 
         
-        public override void InitializeGeometries()
+        public override void UpdateGeometry()
         {
             Ellipse ellipse = new(new RawVector2((float)DxfCircle.Center.X, (float)DxfCircle.Center.Y), (float)DxfCircle.Radius, (float)DxfCircle.Radius);
             EllipseGeometry ellipseGeometry = new(Factory, ellipse);
@@ -82,21 +82,7 @@ namespace Direct2DDXFViewer.DrawingObjects
             var bounds = Geometry.GetWidenedBounds(_hitTestStrokeThickness);
             Bounds = new(bounds.Left, bounds.Top, Math.Abs(bounds.Right - bounds.Left), Math.Abs(bounds.Bottom - bounds.Top));
         }
-        public override async Task UpdateGeometriesAsync()
-        {
-            await Task.Run(() => InitializeGeometries());
-        }
-        public override List<GeometryRealization> GetGeometryRealization(float thickness)
-        {
-            List<GeometryRealization> geometryRealizations = [];
-
-            if (Geometry is not null)
-            {
-                geometryRealizations.Add(new(DeviceContext, Geometry, 0.5f, thickness, HairlineStrokeStyle));
-            }
-
-            return geometryRealizations;
-        }
+    
         public override bool Hittest(RawVector2 p, float thickness)
         {
             return Geometry.StrokeContainsPoint(p, thickness);

@@ -96,7 +96,7 @@ namespace Direct2DDXFViewer.Helpers
             {
                 foreach (var obj in layer.DrawingObjects)
                 {
-                    obj.InitializeGeometries();
+                    obj.UpdateGeometry();
                 }
             }
 

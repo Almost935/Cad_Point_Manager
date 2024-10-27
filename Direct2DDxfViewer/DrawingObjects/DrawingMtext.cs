@@ -1,4 +1,7 @@
-﻿using Direct2DDxfViewer.Direct2DControl;
+﻿
+
+
+using Direct2DDxfViewer.Direct2DControl;
 using Direct2DDXFViewer.Helpers;
 using netDxf;
 using netDxf.Entities;
@@ -7,15 +10,6 @@ using SharpDX.Direct2D1;
 using SharpDX.Direct3D11;
 using SharpDX.DirectWrite;
 using SharpDX.Mathematics.Interop;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Diagnostics;
-using System.Linq;
-using System.Numerics;
-using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
 using Brush = SharpDX.Direct2D1.Brush;
@@ -103,20 +97,12 @@ namespace Direct2DDXFViewer.DrawingObjects
             return Bounds.IntersectsWith(rect) || Bounds.Contains(rect);
         }
 
-        public override async Task UpdateGeometriesAsync()
-        {
-            await Task.Run(() => InitializeGeometries());
-        }
-        public override void InitializeGeometries()
+        public override void UpdateGeometry()
         {
             Bounds = new(DxfMtext.Position.X, DxfMtext.Position.Y, DxfMtext.RectangleWidth * 2, DxfMtext.Height * 2);
             GetTransform();
             GetTextFormat();
             GetTextLayout();
-        }
-        public override List<GeometryRealization> GetGeometryRealization(float thickness)
-        {
-            return new List<GeometryRealization>();
         }
 
         public void GetTextFormat()

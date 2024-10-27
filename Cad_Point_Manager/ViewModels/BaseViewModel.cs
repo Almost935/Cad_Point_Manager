@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Cad_Point_Manager.ViewModels
 {
-    internal class BaseViewModel : INotifyPropertyChanged
+    public class BaseViewModel : INotifyPropertyChanged
     {
         public event PropertyChangedEventHandler PropertyChanged;
 

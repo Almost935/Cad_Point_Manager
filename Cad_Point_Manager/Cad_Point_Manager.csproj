@@ -9,6 +9,14 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Models\DrawingObjects\**" />
+    <EmbeddedResource Remove="Models\DrawingObjects\**" />
+    <None Remove="Models\DrawingObjects\**" />
+    <Page Remove="Models\DrawingObjects\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="Helpers\DxfHelper.cs" />
     <Compile Remove="Services\DxfService.cs" />
   </ItemGroup>
 
@@ -29,6 +37,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="Helpers\" />
     <Folder Include="Services\" />
   </ItemGroup>
 
