@@ -44,15 +44,11 @@ namespace Direct2DDXFViewer.DrawingObjects
         #endregion
 
         #region Constructor
-        public DrawingMtext(MText dxfMtext, SharpDX.Direct2D1.Factory1 factory, DeviceContext1 deviceContext, ResourceCache resCache, ObjectLayer layer, Factory1 factoryWrite)
+        public DrawingMtext(MText dxfMtext, ObjectLayer layer)
         {
             DxfMtext = dxfMtext;
             Entity = dxfMtext;
-            Factory = factory;
-            DeviceContext = deviceContext;
-            ResCache = resCache;
             Layer = layer;
-            _factoryWrite = factoryWrite;
             EntityCount = 1;
 
             GetStrokeStyle();
@@ -61,11 +57,11 @@ namespace Direct2DDXFViewer.DrawingObjects
         #endregion
 
         #region Methods
-        public override void DrawToDeviceContext(DeviceContext1 deviceContext, float thickness, Brush brush)
+        public override void DrawToDeviceContext(float thickness, Brush brush)
         {
             deviceContext.DrawTextLayout(new RawVector2((float)DxfMtext.Position.X, (float)DxfMtext.Position.Y), _textLayout, brush);
         }
-        public override void DrawToDeviceContext(DeviceContext1 deviceContext, float thickness, Brush brush, StrokeStyle1 strokeStyle)
+        public override void DrawToDeviceContext(float thickness, Brush brush, StrokeStyle1 strokeStyle)
         {
             deviceContext.DrawTextLayout(new RawVector2((float)DxfMtext.Position.X, (float)DxfMtext.Position.Y), _textLayout, brush);
             //deviceContext.DrawText(DxfMtext.PlainText(), _textFormat, new RawRectangleF((float)Bounds.Left, (float)Bounds.Top, (float)Bounds.Right, (float)Bounds.Bottom), Brush);
@@ -97,6 +93,10 @@ namespace Direct2DDXFViewer.DrawingObjects
             return Bounds.IntersectsWith(rect) || Bounds.Contains(rect);
         }
 
+        public override void UpdateDxfProperties()
+        {
+
+        }
         public override void UpdateGeometry()
         {
             Bounds = new(DxfMtext.Position.X, DxfMtext.Position.Y, DxfMtext.RectangleWidth * 2, DxfMtext.Height * 2);

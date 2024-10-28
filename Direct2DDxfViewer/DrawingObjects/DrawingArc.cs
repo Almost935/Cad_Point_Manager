@@ -35,34 +35,39 @@ namespace Direct2DDXFViewer.DrawingObjects
 
         public double Sweep { get; set; }
         public bool IsLargeArc { get; set; }
+        public bool Radius { get; }
         #endregion
 
         #region Constructor
-        public DrawingArc(Arc dxfArc, Factory1 factory, DeviceContext1 deviceContext, ResourceCache resCache, ObjectLayer layer)
+        public DrawingArc(Arc dxfArc, Factory1 factory, ObjectLayer layer)
         {
             DxfArc = dxfArc;
             Entity = dxfArc;
             Factory = factory;
-            DeviceContext = deviceContext;
-            ResCache = resCache;
             Layer = layer;
             EntityCount = 1;
 
-            Initialize();
-            GetStrokeStyle();
-            UpdateBrush();            
+            UpdateDxfProperties();
+                      
         }
         #endregion
 
         #region Methods
+       
 
-        public override void DrawToDeviceContext(DeviceContext1 deviceContext, float thickness, Brush brush)
+        public override void DrawToDeviceContext(float thickness, Brush brush)
         {
-            deviceContext.DrawGeometry(Geometry, brush, thickness);
+            if (DeviceContext is not null)
+            {
+                DeviceContext.DrawGeometry(Geometry, brush, thickness);
+            }
         }
-        public override void DrawToDeviceContext(DeviceContext1 deviceContext, float thickness, Brush brush, StrokeStyle1 strokeStyle)
+        public override void DrawToDeviceContext(float thickness, Brush brush, StrokeStyle1 strokeStyle)
         {
-            deviceContext.DrawGeometry(Geometry, brush, thickness, strokeStyle);
+            if (DeviceContext is not null)
+            {
+                DeviceContext.DrawGeometry(Geometry, brush, thickness, strokeStyle);
+            }
         }
         public override void DrawToRenderTarget(RenderTarget target, float thickness, Brush brush)
         {
@@ -76,7 +81,7 @@ namespace Direct2DDXFViewer.DrawingObjects
         {
             return Bounds.IntersectsWith(rect) || Bounds.Contains(rect);
         }
-        public override void Initialize()
+        public override void UpdateDxfProperties()
         {
             // Start by getting start and end points using NetDxf ToPolyline2D method
             StartPoint = new(

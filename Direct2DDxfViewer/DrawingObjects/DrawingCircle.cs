@@ -50,13 +50,13 @@ namespace Direct2DDXFViewer.DrawingObjects
         #endregion
 
         #region Methods
-        public override void DrawToDeviceContext(DeviceContext1 deviceContext, float thickness, Brush brush)
+        public override void DrawToDeviceContext(float thickness, Brush brush)
         {
-            deviceContext.DrawGeometry(Geometry, brush, thickness);
+            DeviceContext?.DrawGeometry(Geometry, brush, thickness);
         }
-        public override void DrawToDeviceContext(DeviceContext1 deviceContext, float thickness, Brush brush, StrokeStyle1 strokeStyle)
+        public override void DrawToDeviceContext(float thickness, Brush brush, StrokeStyle1 strokeStyle)
         {
-            deviceContext.DrawGeometry(Geometry, brush, thickness, strokeStyle);
+            DeviceContext?.DrawGeometry(Geometry, brush, thickness, strokeStyle);
         }
         public override void DrawToRenderTarget(RenderTarget target, float thickness, Brush brush)
         {
@@ -71,7 +71,11 @@ namespace Direct2DDXFViewer.DrawingObjects
             return Bounds.IntersectsWith(rect) || Bounds.Contains(rect);
         }
 
-        
+
+        public override void UpdateDxfProperties()
+        {
+            
+        }
         public override void UpdateGeometry()
         {
             Ellipse ellipse = new(new RawVector2((float)DxfCircle.Center.X, (float)DxfCircle.Center.Y), (float)DxfCircle.Radius, (float)DxfCircle.Radius);

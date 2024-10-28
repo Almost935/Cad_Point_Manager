@@ -39,7 +39,7 @@ namespace Direct2DDXFViewer.DrawingObjects
         #endregion
 
         #region Constructor
-        public DrawingBlock(Insert dxfBlock, Factory1 factory, DeviceContext1 deviceContext, ResourceCache resCache, ObjectLayer layer)
+        public DrawingBlock(Insert dxfBlock, ObjectLayer layer)
         {
             DxfBlock = dxfBlock;
             Entity = dxfBlock;
@@ -48,7 +48,7 @@ namespace Direct2DDXFViewer.DrawingObjects
             ResCache = resCache;
             Layer = layer;
 
-            Initialize();
+            UpdateDxfProperties();
             GetStrokeStyle();
             UpdateBrush();
         }
@@ -69,21 +69,27 @@ namespace Direct2DDXFViewer.DrawingObjects
             }
         }
 
-
-        public override void DrawToDeviceContext(DeviceContext1 deviceContext, float thickness, Brush brush)
+        public override void DrawToDeviceContext(float thickness, Brush brush)
         {
-            foreach (var obj in DrawingObjects)
+            if (DeviceContext is not null)
             {
-                obj.DrawToDeviceContext(deviceContext, thickness, brush);
+                foreach (var obj in DrawingObjects)
+                {
+                    obj.DrawToDeviceContext(thickness, brush);
+                }
             }
         }
-        public override void DrawToDeviceContext(DeviceContext1 deviceContext, float thickness, Brush brush, StrokeStyle1 strokeStyle)
+        public override void DrawToDeviceContext(float thickness, Brush brush, StrokeStyle1 strokeStyle)
         {
-            foreach (var obj in DrawingObjects)
+            if (DeviceContext is not null)
             {
-                obj.DrawToDeviceContext(deviceContext, thickness, brush, strokeStyle);
+                foreach (var obj in DrawingObjects)
+                {
+                    obj.DrawToDeviceContext(thickness, brush, strokeStyle);
+                }
             }
         }
+       
         public override void DrawToRenderTarget(RenderTarget target, float thickness, Brush brush)
         {
             foreach (var obj in DrawingObjects)
@@ -109,7 +115,7 @@ namespace Direct2DDXFViewer.DrawingObjects
             }
             return false;
         }
-        public override void Initialize()
+        public override void UpdateDxfProperties()
         {
             foreach (var e in DxfBlock.Explode())
             {

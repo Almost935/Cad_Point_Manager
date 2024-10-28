@@ -63,13 +63,13 @@ namespace Direct2DDXFViewer.DrawingObjects
         #endregion
 
         #region Methods
-        public override void DrawToDeviceContext(DeviceContext1 deviceContext, float thickness, Brush brush)
+        public override void DrawToDeviceContext(float thickness, Brush brush)
         {
-            deviceContext.DrawGeometry(Geometry, brush, thickness);
+            DeviceContext?.DrawGeometry(Geometry, brush, thickness);
         }
-        public override void DrawToDeviceContext(DeviceContext1 deviceContext, float thickness, Brush brush, StrokeStyle1 strokeStyle)
+        public override void DrawToDeviceContext(float thickness, Brush brush, StrokeStyle1 strokeStyle)
         {
-            deviceContext.DrawGeometry(Geometry, brush, thickness, strokeStyle);
+            DeviceContext?.DrawGeometry(Geometry, brush, thickness, strokeStyle);
         }
         public override void DrawToRenderTarget(RenderTarget target, float thickness, Brush brush)
         {
@@ -84,29 +84,29 @@ namespace Direct2DDXFViewer.DrawingObjects
             return Bounds.IntersectsWith(rect) || Bounds.Contains(rect);
         }
 
-
-        public override void UpdateGeometry()
+        public override void UpdateDxfProperties()
         {
             if (DxfEllipse.IsFullEllipse)
             {
                 Geometry = GetEllipseGeometry();
-                var bounds = Geometry.GetWidenedBounds(10);
-                Bounds = new(bounds.Left, bounds.Top, Math.Abs(bounds.Right - bounds.Left), Math.Abs(bounds.Bottom - bounds.Top));
             }
             else
             {
                 Geometry = GetArcGeometry();
-                var bounds = Geometry.GetWidenedBounds(10);
-                Bounds = new(bounds.Left, bounds.Top, Math.Abs(bounds.Right - bounds.Left), Math.Abs(bounds.Bottom - bounds.Top));
             }
+        }
+        public override void UpdateGeometry()
+        {
+            var bounds = Geometry.GetWidenedBounds(10);
+            Bounds = new(bounds.Left, bounds.Top, Math.Abs(bounds.Right - bounds.Left), Math.Abs(bounds.Bottom - bounds.Top));
         }
         public Geometry GetArcGeometry()
         {
             // Start by getting start and end points using NetDxf ToPolyline2D method
-            RawVector2 startPoint = new(
+            StartPoint = new(
                 (float)DxfEllipse.ToPolyline2D(2).Vertexes.First().Position.X,
                 (float)DxfEllipse.ToPolyline2D(2).Vertexes.First().Position.Y);
-            RawVector2 endPoint = new(
+            EndPoint = new(
                 (float)DxfEllipse.ToPolyline2D(2).Vertexes.Last().Position.X,
                 (float)DxfEllipse.ToPolyline2D(2).Vertexes.Last().Position.Y);
             var radiusX = (float)(DxfEllipse.MajorAxis / 2);
@@ -128,11 +128,11 @@ namespace Direct2DDXFViewer.DrawingObjects
             PathGeometry pathGeometry = new(Factory);
             using (var sink = pathGeometry.Open())
             {
-                sink.BeginFigure(startPoint, FigureBegin.Filled);
+                sink.BeginFigure(StartPoint, FigureBegin.Filled);
 
                 ArcSegment arcSegment = new()
                 {
-                    Point = endPoint,
+                    Point = EndPoint,
                     Size = new(radiusX, radiusY),
                     SweepDirection = SweepDirection.Clockwise,
                     RotationAngle = rotation,

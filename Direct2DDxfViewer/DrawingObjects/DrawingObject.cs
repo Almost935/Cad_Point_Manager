@@ -77,15 +77,30 @@ namespace Direct2DDXFViewer.DrawingObjects
         #endregion
 
         #region Methods
-        public abstract void Initialize();
+        public abstract void UpdateDxfProperties();
         public abstract void UpdateGeometry();
-        public abstract void DrawToDeviceContext(DeviceContext1 deviceContext, float thickness, Brush brush);
-        public abstract void DrawToDeviceContext(DeviceContext1 deviceContext, float thickness, Brush brush, StrokeStyle1 strokeStyle);
+        public abstract void DrawToDeviceContext(float thickness, Brush brush);
+        public abstract void DrawToDeviceContext(float thickness, Brush brush, StrokeStyle1 strokeStyle);
         public abstract void DrawToRenderTarget(RenderTarget target, float thickness, Brush brush);
         public abstract void DrawToRenderTarget(RenderTarget target, float thickness, Brush brush, StrokeStyle1 strokeStyle);
         public abstract bool DrawingObjectIsInRect(Rect rect);
         public abstract bool Hittest(RawVector2 p, float thickness);
 
+        public void SetDeviceDependentResources(DeviceContext1 deviceContext, ResourceCache resCache)
+        {
+            DeviceContext = deviceContext;
+            ResCache = resCache;
+
+            GetStrokeStyle();
+            UpdateBrush();
+        }
+
+        public void SetDeviceIndependentResources(Factory1 factory)
+        {
+            Factory = factory;
+
+            UpdateGeometry();
+        }
         public void UpdateBrush()
         {
             if (Entity is null || DeviceContext is null)

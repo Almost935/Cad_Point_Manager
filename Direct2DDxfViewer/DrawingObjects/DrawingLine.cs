@@ -56,11 +56,11 @@ namespace Direct2DDXFViewer.DrawingObjects
         #endregion
 
         #region Methods
-        public override void DrawToDeviceContext(DeviceContext1 deviceContext, float thickness, Brush brush)
+        public override void DrawToDeviceContext(float thickness, Brush brush)
         {
             deviceContext.DrawLine(StartPoint, EndPoint, brush, thickness);
         }
-        public override void DrawToDeviceContext(DeviceContext1 deviceContext, float thickness, Brush brush, StrokeStyle1 strokeStyle)
+        public override void DrawToDeviceContext(float thickness, Brush brush, StrokeStyle1 strokeStyle)
         {
             deviceContext.DrawLine(StartPoint, EndPoint, brush, thickness, strokeStyle);
         }
@@ -77,13 +77,18 @@ namespace Direct2DDXFViewer.DrawingObjects
             return Bounds.IntersectsWith(rect) || Bounds.Contains(rect);
         }
 
+        public override void UpdateDxfProperties()
+        {
+            StartPoint = new((float)DxfLine.StartPoint.X, (float)DxfLine.StartPoint.Y);
+            EndPoint = new((float)DxfLine.EndPoint.X, (float)DxfLine.EndPoint.Y);
+        }
         public async override void UpdateGeometry()
         {
             PathGeometry pathGeometry = new(Factory);
             using (var sink = pathGeometry.Open())
             {
-                sink.BeginFigure(new RawVector2((float)DxfLine.StartPoint.X, (float)DxfLine.StartPoint.Y), FigureBegin.Filled);
-                sink.AddLine(new RawVector2((float)DxfLine.EndPoint.X, (float)DxfLine.EndPoint.Y));
+                sink.BeginFigure(StartPoint, FigureBegin.Filled);
+                sink.AddLine(EndPoint);
                 sink.EndFigure(FigureEnd.Open);
                 sink.Close();
 
