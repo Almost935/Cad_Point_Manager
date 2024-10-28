@@ -1,5 +1,6 @@
 ﻿using netDxf.Entities;
 using SharpDX.Direct2D1;
+using SharpDX.Direct3D11;
 using SharpDX.Mathematics.Interop;
 using System;
 using System.Collections.Generic;
@@ -26,34 +27,34 @@ namespace Direct2DDXFViewer.DrawingObjects
         #region Methods
         public abstract void GetDrawingSegments();
 
-        public override void UpdateGeometry()
+        public override void DrawToDeviceContext(float thickness, Brush brush)
         {
-            // Implement logic to update the geometry of the polyline
-            throw new NotImplementedException();
-        }
-
-        public override void DrawToDeviceContext(DeviceContext1 deviceContext, float thickness, Brush brush)
-        {
-            foreach (var segment in DrawingSegments)
+            if (DeviceContext is not null)
             {
-                segment.DrawToRenderTarget(deviceContext, thickness, brush);
+                foreach (var segment in DrawingSegments)
+                {
+                    segment.DrawToRenderTarget(DeviceContext, thickness, brush);
+                }
             }
         }
-        public override void DrawToDeviceContext(DeviceContext1 deviceContext, float thickness, Brush brush, StrokeStyle1 strokeStyle)
+        public override void DrawToDeviceContext(float thickness, Brush brush, StrokeStyle1 strokeStyle)
         {
-            foreach (var segment in DrawingSegments)
+            if (DeviceContext is not null)
             {
-                segment.DrawToRenderTarget(deviceContext, thickness, brush, strokeStyle);
+                foreach (var segment in DrawingSegments)
+                {
+                    segment.DrawToRenderTarget(DeviceContext, thickness, brush, strokeStyle);
+                }
             }
         }
-        public override void DrawToRenderTarget(RenderTarget target, float thickness, Brush brush)
+        public override void DrawToRenderTarget(float thickness, Brush brush)
         {
             foreach (var segment in DrawingSegments)
             {
                 segment.DrawToRenderTarget(target, thickness, brush);
             }
         }
-        public override void DrawToRenderTarget(RenderTarget target, float thickness, Brush brush, StrokeStyle1 strokeStyle)
+        public override void DrawToRenderTarget(float thickness, Brush brush, StrokeStyle1 strokeStyle)
         {
             foreach (var segment in DrawingSegments)
             {
@@ -74,7 +75,7 @@ namespace Direct2DDXFViewer.DrawingObjects
         }
         public override bool Hittest(RawVector2 p, float thickness)
         {
-            foreach(var segment in DrawingSegments)
+            foreach (var segment in DrawingSegments)
             {
                 if (segment.Bounds.Contains((double)p.X, (double)p.Y))
                 {

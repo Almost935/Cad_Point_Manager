@@ -45,36 +45,10 @@ namespace Direct2DDXFViewer.DrawingObjects
                 return objectLayer;
             }
         }
-        public void DrawVisibleObjectsToDeviceContext(DeviceContext1 deviceContext, float thickness)
+        public void UpdateDeviceContext()
         {
-            foreach (var layer in Layers.Values)
-            {
-                layer.DrawVisibleObjectsToDeviceContext(deviceContext, thickness);
-            }
-        }
-        public void DrawVisibleObjectsToRenderTarget(RenderTarget renderTarget, float thickness)
-        {
-            foreach (var layer in Layers.Values)
-            {
-                layer.DrawVisibleObjectsToRenderTarget(renderTarget, thickness);
-            }
-        }
 
-        public void DrawObjectsToDeviceContext(DeviceContext1 deviceContext, float thickness)
-        {
-            foreach (var layer in Layers.Values)
-            {
-                layer.DrawObjectsToDeviceContext(deviceContext, thickness);
-            }
         }
-        public void DrawObjectsToRenderTarget(RenderTarget renderTarget, float thickness)
-        {
-            foreach (var layer in Layers.Values)
-            {
-                layer.DrawObjectsToRenderTarget(renderTarget, thickness);
-            }
-        }
-
         public List<DrawingObject> GetDrawingObjectsinRect(Rect rect)
         {
             List<DrawingObject> drawingObjects = [];

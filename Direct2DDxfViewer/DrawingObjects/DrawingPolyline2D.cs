@@ -35,22 +35,20 @@ namespace Direct2DDXFViewer.DrawingObjects
         #endregion
 
         #region Constructor
-        public DrawingPolyline2D(Polyline2D dxfPolyline2D, Factory1 factory, DeviceContext1 deviceContext, ResourceCache resCache, ObjectLayer layer)
+        public DrawingPolyline2D(Polyline2D dxfPolyline2D, ObjectLayer layer)
         {
             DxfPolyline2D = dxfPolyline2D;
             Entity = dxfPolyline2D;
-            Factory = factory;
-            DeviceContext = deviceContext;
-            ResCache = resCache;
             Layer = layer;
 
+            UpdateDxfProperties();
             GetStrokeStyle();
             UpdateBrush();
-            GetDrawingSegments();
         }
         #endregion
 
         #region Methods
+
         public override void GetDrawingSegments()
         {
             foreach (var e in DxfPolyline2D.Explode())
