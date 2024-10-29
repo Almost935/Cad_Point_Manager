@@ -47,18 +47,14 @@ namespace Direct2DDXFViewer.DrawingObjects
         #endregion
 
         #region Constructor
-        public DrawingEllipse(netDxf.Entities.Ellipse dxfEllipse, Factory1 factory, DeviceContext1 deviceContext, ResourceCache resCache, ObjectLayer layer)
+        public DrawingEllipse(netDxf.Entities.Ellipse dxfEllipse, ObjectLayer layer)
         {
             DxfEllipse = dxfEllipse;
             Entity = dxfEllipse;
-            Factory = factory;
-            DeviceContext = deviceContext;
-            ResCache = resCache;
             Layer = layer;
             EntityCount = 1;
 
-            GetStrokeStyle();
-            UpdateBrush();
+           UpdateDxfProperties();
         }
         #endregion
 
@@ -70,14 +66,6 @@ namespace Direct2DDXFViewer.DrawingObjects
         public override void DrawToDeviceContext(float thickness, Brush brush, StrokeStyle1 strokeStyle)
         {
             DeviceContext?.DrawGeometry(Geometry, brush, thickness, strokeStyle);
-        }
-        public override void DrawToRenderTarget(RenderTarget target, float thickness, Brush brush)
-        {
-            target.DrawGeometry(Geometry, brush, thickness);
-        }
-        public override void DrawToRenderTarget(RenderTarget target, float thickness, Brush brush, StrokeStyle1 strokeStyle)
-        {
-            target.DrawGeometry(Geometry, brush, thickness, strokeStyle);
         }
         public override bool DrawingObjectIsInRect(Rect rect)
         {

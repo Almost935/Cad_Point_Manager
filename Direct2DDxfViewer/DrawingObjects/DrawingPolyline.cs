@@ -18,9 +18,30 @@ namespace Direct2DDXFViewer.DrawingObjects
     public abstract class DrawingPolyline : DrawingObject
     {
         #region Fields
+        private RawVector2 _startPoint;
+        private RawVector2 _endPoint;
         #endregion
 
         #region Properties
+        public RawVector2 StartPoint
+        {
+            get { return _startPoint; }
+            set
+            {
+                _startPoint = value;
+                OnPropertyChanged(nameof(StartPoint));
+            }
+        }
+        public RawVector2 EndPoint
+        {
+            get { return _endPoint; }
+            set
+            {
+                _endPoint = value;
+                OnPropertyChanged(nameof(EndPoint));
+            }
+        }
+
         public ObservableCollection<DrawingSegment> DrawingSegments { get; set; } = new();
         #endregion
 
@@ -33,7 +54,7 @@ namespace Direct2DDXFViewer.DrawingObjects
             {
                 foreach (var segment in DrawingSegments)
                 {
-                    segment.DrawToRenderTarget(DeviceContext, thickness, brush);
+                    segment.DrawToDeviceContext(thickness, brush);
                 }
             }
         }
@@ -43,22 +64,8 @@ namespace Direct2DDXFViewer.DrawingObjects
             {
                 foreach (var segment in DrawingSegments)
                 {
-                    segment.DrawToRenderTarget(DeviceContext, thickness, brush, strokeStyle);
+                    segment.DrawToDeviceContext(thickness, brush, strokeStyle);
                 }
-            }
-        }
-        public override void DrawToRenderTarget(float thickness, Brush brush)
-        {
-            foreach (var segment in DrawingSegments)
-            {
-                segment.DrawToRenderTarget(target, thickness, brush);
-            }
-        }
-        public override void DrawToRenderTarget(float thickness, Brush brush, StrokeStyle1 strokeStyle)
-        {
-            foreach (var segment in DrawingSegments)
-            {
-                segment.DrawToRenderTarget(target, thickness, brush, strokeStyle);
             }
         }
 

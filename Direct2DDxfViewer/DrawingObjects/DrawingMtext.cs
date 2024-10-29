@@ -50,43 +50,18 @@ namespace Direct2DDXFViewer.DrawingObjects
             Entity = dxfMtext;
             Layer = layer;
             EntityCount = 1;
-
-            GetStrokeStyle();
-            UpdateBrush();
         }
         #endregion
 
         #region Methods
         public override void DrawToDeviceContext(float thickness, Brush brush)
         {
-            deviceContext.DrawTextLayout(new RawVector2((float)DxfMtext.Position.X, (float)DxfMtext.Position.Y), _textLayout, brush);
+            DeviceContext?.DrawTextLayout(new RawVector2((float)DxfMtext.Position.X, (float)DxfMtext.Position.Y), _textLayout, brush);
         }
         public override void DrawToDeviceContext(float thickness, Brush brush, StrokeStyle1 strokeStyle)
         {
-            deviceContext.DrawTextLayout(new RawVector2((float)DxfMtext.Position.X, (float)DxfMtext.Position.Y), _textLayout, brush);
+            DeviceContext?.DrawTextLayout(new RawVector2((float)DxfMtext.Position.X, (float)DxfMtext.Position.Y), _textLayout, brush);
             //deviceContext.DrawText(DxfMtext.PlainText(), _textFormat, new RawRectangleF((float)Bounds.Left, (float)Bounds.Top, (float)Bounds.Right, (float)Bounds.Bottom), Brush);
-        }
-        public override void DrawToRenderTarget(RenderTarget target, float thickness, Brush brush)
-        {
-            var transform = target.Transform;
-            transform.M22 *= -1;
-            target.Transform = transform;
-            target.DrawTextLayout(new RawVector2((float)DxfMtext.Position.X, -(float)DxfMtext.Position.Y), _textLayout, brush);
-            transform.M22 *= -1;
-            target.Transform = transform;
-        }
-        public override void DrawToRenderTarget(RenderTarget target, float thickness, Brush brush, StrokeStyle1 strokeStyle)
-        {
-            var transform = target.Transform;
-
-            Matrix matrix = new(transform.M11, transform.M12, transform.M21, -transform.M22, transform.M31, transform.M32);
-            matrix.RotateAtPrepend(-(float)DxfMtext.Rotation, _adjustedPos.X, -_adjustedPos.Y);
-            RawMatrix3x2 newTransform = new((float)matrix.M11, (float)matrix.M12, (float)matrix.M21, (float)matrix.M22, (float)matrix.OffsetX, (float)matrix.OffsetY);
-
-            target.Transform = newTransform;
-            target.DrawTextLayout(new RawVector2((float)_adjustedPos.X, -(float)_adjustedPos.Y), _textLayout, brush);
-
-            target.Transform = transform;
         }
         public override bool DrawingObjectIsInRect(Rect rect)
         {

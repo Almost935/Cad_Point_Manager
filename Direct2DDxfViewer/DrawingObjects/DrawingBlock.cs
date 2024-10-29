@@ -43,14 +43,9 @@ namespace Direct2DDXFViewer.DrawingObjects
         {
             DxfBlock = dxfBlock;
             Entity = dxfBlock;
-            Factory = factory;
-            DeviceContext = deviceContext;
-            ResCache = resCache;
             Layer = layer;
 
             UpdateDxfProperties();
-            GetStrokeStyle();
-            UpdateBrush();
         }
         #endregion
 
@@ -59,7 +54,7 @@ namespace Direct2DDXFViewer.DrawingObjects
         {
             foreach (var e in DxfBlock.Explode())
             {
-                var obj = DxfHelpers.GetDrawingObject(e, Layer, Factory, DeviceContext, ResCache);
+                var obj = DxfHelpers.GetDrawingObject(e, Layer);
 
                 if (obj is not null)
                 {
@@ -89,21 +84,7 @@ namespace Direct2DDXFViewer.DrawingObjects
                 }
             }
         }
-       
-        public override void DrawToRenderTarget(float thickness, Brush brush)
-        {
-            foreach (var obj in DrawingObjects)
-            {
-                obj.DrawToRenderTarget(target, thickness, brush);
-            }
-        }
-        public override void DrawToRenderTarget(float thickness, Brush brush, StrokeStyle1 strokeStyle)
-        {
-            foreach (var obj in DrawingObjects)
-            {
-                obj.DrawToRenderTarget(target, thickness, brush, strokeStyle);
-            }
-        }
+
         public override bool DrawingObjectIsInRect(Rect rect)
         {
             foreach (var obj in DrawingObjects)
@@ -119,7 +100,7 @@ namespace Direct2DDXFViewer.DrawingObjects
         {
             foreach (var e in DxfBlock.Explode())
             {
-                var obj = DxfHelpers.GetDrawingObject(e, Layer, Factory, DeviceContext, ResCache);
+                var obj = DxfHelpers.GetDrawingObject(e, Layer);
 
                 if (obj is not null)
                 {

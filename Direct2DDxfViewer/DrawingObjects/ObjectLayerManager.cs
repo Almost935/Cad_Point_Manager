@@ -71,9 +71,12 @@ namespace Direct2DDXFViewer.DrawingObjects
                 return objectLayer;
             }
         }
-        public void UpdateDeviceContext()
+        public void UpdateDeviceDependentResources(DeviceContext1 newDeviceContext)
         {
-
+            foreach (var layer in Layers.Values)
+            {
+                layer?.UpdateDeviceDependentResources(newDeviceContext);
+            }
         }
         public List<DrawingObject> GetDrawingObjectsinRect(Rect rect)
         {

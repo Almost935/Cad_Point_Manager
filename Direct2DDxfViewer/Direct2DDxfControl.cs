@@ -198,7 +198,7 @@ namespace Direct2DDXFViewer
 
                 UpdateLineThicknesses();
 
-                LayerManager = DxfHelpers.GetLayers(DxfDoc, deviceContext, factory, resCache);
+                LayerManager = DxfHelpers.GetLayers(DxfDoc);
                 _hittestStrokeThickness = (float)(8 / ExtentsMatrix.M11);
 
                 _dxfObjectCount = DxfHelpers.LoadDrawingObjects(DxfDoc, LayerManager, factory, deviceContext, resCache);

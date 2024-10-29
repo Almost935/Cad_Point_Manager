@@ -39,16 +39,14 @@ namespace Direct2DDXFViewer.DrawingObjects
         #endregion
 
         #region Constructor
-        public DrawingArc(Arc dxfArc, Factory1 factory, ObjectLayer layer)
+        public DrawingArc(Arc dxfArc, ObjectLayer layer)
         {
             DxfArc = dxfArc;
             Entity = dxfArc;
-            Factory = factory;
             Layer = layer;
             EntityCount = 1;
 
-            UpdateDxfProperties();
-                      
+            UpdateDxfProperties();         
         }
         #endregion
 
@@ -69,14 +67,7 @@ namespace Direct2DDXFViewer.DrawingObjects
                 DeviceContext.DrawGeometry(Geometry, brush, thickness, strokeStyle);
             }
         }
-        public override void DrawToRenderTarget(float thickness, Brush brush)
-        {
-            target.DrawGeometry(Geometry, brush, thickness);
-        }
-        public override void DrawToRenderTarget(float thickness, Brush brush, StrokeStyle1 strokeStyle)
-        {
-            target.DrawGeometry(Geometry, brush, thickness, strokeStyle);
-        }
+
         public override bool DrawingObjectIsInRect(Rect rect)
         {
             return Bounds.IntersectsWith(rect) || Bounds.Contains(rect);

@@ -81,22 +81,18 @@ namespace Direct2DDXFViewer.DrawingObjects
         public abstract void UpdateGeometry();
         public abstract void DrawToDeviceContext(float thickness, Brush brush);
         public abstract void DrawToDeviceContext(float thickness, Brush brush, StrokeStyle1 strokeStyle);
-        public abstract void DrawToRenderTarget(float thickness, Brush brush);
-        public abstract void DrawToRenderTarget(float thickness, Brush brush, StrokeStyle1 strokeStyle);
         public abstract bool DrawingObjectIsInRect(Rect rect);
         public abstract bool Hittest(RawVector2 p, float thickness);
 
-        public void SetDeviceDependentResources(DeviceContext1 deviceContext, ResourceCache resCache)
+        public void UpdateDeviceDependentResources(DeviceContext1 deviceContext)
         {
             DeviceContext = deviceContext;
-
-            ResCache = resCache;
 
             GetStrokeStyle();
             UpdateBrush();
         }
 
-        public void SetDeviceIndependentResources(Factory1 factory)
+        public void UpdateDeviceIndependentResources(Factory1 factory)
         {
             Factory = factory;
 

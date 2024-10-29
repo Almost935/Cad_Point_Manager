@@ -14,7 +14,6 @@ using Direct2DDXFViewer.DrawingObjects;
 using netDxf;
 using Direct2DDXFViewer.Helpers;
 using netDxf.Tables;
-using Direct2DDXFViewer.BitmapHelpers;
 using Point = System.Windows.Point;
 
 namespace Direct2DDXFViewer.DrawingObjects

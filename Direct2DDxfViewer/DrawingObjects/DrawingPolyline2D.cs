@@ -53,7 +53,7 @@ namespace Direct2DDXFViewer.DrawingObjects
         {
             foreach (var e in DxfPolyline2D.Explode())
             {
-                var obj = DxfHelpers.GetDrawingSegment(e, Layer, Factory, DeviceContext, ResCache);
+                var obj = DxfHelpers.GetDrawingSegment(e, Layer);
                 if (obj is not null)
                 {
                     EntityCount += obj.EntityCount;
@@ -62,22 +62,15 @@ namespace Direct2DDXFViewer.DrawingObjects
             }
         }
 
+        public override void UpdateDxfProperties()
+        {
+            Parallel.ForEach(DrawingSegments, segment =>
+            {
+                segment.UpdateDxfProperties();
+            });
+        }
         public override void UpdateGeometry()
         {
-            //foreach (var segment in DrawingSegments)
-            //{
-            //    segment.UpdateGeometry();
-
-            //    if (Bounds.IsEmpty)
-            //    {
-            //        Bounds = segment.Bounds;
-            //    }
-            //    else
-            //    {
-            //        Bounds = Rect.Union(Bounds, segment.Bounds);
-            //    }
-            //}
-
             Parallel.ForEach(DrawingSegments, segment =>
             {
                 segment.UpdateGeometry();

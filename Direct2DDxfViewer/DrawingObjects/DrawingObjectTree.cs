@@ -1,5 +1,4 @@
-﻿using Direct2DDXFViewer.BitmapHelpers;
-using Direct2DDXFViewer.Helpers;
+﻿using Direct2DDXFViewer.Helpers;
 using netDxf.Tables;
 using SharpDX;
 using SharpDX.Direct2D1;

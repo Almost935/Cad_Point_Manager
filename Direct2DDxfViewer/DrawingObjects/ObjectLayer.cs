@@ -91,7 +91,13 @@ namespace Direct2DDXFViewer.DrawingObjects
         public void UpdateDeviceDependentResources(DeviceContext1 deviceContext)
         {
             _deviceContext = deviceContext;
+            
             GetLayerBrush();
+
+            foreach (var obj in DrawingObjects)
+            {
+                obj?.UpdateDeviceDependentResources(deviceContext);
+            }
         }
         public void LoadGeometryGroup()
         {
@@ -139,12 +145,6 @@ namespace Direct2DDXFViewer.DrawingObjects
                 var geometryArr = geometries.ToArray();
                 GeometryGroup = new(_deviceContext.Factory, FillMode.Alternate, geometryArr);
             }
-        }
-
-        public void UpdateDeviceDependentResources(DeviceContext1 deviceContext)
-        {
-            _deviceContext = deviceContext;
-            GetLayerBrush();
         }
 
         public void GetLayerStrokeStyle()
