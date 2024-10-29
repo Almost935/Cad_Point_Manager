@@ -69,11 +69,11 @@ namespace Direct2DDXFViewer.DrawingObjects
                 DeviceContext.DrawGeometry(Geometry, brush, thickness, strokeStyle);
             }
         }
-        public override void DrawToRenderTarget(RenderTarget target, float thickness, Brush brush)
+        public override void DrawToRenderTarget(float thickness, Brush brush)
         {
             target.DrawGeometry(Geometry, brush, thickness);
         }
-        public override void DrawToRenderTarget(RenderTarget target, float thickness, Brush brush, StrokeStyle1 strokeStyle)
+        public override void DrawToRenderTarget(float thickness, Brush brush, StrokeStyle1 strokeStyle)
         {
             target.DrawGeometry(Geometry, brush, thickness, strokeStyle);
         }

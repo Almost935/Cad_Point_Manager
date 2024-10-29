@@ -90,14 +90,14 @@ namespace Direct2DDXFViewer.DrawingObjects
             }
         }
        
-        public override void DrawToRenderTarget(RenderTarget target, float thickness, Brush brush)
+        public override void DrawToRenderTarget(float thickness, Brush brush)
         {
             foreach (var obj in DrawingObjects)
             {
                 obj.DrawToRenderTarget(target, thickness, brush);
             }
         }
-        public override void DrawToRenderTarget(RenderTarget target, float thickness, Brush brush, StrokeStyle1 strokeStyle)
+        public override void DrawToRenderTarget(float thickness, Brush brush, StrokeStyle1 strokeStyle)
         {
             foreach (var obj in DrawingObjects)
             {
