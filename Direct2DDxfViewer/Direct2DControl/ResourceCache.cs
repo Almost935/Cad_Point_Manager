@@ -3,253 +3,235 @@ using SharpDX.DirectWrite;
 using SharpDX.Mathematics.Interop;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.ComponentModel;
+
 using Factory1 = SharpDX.Direct2D1.Factory1;
 
 namespace Direct2DDxfViewer.Direct2DControl
 {
-    public class ResourceCache : IDisposable
+    public class ResourceCache : IDisposable, INotifyPropertyChanged
     {
-        // - field -----------------------------------------------------------------------
-        private Dictionary<string, Func<RenderTarget, object>> generators = new Dictionary<string, Func<RenderTarget, object>>();
-        private Dictionary<string, object> resources = new Dictionary<string, object>();
+        #region Fields
+        private bool disposed = false;
 
-        private SharpDX.Direct3D11.Device device = null;
-        private RenderTarget renderTarget = null;
-        private DeviceContext1 deviceContext = null;
-        private Factory1 factory = null;
-        private SharpDX.DirectWrite.Factory1 factoryWrite = null;
-        private bool _disposed = false;
-        // - property --------------------------------------------------------------------
+        private SharpDX.Direct3D11.Device _device = null;
+        private RenderTarget _renderTarget = null;
+        private DeviceContext1 _deviceContext = null;
+        private Factory1 _factory = null;
+        private SharpDX.DirectWrite.Factory1 _factoryWrite = null;
+        private int _maxBitmapSize;
+        private Dictionary<(byte r, byte g, byte b, byte a), Brush> _brushes = [];
+        private Dictionary<(LineType lineType, StrokeTransformType strokeTransformType), StrokeStyle1> _strokeStyles = [];
+        private Dictionary<(int fontSize, string fontName), TextFormat> _textFormats = [];
+        #endregion
+
+        #region Properties
         public SharpDX.Direct3D11.Device Device
         {
-            get { return device; }
-            set { device = value; UpdateResources(); }
+            get { return _device; }
+            set
+            {
+                _device = value;
+                OnPropertyChanged(nameof(Device));
+            }
         }
         public RenderTarget RenderTarget
         {
-            get { return renderTarget; }
-            set { renderTarget = value; UpdateResources(); }
+            get { return _renderTarget; }
+            set
+            {
+                _renderTarget = value;
+                OnPropertyChanged(nameof(RenderTarget));
+            }
         }
         public DeviceContext1 DeviceContext
         {
-            get { return deviceContext; }
-            set { deviceContext = value; UpdateResources(); }
+            get { return _deviceContext; }
+            set
+            {
+                _deviceContext = value;
+                OnPropertyChanged(nameof(DeviceContext));
+            }
         }
         public Factory1 Factory
         {
-            get { return factory; }
-            set { factory = value; UpdateResources(); }
+            get { return _factory; }
+            set
+            {
+                _factory = value;
+                OnPropertyChanged(nameof(Factory));
+            }
         }
         public SharpDX.DirectWrite.Factory1 FactoryWrite
         {
-            get { return factoryWrite; }
-            set { factoryWrite = value; UpdateResources(); }
-        }
-
-        public int Count
-        {
-            get { return resources.Count; }
-        }
-
-        public int MaxBitmapSize { get; set; }
-        public Dictionary<(byte r, byte g, byte b, byte a), Brush> Brushes { get; set; } = new();
-
-        public enum LineType { Solid_Hairline, Solid_Fixed, Dash };
-        public Dictionary<LineType, StrokeStyle1> StrokeStyles { get; set; } = new();
-
-        public Dictionary<string, TextFormat1> TextFormats { get; set; } = new();
-
-        public object this[string key]
-        {
-            get { return resources[key]; }
-        }
-
-        public Dictionary<string, object>.KeyCollection Keys
-        {
-            get { return resources.Keys; }
-        }
-
-        public Dictionary<string, object>.ValueCollection Values
-        {
-            get { return resources.Values; }
-        }
-
-        // - public methods --------------------------------------------------------------
-
-        public void Add(string key, Func<RenderTarget, object> gen)
-        {
-            object resOld;
-            if (resources.TryGetValue(key, out resOld))
+            get { return _factoryWrite; }
+            set
             {
-                Disposer.SafeDispose(ref resOld);
-                generators.Remove(key);
-                resources.Remove(key);
+                _factoryWrite = value;
+                OnPropertyChanged(nameof(FactoryWrite));
             }
-
-            if (renderTarget == null)
+        }
+        public int MaxBitmapSize
+        {
+            get { return _maxBitmapSize; }
+            set
             {
-                generators.Add(key, gen);
-                resources.Add(key, null);
+                _maxBitmapSize = value;
+                OnPropertyChanged(nameof(MaxBitmapSize));
             }
-            else
+        }
+        public Dictionary<(byte r, byte g, byte b, byte a), Brush> Brushes
+        {
+            get { return _brushes; }
+            set
             {
-                var res = gen(renderTarget);
-                generators.Add(key, gen);
-                resources.Add(key, res);
+                _brushes = value;
+                OnPropertyChanged(nameof(Brushes));
+            }
+        }
+        public Dictionary<(LineType lineType, StrokeTransformType strokeTransformType), StrokeStyle1> StrokeStyles
+        {
+            get { return _strokeStyles; }
+            set
+            {
+                _strokeStyles = value;
+                OnPropertyChanged(nameof(StrokeStyles));
+            }
+        }
+        public Dictionary<(int fontSize, string fontName), TextFormat> TextFormats
+        {
+            get { return _textFormats; }
+            set
+            {
+                _textFormats = value;
+                OnPropertyChanged(nameof(TextFormats));
             }
         }
 
-        public void Clear()
-        {
-            foreach (var key in resources.Keys)
-            {
-                var res = resources[key];
-                Disposer.SafeDispose(ref res);
-            }
-            generators.Clear();
-            resources.Clear();
-        }
 
-        public bool ContainsKey(string key)
-        {
-            return resources.ContainsKey(key);
-        }
+        public enum LineType { Solid, Dash };
+        #endregion
 
-        public bool ContainsValue(object val)
-        {
-            return resources.ContainsValue(val);
-        }
+        #region Events
+        public event PropertyChangedEventHandler PropertyChanged;
+        #endregion
 
-        public Dictionary<string, object>.Enumerator GetEnumerator()
-        {
-            return resources.GetEnumerator();
-        }
-
-        public bool Remove(string key)
-        {
-            object res;
-            if (resources.TryGetValue(key, out res))
-            {
-                Disposer.SafeDispose(ref res);
-                generators.Remove(key);
-                resources.Remove(key);
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
-
-        public bool TryGetValue(string key, out object res)
-        {
-            return resources.TryGetValue(key, out res);
-        }
-
+        #region Methods
         public Brush GetBrush(byte r, byte g, byte b, byte a)
         {
             bool brushExists = Brushes.TryGetValue((r, g, b, a), out Brush brush);
-            if (!brushExists)
+            if (!brushExists || brush is null)
             {
-                brush = new SolidColorBrush(RenderTarget, new RawColor4((float)r / 255, (float)g / 255, (float)b / 255, (float)a / 255));
+                brush = new SolidColorBrush(DeviceContext, new RawColor4((float)r / 255, (float)g / 255, (float)b / 255, (float)a / 255));
                 Brushes.Add((r, g, b, a), brush);
             }
-
+            
             return brush;
         }
-
-        // - private methods -------------------------------------------------------------
-
-        private void UpdateResources()
+        public StrokeStyle1 GetStrokeStyle(LineType lineType, StrokeTransformType strokeTransformType)
         {
-            if (renderTarget == null) { return; }
+            bool strokeStyleExists = StrokeStyles.TryGetValue((lineType, strokeTransformType), value: out StrokeStyle1 strokeStyle);
 
-            foreach (var g in generators)
+            if (!strokeStyleExists || strokeStyle is null)
             {
-                var key = g.Key;
-                var gen = g.Value;
-                var res = gen(renderTarget);
+                DashStyle dashStyle; float dashOffset;
 
-                object resOld;
-                if (resources.TryGetValue(key, out resOld))
+                if (lineType is LineType.Dash) { dashStyle = DashStyle.Dash; dashOffset = 1; }
+                else { dashStyle = DashStyle.Solid; dashOffset = 0; }
+
+                StrokeStyleProperties1 ssp = new()
                 {
-                    Disposer.SafeDispose(ref resOld);
-                    resources.Remove(key);
-                }
-
-                resources.Add(key, res);
+                    StartCap = CapStyle.Round,
+                    EndCap = CapStyle.Round,
+                    DashCap = CapStyle.Flat,
+                    LineJoin = LineJoin.Round,
+                    MiterLimit = 10.0f,
+                    DashStyle = dashStyle,
+                    DashOffset = dashOffset,
+                    TransformType = strokeTransformType
+                };
+                strokeStyle = new StrokeStyle1(Factory, ssp);
+                StrokeStyles.Add((lineType, strokeTransformType), strokeStyle);
             }
 
-            foreach (var brush in Brushes.Values)
-            {
-                brush.Dispose();
-            }
-            Brushes.Clear();
-
-            foreach (var strokeStyle in StrokeStyles.Values)
-            {
-                strokeStyle.Dispose();
-            }
-            StrokeStyles.Clear();
-
-            foreach (var textFormat in TextFormats.Values)
-            {
-                textFormat.Dispose();
-            }
-            TextFormats.Clear();
+            return strokeStyle;
         }
+        public TextFormat GetTextFormat(int fontSize, string fontName)
+        {
+            bool textFormatExists = TextFormats.TryGetValue((fontSize, fontName), value: out TextFormat textFormat);
+            if (!textFormatExists || textFormat is null)
+            {
+                textFormat = new TextFormat(FactoryWrite, fontName, fontSize);
+                TextFormats.Add((fontSize, fontName), textFormat);
+            }
+            return textFormat;
+        }
+
+        public void ChangeDeviceContext(DeviceContext1 newDeviceContext)
+        {
+            // Dispose of the old device context and related resources
+            DisposeDeviceDependentResources();
+
+            // Assign the new device context
+            DeviceContext = newDeviceContext;
+        }
+
 
         public void Dispose()
         {
             Dispose(true);
             GC.SuppressFinalize(this);
         }
-
         protected virtual void Dispose(bool disposing)
         {
-            if (!_disposed)
+            if (!disposed)
             {
                 if (disposing)
                 {
-                    // Dispose managed resources
-                    Clear();
-                    Disposer.SafeDispose(ref renderTarget);
-                    Disposer.SafeDispose(ref deviceContext);
-                    Disposer.SafeDispose(ref device);
-                    Disposer.SafeDispose(ref factory);
-                    Disposer.SafeDispose(ref factoryWrite);
+                    DisposeDeviceDependentResources();
+                    DisposeDeviceIndependentResources();
 
-                    foreach (var brush in Brushes.Values)
-                    {
-                        brush.Dispose();
-                    }
-                    Brushes.Clear();
-
-                    foreach (var strokeStyle in StrokeStyles.Values)
-                    {
-                        strokeStyle.Dispose();
-                    }
-                    StrokeStyles.Clear();
-
-                    foreach (var textFormat in TextFormats.Values)
-                    {
-                        textFormat.Dispose();
-                    }
-                    TextFormats.Clear();
+                    _deviceContext?.Dispose();
+                    _factory?.Dispose();
+                    _factoryWrite?.Dispose();
+                    _device?.Dispose();
                 }
 
-                // Free unmanaged resources (if any)
-
-                _disposed = true;
+                disposed = true;
             }
         }
+        private void DisposeDeviceDependentResources()
+        {
+            foreach (var brush in _brushes.Values)
+            {
+                brush.Dispose();
+            }
+            _brushes.Clear();
+        }
+        private void DisposeDeviceIndependentResources()
+        {
+            foreach (var strokeStyle in _strokeStyles.Values)
+            {
+                strokeStyle.Dispose();
+            }
+            _strokeStyles.Clear();
 
+            foreach (var textFormat in _textFormats.Values)
+            {
+                textFormat.Dispose();
+            }
+            _textFormats.Clear();
+        }
         ~ResourceCache()
         {
             Dispose(false);
         }
+
+
+        protected virtual void OnPropertyChanged(string propertyName)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+        #endregion
     }
 }

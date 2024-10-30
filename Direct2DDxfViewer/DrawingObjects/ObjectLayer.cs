@@ -17,8 +17,8 @@ namespace Direct2DDXFViewer.DrawingObjects
     {
         #region Fields
         private DeviceContext1 _deviceContext;
-        private readonly Factory1 _factory;
-        private readonly ResourceCache _resourceCache;
+        private Factory1 _factory;
+        private OldResourceCache _resCache;
         private string _name;
         private List<DrawingObject> _drawingObjects = [];
         private bool isVisible = true;
@@ -65,16 +65,10 @@ namespace Direct2DDXFViewer.DrawingObjects
         #endregion
 
         #region Constructors
-        public ObjectLayer(DeviceContext1 deviceContext, Factory1 factory, ResourceCache resCache, netDxf.Tables.Layer layer)
+        public ObjectLayer(netDxf.Tables.Layer layer)
         {
-            _deviceContext = deviceContext;
-            _factory = factory;
-            _resourceCache = resCache;
             Name = layer.Name;
             DxfLayer = layer;
-
-            GetLayerBrush();
-            GetLayerStrokeStyle();
         }
         #endregion
 
@@ -97,6 +91,15 @@ namespace Direct2DDXFViewer.DrawingObjects
             foreach (var obj in DrawingObjects)
             {
                 obj?.UpdateDeviceDependentResources(deviceContext);
+            }
+        }
+        public void UpdateDeviceIndependentResources(Factory1 factory)
+        {
+            _factory = factory;
+
+            foreach (var obj in DrawingObjects)
+            {
+                obj?.UpdateDeviceIndependentResources(factory);
             }
         }
         public void LoadGeometryGroup()
@@ -149,7 +152,7 @@ namespace Direct2DDXFViewer.DrawingObjects
 
         public void GetLayerStrokeStyle()
         {
-            bool hairlineStrokeStyleExists = _resourceCache.StrokeStyles.TryGetValue(ResourceCache.LineType.Solid_Hairline, value: out StrokeStyle1 hairlineStrokeStyle);
+            bool hairlineStrokeStyleExists = _resCache.StrokeStyles.TryGetValue(OldResourceCache.LineType.Solid_Hairline, value: out StrokeStyle1 hairlineStrokeStyle);
             if (!hairlineStrokeStyleExists)
             {
                 StrokeStyleProperties1 ssp = new()
@@ -164,7 +167,7 @@ namespace Direct2DDXFViewer.DrawingObjects
                     TransformType = StrokeTransformType.Hairline
                 };
                 HairlineStrokeStyle = new(_factory, ssp);
-                _resourceCache.StrokeStyles.Add(ResourceCache.LineType.Solid_Hairline, HairlineStrokeStyle);
+                _resCache.StrokeStyles.Add(OldResourceCache.LineType.Solid_Hairline, HairlineStrokeStyle);
             }
             else
             {
@@ -175,7 +178,7 @@ namespace Direct2DDXFViewer.DrawingObjects
         public void GetLayerBrush()
         {
             LayerBrush?.Dispose();
-            LayerBrush = _resourceCache.GetBrush(DxfLayer.Color.R, DxfLayer.Color.G, DxfLayer.Color.B, 255);
+            LayerBrush = _resCache.GetBrush(DxfLayer.Color.R, DxfLayer.Color.G, DxfLayer.Color.B, 255);
         }
 
         public void Dispose()

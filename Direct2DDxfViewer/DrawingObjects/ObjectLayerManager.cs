@@ -20,7 +20,7 @@ namespace Direct2DDXFViewer.DrawingObjects
         private bool _disposed = false;
         private DeviceContext1 _deviceContext;
         private Factory1 _factory;
-        private ResourceCache _resourceCache;
+        private OldResourceCache _resourceCache;
 
         private DxfDocument _dxfDocument;
         #endregion
@@ -39,13 +39,6 @@ namespace Direct2DDXFViewer.DrawingObjects
         public List<DrawingObject> DrawingObjects => Layers.Values.SelectMany(layer => layer.DrawingObjects).ToList();
         #endregion
 
-        #region Constructors
-        public ObjectLayerManager(DxfDocument dxfDocument)
-        {
-            _dxfDocument = dxfDocument;
-        }
-        #endregion
-
         #region Events
         public event PropertyChangedEventHandler PropertyChanged;
         #endregion
@@ -57,7 +50,7 @@ namespace Direct2DDXFViewer.DrawingObjects
             Layers.Clear();
             foreach (var dxfLayer in _dxfDocument.Layers)
             {
-                ObjectLayer objectLayer = new(_deviceContext, _factory, _resourceCache, dxfLayer);
+                ObjectLayer objectLayer = new(dxfLayer);
                 Layers.Add(dxfLayer.Name, objectLayer);
             }
         }
@@ -66,7 +59,7 @@ namespace Direct2DDXFViewer.DrawingObjects
             if (Layers.TryGetValue(dxfLayer.Name, out ObjectLayer layer)) { return layer; }
             else
             {
-                ObjectLayer objectLayer = new(_deviceContext, _factory, _resourceCache, dxfLayer);
+                ObjectLayer objectLayer = new(dxfLayer);
                 Layers.Add(dxfLayer.Name, objectLayer);
                 return objectLayer;
             }

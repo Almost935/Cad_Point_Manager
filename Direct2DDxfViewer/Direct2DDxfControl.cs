@@ -187,7 +187,7 @@ namespace Direct2DDXFViewer
             if (dxfDoc is not null) { DxfDoc = dxfDoc; }
         }
 
-        public void LoadDxf(Factory1 factory, DeviceContext1 deviceContext, ResourceCache resCache)
+        public void LoadDxf(Factory1 factory, DeviceContext1 deviceContext, OldResourceCache resCache)
         {
             if (DxfDoc is not null)
             {
@@ -401,7 +401,7 @@ namespace Direct2DDXFViewer
             var objCopy = SnappedObject;
             if (objCopy is not null)
             {
-                objCopy.DrawToDeviceContext(deviceContext, _snappedThickness, objCopy.OuterEdgeBrush);
+                objCopy.DrawToDeviceContext(_snappedThickness, objCopy.OuterEdgeBrush);
             }
         }
         private void RenderHighlightedObjects(DeviceContext1 deviceContext)
@@ -409,7 +409,7 @@ namespace Direct2DDXFViewer
             var copy = HighlightedObjects.ToList();
             foreach (var obj in copy)
             {
-                obj.DrawToDeviceContext(deviceContext, 2, _highlightedBrush);
+                obj.DrawToDeviceContext(2, _highlightedBrush);
             }
         }
 
