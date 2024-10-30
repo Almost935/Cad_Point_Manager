@@ -26,13 +26,13 @@
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="*" />
+            <RowDefinition Height="*" />
             <RowDefinition Height="4*" />
         </Grid.RowDefinitions>
 
 
         <Grid x:Name="menuGrid"
-              Grid.Row="0" >
-            
+              Grid.Row="0">
 
             <Border Grid.Row="0"
                     BorderBrush="#7FFFFFFF"
@@ -81,7 +81,7 @@
                         </MenuItem>
                         <MenuItem Header="Zoom Out">
                             <MenuItem.Icon>
-                                <fa:FontAwesome Icon="SearchMinus"/>
+                                <fa:FontAwesome Icon="SearchMinus" />
                             </MenuItem.Icon>
                         </MenuItem>
                         <MenuItem Header="Zoom To Extents">
@@ -94,8 +94,25 @@
             </Border>
         </Grid>
 
+        <DockPanel Grid.Row="1"
+                   Margin="5 0 5 0">
+            <Button DockPanel.Dock="Left"
+                    Click="Button_Click">
+                <fa:FontAwesome Icon="Paperclip"
+                                Foreground="White" />
+                <Button.LayoutTransform>
+                    <ScaleTransform ScaleX="0.5"
+                                    ScaleY="0.5" />
+                </Button.LayoutTransform>
+            </Button>
+
+            <TextBlock DockPanel.Dock="Left"
+                       Text="{Binding DxfFilePath}"
+                       Foreground="White" />
+        </DockPanel>
+
         <Grid x:Name="dxfGrid"
-              Grid.Row="1">
+              Grid.Row="2">
             <Border x:Name="dxfBorder"
                     BorderBrush="Black"
                     BorderThickness="1"
