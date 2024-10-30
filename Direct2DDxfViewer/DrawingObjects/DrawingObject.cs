@@ -147,7 +147,9 @@ namespace Direct2DDXFViewer.DrawingObjects
 
         public void GetStrokeStyle()
         {
-            bool hairlineStrokeStyleExists = ResCache.StrokeStyles.TryGetValue(ResourceCache.LineType.Solid_Hairline, value: out StrokeStyle1 hairlineStrokeStyle);
+            HairlineStrokeStyle = ResCache.GetStrokeStyle(ResourceCache.LineType.Solid, StrokeTransformType.Hairline, out StrokeStyle1 hairlineStrokeStyle);
+
+            bool hairlineStrokeStyleExists = ResCache.StrokeStyles.TryGetValue(OldResourceCache.LineType.Solid_Hairline, value: out StrokeStyle1 hairlineStrokeStyle);
             if (!hairlineStrokeStyleExists)
             {
                 StrokeStyleProperties1 ssp = new()
@@ -162,14 +164,14 @@ namespace Direct2DDXFViewer.DrawingObjects
                     TransformType = StrokeTransformType.Hairline
                 };
                 HairlineStrokeStyle = new(Factory, ssp);
-                ResCache.StrokeStyles.Add(ResourceCache.LineType.Solid_Hairline, HairlineStrokeStyle);
+                ResCache.StrokeStyles.Add(OldResourceCache.LineType.Solid_Hairline, HairlineStrokeStyle);
             }
             else
             {
                 HairlineStrokeStyle = hairlineStrokeStyle;
             }
 
-            bool fixedStrokeStyleExists = ResCache.StrokeStyles.TryGetValue(ResourceCache.LineType.Solid_Fixed, value: out StrokeStyle1 fixedStrokeStyle);
+            bool fixedStrokeStyleExists = ResCache.StrokeStyles.TryGetValue(OldResourceCache.LineType.Solid_Fixed, value: out StrokeStyle1 fixedStrokeStyle);
             if (!fixedStrokeStyleExists)
             {
                 StrokeStyleProperties1 ssp = new()
@@ -184,7 +186,7 @@ namespace Direct2DDXFViewer.DrawingObjects
                     TransformType = StrokeTransformType.Fixed
                 };
                 FixedStrokeStyle = new(Factory, ssp);
-                ResCache.StrokeStyles.Add(ResourceCache.LineType.Solid_Fixed, FixedStrokeStyle);
+                ResCache.StrokeStyles.Add((ResourceCache.LineType.Solid, StrokeTransformType.Fixed), FixedStrokeStyle);
             }
             else
             {
