@@ -38,40 +38,29 @@ namespace Direct2DDXFViewer.DrawingObjects
         #endregion
 
         #region Constructor
-        public DrawingLine(Line dxfLine, Factory1 factory, DeviceContext1 deviceContext, OldResourceCache resCache, ObjectLayer layer)
+        public DrawingLine(Line dxfLine, ObjectLayer layer)
         {
             DxfLine = dxfLine;
             Entity = dxfLine;
-            Factory = factory;
-            DeviceContext = deviceContext;
-            ResCache = resCache;
             Layer = layer;
             EntityCount = 1;
             StartPoint = new((float)dxfLine.StartPoint.X, (float)dxfLine.StartPoint.Y);
             EndPoint = new((float)dxfLine.EndPoint.X, (float)dxfLine.EndPoint.Y);
 
-            GetStrokeStyle();
-            UpdateBrush();
+            UpdateDxfProperties();
         }
         #endregion
 
         #region Methods
         public override void DrawToDeviceContext(float thickness, Brush brush)
         {
-            deviceContext.DrawLine(StartPoint, EndPoint, brush, thickness);
+            DeviceContext.DrawLine(StartPoint, EndPoint, brush, thickness);
         }
         public override void DrawToDeviceContext(float thickness, Brush brush, StrokeStyle1 strokeStyle)
         {
-            deviceContext.DrawLine(StartPoint, EndPoint, brush, thickness, strokeStyle);
+            DeviceContext.DrawLine(StartPoint, EndPoint, brush, thickness, strokeStyle);
         }
-        public override void DrawToRenderTarget(RenderTarget target, float thickness, Brush brush)
-        {
-            target.DrawLine(StartPoint, EndPoint, brush, thickness);
-        }
-        public override void DrawToRenderTarget(RenderTarget target, float thickness, Brush brush, StrokeStyle1 strokeStyle)
-        {
-            target.DrawLine(StartPoint, EndPoint, brush, thickness, strokeStyle);
-        }
+       
         public override bool DrawingObjectIsInRect(Rect rect)
         {
             return Bounds.IntersectsWith(rect) || Bounds.Contains(rect);

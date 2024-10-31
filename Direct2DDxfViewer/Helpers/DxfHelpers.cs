@@ -41,33 +41,31 @@ namespace Direct2DDXFViewer.Helpers
             return Rect.Empty;
         }
 
-        public static ObjectLayerManager GetLayers(DxfDocument dxfDocument, DeviceContext1 deviceContext, Factory1 factory, OldResourceCache resCache)
+        public static ObjectLayerManager GetLayers(DxfDocument dxfDocument)
         {
-            ObjectLayerManager layerManager = new(deviceContext, factory, resCache);
+            ObjectLayerManager layerManager = new();
 
             foreach (var dxfLayer in dxfDocument.Layers)
             {
-                var color = GetRGBAColor(dxfLayer);
                 layerManager.GetLayer(dxfLayer);
             }
 
             return layerManager;
         }
 
-        public static int LoadEntityObject(EntityObject e, ObjectLayerManager layerManager, Factory1 factory,
-            DeviceContext1 deviceContext, OldResourceCache resCache)
+        public static int LoadEntityObject(EntityObject e, ObjectLayerManager layerManager)
         {
             ObjectLayer layer = layerManager.GetLayer(e.Layer);
             DrawingObject drawingObject = e switch
             {
-                Line line => new DrawingLine(line, factory, deviceContext, resCache, layer),
-                Arc arc => new DrawingArc(arc, factory, deviceContext, resCache, layer),
-                Polyline2D polyline2D => new DrawingPolyline2D(polyline2D, factory, deviceContext, resCache, layer),
-                Polyline3D polyline3D => new DrawingPolyline3D(polyline3D, factory, deviceContext, resCache, layer),
-                Circle circle => new DrawingCircle(circle, factory, deviceContext, resCache, layer),
-                Insert block => new DrawingBlock(block, factory, deviceContext, resCache, layer),
-                netDxf.Entities.Ellipse ellipse => new DrawingEllipse(ellipse, factory, deviceContext, resCache, layer),
-                MText mtext => new DrawingMtext(mtext, factory, deviceContext, resCache, layer, resCache.FactoryWrite),
+                Line line => new DrawingLine(line, layer),
+                Arc arc => new DrawingArc(arc, layer),
+                Polyline2D polyline2D => new DrawingPolyline2D(polyline2D, layer),
+                Polyline3D polyline3D => new DrawingPolyline3D(polyline3D, layer),
+                Circle circle => new DrawingCircle(circle, layer),
+                Insert block => new DrawingBlock(block, layer),
+                netDxf.Entities.Ellipse ellipse => new DrawingEllipse(ellipse, layer),
+                MText mtext => new DrawingMtext(mtext, layer),
                 _ => null
             };
 
@@ -81,7 +79,7 @@ namespace Direct2DDXFViewer.Helpers
         }
 
         public static int LoadDrawingObjects(DxfDocument dxfDocument, ObjectLayerManager layerManager, Factory1 factory,
-            DeviceContext1 deviceContext, OldResourceCache resCache)
+            DeviceContext1 deviceContext, ResourceCache resCache)
         {
             Stopwatch stopwatch = Stopwatch.StartNew();
 
@@ -110,21 +108,21 @@ namespace Direct2DDXFViewer.Helpers
         {
             return entity switch
             {
-                Line line => new DrawingLine(line, factory, deviceContext, resCache, layer),
-                Arc arc => new DrawingArc(arc, factory, deviceContext, resCache, layer),
-                Polyline2D polyline2D => new DrawingPolyline2D(polyline2D, factory, deviceContext, resCache, layer),
-                Polyline3D polyline3D => new DrawingPolyline3D(polyline3D, factory, deviceContext, resCache, layer),
-                Circle circle => new DrawingCircle(circle, factory, deviceContext, resCache, layer),
+                Line line => new DrawingLine(line, layer),
+                Arc arc => new DrawingArc(arc, layer),
+                Polyline2D polyline2D => new DrawingPolyline2D(polyline2D, layer),
+                Polyline3D polyline3D => new DrawingPolyline3D(polyline3D, layer),
+                Circle circle => new DrawingCircle(circle, layer),
                 _ => null
             };
         }
 
-        public static DrawingSegment GetDrawingSegment(EntityObject entity, ObjectLayer layer, Factory1 factory, DeviceContext1 deviceContext, OldResourceCache resCache)
+        public static DrawingSegment GetDrawingSegment(EntityObject entity, ObjectLayer layer)
         {
             return entity switch
             {
-                Line line => new DrawingLine(line, factory, deviceContext, resCache, layer),
-                Arc arc => new DrawingArc(arc, factory, deviceContext, resCache, layer),
+                Line line => new DrawingLine(line, layer),
+                Arc arc => new DrawingArc(arc, layer),
                 _ => null
             };
         }

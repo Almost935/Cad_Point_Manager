@@ -18,7 +18,7 @@ namespace Direct2DDXFViewer.DrawingObjects
         #region Fields
         private DeviceContext1 _deviceContext;
         private Factory1 _factory;
-        private OldResourceCache _resCache;
+        private ResourceCache _resCache;
         private string _name;
         private List<DrawingObject> _drawingObjects = [];
         private bool isVisible = true;

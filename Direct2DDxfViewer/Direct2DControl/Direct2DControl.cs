@@ -29,7 +29,7 @@ namespace Direct2DDxfViewer.Direct2DControl
 
         private readonly Stopwatch renderTimer = new();
 
-        protected OldResourceCache resCache = new();
+        protected ResourceCache resCache = new();
 
         private long lastFrameTime = 0;
         private long lastRenderTime = 0;

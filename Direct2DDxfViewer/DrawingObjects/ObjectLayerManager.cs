@@ -20,7 +20,7 @@ namespace Direct2DDXFViewer.DrawingObjects
         private bool _disposed = false;
         private DeviceContext1 _deviceContext;
         private Factory1 _factory;
-        private OldResourceCache _resourceCache;
+        private ResourceCache _resourceCache;
 
         private DxfDocument _dxfDocument;
         #endregion

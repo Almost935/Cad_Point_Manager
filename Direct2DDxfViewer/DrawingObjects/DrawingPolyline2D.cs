@@ -41,9 +41,8 @@ namespace Direct2DDXFViewer.DrawingObjects
             Entity = dxfPolyline2D;
             Layer = layer;
 
+            GetDrawingSegments();
             UpdateDxfProperties();
-            GetStrokeStyle();
-            UpdateBrush();
         }
         #endregion
 

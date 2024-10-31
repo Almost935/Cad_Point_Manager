@@ -34,18 +34,14 @@ namespace Direct2DDXFViewer.DrawingObjects
         #endregion
 
         #region Constructor
-        public DrawingCircle(Circle dxfCircle, Factory1 factory, DeviceContext1 deviceContext, OldResourceCache resCache, ObjectLayer layer)
+        public DrawingCircle(Circle dxfCircle, ObjectLayer layer)
         {
             DxfCircle = dxfCircle;
             Entity = dxfCircle;
-            Factory = factory;
-            DeviceContext = deviceContext;
-            ResCache = resCache;
             Layer = layer;
             EntityCount = 1;
 
-            GetStrokeStyle();
-            UpdateBrush();
+            UpdateDxfProperties();
         }
         #endregion
 
@@ -58,14 +54,7 @@ namespace Direct2DDXFViewer.DrawingObjects
         {
             DeviceContext?.DrawGeometry(Geometry, brush, thickness, strokeStyle);
         }
-        public override void DrawToRenderTarget(RenderTarget target, float thickness, Brush brush)
-        {
-            target.DrawGeometry(Geometry, brush, thickness);
-        }
-        public override void DrawToRenderTarget(RenderTarget target, float thickness, Brush brush, StrokeStyle1 strokeStyle)
-        {
-            target.DrawGeometry(Geometry, brush, thickness, strokeStyle);
-        }
+       
         public override bool DrawingObjectIsInRect(Rect rect)
         {
             return Bounds.IntersectsWith(rect) || Bounds.Contains(rect);

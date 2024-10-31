@@ -34,18 +34,14 @@ namespace Direct2DDXFViewer.DrawingObjects
         #endregion
 
         #region Constructor
-        public DrawingPolyline3D(Polyline3D dxfPolyline3D, Factory1 factory, DeviceContext1 deviceContext, OldResourceCache resCache, ObjectLayer layer)
+        public DrawingPolyline3D(Polyline3D dxfPolyline3D, ObjectLayer layer)
         {
             DxfPolyline3D = dxfPolyline3D;
             Entity = dxfPolyline3D;
-            Factory = factory;
-            DeviceContext = deviceContext;
-            ResCache = resCache;
             Layer = layer;
 
-            GetStrokeStyle();
-            UpdateBrush();
             GetDrawingSegments();
+            UpdateDxfProperties();
         }
         #endregion
 
@@ -54,7 +50,7 @@ namespace Direct2DDXFViewer.DrawingObjects
         {
             foreach (var e in DxfPolyline3D.Explode())
             {
-                var obj = DxfHelpers.GetDrawingSegment(e, Layer, Factory, DeviceContext, ResCache);
+                var obj = DxfHelpers.GetDrawingSegment(e, Layer);
                 if (obj is not null)
                 {
                     EntityCount += obj.EntityCount;
@@ -63,6 +59,13 @@ namespace Direct2DDXFViewer.DrawingObjects
             }
         }
 
+        public override void UpdateDxfProperties()
+        {
+            Parallel.ForEach(DrawingSegments, segment =>
+            {
+                segment.UpdateDxfProperties();
+            });
+        }
         public override void UpdateGeometry()
         {
             Parallel.ForEach(DrawingSegments, segment =>
@@ -75,11 +78,10 @@ namespace Direct2DDXFViewer.DrawingObjects
                 }
                 else
                 {
-                    Bounds.Union(segment.Bounds);
+                    Bounds = Rect.Union(Bounds, segment.Bounds);
                 }
             });
         }
-
         #endregion
     }
 }

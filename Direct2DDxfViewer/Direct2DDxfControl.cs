@@ -187,7 +187,7 @@ namespace Direct2DDXFViewer
             if (dxfDoc is not null) { DxfDoc = dxfDoc; }
         }
 
-        public void LoadDxf(Factory1 factory, DeviceContext1 deviceContext, OldResourceCache resCache)
+        public void LoadDxf(Factory1 factory, DeviceContext1 deviceContext, ResourceCache resCache)
         {
             if (DxfDoc is not null)
             {
