@@ -28,17 +28,11 @@ namespace Cad_Point_Manager.Views
         {
             this.DataContext = this;
             InitializeComponent();
-
-            DxfDocument dxfDoc = DxfDocument.Load(dxfFilePath);
-            if (dxfDoc is not null)
-            {
-                dxfViewer.LoadDxfControl(dxfDoc);
-            }
         }
 
         private void Button_Click(object sender, RoutedEventArgs e)
         {
-
+            int x = 0;
         }
     }
 }

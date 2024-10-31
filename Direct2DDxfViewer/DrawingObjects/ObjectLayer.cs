@@ -152,27 +152,7 @@ namespace Direct2DDXFViewer.DrawingObjects
 
         public void GetLayerStrokeStyle()
         {
-            bool hairlineStrokeStyleExists = _resCache.StrokeStyles.TryGetValue(OldResourceCache.LineType.Solid_Hairline, value: out StrokeStyle1 hairlineStrokeStyle);
-            if (!hairlineStrokeStyleExists)
-            {
-                StrokeStyleProperties1 ssp = new()
-                {
-                    StartCap = CapStyle.Round,
-                    EndCap = CapStyle.Round,
-                    DashCap = CapStyle.Flat,
-                    LineJoin = LineJoin.Round,
-                    MiterLimit = 10.0f,
-                    DashStyle = DashStyle.Solid,
-                    DashOffset = 0.0f,
-                    TransformType = StrokeTransformType.Hairline
-                };
-                HairlineStrokeStyle = new(_factory, ssp);
-                _resCache.StrokeStyles.Add(OldResourceCache.LineType.Solid_Hairline, HairlineStrokeStyle);
-            }
-            else
-            {
-                HairlineStrokeStyle = hairlineStrokeStyle;
-            }
+            HairlineStrokeStyle = _resCache.GetStrokeStyle(ResourceCache.LineType.Solid, StrokeTransformType.Hairline);
         }
 
         public void GetLayerBrush()

@@ -83,7 +83,7 @@ namespace Direct2DDXFViewer.Helpers
         {
             Stopwatch stopwatch = Stopwatch.StartNew();
 
-            int count = dxfDocument.Entities.All.Sum(e => LoadEntityObject(e, layerManager, factory, deviceContext, resCache));
+            int count = dxfDocument.Entities.All.Sum(e => LoadEntityObject(e, layerManager));
 
             stopwatch.Stop();
             Debug.WriteLine($"LoadDrawingObjects: {stopwatch.ElapsedMilliseconds} ms");
@@ -104,7 +104,7 @@ namespace Direct2DDXFViewer.Helpers
             return count;
         }
 
-        public static DrawingObject GetDrawingObject(EntityObject entity, ObjectLayer layer, Factory1 factory, DeviceContext1 deviceContext, OldResourceCache resCache)
+        public static DrawingObject GetDrawingObject(EntityObject entity, ObjectLayer layer)
         {
             return entity switch
             {

@@ -94,22 +94,19 @@
             </Border>
         </Grid>
 
-        <DockPanel Grid.Row="1"
-                   Margin="5 0 5 0">
-            <Button DockPanel.Dock="Left"
-                    Click="Button_Click">
+        <!--<Grid Grid.Row="1"
+                   Margin="5 0 5 0"
+              Background="Red">-->
+            <Button Click="Button_Click"
+                    Grid.Row="1">
                 <fa:FontAwesome Icon="Paperclip"
                                 Foreground="White" />
-                <Button.LayoutTransform>
-                    <ScaleTransform ScaleX="0.5"
-                                    ScaleY="0.5" />
-                </Button.LayoutTransform>
             </Button>
 
             <TextBlock DockPanel.Dock="Left"
                        Text="{Binding DxfFilePath}"
                        Foreground="White" />
-        </DockPanel>
+        <!--</Grid>-->
 
         <Grid x:Name="dxfGrid"
               Grid.Row="2">
