@@ -156,6 +156,7 @@ namespace Direct2DDXFViewer
             get { return (ObjectLayerManager)GetValue(LayerManagerProperty); }
             set { SetValue(LayerManagerProperty, value); }
         }
+
         public static readonly DependencyProperty LayerManagerProperty =
         DependencyProperty.Register(
             nameof(LayerManager),           
@@ -182,9 +183,8 @@ namespace Direct2DDXFViewer
         #endregion
 
         #region Methods
-        public void Initialize(DxfDocument dxfDoc)
+        public void Initialize(ObjectLayerManager layerManager)
         {
-            if (dxfDoc is not null) { DxfDoc = dxfDoc; }
         }
 
         public void LoadDxf(Factory1 factory, DeviceContext1 deviceContext, ResourceCache resCache)

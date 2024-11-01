@@ -10,6 +10,7 @@
     <Grid>
         <local:Direct2DDxfControl x:Name="dxfControl"
                                   RenderOptions.BitmapScalingMode="HighQuality" 
-                                  Cursor="Cross"/>
+                                  Cursor="Cross"
+                                  LayerManager="{Binding LayerManager}"/>
     </Grid>
 </UserControl>

@@ -1,5 +1,6 @@
 ﻿using Cad_Point_Manager.Commands;
 using Direct2DDXFViewer.DrawingObjects;
+using netDxf;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,6 +17,7 @@ namespace Cad_Point_Manager.ViewModels
         private ObjectLayerManager _layerManager;
         private string _dxfFilePath;
         private string _dxfFileName;
+        private DxfDocument _dxfDocument;
         #endregion
 
         #region Properties
@@ -46,6 +48,15 @@ namespace Cad_Point_Manager.ViewModels
                 OnPropertyChanged(nameof(DxfFileName));
             }
         }
+        public DxfDocument DxfDocument
+        {
+            get { return _dxfDocument; }
+            set
+            {
+                _dxfDocument = value;
+                OnPropertyChanged(nameof(DxfDocument));
+            }
+        }
         #endregion
 
         #region Commands
@@ -65,6 +76,7 @@ namespace Cad_Point_Manager.ViewModels
             Microsoft.Win32.OpenFileDialog dlg = new Microsoft.Win32.OpenFileDialog();
             dlg.DefaultExt = ".dxf";
             dlg.Filter = "DXF Files (*.dxf)|*.dxf";
+            dlg.InitialDirectory = @"C:\Users\fcraw\source\repos\Cad_Point_Manager\Cad_Point_Manager\Resources\DXF";
 
             Nullable<bool> result = dlg.ShowDialog();
 
@@ -72,6 +84,12 @@ namespace Cad_Point_Manager.ViewModels
             {
                 DxfFilePath = dlg.FileName;
                 DxfFileName = dlg.SafeFileName;
+            }
+
+            DxfDocument = DxfDocument.Load(DxfFilePath);
+            if (DxfDocument is not null)
+            {
+                DxfFileName = DxfDocument.Name;
             }
         }
         #endregion

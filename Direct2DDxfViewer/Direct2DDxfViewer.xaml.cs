@@ -1,4 +1,6 @@
-﻿using netDxf;
+﻿using Direct2DDxfViewer.Direct2DControl;
+using Direct2DDXFViewer.DrawingObjects;
+using netDxf;
 using SharpDX.Direct2D1;
 using SharpDX.Mathematics.Interop;
 using System;
@@ -62,6 +64,21 @@ namespace Direct2DDXFViewer
         }
         #endregion
 
+        #region Dependency Properties
+        public ObjectLayerManager LayerManager
+        {
+            get { return (ObjectLayerManager)GetValue(LayerManagerProperty); }
+            set { SetValue(LayerManagerProperty, value); }
+        }
+
+        public static readonly DependencyProperty LayerManagerProperty =
+        DependencyProperty.Register(
+            nameof(LayerManager),
+            typeof(ObjectLayerManager),
+            typeof(Direct2DDxfViewer),
+            new PropertyMetadata(default(ObjectLayerManager)));
+        #endregion
+
         #region Constructor
         public Direct2DDxfViewer()
         {
@@ -78,7 +95,7 @@ namespace Direct2DDXFViewer
         #region Methods
         public void LoadDxfControl(DxfDocument dxfDocument)
         {
-            if (dxfDocument is not null) { dxfControl.Initialize(dxfDocument); }
+            
         }
 
         protected void OnPropertyChanged([CallerMemberName] string propertyName = null)

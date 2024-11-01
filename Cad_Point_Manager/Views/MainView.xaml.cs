@@ -29,10 +29,5 @@ namespace Cad_Point_Manager.Views
             this.DataContext = this;
             InitializeComponent();
         }
-
-        private void Button_Click(object sender, RoutedEventArgs e)
-        {
-            int x = 0;
-        }
     }
 }

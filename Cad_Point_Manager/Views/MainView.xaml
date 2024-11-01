@@ -10,6 +10,8 @@
       xmlns:viewModels="clr-namespace:Cad_Point_Manager.ViewModels"
       mc:Ignorable="d"
       Title="MainView"
+      Width="{x:Static SystemParameters.PrimaryScreenWidth}"
+      Height="{x:Static SystemParameters.PrimaryScreenHeight}"
       Background="{StaticResource MainBackgroundBrush}">
 
     <Page.DataContext>
@@ -25,9 +27,9 @@
 
     <Grid>
         <Grid.RowDefinitions>
+            <RowDefinition Height="0.5*" />
             <RowDefinition Height="*" />
-            <RowDefinition Height="*" />
-            <RowDefinition Height="4*" />
+            <RowDefinition Height="18*" />
         </Grid.RowDefinitions>
 
 
@@ -94,19 +96,42 @@
             </Border>
         </Grid>
 
-        <!--<Grid Grid.Row="1"
-                   Margin="5 0 5 0"
-              Background="Red">-->
-            <Button Click="Button_Click"
-                    Grid.Row="1">
-                <fa:FontAwesome Icon="Paperclip"
-                                Foreground="White" />
-            </Button>
+        <Grid Grid.Row="1"
+              Margin="5 0 5 0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
 
-            <TextBlock DockPanel.Dock="Left"
-                       Text="{Binding DxfFilePath}"
-                       Foreground="White" />
-        <!--</Grid>-->
+            <Grid Grid.Column="0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="5*" />
+                </Grid.ColumnDefinitions>
+                <Button Grid.Column="0"
+                        Command="{Binding AttachDxfFileCommand}"
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Stretch"
+                        Margin="5 5 1 5"
+                        Background="#33BBA2A2">
+                    <Viewbox>
+                        <fa:FontAwesome Icon="Paperclip"
+                                        Foreground="White"
+                                        HorizontalAlignment="Stretch"
+                                        VerticalAlignment="Stretch" />
+                    </Viewbox>
+                </Button>
+
+                <TextBox Text="{Binding DxfFileName}"
+                         Background="White"
+                         IsEnabled="False"
+                         Grid.Column="1" 
+                         Margin="1 5 10 5"/>
+            </Grid>
+        </Grid>
 
         <Grid x:Name="dxfGrid"
               Grid.Row="2">
@@ -118,7 +143,8 @@
                     ClipToBounds="True"
                     Panel.ZIndex="1">
                 <d2dDxf:Direct2DDxfViewer x:Name="dxfViewer"
-                                          Panel.ZIndex="0" />
+                                          Panel.ZIndex="0" 
+                                          LayerManager="{Binding LayerManager}"/>
             </Border>
         </Grid>
     </Grid>
