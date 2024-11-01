@@ -84,18 +84,30 @@ namespace Direct2DDXFViewer.DrawingObjects
         public abstract bool DrawingObjectIsInRect(Rect rect);
         public abstract bool Hittest(RawVector2 p, float thickness);
 
-        public void UpdateDeviceDependentResources(DeviceContext1 deviceContext)
-        {
-            DeviceContext = deviceContext;
 
+        public void InitializeResources(ResourceCache resCache)
+        {
+            ResCache = resCache;
+            DeviceContext = resCache.DeviceContext;
+            Factory = resCache.Factory;
+
+            UpdateBrush();
             GetStrokeStyle();
+            UpdateGeometry();
+        }
+        public void UpdateDeviceDependentResources(ResourceCache resCache)
+        {
+            ResCache = resCache;
+            DeviceContext = resCache.DeviceContext;
+
             UpdateBrush();
         }
 
-        public void UpdateDeviceIndependentResources(Factory1 factory)
+        public void UpdateDeviceIndependentResources(ResourceCache resCache)
         {
-            Factory = factory;
+            Factory = resCache.Factory;
 
+            GetStrokeStyle();
             UpdateGeometry();
         }
         public void UpdateBrush()
@@ -126,7 +138,6 @@ namespace Direct2DDXFViewer.DrawingObjects
         public void GetStrokeStyle()
         {
             HairlineStrokeStyle = ResCache.GetStrokeStyle(ResourceCache.LineType.Solid, StrokeTransformType.Hairline);
-
             FixedStrokeStyle = ResCache.GetStrokeStyle(ResourceCache.LineType.Solid, StrokeTransformType.Fixed);    
         }
     
@@ -135,11 +146,6 @@ namespace Direct2DDXFViewer.DrawingObjects
         //    Factory = factory;
         //    GetStrokeStyle();
         //}
-        public void UpdateDeviceContext(DeviceContext1 deviceContext)
-        {
-            DeviceContext = deviceContext;
-            UpdateBrush();
-        }
 
         protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {

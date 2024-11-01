@@ -54,7 +54,6 @@ namespace Direct2DDXFViewer
         private bool _deviceContextIsDirty = true;
         private Point _lastTranslatePos = new();
         private bool _dxfLoaded = false;
-        private int _dxfObjectCount;
         private Rect _currentView;
         private Rect _currentDxfView;
         private List<DrawingObject> _visibleDrawingObjects = new();
@@ -73,7 +72,6 @@ namespace Direct2DDXFViewer
         private DrawingObjectNode _lastHitTestNode;
         private float _hittestStrokeThickness;
 
-        private DxfDocument _dxfDoc;
         private Point _pointerCoords = new();
         private Point _dxfPointerCoords = new();
         private Rect _extents = new();
@@ -86,15 +84,6 @@ namespace Direct2DDXFViewer
         #endregion
 
         #region Properties
-        public DxfDocument DxfDoc
-        {
-            get { return _dxfDoc; }
-            set
-            {
-                _dxfDoc = value;
-                OnPropertyChanged(nameof(DxfDoc));
-            }
-        }
         public Point PointerCoords
         {
             get { return _pointerCoords; }
@@ -162,7 +151,7 @@ namespace Direct2DDXFViewer
             nameof(LayerManager),           
             typeof(ObjectLayerManager),           
             typeof(Direct2DControl),   
-            new PropertyMetadata(default(ObjectLayerManager)));
+            new PropertyMetadata(default(ObjectLayerManager), OnLayerManagerChanged));
         #endregion
 
         #region Constructor
@@ -183,29 +172,35 @@ namespace Direct2DDXFViewer
         #endregion
 
         #region Methods
-        public void Initialize(ObjectLayerManager layerManager)
+        private static void OnLayerManagerChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
+            if (d is Direct2DDxfControl control)
+            {
+                control.LayerManager = (ObjectLayerManager)e.NewValue;
+            }
+        }
+        public void UpdateDxf(ObjectLayerManager layerManager)
+        {
+            if (layerManager is not null)
+            {
+                LayerManager = layerManager;
+            }
         }
 
-        public void LoadDxf(Factory1 factory, DeviceContext1 deviceContext, ResourceCache resCache)
+        private void LoadDxf(Factory1 factory, DeviceContext1 deviceContext, ResourceCache resCache)
         {
-            if (DxfDoc is not null)
+            if (LayerManager is not null)
             {
                 _dxfLoaded = true;
-                Extents = DxfHelpers.GetExtentsFromHeader(DxfDoc);
+                Extents = LayerManager.Extents;
                 ExtentsMatrix = GetInitialMatrix();
                 _overallMatrix = ExtentsMatrix;
 
                 UpdateLineThicknesses();
 
-                LayerManager = DxfHelpers.GetLayers(DxfDoc);
                 _hittestStrokeThickness = (float)(8 / ExtentsMatrix.M11);
 
-                _dxfObjectCount = DxfHelpers.LoadDrawingObjects(DxfDoc, LayerManager, factory, deviceContext, resCache);
-                foreach (var layer in LayerManager.Layers.Values)
-                {
-                    layer.LoadGeometryGroup();
-                }
+                LayerManager.InitializeDeviceResources(deviceContext, factory, resCache);
 
                 _drawingObjectTree = new(LayerManager, Extents, 4);
             }
@@ -256,7 +251,8 @@ namespace Direct2DDXFViewer
 
         public override void Render()
         {
-            if (DxfDoc is not null)
+            //Debug.WriteLine($"LayerManager is null: {LayerManager is null}");
+            if (LayerManager is not null)
             {
                 GetResources(d2DDeviceContext);
 
@@ -416,7 +412,7 @@ namespace Direct2DDXFViewer
         protected override void OnRenderSizeChanged(SizeChangedInfo sizeInfo)
         {
             base.OnRenderSizeChanged(sizeInfo);
-            UpdateDeviceContext(resCache.DeviceContext);
+            UpdateDeviceContext(resCache);
 
             this.Clip = null;
             _clipSet = false;
@@ -717,7 +713,7 @@ namespace Direct2DDXFViewer
             { Opacity = 0.2f };
 
         }
-        private void UpdateDeviceContext(DeviceContext1 deviceContext)
+        private void UpdateDeviceContext(ResourceCache resCache)
         {
             if (LayerManager is null) { return; }
 
@@ -725,9 +721,9 @@ namespace Direct2DDXFViewer
             {
                 foreach (var o in layer.DrawingObjects)
                 {
-                    o.UpdateDeviceContext(deviceContext);
+                    o.UpdateDeviceDependentResources(resCache);
                 }
-                layer.UpdateDeviceDependentResources(deviceContext);
+                layer.UpdateDeviceDependentResources(resCache);
             }
         }
         public void ZoomToExtents()

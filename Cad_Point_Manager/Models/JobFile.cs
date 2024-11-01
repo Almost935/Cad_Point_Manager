@@ -13,6 +13,7 @@ namespace Cad_Point_Manager.Models
     public class JobFile : BaseModel
     {
         #region Fields
+        private string _jobName;
         private string _dxfFilePath;
         private DxfDocument _dxfDoc;
         private ObjectLayerManager _layerManager;
@@ -20,6 +21,15 @@ namespace Cad_Point_Manager.Models
         #endregion
 
         #region Properties
+        public string JobName
+        {
+            get { return _jobName; }
+            set
+            {
+                _jobName = value;
+                OnPropertyChanged();
+            }
+        }
         public string DxfFilePath
         {
             get { return _dxfFilePath; }
@@ -57,6 +67,7 @@ namespace Cad_Point_Manager.Models
             }
         }
 
+        public bool DxfLoaded { get { return LayerManager is not null; } }
         #endregion
 
         #region Constructors
@@ -67,16 +78,10 @@ namespace Cad_Point_Manager.Models
         #endregion
 
         #region Methods
-        //public void LoadDxf(string dxfFilePath)
-        //{
-        //    var dxfDoc = DxfDocument.Load(dxfFilePath);
-        //    if (dxfDoc is not null) 
-        //    { 
-        //        DxfDoc = dxfDoc; 
-        //        bool extentsFound = DxfService.TryGetExtentsFromDxfDoc(dxfDoc, out Rect extents);
-        //        Layers = DxfService.LoadLayers(dxfDoc, extents);
-        //    }
-        //}
+        public void LoadDxf(DxfDocument dxfDoc)
+        {
+            
+        }
         #endregion
     }
 }

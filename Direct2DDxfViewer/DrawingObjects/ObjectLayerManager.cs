@@ -1,5 +1,7 @@
 ﻿using Direct2DDxfViewer.Direct2DControl;
+using Direct2DDXFViewer.Helpers;
 using netDxf;
+using netDxf.Entities;
 using netDxf.Units;
 using SharpDX.Direct2D1;
 using System;
@@ -18,11 +20,9 @@ namespace Direct2DDXFViewer.DrawingObjects
     {
         #region Fields
         private bool _disposed = false;
-        private DeviceContext1 _deviceContext;
-        private Factory1 _factory;
-        private ResourceCache _resourceCache;
 
         private DxfDocument _dxfDocument;
+        private Rect _extents;
         #endregion
 
         #region Properties
@@ -35,6 +35,16 @@ namespace Direct2DDXFViewer.DrawingObjects
                 OnPropertyChanged(nameof(DxfDocument));
             }
         }
+        public Rect Extents
+        {
+            get { return _extents; }
+            set
+            {
+                _extents = value;
+                OnPropertyChanged(nameof(Extents));
+            }
+        }
+
         public Dictionary<string, ObjectLayer> Layers { get; set; } = new();
         public List<DrawingObject> DrawingObjects => Layers.Values.SelectMany(layer => layer.DrawingObjects).ToList();
         #endregion
@@ -48,10 +58,15 @@ namespace Direct2DDXFViewer.DrawingObjects
         {
             _dxfDocument = dxfDocument;
             Layers.Clear();
-            foreach (var dxfLayer in _dxfDocument.Layers)
+            Extents = new();
+
+            Extents = DxfHelpers.GetExtentsFromHeader(DxfDocument);
+
+            foreach (var e in _dxfDocument.Entities.All)
             {
-                ObjectLayer objectLayer = new(dxfLayer);
-                Layers.Add(dxfLayer.Name, objectLayer);
+                var layer = GetLayer(e.Layer);
+                var obj = DxfHelpers.GetDrawingObject(e, layer);
+                layer.DrawingObjects.Add(obj);
             }
         }
         public ObjectLayer GetLayer(netDxf.Tables.Layer dxfLayer)
@@ -64,13 +79,29 @@ namespace Direct2DDXFViewer.DrawingObjects
                 return objectLayer;
             }
         }
-        public void UpdateDeviceDependentResources(DeviceContext1 newDeviceContext)
+
+        public void InitializeDeviceResources(DeviceContext1 deviceContext, Factory1 factory, ResourceCache resCache)
         {
             foreach (var layer in Layers.Values)
             {
-                layer?.UpdateDeviceDependentResources(newDeviceContext);
+                layer.InitializeResources(resCache);
             }
         }
+        public void UpdateDeviceDependentResources(DeviceContext1 newDeviceContext, ResourceCache resCache)
+        {
+            foreach (var layer in Layers.Values)
+            {
+                layer?.UpdateDeviceDependentResources(resCache);
+            }
+        }
+        public void UpdateDeviceIndependentResources(Factory1 factory, ResourceCache resCache)
+        {
+            foreach (var layer in Layers.Values)
+            {
+                layer?.UpdateDeviceIndependentResources(resCache);
+            }
+        }
+
         public List<DrawingObject> GetDrawingObjectsinRect(Rect rect)
         {
             List<DrawingObject> drawingObjects = [];

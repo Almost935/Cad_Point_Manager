@@ -58,7 +58,6 @@ namespace Direct2DDXFViewer.DrawingObjects
                 OnPropertyChanged(nameof(IsVisible));
             }
         }
-        public Dictionary<int, List<(List<GeometryRealization> geometryRealizations, Brush brush)>> GeometryRealizations { get; set; } = [];
         public Brush LayerBrush { get; set; }
         public StrokeStyle1 HairlineStrokeStyle { get; set; }
         public netDxf.Tables.Layer DxfLayer { get; set; }
@@ -82,26 +81,54 @@ namespace Direct2DDXFViewer.DrawingObjects
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
        
-        public void UpdateDeviceDependentResources(DeviceContext1 deviceContext)
+
+        public void InitializeResources(ResourceCache resCache)
         {
-            _deviceContext = deviceContext;
+            _resCache = resCache;
+            _deviceContext = resCache.DeviceContext;
+            _factory = resCache.Factory;
+            
+            GetLayerBrush();
+            GetLayerStrokeStyle();
+
+            foreach (var obj in DrawingObjects)
+            {
+                obj?.UpdateDeviceIndependentResources(resCache);
+            }
+            LoadGeometryGroup();
+        }
+        public void UpdateDeviceDependentResources(ResourceCache resCache)
+        {
+            LayerBrush?.Dispose();
+            LayerBrush = null;
+
+            _deviceContext = resCache.DeviceContext;
             
             GetLayerBrush();
 
             foreach (var obj in DrawingObjects)
             {
-                obj?.UpdateDeviceDependentResources(deviceContext);
+                obj?.UpdateDeviceDependentResources(resCache);
             }
         }
-        public void UpdateDeviceIndependentResources(Factory1 factory)
+        public void UpdateDeviceIndependentResources(ResourceCache resCache)
         {
-            _factory = factory;
+            GeometryGroup?.Dispose();
+            GeometryGroup = null;
+            HairlineStrokeStyle?.Dispose();
+            HairlineStrokeStyle = null;
+
+            _factory = resCache.Factory;
+
+            GetLayerStrokeStyle();
 
             foreach (var obj in DrawingObjects)
             {
-                obj?.UpdateDeviceIndependentResources(factory);
+                obj?.UpdateDeviceIndependentResources(resCache);
             }
+            LoadGeometryGroup();
         }
+
         public void LoadGeometryGroup()
         {
             List<Geometry> geometries = [];

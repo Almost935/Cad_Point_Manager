@@ -76,7 +76,7 @@ namespace Direct2DDXFViewer
             nameof(LayerManager),
             typeof(ObjectLayerManager),
             typeof(Direct2DDxfViewer),
-            new PropertyMetadata(default(ObjectLayerManager)));
+            new PropertyMetadata(default(ObjectLayerManager), OnLayerManagerChanged));
         #endregion
 
         #region Constructor
@@ -93,6 +93,14 @@ namespace Direct2DDXFViewer
         #endregion
 
         #region Methods
+        private static void OnLayerManagerChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is Direct2DDxfControl control)
+            {
+                control.LayerManager = (ObjectLayerManager)e.NewValue;
+            }
+        }
+
         public void LoadDxfControl(DxfDocument dxfDocument)
         {
             

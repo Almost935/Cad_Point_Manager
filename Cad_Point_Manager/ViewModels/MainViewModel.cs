@@ -14,6 +14,7 @@ namespace Cad_Point_Manager.ViewModels
     public class MainViewModel : BaseViewModel
     {
         #region Fields
+        private bool _jobFileLoaded = false;
         private ObjectLayerManager _layerManager;
         private string _dxfFilePath;
         private string _dxfFileName;
@@ -21,6 +22,15 @@ namespace Cad_Point_Manager.ViewModels
         #endregion
 
         #region Properties
+        public bool JobFileLoaded
+        {
+            get { return _jobFileLoaded; }
+            set
+            {
+                _jobFileLoaded = value;
+                OnPropertyChanged(nameof(JobFileLoaded));
+            }
+        }
         public ObjectLayerManager LayerManager
         {
             get { return _layerManager; }
@@ -73,10 +83,13 @@ namespace Cad_Point_Manager.ViewModels
         #region Methods
         public void AttachDxfFile(RoutedEventArgs e)
         {
+            LayerManager?.Dispose();
+            LayerManager = new();
+
             Microsoft.Win32.OpenFileDialog dlg = new Microsoft.Win32.OpenFileDialog();
             dlg.DefaultExt = ".dxf";
             dlg.Filter = "DXF Files (*.dxf)|*.dxf";
-            dlg.InitialDirectory = @"C:\Users\fcraw\source\repos\Cad_Point_Manager\Cad_Point_Manager\Resources\DXF";
+            dlg.InitialDirectory = @"C:\Users\Tim\source\repos\Cad_Point_Manager\Cad_Point_Manager\Resources\DXF\";
 
             Nullable<bool> result = dlg.ShowDialog();
 
@@ -84,12 +97,13 @@ namespace Cad_Point_Manager.ViewModels
             {
                 DxfFilePath = dlg.FileName;
                 DxfFileName = dlg.SafeFileName;
-            }
 
-            DxfDocument = DxfDocument.Load(DxfFilePath);
-            if (DxfDocument is not null)
-            {
-                DxfFileName = DxfDocument.Name;
+                DxfDocument = DxfDocument.Load(DxfFilePath);
+                if (DxfDocument is not null)
+                {
+                    DxfFileName = DxfDocument.Name;
+                    LayerManager.LoadDxfDocument(DxfDocument);
+                }
             }
         }
         #endregion
