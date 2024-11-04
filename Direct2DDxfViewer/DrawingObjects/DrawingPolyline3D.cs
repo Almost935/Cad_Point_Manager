@@ -51,6 +51,9 @@ namespace Direct2DDXFViewer.DrawingObjects
             foreach (var e in DxfPolyline3D.Explode())
             {
                 var obj = DxfHelpers.GetDrawingSegment(e, Layer);
+                obj.IsPartOfPolyline = true;
+                obj.DrawingPolyline = this;
+
                 if (obj is not null)
                 {
                     EntityCount += obj.EntityCount;

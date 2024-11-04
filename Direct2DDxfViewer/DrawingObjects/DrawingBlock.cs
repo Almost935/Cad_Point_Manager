@@ -55,6 +55,8 @@ namespace Direct2DDXFViewer.DrawingObjects
             foreach (var e in DxfBlock.Explode())
             {
                 var obj = DxfHelpers.GetDrawingObject(e, Layer);
+                obj.IsPartOfBlock = true;
+                obj.Block = this;
 
                 if (obj is not null)
                 {
@@ -83,6 +85,44 @@ namespace Direct2DDXFViewer.DrawingObjects
                     obj.DrawToDeviceContext(thickness, brush, strokeStyle);
                 }
             }
+        }
+
+        public override void InitializeResources(ResourceCache resCache)
+        {
+            ResCache = resCache;
+            DeviceContext = resCache.DeviceContext;
+            Factory = resCache.Factory;
+
+            foreach (var obj in DrawingObjects)
+            {
+                obj.InitializeResources(resCache);
+            }
+
+            UpdateBrush();
+            GetStrokeStyle();
+        }
+        public override void UpdateDeviceDependentResources(ResourceCache resCache)
+        {
+            ResCache = resCache;
+            DeviceContext = resCache.DeviceContext;
+
+            foreach (var obj in DrawingObjects)
+            {
+                obj.UpdateDeviceDependentResources(resCache);
+            }
+            UpdateBrush();
+        }
+
+        public override void UpdateDeviceIndependentResources(ResourceCache resCache)
+        {
+            ResCache = resCache;
+            Factory = resCache.Factory;
+
+            foreach (var obj in DrawingObjects)
+            {
+                obj.UpdateDeviceIndependentResources(resCache);
+            }
+            GetStrokeStyle();
         }
 
         public override bool DrawingObjectIsInRect(Rect rect)

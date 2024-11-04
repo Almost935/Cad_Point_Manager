@@ -80,6 +80,34 @@ namespace Direct2DDXFViewer.DrawingObjects
             GetTextLayout();
         }
 
+        public override void InitializeResources(ResourceCache resCache)
+        {
+            ResCache = resCache;
+            DeviceContext = resCache.DeviceContext;
+            Factory = resCache.Factory;
+            _factoryWrite = resCache.FactoryWrite;
+
+            UpdateBrush();
+            GetStrokeStyle();
+            UpdateGeometry();
+        }
+        public override void UpdateDeviceDependentResources(ResourceCache resCache)
+        {
+            ResCache = resCache;
+            DeviceContext = resCache.DeviceContext;
+
+            UpdateBrush();
+        }
+        public override void UpdateDeviceIndependentResources(ResourceCache resCache)
+        {
+            ResCache = resCache;
+            Factory = resCache.Factory;
+            _factoryWrite = resCache.FactoryWrite;
+
+            GetStrokeStyle();
+            UpdateGeometry();
+        }
+
         public void GetTextFormat()
         {
             _textFormat = new(_factoryWrite, DxfMtext.Style.FontFamilyName, (float)(DxfMtext.Height * 1.25));

@@ -89,7 +89,7 @@ namespace Cad_Point_Manager.ViewModels
             Microsoft.Win32.OpenFileDialog dlg = new Microsoft.Win32.OpenFileDialog();
             dlg.DefaultExt = ".dxf";
             dlg.Filter = "DXF Files (*.dxf)|*.dxf";
-            dlg.InitialDirectory = @"C:\Users\Tim\source\repos\Cad_Point_Manager\Cad_Point_Manager\Resources\DXF\";
+            dlg.InitialDirectory = @"C:\Users\fcraw\source\repos\Cad_Point_Manager\Cad_Point_Manager\Resources\DXF";
 
             Nullable<bool> result = dlg.ShowDialog();
 

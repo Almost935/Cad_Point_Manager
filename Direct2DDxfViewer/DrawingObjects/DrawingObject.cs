@@ -85,7 +85,7 @@ namespace Direct2DDXFViewer.DrawingObjects
         public abstract bool Hittest(RawVector2 p, float thickness);
 
 
-        public void InitializeResources(ResourceCache resCache)
+        public virtual void InitializeResources(ResourceCache resCache)
         {
             ResCache = resCache;
             DeviceContext = resCache.DeviceContext;
@@ -93,9 +93,8 @@ namespace Direct2DDXFViewer.DrawingObjects
 
             UpdateBrush();
             GetStrokeStyle();
-            UpdateGeometry();
         }
-        public void UpdateDeviceDependentResources(ResourceCache resCache)
+        public virtual void UpdateDeviceDependentResources(ResourceCache resCache)
         {
             ResCache = resCache;
             DeviceContext = resCache.DeviceContext;
@@ -103,12 +102,12 @@ namespace Direct2DDXFViewer.DrawingObjects
             UpdateBrush();
         }
 
-        public void UpdateDeviceIndependentResources(ResourceCache resCache)
+        public virtual void UpdateDeviceIndependentResources(ResourceCache resCache)
         {
+            ResCache = resCache;
             Factory = resCache.Factory;
 
             GetStrokeStyle();
-            UpdateGeometry();
         }
         public void UpdateBrush()
         {
@@ -133,6 +132,7 @@ namespace Direct2DDXFViewer.DrawingObjects
 
             Brush = ResCache.GetBrush(r, g, b, a);
             OuterEdgeBrush = ResCache.GetBrush(r2, g2, b2, a2);
+            int x = 0;
         }
 
         public void GetStrokeStyle()

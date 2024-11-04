@@ -47,6 +47,7 @@ namespace Direct2DDXFViewer.DrawingObjects
 
         public Dictionary<string, ObjectLayer> Layers { get; set; } = new();
         public List<DrawingObject> DrawingObjects => Layers.Values.SelectMany(layer => layer.DrawingObjects).ToList();
+        public bool DxfLoaded { get; set; } = false;
         #endregion
 
         #region Events
@@ -56,6 +57,10 @@ namespace Direct2DDXFViewer.DrawingObjects
         #region Methods
         public void LoadDxfDocument(DxfDocument dxfDocument)
         {
+            Stopwatch stopwatch = Stopwatch.StartNew();
+
+            DxfLoaded = false;
+
             _dxfDocument = dxfDocument;
             Layers.Clear();
             Extents = new();
@@ -66,8 +71,15 @@ namespace Direct2DDXFViewer.DrawingObjects
             {
                 var layer = GetLayer(e.Layer);
                 var obj = DxfHelpers.GetDrawingObject(e, layer);
-                layer.DrawingObjects.Add(obj);
+                if (obj is not null)
+                {
+                    layer.DrawingObjects.Add(obj);
+                }
             }
+            DxfLoaded = true;
+
+            stopwatch.Stop();
+            Debug.WriteLine($"LoadDxfDocument: {stopwatch.ElapsedMilliseconds} ms");
         }
         public ObjectLayer GetLayer(netDxf.Tables.Layer dxfLayer)
         {
@@ -80,21 +92,48 @@ namespace Direct2DDXFViewer.DrawingObjects
             }
         }
 
-        public void InitializeDeviceResources(DeviceContext1 deviceContext, Factory1 factory, ResourceCache resCache)
+        public void InitializeDeviceResources(ResourceCache resCache)
         {
+            Stopwatch stopwatch = new();
+
             foreach (var layer in Layers.Values)
             {
+                stopwatch.Restart();
+
                 layer.InitializeResources(resCache);
+
+                stopwatch.Stop();
+                Debug.WriteLine($"InitializeResources: {layer.Name} - {stopwatch.ElapsedMilliseconds} ms");
             }
+
+            foreach (var layer in Layers.Values)
+            {
+                stopwatch.Restart();
+
+                layer.InitializeGeometries();
+
+                stopwatch.Stop();
+                Debug.WriteLine($"InitializeGeometries: {layer.Name} - {stopwatch.ElapsedMilliseconds} ms");
+            }
+
+            //Parallel.ForEach(Layers.Values, layer =>
+            //{
+            //    stopwatch.Restart();
+
+            //    layer.InitializeGeometries();
+
+            //    stopwatch.Stop();
+            //    Debug.WriteLine($"InitializeGeometries: {layer.Name} - {stopwatch.ElapsedMilliseconds} ms");
+            //});
         }
-        public void UpdateDeviceDependentResources(DeviceContext1 newDeviceContext, ResourceCache resCache)
+        public void UpdateDeviceDependentResources(ResourceCache resCache)
         {
             foreach (var layer in Layers.Values)
             {
                 layer?.UpdateDeviceDependentResources(resCache);
             }
         }
-        public void UpdateDeviceIndependentResources(Factory1 factory, ResourceCache resCache)
+        public void UpdateDeviceIndependentResources(ResourceCache resCache)
         {
             foreach (var layer in Layers.Values)
             {

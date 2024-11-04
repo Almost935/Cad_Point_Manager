@@ -91,10 +91,37 @@ namespace Direct2DDXFViewer.DrawingObjects
             GetLayerBrush();
             GetLayerStrokeStyle();
 
+            //Stopwatch stopwatch = new();
+
             foreach (var obj in DrawingObjects)
             {
-                obj?.UpdateDeviceIndependentResources(resCache);
+                //stopwatch.Restart();
+                //Debug.WriteLine($"InitializeResources of obj: {obj.GetType()}");
+
+                obj?.InitializeResources(resCache);
+
+                //stopwatch.Stop();
+                //Debug.WriteLine($"InitializeResources of obj: {obj.GetType()}: {stopwatch.ElapsedMilliseconds} ms");
             }
+        }
+        public void InitializeGeometries()
+        {
+            Parallel.ForEach(DrawingObjects, obj =>
+            {
+                //stopwatch.Restart();
+                //Debug.WriteLine($"UpdateGeometry of obj: {obj.GetType()}");
+
+                obj?.UpdateGeometry();
+
+                //stopwatch.Stop();
+                //Debug.WriteLine($"UpdateGeometry of obj: {obj.GetType()}: {stopwatch.ElapsedMilliseconds} ms");
+            });
+
+            //foreach (var obj in DrawingObjects)
+            //{
+            //    obj?.UpdateGeometry();
+            //}
+
             LoadGeometryGroup();
         }
         public void UpdateDeviceDependentResources(ResourceCache resCache)

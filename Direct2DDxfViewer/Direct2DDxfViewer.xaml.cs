@@ -29,62 +29,45 @@ namespace Direct2DDXFViewer
     public partial class Direct2DDxfViewer : UserControl, INotifyPropertyChanged
     {
         #region Fields
-        private Point _dxfPointerCoords = new();
-        private Point _pointerCoords = new();
-        private int _currentZoomStep;
+
         #endregion
 
         #region Properties
-        public Point DxfPointerCoords
-        {
-            get { return _dxfPointerCoords; }
-            set
-            {
-                _dxfPointerCoords = value;
-                OnPropertyChanged(nameof(DxfPointerCoords));
-            }
-        }
-        public Point PointerCoords
-        {
-            get { return _pointerCoords; }
-            set
-            {
-                _pointerCoords = value;
-                OnPropertyChanged(nameof(PointerCoords));
-            }
-        }
-        public int CurrentZoomStep
-        {
-            get { return _currentZoomStep; }
-            set
-            {
-                _currentZoomStep = value;
-                OnPropertyChanged(nameof(CurrentZoomStep));
-            }
-        }
+
         #endregion
 
         #region Dependency Properties
-        public ObjectLayerManager LayerManager
+        public ObjectLayerManager LayerManagerValue
         {
-            get { return (ObjectLayerManager)GetValue(LayerManagerProperty); }
-            set { SetValue(LayerManagerProperty, value); }
+            get { return (ObjectLayerManager)GetValue(LayerManagerValueProperty); }
+            set { SetValue(LayerManagerValueProperty, value); }
         }
 
-        public static readonly DependencyProperty LayerManagerProperty =
-        DependencyProperty.Register(
-            nameof(LayerManager),
-            typeof(ObjectLayerManager),
-            typeof(Direct2DDxfViewer),
-            new PropertyMetadata(default(ObjectLayerManager), OnLayerManagerChanged));
+        public static readonly DependencyProperty LayerManagerValueProperty =
+       DependencyProperty.Register(
+           nameof(LayerManagerValue),
+           typeof(ObjectLayerManager),
+           typeof(Direct2DDxfViewer),
+           new PropertyMetadata(null, OnLayerManagerChanged));
+
+        public Point DxfPointerCoordsValue
+        {
+            get { return (Point)GetValue(DxfPointerCoordsValueProperty); }
+            set { SetValue(DxfPointerCoordsValueProperty, value); }
+        }
+
+        public static readonly DependencyProperty DxfPointerCoordsValueProperty =
+       DependencyProperty.Register(
+           nameof(DxfPointerCoordsValue),
+           typeof(Point),
+           typeof(Direct2DDxfViewer),
+           new PropertyMetadata(null));
         #endregion
 
         #region Constructor
         public Direct2DDxfViewer()
         {
             InitializeComponent();
-
-            dxfControl.PropertyChanged += DxfControl_PropertyChanged;
         }
         #endregion
 
@@ -95,36 +78,16 @@ namespace Direct2DDXFViewer
         #region Methods
         private static void OnLayerManagerChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
-            if (d is Direct2DDxfControl control)
-            {
-                control.LayerManager = (ObjectLayerManager)e.NewValue;
-            }
-        }
-
-        public void LoadDxfControl(DxfDocument dxfDocument)
-        {
-            
+            int x = 0;
+            //if (d is Direct2DDxfViewer control)
+            //{
+            //    control.LayerManagerValue = (ObjectLayerManager)e.NewValue;
+            //}
         }
 
         protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        }
-
-        private void DxfControl_PropertyChanged(object? sender, PropertyChangedEventArgs e)
-        {
-            if (e.PropertyName == nameof(dxfControl.DxfPointerCoords))
-            {
-                DxfPointerCoords = dxfControl.DxfPointerCoords;
-            }
-            if (e.PropertyName == nameof(dxfControl.PointerCoords))
-            {
-                PointerCoords = dxfControl.PointerCoords;
-            }
-            if (e.PropertyName == nameof(dxfControl.CurrentZoomStep))
-            {
-               CurrentZoomStep = dxfControl.CurrentZoomStep;
-            }
         }
 
         public void ZoomToExtents()

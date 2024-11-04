@@ -75,7 +75,6 @@ namespace Direct2DDXFViewer
         private Point _pointerCoords = new();
         private Point _dxfPointerCoords = new();
         private Rect _extents = new();
-        //private ObjectLayerManager _layerManager;
         private DrawingObject _snappedObject;
         private int _currentZoomStep = 0;
 
@@ -150,8 +149,8 @@ namespace Direct2DDXFViewer
         DependencyProperty.Register(
             nameof(LayerManager),           
             typeof(ObjectLayerManager),           
-            typeof(Direct2DControl),   
-            new PropertyMetadata(default(ObjectLayerManager), OnLayerManagerChanged));
+            typeof(Direct2DDxfControl),   
+            new PropertyMetadata(null, OnLayerManagerChanged));
         #endregion
 
         #region Constructor
@@ -174,10 +173,11 @@ namespace Direct2DDXFViewer
         #region Methods
         private static void OnLayerManagerChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
-            if (d is Direct2DDxfControl control)
-            {
-                control.LayerManager = (ObjectLayerManager)e.NewValue;
-            }
+            int x = 0;
+            //if (d is Direct2DDxfControl control)
+            //{
+            //    control.LayerManagerValue = (ObjectLayerManager)e.NewValue;
+            //}
         }
         public void UpdateDxf(ObjectLayerManager layerManager)
         {
@@ -187,10 +187,12 @@ namespace Direct2DDXFViewer
             }
         }
 
-        private void LoadDxf(Factory1 factory, DeviceContext1 deviceContext, ResourceCache resCache)
+        private void LoadDxfResources(ResourceCache resCache)
         {
-            if (LayerManager is not null)
+            if (LayerManager is not null && LayerManager.DxfLoaded)
             {
+                Stopwatch stopwatch = Stopwatch.StartNew();
+
                 _dxfLoaded = true;
                 Extents = LayerManager.Extents;
                 ExtentsMatrix = GetInitialMatrix();
@@ -200,9 +202,14 @@ namespace Direct2DDXFViewer
 
                 _hittestStrokeThickness = (float)(8 / ExtentsMatrix.M11);
 
-                LayerManager.InitializeDeviceResources(deviceContext, factory, resCache);
+                LayerManager.InitializeDeviceResources(resCache);
 
                 _drawingObjectTree = new(LayerManager, Extents, 4);
+
+                _offscreenBitmapIsDirty = true;
+
+                stopwatch.Stop();
+                Debug.WriteLine($"LoadDxfResources Elapsed Time: {stopwatch.ElapsedMilliseconds} ms");
             }
         }
         public Matrix GetInitialMatrix()
@@ -266,7 +273,7 @@ namespace Direct2DDXFViewer
 
                 if (!_dxfLoaded)
                 {
-                    LoadDxf(resCache.Factory, d2DDeviceContext, resCache);
+                    LoadDxfResources(resCache);
                     GetInitialView();
 
                     UpdateOffscreenRenderTarget();
@@ -364,7 +371,7 @@ namespace Direct2DDXFViewer
 
         private void RenderOffscreenBitmap(DeviceContext1 deviceContext)
         {
-            Stopwatch stopwatch = Stopwatch.StartNew();
+            //Stopwatch stopwatch = Stopwatch.StartNew();
 
             Matrix matrix = _currentOffscreenBitmapTransform;
             matrix.Translate(-_offscreenBitmapCenteringOffset.x, -_offscreenBitmapCenteringOffset.y); // Translation is to center the bitmap in the render target
@@ -376,9 +383,7 @@ namespace Direct2DDXFViewer
 
             deviceContext.DrawBitmap(_currentOffscreenBitmap.Bitmap, 1.0f, BitmapInterpolationMode.Linear, sourceRect);
 
-            //Debug.WriteLine($"_currentOffscreenBitmap.ZoomStep: {_currentOffscreenBitmap.ZoomStep}");
-
-            stopwatch.Stop();
+            //stopwatch.Stop();
             //Debug.WriteLine($"RenderOffscreenBitmap Elapsed Time: {stopwatch.ElapsedMilliseconds} ms");
         }
         private void RenderInteractiveObjects(DeviceContext1 deviceContext)
@@ -436,16 +441,17 @@ namespace Direct2DDXFViewer
         protected override void OnMouseWheel(MouseWheelEventArgs e)
         {
             float zoom;
+            int zoomStepDelta = e.Delta / 120;
 
             if (e.Delta > 0)
             {
-                zoom = _zoomFactor;
-                CurrentZoomStep += 1;
+                zoom = _zoomFactor * zoomStepDelta;
+                CurrentZoomStep += zoomStepDelta;
             }
             else
             {
-                zoom = 1 / _zoomFactor;
-                CurrentZoomStep -= 1;
+                zoom = 1 / (_zoomFactor * zoomStepDelta);
+                CurrentZoomStep -= zoomStepDelta;
             }
 
             UpdateZoom(zoom);
@@ -539,6 +545,7 @@ namespace Direct2DDXFViewer
 
             Stopwatch stopwatch = Stopwatch.StartNew();
 
+            if (_drawingObjectTree is null) { return; }
             if (_offscreenBitmapIsDirty) { return; }
             if (_isPanning) { return; }
             if (LayerManager is null) { return; }
