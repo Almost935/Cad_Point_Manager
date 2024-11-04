@@ -261,6 +261,8 @@ namespace Direct2DDXFViewer
             //Debug.WriteLine($"LayerManager is null: {LayerManager is null}");
             if (LayerManager is not null)
             {
+                Stopwatch stopwatch = Stopwatch.StartNew();
+
                 GetResources(d2DDeviceContext);
 
                 if (_offscreenRenderTarget is null)
@@ -296,6 +298,9 @@ namespace Direct2DDXFViewer
 
                     _deviceContextIsDirty = false;
                 }
+
+                //stopwatch.Stop();
+                //Debug.WriteLine($"Render Elapsed Time: {stopwatch.ElapsedMilliseconds} ms");
             }
         }
         private void SetClip()
@@ -342,15 +347,25 @@ namespace Direct2DDXFViewer
                 RawMatrix3x2 rawMatrix = new((float)matrix.M11, (float)matrix.M12, (float)matrix.M21, (float)matrix.M22, (float)matrix.OffsetX, (float)matrix.OffsetY);
                 _offscreenRenderTarget.Transform = rawMatrix;
 
+                //Debug.WriteLine($"rawMatrix: {rawMatrix.M11} {rawMatrix.M21} {rawMatrix.M31} {rawMatrix.M32}");
+
                 float thickness = (float)(_baseLineThickness / _overallMatrix.M11);
 
-                Parallel.ForEach(LayerManager.Layers.Values, layer =>
+                foreach (var layer in LayerManager.Layers.Values)
                 {
                     if (layer.GeometryGroup is not null)
                     {
                         _offscreenRenderTarget.DrawGeometry(layer.GeometryGroup, layer.LayerBrush, thickness);
                     }
-                });
+                }
+
+                //Parallel.ForEach(LayerManager.Layers.Values, layer =>
+                //{
+                //    if (layer.GeometryGroup is not null)
+                //    {
+                //        _offscreenRenderTarget.DrawGeometry(layer.GeometryGroup, layer.LayerBrush, thickness);
+                //    }
+                //});
 
                 _offscreenRenderTarget.EndDraw();
 
@@ -361,11 +376,11 @@ namespace Direct2DDXFViewer
                 _deviceContextIsDirty = true;
                 prevBitmap?.Dispose();
 
-                stopwatch.Stop();
-                //Debug.WriteLine($"UpdateOffscreenRenderTarget Elapsed Time: {stopwatch.ElapsedMilliseconds} ms");
-
                 // Verify that the bitmap was updated correctly
                 if (_currentOffscreenBitmap.ZoomStep == _currentZoomStep) { _offscreenBitmapIsDirty = false; }
+
+                stopwatch.Stop();
+                Debug.WriteLine($"UpdateOffscreenRenderTarget Elapsed Time: {stopwatch.ElapsedMilliseconds} ms");
             }
         }
 
@@ -410,7 +425,7 @@ namespace Direct2DDXFViewer
             var copy = HighlightedObjects.ToList();
             foreach (var obj in copy)
             {
-                obj.DrawToDeviceContext(2, _highlightedBrush);
+                obj.DrawToDeviceContext(_highlightedThickness, _highlightedBrush);
             }
         }
 
@@ -440,8 +455,11 @@ namespace Direct2DDXFViewer
         }
         protected override void OnMouseWheel(MouseWheelEventArgs e)
         {
+            //Stopwatch stopwatch = Stopwatch.StartNew();
+            //Debug.WriteLine($"\nOnMouseWheel started");
+
             float zoom;
-            int zoomStepDelta = e.Delta / 120;
+            int zoomStepDelta = Math.Abs(e.Delta / 120);
 
             if (e.Delta > 0)
             {
@@ -455,6 +473,9 @@ namespace Direct2DDXFViewer
             }
 
             UpdateZoom(zoom);
+
+            //stopwatch.Stop();
+            //Debug.WriteLine($"OnMouseWheel ended: {stopwatch.ElapsedMilliseconds} ms");
         }
         protected override void OnMouseMove(MouseEventArgs e)
         {
@@ -465,6 +486,8 @@ namespace Direct2DDXFViewer
                 var translate = PointerCoords - _lastTranslatePos;
 
                 if (translate.LengthSquared < 1) { return; } //Prevent unneccessary translations
+
+                //Debug.WriteLine($"PointerCoords: {PointerCoords} _lastTranslatePos: {_lastTranslatePos}");
 
                 UpdateTranslate(translate);
                 _lastTranslatePos = PointerCoords;
@@ -642,7 +665,7 @@ namespace Direct2DDXFViewer
         {
             while (true)
             {
-                await Task.Delay(50);
+                await Task.Delay(10);
                 await Task.Run(() => UpdateDxfPointerCoords());
             }
         }
@@ -685,9 +708,6 @@ namespace Direct2DDXFViewer
 
             if (Math.Abs(_distFromOffscreenBitmapUpdate.X) > _maxDistFromOffscreenBitmapUpdate.X + 200 ||
                 Math.Abs(_distFromOffscreenBitmapUpdate.Y) > _maxDistFromOffscreenBitmapUpdate.Y + 200) { _offscreenBitmapIsDirty = true; }
-
-            //Debug.WriteLine($"\n_distFromOffscreenBitmapUpdate.X and Y: {_distFromOffscreenBitmapUpdate.X}, {_distFromOffscreenBitmapUpdate.Y}" +
-            //    $"\n_maxDistFromOffscreenBitmapUpdate: {_maxDistFromOffscreenBitmapUpdate.X}, {_maxDistFromOffscreenBitmapUpdate.Y}");
         }
         private void UpdateLineThicknesses()
         {
