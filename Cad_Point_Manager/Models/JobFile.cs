@@ -15,6 +15,7 @@ namespace Cad_Point_Manager.Models
     {
         #region Fields
         private string _jobName;
+        private string _jobFilePath;
         private string _dxfFilePath;
         private DxfDocument _dxfDoc;
         private ObjectLayerManager _layerManager;
@@ -28,6 +29,15 @@ namespace Cad_Point_Manager.Models
             set
             {
                 _jobName = value;
+                OnPropertyChanged();
+            }
+        }
+        public string JobFilePath
+        {
+            get { return _jobFilePath; }
+            set
+            {
+                _jobFilePath = value;
                 OnPropertyChanged();
             }
         }

@@ -102,25 +102,33 @@ namespace Cad_Point_Manager.DrawingObjects
                 layer.InitializeResources(resCache);
             }
 
-            foreach (var layer in Layers.Values)
-            {
-                stopwatch.Restart();
-
-                layer.InitializeGeometries();
-
-                stopwatch.Stop();
-                Debug.WriteLine($"InitializeGeometries: {layer.Name} - {stopwatch.ElapsedMilliseconds} ms");
-            }
-
-            //Parallel.ForEach(Layers.Values, layer =>
+            //foreach (var layer in Layers.Values)
             //{
-            //    stopwatch.Restart();
+            //    //stopwatch.Restart();
 
             //    layer.InitializeGeometries();
 
-            //    stopwatch.Stop();
-            //    Debug.WriteLine($"InitializeGeometries: {layer.Name} - {stopwatch.ElapsedMilliseconds} ms");
+            //    //stopwatch.Stop();
+            //    //Debug.WriteLine($"InitializeGeometries: {layer.Name} - {stopwatch.ElapsedMilliseconds} ms");
+            //}
+
+            //Parallel.ForEach(Layers.Values, layer =>
+            //{
+            //    //stopwatch.Restart();
+
+            //    layer.InitializeGeometries();
+
+            //    //stopwatch.Stop();
+            //    //Debug.WriteLine($"InitializeGeometries: {layer.Name} - {stopwatch.ElapsedMilliseconds} ms");
             //});
+
+
+            var tasks = Layers.Values.Select(layer => Task.Run(() => layer.InitializeGeometries())).ToArray();
+            Task.WhenAll(tasks).Wait();
+
+
+            stopwatch.Stop();
+            Debug.WriteLine($"InitializeDeviceResources: {stopwatch.ElapsedMilliseconds} ms");
         }
         public void UpdateDeviceDependentResources(ResourceCache resCache)
         {
