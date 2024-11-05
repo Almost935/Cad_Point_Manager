@@ -200,7 +200,7 @@ namespace Cad_Point_Manager.Controls.D2DControl
                 disposed = true;
             }
         }
-        private void DisposeDeviceDependentResources()
+        public void DisposeDeviceDependentResources()
         {
             foreach (var brush in _brushes.Values)
             {
@@ -208,7 +208,7 @@ namespace Cad_Point_Manager.Controls.D2DControl
             }
             _brushes.Clear();
         }
-        private void DisposeDeviceIndependentResources()
+        public void DisposeDeviceIndependentResources()
         {
             foreach (var strokeStyle in _strokeStyles.Values)
             {

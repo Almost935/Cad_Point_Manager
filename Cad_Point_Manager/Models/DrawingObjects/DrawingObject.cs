@@ -17,7 +17,7 @@ namespace Cad_Point_Manager.DrawingObjects
         private bool _isHighlighted = false;
         private float _outerEdgeOpacity = 0.25f;
         private bool _disposed = false;
-        
+
         protected float _hitTestStrokeThickness = 10;
         #endregion
 
@@ -116,36 +116,24 @@ namespace Cad_Point_Manager.DrawingObjects
                 return;
             }
 
-            if (Brush is not null)
-            {
-                Brush.Dispose();
-                Brush = null;
-            }
-            if (OuterEdgeBrush is not null)
-            {
-                OuterEdgeBrush.Dispose();
-                OuterEdgeBrush = null;
-            }
+            Brush?.Dispose();
+            Brush = null;
+
+            OuterEdgeBrush?.Dispose();
+            OuterEdgeBrush = null;
 
             (byte r, byte g, byte b, byte a) = DxfHelpers.GetRGBAColor(Entity);
             (byte r2, byte g2, byte b2, byte a2) = (r, g, b, (byte)(0.4 * 255));
 
             Brush = ResCache.GetBrush(r, g, b, a);
             OuterEdgeBrush = ResCache.GetBrush(r2, g2, b2, a2);
-            int x = 0;
         }
 
         public void GetStrokeStyle()
         {
             HairlineStrokeStyle = ResCache.GetStrokeStyle(ResourceCache.LineType.Solid, StrokeTransformType.Hairline);
-            FixedStrokeStyle = ResCache.GetStrokeStyle(ResourceCache.LineType.Solid, StrokeTransformType.Fixed);    
+            FixedStrokeStyle = ResCache.GetStrokeStyle(ResourceCache.LineType.Solid, StrokeTransformType.Fixed);
         }
-    
-        //public void UpdateFactory(Factory1 factory)
-        //{
-        //    Factory = factory;
-        //    GetStrokeStyle();
-        //}
 
         protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {

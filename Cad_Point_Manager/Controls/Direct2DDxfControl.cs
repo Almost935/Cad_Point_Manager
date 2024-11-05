@@ -274,7 +274,7 @@ namespace Cad_Point_Manager.Controls
                     _maxDistFromOffscreenBitmapUpdate = new(((_offscreenRenderTarget.Size.Width / 2) - (d2DDeviceContext.Size.Width / 2)), ((_offscreenRenderTarget.Size.Height / 2) - (d2DDeviceContext.Size.Height / 2)));
                     _offscreenBitmapCenteringOffset = ((float)_maxDistFromOffscreenBitmapUpdate.X, (float)_maxDistFromOffscreenBitmapUpdate.Y);
                 }
-
+                
                 if (!_dxfLoaded)
                 {
                     LoadDxfResources(resCache);
@@ -345,7 +345,7 @@ namespace Cad_Point_Manager.Controls
 
                 int zoomStep = _currentZoomStep;
                 Matrix matrix = _overallMatrix;
-                matrix.Translate(_offscreenBitmapCenteringOffset.x, _offscreenBitmapCenteringOffset.y); // Translation is to center the bitmap in the render target
+                matrix.Translate(_offscreenBitmapCenteringOffset.x, _offscreenBitmapCenteringOffset.y); // Translation to center the bitmap in the render target
                 RawMatrix3x2 rawMatrix = new((float)matrix.M11, (float)matrix.M12, (float)matrix.M21, (float)matrix.M22, (float)matrix.OffsetX, (float)matrix.OffsetY);
                 _offscreenRenderTarget.Transform = rawMatrix;
 
@@ -360,14 +360,6 @@ namespace Cad_Point_Manager.Controls
                         _offscreenRenderTarget.DrawGeometry(layer.GeometryGroup, layer.LayerBrush, thickness);
                     }
                 }
-
-                //Parallel.ForEach(LayerManager.Layers.Values, layer =>
-                //{
-                //    if (layer.GeometryGroup is not null)
-                //    {
-                //        _offscreenRenderTarget.DrawGeometry(layer.GeometryGroup, layer.LayerBrush, thickness);
-                //    }
-                //});
 
                 _offscreenRenderTarget.EndDraw();
 
@@ -685,7 +677,6 @@ namespace Cad_Point_Manager.Controls
                 _transformMatrix.ScaleAt(zoom, zoom, PointerCoords.X, PointerCoords.Y);
 
                 UpdateLineThicknesses();
-                UpdateCurrentView();
                 ResetSnappedObjects();
 
                 _visibleObjectsDirty = true;
@@ -702,7 +693,6 @@ namespace Cad_Point_Manager.Controls
             _currentOffscreenBitmapTransform.Translate(translate.X, translate.Y);
             _distFromOffscreenBitmapUpdate += translate;
 
-            UpdateCurrentView();
             ResetSnappedObjects();
 
             _visibleObjectsDirty = true;
@@ -717,23 +707,6 @@ namespace Cad_Point_Manager.Controls
             _snappedThickness = (float)(_baseSnappedThickness / _overallMatrix.M11);
             _highlightedThickness = (float)(_baseHighlightedThickness / _overallMatrix.M11);
         }
-        private void UpdateCurrentView()
-        {
-            if (resCache.RenderTarget is not null)
-            {
-                // Get the current view in dxf coordinates
-                _currentDxfView = new(0, 0, this.ActualWidth, this.ActualHeight);
-                var overallMatrix = _overallMatrix;
-                overallMatrix.Invert();
-                _currentDxfView.Transform(overallMatrix);
-
-                // Get the current view in screen coordinates
-                _currentView = new(0, 0, this.ActualWidth, this.ActualHeight);
-                var transformMatrix = _transformMatrix;
-                transformMatrix.Invert();
-                _currentView.Transform(transformMatrix);
-            }
-        }
         private void GetResources(DeviceContext1 deviceContext)
         {
             _highlightedBrush ??= new SolidColorBrush(deviceContext, new RawColor4((97 / 255), 1.0f, 0.0f, 1.0f));
@@ -744,14 +717,10 @@ namespace Cad_Point_Manager.Controls
         }
         private void UpdateDeviceContext(ResourceCache resCache)
         {
-            if (LayerManager is null) { return; }
+            if (LayerManager is null || resCache is null) { return; }
 
             foreach (var layer in LayerManager.Layers.Values)
             {
-                foreach (var o in layer.DrawingObjects)
-                {
-                    o.UpdateDeviceDependentResources(resCache);
-                }
                 layer.UpdateDeviceDependentResources(resCache);
             }
         }

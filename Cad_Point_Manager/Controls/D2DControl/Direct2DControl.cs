@@ -138,12 +138,9 @@ namespace Cad_Point_Manager.Controls.D2DControl
 
         protected override void OnRenderSizeChanged(SizeChangedInfo sizeInfo)
         {
-            //StopRendering();
-
+            resCache.DisposeDeviceDependentResources();
             CreateAndBindTargets();
             base.OnRenderSizeChanged(sizeInfo);
-
-            //StartRendering();
         }
 
         private void OnIsFrontBufferAvailableChanged(object sender, DependencyPropertyChangedEventArgs e)

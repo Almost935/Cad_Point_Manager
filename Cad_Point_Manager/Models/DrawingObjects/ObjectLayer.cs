@@ -108,13 +108,13 @@ namespace Cad_Point_Manager.DrawingObjects
         {
             Parallel.ForEach(DrawingObjects, obj =>
             {
-                //stopwatch.Restart();
-                //Debug.WriteLine($"UpdateGeometry of obj: {obj.GetType()}");
+                Stopwatch stopwatch = new();
+                stopwatch.Restart();
 
                 obj?.UpdateGeometry();
 
                 //stopwatch.Stop();
-                //Debug.WriteLine($"UpdateGeometry of obj: {obj.GetType()}: {stopwatch.ElapsedMilliseconds} ms");
+                //Debug.WriteLine($"InitializeGeometry of obj: {obj.GetType()}: {stopwatch.ElapsedMilliseconds} ms");
             });
 
             //foreach (var obj in DrawingObjects)

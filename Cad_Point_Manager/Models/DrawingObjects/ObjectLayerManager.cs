@@ -99,12 +99,7 @@ namespace Cad_Point_Manager.DrawingObjects
 
             foreach (var layer in Layers.Values)
             {
-                stopwatch.Restart();
-
                 layer.InitializeResources(resCache);
-
-                stopwatch.Stop();
-                Debug.WriteLine($"InitializeResources: {layer.Name} - {stopwatch.ElapsedMilliseconds} ms");
             }
 
             foreach (var layer in Layers.Values)
