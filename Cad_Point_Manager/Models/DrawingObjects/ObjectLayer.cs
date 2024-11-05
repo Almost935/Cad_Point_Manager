@@ -1,4 +1,4 @@
-﻿using Direct2DDxfViewer.Direct2DControl;
+﻿using Cad_Point_Manager.Controls.D2DControl;
 using netDxf.Tables;
 using SharpDX.Direct2D1;
 using System;
@@ -11,14 +11,14 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 
-namespace Cad_Point_Manager.Models.DrawingObjects
+namespace Cad_Point_Manager.DrawingObjects
 {
     public class ObjectLayer : INotifyPropertyChanged, IDisposable
     {
         #region Fields
         private DeviceContext1 _deviceContext;
-        private readonly Factory1 _factory;
-        private readonly ResourceCache _resourceCache;
+        private Factory1 _factory;
+        private ResourceCache _resCache;
         private string _name;
         private List<DrawingObject> _drawingObjects = [];
         private bool isVisible = true;
@@ -64,16 +64,10 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         #endregion
 
         #region Constructors
-        public ObjectLayer(DeviceContext1 deviceContext, Factory1 factory, ResourceCache resCache, netDxf.Tables.Layer layer)
+        public ObjectLayer(netDxf.Tables.Layer layer)
         {
-            _deviceContext = deviceContext;
-            _factory = factory;
-            _resourceCache = resCache;
             Name = layer.Name;
             DxfLayer = layer;
-
-            GetLayerBrush();
-            GetLayerStrokeStyle();
         }
         #endregion
 
@@ -86,53 +80,86 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
+       
 
-        public void DrawVisibleObjectsToDeviceContext(DeviceContext1 deviceContext, float thickness)
+        public void InitializeResources(ResourceCache resCache)
         {
-            if (!IsVisible) { return; }
+            _resCache = resCache;
+            _deviceContext = resCache.DeviceContext;
+            _factory = resCache.Factory;
+            
+            GetLayerBrush();
+            GetLayerStrokeStyle();
 
-            foreach (var drawingObject in DrawingObjects)
+            //Stopwatch stopwatch = new();
+
+            foreach (var obj in DrawingObjects)
             {
-                if (drawingObject.IsInView)
-                {
-                    drawingObject.DrawToDeviceContext(deviceContext, thickness, drawingObject.Brush, drawingObject.HairlineStrokeStyle);
-                }
+                //stopwatch.Restart();
+                //Debug.WriteLine($"InitializeResources of obj: {obj.GetType()}");
+
+                obj?.InitializeResources(resCache);
+
+                //stopwatch.Stop();
+                //Debug.WriteLine($"InitializeResources of obj: {obj.GetType()}: {stopwatch.ElapsedMilliseconds} ms");
             }
         }
-        public void DrawVisibleObjectsToRenderTarget(RenderTarget renderTarget, float thickness)
+        public void InitializeGeometries()
         {
-            if (!IsVisible) { return; }
-            foreach (var drawingObject in DrawingObjects)
+            Parallel.ForEach(DrawingObjects, obj =>
             {
-                if (drawingObject.IsInView)
-                {
-                    drawingObject.DrawToRenderTarget(renderTarget, thickness, drawingObject.Brush, drawingObject.HairlineStrokeStyle);
-                }
+                //stopwatch.Restart();
+                //Debug.WriteLine($"UpdateGeometry of obj: {obj.GetType()}");
+
+                obj?.UpdateGeometry();
+
+                //stopwatch.Stop();
+                //Debug.WriteLine($"UpdateGeometry of obj: {obj.GetType()}: {stopwatch.ElapsedMilliseconds} ms");
+            });
+
+            //foreach (var obj in DrawingObjects)
+            //{
+            //    obj?.UpdateGeometry();
+            //}
+
+            LoadGeometryGroup();
+        }
+        public void UpdateDeviceDependentResources(ResourceCache resCache)
+        {
+            LayerBrush?.Dispose();
+            LayerBrush = null;
+
+            _deviceContext = resCache.DeviceContext;
+            
+            GetLayerBrush();
+
+            foreach (var obj in DrawingObjects)
+            {
+                obj?.UpdateDeviceDependentResources(resCache);
             }
         }
-
-        public void DrawObjectsToDeviceContext(DeviceContext1 deviceContext, float thickness)
+        public void UpdateDeviceIndependentResources(ResourceCache resCache)
         {
-            if (!IsVisible) { return; }
+            GeometryGroup?.Dispose();
+            GeometryGroup = null;
+            HairlineStrokeStyle?.Dispose();
+            HairlineStrokeStyle = null;
 
-            foreach (var drawingObject in DrawingObjects)
-            {
-                drawingObject.DrawToDeviceContext(deviceContext, thickness, drawingObject.Brush, drawingObject.HairlineStrokeStyle);
-            }
-        }
-        public void DrawObjectsToRenderTarget(RenderTarget renderTarget, float thickness)
-        {
-            if (!IsVisible) { return; }
+            _factory = resCache.Factory;
 
-            foreach (var drawingObject in DrawingObjects)
+            GetLayerStrokeStyle();
+
+            foreach (var obj in DrawingObjects)
             {
-                drawingObject.DrawToRenderTarget(renderTarget, thickness, new SolidColorBrush(renderTarget, new SharpDX.Mathematics.Interop.RawColor4(0, 0, 0, 1)), drawingObject.HairlineStrokeStyle);
+                obj?.UpdateDeviceIndependentResources(resCache);
             }
+            LoadGeometryGroup();
         }
 
         public void LoadGeometryGroup()
         {
-            List<Geometry> geometries = new();
+            List<Geometry> geometries = [];
+
             foreach (var obj in DrawingObjects)
             {
                 if (obj is DrawingBlock block)
@@ -177,41 +204,15 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             }
         }
 
-        public void UpdateDeviceDependentResources(DeviceContext1 deviceContext)
-        {
-            _deviceContext = deviceContext;
-            GetLayerBrush();
-        }
-
         public void GetLayerStrokeStyle()
         {
-            bool hairlineStrokeStyleExists = _resourceCache.StrokeStyles.TryGetValue(ResourceCache.LineType.Solid_Hairline, value: out StrokeStyle1 hairlineStrokeStyle);
-            if (!hairlineStrokeStyleExists)
-            {
-                StrokeStyleProperties1 ssp = new()
-                {
-                    StartCap = CapStyle.Round,
-                    EndCap = CapStyle.Round,
-                    DashCap = CapStyle.Flat,
-                    LineJoin = LineJoin.Round,
-                    MiterLimit = 10.0f,
-                    DashStyle = DashStyle.Solid,
-                    DashOffset = 0.0f,
-                    TransformType = StrokeTransformType.Hairline
-                };
-                HairlineStrokeStyle = new(_factory, ssp);
-                _resourceCache.StrokeStyles.Add(ResourceCache.LineType.Solid_Hairline, HairlineStrokeStyle);
-            }
-            else
-            {
-                HairlineStrokeStyle = hairlineStrokeStyle;
-            }
+            HairlineStrokeStyle = _resCache.GetStrokeStyle(ResourceCache.LineType.Solid, StrokeTransformType.Hairline);
         }
 
         public void GetLayerBrush()
         {
             LayerBrush?.Dispose();
-            LayerBrush = _resourceCache.GetBrush(DxfLayer.Color.R, DxfLayer.Color.G, DxfLayer.Color.B, 255);
+            LayerBrush = _resCache.GetBrush(DxfLayer.Color.R, DxfLayer.Color.G, DxfLayer.Color.B, 255);
         }
 
         public void Dispose()

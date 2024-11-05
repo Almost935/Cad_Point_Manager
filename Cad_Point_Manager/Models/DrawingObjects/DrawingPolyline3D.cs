@@ -1,5 +1,5 @@
-﻿using Direct2DDxfViewer.Direct2DControl;
-using Direct2DDXFViewer.Helpers;
+﻿using Cad_Point_Manager.DrawingObjects;
+using Cad_Point_Manager.Helpers;
 using netDxf.Entities;
 using SharpDX.Direct2D1;
 using SharpDX.Mathematics.Interop;
@@ -13,7 +13,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 
-namespace Cad_Point_Manager.Models.DrawingObjects
+namespace Direct2DDXFViewer.DrawingObjects
 {
     public class DrawingPolyline3D : DrawingPolyline
     {
@@ -34,18 +34,14 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         #endregion
 
         #region Constructor
-        public DrawingPolyline3D(Polyline3D dxfPolyline3D, Factory1 factory, DeviceContext1 deviceContext, ResourceCache resCache, ObjectLayer layer)
+        public DrawingPolyline3D(Polyline3D dxfPolyline3D, ObjectLayer layer)
         {
             DxfPolyline3D = dxfPolyline3D;
             Entity = dxfPolyline3D;
-            Factory = factory;
-            DeviceContext = deviceContext;
-            ResCache = resCache;
             Layer = layer;
 
-            GetStrokeStyle();
-            UpdateBrush();
             GetDrawingSegments();
+            UpdateDxfProperties();
         }
         #endregion
 
@@ -54,7 +50,10 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         {
             foreach (var e in DxfPolyline3D.Explode())
             {
-                var obj = DxfHelpers.GetDrawingSegment(e, Layer, Factory, DeviceContext, ResCache);
+                var obj = DxfHelpers.GetDrawingSegment(e, Layer);
+                obj.IsPartOfPolyline = true;
+                obj.DrawingPolyline = this;
+
                 if (obj is not null)
                 {
                     EntityCount += obj.EntityCount;
@@ -63,15 +62,18 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             }
         }
 
-        public override async Task UpdateGeometriesAsync()
-        {
-            await Task.Run(() => InitializeGeometries());
-        }
-        public override void InitializeGeometries()
+        public override void UpdateDxfProperties()
         {
             Parallel.ForEach(DrawingSegments, segment =>
             {
-                segment.InitializeGeometries();
+                segment.UpdateDxfProperties();
+            });
+        }
+        public override void UpdateGeometry()
+        {
+            Parallel.ForEach(DrawingSegments, segment =>
+            {
+                segment.UpdateGeometry();
 
                 if (Bounds.IsEmpty)
                 {
@@ -79,11 +81,10 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 }
                 else
                 {
-                    Bounds.Union(segment.Bounds);
+                    Bounds = Rect.Union(Bounds, segment.Bounds);
                 }
             });
         }
-
         #endregion
     }
 }

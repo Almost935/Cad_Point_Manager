@@ -12,12 +12,11 @@ using System.Xml.Linq;
 using System.Windows.Media;
 using Direct2DDXFViewer.DrawingObjects;
 using netDxf;
-using Direct2DDXFViewer.Helpers;
 using netDxf.Tables;
-using Direct2DDXFViewer.BitmapHelpers;
 using Point = System.Windows.Point;
+using Cad_Point_Manager.Helpers;
 
-namespace Cad_Point_Manager.Models.DrawingObjects
+namespace Cad_Point_Manager.DrawingObjects
 {
     public class DrawingObjectNode
     {

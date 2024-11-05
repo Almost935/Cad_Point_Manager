@@ -1,5 +1,7 @@
-﻿using netDxf.Entities;
+﻿using Cad_Point_Manager.Controls.D2DControl;
+using netDxf.Entities;
 using SharpDX.Direct2D1;
+using SharpDX.Direct3D11;
 using SharpDX.Mathematics.Interop;
 using System;
 using System.Collections.Generic;
@@ -12,64 +14,99 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 
-namespace Cad_Point_Manager.Models.DrawingObjects
+namespace Cad_Point_Manager.DrawingObjects
 {
     public abstract class DrawingPolyline : DrawingObject
     {
         #region Fields
+        private RawVector2 _startPoint;
+        private RawVector2 _endPoint;
         #endregion
 
         #region Properties
+        public RawVector2 StartPoint
+        {
+            get { return _startPoint; }
+            set
+            {
+                _startPoint = value;
+                OnPropertyChanged(nameof(StartPoint));
+            }
+        }
+        public RawVector2 EndPoint
+        {
+            get { return _endPoint; }
+            set
+            {
+                _endPoint = value;
+                OnPropertyChanged(nameof(EndPoint));
+            }
+        }
+
         public ObservableCollection<DrawingSegment> DrawingSegments { get; set; } = new();
         #endregion
 
         #region Methods
         public abstract void GetDrawingSegments();
 
-        public override void InitializeGeometries()
+        public override void DrawToDeviceContext(float thickness, Brush brush)
         {
-            // Implement logic to update the geometry of the polyline
-            throw new NotImplementedException();
+            if (DeviceContext is not null)
+            {
+                foreach (var segment in DrawingSegments)
+                {
+                    segment.DrawToDeviceContext(thickness, brush);
+                }
+            }
         }
-        public override List<GeometryRealization> GetGeometryRealization(float thickness)
+        public override void DrawToDeviceContext(float thickness, Brush brush, StrokeStyle1 strokeStyle)
         {
-            List<GeometryRealization> geometryRealizations = [];
+            if (DeviceContext is not null)
+            {
+                foreach (var segment in DrawingSegments)
+                {
+                    segment.DrawToDeviceContext(thickness, brush, strokeStyle);
+                }
+            }
+        }
 
-            foreach (var segment in DrawingSegments)
+        public override void InitializeResources(ResourceCache resCache)
+        {
+            ResCache = resCache;
+            DeviceContext = resCache.DeviceContext;
+            Factory = resCache.Factory;
+
+            foreach (var obj in DrawingSegments)
             {
-                geometryRealizations.AddRange(segment.GetGeometryRealization(thickness));
+                obj.InitializeResources(resCache);
             }
 
-            return geometryRealizations;
+            UpdateBrush();
+            GetStrokeStyle();
         }
+        public override void UpdateDeviceDependentResources(ResourceCache resCache)
+        {
+            ResCache = resCache;
+            DeviceContext = resCache.DeviceContext;
 
-        public override void DrawToDeviceContext(DeviceContext1 deviceContext, float thickness, Brush brush)
-        {
-            foreach (var segment in DrawingSegments)
+            foreach (var obj in DrawingSegments)
             {
-                segment.DrawToRenderTarget(deviceContext, thickness, brush);
+                obj.UpdateDeviceDependentResources(resCache);
             }
+
+            UpdateBrush();
         }
-        public override void DrawToDeviceContext(DeviceContext1 deviceContext, float thickness, Brush brush, StrokeStyle1 strokeStyle)
+        public override void UpdateDeviceIndependentResources(ResourceCache resCache)
         {
-            foreach (var segment in DrawingSegments)
+            ResCache = resCache;
+            Factory = resCache.Factory;
+
+            foreach (var obj in DrawingSegments)
             {
-                segment.DrawToRenderTarget(deviceContext, thickness, brush, strokeStyle);
+                obj.UpdateDeviceIndependentResources(resCache);
             }
-        }
-        public override void DrawToRenderTarget(RenderTarget target, float thickness, Brush brush)
-        {
-            foreach (var segment in DrawingSegments)
-            {
-                segment.DrawToRenderTarget(target, thickness, brush);
-            }
-        }
-        public override void DrawToRenderTarget(RenderTarget target, float thickness, Brush brush, StrokeStyle1 strokeStyle)
-        {
-            foreach (var segment in DrawingSegments)
-            {
-                segment.DrawToRenderTarget(target, thickness, brush, strokeStyle);
-            }
+
+            GetStrokeStyle();
         }
 
         public override bool DrawingObjectIsInRect(Rect rect)
@@ -85,7 +122,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         }
         public override bool Hittest(RawVector2 p, float thickness)
         {
-            foreach(var segment in DrawingSegments)
+            foreach (var segment in DrawingSegments)
             {
                 if (segment.Bounds.Contains((double)p.X, (double)p.Y))
                 {

@@ -1,5 +1,5 @@
-﻿using Direct2DDxfViewer.Direct2DControl;
-using Direct2DDXFViewer.Helpers;
+﻿using Cad_Point_Manager.Controls.D2DControl;
+using Cad_Point_Manager.Helpers;
 using netDxf.Entities;
 using SharpDX.Direct2D1;
 using SharpDX.Mathematics.Interop;
@@ -7,7 +7,7 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows;
 
-namespace Cad_Point_Manager.Models.DrawingObjects
+namespace Cad_Point_Manager.DrawingObjects
 {
     public abstract class DrawingObject : INotifyPropertyChanged, IDisposable
     {
@@ -77,16 +77,38 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         #endregion
 
         #region Methods
-        public abstract Task UpdateGeometriesAsync();
-        public abstract void InitializeGeometries();
-        public abstract List<GeometryRealization> GetGeometryRealization(float thickness);
-        public abstract void DrawToDeviceContext(DeviceContext1 deviceContext, float thickness, Brush brush);
-        public abstract void DrawToDeviceContext(DeviceContext1 deviceContext, float thickness, Brush brush, StrokeStyle1 strokeStyle);
-        public abstract void DrawToRenderTarget(RenderTarget target, float thickness, Brush brush);
-        public abstract void DrawToRenderTarget(RenderTarget target, float thickness, Brush brush, StrokeStyle1 strokeStyle);
+        public abstract void UpdateDxfProperties();
+        public abstract void UpdateGeometry();
+        public abstract void DrawToDeviceContext(float thickness, Brush brush);
+        public abstract void DrawToDeviceContext(float thickness, Brush brush, StrokeStyle1 strokeStyle);
         public abstract bool DrawingObjectIsInRect(Rect rect);
         public abstract bool Hittest(RawVector2 p, float thickness);
 
+
+        public virtual void InitializeResources(ResourceCache resCache)
+        {
+            ResCache = resCache;
+            DeviceContext = resCache.DeviceContext;
+            Factory = resCache.Factory;
+
+            UpdateBrush();
+            GetStrokeStyle();
+        }
+        public virtual void UpdateDeviceDependentResources(ResourceCache resCache)
+        {
+            ResCache = resCache;
+            DeviceContext = resCache.DeviceContext;
+
+            UpdateBrush();
+        }
+
+        public virtual void UpdateDeviceIndependentResources(ResourceCache resCache)
+        {
+            ResCache = resCache;
+            Factory = resCache.Factory;
+
+            GetStrokeStyle();
+        }
         public void UpdateBrush()
         {
             if (Entity is null || DeviceContext is null)
@@ -110,75 +132,13 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
             Brush = ResCache.GetBrush(r, g, b, a);
             OuterEdgeBrush = ResCache.GetBrush(r2, g2, b2, a2);
-
-            //bool brushExists = ResCache.Brushes.TryGetValue((r, g, b, a), value: out Brush brush);
-            //if (!brushExists)
-            //{
-            //    Brush = new SolidColorBrush(DeviceContext, new RawColor4((float)r / 255, (float)g / 255, (float)b / 255, 1.0f));
-            //    ResCache.Brushes.Add((r, g, b, a), Brush);
-            //}
-            //else
-            //{
-            //    Brush = brush;
-            //}
-
-            //bool outerEdgeBrushExists = ResCache.Brushes.TryGetValue((r2, g2, b2, a2), value: out Brush outerEdgeBrush);
-            //if (!brushExists)
-            //{
-            //    OuterEdgeBrush = new SolidColorBrush(DeviceContext, new RawColor4((float)r2 / 255, (float)g2 / 255, (float)b2 / 255, 0.4f));
-            //    ResCache.Brushes.Add((r2, g2, b2, a2), OuterEdgeBrush);
-            //}
-            //else
-            //{
-            //    OuterEdgeBrush = outerEdgeBrush;
-            //}
+            int x = 0;
         }
 
         public void GetStrokeStyle()
         {
-            bool hairlineStrokeStyleExists = ResCache.StrokeStyles.TryGetValue(ResourceCache.LineType.Solid_Hairline, value: out StrokeStyle1 hairlineStrokeStyle);
-            if (!hairlineStrokeStyleExists)
-            {
-                StrokeStyleProperties1 ssp = new()
-                {
-                    StartCap = CapStyle.Round,
-                    EndCap = CapStyle.Round,
-                    DashCap = CapStyle.Flat,
-                    LineJoin = LineJoin.Round,
-                    MiterLimit = 10.0f,
-                    DashStyle = DashStyle.Solid,
-                    DashOffset = 0.0f,
-                    TransformType = StrokeTransformType.Hairline
-                };
-                HairlineStrokeStyle = new(Factory, ssp);
-                ResCache.StrokeStyles.Add(ResourceCache.LineType.Solid_Hairline, HairlineStrokeStyle);
-            }
-            else
-            {
-                HairlineStrokeStyle = hairlineStrokeStyle;
-            }
-
-            bool fixedStrokeStyleExists = ResCache.StrokeStyles.TryGetValue(ResourceCache.LineType.Solid_Fixed, value: out StrokeStyle1 fixedStrokeStyle);
-            if (!fixedStrokeStyleExists)
-            {
-                StrokeStyleProperties1 ssp = new()
-                {
-                    StartCap = CapStyle.Flat,
-                    EndCap = CapStyle.Flat,
-                    DashCap = CapStyle.Flat,
-                    LineJoin = LineJoin.MiterOrBevel,
-                    MiterLimit = 10.0f,
-                    DashStyle = DashStyle.Solid,
-                    DashOffset = 0.0f,
-                    TransformType = StrokeTransformType.Fixed
-                };
-                FixedStrokeStyle = new(Factory, ssp);
-                ResCache.StrokeStyles.Add(ResourceCache.LineType.Solid_Fixed, FixedStrokeStyle);
-            }
-            else
-            {
-                FixedStrokeStyle = fixedStrokeStyle;
-            }
+            HairlineStrokeStyle = ResCache.GetStrokeStyle(ResourceCache.LineType.Solid, StrokeTransformType.Hairline);
+            FixedStrokeStyle = ResCache.GetStrokeStyle(ResourceCache.LineType.Solid, StrokeTransformType.Fixed);    
         }
     
         //public void UpdateFactory(Factory1 factory)
@@ -186,11 +146,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         //    Factory = factory;
         //    GetStrokeStyle();
         //}
-        public void UpdateDeviceContext(DeviceContext1 deviceContext)
-        {
-            DeviceContext = deviceContext;
-            UpdateBrush();
-        }
 
         protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {

@@ -1,6 +1,4 @@
-﻿using Direct2DDXFViewer.BitmapHelpers;
-using Direct2DDXFViewer.Helpers;
-using netDxf.Tables;
+﻿using netDxf.Tables;
 using SharpDX;
 using SharpDX.Direct2D1;
 using SharpDX.Mathematics.Interop;
@@ -14,7 +12,7 @@ using System.Windows;
 using System.Windows.Media;
 using Point = System.Windows.Point;
 
-namespace Cad_Point_Manager.Models.DrawingObjects
+namespace Cad_Point_Manager.DrawingObjects
 {
     public class DrawingObjectTree
     {

@@ -1,5 +1,4 @@
-﻿using Direct2DDxfViewer.Direct2DControl;
-using netDxf.Entities;
+﻿using netDxf.Entities;
 using SharpDX;
 using SharpDX.Direct2D1;
 using SharpDX.Mathematics.Interop;
@@ -14,7 +13,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 
-namespace Cad_Point_Manager.Models.DrawingObjects
+namespace Cad_Point_Manager.DrawingObjects
 {
     public class DrawingArc : DrawingSegment
     {
@@ -35,50 +34,44 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
         public double Sweep { get; set; }
         public bool IsLargeArc { get; set; }
+        public bool Radius { get; }
         #endregion
 
         #region Constructor
-        public DrawingArc(Arc dxfArc, Factory1 factory, DeviceContext1 deviceContext, ResourceCache resCache, ObjectLayer layer)
+        public DrawingArc(Arc dxfArc, ObjectLayer layer)
         {
             DxfArc = dxfArc;
             Entity = dxfArc;
-            Factory = factory;
-            DeviceContext = deviceContext;
-            ResCache = resCache;
             Layer = layer;
             EntityCount = 1;
 
-            GetStrokeStyle();
-            UpdateBrush();            
+            UpdateDxfProperties();         
         }
         #endregion
 
         #region Methods
-        public override void DrawToDeviceContext(DeviceContext1 deviceContext, float thickness, Brush brush)
+       
+
+        public override void DrawToDeviceContext(float thickness, Brush brush)
         {
-            deviceContext.DrawGeometry(Geometry, brush, thickness);
+            if (DeviceContext is not null)
+            {
+                DeviceContext.DrawGeometry(Geometry, brush, thickness);
+            }
         }
-        public override void DrawToDeviceContext(DeviceContext1 deviceContext, float thickness, Brush brush, StrokeStyle1 strokeStyle)
+        public override void DrawToDeviceContext(float thickness, Brush brush, StrokeStyle1 strokeStyle)
         {
-            deviceContext.DrawGeometry(Geometry, brush, thickness, strokeStyle);
+            if (DeviceContext is not null)
+            {
+                DeviceContext.DrawGeometry(Geometry, brush, thickness, strokeStyle);
+            }
         }
-        public override void DrawToRenderTarget(RenderTarget target, float thickness, Brush brush)
-        {
-            target.DrawGeometry(Geometry, brush, thickness);
-        }
-        public override void DrawToRenderTarget(RenderTarget target, float thickness, Brush brush, StrokeStyle1 strokeStyle)
-        {
-            target.DrawGeometry(Geometry, brush, thickness, strokeStyle);
-        }
+
         public override bool DrawingObjectIsInRect(Rect rect)
         {
             return Bounds.IntersectsWith(rect) || Bounds.Contains(rect);
         }
-        public override async Task UpdateGeometriesAsync()
-        {
-            await Task.Run(() => InitializeGeometries());
-        }
-        public override void InitializeGeometries()
+        public override void UpdateDxfProperties()
         {
             // Start by getting start and end points using NetDxf ToPolyline2D method
             StartPoint = new(
@@ -98,7 +91,9 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 Sweep = Math.Abs(DxfArc.EndAngle - DxfArc.StartAngle);
             }
             IsLargeArc = Sweep >= 180;
-
+        }
+        public override void UpdateGeometry()
+        {
             PathGeometry pathGeometry = new(Factory);
             using (var sink = pathGeometry.Open())
             {
@@ -131,17 +126,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 var bounds = Geometry.GetWidenedBounds(_hitTestStrokeThickness);
                 Bounds = new(bounds.Left, bounds.Top, Math.Abs(bounds.Right - bounds.Left), Math.Abs(bounds.Bottom - bounds.Top));
             }
-        }
-        public override List<GeometryRealization> GetGeometryRealization(float thickness)
-        {
-            List<GeometryRealization> geometryRealizations = [];
-
-            if (Geometry is not null)
-            {
-                geometryRealizations.Add(new(DeviceContext, Geometry, 1f, thickness, HairlineStrokeStyle));
-            }
-            
-            return geometryRealizations;
         }
         public override bool Hittest(RawVector2 p, float thickness)
         {

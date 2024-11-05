@@ -4,7 +4,7 @@
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
       xmlns:local="clr-namespace:Cad_Point_Manager.Views"
-      xmlns:d2dDxf="clr-namespace:Direct2DDXFViewer;assembly=Direct2DDXFViewer"
+      xmlns:controls="clr-namespace:Cad_Point_Manager.Controls"
       xmlns:ui="http://schemas.modernwpf.com/2019"
       xmlns:fa="http://schemas.fontawesome.io/icons/"
       xmlns:viewModels="clr-namespace:Cad_Point_Manager.ViewModels"
@@ -143,7 +143,7 @@
                     CornerRadius="20"
                     ClipToBounds="True">
 
-                <d2dDxf:Direct2DDxfControl x:Name="dxfControl"
+                <controls:Direct2DDxfControl x:Name="dxfControl"
                                           RenderOptions.BitmapScalingMode="HighQuality"
                                           Cursor="Cross"
                                           LayerManager="{Binding LayerManager}" />

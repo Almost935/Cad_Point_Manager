@@ -1,5 +1,4 @@
-﻿using Direct2DDxfViewer.Direct2DControl;
-using Direct2DDXFViewer.Helpers;
+﻿using Cad_Point_Manager.Helpers;
 using netDxf.Entities;
 using SharpDX.Direct2D1;
 using SharpDX.Mathematics.Interop;
@@ -14,7 +13,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 
-namespace Cad_Point_Manager.Models.DrawingObjects
+namespace Cad_Point_Manager.DrawingObjects
 {
     public class DrawingPolyline2D : DrawingPolyline
     {
@@ -35,27 +34,27 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         #endregion
 
         #region Constructor
-        public DrawingPolyline2D(Polyline2D dxfPolyline2D, Factory1 factory, DeviceContext1 deviceContext, ResourceCache resCache, ObjectLayer layer)
+        public DrawingPolyline2D(Polyline2D dxfPolyline2D, ObjectLayer layer)
         {
             DxfPolyline2D = dxfPolyline2D;
             Entity = dxfPolyline2D;
-            Factory = factory;
-            DeviceContext = deviceContext;
-            ResCache = resCache;
             Layer = layer;
 
-            GetStrokeStyle();
-            UpdateBrush();
             GetDrawingSegments();
+            UpdateDxfProperties();
         }
         #endregion
 
         #region Methods
+
         public override void GetDrawingSegments()
         {
             foreach (var e in DxfPolyline2D.Explode())
             {
-                var obj = DxfHelpers.GetDrawingSegment(e, Layer, Factory, DeviceContext, ResCache);
+                var obj = DxfHelpers.GetDrawingSegment(e, Layer);
+                obj.IsPartOfPolyline = true;
+                obj.DrawingPolyline = this;
+
                 if (obj is not null)
                 {
                     EntityCount += obj.EntityCount;
@@ -64,29 +63,18 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             }
         }
 
-        public override async Task UpdateGeometriesAsync()
+        public override void UpdateDxfProperties()
         {
-            await Task.Run(() => InitializeGeometries());
-        }
-        public override void InitializeGeometries()
-        {
-            //foreach (var segment in DrawingSegments)
-            //{
-            //    segment.UpdateGeometry();
-
-            //    if (Bounds.IsEmpty)
-            //    {
-            //        Bounds = segment.Bounds;
-            //    }
-            //    else
-            //    {
-            //        Bounds = Rect.Union(Bounds, segment.Bounds);
-            //    }
-            //}
-
             Parallel.ForEach(DrawingSegments, segment =>
             {
-                segment.InitializeGeometries();
+                segment.UpdateDxfProperties();
+            });
+        }
+        public override void UpdateGeometry()
+        {
+            Parallel.ForEach(DrawingSegments, segment =>
+            {
+                segment.UpdateGeometry();
 
                 if (Bounds.IsEmpty)
                 {

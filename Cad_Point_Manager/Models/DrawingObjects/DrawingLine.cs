@@ -1,5 +1,4 @@
-﻿using Direct2DDxfViewer.Direct2DControl;
-using Direct2DDXFViewer.Helpers;
+﻿using Cad_Point_Manager.Helpers;
 using netDxf;
 using netDxf.Entities;
 using netDxf.Units;
@@ -17,7 +16,7 @@ using System.Windows;
 
 using Point = System.Windows.Point;
 
-namespace Cad_Point_Manager.Models.DrawingObjects
+namespace Cad_Point_Manager.DrawingObjects
 {
     public class DrawingLine : DrawingSegment
     {
@@ -38,56 +37,46 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         #endregion
 
         #region Constructor
-        public DrawingLine(Line dxfLine, Factory1 factory, DeviceContext1 deviceContext, ResourceCache resCache, ObjectLayer layer)
+        public DrawingLine(Line dxfLine, ObjectLayer layer)
         {
             DxfLine = dxfLine;
             Entity = dxfLine;
-            Factory = factory;
-            DeviceContext = deviceContext;
-            ResCache = resCache;
             Layer = layer;
             EntityCount = 1;
             StartPoint = new((float)dxfLine.StartPoint.X, (float)dxfLine.StartPoint.Y);
             EndPoint = new((float)dxfLine.EndPoint.X, (float)dxfLine.EndPoint.Y);
 
-            GetStrokeStyle();
-            UpdateBrush();
+            UpdateDxfProperties();
         }
         #endregion
 
         #region Methods
-        public override void DrawToDeviceContext(DeviceContext1 deviceContext, float thickness, Brush brush)
+        public override void DrawToDeviceContext(float thickness, Brush brush)
         {
-            deviceContext.DrawLine(StartPoint, EndPoint, brush, thickness);
+            DeviceContext.DrawLine(StartPoint, EndPoint, brush, thickness);
         }
-        public override void DrawToDeviceContext(DeviceContext1 deviceContext, float thickness, Brush brush, StrokeStyle1 strokeStyle)
+        public override void DrawToDeviceContext(float thickness, Brush brush, StrokeStyle1 strokeStyle)
         {
-            deviceContext.DrawLine(StartPoint, EndPoint, brush, thickness, strokeStyle);
+            DeviceContext.DrawLine(StartPoint, EndPoint, brush, thickness, strokeStyle);
         }
-        public override void DrawToRenderTarget(RenderTarget target, float thickness, Brush brush)
-        {
-            target.DrawLine(StartPoint, EndPoint, brush, thickness);
-        }
-        public override void DrawToRenderTarget(RenderTarget target, float thickness, Brush brush, StrokeStyle1 strokeStyle)
-        {
-            target.DrawLine(StartPoint, EndPoint, brush, thickness, strokeStyle);
-        }
+       
         public override bool DrawingObjectIsInRect(Rect rect)
         {
             return Bounds.IntersectsWith(rect) || Bounds.Contains(rect);
         }
 
-        public override async Task UpdateGeometriesAsync()
+        public override void UpdateDxfProperties()
         {
-            await Task.Run(() => InitializeGeometries());
+            StartPoint = new((float)DxfLine.StartPoint.X, (float)DxfLine.StartPoint.Y);
+            EndPoint = new((float)DxfLine.EndPoint.X, (float)DxfLine.EndPoint.Y);
         }
-        public async override void InitializeGeometries()
+        public async override void UpdateGeometry()
         {
             PathGeometry pathGeometry = new(Factory);
             using (var sink = pathGeometry.Open())
             {
-                sink.BeginFigure(new RawVector2((float)DxfLine.StartPoint.X, (float)DxfLine.StartPoint.Y), FigureBegin.Filled);
-                sink.AddLine(new RawVector2((float)DxfLine.EndPoint.X, (float)DxfLine.EndPoint.Y));
+                sink.BeginFigure(StartPoint, FigureBegin.Filled);
+                sink.AddLine(EndPoint);
                 sink.EndFigure(FigureEnd.Open);
                 sink.Close();
 
@@ -98,17 +87,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             }
         }
 
-        public override List<GeometryRealization> GetGeometryRealization(float thickness)
-        {
-            List<GeometryRealization> geometryRealizations = [];
-
-            if (Geometry is not null)
-            {
-                geometryRealizations.Add(new(DeviceContext, Geometry, 0.5f, thickness, HairlineStrokeStyle));
-            }
-
-            return geometryRealizations;
-        }
         public override bool Hittest(RawVector2 p, float thickness)
         {
             return Geometry.StrokeContainsPoint(p, thickness); ;

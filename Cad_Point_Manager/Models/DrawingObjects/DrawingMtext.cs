@@ -1,21 +1,10 @@
-﻿using Direct2DDxfViewer.Direct2DControl;
-using Direct2DDXFViewer.Helpers;
-using netDxf;
+﻿using Cad_Point_Manager.Controls.D2DControl;
 using netDxf.Entities;
 using netDxf.Units;
 using SharpDX.Direct2D1;
 using SharpDX.Direct3D11;
 using SharpDX.DirectWrite;
 using SharpDX.Mathematics.Interop;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Diagnostics;
-using System.Linq;
-using System.Numerics;
-using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
 using Brush = SharpDX.Direct2D1.Brush;
@@ -23,7 +12,7 @@ using DeviceContext1 = SharpDX.Direct2D1.DeviceContext1;
 using Factory1 = SharpDX.DirectWrite.Factory1;
 using Point = System.Windows.Point;
 
-namespace Cad_Point_Manager.Models.DrawingObjects
+namespace Cad_Point_Manager.DrawingObjects
 {
     public class DrawingMtext : DrawingObject
     {
@@ -50,73 +39,68 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         #endregion
 
         #region Constructor
-        public DrawingMtext(MText dxfMtext, SharpDX.Direct2D1.Factory1 factory, DeviceContext1 deviceContext, ResourceCache resCache, ObjectLayer layer, Factory1 factoryWrite)
+        public DrawingMtext(MText dxfMtext, ObjectLayer layer)
         {
             DxfMtext = dxfMtext;
             Entity = dxfMtext;
-            Factory = factory;
-            DeviceContext = deviceContext;
-            ResCache = resCache;
             Layer = layer;
-            _factoryWrite = factoryWrite;
             EntityCount = 1;
-
-            GetStrokeStyle();
-            UpdateBrush();
         }
         #endregion
 
         #region Methods
-        public override void DrawToDeviceContext(DeviceContext1 deviceContext, float thickness, Brush brush)
+        public override void DrawToDeviceContext(float thickness, Brush brush)
         {
-            deviceContext.DrawTextLayout(new RawVector2((float)DxfMtext.Position.X, (float)DxfMtext.Position.Y), _textLayout, brush);
+            DeviceContext?.DrawTextLayout(new RawVector2((float)DxfMtext.Position.X, (float)DxfMtext.Position.Y), _textLayout, brush);
         }
-        public override void DrawToDeviceContext(DeviceContext1 deviceContext, float thickness, Brush brush, StrokeStyle1 strokeStyle)
+        public override void DrawToDeviceContext(float thickness, Brush brush, StrokeStyle1 strokeStyle)
         {
-            deviceContext.DrawTextLayout(new RawVector2((float)DxfMtext.Position.X, (float)DxfMtext.Position.Y), _textLayout, brush);
+            DeviceContext?.DrawTextLayout(new RawVector2((float)DxfMtext.Position.X, (float)DxfMtext.Position.Y), _textLayout, brush);
             //deviceContext.DrawText(DxfMtext.PlainText(), _textFormat, new RawRectangleF((float)Bounds.Left, (float)Bounds.Top, (float)Bounds.Right, (float)Bounds.Bottom), Brush);
-        }
-        public override void DrawToRenderTarget(RenderTarget target, float thickness, Brush brush)
-        {
-            var transform = target.Transform;
-            transform.M22 *= -1;
-            target.Transform = transform;
-            target.DrawTextLayout(new RawVector2((float)DxfMtext.Position.X, -(float)DxfMtext.Position.Y), _textLayout, brush);
-            transform.M22 *= -1;
-            target.Transform = transform;
-        }
-        public override void DrawToRenderTarget(RenderTarget target, float thickness, Brush brush, StrokeStyle1 strokeStyle)
-        {
-            var transform = target.Transform;
-
-            Matrix matrix = new(transform.M11, transform.M12, transform.M21, -transform.M22, transform.M31, transform.M32);
-            matrix.RotateAtPrepend(-(float)DxfMtext.Rotation, _adjustedPos.X, -_adjustedPos.Y);
-            RawMatrix3x2 newTransform = new((float)matrix.M11, (float)matrix.M12, (float)matrix.M21, (float)matrix.M22, (float)matrix.OffsetX, (float)matrix.OffsetY);
-
-            target.Transform = newTransform;
-            target.DrawTextLayout(new RawVector2((float)_adjustedPos.X, -(float)_adjustedPos.Y), _textLayout, brush);
-
-            target.Transform = transform;
         }
         public override bool DrawingObjectIsInRect(Rect rect)
         {
             return Bounds.IntersectsWith(rect) || Bounds.Contains(rect);
         }
 
-        public override async Task UpdateGeometriesAsync()
+        public override void UpdateDxfProperties()
         {
-            await Task.Run(() => InitializeGeometries());
+
         }
-        public override void InitializeGeometries()
+        public override void UpdateGeometry()
         {
             Bounds = new(DxfMtext.Position.X, DxfMtext.Position.Y, DxfMtext.RectangleWidth * 2, DxfMtext.Height * 2);
             GetTransform();
             GetTextFormat();
             GetTextLayout();
         }
-        public override List<GeometryRealization> GetGeometryRealization(float thickness)
+
+        public override void InitializeResources(ResourceCache resCache)
         {
-            return new List<GeometryRealization>();
+            ResCache = resCache;
+            DeviceContext = resCache.DeviceContext;
+            Factory = resCache.Factory;
+            _factoryWrite = resCache.FactoryWrite;
+
+            UpdateBrush();
+            GetStrokeStyle();
+            UpdateGeometry();
+        }
+        public override void UpdateDeviceDependentResources(ResourceCache resCache)
+        {
+            ResCache = resCache;
+            DeviceContext = resCache.DeviceContext;
+
+            UpdateBrush();
+        }
+        public override void UpdateDeviceIndependentResources(ResourceCache resCache)
+        {
+            ResCache = resCache;
+            Factory = resCache.Factory;
+            _factoryWrite = resCache.FactoryWrite;
+
+            GetStrokeStyle();
+            UpdateGeometry();
         }
 
         public void GetTextFormat()

@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 using System.Windows;
 
 
-namespace Cad_Point_Manager.Models.DrawingObjects
+namespace Cad_Point_Manager.DrawingObjects
 {
     public abstract class DrawingSegment : DrawingObject
     {

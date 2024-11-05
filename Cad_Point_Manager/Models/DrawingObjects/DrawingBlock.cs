@@ -11,8 +11,10 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
+using Cad_Point_Manager.Controls.D2DControl;
+using Cad_Point_Manager.Helpers;
 
-namespace Cad_Point_Manager.Models.DrawingObjects
+namespace Cad_Point_Manager.DrawingObjects
 {
     public class DrawingBlock : DrawingObject
     {
@@ -37,17 +39,13 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         #endregion
 
         #region Constructor
-        public DrawingBlock(Insert dxfBlock, Factory1 factory, DeviceContext1 deviceContext, ResourceCache resCache, ObjectLayer layer)
+        public DrawingBlock(Insert dxfBlock, ObjectLayer layer)
         {
             DxfBlock = dxfBlock;
             Entity = dxfBlock;
-            Factory = factory;
-            DeviceContext = deviceContext;
-            ResCache = resCache;
             Layer = layer;
 
-            GetStrokeStyle();
-            UpdateBrush();
+            UpdateDxfProperties();
         }
         #endregion
 
@@ -56,7 +54,9 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         {
             foreach (var e in DxfBlock.Explode())
             {
-                var obj = DxfHelpers.GetDrawingObject(e, Layer, Factory, DeviceContext, ResCache);
+                var obj = DxfHelpers.GetDrawingObject(e, Layer);
+                obj.IsPartOfBlock = true;
+                obj.Block = this;
 
                 if (obj is not null)
                 {
@@ -66,35 +66,65 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             }
         }
 
+        public override void DrawToDeviceContext(float thickness, Brush brush)
+        {
+            if (DeviceContext is not null)
+            {
+                foreach (var obj in DrawingObjects)
+                {
+                    obj.DrawToDeviceContext(thickness, brush);
+                }
+            }
+        }
+        public override void DrawToDeviceContext(float thickness, Brush brush, StrokeStyle1 strokeStyle)
+        {
+            if (DeviceContext is not null)
+            {
+                foreach (var obj in DrawingObjects)
+                {
+                    obj.DrawToDeviceContext(thickness, brush, strokeStyle);
+                }
+            }
+        }
 
-        public override void DrawToDeviceContext(DeviceContext1 deviceContext, float thickness, Brush brush)
+        public override void InitializeResources(ResourceCache resCache)
         {
+            ResCache = resCache;
+            DeviceContext = resCache.DeviceContext;
+            Factory = resCache.Factory;
+
             foreach (var obj in DrawingObjects)
             {
-                obj.DrawToDeviceContext(deviceContext, thickness, brush);
+                obj.InitializeResources(resCache);
             }
+
+            UpdateBrush();
+            GetStrokeStyle();
         }
-        public override void DrawToDeviceContext(DeviceContext1 deviceContext, float thickness, Brush brush, StrokeStyle1 strokeStyle)
+        public override void UpdateDeviceDependentResources(ResourceCache resCache)
         {
+            ResCache = resCache;
+            DeviceContext = resCache.DeviceContext;
+
             foreach (var obj in DrawingObjects)
             {
-                obj.DrawToDeviceContext(deviceContext, thickness, brush, strokeStyle);
+                obj.UpdateDeviceDependentResources(resCache);
             }
+            UpdateBrush();
         }
-        public override void DrawToRenderTarget(RenderTarget target, float thickness, Brush brush)
+
+        public override void UpdateDeviceIndependentResources(ResourceCache resCache)
         {
+            ResCache = resCache;
+            Factory = resCache.Factory;
+
             foreach (var obj in DrawingObjects)
             {
-                obj.DrawToRenderTarget(target, thickness, brush);
+                obj.UpdateDeviceIndependentResources(resCache);
             }
+            GetStrokeStyle();
         }
-        public override void DrawToRenderTarget(RenderTarget target, float thickness, Brush brush, StrokeStyle1 strokeStyle)
-        {
-            foreach (var obj in DrawingObjects)
-            {
-                obj.DrawToRenderTarget(target, thickness, brush, strokeStyle);
-            }
-        }
+
         public override bool DrawingObjectIsInRect(Rect rect)
         {
             foreach (var obj in DrawingObjects)
@@ -106,16 +136,24 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             }
             return false;
         }
-
-        public override async Task UpdateGeometriesAsync()
+        public override void UpdateDxfProperties()
         {
-            await Task.Run(() => InitializeGeometries());
+            foreach (var e in DxfBlock.Explode())
+            {
+                var obj = DxfHelpers.GetDrawingObject(e, Layer);
+
+                if (obj is not null)
+                {
+                    EntityCount += obj.EntityCount;
+                    DrawingObjects.Add(obj);
+                }
+            }
         }
-        public override void InitializeGeometries()
+        public override void UpdateGeometry()
         {
             foreach (var obj in DrawingObjects)
             {
-                obj.InitializeGeometries();
+                obj.UpdateGeometry();
 
                 if (Bounds.IsEmpty)
                 {
@@ -127,17 +165,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 }
             }
         }
-        public override List<GeometryRealization> GetGeometryRealization(float thickness)
-        {
-            List<GeometryRealization> geometryRealizations = [];
-
-            foreach (var obj in DrawingObjects)
-            {
-                geometryRealizations.AddRange(obj.GetGeometryRealization(thickness));
-            }
-
-            return geometryRealizations;
-        }
+   
         public override bool Hittest(RawVector2 p, float thickness)
         {
             foreach (var obj in DrawingObjects)

@@ -1,77 +1,144 @@
-﻿using Direct2DDxfViewer.Direct2DControl;
+﻿
+using netDxf;
+using netDxf.Entities;
 using netDxf.Units;
 using SharpDX.Direct2D1;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
+using Cad_Point_Manager.Helpers;
+using Cad_Point_Manager.Controls.D2DControl;
 
-namespace Cad_Point_Manager.Models.DrawingObjects
+namespace Cad_Point_Manager.DrawingObjects
 {
-    public class ObjectLayerManager : IDisposable
+    public class ObjectLayerManager : IDisposable, INotifyPropertyChanged
     {
         #region Fields
         private bool _disposed = false;
-        private DeviceContext1 _deviceContext;
-        private Factory1 _factory;
-        private ResourceCache _resourceCache;
+
+        private DxfDocument _dxfDocument;
+        private Rect _extents;
         #endregion
 
         #region Properties
+        public DxfDocument DxfDocument
+        {
+            get { return _dxfDocument; }
+            set
+            {
+                _dxfDocument = value;
+                OnPropertyChanged(nameof(DxfDocument));
+            }
+        }
+        public Rect Extents
+        {
+            get { return _extents; }
+            set
+            {
+                _extents = value;
+                OnPropertyChanged(nameof(Extents));
+            }
+        }
+
         public Dictionary<string, ObjectLayer> Layers { get; set; } = new();
         public List<DrawingObject> DrawingObjects => Layers.Values.SelectMany(layer => layer.DrawingObjects).ToList();
+        public bool DxfLoaded { get; set; } = false;
         #endregion
 
-        #region Constructors
-        public ObjectLayerManager(DeviceContext1 deviceContext, Factory1 factory, ResourceCache resCache)
-        {
-            _deviceContext = deviceContext;
-            _factory = factory;
-            _resourceCache = resCache;
-        }
+        #region Events
+        public event PropertyChangedEventHandler PropertyChanged;
         #endregion
 
         #region Methods
+        public void LoadDxfDocument(DxfDocument dxfDocument)
+        {
+            Stopwatch stopwatch = Stopwatch.StartNew();
+
+            DxfLoaded = false;
+
+            _dxfDocument = dxfDocument;
+            Layers.Clear();
+            Extents = new();
+
+            Extents = DxfHelpers.GetExtentsFromHeader(DxfDocument);
+
+            foreach (var e in _dxfDocument.Entities.All)
+            {
+                var layer = GetLayer(e.Layer);
+                var obj = DxfHelpers.GetDrawingObject(e, layer);
+                if (obj is not null)
+                {
+                    layer.DrawingObjects.Add(obj);
+                }
+            }
+            DxfLoaded = true;
+
+            stopwatch.Stop();
+            Debug.WriteLine($"LoadDxfDocument: {stopwatch.ElapsedMilliseconds} ms");
+        }
         public ObjectLayer GetLayer(netDxf.Tables.Layer dxfLayer)
         {
             if (Layers.TryGetValue(dxfLayer.Name, out ObjectLayer layer)) { return layer; }
             else
             {
-                ObjectLayer objectLayer = new(_deviceContext, _factory, _resourceCache, dxfLayer);
+                ObjectLayer objectLayer = new(dxfLayer);
                 Layers.Add(dxfLayer.Name, objectLayer);
                 return objectLayer;
             }
         }
-        public void DrawVisibleObjectsToDeviceContext(DeviceContext1 deviceContext, float thickness)
-        {
-            foreach (var layer in Layers.Values)
-            {
-                layer.DrawVisibleObjectsToDeviceContext(deviceContext, thickness);
-            }
-        }
-        public void DrawVisibleObjectsToRenderTarget(RenderTarget renderTarget, float thickness)
-        {
-            foreach (var layer in Layers.Values)
-            {
-                layer.DrawVisibleObjectsToRenderTarget(renderTarget, thickness);
-            }
-        }
 
-        public void DrawObjectsToDeviceContext(DeviceContext1 deviceContext, float thickness)
+        public void InitializeDeviceResources(ResourceCache resCache)
+        {
+            Stopwatch stopwatch = new();
+
+            foreach (var layer in Layers.Values)
+            {
+                stopwatch.Restart();
+
+                layer.InitializeResources(resCache);
+
+                stopwatch.Stop();
+                Debug.WriteLine($"InitializeResources: {layer.Name} - {stopwatch.ElapsedMilliseconds} ms");
+            }
+
+            foreach (var layer in Layers.Values)
+            {
+                stopwatch.Restart();
+
+                layer.InitializeGeometries();
+
+                stopwatch.Stop();
+                Debug.WriteLine($"InitializeGeometries: {layer.Name} - {stopwatch.ElapsedMilliseconds} ms");
+            }
+
+            //Parallel.ForEach(Layers.Values, layer =>
+            //{
+            //    stopwatch.Restart();
+
+            //    layer.InitializeGeometries();
+
+            //    stopwatch.Stop();
+            //    Debug.WriteLine($"InitializeGeometries: {layer.Name} - {stopwatch.ElapsedMilliseconds} ms");
+            //});
+        }
+        public void UpdateDeviceDependentResources(ResourceCache resCache)
         {
             foreach (var layer in Layers.Values)
             {
-                layer.DrawObjectsToDeviceContext(deviceContext, thickness);
+                layer?.UpdateDeviceDependentResources(resCache);
             }
         }
-        public void DrawObjectsToRenderTarget(RenderTarget renderTarget, float thickness)
+        public void UpdateDeviceIndependentResources(ResourceCache resCache)
         {
             foreach (var layer in Layers.Values)
             {
-                layer.DrawObjectsToRenderTarget(renderTarget, thickness);
+                layer?.UpdateDeviceIndependentResources(resCache);
             }
         }
 
@@ -89,6 +156,11 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 }
             }
             return drawingObjects;
+        }
+
+        protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
         public void Dispose()

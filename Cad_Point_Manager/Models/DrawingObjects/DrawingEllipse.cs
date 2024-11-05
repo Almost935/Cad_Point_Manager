@@ -23,10 +23,9 @@ using Brush = SharpDX.Direct2D1.Brush;
 using PathGeometry = SharpDX.Direct2D1.PathGeometry;
 using ArcSegment = SharpDX.Direct2D1.ArcSegment;
 using SweepDirection = SharpDX.Direct2D1.SweepDirection;
-using Direct2DDxfViewer.Direct2DControl;
 using Matrix = System.Windows.Media.Matrix;
 
-namespace Cad_Point_Manager.Models.DrawingObjects
+namespace Cad_Point_Manager.DrawingObjects
 {
     public class DrawingEllipse : DrawingSegment
     {
@@ -47,66 +46,55 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         #endregion
 
         #region Constructor
-        public DrawingEllipse(netDxf.Entities.Ellipse dxfEllipse, Factory1 factory, DeviceContext1 deviceContext, ResourceCache resCache, ObjectLayer layer)
+        public DrawingEllipse(netDxf.Entities.Ellipse dxfEllipse, ObjectLayer layer)
         {
             DxfEllipse = dxfEllipse;
             Entity = dxfEllipse;
-            Factory = factory;
-            DeviceContext = deviceContext;
-            ResCache = resCache;
             Layer = layer;
             EntityCount = 1;
 
-            GetStrokeStyle();
-            UpdateBrush();
+            UpdateDxfProperties();
         }
         #endregion
 
         #region Methods
-        public override void DrawToDeviceContext(DeviceContext1 deviceContext, float thickness, Brush brush)
+        public override void DrawToDeviceContext(float thickness, Brush brush)
         {
-            deviceContext.DrawGeometry(Geometry, brush, thickness);
+            DeviceContext?.DrawGeometry(Geometry, brush, thickness);
         }
-        public override void DrawToDeviceContext(DeviceContext1 deviceContext, float thickness, Brush brush, StrokeStyle1 strokeStyle)
+        public override void DrawToDeviceContext(float thickness, Brush brush, StrokeStyle1 strokeStyle)
         {
-            deviceContext.DrawGeometry(Geometry, brush, thickness, strokeStyle);
+            DeviceContext?.DrawGeometry(Geometry, brush, thickness, strokeStyle);
         }
-        public override void DrawToRenderTarget(RenderTarget target, float thickness, Brush brush)
-        {
-            target.DrawGeometry(Geometry, brush, thickness);
-        }
-        public override void DrawToRenderTarget(RenderTarget target, float thickness, Brush brush, StrokeStyle1 strokeStyle)
-        {
-            target.DrawGeometry(Geometry, brush, thickness, strokeStyle);
-        }
+       
         public override bool DrawingObjectIsInRect(Rect rect)
         {
             return Bounds.IntersectsWith(rect) || Bounds.Contains(rect);
         }
 
-
-        public override void InitializeGeometries()
+        public override void UpdateDxfProperties()
         {
             if (DxfEllipse.IsFullEllipse)
             {
                 Geometry = GetEllipseGeometry();
-                var bounds = Geometry.GetWidenedBounds(10);
-                Bounds = new(bounds.Left, bounds.Top, Math.Abs(bounds.Right - bounds.Left), Math.Abs(bounds.Bottom - bounds.Top));
             }
             else
             {
                 Geometry = GetArcGeometry();
-                var bounds = Geometry.GetWidenedBounds(10);
-                Bounds = new(bounds.Left, bounds.Top, Math.Abs(bounds.Right - bounds.Left), Math.Abs(bounds.Bottom - bounds.Top));
             }
+        }
+        public override void UpdateGeometry()
+        {
+            var bounds = Geometry.GetWidenedBounds(10);
+            Bounds = new(bounds.Left, bounds.Top, Math.Abs(bounds.Right - bounds.Left), Math.Abs(bounds.Bottom - bounds.Top));
         }
         public Geometry GetArcGeometry()
         {
             // Start by getting start and end points using NetDxf ToPolyline2D method
-            RawVector2 startPoint = new(
+            StartPoint = new(
                 (float)DxfEllipse.ToPolyline2D(2).Vertexes.First().Position.X,
                 (float)DxfEllipse.ToPolyline2D(2).Vertexes.First().Position.Y);
-            RawVector2 endPoint = new(
+            EndPoint = new(
                 (float)DxfEllipse.ToPolyline2D(2).Vertexes.Last().Position.X,
                 (float)DxfEllipse.ToPolyline2D(2).Vertexes.Last().Position.Y);
             var radiusX = (float)(DxfEllipse.MajorAxis / 2);
@@ -128,11 +116,11 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             PathGeometry pathGeometry = new(Factory);
             using (var sink = pathGeometry.Open())
             {
-                sink.BeginFigure(startPoint, FigureBegin.Filled);
+                sink.BeginFigure(StartPoint, FigureBegin.Filled);
 
                 ArcSegment arcSegment = new()
                 {
-                    Point = endPoint,
+                    Point = EndPoint,
                     Size = new(radiusX, radiusY),
                     SweepDirection = SweepDirection.Clockwise,
                     RotationAngle = rotation,
@@ -194,21 +182,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 return ellipseGeometry;
             }
         }
-        public override async Task UpdateGeometriesAsync()
-        {
-            await Task.Run(() => InitializeGeometries());
-        }
-        public override List<GeometryRealization> GetGeometryRealization(float thickness)
-        {
-            List<GeometryRealization> geometryRealizations = [];
-
-            if (Geometry is not null)
-            {
-                geometryRealizations.Add(new(DeviceContext, Geometry, 0.5f, thickness, HairlineStrokeStyle));
-            }
-
-            return geometryRealizations;
-        }
+    
         public override bool Hittest(RawVector2 p, float thickness)
         {
             return Geometry.StrokeContainsPoint(p, thickness);
