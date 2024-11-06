@@ -13,7 +13,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 
-namespace Cad_Point_Manager.DrawingObjects
+namespace Cad_Point_Manager.Models.DrawingObjects
 {
     public class DrawingArc : DrawingSegment
     {
@@ -126,7 +126,7 @@ namespace Cad_Point_Manager.DrawingObjects
         #endregion
     }
 
-    public class  DrawingArcData : DrawingObjectData
+    public class  DrawingArcData : DrawingSegmentData
     {
         public double Sweep { get; set; }
         public bool IsLargeArc { get; set; }

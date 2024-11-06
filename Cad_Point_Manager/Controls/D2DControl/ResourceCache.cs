@@ -1,4 +1,6 @@
-﻿using SharpDX.Direct2D1;
+﻿using Cad_Point_Manager.Models;
+using Cad_Point_Manager.Models.DrawingObjects;
+using SharpDX.Direct2D1;
 using SharpDX.DirectWrite;
 using SharpDX.Mathematics.Interop;
 using System;
@@ -21,7 +23,7 @@ namespace Cad_Point_Manager.Controls.D2DControl
         private SharpDX.DirectWrite.Factory1 _factoryWrite = null;
         private int _maxBitmapSize;
         private Dictionary<(byte r, byte g, byte b, byte a), Brush> _brushes = [];
-        private Dictionary<(LineType lineType, StrokeTransformType strokeTransformType), StrokeStyle1> _strokeStyles = [];
+        private Dictionary<(Enums.LineType lineType, StrokeTransformType strokeTransformType), StrokeStyle1> _strokeStyles = [];
         private Dictionary<(int fontSize, string fontName), TextFormat> _textFormats = [];
         #endregion
 
@@ -89,7 +91,7 @@ namespace Cad_Point_Manager.Controls.D2DControl
                 OnPropertyChanged(nameof(Brushes));
             }
         }
-        public Dictionary<(LineType lineType, StrokeTransformType strokeTransformType), StrokeStyle1> StrokeStyles
+        public Dictionary<(Enums.LineType lineType, StrokeTransformType strokeTransformType), StrokeStyle1> StrokeStyles
         {
             get { return _strokeStyles; }
             set
@@ -107,9 +109,6 @@ namespace Cad_Point_Manager.Controls.D2DControl
                 OnPropertyChanged(nameof(TextFormats));
             }
         }
-
-
-        public enum LineType { Solid, Dash };
         #endregion
 
         #region Events
@@ -128,7 +127,8 @@ namespace Cad_Point_Manager.Controls.D2DControl
             
             return brush;
         }
-        public StrokeStyle1 GetStrokeStyle(LineType lineType, StrokeTransformType strokeTransformType)
+
+        public StrokeStyle1 GetStrokeStyle(Enums.LineType lineType, StrokeTransformType strokeTransformType)
         {
             bool strokeStyleExists = StrokeStyles.TryGetValue((lineType, strokeTransformType), value: out StrokeStyle1 strokeStyle);
 
@@ -136,7 +136,7 @@ namespace Cad_Point_Manager.Controls.D2DControl
             {
                 DashStyle dashStyle; float dashOffset;
 
-                if (lineType is LineType.Dash) { dashStyle = DashStyle.Dash; dashOffset = 1; }
+                if (lineType is Enums.LineType.Dash) { dashStyle = DashStyle.Dash; dashOffset = 1; }
                 else { dashStyle = DashStyle.Solid; dashOffset = 0; }
 
                 StrokeStyleProperties1 ssp = new()

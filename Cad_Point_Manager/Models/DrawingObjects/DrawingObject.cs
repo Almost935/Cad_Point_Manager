@@ -7,7 +7,7 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows;
 
-namespace Cad_Point_Manager.DrawingObjects
+namespace Cad_Point_Manager.Models.DrawingObjects
 {
     public abstract class DrawingObject : INotifyPropertyChanged, IDisposable
     {

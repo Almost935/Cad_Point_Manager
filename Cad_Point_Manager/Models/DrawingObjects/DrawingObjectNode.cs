@@ -16,7 +16,7 @@ using netDxf.Tables;
 using Point = System.Windows.Point;
 using Cad_Point_Manager.Helpers;
 
-namespace Cad_Point_Manager.DrawingObjects
+namespace Cad_Point_Manager.Models.DrawingObjects
 {
     public class DrawingObjectNode
     {

@@ -13,7 +13,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 
-namespace Cad_Point_Manager.DrawingObjects
+namespace Cad_Point_Manager.Models.DrawingObjects
 {
     public class DrawingPolyline2D : DrawingPolyline
     {
@@ -87,5 +87,10 @@ namespace Cad_Point_Manager.DrawingObjects
             });
         }
         #endregion
+    }
+
+    public class DrawingPolyline2DData : DrawingPolylineData
+    {
+
     }
 }

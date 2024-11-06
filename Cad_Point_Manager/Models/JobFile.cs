@@ -1,13 +1,16 @@
-﻿using Cad_Point_Manager.DrawingObjects;
-using Direct2DDXFViewer.DrawingObjects;
+﻿using Cad_Point_Manager.Helpers;
+using Cad_Point_Manager.Models.DrawingObjects;
 using netDxf;
+using netDxf.Collections;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Xml.Linq;
 
 namespace Cad_Point_Manager.Models
 {
@@ -18,7 +21,7 @@ namespace Cad_Point_Manager.Models
         private string _jobFilePath;
         private string _dxfFilePath;
         private DxfDocument _dxfDoc;
-        private ObjectLayerManager _layerManager;
+        private CadManager _layerManager;
         private Rect _extents = new();
         #endregion
 
@@ -59,7 +62,7 @@ namespace Cad_Point_Manager.Models
                 OnPropertyChanged();
             }
         }
-        public ObjectLayerManager LayerManager 
+        public CadManager LayerManager 
         {
             get { return _layerManager; }
             set
@@ -78,7 +81,7 @@ namespace Cad_Point_Manager.Models
             }
         }
 
-        public bool DxfLoaded { get { return LayerManager is not null; } }
+        public bool DxfLoaded { get; set; } = false;
         #endregion
 
         #region Constructors
@@ -88,7 +91,29 @@ namespace Cad_Point_Manager.Models
         #region Methods
         public void LoadDxf(DxfDocument dxfDoc)
         {
-            
+            Stopwatch stopwatch = Stopwatch.StartNew();
+
+            DxfLoaded = false;
+
+            DxfDoc = dxfDoc;
+            Layers.Clear();
+            Extents = new();
+
+            Extents = DxfHelpers.GetExtentsFromHeader(DxfDocument);
+
+            foreach (var e in _dxfDocument.Entities.All)
+            {
+                var layer = GetLayer(e.Layer);
+                var obj = DxfHelpers.GetDrawingObject(e, layer);
+                if (obj is not null)
+                {
+                    layer.DrawingObjects.Add(obj);
+                }
+            }
+            DxfLoaded = true;
+
+            stopwatch.Stop();
+            Debug.WriteLine($"LoadDxfDocument: {stopwatch.ElapsedMilliseconds} ms");
         }
 
         public void SaveToFile()

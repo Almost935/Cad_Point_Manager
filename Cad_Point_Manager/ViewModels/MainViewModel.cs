@@ -1,6 +1,5 @@
 ﻿using Cad_Point_Manager.Commands;
-using Cad_Point_Manager.DrawingObjects;
-using Direct2DDXFViewer.DrawingObjects;
+using Cad_Point_Manager.Models.DrawingObjects;
 using netDxf;
 using System;
 using System.Collections.Generic;
@@ -16,7 +15,7 @@ namespace Cad_Point_Manager.ViewModels
     {
         #region Fields
         private bool _jobFileLoaded = false;
-        private ObjectLayerManager _layerManager;
+        private CadManager _layerManager;
         private string _dxfFilePath;
         private string _dxfFileName;
         private DxfDocument _dxfDocument;
@@ -32,7 +31,7 @@ namespace Cad_Point_Manager.ViewModels
                 OnPropertyChanged(nameof(JobFileLoaded));
             }
         }
-        public ObjectLayerManager LayerManager
+        public CadManager LayerManager
         {
             get { return _layerManager; }
             set

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Cad_Point_Manager.Models.DrawingObjects
 {
-    public class Point
+    public class CogoPoint
     {
 
     }

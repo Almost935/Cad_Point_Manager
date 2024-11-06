@@ -144,12 +144,9 @@
                     ClipToBounds="True">
 
                 <controls:Direct2DDxfControl x:Name="dxfControl"
-                                          RenderOptions.BitmapScalingMode="HighQuality"
-                                          Cursor="Cross"
-                                          LayerManager="{Binding LayerManager}" />
-
-                <!--<d2dDxf:Direct2DDxfViewer x:Name="dxfViewer"
-                                          LayerManagerValue="{Binding LayerManager}"/>-->
+                                             RenderOptions.BitmapScalingMode="HighQuality"
+                                             Cursor="Cross"
+                                             LayerManager="{Binding LayerManager}" />
             </Border>
         </Grid>
 

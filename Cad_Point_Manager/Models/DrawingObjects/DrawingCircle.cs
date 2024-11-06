@@ -1,4 +1,5 @@
-﻿using netDxf.Entities;
+﻿using Cad_Point_Manager.Models.SerializableObjects;
+using netDxf.Entities;
 using SharpDX.Direct2D1;
 using SharpDX.Mathematics.Interop;
 using System;
@@ -12,7 +13,7 @@ using System.Windows;
 
 using Ellipse = SharpDX.Direct2D1.Ellipse;
 
-namespace Cad_Point_Manager.DrawingObjects
+namespace Cad_Point_Manager.Models.DrawingObjects
 {
     public class DrawingCircle : DrawingSegment
     {
@@ -86,9 +87,9 @@ namespace Cad_Point_Manager.DrawingObjects
         #endregion
     }
 
-    public class DrawingCircleData
+    public class DrawingCircleData : DrawingSegmentData
     {
         public double Radius { get; set; }
-        public RawVector2 Center { get; set; }
+        public SerializablePoint Center { get; set; }
     }
 }

@@ -1,5 +1,4 @@
-﻿using Cad_Point_Manager.DrawingObjects;
-using Cad_Point_Manager.Helpers;
+﻿using Cad_Point_Manager.Helpers;
 using netDxf.Entities;
 using SharpDX.Direct2D1;
 using SharpDX.Mathematics.Interop;
@@ -13,7 +12,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 
-namespace Direct2DDXFViewer.DrawingObjects
+namespace Cad_Point_Manager.Models.DrawingObjects
 {
     public class DrawingPolyline3D : DrawingPolyline
     {
@@ -86,5 +85,10 @@ namespace Direct2DDXFViewer.DrawingObjects
             });
         }
         #endregion
+    }
+
+    public class DrawingPolyline3DData
+    {
+
     }
 }

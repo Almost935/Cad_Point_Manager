@@ -10,8 +10,9 @@ using PathGeometry = SharpDX.Direct2D1.PathGeometry;
 using ArcSegment = SharpDX.Direct2D1.ArcSegment;
 using SweepDirection = SharpDX.Direct2D1.SweepDirection;
 using Matrix = System.Windows.Media.Matrix;
+using Cad_Point_Manager.Models.SerializableObjects;
 
-namespace Cad_Point_Manager.DrawingObjects
+namespace Cad_Point_Manager.Models.DrawingObjects
 {
     public class DrawingEllipse : DrawingSegment
     {
@@ -36,6 +37,9 @@ namespace Cad_Point_Manager.DrawingObjects
         public double Sweep { get; set; }
         public double MajorAxis { get; set; }
         public double MinorAxis { get; set; }
+        public double Rotation { get; set; }
+        public bool IsLargeArc { get; set; }
+        public RawVector2 Center { get; set; }
         #endregion
 
         #region Constructor
@@ -76,7 +80,19 @@ namespace Cad_Point_Manager.DrawingObjects
             IsFullEllipse = DxfEllipse.IsFullEllipse;
             MajorAxis = DxfEllipse.MajorAxis;
             MinorAxis = DxfEllipse.MinorAxis;
+            Rotation = DxfEllipse.Rotation;
+            Center = new((float)DxfEllipse.Center.X, (float)DxfEllipse.Center.Y);
 
+            // Get sweep and find out if large arc 
+            if (DxfEllipse.EndAngle < DxfEllipse.StartAngle)
+            {
+                Sweep = (360 + DxfEllipse.EndAngle) - DxfEllipse.StartAngle;
+            }
+            else
+            {
+                Sweep = Math.Abs(DxfEllipse.EndAngle - DxfEllipse.StartAngle);
+            }
+            IsLargeArc = Sweep >= 180;
         }
         public override void UpdateGeometry()
         {
@@ -94,20 +110,8 @@ namespace Cad_Point_Manager.DrawingObjects
         }
         public Geometry GetArcGeometry()
         {
-            var radiusX = (float)(DxfEllipse.MajorAxis / 2);
-            var radiusY = (float)(DxfEllipse.MinorAxis / 2);
-            float rotation = (float)DxfEllipse.Rotation; // Rotation in degrees
-
-            // Get sweep and find out if large arc 
-            if (DxfEllipse.EndAngle < DxfEllipse.StartAngle)
-            {
-                Sweep = (360 + DxfEllipse.EndAngle) - DxfEllipse.StartAngle;
-            }
-            else
-            {
-                Sweep = Math.Abs(DxfEllipse.EndAngle - DxfEllipse.StartAngle);
-            }
-            bool isLargeArc = Sweep >= 180;
+            var radiusX = (float)(MajorAxis / 2);
+            var radiusY = (float)(MinorAxis / 2);
 
             PathGeometry pathGeometry = new(Factory);
             using (var sink = pathGeometry.Open())
@@ -119,8 +123,8 @@ namespace Cad_Point_Manager.DrawingObjects
                     Point = EndPoint,
                     Size = new(radiusX, radiusY),
                     SweepDirection = SweepDirection.Clockwise,
-                    RotationAngle = rotation,
-                    ArcSize = isLargeArc ? ArcSize.Large : ArcSize.Small
+                    RotationAngle = (float)Rotation,
+                    ArcSize = IsLargeArc ? ArcSize.Large : ArcSize.Small
                 };
 
                 sink.AddArc(arcSegment);
@@ -128,46 +132,39 @@ namespace Cad_Point_Manager.DrawingObjects
                 sink.Close();
 
                 // Apply rotation if needed
-                if (rotation != 0)
-                {
-                    Matrix matrix = new();
-                    //matrix.RotateAt((float)rotation, centerPoint.X, centerPoint.Y);
+                //if (Rotation != 0)
+                //{
+                //    Matrix matrix = new();
+                //    //matrix.RotateAt((float)rotation, centerPoint.X, centerPoint.Y);
 
-                    // Apply rotation transformation if required
-                    RawMatrix3x2 transform = new((float)matrix.M11, (float)matrix.M12, (float)matrix.M21, (float)matrix.M22, (float)matrix.OffsetX, (float)matrix.OffsetY);
+                //    // Apply rotation transformation if required
+                //    RawMatrix3x2 transform = new((float)matrix.M11, (float)matrix.M12, (float)matrix.M21, (float)matrix.M22, (float)matrix.OffsetX, (float)matrix.OffsetY);
 
-                    return new TransformedGeometry(Factory, pathGeometry, transform);
-                }
-                else
-                {
-                    return pathGeometry;
-                }
+                //    return new TransformedGeometry(Factory, pathGeometry, transform);
+                //}
+                //else
+                //{
+                //    return pathGeometry;
+                //}
+                return pathGeometry;
             }
         }
         public Geometry GetEllipseGeometry()
         {
-            // Extract properties from the netDxf Ellipse
-            var center = DxfEllipse.Center;
-            double majorAxis = DxfEllipse.MajorAxis;
-            double minorAxis = DxfEllipse.MinorAxis;
-            double rotation = DxfEllipse.Rotation; // Rotation in degrees
-
-            // Convert center coordinates and axes to SharpDX format
-            var centerPoint = new RawVector2((float)center.X, (float)center.Y);
-            var width = (float)(majorAxis);
-            var height = (float)(minorAxis);
+            var width = (float)(MajorAxis);
+            var height = (float)(MinorAxis);
 
             Matrix matrix = new();
-            matrix.RotateAt((float)rotation, centerPoint.X, centerPoint.Y);
+            matrix.RotateAt((float)Rotation, Center.X, Center.Y);
 
             // Create the SharpDX Ellipse
-            Ellipse ellipse = new(centerPoint, width / 2, height / 2);
+            Ellipse ellipse = new(Center, width / 2, height / 2);
 
             // Create EllipseGeometry
             var ellipseGeometry = new EllipseGeometry(Factory, ellipse);
 
             // Apply rotation if needed
-            if (rotation != 0)
+            if (Rotation != 0)
             {
                 // Apply rotation transformation if required
                 RawMatrix3x2 transform = new((float)matrix.M11, (float)matrix.M12, (float)matrix.M21, (float)matrix.M22, (float)matrix.OffsetX, (float)matrix.OffsetY);
@@ -186,8 +183,16 @@ namespace Cad_Point_Manager.DrawingObjects
         #endregion
     }
 
-    public class DrawingEllipseData
+    public class DrawingEllipseData : DrawingSegmentData
     {
-
+        public bool IsFullEllipse { get; set; }
+        public double StartAngle { get; set; }
+        public double EndAngle { get; set; }
+        public double Sweep { get; set; }
+        public double MajorAxis { get; set; }
+        public double MinorAxis { get; set; }
+        public double Rotation { get; set; }
+        public bool IsLargeArc { get; set; }
+        public SerializablePoint Center { get; set; }
     }
 }

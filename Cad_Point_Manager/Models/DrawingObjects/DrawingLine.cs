@@ -16,7 +16,7 @@ using System.Windows;
 
 using Point = System.Windows.Point;
 
-namespace Cad_Point_Manager.DrawingObjects
+namespace Cad_Point_Manager.Models.DrawingObjects
 {
     public class DrawingLine : DrawingSegment
     {
@@ -70,7 +70,7 @@ namespace Cad_Point_Manager.DrawingObjects
             StartPoint = new((float)DxfLine.StartPoint.X, (float)DxfLine.StartPoint.Y);
             EndPoint = new((float)DxfLine.EndPoint.X, (float)DxfLine.EndPoint.Y);
         }
-        public async override void UpdateGeometry()
+        public override void UpdateGeometry()
         {
             PathGeometry pathGeometry = new(Factory);
             using (var sink = pathGeometry.Open())
@@ -92,5 +92,10 @@ namespace Cad_Point_Manager.DrawingObjects
             return Geometry.StrokeContainsPoint(p, thickness); ;
         }
         #endregion
+    }
+
+    public class DrawingLineData : DrawingSegmentData
+    {
+
     }
 }

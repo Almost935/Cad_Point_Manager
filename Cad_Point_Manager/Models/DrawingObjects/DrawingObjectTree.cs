@@ -12,14 +12,14 @@ using System.Windows;
 using System.Windows.Media;
 using Point = System.Windows.Point;
 
-namespace Cad_Point_Manager.DrawingObjects
+namespace Cad_Point_Manager.Models.DrawingObjects
 {
     public class DrawingObjectTree
     {
         #region Fields
         private const float _viewInflationFactor = 1.1f;
 
-        private ObjectLayerManager _layerManager;
+        private CadManager _layerManager;
         #endregion
 
         #region Properties
@@ -36,7 +36,7 @@ namespace Cad_Point_Manager.DrawingObjects
         #endregion
 
         #region Constructors
-        public DrawingObjectTree(ObjectLayerManager layerManager, Rect extents, int levels)
+        public DrawingObjectTree(CadManager layerManager, Rect extents, int levels)
         {
             _layerManager = layerManager;
             Extents = extents;

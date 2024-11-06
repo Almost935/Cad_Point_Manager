@@ -14,7 +14,7 @@ using System.Windows;
 using Cad_Point_Manager.Controls.D2DControl;
 using Cad_Point_Manager.Helpers;
 
-namespace Cad_Point_Manager.DrawingObjects
+namespace Cad_Point_Manager.Models.DrawingObjects
 {
     public class DrawingBlock : DrawingObject
     {
@@ -180,8 +180,8 @@ namespace Cad_Point_Manager.DrawingObjects
         #endregion
     }
 
-    public class  DrawingBlockData
+    public class  DrawingBlockData : DrawingObjectData
     {
-        List<DrawingObjectData> drawingObjectDatas { get; set; }
+        List<DrawingObjectData> DrawingObjectDatas { get; set; }
     }
 }

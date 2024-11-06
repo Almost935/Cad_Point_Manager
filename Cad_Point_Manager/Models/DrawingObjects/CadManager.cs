@@ -15,16 +15,20 @@ using System.Windows;
 using Cad_Point_Manager.Helpers;
 using Cad_Point_Manager.Controls.D2DControl;
 using System.IO;
+using SharpDX.DirectWrite;
 
-namespace Cad_Point_Manager.DrawingObjects
+namespace Cad_Point_Manager.Models.DrawingObjects
 {
-    public class ObjectLayerManager : IDisposable, INotifyPropertyChanged
+    public class CadManager : IDisposable, INotifyPropertyChanged
     {
         #region Fields
         private bool _disposed = false;
 
         private DxfDocument _dxfDocument;
         private Rect _extents;
+        private Dictionary<(byte r, byte g, byte b, byte a), Brush> _brushes = [];
+        private Dictionary<(Enums.LineType lineType, StrokeTransformType strokeTransformType), StrokeStyle1> _strokeStyles = [];
+        private Dictionary<(int fontSize, string fontName), TextFormat> _textFormats = [];
         #endregion
 
         #region Properties
@@ -44,6 +48,33 @@ namespace Cad_Point_Manager.DrawingObjects
             {
                 _extents = value;
                 OnPropertyChanged(nameof(Extents));
+            }
+        }
+        public Dictionary<(byte r, byte g, byte b, byte a), Brush> Brushes
+        {
+            get { return _brushes; }
+            set
+            {
+                _brushes = value;
+                OnPropertyChanged(nameof(Brushes));
+            }
+        }
+        public Dictionary<(Enums.LineType lineType, StrokeTransformType strokeTransformType), StrokeStyle1> StrokeStyles
+        {
+            get { return _strokeStyles; }
+            set
+            {
+                _strokeStyles = value;
+                OnPropertyChanged(nameof(StrokeStyles));
+            }
+        }
+        public Dictionary<(int fontSize, string fontName), TextFormat> TextFormats
+        {
+            get { return _textFormats; }
+            set
+            {
+                _textFormats = value;
+                OnPropertyChanged(nameof(TextFormats));
             }
         }
 
@@ -146,22 +177,11 @@ namespace Cad_Point_Manager.DrawingObjects
             }
         }
 
-        public List<DrawingObject> GetDrawingObjectsinRect(Rect rect)
-        {
-            List<DrawingObject> drawingObjects = [];
-            foreach (var layer in Layers.Values)
-            {
-                foreach (var obj in layer.DrawingObjects)
-                {
-                    if (obj.DrawingObjectIsInRect(rect))
-                    {
-                        drawingObjects.Add(obj);
-                    }
-                }
-            }
-            return drawingObjects;
-        }
 
+        public void ClearDxfDocument()
+        {
+            
+        }
         protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
@@ -194,7 +214,7 @@ namespace Cad_Point_Manager.DrawingObjects
             _disposed = true;
         }
 
-        ~ObjectLayerManager()
+        ~CadManager()
         {
             Dispose(false);
         }

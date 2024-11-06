@@ -7,11 +7,13 @@ using netDxf.Entities;
 using netDxf.Header;
 using SharpDX;
 using SharpDX.Direct2D1;
-using Cad_Point_Manager.DrawingObjects;
+using Cad_Point_Manager.Models.DrawingObjects;
 using SharpDX.Mathematics.Interop;
 using System.Windows;
 using netDxf.Tables;
 using System.Net;
+using Cad_Point_Manager.Controls.D2DControl;
+
 using PathGeometry = SharpDX.Direct2D1.PathGeometry;
 using ArcSegment = SharpDX.Direct2D1.ArcSegment;
 using SweepDirection = SharpDX.Direct2D1.SweepDirection;
@@ -19,8 +21,6 @@ using Geometry = SharpDX.Direct2D1.Geometry;
 using Ellipse = SharpDX.Direct2D1.Ellipse;
 using EllipseGeometry = SharpDX.Direct2D1.EllipseGeometry;
 using Vector3 = netDxf.Vector3;
-using Direct2DDXFViewer.DrawingObjects;
-using Cad_Point_Manager.Controls.D2DControl;
 
 namespace Cad_Point_Manager.Helpers
 {
@@ -42,9 +42,9 @@ namespace Cad_Point_Manager.Helpers
             return Rect.Empty;
         }
 
-        public static ObjectLayerManager GetLayers(DxfDocument dxfDocument)
+        public static CadManager GetLayers(DxfDocument dxfDocument)
         {
-            ObjectLayerManager layerManager = new();
+            CadManager layerManager = new();
 
             foreach (var dxfLayer in dxfDocument.Layers)
             {
@@ -54,7 +54,7 @@ namespace Cad_Point_Manager.Helpers
             return layerManager;
         }
 
-        public static int LoadEntityObject(EntityObject e, ObjectLayerManager layerManager)
+        public static int LoadEntityObject(EntityObject e, CadManager layerManager)
         {
             ObjectLayer layer = layerManager.GetLayer(e.Layer);
             DrawingObject drawingObject = e switch
@@ -79,7 +79,7 @@ namespace Cad_Point_Manager.Helpers
             return 0;
         }
 
-        public static int LoadDrawingObjects(DxfDocument dxfDocument, ObjectLayerManager layerManager, Factory1 factory,
+        public static int LoadDrawingObjects(DxfDocument dxfDocument, CadManager layerManager, Factory1 factory,
             DeviceContext1 deviceContext, ResourceCache resCache)
         {
             Stopwatch stopwatch = Stopwatch.StartNew();

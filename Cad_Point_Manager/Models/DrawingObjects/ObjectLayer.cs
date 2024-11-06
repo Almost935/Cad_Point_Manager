@@ -11,7 +11,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 
-namespace Cad_Point_Manager.DrawingObjects
+namespace Cad_Point_Manager.Models.DrawingObjects
 {
     public class ObjectLayer : INotifyPropertyChanged, IDisposable
     {
@@ -21,7 +21,7 @@ namespace Cad_Point_Manager.DrawingObjects
         private ResourceCache _resCache;
         private string _name;
         private List<DrawingObject> _drawingObjects = [];
-        private bool isVisible = true;
+        private bool _isOn = true;
         private bool _disposed = false;
         #endregion
 
@@ -45,22 +45,20 @@ namespace Cad_Point_Manager.DrawingObjects
             }
         }
         public GeometryGroup GeometryGroup { get; set; }
-        public int DrawingObjectsCount
+        public bool IsOn
         {
-            get { return DrawingObjects.Count; }
-        }
-        public bool IsVisible
-        {
-            get { return isVisible; }
+            get { return _isOn; }
             set
             {
-                isVisible = value;
-                OnPropertyChanged(nameof(IsVisible));
+                _isOn = value;
+                OnPropertyChanged(nameof(IsOn));
             }
         }
         public Brush LayerBrush { get; set; }
+        public (byte R, byte G, byte B, byte A) LayerColor { get; set; }
         public StrokeStyle1 HairlineStrokeStyle { get; set; }
         public netDxf.Tables.Layer DxfLayer { get; set; }
+        public Enums.LineType LineType { get; set; }
         #endregion
 
         #region Constructors
@@ -68,6 +66,8 @@ namespace Cad_Point_Manager.DrawingObjects
         {
             Name = layer.Name;
             DxfLayer = layer;
+            LayerColor = (layer.Color.R, layer.Color.G, layer.Color.B, 255);
+            LineType = Enums.LineType.Solid;
         }
         #endregion
 
@@ -95,13 +95,7 @@ namespace Cad_Point_Manager.DrawingObjects
 
             foreach (var obj in DrawingObjects)
             {
-                //stopwatch.Restart();
-                //Debug.WriteLine($"InitializeResources of obj: {obj.GetType()}");
-
                 obj?.InitializeResources(resCache);
-
-                //stopwatch.Stop();
-                //Debug.WriteLine($"InitializeResources of obj: {obj.GetType()}: {stopwatch.ElapsedMilliseconds} ms");
             }
         }
         public void InitializeGeometries()
@@ -206,13 +200,13 @@ namespace Cad_Point_Manager.DrawingObjects
 
         public void GetLayerStrokeStyle()
         {
-            HairlineStrokeStyle = _resCache.GetStrokeStyle(ResourceCache.LineType.Solid, StrokeTransformType.Hairline);
+            HairlineStrokeStyle = _resCache.GetStrokeStyle(LineType, StrokeTransformType.Hairline);
         }
 
         public void GetLayerBrush()
         {
             LayerBrush?.Dispose();
-            LayerBrush = _resCache.GetBrush(DxfLayer.Color.R, DxfLayer.Color.G, DxfLayer.Color.B, 255);
+            LayerBrush = _resCache.GetBrush(LayerColor.R, LayerColor.G, LayerColor.B, LayerColor.A);
         }
 
         public void Dispose()
@@ -240,8 +234,8 @@ namespace Cad_Point_Manager.DrawingObjects
                     _drawingObjects.Clear();
                 }
             }
+            LayerBrush?.Dispose();
 
-            // Free unmanaged resources if any
 
             _disposed = true;
         }
@@ -251,5 +245,14 @@ namespace Cad_Point_Manager.DrawingObjects
             Dispose(false);
         }
         #endregion
+    }
+
+    public class ObjectLayerData
+    {
+        public string Name { get; set; }
+        public List<DrawingObjectData> DrawingObjectDatas { get; set; }
+        public bool IsOn { get; set; }
+        public string LayerBrush { get; set; }
+        public Enums.LineType LineType { get; set; }
     }
 }
