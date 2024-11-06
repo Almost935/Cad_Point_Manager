@@ -30,6 +30,9 @@ namespace Cad_Point_Manager.DrawingObjects
                 OnPropertyChanged(nameof(DxfCircle));
             }
         }
+
+        public double Radius { get; set; }
+        public RawVector2 Center { get; set; }
         #endregion
 
         #region Constructor
@@ -62,11 +65,12 @@ namespace Cad_Point_Manager.DrawingObjects
 
         public override void UpdateDxfProperties()
         {
-            
+            Radius = DxfCircle.Radius;
+            Center = new RawVector2((float)DxfCircle.Center.X, (float)DxfCircle.Center.Y);
         }
         public override void UpdateGeometry()
         {
-            Ellipse ellipse = new(new RawVector2((float)DxfCircle.Center.X, (float)DxfCircle.Center.Y), (float)DxfCircle.Radius, (float)DxfCircle.Radius);
+            Ellipse ellipse = new(Center, (float)Center.X, (float)Center.Y);
             EllipseGeometry ellipseGeometry = new(Factory, ellipse);
 
             Geometry = ellipseGeometry;
@@ -80,5 +84,11 @@ namespace Cad_Point_Manager.DrawingObjects
             return Geometry.StrokeContainsPoint(p, thickness);
         }
         #endregion
+    }
+
+    public class DrawingCircleData
+    {
+        public double Radius { get; set; }
+        public RawVector2 Center { get; set; }
     }
 }

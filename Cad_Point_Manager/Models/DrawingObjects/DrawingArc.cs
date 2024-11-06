@@ -34,7 +34,7 @@ namespace Cad_Point_Manager.DrawingObjects
 
         public double Sweep { get; set; }
         public bool IsLargeArc { get; set; }
-        public bool Radius { get; }
+        public double Radius { get; set; }
         #endregion
 
         #region Constructor
@@ -91,6 +91,7 @@ namespace Cad_Point_Manager.DrawingObjects
                 Sweep = Math.Abs(DxfArc.EndAngle - DxfArc.StartAngle);
             }
             IsLargeArc = Sweep >= 180;
+            Radius = DxfArc.Radius;
         }
         public override void UpdateGeometry()
         {
@@ -102,7 +103,7 @@ namespace Cad_Point_Manager.DrawingObjects
                 ArcSegment arcSegment = new()
                 {
                     Point = EndPoint,
-                    Size = new((float)DxfArc.Radius, (float)DxfArc.Radius),
+                    Size = new((float)Radius, (float)Radius),
                     SweepDirection = SweepDirection.Clockwise,
                     RotationAngle = (float)Sweep,
                     ArcSize = IsLargeArc ? ArcSize.Large : ArcSize.Small
@@ -123,5 +124,12 @@ namespace Cad_Point_Manager.DrawingObjects
             return Geometry.StrokeContainsPoint(p, thickness);
         }
         #endregion
+    }
+
+    public class  DrawingArcData : DrawingObjectData
+    {
+        public double Sweep { get; set; }
+        public bool IsLargeArc { get; set; }
+        public double Radius { get; set; }
     }
 }

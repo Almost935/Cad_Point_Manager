@@ -114,6 +114,7 @@ namespace Cad_Point_Manager.Helpers
                 Polyline2D polyline2D => new DrawingPolyline2D(polyline2D, layer),
                 Polyline3D polyline3D => new DrawingPolyline3D(polyline3D, layer),
                 Circle circle => new DrawingCircle(circle, layer),
+                netDxf.Entities.Ellipse ellipse => new DrawingEllipse(ellipse, layer),
                 Insert insert => new DrawingBlock(insert, layer),
                 MText mtext => new DrawingMtext(mtext, layer),
                 _ => null

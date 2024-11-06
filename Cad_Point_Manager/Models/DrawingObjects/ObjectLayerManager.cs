@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using Cad_Point_Manager.Helpers;
 using Cad_Point_Manager.Controls.D2DControl;
+using System.IO;
 
 namespace Cad_Point_Manager.DrawingObjects
 {
@@ -57,7 +58,7 @@ namespace Cad_Point_Manager.DrawingObjects
 
         #region Methods
         public void LoadDxfDocument(DxfDocument dxfDocument)
-        {
+        {       
             Stopwatch stopwatch = Stopwatch.StartNew();
 
             DxfLoaded = false;

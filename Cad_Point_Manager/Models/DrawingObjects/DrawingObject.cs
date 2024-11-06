@@ -15,7 +15,6 @@ namespace Cad_Point_Manager.DrawingObjects
         private ObjectLayer _layer;
         private bool _isSnapped = false;
         private bool _isHighlighted = false;
-        private float _outerEdgeOpacity = 0.25f;
         private bool _disposed = false;
 
         protected float _hitTestStrokeThickness = 10;
@@ -169,5 +168,12 @@ namespace Cad_Point_Manager.DrawingObjects
             Dispose(false);
         }
         #endregion
+    }
+
+    public abstract class DrawingObjectData
+    {
+        public string LayerName { get; set; }
+        public Rect Bounds { get; set; }
+        public bool IsPartOfBlock { get; set; }
     }
 }

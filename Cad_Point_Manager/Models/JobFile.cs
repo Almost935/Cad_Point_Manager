@@ -82,16 +82,18 @@ namespace Cad_Point_Manager.Models
         #endregion
 
         #region Constructors
-        public JobFile()
-        {
-
-        }
+        public JobFile() { }
         #endregion
 
         #region Methods
         public void LoadDxf(DxfDocument dxfDoc)
         {
             
+        }
+
+        public void SaveToFile()
+        {
+
         }
         #endregion
     }

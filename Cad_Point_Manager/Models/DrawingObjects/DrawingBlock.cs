@@ -33,9 +33,6 @@ namespace Cad_Point_Manager.DrawingObjects
             }
         }
         public ObservableCollection<DrawingObject> DrawingObjects { get; set; } = new();
-
-
-        public float CurrentScale { get; set; } = 1;
         #endregion
 
         #region Constructor
@@ -181,5 +178,10 @@ namespace Cad_Point_Manager.DrawingObjects
             return false;
         }
         #endregion
+    }
+
+    public class  DrawingBlockData
+    {
+        List<DrawingObjectData> drawingObjectDatas { get; set; }
     }
 }
