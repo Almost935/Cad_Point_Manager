@@ -1,4 +1,5 @@
 ﻿using Cad_Point_Manager.Commands;
+using Cad_Point_Manager.Models;
 using Cad_Point_Manager.Models.DrawingObjects;
 using netDxf;
 using System;
@@ -14,14 +15,21 @@ namespace Cad_Point_Manager.ViewModels
     public class MainViewModel : BaseViewModel
     {
         #region Fields
+        private JobFile _jobFile;
         private bool _jobFileLoaded = false;
-        private CadManager _layerManager;
-        private string _dxfFilePath;
-        private string _dxfFileName;
         private DxfDocument _dxfDocument;
         #endregion
 
         #region Properties
+        public JobFile JobFile
+        {
+            get { return _jobFile; }
+            set
+            {
+                _jobFile = value;
+                OnPropertyChanged(nameof(JobFile));
+            }
+        }
         public bool JobFileLoaded
         {
             get { return _jobFileLoaded; }
@@ -29,33 +37,6 @@ namespace Cad_Point_Manager.ViewModels
             {
                 _jobFileLoaded = value;
                 OnPropertyChanged(nameof(JobFileLoaded));
-            }
-        }
-        public CadManager LayerManager
-        {
-            get { return _layerManager; }
-            set
-            {
-                _layerManager = value;
-                OnPropertyChanged(nameof(LayerManager));
-            }
-        }
-        public string DxfFilePath
-        {
-            get { return _dxfFilePath; }
-            set
-            {
-                _dxfFilePath = value;
-                OnPropertyChanged(nameof(DxfFilePath));
-            }
-        }
-        public string DxfFileName
-        {
-            get { return _dxfFileName; }
-            set
-            {
-                _dxfFileName = value;
-                OnPropertyChanged(nameof(DxfFileName));
             }
         }
         public DxfDocument DxfDocument
@@ -76,6 +57,8 @@ namespace Cad_Point_Manager.ViewModels
         #region Constructors
         public MainViewModel()
         {
+            JobFile = new();
+
             AttachDxfFileCommand = new RelayCommand<RoutedEventArgs>(AttachDxfFile);
         }
         #endregion
@@ -83,9 +66,6 @@ namespace Cad_Point_Manager.ViewModels
         #region Methods
         public void AttachDxfFile(RoutedEventArgs e)
         {
-            LayerManager?.Dispose();
-            LayerManager = new();
-
             Microsoft.Win32.OpenFileDialog dlg = new Microsoft.Win32.OpenFileDialog();
             dlg.DefaultExt = ".dxf";
             dlg.Filter = "DXF Files (*.dxf)|*.dxf";
@@ -95,15 +75,7 @@ namespace Cad_Point_Manager.ViewModels
 
             if (result == true)
             {
-                DxfFilePath = dlg.FileName;
-                DxfFileName = dlg.SafeFileName;
-
-                DxfDocument = DxfDocument.Load(DxfFilePath);
-                if (DxfDocument is not null)
-                {
-                    DxfFileName = DxfDocument.Name;
-                    LayerManager.LoadDxfDocument(DxfDocument);
-                }
+                JobFile.LoadDxf(dlg.FileName);
             }
         }
         #endregion

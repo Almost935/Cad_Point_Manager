@@ -141,16 +141,16 @@ namespace Cad_Point_Manager.Controls
         #endregion
 
         #region Dependency Properties
-        public ObjectLayerManager LayerManager
+        public CadManager CadManager
         {
-            get { return (ObjectLayerManager)GetValue(LayerManagerProperty); }
-            set { SetValue(LayerManagerProperty, value); }
+            get { return (CadManager)GetValue(CadManagerProperty); }
+            set { SetValue(CadManagerProperty, value); }
         }
 
-        public static readonly DependencyProperty LayerManagerProperty =
+        public static readonly DependencyProperty CadManagerProperty =
         DependencyProperty.Register(
-            nameof(LayerManager),           
-            typeof(ObjectLayerManager),           
+            nameof(CadManager),           
+            typeof(CadManager),           
             typeof(Direct2DDxfControl),   
             new PropertyMetadata(null, OnLayerManagerChanged));
         #endregion
@@ -181,22 +181,22 @@ namespace Cad_Point_Manager.Controls
             //    control.LayerManagerValue = (ObjectLayerManager)e.NewValue;
             //}
         }
-        public void UpdateDxf(ObjectLayerManager layerManager)
+        public void UpdateDxf(CadManager cadManager)
         {
-            if (layerManager is not null)
+            if (cadManager is not null)
             {
-                LayerManager = layerManager;
+                CadManager = cadManager;
             }
         }
 
         private void LoadDxfResources(ResourceCache resCache)
         {
-            if (LayerManager is not null && LayerManager.DxfLoaded)
+            if (CadManager is not null && CadManager.DxfLoaded)
             {
                 Stopwatch stopwatch = Stopwatch.StartNew();
 
                 _dxfLoaded = true;
-                Extents = LayerManager.Extents;
+                Extents = CadManager.Extents;
                 ExtentsMatrix = GetInitialMatrix();
                 _overallMatrix = ExtentsMatrix;
 
@@ -204,9 +204,9 @@ namespace Cad_Point_Manager.Controls
 
                 _hittestStrokeThickness = (float)(8 / ExtentsMatrix.M11);
 
-                LayerManager.InitializeDeviceResources(resCache);
+                CadManager.InitializeDeviceResources(resCache);
 
-                _drawingObjectTree = new(LayerManager, Extents, 4);
+                _drawingObjectTree = new(CadManager, Extents, 4);
 
                 _offscreenBitmapIsDirty = true;
 
@@ -261,7 +261,7 @@ namespace Cad_Point_Manager.Controls
         public override void Render()
         {
             //Debug.WriteLine($"LayerManager is null: {LayerManager is null}");
-            if (LayerManager is not null)
+            if (CadManager is not null)
             {
                 Stopwatch stopwatch = Stopwatch.StartNew();
 
@@ -289,7 +289,7 @@ namespace Cad_Point_Manager.Controls
                 if (d2DDeviceContext is null) { return; }
                 if (d2DDeviceContext.IsDisposed) { return; }
 
-                if (LayerManager is not null && d2DDeviceContext is not null && !d2DDeviceContext.IsDisposed && _deviceContextIsDirty)
+                if (CadManager is not null && d2DDeviceContext is not null && !d2DDeviceContext.IsDisposed && _deviceContextIsDirty)
                 {
                     if (_currentOffscreenBitmap is null) { UpdateOffscreenRenderTarget(); }
 
@@ -353,7 +353,7 @@ namespace Cad_Point_Manager.Controls
 
                 float thickness = (float)(_baseLineThickness / _overallMatrix.M11);
 
-                foreach (var layer in LayerManager.Layers.Values)
+                foreach (var layer in CadManager.Layers.Values)
                 {
                     if (layer.GeometryGroup is not null)
                     {
@@ -408,11 +408,11 @@ namespace Cad_Point_Manager.Controls
         }
         private void RenderSnappedObjects(DeviceContext1 deviceContext)
         {
-            var objCopy = SnappedObject;
-            if (objCopy is not null)
-            {
-                objCopy.DrawToDeviceContext(_snappedThickness, objCopy.OuterEdgeBrush);
-            }
+            //var objCopy = SnappedObject;
+            //if (objCopy is not null)
+            //{
+            //    objCopy.DrawToDeviceContext(_snappedThickness, objCopy.OuterEdgeBrush);
+            //}
         }
         private void RenderHighlightedObjects(DeviceContext1 deviceContext)
         {
@@ -565,7 +565,7 @@ namespace Cad_Point_Manager.Controls
             if (_drawingObjectTree is null) { return; }
             if (_offscreenBitmapIsDirty) { return; }
             if (_isPanning) { return; }
-            if (LayerManager is null) { return; }
+            if (CadManager is null) { return; }
 
             var mousePos = DxfPointerCoords;
             var rawMousePos = new RawVector2((float)mousePos.X, (float)mousePos.Y);
@@ -717,9 +717,9 @@ namespace Cad_Point_Manager.Controls
         }
         private void UpdateDeviceContext(ResourceCache resCache)
         {
-            if (LayerManager is null || resCache is null) { return; }
+            if (CadManager is null || resCache is null) { return; }
 
-            foreach (var layer in LayerManager.Layers.Values)
+            foreach (var layer in CadManager.Layers.Values)
             {
                 layer.UpdateDeviceDependentResources(resCache);
             }

@@ -58,4 +58,9 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         #region Methods
         #endregion
     }
+
+    public class DrawingSegmentData : DrawingObjectData
+    {
+
+    }
 }

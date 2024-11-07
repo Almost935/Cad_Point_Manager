@@ -80,9 +80,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             {
                 obj.InitializeResources(resCache);
             }
-
-            UpdateBrush();
-            GetStrokeStyle();
         }
         public override void UpdateDeviceDependentResources(ResourceCache resCache)
         {
@@ -93,8 +90,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             {
                 obj.UpdateDeviceDependentResources(resCache);
             }
-
-            UpdateBrush();
         }
         public override void UpdateDeviceIndependentResources(ResourceCache resCache)
         {
@@ -105,8 +100,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             {
                 obj.UpdateDeviceIndependentResources(resCache);
             }
-
-            GetStrokeStyle();
         }
 
         public override bool DrawingObjectIsInRect(Rect rect)

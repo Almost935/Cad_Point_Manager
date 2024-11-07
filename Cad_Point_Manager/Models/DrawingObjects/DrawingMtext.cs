@@ -82,16 +82,12 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             Factory = resCache.Factory;
             _factoryWrite = resCache.FactoryWrite;
 
-            UpdateBrush();
-            GetStrokeStyle();
             UpdateGeometry();
         }
         public override void UpdateDeviceDependentResources(ResourceCache resCache)
         {
             ResCache = resCache;
             DeviceContext = resCache.DeviceContext;
-
-            UpdateBrush();
         }
         public override void UpdateDeviceIndependentResources(ResourceCache resCache)
         {
@@ -99,7 +95,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             Factory = resCache.Factory;
             _factoryWrite = resCache.FactoryWrite;
 
-            GetStrokeStyle();
             UpdateGeometry();
         }
 

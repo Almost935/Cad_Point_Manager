@@ -16,9 +16,8 @@ namespace Cad_Point_Manager.Models.DrawingObjects
     public class ObjectLayer : INotifyPropertyChanged, IDisposable
     {
         #region Fields
-        private DeviceContext1 _deviceContext;
-        private Factory1 _factory;
         private ResourceCache _resCache;
+        private CadManager _cadManager;
         private string _name;
         private List<DrawingObject> _drawingObjects = [];
         private bool isVisible = true;
@@ -64,10 +63,11 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         #endregion
 
         #region Constructors
-        public ObjectLayer(netDxf.Tables.Layer layer)
+        public ObjectLayer(netDxf.Tables.Layer layer, CadManager cadManager)
         {
             Name = layer.Name;
             DxfLayer = layer;
+            _cadManager = cadManager;
         }
         #endregion
 
@@ -85,8 +85,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         public void InitializeResources(ResourceCache resCache)
         {
             _resCache = resCache;
-            _deviceContext = resCache.DeviceContext;
-            _factory = resCache.Factory;
 
             GetLayerBrush();
             GetLayerStrokeStyle();
@@ -95,13 +93,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
             foreach (var obj in DrawingObjects)
             {
-                //stopwatch.Restart();
-                //Debug.WriteLine($"InitializeResources of obj: {obj.GetType()}");
-
                 obj?.InitializeResources(resCache);
-
-                //stopwatch.Stop();
-                //Debug.WriteLine($"InitializeResources of obj: {obj.GetType()}: {stopwatch.ElapsedMilliseconds} ms");
             }
         }
         public void InitializeGeometries()
@@ -126,10 +118,10 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         }
         public void UpdateDeviceDependentResources(ResourceCache resCache)
         {
+            _resCache = resCache;
+
             LayerBrush?.Dispose();
             LayerBrush = null;
-
-            _deviceContext = resCache.DeviceContext;
 
             GetLayerBrush();
 
@@ -140,12 +132,12 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         }
         public void UpdateDeviceIndependentResources(ResourceCache resCache)
         {
+            _resCache = resCache;
+
             GeometryGroup?.Dispose();
             GeometryGroup = null;
             HairlineStrokeStyle?.Dispose();
             HairlineStrokeStyle = null;
-
-            _factory = resCache.Factory;
 
             GetLayerStrokeStyle();
 
@@ -200,19 +192,19 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             if (geometries.Count > 0)
             {
                 var geometryArr = geometries.ToArray();
-                GeometryGroup = new(_deviceContext.Factory, FillMode.Alternate, geometryArr);
+                GeometryGroup = new(_resCache.Factory, FillMode.Alternate, geometryArr);
             }
         }
 
         public void GetLayerStrokeStyle()
         {
-            HairlineStrokeStyle = _resCache.GetStrokeStyle(ResourceCache.LineType.Solid, StrokeTransformType.Hairline);
+            HairlineStrokeStyle = _resCache.GetStrokeStyle(Enums.LineType.Solid, StrokeTransformType.Hairline);
         }
 
         public void GetLayerBrush()
         {
             LayerBrush?.Dispose();
-            LayerBrush = _resCache.GetBrush(DxfLayer.Color.R, DxfLayer.Color.G, DxfLayer.Color.B, 255);
+            LayerBrush = _cadManager.GetBrush(DxfLayer.Color.R, DxfLayer.Color.G, DxfLayer.Color.B, 255);
         }
 
         public void Dispose()

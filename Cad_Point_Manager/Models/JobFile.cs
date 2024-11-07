@@ -21,8 +21,8 @@ namespace Cad_Point_Manager.Models
         private string _jobFilePath;
         private string _dxfFilePath;
         private DxfDocument _dxfDoc;
-        private CadManager _layerManager;
-        private Rect _extents = new();
+        private string _dxfFileName;
+        private CadManager _cadManager;
         #endregion
 
         #region Properties
@@ -62,21 +62,21 @@ namespace Cad_Point_Manager.Models
                 OnPropertyChanged();
             }
         }
-        public CadManager LayerManager 
+        public string DxfFileName
         {
-            get { return _layerManager; }
+            get { return _dxfFileName; }
             set
             {
-                _layerManager = value;
+                _dxfFileName = value;
                 OnPropertyChanged();
             }
         }
-        public Rect Extents
+        public CadManager CadManager 
         {
-           get { return _extents; }
+            get { return _cadManager; }
             set
             {
-                _extents = value;
+                _cadManager = value;
                 OnPropertyChanged();
             }
         }
@@ -85,32 +85,27 @@ namespace Cad_Point_Manager.Models
         #endregion
 
         #region Constructors
-        public JobFile() { }
+        public JobFile() 
+        { 
+            CadManager = new(); 
+        }
         #endregion
 
         #region Methods
-        public void LoadDxf(DxfDocument dxfDoc)
+        public void LoadDxf(string filepath)
         {
             Stopwatch stopwatch = Stopwatch.StartNew();
 
             DxfLoaded = false;
 
-            DxfDoc = dxfDoc;
-            Layers.Clear();
-            Extents = new();
-
-            Extents = DxfHelpers.GetExtentsFromHeader(DxfDocument);
-
-            foreach (var e in _dxfDocument.Entities.All)
+            DxfDoc = DxfDocument.Load(filepath);
+            if (DxfDoc is not null)
             {
-                var layer = GetLayer(e.Layer);
-                var obj = DxfHelpers.GetDrawingObject(e, layer);
-                if (obj is not null)
-                {
-                    layer.DrawingObjects.Add(obj);
-                }
-            }
-            DxfLoaded = true;
+                DxfFilePath = filepath;
+                DxfFileName = DxfDoc.Name;
+                CadManager.LoadDxfDocument(DxfDoc);
+                DxfLoaded = true;
+            }           
 
             stopwatch.Stop();
             Debug.WriteLine($"LoadDxfDocument: {stopwatch.ElapsedMilliseconds} ms");
