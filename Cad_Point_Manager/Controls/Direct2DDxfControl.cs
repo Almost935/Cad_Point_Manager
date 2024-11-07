@@ -141,16 +141,16 @@ namespace Cad_Point_Manager.Controls
         #endregion
 
         #region Dependency Properties
-        public CadManager LayerManager
+        public ObjectLayerManager LayerManager
         {
-            get { return (CadManager)GetValue(LayerManagerProperty); }
+            get { return (ObjectLayerManager)GetValue(LayerManagerProperty); }
             set { SetValue(LayerManagerProperty, value); }
         }
 
         public static readonly DependencyProperty LayerManagerProperty =
         DependencyProperty.Register(
             nameof(LayerManager),           
-            typeof(CadManager),           
+            typeof(ObjectLayerManager),           
             typeof(Direct2DDxfControl),   
             new PropertyMetadata(null, OnLayerManagerChanged));
         #endregion
@@ -181,7 +181,7 @@ namespace Cad_Point_Manager.Controls
             //    control.LayerManagerValue = (ObjectLayerManager)e.NewValue;
             //}
         }
-        public void UpdateDxf(CadManager layerManager)
+        public void UpdateDxf(ObjectLayerManager layerManager)
         {
             if (layerManager is not null)
             {
@@ -598,7 +598,7 @@ namespace Cad_Point_Manager.Controls
 
             Parallel.ForEach(_lastHitTestNode.DrawingObjects, obj =>
             {
-                if (obj.Layer.IsOn && obj.Bounds.Contains(mousePos))
+                if (obj.Layer.IsVisible && obj.Bounds.Contains(mousePos))
                 {
                     if (obj.Hittest(rawMousePos, thickness))
                     {

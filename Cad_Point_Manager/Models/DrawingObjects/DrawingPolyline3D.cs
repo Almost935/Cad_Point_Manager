@@ -86,9 +86,4 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         }
         #endregion
     }
-
-    public class DrawingPolyline3DData
-    {
-
-    }
 }

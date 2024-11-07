@@ -45,12 +45,12 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             Layer = layer;
             EntityCount = 1;
 
-            UpdateDxfProperties();         
+            UpdateDxfProperties();
         }
         #endregion
 
         #region Methods
-       
+
 
         public override void DrawToDeviceContext(float thickness, Brush brush)
         {
@@ -84,7 +84,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             // Get sweep and find out if large arc 
             if (DxfArc.EndAngle < DxfArc.StartAngle)
             {
-                Sweep = (360 + DxfArc.EndAngle) - DxfArc.StartAngle;
+                Sweep = 360 + DxfArc.EndAngle - DxfArc.StartAngle;
             }
             else
             {
@@ -126,7 +126,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         #endregion
     }
 
-    public class  DrawingArcData : DrawingSegmentData
+    public class DrawingArcData : DrawingObjectData
     {
         public double Sweep { get; set; }
         public bool IsLargeArc { get; set; }

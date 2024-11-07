@@ -1,5 +1,4 @@
-﻿using Cad_Point_Manager.Models.SerializableObjects;
-using netDxf.Entities;
+﻿using netDxf.Entities;
 using SharpDX.Direct2D1;
 using SharpDX.Mathematics.Interop;
 using System;
@@ -57,7 +56,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         {
             DeviceContext?.DrawGeometry(Geometry, brush, thickness, strokeStyle);
         }
-       
+
         public override bool DrawingObjectIsInRect(Rect rect)
         {
             return Bounds.IntersectsWith(rect) || Bounds.Contains(rect);
@@ -71,7 +70,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         }
         public override void UpdateGeometry()
         {
-            Ellipse ellipse = new(Center, (float)Center.X, (float)Center.Y);
+            Ellipse ellipse = new(Center, Center.X, Center.Y);
             EllipseGeometry ellipseGeometry = new(Factory, ellipse);
 
             Geometry = ellipseGeometry;
@@ -79,7 +78,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             var bounds = Geometry.GetWidenedBounds(_hitTestStrokeThickness);
             Bounds = new(bounds.Left, bounds.Top, Math.Abs(bounds.Right - bounds.Left), Math.Abs(bounds.Bottom - bounds.Top));
         }
-    
+
         public override bool Hittest(RawVector2 p, float thickness)
         {
             return Geometry.StrokeContainsPoint(p, thickness);
@@ -87,9 +86,9 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         #endregion
     }
 
-    public class DrawingCircleData : DrawingSegmentData
+    public class DrawingCircleData
     {
         public double Radius { get; set; }
-        public SerializablePoint Center { get; set; }
+        public RawVector2 Center { get; set; }
     }
 }

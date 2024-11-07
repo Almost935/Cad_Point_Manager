@@ -121,10 +121,10 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
                 // Represents the dxf coordinate bounds of each quadrant.
                 Size halfBoundsSize = new(Extents.Width / 2, Extents.Height / 2);
-                Rect extents1 = new(Extents.Left + (halfBoundsSize.Width * factor1.X), Extents.Top + (halfBoundsSize.Height * factor1.Y), halfBoundsSize.Width, halfBoundsSize.Height);
-                Rect extents2 = new(Extents.Left + (halfBoundsSize.Width * factor2.X), Extents.Top + (halfBoundsSize.Height * factor2.Y), halfBoundsSize.Width, halfBoundsSize.Height);
-                Rect extents3 = new(Extents.Left + (halfBoundsSize.Width * factor3.X), Extents.Top + (halfBoundsSize.Height * factor3.Y), halfBoundsSize.Width, halfBoundsSize.Height);
-                Rect extents4 = new(Extents.Left + (halfBoundsSize.Width * factor4.X), Extents.Top + (halfBoundsSize.Height * factor4.Y), halfBoundsSize.Width, halfBoundsSize.Height);
+                Rect extents1 = new(Extents.Left + halfBoundsSize.Width * factor1.X, Extents.Top + halfBoundsSize.Height * factor1.Y, halfBoundsSize.Width, halfBoundsSize.Height);
+                Rect extents2 = new(Extents.Left + halfBoundsSize.Width * factor2.X, Extents.Top + halfBoundsSize.Height * factor2.Y, halfBoundsSize.Width, halfBoundsSize.Height);
+                Rect extents3 = new(Extents.Left + halfBoundsSize.Width * factor3.X, Extents.Top + halfBoundsSize.Height * factor3.Y, halfBoundsSize.Width, halfBoundsSize.Height);
+                Rect extents4 = new(Extents.Left + halfBoundsSize.Width * factor4.X, Extents.Top + halfBoundsSize.Height * factor4.Y, halfBoundsSize.Width, halfBoundsSize.Height);
 
                 List<DrawingObject> objects1 = [];
                 List<DrawingObject> objects2 = [];

@@ -1,5 +1,4 @@
 ﻿using Cad_Point_Manager.Controls.D2DControl;
-using Cad_Point_Manager.Models.SerializableObjects;
 using netDxf.Entities;
 using SharpDX.Direct2D1;
 using SharpDX.Direct3D11;
@@ -14,7 +13,6 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
-using Point = System.Windows.Point;
 
 namespace Cad_Point_Manager.Models.DrawingObjects
 {
@@ -126,7 +124,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         {
             foreach (var segment in DrawingSegments)
             {
-                if (segment.Bounds.Contains((double)p.X, (double)p.Y))
+                if (segment.Bounds.Contains(p.X, p.Y))
                 {
                     if (segment.Hittest(p, thickness))
                     {
@@ -137,12 +135,5 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             return false;
         }
         #endregion
-    }
-
-    public class DrawingPolylineData : DrawingObjectData
-    {
-        public SerializablePoint StartPoint { get; set; }
-        public SerializablePoint EndPoint { get; set; }
-        public List<DrawingSegmentData> DrawingSegmentData { get; set; }
     }
 }

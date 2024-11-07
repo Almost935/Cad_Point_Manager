@@ -1,5 +1,4 @@
 ﻿using Cad_Point_Manager.Controls.D2DControl;
-using Cad_Point_Manager.Models.SerializableObjects;
 using netDxf.Entities;
 using netDxf.Units;
 using SharpDX.Direct2D1;
@@ -8,7 +7,6 @@ using SharpDX.DirectWrite;
 using SharpDX.Mathematics.Interop;
 using System.Windows;
 using System.Windows.Media;
-
 using Brush = SharpDX.Direct2D1.Brush;
 using DeviceContext1 = SharpDX.Direct2D1.DeviceContext1;
 using Factory1 = SharpDX.DirectWrite.Factory1;
@@ -23,7 +21,9 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
         private Factory1 _factoryWrite;
         private TextFormat _textFormat;
+        private Matrix _transform;
         private TextLayout _textLayout;
+        private Point _adjustedPos;
         #endregion
 
         #region Properties
@@ -36,14 +36,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 OnPropertyChanged(nameof(DxfMtext));
             }
         }
-
-        public Matrix TextTransform { get; set; } = Matrix.Identity;
-        public Point InitialPosition { get; set; }
-        public Enums.TextAttachmentPoint AttachmentPoint { get; set; }
-        public Point AdjustedPosition { get; set; }
-        public string Text { get; set; }
-        public string FontFamilyName { get; set; }
-        public double FontSize { get; set; }
         #endregion
 
         #region Constructor
@@ -59,11 +51,12 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         #region Methods
         public override void DrawToDeviceContext(float thickness, Brush brush)
         {
-            DeviceContext?.DrawTextLayout(new RawVector2((float)InitialPosition.X, (float)InitialPosition.Y), _textLayout, brush);
+            DeviceContext?.DrawTextLayout(new RawVector2((float)DxfMtext.Position.X, (float)DxfMtext.Position.Y), _textLayout, brush);
         }
         public override void DrawToDeviceContext(float thickness, Brush brush, StrokeStyle1 strokeStyle)
         {
-            DeviceContext?.DrawTextLayout(new RawVector2((float)InitialPosition.X, (float)InitialPosition.Y), _textLayout, brush);
+            DeviceContext?.DrawTextLayout(new RawVector2((float)DxfMtext.Position.X, (float)DxfMtext.Position.Y), _textLayout, brush);
+            //deviceContext.DrawText(DxfMtext.PlainText(), _textFormat, new RawRectangleF((float)Bounds.Left, (float)Bounds.Top, (float)Bounds.Right, (float)Bounds.Bottom), Brush);
         }
         public override bool DrawingObjectIsInRect(Rect rect)
         {
@@ -72,77 +65,12 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
         public override void UpdateDxfProperties()
         {
-            InitialPosition = new(DxfMtext.Position.X, DxfMtext.Position.Y);
-            Text = DxfMtext.PlainText();
-            Bounds = new(InitialPosition.X, InitialPosition.Y, DxfMtext.RectangleWidth * 2, DxfMtext.Height * 2);
-            TextTransform = new();
-            TextTransform.ScaleAt(-1, -1, InitialPosition.X, InitialPosition.Y);
-            FontFamilyName = DxfMtext.Style.FontFamilyName;
-            FontSize = DxfMtext.Height * 1.25;
 
-            switch (DxfMtext.AttachmentPoint)
-            {
-                case MTextAttachmentPoint.TopLeft:
-                    AttachmentPoint = Enums.TextAttachmentPoint.TopLeft;
-                    AdjustedPosition = InitialPosition;
-                    break;
-
-                case MTextAttachmentPoint.TopCenter:
-                    AttachmentPoint = Enums.TextAttachmentPoint.TopCenter;
-                    AdjustedPosition = new Point(InitialPosition.X - (Bounds.Width) / 2,
-                        InitialPosition.Y);
-                    break;
-
-                case MTextAttachmentPoint.TopRight:
-                    AttachmentPoint = Enums.TextAttachmentPoint.TopRight;
-                    AdjustedPosition = new Point(InitialPosition.X - (Bounds.Width),
-                        InitialPosition.Y);
-                    break;
-
-                case MTextAttachmentPoint.MiddleLeft:
-                    AttachmentPoint = Enums.TextAttachmentPoint.MiddleLeft;
-                    AdjustedPosition = new Point(InitialPosition.X,
-                        InitialPosition.Y - (Bounds.Height / 2));
-                    break;
-
-                case MTextAttachmentPoint.MiddleCenter:
-                    AttachmentPoint = Enums.TextAttachmentPoint.MiddleCenter;
-                    AdjustedPosition = new Point(InitialPosition.X - (Bounds.Width) / 2,
-                        InitialPosition.Y - (Bounds.Height / 2));
-                    break;
-
-                case MTextAttachmentPoint.MiddleRight:
-                    AttachmentPoint = Enums.TextAttachmentPoint.MiddleRight;
-                    AdjustedPosition = new Point(InitialPosition.X - (Bounds.Width),
-                        InitialPosition.Y - (Bounds.Height / 2));
-                    break;
-
-                case MTextAttachmentPoint.BottomLeft:
-                    AttachmentPoint = Enums.TextAttachmentPoint.BottomLeft;
-                    AdjustedPosition = new Point(InitialPosition.X,
-                        InitialPosition.Y - (Bounds.Height));
-                    break;
-
-                case MTextAttachmentPoint.BottomCenter:
-                    AttachmentPoint = Enums.TextAttachmentPoint.BottomCenter;
-                    AdjustedPosition = new Point(InitialPosition.X - (Bounds.Width) / 2,
-                        InitialPosition.Y - (Bounds.Height));
-                    break;
-
-                case MTextAttachmentPoint.BottomRight:
-                    AttachmentPoint = Enums.TextAttachmentPoint.BottomRight;
-                    AdjustedPosition = new Point(InitialPosition.X - (Bounds.Width),
-                        InitialPosition.Y - (Bounds.Height));
-                    break;
-
-                default:
-                    AttachmentPoint = Enums.TextAttachmentPoint.TopLeft;
-                    AdjustedPosition = InitialPosition;
-                    break;
-            }
         }
         public override void UpdateGeometry()
         {
+            Bounds = new(DxfMtext.Position.X, DxfMtext.Position.Y, DxfMtext.RectangleWidth * 2, DxfMtext.Height * 2);
+            GetTransform();
             GetTextFormat();
             GetTextLayout();
         }
@@ -177,28 +105,88 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
         public void GetTextFormat()
         {
-            _textFormat = new(_factoryWrite, FontFamilyName, (float)FontSize);
+            _textFormat = new(_factoryWrite, DxfMtext.Style.FontFamilyName, (float)(DxfMtext.Height * 1.25));
+        }
+        public void GetTransform()
+        {
+            _transform = new();
+            _transform.ScaleAt(-1, -1, DxfMtext.Position.X, DxfMtext.Position.Y);
         }
         public void GetTextLayout()
         {
-            RawMatrix3x2 transform = new((float)TextTransform.M11, (float)TextTransform.M12, (float)TextTransform.M21, (float)TextTransform.M22, (float)TextTransform.OffsetX, (float)TextTransform.OffsetY);
-            _textLayout = new(_factoryWrite, Text, _textFormat, (float)Bounds.Width, (float)Bounds.Height, 96, transform, true);
+            _adjustedPos = GetTextOrigin(DxfMtext, Bounds, new Point(DxfMtext.Position.X, DxfMtext.Position.Y));
+            RawMatrix3x2 transform = new((float)_transform.M11, (float)_transform.M12, (float)_transform.M21, (float)_transform.M22, (float)_transform.OffsetX, (float)_transform.OffsetY);
+            _textLayout = new(_factoryWrite, DxfMtext.PlainText(), _textFormat, (float)Bounds.Width, (float)Bounds.Height, 96, transform, true);
         }
         public override bool Hittest(RawVector2 p, float thickness)
         {
             return Bounds.Contains(p.X, p.Y);
         }
-        #endregion
-    }
 
-    public class DrawingMtextData : DrawingObjectData
-    {
-        public SerializableMatrix TextTransform { get; set; } 
-        public SerializablePoint InitialPosition { get; set; }
-        public Enums.TextAttachmentPoint AttachmentPoint { get; set; }
-        public SerializablePoint AdjustedPosition { get; set; }
-        public string Text { get; set; }
-        public string FontFamilyName { get; set; }
-        public double FontSize { get; set; }
+        /// <summary>
+        /// Gets the upper left point of the MText.
+        /// </summary>
+        /// <param name="mText"></param>
+        /// <param name="rect"></param>
+        /// <param name="position"></param>
+        /// <returns></returns>
+        public Point GetTextOrigin(MText mText, Rect rect, Point position)
+        {
+            Point adjustedPos = new();
+
+            switch (mText.AttachmentPoint)
+            {
+                case MTextAttachmentPoint.TopLeft:
+                    adjustedPos = position;
+                    break;
+
+                case MTextAttachmentPoint.TopCenter:
+                    adjustedPos = new Point(position.X - rect.Width / 2,
+                        position.Y);
+                    break;
+
+                case MTextAttachmentPoint.TopRight:
+                    adjustedPos = new Point(position.X - rect.Width,
+                        position.Y);
+                    break;
+
+                case MTextAttachmentPoint.MiddleLeft:
+                    adjustedPos = new Point(position.X,
+                        position.Y - rect.Height / 2);
+                    break;
+
+                case MTextAttachmentPoint.MiddleCenter:
+                    adjustedPos = new Point(position.X - rect.Width / 2,
+                        position.Y - rect.Height / 2);
+                    break;
+
+                case MTextAttachmentPoint.MiddleRight:
+                    adjustedPos = new Point(position.X - rect.Width,
+                        position.Y - rect.Height / 2);
+                    break;
+
+                case MTextAttachmentPoint.BottomLeft:
+                    adjustedPos = new Point(position.X,
+                        position.Y - rect.Height);
+                    break;
+
+                case MTextAttachmentPoint.BottomCenter:
+                    adjustedPos = new Point(position.X - rect.Width / 2,
+                        position.Y - rect.Height);
+                    break;
+
+                case MTextAttachmentPoint.BottomRight:
+                    adjustedPos = new Point(position.X - rect.Width,
+                        position.Y - rect.Height);
+                    break;
+
+                default:
+                    adjustedPos = position;
+                    break;
+            }
+
+            return adjustedPos;
+        }
+        #endregion
     }
 }

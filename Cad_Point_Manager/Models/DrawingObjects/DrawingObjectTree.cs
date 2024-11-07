@@ -19,7 +19,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         #region Fields
         private const float _viewInflationFactor = 1.1f;
 
-        private CadManager _layerManager;
+        private ObjectLayerManager _layerManager;
         #endregion
 
         #region Properties
@@ -36,7 +36,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         #endregion
 
         #region Constructors
-        public DrawingObjectTree(CadManager layerManager, Rect extents, int levels)
+        public DrawingObjectTree(ObjectLayerManager layerManager, Rect extents, int levels)
         {
             _layerManager = layerManager;
             Extents = extents;

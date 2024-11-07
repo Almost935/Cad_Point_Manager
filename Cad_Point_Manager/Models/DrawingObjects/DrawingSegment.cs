@@ -1,5 +1,4 @@
-﻿using Cad_Point_Manager.Models.SerializableObjects;
-using netDxf.Entities;
+﻿using netDxf.Entities;
 using SharpDX.Direct2D1;
 using SharpDX.Mathematics.Interop;
 using System;
@@ -11,7 +10,6 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
-using Point = System.Windows.Point;
 
 
 namespace Cad_Point_Manager.Models.DrawingObjects
@@ -59,12 +57,5 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
         #region Methods
         #endregion
-    }
-
-    public class DrawingSegmentData : DrawingObjectData
-    {
-        public SerializablePoint StartPoint { get; set; }
-        public SerializablePoint EndPoint { get; set; }
-        public bool IsPartOfPolyline { get; set; }  
     }
 }
