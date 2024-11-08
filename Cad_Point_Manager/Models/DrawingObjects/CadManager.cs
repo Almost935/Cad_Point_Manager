@@ -189,7 +189,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             var tasks = Layers.Values.Select(layer => Task.Run(() => layer.InitializeGeometries())).ToArray();
             Task.WhenAll(tasks).Wait();
 
-
             stopwatch.Stop();
             Debug.WriteLine($"InitializeDeviceResources: {stopwatch.ElapsedMilliseconds} ms");
         }

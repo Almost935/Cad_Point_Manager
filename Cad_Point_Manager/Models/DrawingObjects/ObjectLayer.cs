@@ -109,11 +109,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 //Debug.WriteLine($"InitializeGeometry of obj: {obj.GetType()}: {stopwatch.ElapsedMilliseconds} ms");
             });
 
-            //foreach (var obj in DrawingObjects)
-            //{
-            //    obj?.UpdateGeometry();
-            //}
-
             LoadGeometryGroup();
         }
         public void UpdateDeviceDependentResources(ResourceCache resCache)
@@ -198,7 +193,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
         public void GetLayerStrokeStyle()
         {
-            HairlineStrokeStyle = _resCache.GetStrokeStyle(Enums.LineType.Solid, StrokeTransformType.Hairline);
+            HairlineStrokeStyle = _cadManager.GetStrokeStyle(Enums.LineType.Solid, StrokeTransformType.Hairline);
         }
 
         public void GetLayerBrush()
