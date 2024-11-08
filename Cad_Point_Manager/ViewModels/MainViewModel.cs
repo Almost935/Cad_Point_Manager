@@ -66,7 +66,7 @@ namespace Cad_Point_Manager.ViewModels
         #region Methods
         public void AttachDxfFile(RoutedEventArgs e)
         {
-            Microsoft.Win32.OpenFileDialog dlg = new Microsoft.Win32.OpenFileDialog();
+            Microsoft.Win32.OpenFileDialog dlg = new();
             dlg.DefaultExt = ".dxf";
             dlg.Filter = "DXF Files (*.dxf)|*.dxf";
             dlg.InitialDirectory = @"C:\Users\fcraw\source\repos\Cad_Point_Manager\Cad_Point_Manager\Resources\DXF";

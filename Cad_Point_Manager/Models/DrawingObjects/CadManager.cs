@@ -81,7 +81,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         }
 
         public Dictionary<string, ObjectLayer> Layers { get; set; } = new();
-        public List<DrawingObject> DrawingObjects => Layers.Values.SelectMany(layer => layer.DrawingObjects).ToList();
         public bool DxfLoaded { get; set; } = false;
         #endregion
 
@@ -97,10 +96,10 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             ClearDxfDocument();
 
             _dxfDocument = dxfDocument;
-            Layers.Clear();
             Extents = new();
             Extents = DxfHelpers.GetExtentsFromHeader(DxfDocument);
 
+            int count = 0;
             foreach (var e in _dxfDocument.Entities.All)
             {
                 var layer = GetLayer(e.Layer);
@@ -108,12 +107,13 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 if (obj is not null)
                 {
                     layer.DrawingObjects.Add(obj);
+                    count++;
                 }
             }
             DxfLoaded = true;
 
             stopwatch.Stop();
-            Debug.WriteLine($"LoadDxfDocument: {stopwatch.ElapsedMilliseconds} ms");
+            Debug.WriteLine($"CadManager LoadDxfDocument: {stopwatch.ElapsedMilliseconds} ms. {count} objects loaded.");
         }
         public ObjectLayer GetLayer(netDxf.Tables.Layer dxfLayer)
         {

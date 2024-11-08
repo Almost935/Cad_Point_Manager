@@ -356,8 +356,6 @@ namespace Cad_Point_Manager.Controls
 
                 float thickness = (float)(_baseLineThickness / _overallMatrix.M11);
 
-                Debug.WriteLine($"1: {stopwatch.ElapsedMilliseconds}");
-
                 foreach (var layer in CadManager.Layers.Values)
                 {
                     if (layer.GeometryGroup is not null)
@@ -401,14 +399,14 @@ namespace Cad_Point_Manager.Controls
         }
         private void RenderInteractiveObjects(DeviceContext1 deviceContext)
         {
-            Stopwatch stopwatch = Stopwatch.StartNew();
+            //Stopwatch stopwatch = Stopwatch.StartNew();
 
-            deviceContext.Transform = new((float)_overallMatrix.M11, (float)_overallMatrix.M12, (float)_overallMatrix.M21, (float)_overallMatrix.M22, (float)_overallMatrix.OffsetX, (float)_overallMatrix.OffsetY);
-            RenderSnappedObjects(deviceContext);
-            RenderHighlightedObjects(deviceContext);
+            //deviceContext.Transform = new((float)_overallMatrix.M11, (float)_overallMatrix.M12, (float)_overallMatrix.M21, (float)_overallMatrix.M22, (float)_overallMatrix.OffsetX, (float)_overallMatrix.OffsetY);
+            //RenderSnappedObjects(deviceContext);
+            //RenderHighlightedObjects(deviceContext);
 
-            stopwatch.Stop();
-            //Debug.WriteLine($"DrawInteractiveObjects Elapsed Time: {stopwatch.ElapsedMilliseconds} ms");
+            //stopwatch.Stop();
+            ////Debug.WriteLine($"DrawInteractiveObjects Elapsed Time: {stopwatch.ElapsedMilliseconds} ms");
         }
         private void RenderSnappedObjects(DeviceContext1 deviceContext)
         {
@@ -698,8 +696,11 @@ namespace Cad_Point_Manager.Controls
         private void UpdateDxfPointerCoords()
         {
             var newMatrix = _overallMatrix;
-            newMatrix.Invert();
-            DxfPointerCoords = newMatrix.Transform(PointerCoords);
+            if (newMatrix.HasInverse)
+            {
+                newMatrix.Invert();
+                DxfPointerCoords = newMatrix.Transform(PointerCoords);
+            }
         }
         private void UpdateZoom(float zoom)
         {

@@ -187,6 +187,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             if (geometries.Count > 0)
             {
                 var geometryArr = geometries.ToArray();
+
                 GeometryGroup = new(_resCache.Factory, FillMode.Alternate, geometryArr);
             }
         }
