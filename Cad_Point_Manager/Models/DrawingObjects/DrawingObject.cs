@@ -55,10 +55,10 @@ namespace Cad_Point_Manager.DrawingObjects
         public Rect Bounds { get; set; } = Rect.Empty;
         public DeviceContext1 DeviceContext { get; set; }
         public Factory1 Factory { get; set; }
-        public Brush Brush { get; set; }
-        public Brush OuterEdgeBrush { get; set; }
-        public StrokeStyle1 HairlineStrokeStyle { get; set; }
-        public StrokeStyle1 FixedStrokeStyle { get; set; }
+        //public Brush Brush { get; set; }
+        //public Brush OuterEdgeBrush { get; set; }
+        //public StrokeStyle1 HairlineStrokeStyle { get; set; }
+        //public StrokeStyle1 FixedStrokeStyle { get; set; }
         public float Thickness { get; set; } = 0.25f;
 
         public ResourceCache ResCache { get; set; }
@@ -111,28 +111,28 @@ namespace Cad_Point_Manager.DrawingObjects
         }
         public void UpdateBrush()
         {
-            if (Entity is null || DeviceContext is null)
-            {
-                return;
-            }
+            //if (Entity is null || DeviceContext is null)
+            //{
+            //    return;
+            //}
 
-            Brush?.Dispose();
-            Brush = null;
+            //Brush?.Dispose();
+            //Brush = null;
 
-            OuterEdgeBrush?.Dispose();
-            OuterEdgeBrush = null;
+            //OuterEdgeBrush?.Dispose();
+            //OuterEdgeBrush = null;
 
-            (byte r, byte g, byte b, byte a) = DxfHelpers.GetRGBAColor(Entity);
-            (byte r2, byte g2, byte b2, byte a2) = (r, g, b, (byte)(0.4 * 255));
+            //(byte r, byte g, byte b, byte a) = DxfHelpers.GetRGBAColor(Entity);
+            //(byte r2, byte g2, byte b2, byte a2) = (r, g, b, (byte)(0.4 * 255));
 
-            Brush = ResCache.GetBrush(r, g, b, a);
-            OuterEdgeBrush = ResCache.GetBrush(r2, g2, b2, a2);
+            //Brush = ResCache.GetBrush(r, g, b, a);
+            //OuterEdgeBrush = ResCache.GetBrush(r2, g2, b2, a2);
         }
 
         public void GetStrokeStyle()
         {
-            HairlineStrokeStyle = ResCache.GetStrokeStyle(ResourceCache.LineType.Solid, StrokeTransformType.Hairline);
-            FixedStrokeStyle = ResCache.GetStrokeStyle(ResourceCache.LineType.Solid, StrokeTransformType.Fixed);
+            //HairlineStrokeStyle = ResCache.GetStrokeStyle(ResourceCache.LineType.Solid, StrokeTransformType.Hairline);
+            //FixedStrokeStyle = ResCache.GetStrokeStyle(ResourceCache.LineType.Solid, StrokeTransformType.Fixed);
         }
 
         protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
@@ -153,9 +153,9 @@ namespace Cad_Point_Manager.DrawingObjects
             if (disposing)
             {
                 // Dispose managed resources
-                Brush?.Dispose();
-                OuterEdgeBrush?.Dispose();
-                HairlineStrokeStyle?.Dispose();
+                //Brush?.Dispose();
+                //OuterEdgeBrush?.Dispose();
+                //HairlineStrokeStyle?.Dispose();
                 Geometry?.Dispose();
             }
 

@@ -52,6 +52,12 @@ namespace Cad_Point_Manager.Controls
         private Matrix _transformMatrix = new();
         private Matrix _overallMatrix = new();
 
+        // Device Dependent Resources
+        private bool _resourcesLoaded = false;
+        private Brush _highlightedBrush;
+        private Brush _highlightedOuterEdgeBrush;
+        private Brush _snappedouterEdgeBrush;
+
         private bool _isPanning = false;
         private bool _deviceContextIsDirty = true;
         private Point _lastTranslatePos = new();
@@ -62,8 +68,6 @@ namespace Cad_Point_Manager.Controls
         private bool _visibleObjectsDirty = true;
         private int _objectDetailLevelTransitionNum = 500;
         private DrawingObjectTree _drawingObjectTree;
-        private Brush _highlightedBrush;
-        private Brush _highlightedOuterEdgeBrush;
         private bool _clipSet = false;
         private float _lineThickness;
         private float _snappedThickness;
@@ -264,7 +268,11 @@ namespace Cad_Point_Manager.Controls
             {
                 Stopwatch stopwatch = Stopwatch.StartNew();
 
-                GetResources(d2DDeviceContext);
+                if (!_resourcesLoaded)
+                {
+                    GetResources(d2DDeviceContext);
+                    _resourcesLoaded = true;
+                }
 
                 if (_offscreenRenderTarget is null)
                 {
@@ -295,7 +303,11 @@ namespace Cad_Point_Manager.Controls
                     d2DDeviceContext.Clear(new RawColor4(1, 1, 1, 1));
 
                     RenderOffscreenBitmap(d2DDeviceContext);
-                    RenderInteractiveObjects(d2DDeviceContext);
+
+                    if (_currentOffscreenBitmap.ZoomStep == _currentZoomStep)
+                    {
+                        RenderInteractiveObjects(d2DDeviceContext);
+                    }
 
                     _deviceContextIsDirty = false;
                 }
@@ -408,7 +420,7 @@ namespace Cad_Point_Manager.Controls
             var objCopy = SnappedObject;
             if (objCopy is not null)
             {
-                objCopy.DrawToDeviceContext(_snappedThickness, objCopy.OuterEdgeBrush);
+                objCopy.DrawToDeviceContext(_snappedThickness, _snappedouterEdgeBrush);
             }
         }
         private void RenderHighlightedObjects(DeviceContext1 deviceContext)
@@ -437,6 +449,8 @@ namespace Cad_Point_Manager.Controls
             _highlightedBrush = null;
             _highlightedOuterEdgeBrush?.Dispose();
             _highlightedOuterEdgeBrush = null;
+            _snappedouterEdgeBrush?.Dispose();
+            _snappedouterEdgeBrush = null;
 
             UpdateLineThicknesses();
 
@@ -661,9 +675,14 @@ namespace Cad_Point_Manager.Controls
         }
         private void GetResources(DeviceContext1 deviceContext)
         {
-            _highlightedBrush ??= new SolidColorBrush(deviceContext, new RawColor4((97 / 255), 1.0f, 0.0f, 1.0f));
+            _highlightedBrush?.Dispose();
+            _highlightedOuterEdgeBrush?.Dispose();
+            _snappedouterEdgeBrush?.Dispose();
 
-            _highlightedOuterEdgeBrush ??= new SolidColorBrush(deviceContext, new RawColor4((97 / 255), 1.0f, 0.0f, 1.0f))
+            _highlightedBrush = new SolidColorBrush(deviceContext, new RawColor4((97 / 255), 1.0f, 0.0f, 1.0f));
+            _highlightedOuterEdgeBrush = new SolidColorBrush(deviceContext, new RawColor4((97 / 255), 1.0f, 0.0f, 1.0f))
+            { Opacity = 0.2f };
+            _snappedouterEdgeBrush = new SolidColorBrush(deviceContext, new RawColor4(0.0f, 0.0f, 0.0f, 1.0f))
             { Opacity = 0.2f };
 
         }

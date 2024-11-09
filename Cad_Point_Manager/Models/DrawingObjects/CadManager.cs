@@ -14,6 +14,9 @@ using System.Threading.Tasks;
 using System.Windows;
 using Cad_Point_Manager.Helpers;
 using Cad_Point_Manager.Controls.D2DControl;
+using SharpDX.DirectWrite;
+using Cad_Point_Manager.Common;
+using SharpDX.Mathematics.Interop;
 
 namespace Cad_Point_Manager.DrawingObjects
 {
@@ -24,6 +27,11 @@ namespace Cad_Point_Manager.DrawingObjects
 
         private DxfDocument _dxfDocument;
         private Rect _extents;
+        private Dictionary<(byte r, byte g, byte b, byte a), Brush> _brushes = [];
+        private Dictionary<(Enums.LineType lineType, StrokeTransformType strokeTransformType), StrokeStyle1> _strokeStyles = [];
+        private Dictionary<(int fontSize, string fontName), TextFormat> _textFormats = [];
+
+        private ResourceCache _resCache;
         #endregion
 
         #region Properties
@@ -43,6 +51,33 @@ namespace Cad_Point_Manager.DrawingObjects
             {
                 _extents = value;
                 OnPropertyChanged(nameof(Extents));
+            }
+        }
+        public Dictionary<(byte r, byte g, byte b, byte a), Brush> Brushes
+        {
+            get { return _brushes; }
+            set
+            {
+                _brushes = value;
+                OnPropertyChanged(nameof(Brushes));
+            }
+        }
+        public Dictionary<(Enums.LineType lineType, StrokeTransformType strokeTransformType), StrokeStyle1> StrokeStyles
+        {
+            get { return _strokeStyles; }
+            set
+            {
+                _strokeStyles = value;
+                OnPropertyChanged(nameof(StrokeStyles));
+            }
+        }
+        public Dictionary<(int fontSize, string fontName), TextFormat> TextFormats
+        {
+            get { return _textFormats; }
+            set
+            {
+                _textFormats = value;
+                OnPropertyChanged(nameof(TextFormats));
             }
         }
 
@@ -87,7 +122,7 @@ namespace Cad_Point_Manager.DrawingObjects
             if (Layers.TryGetValue(dxfLayer.Name, out ObjectLayer layer)) { return layer; }
             else
             {
-                ObjectLayer objectLayer = new(dxfLayer);
+                ObjectLayer objectLayer = new(dxfLayer, this);
                 Layers.Add(dxfLayer.Name, objectLayer);
                 return objectLayer;
             }
@@ -97,30 +132,24 @@ namespace Cad_Point_Manager.DrawingObjects
         {
             Stopwatch stopwatch = new();
 
+            _resCache = resCache;
+
             foreach (var layer in Layers.Values)
             {
                 layer.InitializeResources(resCache);
             }
 
-            foreach (var layer in Layers.Values)
-            {
-                stopwatch.Restart();
-
-                layer.InitializeGeometries();
-
-                stopwatch.Stop();
-                Debug.WriteLine($"InitializeGeometries: {layer.Name} - {stopwatch.ElapsedMilliseconds} ms");
-            }
-
-            //Parallel.ForEach(Layers.Values, layer =>
+            //foreach (var layer in Layers.Values)
             //{
             //    stopwatch.Restart();
 
             //    layer.InitializeGeometries();
+            //}
 
-            //    stopwatch.Stop();
-            //    Debug.WriteLine($"InitializeGeometries: {layer.Name} - {stopwatch.ElapsedMilliseconds} ms");
-            //});
+            Parallel.ForEach(Layers.Values, layer =>
+            {
+                layer.InitializeGeometries();
+            });
         }
         public void UpdateDeviceDependentResources(ResourceCache resCache)
         {
@@ -153,6 +182,56 @@ namespace Cad_Point_Manager.DrawingObjects
             return drawingObjects;
         }
 
+        public Brush GetBrush(byte r, byte g, byte b, byte a)
+        {
+            bool brushExists = Brushes.TryGetValue((r, g, b, a), out Brush brush);
+            if (!brushExists || brush is null)
+            {
+                brush = new SolidColorBrush(_resCache.DeviceContext, new RawColor4((float)r / 255, (float)g / 255, (float)b / 255, (float)a / 255));
+                Brushes.Add((r, g, b, a), brush);
+            }
+
+            return brush;
+        }
+        public StrokeStyle1 GetStrokeStyle(Enums.LineType lineType, StrokeTransformType strokeTransformType)
+        {
+            bool strokeStyleExists = StrokeStyles.TryGetValue((lineType, strokeTransformType), value: out StrokeStyle1 strokeStyle);
+
+            if (!strokeStyleExists || strokeStyle is null)
+            {
+                DashStyle dashStyle; float dashOffset;
+
+                if (lineType is Enums.LineType.Dash) { dashStyle = DashStyle.Dash; dashOffset = 1; }
+                else { dashStyle = DashStyle.Solid; dashOffset = 0; }
+
+                StrokeStyleProperties1 ssp = new()
+                {
+                    StartCap = CapStyle.Round,
+                    EndCap = CapStyle.Round,
+                    DashCap = CapStyle.Flat,
+                    LineJoin = LineJoin.Round,
+                    MiterLimit = 10.0f,
+                    DashStyle = dashStyle,
+                    DashOffset = dashOffset,
+                    TransformType = strokeTransformType
+                };
+                strokeStyle = new StrokeStyle1(_resCache.Factory, ssp);
+                StrokeStyles.Add((lineType, strokeTransformType), strokeStyle);
+            }
+
+            return strokeStyle;
+        }
+        public TextFormat GetTextFormat(int fontSize, string fontName)
+        {
+            bool textFormatExists = TextFormats.TryGetValue((fontSize, fontName), value: out TextFormat textFormat);
+            if (!textFormatExists || textFormat is null)
+            {
+                textFormat = new TextFormat(_resCache.FactoryWrite, fontName, fontSize);
+                TextFormats.Add((fontSize, fontName), textFormat);
+            }
+            return textFormat;
+        }
+
         protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
@@ -169,15 +248,23 @@ namespace Cad_Point_Manager.DrawingObjects
 
             if (disposing)
             {
-                // Dispose managed resources
-                if (Layers != null)
+                foreach (var layer in Layers.Values)
                 {
-                    foreach (var layer in Layers.Values)
-                    {
-                        layer?.Dispose();
-                    }
-                    Layers.Clear();
+                    layer?.Dispose();
                 }
+                Layers.Clear();
+
+                foreach (var brush in Brushes.Values)
+                {
+                    brush?.Dispose();
+                }
+                Brushes.Clear();
+
+                foreach (var strokeStyle in StrokeStyles.Values)
+                {
+                    strokeStyle?.Dispose();
+                }
+                StrokeStyles.Clear();
             }
 
             // Free unmanaged resources if any
