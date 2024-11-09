@@ -42,9 +42,9 @@ namespace Cad_Point_Manager.Helpers
             return Rect.Empty;
         }
 
-        public static ObjectLayerManager GetLayers(DxfDocument dxfDocument)
+        public static CadManager GetLayers(DxfDocument dxfDocument)
         {
-            ObjectLayerManager layerManager = new();
+            CadManager layerManager = new();
 
             foreach (var dxfLayer in dxfDocument.Layers)
             {
@@ -54,7 +54,7 @@ namespace Cad_Point_Manager.Helpers
             return layerManager;
         }
 
-        public static int LoadEntityObject(EntityObject e, ObjectLayerManager layerManager)
+        public static int LoadEntityObject(EntityObject e, CadManager layerManager)
         {
             ObjectLayer layer = layerManager.GetLayer(e.Layer);
             DrawingObject drawingObject = e switch
@@ -79,7 +79,7 @@ namespace Cad_Point_Manager.Helpers
             return 0;
         }
 
-        public static int LoadDrawingObjects(DxfDocument dxfDocument, ObjectLayerManager layerManager, Factory1 factory,
+        public static int LoadDrawingObjects(DxfDocument dxfDocument, CadManager layerManager, Factory1 factory,
             DeviceContext1 deviceContext, ResourceCache resCache)
         {
             Stopwatch stopwatch = Stopwatch.StartNew();

@@ -16,7 +16,7 @@ namespace Cad_Point_Manager.ViewModels
     {
         #region Fields
         private bool _jobFileLoaded = false;
-        private ObjectLayerManager _layerManager;
+        private CadManager _layerManager;
         private string _dxfFilePath;
         private string _dxfFileName;
         private DxfDocument _dxfDocument;
@@ -32,7 +32,7 @@ namespace Cad_Point_Manager.ViewModels
                 OnPropertyChanged(nameof(JobFileLoaded));
             }
         }
-        public ObjectLayerManager LayerManager
+        public CadManager LayerManager
         {
             get { return _layerManager; }
             set

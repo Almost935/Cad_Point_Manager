@@ -17,7 +17,7 @@ using Cad_Point_Manager.Controls.D2DControl;
 
 namespace Cad_Point_Manager.DrawingObjects
 {
-    public class ObjectLayerManager : IDisposable, INotifyPropertyChanged
+    public class CadManager : IDisposable, INotifyPropertyChanged
     {
         #region Fields
         private bool _disposed = false;
@@ -185,7 +185,7 @@ namespace Cad_Point_Manager.DrawingObjects
             _disposed = true;
         }
 
-        ~ObjectLayerManager()
+        ~CadManager()
         {
             Dispose(false);
         }

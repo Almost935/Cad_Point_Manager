@@ -141,16 +141,16 @@ namespace Cad_Point_Manager.Controls
         #endregion
 
         #region Dependency Properties
-        public ObjectLayerManager LayerManager
+        public CadManager LayerManager
         {
-            get { return (ObjectLayerManager)GetValue(LayerManagerProperty); }
+            get { return (CadManager)GetValue(LayerManagerProperty); }
             set { SetValue(LayerManagerProperty, value); }
         }
 
         public static readonly DependencyProperty LayerManagerProperty =
         DependencyProperty.Register(
             nameof(LayerManager),           
-            typeof(ObjectLayerManager),           
+            typeof(CadManager),           
             typeof(Direct2DDxfControl),   
             new PropertyMetadata(null, OnLayerManagerChanged));
         #endregion
@@ -181,7 +181,7 @@ namespace Cad_Point_Manager.Controls
             //    control.LayerManagerValue = (ObjectLayerManager)e.NewValue;
             //}
         }
-        public void UpdateDxf(ObjectLayerManager layerManager)
+        public void UpdateDxf(CadManager layerManager)
         {
             if (layerManager is not null)
             {
@@ -260,7 +260,6 @@ namespace Cad_Point_Manager.Controls
 
         public override void Render()
         {
-            //Debug.WriteLine($"LayerManager is null: {LayerManager is null}");
             if (LayerManager is not null)
             {
                 Stopwatch stopwatch = Stopwatch.StartNew();
@@ -338,7 +337,7 @@ namespace Cad_Point_Manager.Controls
                     return;
                 }
 
-                Stopwatch stopwatch = Stopwatch.StartNew();
+                //Stopwatch stopwatch = Stopwatch.StartNew();
 
                 _offscreenRenderTarget.BeginDraw();
                 _offscreenRenderTarget.Clear(new RawColor4(1, 1, 1, 0));
@@ -348,8 +347,6 @@ namespace Cad_Point_Manager.Controls
                 matrix.Translate(_offscreenBitmapCenteringOffset.x, _offscreenBitmapCenteringOffset.y); // Translation to center the bitmap in the render target
                 RawMatrix3x2 rawMatrix = new((float)matrix.M11, (float)matrix.M12, (float)matrix.M21, (float)matrix.M22, (float)matrix.OffsetX, (float)matrix.OffsetY);
                 _offscreenRenderTarget.Transform = rawMatrix;
-
-                //Debug.WriteLine($"rawMatrix: {rawMatrix.M11} {rawMatrix.M21} {rawMatrix.M31} {rawMatrix.M32}");
 
                 float thickness = (float)(_baseLineThickness / _overallMatrix.M11);
 
@@ -373,8 +370,8 @@ namespace Cad_Point_Manager.Controls
                 // Verify that the bitmap was updated correctly
                 if (_currentOffscreenBitmap.ZoomStep == _currentZoomStep) { _offscreenBitmapIsDirty = false; }
 
-                stopwatch.Stop();
-                Debug.WriteLine($"UpdateOffscreenRenderTarget Elapsed Time: {stopwatch.ElapsedMilliseconds} ms");
+                //stopwatch.Stop();
+                //Debug.WriteLine($"UpdateOffscreenRenderTarget Elapsed Time: {stopwatch.ElapsedMilliseconds} ms");
             }
         }
 
@@ -449,9 +446,6 @@ namespace Cad_Point_Manager.Controls
         }
         protected override void OnMouseWheel(MouseWheelEventArgs e)
         {
-            //Stopwatch stopwatch = Stopwatch.StartNew();
-            //Debug.WriteLine($"\nOnMouseWheel started");
-
             float zoom;
             int zoomStepDelta = Math.Abs(e.Delta / 120);
 
@@ -467,9 +461,6 @@ namespace Cad_Point_Manager.Controls
             }
 
             UpdateZoom(zoom);
-
-            //stopwatch.Stop();
-            //Debug.WriteLine($"OnMouseWheel ended: {stopwatch.ElapsedMilliseconds} ms");
         }
         protected override void OnMouseMove(MouseEventArgs e)
         {
@@ -480,8 +471,6 @@ namespace Cad_Point_Manager.Controls
                 var translate = PointerCoords - _lastTranslatePos;
 
                 if (translate.LengthSquared < 1) { return; } //Prevent unneccessary translations
-
-                //Debug.WriteLine($"PointerCoords: {PointerCoords} _lastTranslatePos: {_lastTranslatePos}");
 
                 UpdateTranslate(translate);
                 _lastTranslatePos = PointerCoords;
@@ -618,43 +607,6 @@ namespace Cad_Point_Manager.Controls
 
         }
 
-
-        //private async Task RunGetVisibleObjectsAsync()
-        //{
-        //    while (true)
-        //    {
-        //        await Task.Delay(500);
-        //        await Task.Run(() => GetVisibleObjects());
-        //    }
-        //}
-        //private void GetVisibleObjects()
-        //{
-        //    Stopwatch stopwatch = Stopwatch.StartNew();
-
-
-        //    if (LayerManager is not null && _visibleObjectsDirty && _drawingObjectTree is not null)
-        //    {
-        //        _visibleDrawingObjects.Clear();
-        //        var views = _drawingObjectTree.GetIntersectingNodes(_currentDxfView);
-        //        foreach (var view in views)
-        //        {
-        //            foreach (var obj in view.DrawingObjects)
-        //            {
-        //                if (obj.Layer.IsVisible)
-        //                {
-        //                    obj.IsInView = obj.DrawingObjectIsInRect(_currentDxfView);
-        //                    if (obj.IsInView)
-        //                    {
-        //                        _visibleDrawingObjects.Add(obj);
-        //                    }
-        //                }
-        //            }
-        //        }
-        //        //Debug.WriteLine($"New get visibile objects: {stopwatch.ElapsedMilliseconds}");
-
-        //        _visibleObjectsDirty = false;
-        //    }
-        //}
         private async void UpdateDxfCoordsAsync()
         {
             while (true)

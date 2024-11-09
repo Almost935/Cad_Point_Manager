@@ -17,7 +17,7 @@ namespace Cad_Point_Manager.Models
         private string _jobName;
         private string _dxfFilePath;
         private DxfDocument _dxfDoc;
-        private ObjectLayerManager _layerManager;
+        private CadManager _layerManager;
         private Rect _extents = new();
         #endregion
 
@@ -49,7 +49,7 @@ namespace Cad_Point_Manager.Models
                 OnPropertyChanged();
             }
         }
-        public ObjectLayerManager LayerManager 
+        public CadManager LayerManager 
         {
             get { return _layerManager; }
             set

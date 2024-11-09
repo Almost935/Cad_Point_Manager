@@ -91,17 +91,9 @@ namespace Cad_Point_Manager.DrawingObjects
             GetLayerBrush();
             GetLayerStrokeStyle();
 
-            //Stopwatch stopwatch = new();
-
             foreach (var obj in DrawingObjects)
             {
-                //stopwatch.Restart();
-                //Debug.WriteLine($"InitializeResources of obj: {obj.GetType()}");
-
                 obj?.InitializeResources(resCache);
-
-                //stopwatch.Stop();
-                //Debug.WriteLine($"InitializeResources of obj: {obj.GetType()}: {stopwatch.ElapsedMilliseconds} ms");
             }
         }
         public void InitializeGeometries()
@@ -116,11 +108,6 @@ namespace Cad_Point_Manager.DrawingObjects
                 //stopwatch.Stop();
                 //Debug.WriteLine($"InitializeGeometry of obj: {obj.GetType()}: {stopwatch.ElapsedMilliseconds} ms");
             });
-
-            //foreach (var obj in DrawingObjects)
-            //{
-            //    obj?.UpdateGeometry();
-            //}
 
             LoadGeometryGroup();
         }
