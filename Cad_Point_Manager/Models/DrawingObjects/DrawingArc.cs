@@ -34,7 +34,7 @@ namespace Cad_Point_Manager.DrawingObjects
 
         public double Sweep { get; set; }
         public bool IsLargeArc { get; set; }
-        public bool Radius { get; }
+        public double Radius { get; set; }
         #endregion
 
         #region Constructor
@@ -45,13 +45,11 @@ namespace Cad_Point_Manager.DrawingObjects
             Layer = layer;
             EntityCount = 1;
 
-            UpdateDxfProperties();         
+            LoadFromDxfEntity(DxfArc);
         }
         #endregion
 
         #region Methods
-       
-
         public override void DrawToDeviceContext(float thickness, Brush brush)
         {
             if (DeviceContext is not null)
@@ -71,27 +69,52 @@ namespace Cad_Point_Manager.DrawingObjects
         {
             return Bounds.IntersectsWith(rect) || Bounds.Contains(rect);
         }
-        public override void UpdateDxfProperties()
+        public override void LoadFromDxfEntity(EntityObject e)
         {
-            // Start by getting start and end points using NetDxf ToPolyline2D method
-            StartPoint = new(
-                (float)DxfArc.ToPolyline2D(2).Vertexes.First().Position.X,
-                (float)DxfArc.ToPolyline2D(2).Vertexes.First().Position.Y);
-            EndPoint = new(
-                (float)DxfArc.ToPolyline2D(2).Vertexes.Last().Position.X,
-                (float)DxfArc.ToPolyline2D(2).Vertexes.Last().Position.Y);
-
-            // Get sweep and find out if large arc 
-            if (DxfArc.EndAngle < DxfArc.StartAngle)
+            if (e is Arc arc)
             {
-                Sweep = (360 + DxfArc.EndAngle) - DxfArc.StartAngle;
+                var verteces = arc.ToPolyline2D(2).Vertexes;
+                StartPoint = new(
+                    (float)verteces.First().Position.X,
+                    (float)verteces.First().Position.Y);
+                EndPoint = new(
+                    (float)verteces.Last().Position.X,
+                    (float)verteces.Last().Position.Y);
+
+                // Get sweep and find out if large arc 
+                if (arc.EndAngle < arc.StartAngle)
+                {
+                    Sweep = (360 + arc.EndAngle) - arc.StartAngle;
+                }
+                else
+                {
+                    Sweep = Math.Abs(arc.EndAngle - arc.StartAngle);
+                }
+                IsLargeArc = Sweep >= 180;
             }
             else
             {
-                Sweep = Math.Abs(DxfArc.EndAngle - DxfArc.StartAngle);
+                throw new ArgumentException("EntityObject must be of type Arc");
             }
-            IsLargeArc = Sweep >= 180;
         }
+        public override void LoadFromData(DrawingObjectData drawingObjectData)
+        {
+            if (drawingObjectData is DrawingArcData data)
+            {
+                StartPoint = new((float)data.StartPoint.X, (float)data.EndPoint.Y);
+                EndPoint = new((float)data.EndPoint.X, (float)data.EndPoint.Y);
+                Sweep = data.Sweep;
+                IsLargeArc = data.IsLargeArc;
+                Radius = data.Radius;
+                IsPartOfBlock = data.IsPartOfBlock;
+                Bounds = data.Bounds;
+            }
+            else
+            {
+                throw new ArgumentException("DrawingObjectData must be of type DrawingArcData");
+            }
+        }
+
         public override void UpdateGeometry()
         {
             PathGeometry pathGeometry = new(Factory);
@@ -102,7 +125,7 @@ namespace Cad_Point_Manager.DrawingObjects
                 ArcSegment arcSegment = new()
                 {
                     Point = EndPoint,
-                    Size = new((float)DxfArc.Radius, (float)DxfArc.Radius),
+                    Size = new((float)Radius, (float)Radius),
                     SweepDirection = SweepDirection.Clockwise,
                     RotationAngle = (float)Sweep,
                     ArcSize = IsLargeArc ? ArcSize.Large : ArcSize.Small
@@ -134,5 +157,12 @@ namespace Cad_Point_Manager.DrawingObjects
             return Geometry.StrokeContainsPoint(p, thickness);
         }
         #endregion
+    }
+
+    public class DrawingArcData : DrawingSegmentData
+    {
+        public double Sweep { get; set; }
+        public bool IsLargeArc { get; set; }
+        public double Radius { get; set; }
     }
 }

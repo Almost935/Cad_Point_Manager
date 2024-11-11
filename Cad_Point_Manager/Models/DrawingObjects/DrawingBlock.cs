@@ -13,6 +13,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using Cad_Point_Manager.Controls.D2DControl;
 using Cad_Point_Manager.Helpers;
+using Cad_Point_Manager.Models.DrawingObjectsData;
 
 namespace Cad_Point_Manager.DrawingObjects
 {
@@ -45,7 +46,7 @@ namespace Cad_Point_Manager.DrawingObjects
             Entity = dxfBlock;
             Layer = layer;
 
-            UpdateDxfProperties();
+            LoadFromDxfEntity();
         }
         #endregion
 
@@ -136,19 +137,39 @@ namespace Cad_Point_Manager.DrawingObjects
             }
             return false;
         }
-        public override void UpdateDxfProperties()
-        {
-            foreach (var e in DxfBlock.Explode())
-            {
-                var obj = DxfHelpers.GetDrawingObject(e, Layer);
 
-                if (obj is not null)
+        public override void LoadFromDxfEntity(EntityObject entity)
+        {
+            if (entity is Insert insert)
+            {
+                foreach (var e in insert.Explode())
                 {
-                    EntityCount += obj.EntityCount;
-                    DrawingObjects.Add(obj);
+                    var obj = DxfHelpers.GetDrawingObject(e, Layer);
+
+                    if (obj is not null)
+                    {
+                        EntityCount += obj.EntityCount;
+                        DrawingObjects.Add(obj);
+                    }
                 }
             }
+            else
+            {
+                throw new ArgumentException("EntityObject must be of type Insert");
+            }
         }
+        public override void LoadFromData(DrawingObjectData drawingObjectData)
+        {
+            if (drawingObjectData is DrawingBlockData data)
+            {
+                
+            }
+            else
+            {
+                throw new ArgumentException("DrawingObjectData must be of type DrawingArcData");
+            }
+        }
+
         public override void UpdateGeometry()
         {
             foreach (var obj in DrawingObjects)
@@ -181,5 +202,9 @@ namespace Cad_Point_Manager.DrawingObjects
             return false;
         }
         #endregion
+    }
+    public class DrawingBlockData : DrawingObjectData
+    {
+        List<DrawingObjectData> drawingObjectDatas { get; set; }
     }
 }

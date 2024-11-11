@@ -40,20 +40,20 @@ namespace Cad_Point_Manager.DrawingObjects
             Entity = dxfPolyline2D;
             Layer = layer;
 
-            GetDrawingSegments();
-            UpdateDxfProperties();
+            LoadFromDxfEntity(DxfPolyline2D);
         }
         #endregion
 
         #region Methods
 
-        public override void GetDrawingSegments()
+        public ObservableCollection<DrawingObject> GetDrawingSegments(Polyline2D pline)
         {
-            foreach (var e in DxfPolyline2D.Explode())
+            foreach (var e in pline.Explode())
             {
                 var obj = DxfHelpers.GetDrawingSegment(e, Layer);
                 obj.IsPartOfPolyline = true;
                 obj.DrawingPolyline = this;
+                obj.LoadFromDxfEntity(e);
 
                 if (obj is not null)
                 {
@@ -63,13 +63,23 @@ namespace Cad_Point_Manager.DrawingObjects
             }
         }
 
-        public override void UpdateDxfProperties()
+        public override void LoadFromDxfEntity(EntityObject e)
         {
-            Parallel.ForEach(DrawingSegments, segment =>
+            if (e is Polyline2D pline)
             {
-                segment.UpdateDxfProperties();
-            });
+                StartPoint = pline.;
+                GetDrawingSegments(pline);
+            }
+            else
+            {
+                throw new ArgumentException("EntityObject must be of type DrawingPolyline2D");
+            }
         }
+        public override void LoadFromData(DrawingObjectData drawingObjectData)
+        {
+            throw new NotImplementedException();
+        }
+
         public override void UpdateGeometry()
         {
             Parallel.ForEach(DrawingSegments, segment =>
@@ -87,5 +97,10 @@ namespace Cad_Point_Manager.DrawingObjects
             });
         }
         #endregion
+    }
+
+    public class DrawingPolyline2DData : DrawingPolylineData
+    {
+        
     }
 }

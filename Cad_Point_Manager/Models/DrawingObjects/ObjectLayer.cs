@@ -1,5 +1,6 @@
 ﻿using Cad_Point_Manager.Common;
 using Cad_Point_Manager.Controls.D2DControl;
+using Cad_Point_Manager.Models.SerializableObjects;
 using netDxf.Tables;
 using SharpDX.Direct2D1;
 using System;
@@ -44,7 +45,6 @@ namespace Cad_Point_Manager.DrawingObjects
                 OnPropertyChanged(nameof(DrawingObjects));
             }
         }
-        public GeometryGroup GeometryGroup { get; set; }
         public int DrawingObjectsCount
         {
             get { return DrawingObjects.Count; }
@@ -58,9 +58,12 @@ namespace Cad_Point_Manager.DrawingObjects
                 OnPropertyChanged(nameof(IsVisible));
             }
         }
+
+        public GeometryGroup GeometryGroup { get; set; }
         public Brush LayerBrush { get; set; }
         public StrokeStyle1 HairlineStrokeStyle { get; set; }
         public netDxf.Tables.Layer DxfLayer { get; set; }
+        public SerializableColor Color { get; set; }
         #endregion
 
         #region Constructors
@@ -141,7 +144,11 @@ namespace Cad_Point_Manager.DrawingObjects
             }
             LoadGeometryGroup();
         }
-
+        private void LoadFromDxfLayer(netDxf.Tables.Layer layer)
+        {
+            Name = layer.Name;
+            Color = new(Color.R, Color.G, Color.B, Color.A);
+        }
         private void LoadGeometryGroup()
         {
             List<Geometry> geometries = [];
@@ -198,7 +205,7 @@ namespace Cad_Point_Manager.DrawingObjects
         public void GetLayerBrush()
         {
             LayerBrush?.Dispose();
-            LayerBrush = _cadManager.GetBrush(DxfLayer.Color.R, DxfLayer.Color.G, DxfLayer.Color.B, 255);
+            LayerBrush = _cadManager.GetBrush(Color.R, Color.G, Color.B, Color.A);
         }
 
         public void Dispose()
@@ -237,5 +244,12 @@ namespace Cad_Point_Manager.DrawingObjects
             Dispose(false);
         }
         #endregion
+    }
+
+    public class ObjectLayerData 
+    {
+        public string Name { get; set; }
+        public SerializableColor Color { get; set; }
+        public List<DrawingObjectData> DrawingObjects { get; set; } = [];
     }
 }

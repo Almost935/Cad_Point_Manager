@@ -124,8 +124,13 @@ namespace Cad_Point_Manager.DrawingObjects
             {
                 ObjectLayer objectLayer = new(dxfLayer, this);
                 Layers.Add(dxfLayer.Name, objectLayer);
+
                 return objectLayer;
             }
+        }
+        public bool TryGetLayer(string layerName, out ObjectLayer layer)
+        {
+            return Layers.TryGetValue(layerName, out layer);
         }
 
         public void InitializeDeviceResources(ResourceCache resCache)

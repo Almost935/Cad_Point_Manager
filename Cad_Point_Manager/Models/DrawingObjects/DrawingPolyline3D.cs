@@ -41,7 +41,7 @@ namespace Direct2DDXFViewer.DrawingObjects
             Layer = layer;
 
             GetDrawingSegments();
-            UpdateDxfProperties();
+            LoadFromDxfEntity();
         }
         #endregion
 
@@ -62,11 +62,11 @@ namespace Direct2DDXFViewer.DrawingObjects
             }
         }
 
-        public override void UpdateDxfProperties()
+        public override void LoadFromDxfEntity()
         {
             Parallel.ForEach(DrawingSegments, segment =>
             {
-                segment.UpdateDxfProperties();
+                segment.LoadFromDxfEntity();
             });
         }
         public override void UpdateGeometry()
@@ -86,5 +86,10 @@ namespace Direct2DDXFViewer.DrawingObjects
             });
         }
         #endregion
+    }
+
+    public class DrawingPolyline3DData : DrawingPolylineData
+    {
+
     }
 }

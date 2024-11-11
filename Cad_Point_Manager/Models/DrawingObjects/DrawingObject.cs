@@ -59,7 +59,6 @@ namespace Cad_Point_Manager.DrawingObjects
         //public Brush OuterEdgeBrush { get; set; }
         //public StrokeStyle1 HairlineStrokeStyle { get; set; }
         //public StrokeStyle1 FixedStrokeStyle { get; set; }
-        public float Thickness { get; set; } = 0.25f;
 
         public ResourceCache ResCache { get; set; }
         public bool IsInView { get; set; } = true;
@@ -77,7 +76,8 @@ namespace Cad_Point_Manager.DrawingObjects
         #endregion
 
         #region Methods
-        public abstract void UpdateDxfProperties();
+        public abstract void LoadFromDxfEntity(EntityObject e);
+        public abstract void LoadFromData(DrawingObjectData drawingObjectData);
         public abstract void UpdateGeometry();
         public abstract void DrawToDeviceContext(float thickness, Brush brush);
         public abstract void DrawToDeviceContext(float thickness, Brush brush, StrokeStyle1 strokeStyle);
@@ -169,5 +169,13 @@ namespace Cad_Point_Manager.DrawingObjects
             Dispose(false);
         }
         #endregion
+    }
+    public abstract class DrawingObjectData
+    {
+        public string LayerName { get; set; }
+        public Rect Bounds { get; set; }
+        public bool IsPartOfBlock { get; set; }
+
+        public abstract DrawingObject CreateDrawingObject(ObjectLayer layer);
     }
 }

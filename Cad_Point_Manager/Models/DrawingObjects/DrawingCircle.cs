@@ -1,4 +1,5 @@
-﻿using netDxf.Entities;
+﻿using Cad_Point_Manager.Models.SerializableObjects;
+using netDxf.Entities;
 using SharpDX.Direct2D1;
 using SharpDX.Mathematics.Interop;
 using System;
@@ -9,7 +10,6 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
-
 using Ellipse = SharpDX.Direct2D1.Ellipse;
 
 namespace Cad_Point_Manager.DrawingObjects
@@ -30,6 +30,9 @@ namespace Cad_Point_Manager.DrawingObjects
                 OnPropertyChanged(nameof(DxfCircle));
             }
         }
+
+        public double Radius { get; set; }
+        public RawVector2 Center { get; set; }
         #endregion
 
         #region Constructor
@@ -40,7 +43,7 @@ namespace Cad_Point_Manager.DrawingObjects
             Layer = layer;
             EntityCount = 1;
 
-            UpdateDxfProperties();
+            LoadFromDxfEntity(dxfCircle);
         }
         #endregion
 
@@ -60,10 +63,42 @@ namespace Cad_Point_Manager.DrawingObjects
         }
 
 
-        public override void UpdateDxfProperties()
+        public override void LoadFromDxfEntity(EntityObject e)
         {
-            
+            if (e is Circle circle)
+            {
+                Radius = DxfCircle.Radius;
+                Center = new RawVector2((float)DxfCircle.Center.X, (float)DxfCircle.Center.Y);
+                var verteces = circle.ToPolyline2D(2).Vertexes;
+                StartPoint = new(
+                    (float)verteces.First().Position.X,
+                    (float)verteces.First().Position.Y);
+                EndPoint = new(
+                    (float)verteces.Last().Position.X,
+                    (float)verteces.Last().Position.Y);
+            }
+            else
+            {
+                throw new ArgumentException("EntityObject must be of type Circle");
+            }
         }
+        public override void LoadFromData(DrawingObjectData drawingObjectData)
+        {
+            if (drawingObjectData is DrawingCircleData data)
+            {
+                StartPoint = new((float)data.StartPoint.X, (float)data.EndPoint.Y);
+                EndPoint = new((float)data.EndPoint.X, (float)data.EndPoint.Y);
+                Center = new((float)data.Center.X, (float)data.Center.Y);
+                Radius = data.Radius;
+                IsPartOfBlock = data.IsPartOfBlock;
+                Bounds = data.Bounds;
+            }
+            else
+            {
+                throw new ArgumentException("DrawingObjectData must be of type DrawingCircleData");
+            }
+        }
+
         public override void UpdateGeometry()
         {
             Ellipse ellipse = new(new RawVector2((float)DxfCircle.Center.X, (float)DxfCircle.Center.Y), (float)DxfCircle.Radius, (float)DxfCircle.Radius);
@@ -80,5 +115,10 @@ namespace Cad_Point_Manager.DrawingObjects
             return Geometry.StrokeContainsPoint(p, thickness);
         }
         #endregion
+    }
+    public class DrawingCircleData : DrawingSegmentData
+    {
+        public double Radius { get; set; }
+        public SerializablePoint Center { get; set; }
     }
 }

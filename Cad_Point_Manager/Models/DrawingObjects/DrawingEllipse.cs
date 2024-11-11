@@ -1,20 +1,6 @@
-﻿using netDxf;
-using netDxf.Entities;
-using SharpDX;
-using SharpDX.Direct2D1;
+﻿using SharpDX.Direct2D1;
 using SharpDX.Mathematics.Interop;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Linq;
-using System.Numerics;
-using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Media;
-using System.Diagnostics;
-using System.Net;
 
 using Ellipse = SharpDX.Direct2D1.Ellipse;
 using EllipseGeometry = SharpDX.Direct2D1.EllipseGeometry;
@@ -24,6 +10,10 @@ using PathGeometry = SharpDX.Direct2D1.PathGeometry;
 using ArcSegment = SharpDX.Direct2D1.ArcSegment;
 using SweepDirection = SharpDX.Direct2D1.SweepDirection;
 using Matrix = System.Windows.Media.Matrix;
+using Cad_Point_Manager.Models.SerializableObjects;
+using netDxf.Entities;
+using static netDxf.Entities.HatchBoundaryPath;
+using Cad_Point_Manager.Common;
 
 namespace Cad_Point_Manager.DrawingObjects
 {
@@ -43,6 +33,17 @@ namespace Cad_Point_Manager.DrawingObjects
                 OnPropertyChanged(nameof(_dxfEllipse));
             }
         }
+
+        public Enums.EllipseType Type { get; set; }
+        public double StartAngle { get; set; }
+        public double EndAngle { get; set; }
+        public double Sweep { get; set; }
+        public double MajorAxis { get; set; }
+        public double MinorAxis { get; set; }
+        public double Rotation { get; set; }
+        public bool IsLargeArc { get; set; }
+        public SerializablePoint Center { get; set; }
+        public double Radius { get; set; }
         #endregion
 
         #region Constructor
@@ -53,7 +54,7 @@ namespace Cad_Point_Manager.DrawingObjects
             Layer = layer;
             EntityCount = 1;
 
-            UpdateDxfProperties();
+            LoadFromDxfEntity(dxfEllipse);
         }
         #endregion
 
@@ -72,9 +73,76 @@ namespace Cad_Point_Manager.DrawingObjects
             return Bounds.IntersectsWith(rect) || Bounds.Contains(rect);
         }
 
-        public override void UpdateDxfProperties()
+        public override void LoadFromDxfEntity(EntityObject e)
         {
-            if (DxfEllipse.IsFullEllipse)
+            if (e is netDxf.Entities.Ellipse ellipse)
+            {
+                var verteces = ellipse.ToPolyline2D(2).Vertexes;
+                StartPoint = new(
+                    (float)verteces.First().Position.X,
+                    (float)verteces.First().Position.Y);
+                EndPoint = new(
+                    (float)verteces.Last().Position.X,
+                    (float)verteces.Last().Position.Y);
+
+                StartAngle = ellipse.StartAngle;
+                EndAngle = ellipse.EndAngle;
+                MajorAxis = ellipse.MajorAxis;
+                MinorAxis = ellipse.MinorAxis;
+                Rotation = ellipse.Rotation;
+                Center = new(ellipse.Center.X, ellipse.Center.Y);
+
+                if (EndAngle < StartAngle)
+                {
+                    Sweep = (360 + EndAngle) - StartAngle;
+                }
+                else
+                {
+                    Sweep = Math.Abs(EndAngle - StartAngle);
+                }
+                IsLargeArc = Sweep >= 180;
+
+                if (DxfEllipse.IsFullEllipse)
+                {
+                    Type = Enums.EllipseType.FullEllipse;
+                }
+                else
+                {
+                    Type = Enums.EllipseType.Arc;
+                }
+            }
+            else
+            {
+                throw new ArgumentException("EntityObject must be of type Ellipse");
+            }
+        }
+        public override void LoadFromData(DrawingObjectData drawingObjectData)
+        {
+            if (drawingObjectData is DrawingEllipseData data)
+            {
+                StartPoint = new((float)data.StartPoint.X, (float)data.EndPoint.Y);
+                EndPoint = new((float)data.EndPoint.X, (float)data.EndPoint.Y);
+                StartAngle = data.StartAngle;
+                EndAngle = data.EndAngle;
+                MajorAxis = data.MajorAxis;
+                MinorAxis = data.MinorAxis;
+                Center = data.Center;
+                Radius = data.Radius;
+                IsPartOfBlock = data.IsPartOfBlock;
+                Bounds = data.Bounds;
+                Type = data.Type;
+                Sweep = data.Sweep;
+                IsLargeArc = data.IsLargeArc;
+            }
+            else
+            {
+                throw new ArgumentException("DrawingObjectData must be of type DrawingEllipseData");
+            }
+        }
+
+        public override void UpdateGeometry()
+        {
+            if (Type is Enums.EllipseType.FullEllipse)
             {
                 Geometry = GetEllipseGeometry();
             }
@@ -82,37 +150,12 @@ namespace Cad_Point_Manager.DrawingObjects
             {
                 Geometry = GetArcGeometry();
             }
-        }
-        public override void UpdateGeometry()
-        {
+
             var bounds = Geometry.GetWidenedBounds(10);
             Bounds = new(bounds.Left, bounds.Top, Math.Abs(bounds.Right - bounds.Left), Math.Abs(bounds.Bottom - bounds.Top));
         }
         public Geometry GetArcGeometry()
-        {
-            // Start by getting start and end points using NetDxf ToPolyline2D method
-            StartPoint = new(
-                (float)DxfEllipse.ToPolyline2D(2).Vertexes.First().Position.X,
-                (float)DxfEllipse.ToPolyline2D(2).Vertexes.First().Position.Y);
-            EndPoint = new(
-                (float)DxfEllipse.ToPolyline2D(2).Vertexes.Last().Position.X,
-                (float)DxfEllipse.ToPolyline2D(2).Vertexes.Last().Position.Y);
-            var radiusX = (float)(DxfEllipse.MajorAxis / 2);
-            var radiusY = (float)(DxfEllipse.MinorAxis / 2);
-            float rotation = (float)DxfEllipse.Rotation; // Rotation in degrees
-
-            // Get sweep and find out if large arc 
-            double sweep;
-            if (DxfEllipse.EndAngle < DxfEllipse.StartAngle)
-            {
-                sweep = (360 + DxfEllipse.EndAngle) - DxfEllipse.StartAngle;
-            }
-            else
-            {
-                sweep = Math.Abs(DxfEllipse.EndAngle - DxfEllipse.StartAngle);
-            }
-            bool isLargeArc = sweep >= 180;
-
+        {            
             PathGeometry pathGeometry = new(Factory);
             using (var sink = pathGeometry.Open())
             {
@@ -121,10 +164,10 @@ namespace Cad_Point_Manager.DrawingObjects
                 ArcSegment arcSegment = new()
                 {
                     Point = EndPoint,
-                    Size = new(radiusX, radiusY),
+                    Size = new((float)(MajorAxis / 2), (float)(MinorAxis / 2)),
                     SweepDirection = SweepDirection.Clockwise,
-                    RotationAngle = rotation,
-                    ArcSize = isLargeArc ? ArcSize.Large : ArcSize.Small
+                    RotationAngle = (float)Rotation,
+                    ArcSize = IsLargeArc ? ArcSize.Large : ArcSize.Small
                 };
 
                 sink.AddArc(arcSegment);
@@ -132,7 +175,7 @@ namespace Cad_Point_Manager.DrawingObjects
                 sink.Close();
 
                 // Apply rotation if needed
-                if (rotation != 0)
+                if (Rotation != 0)
                 {
                     Matrix matrix = new();
                     //matrix.RotateAt((float)rotation, centerPoint.X, centerPoint.Y);
@@ -150,28 +193,20 @@ namespace Cad_Point_Manager.DrawingObjects
         }
         public Geometry GetEllipseGeometry()
         {
-            // Extract properties from the netDxf Ellipse
-            var center = DxfEllipse.Center;
-            double majorAxis = DxfEllipse.MajorAxis;
-            double minorAxis = DxfEllipse.MinorAxis;
-            double rotation = DxfEllipse.Rotation; // Rotation in degrees
-
             // Convert center coordinates and axes to SharpDX format
-            var centerPoint = new RawVector2((float)center.X, (float)center.Y);
-            var width = (float)(majorAxis);
-            var height = (float)(minorAxis);
+            var centerPoint = new RawVector2((float)Center.X, (float)Center.Y);
 
             Matrix matrix = new();
-            matrix.RotateAt((float)rotation, centerPoint.X, centerPoint.Y);
+            matrix.RotateAt((float)Rotation, centerPoint.X, centerPoint.Y);
 
             // Create the SharpDX Ellipse
-            Ellipse ellipse = new(centerPoint, width / 2, height / 2);
+            Ellipse ellipse = new(centerPoint, (float)(MajorAxis / 2), (float)(MinorAxis / 2));
 
             // Create EllipseGeometry
             var ellipseGeometry = new EllipseGeometry(Factory, ellipse);
 
             // Apply rotation if needed
-            if (rotation != 0)
+            if (Rotation != 0)
             {
                 // Apply rotation transformation if required
                 RawMatrix3x2 transform = new((float)matrix.M11, (float)matrix.M12, (float)matrix.M21, (float)matrix.M22, (float)matrix.OffsetX, (float)matrix.OffsetY);
@@ -188,5 +223,18 @@ namespace Cad_Point_Manager.DrawingObjects
             return Geometry.StrokeContainsPoint(p, thickness);
         }
         #endregion
+    }
+    public class DrawingEllipseData : DrawingSegmentData
+    {
+        public Enums.EllipseType Type { get; set; }
+        public double StartAngle { get; set; }
+        public double EndAngle { get; set; }
+        public double Sweep { get; set; }
+        public double MajorAxis { get; set; }
+        public double MinorAxis { get; set; }
+        public double Rotation { get; set; }
+        public bool IsLargeArc { get; set; }
+        public double Radius { get; set; }
+        public SerializablePoint Center { get; set; }
     }
 }

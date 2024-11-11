@@ -79,5 +79,24 @@ namespace Cad_Point_Manager.Common
             PolylineMeshSeqendSeqendSeqendSeqendSeqendSeqendVertex,
             PolylineMeshSeqendSeqendSeqendSeqendSeqendSeqendFace
         }
+
+        public enum EllipseType
+        {
+            FullEllipse,
+            Arc
+        }
+
+        public enum TextAttachmentPoint
+        {
+            TopLeft,
+            TopCenter,
+            TopRight,
+            MiddleLeft,
+            MiddleCenter,
+            MiddleRight,
+            BottomLeft,
+            BottomCenter,
+            BottomRight
+        }
     }
 }
