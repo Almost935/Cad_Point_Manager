@@ -13,8 +13,9 @@ using System.Threading.Tasks;
 using System.Windows;
 using Cad_Point_Manager.Controls.D2DControl;
 using Cad_Point_Manager.Helpers;
+using Cad_Point_Manager.Models.DrawingObjectsData;
 
-namespace Cad_Point_Manager.Models.DrawingObjects
+namespace Cad_Point_Manager.DrawingObjects
 {
     public class DrawingBlock : DrawingObject
     {
@@ -33,6 +34,9 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             }
         }
         public ObservableCollection<DrawingObject> DrawingObjects { get; set; } = new();
+
+
+        public float CurrentScale { get; set; } = 1;
         #endregion
 
         #region Constructor
@@ -42,7 +46,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             Entity = dxfBlock;
             Layer = layer;
 
-            UpdateDxfProperties();
+            LoadFromDxfEntity();
         }
         #endregion
 
@@ -94,6 +98,9 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             {
                 obj.InitializeResources(resCache);
             }
+
+            UpdateBrush();
+            GetStrokeStyle();
         }
         public override void UpdateDeviceDependentResources(ResourceCache resCache)
         {
@@ -104,6 +111,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             {
                 obj.UpdateDeviceDependentResources(resCache);
             }
+            UpdateBrush();
         }
 
         public override void UpdateDeviceIndependentResources(ResourceCache resCache)
@@ -115,6 +123,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             {
                 obj.UpdateDeviceIndependentResources(resCache);
             }
+            GetStrokeStyle();
         }
 
         public override bool DrawingObjectIsInRect(Rect rect)
@@ -128,19 +137,39 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             }
             return false;
         }
-        public override void UpdateDxfProperties()
-        {
-            foreach (var e in DxfBlock.Explode())
-            {
-                var obj = DxfHelpers.GetDrawingObject(e, Layer);
 
-                if (obj is not null)
+        public override void LoadFromDxfEntity(EntityObject entity)
+        {
+            if (entity is Insert insert)
+            {
+                foreach (var e in insert.Explode())
                 {
-                    EntityCount += obj.EntityCount;
-                    DrawingObjects.Add(obj);
+                    var obj = DxfHelpers.GetDrawingObject(e, Layer);
+
+                    if (obj is not null)
+                    {
+                        EntityCount += obj.EntityCount;
+                        DrawingObjects.Add(obj);
+                    }
                 }
             }
+            else
+            {
+                throw new ArgumentException("EntityObject must be of type Insert");
+            }
         }
+        public override void LoadFromData(DrawingObjectData drawingObjectData)
+        {
+            if (drawingObjectData is DrawingBlockData data)
+            {
+                
+            }
+            else
+            {
+                throw new ArgumentException("DrawingObjectData must be of type DrawingArcData");
+            }
+        }
+
         public override void UpdateGeometry()
         {
             foreach (var obj in DrawingObjects)
@@ -157,14 +186,14 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 }
             }
         }
-
+   
         public override bool Hittest(RawVector2 p, float thickness)
         {
             foreach (var obj in DrawingObjects)
             {
-                if (obj.Bounds.Contains(p.X, p.Y))
+                if (obj.Bounds.Contains((double)p.X, (double)p.Y))
                 {
-                    if (obj.Hittest(p, thickness))
+                   if (obj.Hittest(p, thickness))
                     {
                         return true;
                     }
@@ -174,8 +203,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         }
         #endregion
     }
-
-    public class DrawingBlockData
+    public class DrawingBlockData : DrawingObjectData
     {
         List<DrawingObjectData> drawingObjectDatas { get; set; }
     }

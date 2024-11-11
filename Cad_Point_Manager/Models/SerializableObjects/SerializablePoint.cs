@@ -23,6 +23,11 @@ namespace Cad_Point_Manager.Models.SerializableObjects
             X = point.X;
             Y = point.Y;
         }
+        public SerializablePoint(double x, double y)
+        {
+            X = x;
+            Y = y;
+        }
 
         public Point ToPoint()
         {

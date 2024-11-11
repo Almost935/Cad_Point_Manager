@@ -40,7 +40,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             Layer = layer;
 
             GetDrawingSegments();
-            UpdateDxfProperties();
+            LoadFromDxfEntity();
         }
         #endregion
 
@@ -61,11 +61,11 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             }
         }
 
-        public override void UpdateDxfProperties()
+        public override void LoadFromDxfEntity()
         {
             Parallel.ForEach(DrawingSegments, segment =>
             {
-                segment.UpdateDxfProperties();
+                segment.LoadFromDxfEntity();
             });
         }
         public override void UpdateGeometry()
@@ -85,5 +85,10 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             });
         }
         #endregion
+    }
+
+    public class DrawingPolyline3DData : DrawingPolylineData
+    {
+
     }
 }

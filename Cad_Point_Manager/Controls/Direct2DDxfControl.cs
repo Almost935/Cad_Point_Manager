@@ -8,6 +8,7 @@ using System.Windows;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Media;
+using Cad_Point_Manager.DrawingObjects;
 using Cad_Point_Manager.Helpers;
 using Cad_Point_Manager.Controls;
 using Cad_Point_Manager.Controls.D2DControl;
@@ -21,7 +22,6 @@ using Border = System.Windows.Controls.Border;
 using System.Net;
 using System.Collections.ObjectModel;
 using Cad_Point_Manager.Models;
-using Cad_Point_Manager.Models.DrawingObjects;
 
 
 namespace Cad_Point_Manager.Controls
@@ -52,24 +52,26 @@ namespace Cad_Point_Manager.Controls
         private Matrix _transformMatrix = new();
         private Matrix _overallMatrix = new();
 
+        // Device Dependent Resources
+        private bool _resourcesLoaded = false;
+        private Brush _highlightedBrush;
+        private Brush _highlightedOuterEdgeBrush;
+        private Brush _snappedouterEdgeBrush;
+
         private bool _isPanning = false;
         private bool _deviceContextIsDirty = true;
         private Point _lastTranslatePos = new();
         private bool _dxfLoaded = false;
         private Rect _currentView;
         private Rect _currentDxfView;
+        private List<DrawingObject> _visibleDrawingObjects = new();
+        private bool _visibleObjectsDirty = true;
         private int _objectDetailLevelTransitionNum = 500;
         private DrawingObjectTree _drawingObjectTree;
         private bool _clipSet = false;
         private float _lineThickness;
         private float _snappedThickness;
         private float _highlightedThickness;
-
-        // Device Dependent Resources
-        private bool _resourcesLoaded = false;
-        private Brush _highlightedBrush;
-        private Brush _highlightedOuterEdgeBrush;
-        private Brush _snappedouterEdgeBrush;
 
         // Hit testing fields
         private Point _lastHitTestPos = new();
@@ -143,15 +145,15 @@ namespace Cad_Point_Manager.Controls
         #endregion
 
         #region Dependency Properties
-        public CadManager CadManager
+        public CadManager LayerManager
         {
-            get { return (CadManager)GetValue(CadManagerProperty); }
-            set { SetValue(CadManagerProperty, value); }
+            get { return (CadManager)GetValue(LayerManagerProperty); }
+            set { SetValue(LayerManagerProperty, value); }
         }
 
-        public static readonly DependencyProperty CadManagerProperty =
+        public static readonly DependencyProperty LayerManagerProperty =
         DependencyProperty.Register(
-            nameof(CadManager),           
+            nameof(LayerManager),           
             typeof(CadManager),           
             typeof(Direct2DDxfControl),   
             new PropertyMetadata(null, OnLayerManagerChanged));
@@ -164,7 +166,6 @@ namespace Cad_Point_Manager.Controls
 
             UpdateDxfCoordsAsync();
             RunHitTestAsync();
-            RunUpdateOffscreenRenderTargetAsync();
 
             //Window window = Application.Current.MainWindow;
             //window.KeyUp += Window_KeyUp;
@@ -184,22 +185,22 @@ namespace Cad_Point_Manager.Controls
             //    control.LayerManagerValue = (ObjectLayerManager)e.NewValue;
             //}
         }
-        public void UpdateDxf(CadManager cadManager)
+        public void UpdateDxf(CadManager layerManager)
         {
-            if (cadManager is not null)
+            if (layerManager is not null)
             {
-                CadManager = cadManager;
+                LayerManager = layerManager;
             }
         }
 
         private void LoadDxfResources(ResourceCache resCache)
         {
-            if (CadManager is not null && CadManager.DxfLoaded)
+            if (LayerManager is not null && LayerManager.DxfLoaded)
             {
                 Stopwatch stopwatch = Stopwatch.StartNew();
 
                 _dxfLoaded = true;
-                Extents = CadManager.Extents;
+                Extents = LayerManager.Extents;
                 ExtentsMatrix = GetInitialMatrix();
                 _overallMatrix = ExtentsMatrix;
 
@@ -207,9 +208,9 @@ namespace Cad_Point_Manager.Controls
 
                 _hittestStrokeThickness = (float)(8 / ExtentsMatrix.M11);
 
-                CadManager.InitializeDeviceResources(resCache);
+                LayerManager.InitializeDeviceResources(resCache);
 
-                _drawingObjectTree = new(CadManager, Extents, 4);
+                _drawingObjectTree = new(LayerManager, Extents, 4);
 
                 _offscreenBitmapIsDirty = true;
 
@@ -263,8 +264,7 @@ namespace Cad_Point_Manager.Controls
 
         public override void Render()
         {
-            //Debug.WriteLine($"LayerManager is null: {LayerManager is null}");
-            if (CadManager is not null)
+            if (LayerManager is not null)
             {
                 Stopwatch stopwatch = Stopwatch.StartNew();
 
@@ -288,20 +288,26 @@ namespace Cad_Point_Manager.Controls
                     GetInitialView();
 
                     UpdateOffscreenRenderTarget();
+
+                    if (!_updateOffscreenBitmapThreadRunning) { RunUpdateOffscreenRenderTargetAsync(); }
                 }
 
                 if (!_clipSet) { SetClip(); }
                 if (d2DDeviceContext is null) { return; }
                 if (d2DDeviceContext.IsDisposed) { return; }
 
-                if (CadManager is not null && d2DDeviceContext is not null && !d2DDeviceContext.IsDisposed && _deviceContextIsDirty)
+                if (LayerManager is not null && d2DDeviceContext is not null && !d2DDeviceContext.IsDisposed && _deviceContextIsDirty)
                 {
-                    //if (_currentOffscreenBitmap is null) { UpdateOffscreenRenderTarget(); }
+                    if (_currentOffscreenBitmap is null) { UpdateOffscreenRenderTarget(); }
 
                     d2DDeviceContext.Clear(new RawColor4(1, 1, 1, 1));
 
                     RenderOffscreenBitmap(d2DDeviceContext);
-                    RenderInteractiveObjects(d2DDeviceContext);
+
+                    if (_currentOffscreenBitmap.ZoomStep == _currentZoomStep)
+                    {
+                        RenderInteractiveObjects(d2DDeviceContext);
+                    }
 
                     _deviceContextIsDirty = false;
                 }
@@ -343,7 +349,7 @@ namespace Cad_Point_Manager.Controls
                     return;
                 }
 
-                Stopwatch stopwatch = Stopwatch.StartNew();
+                //Stopwatch stopwatch = Stopwatch.StartNew();
 
                 _offscreenRenderTarget.BeginDraw();
                 _offscreenRenderTarget.Clear(new RawColor4(1, 1, 1, 0));
@@ -356,7 +362,7 @@ namespace Cad_Point_Manager.Controls
 
                 float thickness = (float)(_baseLineThickness / _overallMatrix.M11);
 
-                foreach (var layer in CadManager.Layers.Values)
+                foreach (var layer in LayerManager.Layers.Values)
                 {
                     if (layer.GeometryGroup is not null)
                     {
@@ -365,6 +371,7 @@ namespace Cad_Point_Manager.Controls
                 }
 
                 _offscreenRenderTarget.EndDraw();
+
                 var prevBitmap = _currentOffscreenBitmap;
                 _currentOffscreenBitmap = new(zoomStep, _offscreenRenderTarget.Bitmap);
                 _distFromOffscreenBitmapUpdate = new();
@@ -375,8 +382,8 @@ namespace Cad_Point_Manager.Controls
                 // Verify that the bitmap was updated correctly
                 if (_currentOffscreenBitmap.ZoomStep == _currentZoomStep) { _offscreenBitmapIsDirty = false; }
 
-                stopwatch.Stop();
-                Debug.WriteLine($"UpdateOffscreenRenderTarget Elapsed Time: {stopwatch.ElapsedMilliseconds} ms");
+                //stopwatch.Stop();
+                //Debug.WriteLine($"UpdateOffscreenRenderTarget Elapsed Time: {stopwatch.ElapsedMilliseconds} ms");
             }
         }
 
@@ -399,14 +406,14 @@ namespace Cad_Point_Manager.Controls
         }
         private void RenderInteractiveObjects(DeviceContext1 deviceContext)
         {
-            //Stopwatch stopwatch = Stopwatch.StartNew();
+            Stopwatch stopwatch = Stopwatch.StartNew();
 
-            //deviceContext.Transform = new((float)_overallMatrix.M11, (float)_overallMatrix.M12, (float)_overallMatrix.M21, (float)_overallMatrix.M22, (float)_overallMatrix.OffsetX, (float)_overallMatrix.OffsetY);
-            //RenderSnappedObjects(deviceContext);
-            //RenderHighlightedObjects(deviceContext);
+            deviceContext.Transform = new((float)_overallMatrix.M11, (float)_overallMatrix.M12, (float)_overallMatrix.M21, (float)_overallMatrix.M22, (float)_overallMatrix.OffsetX, (float)_overallMatrix.OffsetY);
+            RenderSnappedObjects(deviceContext);
+            RenderHighlightedObjects(deviceContext);
 
-            //stopwatch.Stop();
-            ////Debug.WriteLine($"DrawInteractiveObjects Elapsed Time: {stopwatch.ElapsedMilliseconds} ms");
+            stopwatch.Stop();
+            //Debug.WriteLine($"DrawInteractiveObjects Elapsed Time: {stopwatch.ElapsedMilliseconds} ms");
         }
         private void RenderSnappedObjects(DeviceContext1 deviceContext)
         {
@@ -424,32 +431,7 @@ namespace Cad_Point_Manager.Controls
                 obj.DrawToDeviceContext(_highlightedThickness, _highlightedBrush);
             }
         }
-        private void RenderLayersToDeviceContext(DeviceContext1 deviceContext)
-        {
-            Stopwatch stopwatch = Stopwatch.StartNew();
 
-            deviceContext.Transform = new((float)_overallMatrix.M11, (float)_overallMatrix.M12, (float)_overallMatrix.M21, (float)_overallMatrix.M22, (float)_overallMatrix.OffsetX, (float)_overallMatrix.OffsetY);
-
-            //Parallel.ForEach(CadManager.Layers.Values, layer =>
-            //{
-            //    if (layer.GeometryGroup is not null)
-            //    {
-            //        deviceContext.DrawGeometry(layer.GeometryGroup, layer.LayerBrush, 1, layer.HairlineStrokeStyle);
-            //    }
-            //});
-
-            foreach (var layer in CadManager.Layers.Values)
-            {
-                if (layer.GeometryGroup is not null)
-                {
-                    deviceContext.DrawGeometry(layer.GeometryGroup, layer.LayerBrush, 1, layer.HairlineStrokeStyle);
-                }
-            }
-
-            stopwatch.Stop();
-            Debug.WriteLine($"RenderLayersToDeviceContext Elapsed Time: {stopwatch.ElapsedMilliseconds} ms");
-
-        }
         protected override void OnRenderSizeChanged(SizeChangedInfo sizeInfo)
         {
             base.OnRenderSizeChanged(sizeInfo);
@@ -469,7 +451,6 @@ namespace Cad_Point_Manager.Controls
             _highlightedOuterEdgeBrush = null;
             _snappedouterEdgeBrush?.Dispose();
             _snappedouterEdgeBrush = null;
-            _resourcesLoaded = false;
 
             UpdateLineThicknesses();
 
@@ -479,9 +460,6 @@ namespace Cad_Point_Manager.Controls
         }
         protected override void OnMouseWheel(MouseWheelEventArgs e)
         {
-            //Stopwatch stopwatch = Stopwatch.StartNew();
-            //Debug.WriteLine($"\nOnMouseWheel started");
-
             float zoom;
             int zoomStepDelta = Math.Abs(e.Delta / 120);
 
@@ -497,9 +475,6 @@ namespace Cad_Point_Manager.Controls
             }
 
             UpdateZoom(zoom);
-
-            //stopwatch.Stop();
-            //Debug.WriteLine($"OnMouseWheel ended: {stopwatch.ElapsedMilliseconds} ms");
         }
         protected override void OnMouseMove(MouseEventArgs e)
         {
@@ -510,8 +485,6 @@ namespace Cad_Point_Manager.Controls
                 var translate = PointerCoords - _lastTranslatePos;
 
                 if (translate.LengthSquared < 1) { return; } //Prevent unneccessary translations
-
-                //Debug.WriteLine($"PointerCoords: {PointerCoords} _lastTranslatePos: {_lastTranslatePos}");
 
                 UpdateTranslate(translate);
                 _lastTranslatePos = PointerCoords;
@@ -595,7 +568,7 @@ namespace Cad_Point_Manager.Controls
             if (_drawingObjectTree is null) { return; }
             if (_offscreenBitmapIsDirty) { return; }
             if (_isPanning) { return; }
-            if (CadManager is null) { return; }
+            if (LayerManager is null) { return; }
 
             var mousePos = DxfPointerCoords;
             var rawMousePos = new RawVector2((float)mousePos.X, (float)mousePos.Y);
@@ -648,43 +621,6 @@ namespace Cad_Point_Manager.Controls
 
         }
 
-
-        //private async Task RunGetVisibleObjectsAsync()
-        //{
-        //    while (true)
-        //    {
-        //        await Task.Delay(500);
-        //        await Task.Run(() => GetVisibleObjects());
-        //    }
-        //}
-        //private void GetVisibleObjects()
-        //{
-        //    Stopwatch stopwatch = Stopwatch.StartNew();
-
-
-        //    if (LayerManager is not null && _visibleObjectsDirty && _drawingObjectTree is not null)
-        //    {
-        //        _visibleDrawingObjects.Clear();
-        //        var views = _drawingObjectTree.GetIntersectingNodes(_currentDxfView);
-        //        foreach (var view in views)
-        //        {
-        //            foreach (var obj in view.DrawingObjects)
-        //            {
-        //                if (obj.Layer.IsVisible)
-        //                {
-        //                    obj.IsInView = obj.DrawingObjectIsInRect(_currentDxfView);
-        //                    if (obj.IsInView)
-        //                    {
-        //                        _visibleDrawingObjects.Add(obj);
-        //                    }
-        //                }
-        //            }
-        //        }
-        //        //Debug.WriteLine($"New get visibile objects: {stopwatch.ElapsedMilliseconds}");
-
-        //        _visibleObjectsDirty = false;
-        //    }
-        //}
         private async void UpdateDxfCoordsAsync()
         {
             while (true)
@@ -696,11 +632,8 @@ namespace Cad_Point_Manager.Controls
         private void UpdateDxfPointerCoords()
         {
             var newMatrix = _overallMatrix;
-            if (newMatrix.HasInverse)
-            {
-                newMatrix.Invert();
-                DxfPointerCoords = newMatrix.Transform(PointerCoords);
-            }
+            newMatrix.Invert();
+            DxfPointerCoords = newMatrix.Transform(PointerCoords);
         }
         private void UpdateZoom(float zoom)
         {
@@ -712,6 +645,7 @@ namespace Cad_Point_Manager.Controls
                 UpdateLineThicknesses();
                 ResetSnappedObjects();
 
+                _visibleObjectsDirty = true;
                 _deviceContextIsDirty = true;
                 _offscreenBitmapIsDirty = true;
             }
@@ -727,6 +661,7 @@ namespace Cad_Point_Manager.Controls
 
             ResetSnappedObjects();
 
+            _visibleObjectsDirty = true;
             _deviceContextIsDirty = true;
 
             if (Math.Abs(_distFromOffscreenBitmapUpdate.X) > _maxDistFromOffscreenBitmapUpdate.X + 200 ||
@@ -753,9 +688,9 @@ namespace Cad_Point_Manager.Controls
         }
         private void UpdateDeviceContext(ResourceCache resCache)
         {
-            if (CadManager is null || resCache is null) { return; }
+            if (LayerManager is null || resCache is null) { return; }
 
-            foreach (var layer in CadManager.Layers.Values)
+            foreach (var layer in LayerManager.Layers.Values)
             {
                 layer.UpdateDeviceDependentResources(resCache);
             }

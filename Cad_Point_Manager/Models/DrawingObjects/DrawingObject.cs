@@ -7,7 +7,7 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows;
 
-namespace Cad_Point_Manager.Models.DrawingObjects
+namespace Cad_Point_Manager.DrawingObjects
 {
     public abstract class DrawingObject : INotifyPropertyChanged, IDisposable
     {
@@ -15,6 +15,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         private ObjectLayer _layer;
         private bool _isSnapped = false;
         private bool _isHighlighted = false;
+        private float _outerEdgeOpacity = 0.25f;
         private bool _disposed = false;
 
         protected float _hitTestStrokeThickness = 10;
@@ -58,7 +59,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         //public Brush OuterEdgeBrush { get; set; }
         //public StrokeStyle1 HairlineStrokeStyle { get; set; }
         //public StrokeStyle1 FixedStrokeStyle { get; set; }
-        public float Thickness { get; set; } = 0.25f;
 
         public ResourceCache ResCache { get; set; }
         public bool IsInView { get; set; } = true;
@@ -76,7 +76,8 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         #endregion
 
         #region Methods
-        public abstract void UpdateDxfProperties();
+        public abstract void LoadFromDxfEntity(EntityObject e);
+        public abstract void LoadFromData(DrawingObjectData drawingObjectData);
         public abstract void UpdateGeometry();
         public abstract void DrawToDeviceContext(float thickness, Brush brush);
         public abstract void DrawToDeviceContext(float thickness, Brush brush, StrokeStyle1 strokeStyle);
@@ -89,17 +90,49 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             ResCache = resCache;
             DeviceContext = resCache.DeviceContext;
             Factory = resCache.Factory;
+
+            UpdateBrush();
+            GetStrokeStyle();
         }
         public virtual void UpdateDeviceDependentResources(ResourceCache resCache)
         {
             ResCache = resCache;
             DeviceContext = resCache.DeviceContext;
+
+            UpdateBrush();
         }
 
         public virtual void UpdateDeviceIndependentResources(ResourceCache resCache)
         {
             ResCache = resCache;
             Factory = resCache.Factory;
+
+            GetStrokeStyle();
+        }
+        public void UpdateBrush()
+        {
+            //if (Entity is null || DeviceContext is null)
+            //{
+            //    return;
+            //}
+
+            //Brush?.Dispose();
+            //Brush = null;
+
+            //OuterEdgeBrush?.Dispose();
+            //OuterEdgeBrush = null;
+
+            //(byte r, byte g, byte b, byte a) = DxfHelpers.GetRGBAColor(Entity);
+            //(byte r2, byte g2, byte b2, byte a2) = (r, g, b, (byte)(0.4 * 255));
+
+            //Brush = ResCache.GetBrush(r, g, b, a);
+            //OuterEdgeBrush = ResCache.GetBrush(r2, g2, b2, a2);
+        }
+
+        public void GetStrokeStyle()
+        {
+            //HairlineStrokeStyle = ResCache.GetStrokeStyle(ResourceCache.LineType.Solid, StrokeTransformType.Hairline);
+            //FixedStrokeStyle = ResCache.GetStrokeStyle(ResourceCache.LineType.Solid, StrokeTransformType.Fixed);
         }
 
         protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
@@ -119,8 +152,15 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
             if (disposing)
             {
+                // Dispose managed resources
+                //Brush?.Dispose();
+                //OuterEdgeBrush?.Dispose();
+                //HairlineStrokeStyle?.Dispose();
                 Geometry?.Dispose();
             }
+
+            // Free unmanaged resources if any
+
             _disposed = true;
         }
 
@@ -130,11 +170,12 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         }
         #endregion
     }
-
     public abstract class DrawingObjectData
     {
         public string LayerName { get; set; }
         public Rect Bounds { get; set; }
         public bool IsPartOfBlock { get; set; }
+
+        public abstract DrawingObject CreateDrawingObject(ObjectLayer layer);
     }
 }

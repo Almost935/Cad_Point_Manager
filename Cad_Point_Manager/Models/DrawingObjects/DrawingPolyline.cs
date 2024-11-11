@@ -1,4 +1,5 @@
 ﻿using Cad_Point_Manager.Controls.D2DControl;
+using Cad_Point_Manager.Models.SerializableObjects;
 using netDxf.Entities;
 using SharpDX.Direct2D1;
 using SharpDX.Direct3D11;
@@ -47,8 +48,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         #endregion
 
         #region Methods
-        public abstract void GetDrawingSegments();
-
         public override void DrawToDeviceContext(float thickness, Brush brush)
         {
             if (DeviceContext is not null)
@@ -128,5 +127,12 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             return false;
         }
         #endregion
+    }
+
+    public class DrawingPolylineData : DrawingObjectData
+    {
+        public SerializablePoint StartPoint { get; set; }
+        public SerializablePoint EndPoint { get; set; }
+        public List<DrawingSegmentData> DrawingSegmentDatas { get; set; } = new();
     }
 }

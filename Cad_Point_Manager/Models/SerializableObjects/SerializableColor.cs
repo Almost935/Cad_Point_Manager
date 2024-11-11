@@ -10,35 +10,31 @@ namespace Cad_Point_Manager.Models.SerializableObjects
 {
     public class SerializableColor
     {
-        public float Red { get; set; }
-        public float Green { get; set; }
-        public float Blue { get; set; }
-        public float Alpha { get; set; }
+        public byte R { get; set; }
+        public byte G { get; set; }
+        public byte B { get; set; }
+        public byte A { get; set; }
 
         public SerializableColor() { }
 
         public SerializableColor(RawColor4 color)
         {
-            Red = color.R;
-            Green = color.G;
-            Blue = color.B;
-            Alpha = color.A;
+            R = (byte)(color.R * 255);
+            G = (byte)(color.G * 255);
+            B = (byte)(color.B * 255);
+            A = (byte)(color.A * 255);
         }
-        public SerializableColor(byte red, byte green, byte blue, byte alpha)
+        public SerializableColor(byte r, byte g, byte b, byte a)
         {
-            Red = red / 255f;
-            Green = green / 255f;
-            Blue = blue / 255f;
-            Alpha = alpha / 255f;
+            R = r;
+            G = g;
+            B = b;
+            A = a;
         }
 
         public RawColor4 ToColor4()
         {
-            return new Color4(Red, Green, Blue, Alpha);
-        }
-        public (byte r, byte g, byte b, byte a) ToBytes()
-        {
-            return ((byte)(Red * 255), (byte)(Green * 255), (byte)(Blue * 255), (byte)(Alpha * 255));
+            return new RawColor4(R / 255, G / 255, B / 255, A / 255);
         }
     }
 }

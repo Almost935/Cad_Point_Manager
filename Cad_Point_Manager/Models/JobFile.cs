@@ -1,16 +1,13 @@
-﻿using Cad_Point_Manager.Helpers;
-using Cad_Point_Manager.Models.DrawingObjects;
+﻿using Cad_Point_Manager.DrawingObjects;
+using Direct2DDXFViewer.DrawingObjects;
 using netDxf;
-using netDxf.Collections;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Xml.Linq;
 
 namespace Cad_Point_Manager.Models
 {
@@ -18,11 +15,10 @@ namespace Cad_Point_Manager.Models
     {
         #region Fields
         private string _jobName;
-        private string _jobFilePath;
         private string _dxfFilePath;
         private DxfDocument _dxfDoc;
-        private string _dxfFileName;
-        private CadManager _cadManager;
+        private CadManager _layerManager;
+        private Rect _extents = new();
         #endregion
 
         #region Properties
@@ -32,15 +28,6 @@ namespace Cad_Point_Manager.Models
             set
             {
                 _jobName = value;
-                OnPropertyChanged();
-            }
-        }
-        public string JobFilePath
-        {
-            get { return _jobFilePath; }
-            set
-            {
-                _jobFilePath = value;
                 OnPropertyChanged();
             }
         }
@@ -62,58 +49,39 @@ namespace Cad_Point_Manager.Models
                 OnPropertyChanged();
             }
         }
-        public string DxfFileName
+        public CadManager LayerManager 
         {
-            get { return _dxfFileName; }
+            get { return _layerManager; }
             set
             {
-                _dxfFileName = value;
+                _layerManager = value;
                 OnPropertyChanged();
             }
         }
-        public CadManager CadManager 
+        public Rect Extents
         {
-            get { return _cadManager; }
+           get { return _extents; }
             set
             {
-                _cadManager = value;
+                _extents = value;
                 OnPropertyChanged();
             }
         }
 
-        public bool DxfLoaded { get; set; } = false;
+        public bool DxfLoaded { get { return LayerManager is not null; } }
         #endregion
 
         #region Constructors
-        public JobFile() 
-        { 
-            CadManager = new(); 
+        public JobFile()
+        {
+
         }
         #endregion
 
         #region Methods
-        public void LoadDxf(string filepath)
+        public void LoadDxf(DxfDocument dxfDoc)
         {
-            Stopwatch stopwatch = Stopwatch.StartNew();
-
-            DxfLoaded = false;
-
-            DxfDoc = DxfDocument.Load(filepath);
-            if (DxfDoc is not null)
-            {
-                DxfFilePath = filepath;
-                DxfFileName = DxfDoc.Name;
-                CadManager.LoadDxfDocument(DxfDoc);
-                DxfLoaded = true;
-            }           
-
-            stopwatch.Stop();
-            Debug.WriteLine($"LoadDxfDocument: {stopwatch.ElapsedMilliseconds} ms");
-        }
-
-        public void SaveToFile()
-        {
-
+            
         }
         #endregion
     }

@@ -26,4 +26,8 @@ namespace Cad_Point_Manager.Models
         #region Methods
         #endregion
     }
+    public class DrawingLineData : DrawingSegmentData
+    {
+
+    }
 }

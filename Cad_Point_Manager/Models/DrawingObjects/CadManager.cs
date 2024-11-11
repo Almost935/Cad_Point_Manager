@@ -14,11 +14,11 @@ using System.Threading.Tasks;
 using System.Windows;
 using Cad_Point_Manager.Helpers;
 using Cad_Point_Manager.Controls.D2DControl;
-using System.IO;
 using SharpDX.DirectWrite;
+using Cad_Point_Manager.Common;
 using SharpDX.Mathematics.Interop;
 
-namespace Cad_Point_Manager.Models.DrawingObjects
+namespace Cad_Point_Manager.DrawingObjects
 {
     public class CadManager : IDisposable, INotifyPropertyChanged
     {
@@ -26,11 +26,12 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         private bool _disposed = false;
 
         private DxfDocument _dxfDocument;
-        private ResourceCache _resCache;
         private Rect _extents;
         private Dictionary<(byte r, byte g, byte b, byte a), Brush> _brushes = [];
         private Dictionary<(Enums.LineType lineType, StrokeTransformType strokeTransformType), StrokeStyle1> _strokeStyles = [];
         private Dictionary<(int fontSize, string fontName), TextFormat> _textFormats = [];
+
+        private ResourceCache _resCache;
         #endregion
 
         #region Properties
@@ -81,6 +82,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         }
 
         public Dictionary<string, ObjectLayer> Layers { get; set; } = new();
+        public List<DrawingObject> DrawingObjects => Layers.Values.SelectMany(layer => layer.DrawingObjects).ToList();
         public bool DxfLoaded { get; set; } = false;
         #endregion
 
@@ -90,16 +92,17 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
         #region Methods
         public void LoadDxfDocument(DxfDocument dxfDocument)
-        {       
+        {
             Stopwatch stopwatch = Stopwatch.StartNew();
 
-            ClearDxfDocument();
+            DxfLoaded = false;
 
             _dxfDocument = dxfDocument;
+            Layers.Clear();
             Extents = new();
+
             Extents = DxfHelpers.GetExtentsFromHeader(DxfDocument);
 
-            int count = 0;
             foreach (var e in _dxfDocument.Entities.All)
             {
                 var layer = GetLayer(e.Layer);
@@ -107,13 +110,12 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 if (obj is not null)
                 {
                     layer.DrawingObjects.Add(obj);
-                    count++;
                 }
             }
             DxfLoaded = true;
 
             stopwatch.Stop();
-            Debug.WriteLine($"CadManager LoadDxfDocument: {stopwatch.ElapsedMilliseconds} ms. {count} objects loaded.");
+            Debug.WriteLine($"LoadDxfDocument: {stopwatch.ElapsedMilliseconds} ms");
         }
         public ObjectLayer GetLayer(netDxf.Tables.Layer dxfLayer)
         {
@@ -122,9 +124,69 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             {
                 ObjectLayer objectLayer = new(dxfLayer, this);
                 Layers.Add(dxfLayer.Name, objectLayer);
+
                 return objectLayer;
             }
         }
+        public bool TryGetLayer(string layerName, out ObjectLayer layer)
+        {
+            return Layers.TryGetValue(layerName, out layer);
+        }
+
+        public void InitializeDeviceResources(ResourceCache resCache)
+        {
+            Stopwatch stopwatch = new();
+
+            _resCache = resCache;
+
+            foreach (var layer in Layers.Values)
+            {
+                layer.InitializeResources(resCache);
+            }
+
+            //foreach (var layer in Layers.Values)
+            //{
+            //    stopwatch.Restart();
+
+            //    layer.InitializeGeometries();
+            //}
+
+            Parallel.ForEach(Layers.Values, layer =>
+            {
+                layer.InitializeGeometries();
+            });
+        }
+        public void UpdateDeviceDependentResources(ResourceCache resCache)
+        {
+            foreach (var layer in Layers.Values)
+            {
+                layer?.UpdateDeviceDependentResources(resCache);
+            }
+        }
+        public void UpdateDeviceIndependentResources(ResourceCache resCache)
+        {
+            foreach (var layer in Layers.Values)
+            {
+                layer?.UpdateDeviceIndependentResources(resCache);
+            }
+        }
+
+        public List<DrawingObject> GetDrawingObjectsinRect(Rect rect)
+        {
+            List<DrawingObject> drawingObjects = [];
+            foreach (var layer in Layers.Values)
+            {
+                foreach (var obj in layer.DrawingObjects)
+                {
+                    if (obj.DrawingObjectIsInRect(rect))
+                    {
+                        drawingObjects.Add(obj);
+                    }
+                }
+            }
+            return drawingObjects;
+        }
+
         public Brush GetBrush(byte r, byte g, byte b, byte a)
         {
             bool brushExists = Brushes.TryGetValue((r, g, b, a), out Brush brush);
@@ -136,7 +198,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
             return brush;
         }
-
         public StrokeStyle1 GetStrokeStyle(Enums.LineType lineType, StrokeTransformType strokeTransformType)
         {
             bool strokeStyleExists = StrokeStyles.TryGetValue((lineType, strokeTransformType), value: out StrokeStyle1 strokeStyle);
@@ -176,58 +237,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             return textFormat;
         }
 
-        public void InitializeDeviceResources(ResourceCache resCache)
-        {
-            Stopwatch stopwatch = new();
-
-            _resCache = resCache;
-            foreach (var layer in Layers.Values)
-            {
-                layer.InitializeResources(resCache);
-            }
-
-            var tasks = Layers.Values.Select(layer => Task.Run(() => layer.InitializeGeometries())).ToArray();
-            Task.WhenAll(tasks).Wait();
-
-            stopwatch.Stop();
-            Debug.WriteLine($"InitializeDeviceResources: {stopwatch.ElapsedMilliseconds} ms");
-        }
-        public void UpdateDeviceDependentResources(ResourceCache resCache)
-        {
-            ClearDeviceResources();
-            foreach (var layer in Layers.Values)
-            {
-                layer?.UpdateDeviceDependentResources(resCache);
-            }
-        }
-        public void UpdateDeviceIndependentResources(ResourceCache resCache)
-        {
-            foreach (var layer in Layers.Values)
-            {
-                layer?.UpdateDeviceIndependentResources(resCache);
-            }
-        }
-
-
-        public void ClearDxfDocument()
-        {
-            DxfDocument = null;
-            Extents = new();
-            foreach (var layer in Layers.Values) {  layer?.Dispose(); }
-            Layers.Clear();
-            foreach (var brush in Brushes.Values) { brush?.Dispose(); }
-            Brushes.Clear();
-            foreach (var strokeStyle in StrokeStyles.Values) { strokeStyle?.Dispose(); }
-            StrokeStyles.Clear();
-            foreach (var textFormat in TextFormats.Values) { textFormat?.Dispose(); }
-            TextFormats.Clear();
-            DxfLoaded = false;
-        }
-        public void ClearDeviceResources()
-        {
-            foreach (var brush in Brushes.Values) { brush?.Dispose(); }
-            Brushes.Clear();
-        }
         protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
@@ -244,46 +253,30 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
             if (disposing)
             {
-                // Dispose managed resources
-                if (Layers != null)
+                foreach (var layer in Layers.Values)
                 {
-                    foreach (var layer in Layers.Values)
-                    {
-                        layer?.Dispose();
-                    }
-                    Layers.Clear();
+                    layer?.Dispose();
                 }
+                Layers.Clear();
 
-                if (_brushes != null)
+                foreach (var brush in Brushes.Values)
                 {
-                    foreach (var brush in _brushes.Values)
-                    {
-                        brush?.Dispose();
-                    }
-                    _brushes.Clear();
+                    brush?.Dispose();
                 }
+                Brushes.Clear();
 
-                if (_strokeStyles != null)
+                foreach (var strokeStyle in StrokeStyles.Values)
                 {
-                    foreach (var strokeStyle in _strokeStyles.Values)
-                    {
-                        strokeStyle?.Dispose();
-                    }
-                    _strokeStyles.Clear();
+                    strokeStyle?.Dispose();
                 }
-
-                if (_textFormats != null)
-                {
-                    foreach (var textFormat in _textFormats.Values)
-                    {
-                        textFormat?.Dispose();
-                    }
-                    _textFormats.Clear();
-                }
+                StrokeStyles.Clear();
             }
+
+            // Free unmanaged resources if any
 
             _disposed = true;
         }
+
         ~CadManager()
         {
             Dispose(false);

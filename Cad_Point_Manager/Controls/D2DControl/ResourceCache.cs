@@ -127,8 +127,7 @@ namespace Cad_Point_Manager.Controls.D2DControl
             
         //    return brush;
         //}
-
-        //public StrokeStyle1 GetStrokeStyle(Enums.LineType lineType, StrokeTransformType strokeTransformType)
+        //public StrokeStyle1 GetStrokeStyle(LineType lineType, StrokeTransformType strokeTransformType)
         //{
         //    bool strokeStyleExists = StrokeStyles.TryGetValue((lineType, strokeTransformType), value: out StrokeStyle1 strokeStyle);
 
@@ -136,7 +135,7 @@ namespace Cad_Point_Manager.Controls.D2DControl
         //    {
         //        DashStyle dashStyle; float dashOffset;
 
-        //        if (lineType is Enums.LineType.Dash) { dashStyle = DashStyle.Dash; dashOffset = 1; }
+        //        if (lineType is LineType.Dash) { dashStyle = DashStyle.Dash; dashOffset = 1; }
         //        else { dashStyle = DashStyle.Solid; dashOffset = 0; }
 
         //        StrokeStyleProperties1 ssp = new()

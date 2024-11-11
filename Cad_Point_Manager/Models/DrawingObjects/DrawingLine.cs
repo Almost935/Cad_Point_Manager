@@ -16,7 +16,7 @@ using System.Windows;
 
 using Point = System.Windows.Point;
 
-namespace Cad_Point_Manager.Models.DrawingObjects
+namespace Cad_Point_Manager.DrawingObjects
 {
     public class DrawingLine : DrawingSegment
     {
@@ -43,10 +43,8 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             Entity = dxfLine;
             Layer = layer;
             EntityCount = 1;
-            StartPoint = new((float)dxfLine.StartPoint.X, (float)dxfLine.StartPoint.Y);
-            EndPoint = new((float)dxfLine.EndPoint.X, (float)dxfLine.EndPoint.Y);
 
-            UpdateDxfProperties();
+            LoadFromDxfEntity(DxfLine);
         }
         #endregion
 
@@ -65,11 +63,33 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             return Bounds.IntersectsWith(rect) || Bounds.Contains(rect);
         }
 
-        public override void UpdateDxfProperties()
+        public override void LoadFromDxfEntity(EntityObject e)
         {
-            StartPoint = new((float)DxfLine.StartPoint.X, (float)DxfLine.StartPoint.Y);
-            EndPoint = new((float)DxfLine.EndPoint.X, (float)DxfLine.EndPoint.Y);
+            if (e is Line line)
+            {
+                StartPoint = new((float)line.StartPoint.X, (float)line.StartPoint.Y);
+                EndPoint = new((float)line.EndPoint.X, (float)line.EndPoint.Y);
+            }
+            else
+            {
+                throw new ArgumentException("EntityObject must be of type Line");
+            }
         }
+        public override void LoadFromData(DrawingObjectData drawingObjectData)
+        {
+            if (drawingObjectData is DrawingArcData data)
+            {
+                StartPoint = new((float)data.StartPoint.X, (float)data.EndPoint.Y);
+                EndPoint = new((float)data.EndPoint.X, (float)data.EndPoint.Y);
+                IsPartOfBlock = data.IsPartOfBlock;
+                Bounds = data.Bounds;
+            }
+            else
+            {
+                throw new ArgumentException("DrawingObjectData must be of type DrawingLineData");
+            }
+        }
+
         public override void UpdateGeometry()
         {
             PathGeometry pathGeometry = new(Factory);
@@ -96,6 +116,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
     public class DrawingLineData : DrawingSegmentData
     {
-
+       
     }
 }

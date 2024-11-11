@@ -1,4 +1,6 @@
-﻿using Cad_Point_Manager.Controls.D2DControl;
+﻿using Cad_Point_Manager.Common;
+using Cad_Point_Manager.Controls.D2DControl;
+using Cad_Point_Manager.Models.SerializableObjects;
 using netDxf.Tables;
 using SharpDX.Direct2D1;
 using System;
@@ -11,13 +13,13 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 
-namespace Cad_Point_Manager.Models.DrawingObjects
+namespace Cad_Point_Manager.DrawingObjects
 {
     public class ObjectLayer : INotifyPropertyChanged, IDisposable
     {
         #region Fields
-        private ResourceCache _resCache;
         private CadManager _cadManager;
+        private ResourceCache _resCache;
         private string _name;
         private List<DrawingObject> _drawingObjects = [];
         private bool isVisible = true;
@@ -43,7 +45,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 OnPropertyChanged(nameof(DrawingObjects));
             }
         }
-        public GeometryGroup GeometryGroup { get; set; }
         public int DrawingObjectsCount
         {
             get { return DrawingObjects.Count; }
@@ -57,9 +58,12 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 OnPropertyChanged(nameof(IsVisible));
             }
         }
+
+        public GeometryGroup GeometryGroup { get; set; }
         public Brush LayerBrush { get; set; }
         public StrokeStyle1 HairlineStrokeStyle { get; set; }
         public netDxf.Tables.Layer DxfLayer { get; set; }
+        public SerializableColor Color { get; set; }
         #endregion
 
         #region Constructors
@@ -80,7 +84,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
-
+       
 
         public void InitializeResources(ResourceCache resCache)
         {
@@ -88,8 +92,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
             GetLayerBrush();
             GetLayerStrokeStyle();
-
-            //Stopwatch stopwatch = new();
 
             foreach (var obj in DrawingObjects)
             {
@@ -117,7 +119,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
             LayerBrush?.Dispose();
             LayerBrush = null;
-
+            
             GetLayerBrush();
 
             foreach (var obj in DrawingObjects)
@@ -142,8 +144,12 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             }
             LoadGeometryGroup();
         }
-
-        public void LoadGeometryGroup()
+        private void LoadFromDxfLayer(netDxf.Tables.Layer layer)
+        {
+            Name = layer.Name;
+            Color = new(Color.R, Color.G, Color.B, Color.A);
+        }
+        private void LoadGeometryGroup()
         {
             List<Geometry> geometries = [];
 
@@ -187,7 +193,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             if (geometries.Count > 0)
             {
                 var geometryArr = geometries.ToArray();
-
                 GeometryGroup = new(_resCache.Factory, FillMode.Alternate, geometryArr);
             }
         }
@@ -200,7 +205,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         public void GetLayerBrush()
         {
             LayerBrush?.Dispose();
-            LayerBrush = _cadManager.GetBrush(DxfLayer.Color.R, DxfLayer.Color.G, DxfLayer.Color.B, 255);
+            LayerBrush = _cadManager.GetBrush(Color.R, Color.G, Color.B, Color.A);
         }
 
         public void Dispose()
@@ -239,5 +244,12 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             Dispose(false);
         }
         #endregion
+    }
+
+    public class ObjectLayerData 
+    {
+        public string Name { get; set; }
+        public SerializableColor Color { get; set; }
+        public List<DrawingObjectData> DrawingObjects { get; set; } = [];
     }
 }
