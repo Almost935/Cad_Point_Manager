@@ -1,25 +1,19 @@
 ﻿using SharpDX;
 using SharpDX.Direct2D1;
 using SharpDX.Mathematics.Interop;
-using netDxf;
 using System.Diagnostics;
 using System.Windows.Input;
 using System.Windows;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Media;
-using Cad_Point_Manager.Helpers;
-using Cad_Point_Manager.Controls;
 using Cad_Point_Manager.Controls.D2DControl;
 
 using Point = System.Windows.Point;
 using Brush = SharpDX.Direct2D1.Brush;
 using SolidColorBrush = SharpDX.Direct2D1.SolidColorBrush;
-using Factory1 = SharpDX.Direct2D1.Factory1;
 using Matrix = System.Windows.Media.Matrix;
 using Border = System.Windows.Controls.Border;
-using System.Net;
-using System.Collections.ObjectModel;
 using Cad_Point_Manager.Models;
 using Cad_Point_Manager.Models.DrawingObjects;
 
@@ -145,15 +139,15 @@ namespace Cad_Point_Manager.Controls
         #endregion
 
         #region Dependency Properties
-        public CadManager LayerManager
+        public CadManager CadManager
         {
-            get { return (CadManager)GetValue(LayerManagerProperty); }
-            set { SetValue(LayerManagerProperty, value); }
+            get { return (CadManager)GetValue(CadManagerProperty); }
+            set { SetValue(CadManagerProperty, value); }
         }
 
-        public static readonly DependencyProperty LayerManagerProperty =
+        public static readonly DependencyProperty CadManagerProperty =
         DependencyProperty.Register(
-            nameof(LayerManager),           
+            nameof(CadManager),           
             typeof(CadManager),           
             typeof(Direct2DDxfControl),   
             new PropertyMetadata(null, OnLayerManagerChanged));
@@ -189,18 +183,18 @@ namespace Cad_Point_Manager.Controls
         {
             if (layerManager is not null)
             {
-                LayerManager = layerManager;
+                CadManager = layerManager;
             }
         }
 
         private void LoadDxfResources(ResourceCache resCache)
         {
-            if (LayerManager is not null && LayerManager.DxfLoaded)
+            if (CadManager is not null && CadManager.DxfLoaded)
             {
                 Stopwatch stopwatch = Stopwatch.StartNew();
 
                 _dxfLoaded = true;
-                Extents = LayerManager.Extents;
+                Extents = CadManager.Extents;
                 ExtentsMatrix = GetInitialMatrix();
                 _overallMatrix = ExtentsMatrix;
 
@@ -208,9 +202,9 @@ namespace Cad_Point_Manager.Controls
 
                 _hittestStrokeThickness = (float)(8 / ExtentsMatrix.M11);
 
-                LayerManager.InitializeDeviceResources(resCache);
+                CadManager.InitializeDeviceResources(resCache);
 
-                _drawingObjectTree = new(LayerManager, Extents, 4);
+                _drawingObjectTree = new(CadManager, Extents, 4);
 
                 _offscreenBitmapIsDirty = true;
 
@@ -264,7 +258,7 @@ namespace Cad_Point_Manager.Controls
 
         public override void Render()
         {
-            if (LayerManager is not null)
+            if (CadManager is not null)
             {
                 Stopwatch stopwatch = Stopwatch.StartNew();
 
@@ -296,7 +290,7 @@ namespace Cad_Point_Manager.Controls
                 if (d2DDeviceContext is null) { return; }
                 if (d2DDeviceContext.IsDisposed) { return; }
 
-                if (LayerManager is not null && d2DDeviceContext is not null && !d2DDeviceContext.IsDisposed && _deviceContextIsDirty)
+                if (CadManager is not null && d2DDeviceContext is not null && !d2DDeviceContext.IsDisposed && _deviceContextIsDirty)
                 {
                     if (_currentOffscreenBitmap is null) { UpdateOffscreenRenderTarget(); }
 
@@ -362,7 +356,7 @@ namespace Cad_Point_Manager.Controls
 
                 float thickness = (float)(_baseLineThickness / _overallMatrix.M11);
 
-                foreach (var layer in LayerManager.Layers.Values)
+                foreach (var layer in CadManager.Layers.Values)
                 {
                     if (layer.GeometryGroup is not null)
                     {
@@ -568,7 +562,7 @@ namespace Cad_Point_Manager.Controls
             if (_drawingObjectTree is null) { return; }
             if (_offscreenBitmapIsDirty) { return; }
             if (_isPanning) { return; }
-            if (LayerManager is null) { return; }
+            if (CadManager is null) { return; }
 
             var mousePos = DxfPointerCoords;
             var rawMousePos = new RawVector2((float)mousePos.X, (float)mousePos.Y);
@@ -688,9 +682,9 @@ namespace Cad_Point_Manager.Controls
         }
         private void UpdateDeviceContext(ResourceCache resCache)
         {
-            if (LayerManager is null || resCache is null) { return; }
+            if (CadManager is null || resCache is null) { return; }
 
-            foreach (var layer in LayerManager.Layers.Values)
+            foreach (var layer in CadManager.Layers.Values)
             {
                 layer.UpdateDeviceDependentResources(resCache);
             }

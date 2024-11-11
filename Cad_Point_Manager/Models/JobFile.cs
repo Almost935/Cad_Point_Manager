@@ -16,7 +16,7 @@ namespace Cad_Point_Manager.Models
         private string _jobName;
         private string _dxfFilePath;
         private DxfDocument _dxfDoc;
-        private CadManager _layerManager;
+        private CadManager _cadManager;
         private Rect _extents = new();
         #endregion
 
@@ -48,12 +48,12 @@ namespace Cad_Point_Manager.Models
                 OnPropertyChanged();
             }
         }
-        public CadManager LayerManager 
+        public CadManager CadManager 
         {
-            get { return _layerManager; }
+            get { return _cadManager; }
             set
             {
-                _layerManager = value;
+                _cadManager = value;
                 OnPropertyChanged();
             }
         }
@@ -67,7 +67,7 @@ namespace Cad_Point_Manager.Models
             }
         }
 
-        public bool DxfLoaded { get { return LayerManager is not null; } }
+        public bool DxfLoaded { get { return CadManager is not null; } }
         #endregion
 
         #region Constructors

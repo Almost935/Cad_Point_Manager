@@ -195,7 +195,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             return drawingArc;
         }
 
-        public override DrawingObject CreateDrawingSegment(ObjectLayer layer, DrawingBlock block = null, DrawingPolyline pline = null)
+        public override DrawingSegment CreateDrawingSegment(ObjectLayer layer, DrawingBlock block = null, DrawingPolyline pline = null)
         {
             ArgumentNullException.ThrowIfNull(layer);
             DrawingArc drawingArc = new(this, layer, block, pline);

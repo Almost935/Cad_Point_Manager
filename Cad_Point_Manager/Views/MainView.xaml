@@ -146,7 +146,7 @@
                 <controls:Direct2DDxfControl x:Name="dxfControl"
                                              RenderOptions.BitmapScalingMode="HighQuality"
                                              Cursor="Cross"
-                                             CadManager="{Binding JobFile.CadManager}"/>
+                                             CadManager="{Binding CadManager}"/>
             </Border>
         </Grid>
 

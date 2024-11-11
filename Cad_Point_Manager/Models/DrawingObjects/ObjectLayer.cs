@@ -69,9 +69,9 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         #region Constructors
         public ObjectLayer(netDxf.Tables.Layer layer, CadManager cadManager)
         {
-            Name = layer.Name;
             DxfLayer = layer;
             _cadManager = cadManager;
+            LoadFromDxfLayer(layer);
         }
         #endregion
 
@@ -145,7 +145,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         private void LoadFromDxfLayer(netDxf.Tables.Layer layer)
         {
             Name = layer.Name;
-            Color = new(Color.R, Color.G, Color.B, Color.A);
+            Color = new(layer.Color.R, layer.Color.G, layer.Color.B, 255);
         }
         private void LoadGeometryGroup()
         {

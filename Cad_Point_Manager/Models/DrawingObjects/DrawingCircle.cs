@@ -141,7 +141,7 @@ namespace Cad_Point_Manager.DrawingObjects
             return drawingCircle;
         }
 
-        public override DrawingObject CreateDrawingSegment(ObjectLayer layer, DrawingBlock block = null, DrawingPolyline pline = null)
+        public override DrawingSegment CreateDrawingSegment(ObjectLayer layer, DrawingBlock block = null, DrawingPolyline pline = null)
         {
             ArgumentNullException.ThrowIfNull(layer);
             DrawingCircle drawingCircle = new(this, layer, block, pline);

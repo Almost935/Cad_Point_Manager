@@ -129,7 +129,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         #endregion
     }
 
-    public class DrawingPolylineData : DrawingObjectData
+    public abstract class DrawingPolylineData : DrawingObjectData
     {
         public SerializablePoint StartPoint { get; set; }
         public SerializablePoint EndPoint { get; set; }

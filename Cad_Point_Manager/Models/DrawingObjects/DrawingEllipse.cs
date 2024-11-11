@@ -255,7 +255,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             return drawingEllipse;
         }
 
-        public override DrawingObject CreateDrawingSegment(ObjectLayer layer, DrawingBlock block = null, DrawingPolyline pline = null)
+        public override DrawingSegment CreateDrawingSegment(ObjectLayer layer, DrawingBlock block = null, DrawingPolyline pline = null)
         {
             ArgumentNullException.ThrowIfNull(layer);
             DrawingEllipse drawingEllipse = new(this, layer, block, pline);

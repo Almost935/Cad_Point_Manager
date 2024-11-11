@@ -264,5 +264,13 @@ namespace Cad_Point_Manager.DrawingObjects
         public string FontFamilyName { get; set; }
         public Enums.TextAttachmentPoint AttachmentPoint { get; set; }
         public SerializableMatrix Transform { get; set; }
+
+        public override DrawingObject CreateDrawingObject(ObjectLayer layer, DrawingBlock block = null)
+        {
+            ArgumentNullException.ThrowIfNull(layer);
+            DrawingMtext drawingMtext = new(this, layer, block);
+
+            return drawingMtext;
+        }
     }
 }
