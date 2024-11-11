@@ -21,6 +21,8 @@ using Geometry = SharpDX.Direct2D1.Geometry;
 using Ellipse = SharpDX.Direct2D1.Ellipse;
 using EllipseGeometry = SharpDX.Direct2D1.EllipseGeometry;
 using Vector3 = netDxf.Vector3;
+using Cad_Point_Manager.DrawingObjects;
+using Cad_Point_Manager.Models;
 
 namespace Cad_Point_Manager.Helpers
 {
@@ -105,28 +107,28 @@ namespace Cad_Point_Manager.Helpers
             return count;
         }
 
-        public static DrawingObject GetDrawingObject(EntityObject entity, ObjectLayer layer)
+        public static DrawingObject GetDrawingObject(EntityObject entity, ObjectLayer layer, DrawingBlock block = null)
         {
             return entity switch
             {
-                Line line => new DrawingLine(line, layer),
-                Arc arc => new DrawingArc(arc, layer),
-                Polyline2D polyline2D => new DrawingPolyline2D(polyline2D, layer),
-                Polyline3D polyline3D => new DrawingPolyline3D(polyline3D, layer),
-                Circle circle => new DrawingCircle(circle, layer),
-                netDxf.Entities.Ellipse ellipse => new DrawingEllipse(ellipse, layer),
-                Insert insert => new DrawingBlock(insert, layer),
-                MText mtext => new DrawingMtext(mtext, layer),
+                Line line => new DrawingLine(line, layer, block),
+                Arc arc => new DrawingArc(arc, layer, block),
+                Polyline2D polyline2D => new DrawingPolyline2D(polyline2D, layer, block),
+                Polyline3D polyline3D => new DrawingPolyline3D(polyline3D, layer, block),
+                Circle circle => new DrawingCircle(circle, layer, block),
+                netDxf.Entities.Ellipse ellipse => new DrawingEllipse(ellipse, layer, block),
+                Insert insert => new DrawingBlock(insert, layer, block),
+                MText mtext => new DrawingMtext(mtext, layer, block),
                 _ => null
             };
         }
 
-        public static DrawingSegment GetDrawingSegment(EntityObject entity, ObjectLayer layer)
+        public static DrawingSegment GetDrawingSegment(EntityObject entity, ObjectLayer layer, DrawingBlock block = null)
         {
             return entity switch
             {
-                Line line => new DrawingLine(line, layer),
-                Arc arc => new DrawingArc(arc, layer),
+                Line line => new DrawingLine(line, layer, block),
+                Arc arc => new DrawingArc(arc, layer, block),
                 _ => null
             };
         }

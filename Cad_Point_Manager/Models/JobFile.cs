@@ -1,5 +1,4 @@
 ﻿using Cad_Point_Manager.DrawingObjects;
-using Direct2DDXFViewer.DrawingObjects;
 using netDxf;
 using System;
 using System.Collections.Generic;
@@ -84,5 +83,12 @@ namespace Cad_Point_Manager.Models
             
         }
         #endregion
+    }
+
+    public class JobFileData
+    {
+        public string JobName { get; set; }
+        public string DxfFilePath { get; set; }
+        public Rect Extents { get; set; }
     }
 }

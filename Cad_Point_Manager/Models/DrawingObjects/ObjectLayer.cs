@@ -13,7 +13,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 
-namespace Cad_Point_Manager.DrawingObjects
+namespace Cad_Point_Manager.Models.DrawingObjects
 {
     public class ObjectLayer : INotifyPropertyChanged, IDisposable
     {
@@ -84,8 +84,6 @@ namespace Cad_Point_Manager.DrawingObjects
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
-       
-
         public void InitializeResources(ResourceCache resCache)
         {
             _resCache = resCache;
@@ -119,7 +117,7 @@ namespace Cad_Point_Manager.DrawingObjects
 
             LayerBrush?.Dispose();
             LayerBrush = null;
-            
+
             GetLayerBrush();
 
             foreach (var obj in DrawingObjects)
@@ -196,18 +194,15 @@ namespace Cad_Point_Manager.DrawingObjects
                 GeometryGroup = new(_resCache.Factory, FillMode.Alternate, geometryArr);
             }
         }
-
         public void GetLayerStrokeStyle()
         {
             HairlineStrokeStyle = _cadManager.GetStrokeStyle(Enums.LineType.Solid, StrokeTransformType.Hairline);
         }
-
         public void GetLayerBrush()
         {
             LayerBrush?.Dispose();
             LayerBrush = _cadManager.GetBrush(Color.R, Color.G, Color.B, Color.A);
         }
-
         public void Dispose()
         {
             Dispose(true);
@@ -246,7 +241,7 @@ namespace Cad_Point_Manager.DrawingObjects
         #endregion
     }
 
-    public class ObjectLayerData 
+    public class ObjectLayerData
     {
         public string Name { get; set; }
         public SerializableColor Color { get; set; }

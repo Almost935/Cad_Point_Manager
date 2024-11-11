@@ -10,6 +10,7 @@
 
   <ItemGroup>
     <Compile Remove="Helpers\DxfHelper.cs" />
+    <Compile Remove="Models\Enums.cs" />
     <Compile Remove="Services\DxfService.cs" />
   </ItemGroup>
 

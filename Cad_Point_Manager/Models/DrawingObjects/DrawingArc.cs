@@ -1,4 +1,6 @@
-﻿using netDxf.Entities;
+﻿using Cad_Point_Manager.DrawingObjects;
+using Cad_Point_Manager.Models.SerializableObjects;
+using netDxf.Entities;
 using SharpDX;
 using SharpDX.Direct2D1;
 using SharpDX.Mathematics.Interop;
@@ -13,7 +15,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 
-namespace Cad_Point_Manager.DrawingObjects
+namespace Cad_Point_Manager.Models.DrawingObjects
 {
     public class DrawingArc : DrawingSegment
     {
@@ -32,20 +34,33 @@ namespace Cad_Point_Manager.DrawingObjects
             }
         }
 
-        public double Sweep { get; set; }
+        public float Sweep { get; set; }
         public bool IsLargeArc { get; set; }
-        public double Radius { get; set; }
+        public float Radius { get; set; }
+        public SerializablePoint Center { get; set; }
+        public float StartAngle { get; set; }
+        public float EndAngle { get; set; }
         #endregion
 
         #region Constructor
-        public DrawingArc(Arc dxfArc, ObjectLayer layer)
+        public DrawingArc(Arc dxfArc, ObjectLayer layer, DrawingBlock drawingBlock = null, DrawingPolyline drawingPline = null)
         {
             DxfArc = dxfArc;
             Entity = dxfArc;
             Layer = layer;
+            Block = drawingBlock;
+            DrawingPolyline = drawingPline;
             EntityCount = 1;
-
             LoadFromDxfEntity(DxfArc);
+        }
+
+        public DrawingArc(DrawingArcData arcData, ObjectLayer layer, DrawingBlock drawingBlock = null, DrawingPolyline drawingPline = null)
+        {
+            Layer = layer;
+            Block = drawingBlock;
+            DrawingPolyline = drawingPline;
+            EntityCount = 1;
+            LoadFromData(arcData);
         }
         #endregion
 
@@ -80,16 +95,13 @@ namespace Cad_Point_Manager.DrawingObjects
                 EndPoint = new(
                     (float)verteces.Last().Position.X,
                     (float)verteces.Last().Position.Y);
-
-                // Get sweep and find out if large arc 
-                if (arc.EndAngle < arc.StartAngle)
-                {
-                    Sweep = (360 + arc.EndAngle) - arc.StartAngle;
-                }
-                else
-                {
-                    Sweep = Math.Abs(arc.EndAngle - arc.StartAngle);
-                }
+                Radius = (float)arc.Radius;
+                Center = new((float)arc.Center.X, (float)arc.Center.Y);
+                
+                StartAngle = (float)arc.StartAngle;
+                EndAngle = (float)arc.EndAngle;
+                Sweep = EndAngle - StartAngle;
+                if (Sweep < 0) { Sweep += 360; }
                 IsLargeArc = Sweep >= 180;
             }
             else
@@ -103,10 +115,14 @@ namespace Cad_Point_Manager.DrawingObjects
             {
                 StartPoint = new((float)data.StartPoint.X, (float)data.EndPoint.Y);
                 EndPoint = new((float)data.EndPoint.X, (float)data.EndPoint.Y);
+                StartAngle = data.StartAngle;
+                EndAngle = data.EndAngle;
+                Center = new((float)data.Center.X, (float)data.Center.Y);
                 Sweep = data.Sweep;
                 IsLargeArc = data.IsLargeArc;
                 Radius = data.Radius;
                 IsPartOfBlock = data.IsPartOfBlock;
+                IsPartOfPolyline = data.IsPartOfPolyline;
                 Bounds = data.Bounds;
             }
             else
@@ -161,8 +177,31 @@ namespace Cad_Point_Manager.DrawingObjects
 
     public class DrawingArcData : DrawingSegmentData
     {
-        public double Sweep { get; set; }
+        #region Properties
+        public float Sweep { get; set; }
         public bool IsLargeArc { get; set; }
-        public double Radius { get; set; }
+        public float Radius { get; set; }
+        public float StartAngle { get; set; }
+        public float EndAngle { get; set; }
+        public SerializablePoint Center { get; set; }
+        #endregion
+
+        #region Methods
+        public override DrawingObject CreateDrawingObject(ObjectLayer layer, DrawingBlock block = null)
+        {
+            ArgumentNullException.ThrowIfNull(layer);
+            DrawingArc drawingArc = new(this, layer, block);
+
+            return drawingArc;
+        }
+
+        public override DrawingObject CreateDrawingSegment(ObjectLayer layer, DrawingBlock block = null, DrawingPolyline pline = null)
+        {
+            ArgumentNullException.ThrowIfNull(layer);
+            DrawingArc drawingArc = new(this, layer, block, pline);
+
+            return drawingArc;
+        }
+        #endregion
     }
 }

@@ -8,7 +8,6 @@ using System.Windows;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Media;
-using Cad_Point_Manager.DrawingObjects;
 using Cad_Point_Manager.Helpers;
 using Cad_Point_Manager.Controls;
 using Cad_Point_Manager.Controls.D2DControl;
@@ -22,6 +21,7 @@ using Border = System.Windows.Controls.Border;
 using System.Net;
 using System.Collections.ObjectModel;
 using Cad_Point_Manager.Models;
+using Cad_Point_Manager.Models.DrawingObjects;
 
 
 namespace Cad_Point_Manager.Controls

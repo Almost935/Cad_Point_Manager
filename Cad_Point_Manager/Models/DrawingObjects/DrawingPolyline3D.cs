@@ -33,41 +33,85 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         #endregion
 
         #region Constructor
-        public DrawingPolyline3D(Polyline3D dxfPolyline3D, ObjectLayer layer)
+        public DrawingPolyline3D(Polyline3D dxfPolyline3D, ObjectLayer layer, DrawingBlock drawingBlock = null)
         {
             DxfPolyline3D = dxfPolyline3D;
             Entity = dxfPolyline3D;
             Layer = layer;
+            Block = drawingBlock;
+            LoadFromDxfEntity(dxfPolyline3D);
+        }
 
-            GetDrawingSegments();
-            LoadFromDxfEntity();
+        public DrawingPolyline3D(DrawingPolyline3DData polyline3DData, ObjectLayer layer, DrawingBlock drawingBlock = null)
+        {
+            Layer = layer;
+            Block = drawingBlock;
+            LoadFromData(polyline3DData);
         }
         #endregion
 
         #region Methods
-        public override void GetDrawingSegments()
+        public ObservableCollection<DrawingSegment> GetDrawingSegments(Polyline3D pline)
         {
-            foreach (var e in DxfPolyline3D.Explode())
+            ObservableCollection<DrawingSegment> drawingObjects = [];
+
+            foreach (var e in pline.Explode())
             {
                 var obj = DxfHelpers.GetDrawingSegment(e, Layer);
                 obj.IsPartOfPolyline = true;
                 obj.DrawingPolyline = this;
+                obj.LoadFromDxfEntity(e);
 
                 if (obj is not null)
                 {
-                    EntityCount += obj.EntityCount;
-                    DrawingSegments.Add(obj);
+                    drawingObjects.Add(obj);
                 }
+            }
+            return drawingObjects;
+        }
+
+        public override void LoadFromDxfEntity(EntityObject e)
+        {
+            if (e is Polyline3D pline)
+            {
+                var verteces = pline.Vertexes;
+
+                StartPoint = new(
+                    (float)verteces.First().X,
+                    (float)verteces.First().Y);
+                EndPoint = new(
+                    (float)verteces.Last().X,
+                    (float)verteces.Last().Y);
+                DrawingSegments = GetDrawingSegments(pline);
+                EntityCount = DrawingSegments.Count;
+            }
+            else
+            {
+                throw new ArgumentException("EntityObject must be of type DrawingPolyline3D");
             }
         }
 
-        public override void LoadFromDxfEntity()
+        public override void LoadFromData(DrawingObjectData drawingObjectData)
         {
-            Parallel.ForEach(DrawingSegments, segment =>
+            if (drawingObjectData is DrawingPolyline3DData data)
             {
-                segment.LoadFromDxfEntity();
-            });
+                StartPoint = new((float)data.StartPoint.X, (float)data.EndPoint.Y);
+                EndPoint = new((float)data.EndPoint.X, (float)data.EndPoint.Y);
+                IsPartOfBlock = data.IsPartOfBlock;
+                Bounds = data.Bounds;
+
+                foreach (var drawingSegmentData in data.DrawingSegmentDatas)
+                {
+                    var drawingSegment = drawingSegmentData.CreateDrawingSegment(Layer, Block, this);
+                    DrawingSegments.Add(drawingSegment);
+                }
+            }
+            else
+            {
+                throw new ArgumentException("DrawingObjectData must be of type DrawingPolyline3DData");
+            }
         }
+
         public override void UpdateGeometry()
         {
             Parallel.ForEach(DrawingSegments, segment =>
@@ -89,6 +133,12 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
     public class DrawingPolyline3DData : DrawingPolylineData
     {
+        public override DrawingObject CreateDrawingObject(ObjectLayer layer, DrawingBlock block = null)
+        {
+            ArgumentNullException.ThrowIfNull(layer);
+            DrawingPolyline3D drawingpline = new(this, layer, block);
 
+            return drawingpline;
+        }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using Cad_Point_Manager.Helpers;
+using Cad_Point_Manager.Models.DrawingObjects;
 using netDxf;
 using netDxf.Entities;
 using netDxf.Units;
@@ -37,14 +38,24 @@ namespace Cad_Point_Manager.DrawingObjects
         #endregion
 
         #region Constructor
-        public DrawingLine(Line dxfLine, ObjectLayer layer)
+        public DrawingLine(Line dxfLine, ObjectLayer layer, DrawingBlock drawingBlock = null, DrawingPolyline drawingPline = null)
         {
             DxfLine = dxfLine;
             Entity = dxfLine;
             Layer = layer;
+            Block = drawingBlock;
+            DrawingPolyline = drawingPline;
             EntityCount = 1;
-
             LoadFromDxfEntity(DxfLine);
+        }
+
+        public DrawingLine(DrawingLineData data, ObjectLayer layer, DrawingBlock drawingBlock = null, DrawingPolyline drawingPline = null)
+        {
+            Layer = layer;
+            Block = drawingBlock;
+            DrawingPolyline = drawingPline;
+            EntityCount = 1;
+            LoadFromData(data);
         }
         #endregion
 
@@ -68,7 +79,7 @@ namespace Cad_Point_Manager.DrawingObjects
             if (e is Line line)
             {
                 StartPoint = new((float)line.StartPoint.X, (float)line.StartPoint.Y);
-                EndPoint = new((float)line.EndPoint.X, (float)line.EndPoint.Y);
+                EndPoint = new((float)line.EndPoint.X, (float)line.EndPoint.Y); 
             }
             else
             {
@@ -82,6 +93,7 @@ namespace Cad_Point_Manager.DrawingObjects
                 StartPoint = new((float)data.StartPoint.X, (float)data.EndPoint.Y);
                 EndPoint = new((float)data.EndPoint.X, (float)data.EndPoint.Y);
                 IsPartOfBlock = data.IsPartOfBlock;
+                IsPartOfPolyline = data.IsPartOfPolyline;
                 Bounds = data.Bounds;
             }
             else
@@ -116,6 +128,20 @@ namespace Cad_Point_Manager.DrawingObjects
 
     public class DrawingLineData : DrawingSegmentData
     {
-       
+        public override DrawingObject CreateDrawingObject(ObjectLayer layer, DrawingBlock block = null)
+        {
+            ArgumentNullException.ThrowIfNull(layer);
+            DrawingLine drawingLine = new(this, layer, block);
+
+            return drawingLine;
+        }
+
+        public override DrawingObject CreateDrawingSegment(ObjectLayer layer, DrawingBlock block = null, DrawingPolyline pline = null)
+        {
+            ArgumentNullException.ThrowIfNull(layer);
+            DrawingLine drawingLine = new(this, layer, block, pline);
+
+            return drawingLine;
+        }
     }
 }

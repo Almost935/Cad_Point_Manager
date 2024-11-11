@@ -7,7 +7,7 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows;
 
-namespace Cad_Point_Manager.DrawingObjects
+namespace Cad_Point_Manager.Models.DrawingObjects
 {
     public abstract class DrawingObject : INotifyPropertyChanged, IDisposable
     {
@@ -175,7 +175,8 @@ namespace Cad_Point_Manager.DrawingObjects
         public string LayerName { get; set; }
         public Rect Bounds { get; set; }
         public bool IsPartOfBlock { get; set; }
+        public DrawingBlockData DrawingBlockData { get; set; }
 
-        public abstract DrawingObject CreateDrawingObject(ObjectLayer layer);
+        public abstract DrawingObject CreateDrawingObject(ObjectLayer layer, DrawingBlock block = null);
     }
 }

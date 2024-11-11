@@ -1,5 +1,6 @@
 ﻿using Cad_Point_Manager.Common;
 using Cad_Point_Manager.Controls.D2DControl;
+using Cad_Point_Manager.Models.DrawingObjects;
 using Cad_Point_Manager.Models.SerializableObjects;
 using netDxf;
 using netDxf.Entities;
@@ -49,14 +50,22 @@ namespace Cad_Point_Manager.DrawingObjects
         #endregion
 
         #region Constructor
-        public DrawingMtext(MText dxfMtext, ObjectLayer layer)
+        public DrawingMtext(MText dxfMtext, ObjectLayer layer, DrawingBlock drawingBlock = null)
         {
             DxfMtext = dxfMtext;
             Entity = dxfMtext;
             Layer = layer;
+            Block = drawingBlock;
             EntityCount = 1;
-
             LoadFromDxfEntity(dxfMtext);
+        }
+
+        public DrawingMtext(DrawingMtextData mTextData, ObjectLayer layer, DrawingBlock drawingBlock = null)
+        {
+            Layer = layer;
+            Block = drawingBlock;
+            EntityCount = 1;
+            LoadFromData(mTextData);
         }
         #endregion
 

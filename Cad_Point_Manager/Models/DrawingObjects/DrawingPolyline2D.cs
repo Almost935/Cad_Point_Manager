@@ -1,17 +1,9 @@
 ﻿using Cad_Point_Manager.Helpers;
 using netDxf.Entities;
 using SharpDX.Direct2D1;
-using SharpDX.Mathematics.Interop;
-using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
-using System.Diagnostics;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
+using static netDxf.Entities.HatchBoundaryPath;
 
 namespace Cad_Point_Manager.Models.DrawingObjects
 {
@@ -34,20 +26,29 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         #endregion
 
         #region Constructor
-        public DrawingPolyline2D(Polyline2D dxfPolyline2D, ObjectLayer layer)
+        public DrawingPolyline2D(Polyline2D dxfPolyline2D, ObjectLayer layer, DrawingBlock drawingBlock = null)
         {
             DxfPolyline2D = dxfPolyline2D;
             Entity = dxfPolyline2D;
             Layer = layer;
-
+            Block = drawingBlock;
             LoadFromDxfEntity(DxfPolyline2D);
+        }
+
+        public DrawingPolyline2D(DrawingPolyline2DData polylineData, ObjectLayer layer, DrawingBlock drawingBlock = null)
+        {
+            Layer = layer;
+            Block = drawingBlock;
+            LoadFromData(polylineData);
         }
         #endregion
 
         #region Methods
 
-        public ObservableCollection<DrawingObject> GetDrawingSegments(Polyline2D pline)
+        public ObservableCollection<DrawingSegment> GetDrawingSegments(Polyline2D pline)
         {
+            ObservableCollection<DrawingSegment> drawingObjects = [];
+
             foreach (var e in pline.Explode())
             {
                 var obj = DxfHelpers.GetDrawingSegment(e, Layer);
@@ -57,18 +58,25 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
                 if (obj is not null)
                 {
-                    EntityCount += obj.EntityCount;
-                    DrawingSegments.Add(obj);
+                    drawingObjects.Add(obj);
                 }
             }
+            return drawingObjects;
         }
 
         public override void LoadFromDxfEntity(EntityObject e)
         {
             if (e is Polyline2D pline)
             {
-                StartPoint = pline.;
-                GetDrawingSegments(pline);
+                var verteces = pline.Vertexes;
+                StartPoint = new(
+                    (float)verteces.First().Position.X,
+                    (float)verteces.First().Position.Y);
+                EndPoint = new(
+                    (float)verteces.Last().Position.X,
+                    (float)verteces.Last().Position.Y);
+                DrawingSegments = GetDrawingSegments(pline);
+                EntityCount = DrawingSegments.Count;
             }
             else
             {
@@ -77,7 +85,23 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         }
         public override void LoadFromData(DrawingObjectData drawingObjectData)
         {
-            throw new NotImplementedException();
+            if (drawingObjectData is DrawingPolyline2DData data)
+            {
+                StartPoint = new((float)data.StartPoint.X, (float)data.EndPoint.Y);
+                EndPoint = new((float)data.EndPoint.X, (float)data.EndPoint.Y);
+                IsPartOfBlock = data.IsPartOfBlock;
+                Bounds = data.Bounds;
+
+                foreach (var drawingSegmentData in data.DrawingSegmentDatas)
+                {
+                    var drawingSegment = drawingSegmentData.CreateDrawingSegment(Layer, Block, this);
+                    DrawingSegments.Add(drawingSegment);
+                }
+            }
+            else
+            {
+                throw new ArgumentException("DrawingObjectData must be of type DrawingPolyline2DData");
+            }
         }
 
         public override void UpdateGeometry()
@@ -101,6 +125,12 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
     public class DrawingPolyline2DData : DrawingPolylineData
     {
-        
+        public override DrawingObject CreateDrawingObject(ObjectLayer layer, DrawingBlock block = null)
+        {
+            ArgumentNullException.ThrowIfNull(layer);
+            DrawingPolyline2D drawingpline = new(this, layer, block);
+
+            return drawingpline;
+        }
     }
 }

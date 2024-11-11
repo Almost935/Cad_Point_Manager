@@ -1,21 +1,12 @@
 ﻿using netDxf.Entities;
 using SharpDX.Direct2D1;
 using SharpDX.Mathematics.Interop;
-using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
-using System.Linq;
-using System.Net;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using Cad_Point_Manager.Controls.D2DControl;
 using Cad_Point_Manager.Helpers;
-using Cad_Point_Manager.Models.DrawingObjectsData;
 
-namespace Cad_Point_Manager.DrawingObjects
+namespace Cad_Point_Manager.Models.DrawingObjects
 {
     public class DrawingBlock : DrawingObject
     {
@@ -40,13 +31,20 @@ namespace Cad_Point_Manager.DrawingObjects
         #endregion
 
         #region Constructor
-        public DrawingBlock(Insert dxfBlock, ObjectLayer layer)
+        public DrawingBlock(Insert dxfBlock, ObjectLayer layer, DrawingBlock drawingBlock = null)
         {
             DxfBlock = dxfBlock;
             Entity = dxfBlock;
             Layer = layer;
+            Block = drawingBlock;
+            LoadFromDxfEntity(dxfBlock);
+        }
 
-            LoadFromDxfEntity();
+        public DrawingBlock(DrawingBlockData blockData, ObjectLayer layer, DrawingBlock drawingBlock = null)
+        {
+            Layer = layer;
+            Block = drawingBlock;
+            LoadFromData(blockData);
         }
         #endregion
 
@@ -55,7 +53,7 @@ namespace Cad_Point_Manager.DrawingObjects
         {
             foreach (var e in DxfBlock.Explode())
             {
-                var obj = DxfHelpers.GetDrawingObject(e, Layer);
+                var obj = DxfHelpers.GetDrawingObject(e, Layer, this);
                 obj.IsPartOfBlock = true;
                 obj.Block = this;
 
@@ -162,7 +160,14 @@ namespace Cad_Point_Manager.DrawingObjects
         {
             if (drawingObjectData is DrawingBlockData data)
             {
-                
+                Bounds = data.Bounds;
+                IsPartOfBlock = data.IsPartOfBlock;  
+                DrawingObjects = [];
+
+                foreach (var objDatas in data.DrawingObjectDatas)
+                {
+                    DrawingObjects.Add(objDatas.CreateDrawingObject(Layer));
+                }
             }
             else
             {
@@ -186,14 +191,14 @@ namespace Cad_Point_Manager.DrawingObjects
                 }
             }
         }
-   
+
         public override bool Hittest(RawVector2 p, float thickness)
         {
             foreach (var obj in DrawingObjects)
             {
-                if (obj.Bounds.Contains((double)p.X, (double)p.Y))
+                if (obj.Bounds.Contains(p.X, p.Y))
                 {
-                   if (obj.Hittest(p, thickness))
+                    if (obj.Hittest(p, thickness))
                     {
                         return true;
                     }
@@ -205,6 +210,24 @@ namespace Cad_Point_Manager.DrawingObjects
     }
     public class DrawingBlockData : DrawingObjectData
     {
-        List<DrawingObjectData> drawingObjectDatas { get; set; }
+        #region Properties
+        public List<DrawingObjectData> DrawingObjectDatas { get; set; }
+        #endregion
+
+        #region Methods
+        public override DrawingObject CreateDrawingObject(ObjectLayer layer, DrawingBlock block = null)
+        {
+            ArgumentNullException.ThrowIfNull(layer);
+
+            DrawingBlock drawingBlock = new(this, layer);
+
+            foreach (var data in DrawingObjectDatas)
+            {
+                drawingBlock.DrawingObjects.Add(data.CreateDrawingObject(layer, block));
+            }
+
+            return drawingBlock;
+        }
+        #endregion
     }
 }

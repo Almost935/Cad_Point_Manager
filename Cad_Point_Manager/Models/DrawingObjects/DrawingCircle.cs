@@ -1,4 +1,5 @@
-﻿using Cad_Point_Manager.Models.SerializableObjects;
+﻿using Cad_Point_Manager.Models.DrawingObjects;
+using Cad_Point_Manager.Models.SerializableObjects;
 using netDxf.Entities;
 using SharpDX.Direct2D1;
 using SharpDX.Mathematics.Interop;
@@ -31,19 +32,29 @@ namespace Cad_Point_Manager.DrawingObjects
             }
         }
 
-        public double Radius { get; set; }
+        public float Radius { get; set; }
         public RawVector2 Center { get; set; }
         #endregion
 
         #region Constructor
-        public DrawingCircle(Circle dxfCircle, ObjectLayer layer)
+        public DrawingCircle(Circle dxfCircle, ObjectLayer layer, DrawingBlock drawingBlock = null, DrawingPolyline pline = null)
         {
             DxfCircle = dxfCircle;
             Entity = dxfCircle;
             Layer = layer;
+            Block = drawingBlock;
+            DrawingPolyline = pline;
             EntityCount = 1;
-
             LoadFromDxfEntity(dxfCircle);
+        }
+
+        public DrawingCircle(DrawingCircleData circleData, ObjectLayer layer, DrawingBlock drawingBlock = null, DrawingPolyline pline = null)
+        {
+            Layer = layer;
+            Block = drawingBlock;
+            DrawingPolyline = pline;
+            EntityCount = 1;
+            LoadFromData(circleData);
         }
         #endregion
 
@@ -67,7 +78,7 @@ namespace Cad_Point_Manager.DrawingObjects
         {
             if (e is Circle circle)
             {
-                Radius = DxfCircle.Radius;
+                Radius = (float)circle.Radius;
                 Center = new RawVector2((float)DxfCircle.Center.X, (float)DxfCircle.Center.Y);
                 var verteces = circle.ToPolyline2D(2).Vertexes;
                 StartPoint = new(
@@ -91,6 +102,7 @@ namespace Cad_Point_Manager.DrawingObjects
                 Center = new((float)data.Center.X, (float)data.Center.Y);
                 Radius = data.Radius;
                 IsPartOfBlock = data.IsPartOfBlock;
+                IsPartOfPolyline = data.IsPartOfPolyline;
                 Bounds = data.Bounds;
             }
             else
@@ -101,7 +113,7 @@ namespace Cad_Point_Manager.DrawingObjects
 
         public override void UpdateGeometry()
         {
-            Ellipse ellipse = new(new RawVector2((float)DxfCircle.Center.X, (float)DxfCircle.Center.Y), (float)DxfCircle.Radius, (float)DxfCircle.Radius);
+            Ellipse ellipse = new(new RawVector2((float)Center.X, (float)Center.Y), (float)Radius, (float)Radius);
             EllipseGeometry ellipseGeometry = new(Factory, ellipse);
 
             Geometry = ellipseGeometry;
@@ -118,7 +130,23 @@ namespace Cad_Point_Manager.DrawingObjects
     }
     public class DrawingCircleData : DrawingSegmentData
     {
-        public double Radius { get; set; }
+        public float Radius { get; set; }
         public SerializablePoint Center { get; set; }
+
+        public override DrawingObject CreateDrawingObject(ObjectLayer layer, DrawingBlock block = null)
+        {
+            ArgumentNullException.ThrowIfNull(layer);
+            DrawingCircle drawingCircle = new(this, layer, block);
+
+            return drawingCircle;
+        }
+
+        public override DrawingObject CreateDrawingSegment(ObjectLayer layer, DrawingBlock block = null, DrawingPolyline pline = null)
+        {
+            ArgumentNullException.ThrowIfNull(layer);
+            DrawingCircle drawingCircle = new(this, layer, block, pline);
+
+            return drawingCircle;
+        }
     }
 }

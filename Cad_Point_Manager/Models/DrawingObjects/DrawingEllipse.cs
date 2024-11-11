@@ -15,7 +15,7 @@ using netDxf.Entities;
 using static netDxf.Entities.HatchBoundaryPath;
 using Cad_Point_Manager.Common;
 
-namespace Cad_Point_Manager.DrawingObjects
+namespace Cad_Point_Manager.Models.DrawingObjects
 {
     public class DrawingEllipse : DrawingSegment
     {
@@ -47,14 +47,24 @@ namespace Cad_Point_Manager.DrawingObjects
         #endregion
 
         #region Constructor
-        public DrawingEllipse(netDxf.Entities.Ellipse dxfEllipse, ObjectLayer layer)
+        public DrawingEllipse(netDxf.Entities.Ellipse dxfEllipse, ObjectLayer layer, DrawingBlock drawingBlock = null, DrawingPolyline drawingPline = null)
         {
             DxfEllipse = dxfEllipse;
             Entity = dxfEllipse;
             Layer = layer;
+            Block = drawingBlock;
+            DrawingPolyline = drawingPline;
             EntityCount = 1;
-
             LoadFromDxfEntity(dxfEllipse);
+        }
+
+        public DrawingEllipse(DrawingEllipseData data, ObjectLayer layer, DrawingBlock drawingBlock = null, DrawingPolyline drawingPline = null)
+        {
+            Layer = layer;
+            Block = drawingBlock;
+            DrawingPolyline = drawingPline;
+            EntityCount = 1;
+            LoadFromData(data);
         }
         #endregion
 
@@ -67,7 +77,7 @@ namespace Cad_Point_Manager.DrawingObjects
         {
             DeviceContext?.DrawGeometry(Geometry, brush, thickness, strokeStyle);
         }
-       
+
         public override bool DrawingObjectIsInRect(Rect rect)
         {
             return Bounds.IntersectsWith(rect) || Bounds.Contains(rect);
@@ -94,7 +104,7 @@ namespace Cad_Point_Manager.DrawingObjects
 
                 if (EndAngle < StartAngle)
                 {
-                    Sweep = (360 + EndAngle) - StartAngle;
+                    Sweep = 360 + EndAngle - StartAngle;
                 }
                 else
                 {
@@ -155,7 +165,7 @@ namespace Cad_Point_Manager.DrawingObjects
             Bounds = new(bounds.Left, bounds.Top, Math.Abs(bounds.Right - bounds.Left), Math.Abs(bounds.Bottom - bounds.Top));
         }
         public Geometry GetArcGeometry()
-        {            
+        {
             PathGeometry pathGeometry = new(Factory);
             using (var sink = pathGeometry.Open())
             {
@@ -217,7 +227,7 @@ namespace Cad_Point_Manager.DrawingObjects
                 return ellipseGeometry;
             }
         }
-    
+
         public override bool Hittest(RawVector2 p, float thickness)
         {
             return Geometry.StrokeContainsPoint(p, thickness);
@@ -236,5 +246,21 @@ namespace Cad_Point_Manager.DrawingObjects
         public bool IsLargeArc { get; set; }
         public double Radius { get; set; }
         public SerializablePoint Center { get; set; }
+
+        public override DrawingObject CreateDrawingObject(ObjectLayer layer, DrawingBlock block = null)
+        {
+            ArgumentNullException.ThrowIfNull(layer);
+            DrawingEllipse drawingEllipse = new(this, layer, block);
+
+            return drawingEllipse;
+        }
+
+        public override DrawingObject CreateDrawingSegment(ObjectLayer layer, DrawingBlock block = null, DrawingPolyline pline = null)
+        {
+            ArgumentNullException.ThrowIfNull(layer);
+            DrawingEllipse drawingEllipse = new(this, layer, block, pline);
+
+            return drawingEllipse;
+        }
     }
 }

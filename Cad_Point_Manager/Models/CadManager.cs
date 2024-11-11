@@ -1,5 +1,4 @@
-﻿
-using netDxf;
+﻿using netDxf;
 using netDxf.Entities;
 using netDxf.Units;
 using SharpDX.Direct2D1;
@@ -17,8 +16,9 @@ using Cad_Point_Manager.Controls.D2DControl;
 using SharpDX.DirectWrite;
 using Cad_Point_Manager.Common;
 using SharpDX.Mathematics.Interop;
+using Cad_Point_Manager.Models.DrawingObjects;
 
-namespace Cad_Point_Manager.DrawingObjects
+namespace Cad_Point_Manager.Models
 {
     public class CadManager : IDisposable, INotifyPropertyChanged
     {
@@ -81,8 +81,7 @@ namespace Cad_Point_Manager.DrawingObjects
             }
         }
 
-        public Dictionary<string, ObjectLayer> Layers { get; set; } = new();
-        public List<DrawingObject> DrawingObjects => Layers.Values.SelectMany(layer => layer.DrawingObjects).ToList();
+        public Dictionary<string, ObjectLayer> Layers { get; set; } = [];
         public bool DxfLoaded { get; set; } = false;
         #endregion
 
@@ -282,5 +281,11 @@ namespace Cad_Point_Manager.DrawingObjects
             Dispose(false);
         }
         #endregion
+    }
+
+    public class CadManagerData
+    {
+        public Rect Extents { get; set; }
+        public List<ObjectLayerData> ObjectLayerDatas { get; set; } = [];
     }
 }

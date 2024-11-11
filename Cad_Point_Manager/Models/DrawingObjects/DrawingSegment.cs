@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 using System.Windows;
 
 
-namespace Cad_Point_Manager.DrawingObjects
+namespace Cad_Point_Manager.Models.DrawingObjects
 {
     public abstract class DrawingSegment : DrawingObject
     {
@@ -48,22 +48,16 @@ namespace Cad_Point_Manager.DrawingObjects
         public DrawingPolyline DrawingPolyline { get; set; }
         #endregion
 
-        #region Constructor
-        public DrawingSegment() { }
-        #endregion
-
-        #region Events
-        public event PropertyChangedEventHandler PropertyChanged;
-        #endregion
-
         #region Methods
         #endregion
     }
-    public class DrawingSegmentData : DrawingObjectData
+    public abstract class DrawingSegmentData : DrawingObjectData
     {
         public SerializablePoint StartPoint { get; set; }
         public SerializablePoint EndPoint { get; set; }
         public bool IsPartOfPolyline { get; set; }
         public DrawingPolylineData DrawingPolylineData { get; set; }
+
+        public abstract DrawingSegment CreateDrawingSegment(ObjectLayer layer, DrawingBlock block = null, DrawingPolyline pline = null);
     }
 }
