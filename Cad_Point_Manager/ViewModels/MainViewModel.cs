@@ -14,7 +14,7 @@ namespace Cad_Point_Manager.ViewModels
     public class MainViewModel : BaseViewModel
     {
         #region Fields
-        private JobFile _jobFile = new();
+        private JobFileManager _jobFileManager = new();
         private bool _jobFileLoaded = false;
         private string _dxfFilePath;
         private string _dxfFileName;
@@ -22,13 +22,13 @@ namespace Cad_Point_Manager.ViewModels
         #endregion
 
         #region Properties
-        public JobFile JobFile
+        public JobFileManager JobFileManager
         {
-            get { return _jobFile; }
+            get { return _jobFileManager; }
             set
             {
-                _jobFile = value;
-                OnPropertyChanged(nameof(JobFile));
+                _jobFileManager = value;
+                OnPropertyChanged(nameof(JobFileManager));
             }
         }
         public bool JobFileLoaded
@@ -70,17 +70,45 @@ namespace Cad_Point_Manager.ViewModels
         #endregion
 
         #region Commands
+        public ICommand NewJobCommand { get; set; }
+        public ICommand LoadJobCommand { get; set; }
         public ICommand AttachDxfFileCommand { get; set; }
+        public ICommand SaveJobCommand { get; set; }
+        public ICommand SaveAsJobCommand { get; set; }
         #endregion
 
         #region Constructors
         public MainViewModel()
         {
+            NewJobCommand = new RelayCommand<RoutedEventArgs>(NewJob);
+            LoadJobCommand = new RelayCommand<RoutedEventArgs>(LoadJob);
             AttachDxfFileCommand = new RelayCommand<RoutedEventArgs>(AttachDxfFile);
+            SaveJobCommand = new RelayCommand<RoutedEventArgs>(SaveJob);
+            SaveAsJobCommand = new RelayCommand<RoutedEventArgs>(SaveJobAs);
         }
         #endregion
 
         #region Methods
+        public void NewJob(RoutedEventArgs e)
+        {
+            var result = MessageBox.Show("Save current job before exiting?", "Warning", MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
+
+            if (result == MessageBoxResult.Yes)
+            {
+                JobFileManager.SaveJob();
+            }
+            else if (result == MessageBoxResult.No)
+            {
+            }
+            else
+            {
+                return;
+            }
+        }
+        public void LoadJob(RoutedEventArgs e)
+        {
+
+        }
         public void AttachDxfFile(RoutedEventArgs e)
         {
             Microsoft.Win32.OpenFileDialog dlg = new Microsoft.Win32.OpenFileDialog();
@@ -99,9 +127,17 @@ namespace Cad_Point_Manager.ViewModels
                 if (DxfDocument is not null)
                 {
                     DxfFileName = DxfDocument.Name;
-                    JobFile.LoadDxf(DxfDocument);
+                    JobFileManager.LoadDxf(DxfDocument);
                 }
             }
+        }
+        public void SaveJob(RoutedEventArgs e)
+        {
+
+        }
+        public void SaveJobAs(RoutedEventArgs e)
+        {
+
         }
         #endregion
     }

@@ -44,13 +44,22 @@
                       Style="{StaticResource MenuStyle1}">
                     <MenuItem Header="File"
                               Style="{StaticResource MenuItemStyle1}">
+                        <MenuItem Header="New"
+                                  Command="{Binding NewJobCommand}"
+                                  Style="{StaticResource MenuItemStyle1}">
+                            <MenuItem.Icon>
+                                <fa:FontAwesome Icon="File" />
+                            </MenuItem.Icon>
+                        </MenuItem>
                         <MenuItem Header="Open"
+                                  Command="{Binding LoadJobCommand}"
                                   Style="{StaticResource MenuItemStyle1}">
                             <MenuItem.Icon>
                                 <fa:FontAwesome Icon="FolderOpen" />
                             </MenuItem.Icon>
                         </MenuItem>
                         <MenuItem Header="Save"
+                                  Command="{Binding SaveJobCommand}"
                                   Style="{StaticResource MenuItemStyle1}">
                             <MenuItem.Icon>
                                 <fa:FontAwesome Icon="Save" />
@@ -101,43 +110,6 @@
                     </MenuItem>
                 </Menu>
             </Border>
-        </Grid>
-
-        <Grid Grid.Row="1"
-              Margin="5 0 5 0">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="*" />
-            </Grid.ColumnDefinitions>
-
-            <Grid Grid.Column="0">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="5*" />
-                </Grid.ColumnDefinitions>
-                <Button Grid.Column="0"
-                        Command="{Binding AttachDxfFileCommand}"
-                        HorizontalAlignment="Stretch"
-                        VerticalAlignment="Stretch"
-                        Margin="5 5 1 5"
-                        Background="#33BBA2A2">
-                    <Viewbox>
-                        <fa:FontAwesome Icon="Paperclip"
-                                        Foreground="White"
-                                        HorizontalAlignment="Stretch"
-                                        VerticalAlignment="Stretch" />
-                    </Viewbox>
-                </Button>
-
-                <TextBox Text="{Binding DxfFileName}"
-                         Background="White"
-                         IsEnabled="False"
-                         Grid.Column="1" 
-                         Margin="1 5 10 5"/>
-            </Grid>
         </Grid>
 
         <Grid x:Name="dxfGrid"
