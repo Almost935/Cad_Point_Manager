@@ -133,6 +133,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects
     {
         public SerializablePoint StartPoint { get; set; }
         public SerializablePoint EndPoint { get; set; }
-        public List<DrawingSegmentData> DrawingSegmentDatas { get; set; } = new();
+        public List<DrawingSegmentData> DrawingSegmentDatas { get; set; } = [];
     }
 }

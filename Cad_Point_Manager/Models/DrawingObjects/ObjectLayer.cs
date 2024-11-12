@@ -273,7 +273,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         {
             Name = layer.Name;
             Color = layer.Color;
-            DrawingObjects = layer.DrawingObjects.Select(obj => obj.GetObjectData()).ToList();
+            DrawingObjects = layer.DrawingObjects.Select(obj => obj.GetData()).ToList();
         }
 
         public ObjectLayer GetObjectLayer(CadManager cadManager)

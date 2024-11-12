@@ -116,6 +116,26 @@ namespace Cad_Point_Manager.Models
             stopwatch.Stop();
             Debug.WriteLine($"LoadDxfDocument: {stopwatch.ElapsedMilliseconds} ms");
         }
+        public void LoadDxfDocument(CadManagerData cadManagerData)
+        {
+            Stopwatch stopwatch = Stopwatch.StartNew();
+
+            DxfLoaded = false;
+
+            Layers.Clear();
+            Extents = cadManagerData.Extents;
+            foreach (var layerData in cadManagerData.ObjectLayerDatas)
+            {
+                ObjectLayer objectLayer = new(layerData, this);
+                Layers.Add(objectLayer.DxfLayer.Name, objectLayer);
+            }
+
+            DxfLoaded = true;
+
+            stopwatch.Stop();
+            Debug.WriteLine($"LoadDxfDocument: {stopwatch.ElapsedMilliseconds} ms");
+        }
+
         public ObjectLayer GetLayer(netDxf.Tables.Layer dxfLayer)
         {
             if (Layers.TryGetValue(dxfLayer.Name, out ObjectLayer layer)) { return layer; }
@@ -283,9 +303,9 @@ namespace Cad_Point_Manager.Models
         #endregion
     }
 
-    public class CadManagerData
+    public class CadManagerData(CadManager cadManager)
     {
-        public Rect Extents { get; set; }
-        public List<ObjectLayerData> ObjectLayerDatas { get; set; } = [];
+        public Rect Extents { get; set; } = cadManager.Extents;
+        public List<ObjectLayerData> ObjectLayerDatas { get; set; } = cadManager.Layers.Values.Select(layer => new ObjectLayerData(layer)).ToList();
     }
 }

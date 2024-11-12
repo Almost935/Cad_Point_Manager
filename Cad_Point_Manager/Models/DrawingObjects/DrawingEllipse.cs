@@ -14,6 +14,7 @@ using Cad_Point_Manager.Models.SerializableObjects;
 using netDxf.Entities;
 using static netDxf.Entities.HatchBoundaryPath;
 using Cad_Point_Manager.Common;
+using Cad_Point_Manager.DrawingObjects;
 
 namespace Cad_Point_Manager.Models.DrawingObjects
 {
@@ -149,6 +150,14 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 throw new ArgumentException("DrawingObjectData must be of type DrawingEllipseData");
             }
         }
+        public override DrawingObjectData GetData()
+        {
+            return new DrawingEllipseData(this);
+        }
+        public override DrawingSegmentData GetDrawingSegmentData()
+        {
+            return new DrawingEllipseData(this);
+        }
 
         public override void UpdateGeometry()
         {
@@ -246,6 +255,28 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         public bool IsLargeArc { get; set; }
         public double Radius { get; set; }
         public SerializablePoint Center { get; set; }
+
+        public DrawingEllipseData(DrawingEllipse DrawingEllipse, DrawingBlockData drawingBlockData = null, DrawingPolylineData drawingPolylineData = null)
+        {
+            Sweep = DrawingEllipse.Sweep;
+            IsLargeArc = DrawingEllipse.IsLargeArc;
+            Radius = DrawingEllipse.Radius;
+            StartAngle = DrawingEllipse.StartAngle;
+            EndAngle = DrawingEllipse.EndAngle;
+            Center = DrawingEllipse.Center;
+            MajorAxis = DrawingEllipse.MajorAxis;
+            MinorAxis = DrawingEllipse.MinorAxis;
+            Rotation = DrawingEllipse.Rotation;
+            IsLargeArc = DrawingEllipse.IsLargeArc;
+            StartPoint = new(DrawingEllipse.StartPoint.X, DrawingEllipse.StartPoint.Y);
+            EndPoint = new(DrawingEllipse.EndPoint.X, DrawingEllipse.EndPoint.Y);
+            Bounds = DrawingEllipse.Bounds;
+            LayerName = DrawingEllipse.Layer.Name;
+            IsPartOfBlock = DrawingEllipse.IsPartOfBlock;
+            DrawingBlockData = drawingBlockData;
+            IsPartOfPolyline = DrawingEllipse.IsPartOfPolyline;
+            DrawingPolylineData = drawingPolylineData;
+        }
 
         public override DrawingObject CreateDrawingObject(ObjectLayer layer, DrawingBlock block = null)
         {

@@ -118,6 +118,10 @@ namespace Cad_Point_Manager.DrawingObjects
                 throw new ArgumentException("DrawingObjectData must be of type DrawingMtextData");
             }
         }
+        public override DrawingObjectData GetData()
+        {
+            return new DrawingMtextData(this);
+        }
 
         public override void UpdateGeometry()
         {
@@ -264,6 +268,20 @@ namespace Cad_Point_Manager.DrawingObjects
         public string FontFamilyName { get; set; }
         public Enums.TextAttachmentPoint AttachmentPoint { get; set; }
         public SerializableMatrix Transform { get; set; }
+
+        public DrawingMtextData(DrawingMtext drawingMtext, DrawingBlockData drawingBlockData = null)
+        {
+            Text = drawingMtext.Text;
+            Position = new(drawingMtext.Position.X, drawingMtext.Position.Y);
+            FontSize = (int)drawingMtext.FontSize;
+            FontFamilyName = drawingMtext.FontFamilyName;
+            AttachmentPoint = drawingMtext.AttachmentPoint;
+            Transform = new(drawingMtext.Transform);
+            Bounds = drawingMtext.Bounds;
+            LayerName = drawingMtext.Layer.Name;
+            IsPartOfBlock = drawingMtext.IsPartOfBlock;
+            DrawingBlockData = drawingBlockData;
+        }
 
         public override DrawingObject CreateDrawingObject(ObjectLayer layer, DrawingBlock block = null)
         {

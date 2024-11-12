@@ -114,6 +114,10 @@ namespace Cad_Point_Manager.DrawingObjects
         {
             return new DrawingCircleData(this);
         }
+        public override DrawingSegmentData GetDrawingSegmentData()
+        {
+            return new DrawingCircleData(this);
+        }
 
         public override void UpdateGeometry()
         {

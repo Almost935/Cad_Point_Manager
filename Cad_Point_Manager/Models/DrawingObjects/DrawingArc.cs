@@ -134,6 +134,10 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         {
             return new DrawingArcData(this);
         }
+        public override DrawingSegmentData GetDrawingSegmentData()
+        {
+            return new DrawingArcData(this);
+        }
 
         public override void UpdateGeometry()
         {

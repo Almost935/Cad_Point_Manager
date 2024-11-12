@@ -101,6 +101,14 @@ namespace Cad_Point_Manager.DrawingObjects
                 throw new ArgumentException("DrawingObjectData must be of type DrawingLineData");
             }
         }
+        public override DrawingObjectData GetData()
+        {
+            return new DrawingLineData(this);
+        }
+        public override DrawingSegmentData GetDrawingSegmentData()
+        {
+            return new DrawingLineData(this);
+        }
 
         public override void UpdateGeometry()
         {
@@ -128,6 +136,18 @@ namespace Cad_Point_Manager.DrawingObjects
 
     public class DrawingLineData : DrawingSegmentData
     {
+        public DrawingLineData(DrawingLine drawingLine, DrawingBlockData drawingBlockData = null, DrawingPolylineData drawingPolylineData = null)
+        {
+            StartPoint = new(drawingLine.StartPoint.X, drawingLine.StartPoint.Y);
+            EndPoint = new(drawingLine.EndPoint.X, drawingLine.EndPoint.Y);
+            Bounds = drawingLine.Bounds;
+            LayerName = drawingLine.Layer.Name;
+            IsPartOfBlock = drawingLine.IsPartOfBlock;
+            DrawingBlockData = drawingBlockData;
+            IsPartOfPolyline = drawingLine.IsPartOfPolyline;
+            DrawingPolylineData = drawingPolylineData;
+        }
+
         public override DrawingObject CreateDrawingObject(ObjectLayer layer, DrawingBlock block = null)
         {
             ArgumentNullException.ThrowIfNull(layer);
