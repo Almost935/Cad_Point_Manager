@@ -50,12 +50,14 @@
                                 <fa:FontAwesome Icon="FolderOpen" />
                             </MenuItem.Icon>
                         </MenuItem>
-                        <MenuItem Header="Save">
+                        <MenuItem Header="Save"
+                                  Style="{StaticResource MenuItemStyle1}">
                             <MenuItem.Icon>
                                 <fa:FontAwesome Icon="Save" />
                             </MenuItem.Icon>
                         </MenuItem>
-                        <MenuItem Header="Exit">
+                        <MenuItem Header="Exit"
+                                  Style="{StaticResource MenuItemStyle1}">
                             <MenuItem.Icon>
                                 <fa:FontAwesome Icon="Close" />
                             </MenuItem.Icon>
@@ -63,12 +65,14 @@
                     </MenuItem>
                     <MenuItem Header="Edit"
                               Style="{StaticResource MenuItemStyle1}">
-                        <MenuItem Header="Undo">
+                        <MenuItem Header="Undo"
+                                  Style="{StaticResource MenuItemStyle1}">
                             <MenuItem.Icon>
                                 <fa:FontAwesome Icon="Undo" />
                             </MenuItem.Icon>
                         </MenuItem>
-                        <MenuItem Header="Redo">
+                        <MenuItem Header="Redo"
+                                  Style="{StaticResource MenuItemStyle1}">
                             <MenuItem.Icon>
                                 <fa:FontAwesome Icon="RotateRight" />
                             </MenuItem.Icon>
@@ -76,17 +80,20 @@
                     </MenuItem>
                     <MenuItem Header="View"
                               Style="{StaticResource MenuItemStyle1}">
-                        <MenuItem Header="Zoom In">
+                        <MenuItem Header="Zoom In"
+                                  Style="{StaticResource MenuItemStyle1}">
                             <MenuItem.Icon>
                                 <fa:FontAwesome Icon="SearchPlus" />
                             </MenuItem.Icon>
                         </MenuItem>
-                        <MenuItem Header="Zoom Out">
+                        <MenuItem Header="Zoom Out"
+                                  Style="{StaticResource MenuItemStyle1}">
                             <MenuItem.Icon>
                                 <fa:FontAwesome Icon="SearchMinus" />
                             </MenuItem.Icon>
                         </MenuItem>
-                        <MenuItem Header="Zoom To Extents">
+                        <MenuItem Header="Zoom To Extents"
+                                  Style="{StaticResource MenuItemStyle1}">
                             <MenuItem.Icon>
                                 <fa:FontAwesome Icon="SquareOutline" />
                             </MenuItem.Icon>
@@ -146,7 +153,7 @@
                 <controls:Direct2DDxfControl x:Name="dxfControl"
                                              RenderOptions.BitmapScalingMode="HighQuality"
                                              Cursor="Cross"
-                                             CadManager="{Binding CadManager}"/>
+                                             CadManager="{Binding JobFile.CadManager}"/>
             </Border>
         </Grid>
 

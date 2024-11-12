@@ -16,7 +16,7 @@ namespace Cad_Point_Manager.Models
         private string _jobName;
         private string _dxfFilePath;
         private DxfDocument _dxfDoc;
-        private CadManager _cadManager;
+        private CadManager _cadManager = new();
         private Rect _extents = new();
         #endregion
 
@@ -80,7 +80,7 @@ namespace Cad_Point_Manager.Models
         #region Methods
         public void LoadDxf(DxfDocument dxfDoc)
         {
-            
+            CadManager.LoadDxfDocument(dxfDoc);
         }
         #endregion
     }

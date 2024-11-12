@@ -110,6 +110,10 @@ namespace Cad_Point_Manager.DrawingObjects
                 throw new ArgumentException("DrawingObjectData must be of type DrawingCircleData");
             }
         }
+        public override DrawingObjectData GetData()
+        {
+            return new DrawingCircleData(this);
+        }
 
         public override void UpdateGeometry()
         {
@@ -132,6 +136,20 @@ namespace Cad_Point_Manager.DrawingObjects
     {
         public float Radius { get; set; }
         public SerializablePoint Center { get; set; }
+
+        public DrawingCircleData(DrawingCircle drawingCircle, DrawingBlockData drawingBlockData = null, DrawingPolylineData drawingPolylineData = null)
+        {
+            Radius = drawingCircle.Radius;
+            Center = new(drawingCircle.Center.X, drawingCircle.Center.Y);
+            StartPoint = new(drawingCircle.StartPoint.X, drawingCircle.StartPoint.Y);
+            EndPoint = new(drawingCircle.EndPoint.X, drawingCircle.EndPoint.Y);
+            Bounds = drawingCircle.Bounds;
+            LayerName = drawingCircle.Layer.Name;
+            IsPartOfBlock = drawingCircle.IsPartOfBlock;
+            DrawingBlockData = drawingBlockData;
+            IsPartOfPolyline = drawingCircle.IsPartOfPolyline;
+            DrawingPolylineData = drawingPolylineData;
+        }
 
         public override DrawingObject CreateDrawingObject(ObjectLayer layer, DrawingBlock block = null)
         {

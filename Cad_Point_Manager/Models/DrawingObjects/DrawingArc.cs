@@ -130,6 +130,10 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 throw new ArgumentException("DrawingObjectData must be of type DrawingArcData");
             }
         }
+        public override DrawingObjectData GetData()
+        {
+            return new DrawingArcData(this);
+        }
 
         public override void UpdateGeometry()
         {
@@ -184,6 +188,26 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         public float StartAngle { get; set; }
         public float EndAngle { get; set; }
         public SerializablePoint Center { get; set; }
+        #endregion
+
+        #region Constructor
+        public DrawingArcData(DrawingArc drawingArc, DrawingBlockData drawingBlockData = null, DrawingPolylineData drawingPolylineData = null)
+        {
+            Sweep = drawingArc.Sweep;
+            IsLargeArc = drawingArc.IsLargeArc;
+            Radius = drawingArc.Radius;
+            StartAngle = drawingArc.StartAngle;
+            EndAngle = drawingArc.EndAngle;
+            Center = drawingArc.Center;
+            StartPoint = new(drawingArc.StartPoint.X, drawingArc.StartPoint.Y);
+            EndPoint = new(drawingArc.EndPoint.X, drawingArc.EndPoint.Y);
+            Bounds = drawingArc.Bounds;
+            LayerName = drawingArc.Layer.Name;
+            IsPartOfBlock = drawingArc.IsPartOfBlock;
+            DrawingBlockData = drawingBlockData;
+            IsPartOfPolyline = drawingArc.IsPartOfPolyline;
+            DrawingPolylineData = drawingPolylineData;
+        }
         #endregion
 
         #region Methods

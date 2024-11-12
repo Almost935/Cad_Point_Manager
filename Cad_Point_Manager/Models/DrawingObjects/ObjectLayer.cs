@@ -73,6 +73,12 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             _cadManager = cadManager;
             LoadFromDxfLayer(layer);
         }
+
+        public ObjectLayer(ObjectLayerData data, CadManager cadManager)
+        {
+            _cadManager = cadManager;
+            LoadFromDataLayer(data);
+        }
         #endregion
 
         #region Events
@@ -100,13 +106,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         {
             Parallel.ForEach(DrawingObjects, obj =>
             {
-                Stopwatch stopwatch = new();
-                stopwatch.Restart();
-
                 obj?.UpdateGeometry();
-
-                //stopwatch.Stop();
-                //Debug.WriteLine($"InitializeGeometry of obj: {obj.GetType()}: {stopwatch.ElapsedMilliseconds} ms");
             });
 
             LoadGeometryGroup();
@@ -142,11 +142,26 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             }
             LoadGeometryGroup();
         }
+
         private void LoadFromDxfLayer(netDxf.Tables.Layer layer)
         {
             Name = layer.Name;
             Color = new(layer.Color.R, layer.Color.G, layer.Color.B, 255);
         }
+        private void LoadFromDataLayer(ObjectLayerData data)
+        {
+            Name = data.Name;
+            Color = data.Color;
+            foreach (var objData in data.DrawingObjects)
+            {
+                DrawingObject obj = objData.CreateDrawingObject(this, null);
+                if (obj is not null)
+                {
+                    DrawingObjects.Add(obj);
+                }
+            }
+        }
+
         private void LoadGeometryGroup()
         {
             List<Geometry> geometries = [];
@@ -203,6 +218,13 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             LayerBrush?.Dispose();
             LayerBrush = _cadManager.GetBrush(Color.R, Color.G, Color.B, Color.A);
         }
+
+        public ObjectLayerData GetObjectLayerData()
+        {
+            ObjectLayerData data = new(this);
+            return data;
+        }
+
         public void Dispose()
         {
             Dispose(true);
@@ -246,5 +268,17 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         public string Name { get; set; }
         public SerializableColor Color { get; set; }
         public List<DrawingObjectData> DrawingObjects { get; set; } = [];
+
+        public ObjectLayerData(ObjectLayer layer)
+        {
+            Name = layer.Name;
+            Color = layer.Color;
+            DrawingObjects = layer.DrawingObjects.Select(obj => obj.GetObjectData()).ToList();
+        }
+
+        public ObjectLayer GetObjectLayer(CadManager cadManager)
+        {
+            return new(this, cadManager);
+        }
     }
 }

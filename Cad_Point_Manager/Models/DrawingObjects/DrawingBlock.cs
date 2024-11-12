@@ -5,6 +5,7 @@ using System.Collections.ObjectModel;
 using System.Windows;
 using Cad_Point_Manager.Controls.D2DControl;
 using Cad_Point_Manager.Helpers;
+using System.Net;
 
 namespace Cad_Point_Manager.Models.DrawingObjects
 {
@@ -24,7 +25,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 OnPropertyChanged(nameof(DxfBlock));
             }
         }
-        public ObservableCollection<DrawingObject> DrawingObjects { get; set; } = new();
+        public ObservableCollection<DrawingObject> DrawingObjects { get; set; } = [];
 
 
         public float CurrentScale { get; set; } = 1;
@@ -174,6 +175,10 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 throw new ArgumentException("DrawingObjectData must be of type DrawingArcData");
             }
         }
+        public override DrawingObjectData GetData()
+        {
+            return new DrawingBlockData(this);
+        }
 
         public override void UpdateGeometry()
         {
@@ -211,7 +216,22 @@ namespace Cad_Point_Manager.Models.DrawingObjects
     public class DrawingBlockData : DrawingObjectData
     {
         #region Properties
-        public List<DrawingObjectData> DrawingObjectDatas { get; set; }
+        public List<DrawingObjectData> DrawingObjectDatas { get; set; } = [];
+        #endregion
+
+        #region Constructor
+        public DrawingBlockData(DrawingBlock drawingBlock, DrawingBlockData drawingBlockData = null, DrawingPolylineData drawingPolylineData = null)
+        {
+            Bounds = drawingBlock.Bounds;
+            LayerName = drawingBlock.Layer.Name;
+            IsPartOfBlock = drawingBlock.IsPartOfBlock;
+            DrawingBlockData = drawingBlockData;
+
+            foreach (var obj in drawingBlock.DrawingObjects)
+            {
+                DrawingObjectDatas.Add(obj.GetData());
+            }
+        }
         #endregion
 
         #region Methods

@@ -83,7 +83,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         public abstract void DrawToDeviceContext(float thickness, Brush brush, StrokeStyle1 strokeStyle);
         public abstract bool DrawingObjectIsInRect(Rect rect);
         public abstract bool Hittest(RawVector2 p, float thickness);
-
+        public abstract DrawingObjectData GetData();
 
         public virtual void InitializeResources(ResourceCache resCache)
         {
