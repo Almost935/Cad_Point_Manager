@@ -1,17 +1,9 @@
 ﻿using Cad_Point_Manager.Common;
 using Cad_Point_Manager.Controls.D2DControl;
 using Cad_Point_Manager.Models.SerializableObjects;
-using netDxf.Tables;
 using SharpDX.Direct2D1;
-using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Diagnostics;
-using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
 
 namespace Cad_Point_Manager.Models.DrawingObjects
 {
@@ -242,16 +234,13 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 {
                     foreach (var drawingObject in _drawingObjects)
                     {
-                        if (drawingObject is IDisposable disposable)
-                        {
-                            disposable.Dispose();
-                        }
+                        drawingObject?.Dispose();
                     }
                     _drawingObjects.Clear();
                 }
-            }
 
-            // Free unmanaged resources if any
+                GeometryGroup?.Dispose();
+            }
 
             _disposed = true;
         }

@@ -1,10 +1,4 @@
-﻿using Cad_Point_Manager.Models;
-using Cad_Point_Manager.Models.DrawingObjects;
-using SharpDX.Direct2D1;
-using SharpDX.DirectWrite;
-using SharpDX.Mathematics.Interop;
-using System;
-using System.Collections.Generic;
+﻿using SharpDX.Direct2D1;
 using System.ComponentModel;
 
 using Factory1 = SharpDX.Direct2D1.Factory1;

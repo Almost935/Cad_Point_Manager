@@ -1,11 +1,6 @@
-﻿using Cad_Point_Manager.DrawingObjects;
-using netDxf;
-using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using netDxf;
+using System.IO;
+using System.Text.Json;
 using System.Windows;
 
 namespace Cad_Point_Manager.Models
@@ -13,7 +8,7 @@ namespace Cad_Point_Manager.Models
     public class JobFileManager : BaseModel
     {
         #region Fields
-        private string _jobName;
+        private string _jobName = "Unsaved";
         private string _jobFilePath;
         private string _dxfFilePath;
         private DxfDocument _dxfDoc;
@@ -51,14 +46,14 @@ namespace Cad_Point_Manager.Models
         }
         public DxfDocument DxfDoc
         {
-            get { return  _dxfDoc; }
+            get { return _dxfDoc; }
             set
             {
                 _dxfDoc = value;
                 OnPropertyChanged();
             }
         }
-        public CadManager CadManager 
+        public CadManager CadManager
         {
             get { return _cadManager; }
             set
@@ -69,7 +64,7 @@ namespace Cad_Point_Manager.Models
         }
         public Rect Extents
         {
-           get { return _extents; }
+            get { return _extents; }
             set
             {
                 _extents = value;
@@ -88,39 +83,65 @@ namespace Cad_Point_Manager.Models
         #region Methods
         public void NewJobFile()
         {
-            CadManager?.Dispose();
+            CadManager.ClearDxfDocument();
 
             JobName = string.Empty;
             JobFilePath = string.Empty;
             DxfFilePath = string.Empty;
             DxfDoc = null;
-            CadManager = new CadManager();
             Extents = new Rect();
         }
         public bool TrySaveJobFile()
         {
             if (!JobPathSet)
             {
-                Microsoft.Win32.OpenFileDialog dlg = new Microsoft.Win32.OpenFileDialog();
-                dlg.DefaultExt = ".cpm";
-                dlg.Filter = "Cad Point Manager Files (*.cpm)|*.cpm";
-                dlg.InitialDirectory = @"C:\Users\fcraw\source\repos\Cad_Point_Manager\Cad_Point_Manager\Resources\DXF";
-
-                Nullable<bool> result = dlg.ShowDialog();
+                bool result = TryGetJobFilePath();
 
                 if (result == true)
                 {
-
+                    JobPathSet = true;
+                    SaveJobFile(JobFilePath);
+                    return true;
                 }
                 else
                 {
                     return false;
                 }
             }
+            else
+            {
+                SaveJobFile(JobFilePath);
+                return true;
+            }
         }
-        public void SaveJobFile()
+        public bool TryGetJobFilePath()
         {
-           JobFileData jobFileData = new JobFileData(this);
+            Microsoft.Win32.SaveFileDialog dlg = new()
+            {
+                DefaultExt = ".cpm",
+                Filter = "Cad Point Manager Files (*.cpm)|*.cpm"
+            };
+            //dlg.InitialDirectory = @"C:\Users\fcraw\source\repos\Cad_Point_Manager\Cad_Point_Manager\Resources\DXF";
+
+            Nullable<bool> result = dlg.ShowDialog();
+
+            if (result == true)
+            {
+                JobFilePath = dlg.FileName;
+                JobName = Path.GetFileName(JobFilePath);
+                JobPathSet = true;
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+        public void SaveJobFile(string path)
+        {
+            JobFileData jobFileData = new(this);
+            string jsonString = JsonSerializer.Serialize(jobFileData);
+            System.IO.File.WriteAllText(path, jsonString);
         }
         public void LoadJobFile(JobFileData jobFileData)
         {
@@ -128,11 +149,11 @@ namespace Cad_Point_Manager.Models
             JobFilePath = jobFileData.JobFilePath;
             DxfFilePath = jobFileData.DxfFilePath;
             Extents = jobFileData.Extents;
-            
+
             if (DxfFilePath is not null)
             {
-               DxfDoc = DxfDocument.Load(DxfFilePath);
-               
+                DxfDoc = DxfDocument.Load(DxfFilePath);
+
             }
         }
         public void LoadDxf(DxfDocument dxfDoc)
@@ -155,7 +176,7 @@ namespace Cad_Point_Manager.Models
 
         public JobFileData(JobFileManager jobFile)
         {
-            { 
+            {
                 JobName = jobFile.JobName;
                 JobFilePath = jobFile.JobFilePath;
                 DxfFilePath = jobFile.DxfFilePath;

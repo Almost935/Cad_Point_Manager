@@ -1,15 +1,8 @@
 ﻿using netDxf;
-using netDxf.Entities;
-using netDxf.Units;
 using SharpDX.Direct2D1;
-using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using Cad_Point_Manager.Helpers;
 using Cad_Point_Manager.Controls.D2DControl;
@@ -26,6 +19,7 @@ namespace Cad_Point_Manager.Models
         private bool _disposed = false;
 
         private DxfDocument _dxfDocument;
+        private bool _dxfDirty = true;
         private Rect _extents;
         private Dictionary<(byte r, byte g, byte b, byte a), Brush> _brushes = [];
         private Dictionary<(Enums.LineType lineType, StrokeTransformType strokeTransformType), StrokeStyle1> _strokeStyles = [];
@@ -42,6 +36,15 @@ namespace Cad_Point_Manager.Models
             {
                 _dxfDocument = value;
                 OnPropertyChanged(nameof(DxfDocument));
+            }
+        }
+        public bool DxfDirty
+        {
+            get { return _dxfDirty; }
+            set
+            {
+                _dxfDirty = value;
+                OnPropertyChanged(nameof(DxfDirty));
             }
         }
         public Rect Extents
@@ -94,12 +97,10 @@ namespace Cad_Point_Manager.Models
         {
             Stopwatch stopwatch = Stopwatch.StartNew();
 
+            ClearDxfDocument();
             DxfLoaded = false;
 
             _dxfDocument = dxfDocument;
-            Layers.Clear();
-            Extents = new();
-
             Extents = DxfHelpers.GetExtentsFromHeader(DxfDocument);
 
             foreach (var e in _dxfDocument.Entities.All)
@@ -112,6 +113,7 @@ namespace Cad_Point_Manager.Models
                 }
             }
             DxfLoaded = true;
+            DxfDirty = true;
 
             stopwatch.Stop();
             Debug.WriteLine($"LoadDxfDocument: {stopwatch.ElapsedMilliseconds} ms");
@@ -120,9 +122,9 @@ namespace Cad_Point_Manager.Models
         {
             Stopwatch stopwatch = Stopwatch.StartNew();
 
+            ClearDxfDocument();
             DxfLoaded = false;
 
-            Layers.Clear();
             Extents = cadManagerData.Extents;
             foreach (var layerData in cadManagerData.ObjectLayerDatas)
             {
@@ -131,9 +133,25 @@ namespace Cad_Point_Manager.Models
             }
 
             DxfLoaded = true;
+            DxfDirty = true;
 
             stopwatch.Stop();
             Debug.WriteLine($"LoadDxfDocument: {stopwatch.ElapsedMilliseconds} ms");
+        }
+
+        public void ClearDxfDocument()
+        {
+            Extents = new();
+            foreach (var layer in Layers.Values) { layer?.Dispose(); }
+            Layers.Clear();
+            foreach (var brush in Brushes.Values) { brush?.Dispose(); }
+            Brushes.Clear();
+            foreach (var strokeStyle in StrokeStyles.Values) { strokeStyle?.Dispose(); }
+            StrokeStyles.Clear();
+            foreach (var textFormat in TextFormats.Values) { textFormat?.Dispose(); }
+            TextFormats.Clear();
+            
+            DxfDirty = true;
         }
 
         public ObjectLayer GetLayer(netDxf.Tables.Layer dxfLayer)
@@ -258,6 +276,7 @@ namespace Cad_Point_Manager.Models
 
         protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
+            Debug.WriteLine($"CadManager: {propertyName}");
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 

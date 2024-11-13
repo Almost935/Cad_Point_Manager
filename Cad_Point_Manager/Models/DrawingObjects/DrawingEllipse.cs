@@ -12,9 +12,7 @@ using SweepDirection = SharpDX.Direct2D1.SweepDirection;
 using Matrix = System.Windows.Media.Matrix;
 using Cad_Point_Manager.Models.SerializableObjects;
 using netDxf.Entities;
-using static netDxf.Entities.HatchBoundaryPath;
 using Cad_Point_Manager.Common;
-using Cad_Point_Manager.DrawingObjects;
 
 namespace Cad_Point_Manager.Models.DrawingObjects
 {
@@ -239,6 +237,8 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
         public override bool Hittest(RawVector2 p, float thickness)
         {
+            if (Geometry is null || Geometry.IsDisposed) { return false; }
+
             return Geometry.StrokeContainsPoint(p, thickness);
         }
         #endregion

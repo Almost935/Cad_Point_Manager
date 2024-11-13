@@ -1,5 +1,4 @@
 ﻿using Cad_Point_Manager.Controls.D2DControl;
-using Cad_Point_Manager.Helpers;
 using netDxf.Entities;
 using SharpDX.Direct2D1;
 using SharpDX.Mathematics.Interop;
@@ -152,14 +151,8 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
             if (disposing)
             {
-                // Dispose managed resources
-                //Brush?.Dispose();
-                //OuterEdgeBrush?.Dispose();
-                //HairlineStrokeStyle?.Dispose();
                 Geometry?.Dispose();
             }
-
-            // Free unmanaged resources if any
 
             _disposed = true;
         }

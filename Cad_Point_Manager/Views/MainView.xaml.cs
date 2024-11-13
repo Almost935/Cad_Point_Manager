@@ -1,19 +1,5 @@
-﻿using netDxf;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
+﻿using Cad_Point_Manager.ViewModels;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
 
 namespace Cad_Point_Manager.Views
 {
@@ -22,8 +8,10 @@ namespace Cad_Point_Manager.Views
     /// </summary>
     public partial class MainView : Page
     {
-        public MainView()
+        public MainView(MainViewModel mainViewModel)
         {
+            this.DataContext = mainViewModel;
+
             InitializeComponent();
         }
     }

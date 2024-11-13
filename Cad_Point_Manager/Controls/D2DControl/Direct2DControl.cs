@@ -1,14 +1,10 @@
-﻿using SharpDX;
-using SharpDX.Direct2D1;
+﻿using SharpDX.Direct2D1;
 using SharpDX.Direct3D;
 using SharpDX.Direct3D11;
 using SharpDX.DXGI;
-using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Windows;
-using System.Windows.Threading;
 
 using DeviceContext1 = SharpDX.Direct2D1.DeviceContext1;
 using FeatureLevel = SharpDX.Direct3D.FeatureLevel;

@@ -150,7 +150,7 @@ namespace Cad_Point_Manager.Controls
             nameof(CadManager),           
             typeof(CadManager),           
             typeof(Direct2DDxfControl),   
-            new PropertyMetadata(null, OnLayerManagerChanged));
+            new PropertyMetadata(null, OnCadManagerChanged));
         #endregion
 
         #region Constructor
@@ -171,20 +171,26 @@ namespace Cad_Point_Manager.Controls
         #endregion
 
         #region Methods
-        private static void OnLayerManagerChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        private static void OnCadManagerChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
-            int x = 0;
-            //if (d is Direct2DDxfControl control)
-            //{
-            //    control.LayerManagerValue = (ObjectLayerManager)e.NewValue;
-            //}
-        }
-        public void UpdateDxf(CadManager layerManager)
-        {
-            if (layerManager is not null)
+            var control = d as Direct2DDxfControl;
+            if (control == null) return;
+
+            if (e.OldValue is CadManager oldCadManager)
             {
-                CadManager = layerManager;
+                oldCadManager.PropertyChanged -= control.CadManager_PropertyChanged;
             }
+
+            if (e.NewValue is CadManager newCadManager)
+            {
+                newCadManager.PropertyChanged += control.CadManager_PropertyChanged;
+            }
+        }
+
+        private void CadManager_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            Debug.WriteLine(e.PropertyName);
+            if (e.PropertyName == nameof(CadManager.DxfDirty) && CadManager.DxfDirty) { _deviceContextIsDirty = true; _offscreenBitmapIsDirty = true; }
         }
 
         private void LoadDxfResources(ResourceCache resCache)

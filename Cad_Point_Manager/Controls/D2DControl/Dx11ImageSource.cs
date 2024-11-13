@@ -1,12 +1,5 @@
 ﻿using SharpDX.Direct3D9;
-using System;
-using System.Collections.Generic;
-using System.DirectoryServices.ActiveDirectory;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Interop;
-using System.Windows.Media.TextFormatting;
 
 namespace Cad_Point_Manager.Controls.D2DControl
 {

@@ -7,15 +7,12 @@
         xmlns:ui="http://schemas.modernwpf.com/2019"
         ui:WindowHelper.UseModernWindowStyle="False"
         mc:Ignorable="d"
-        Title="MainWindow"
+        Title="{Binding JobFileManager.JobName}"
         Width="600"
         Height="400"
         WindowState="Maximized"
         ui:ThemeManager.IsThemeAware="True"
         ui:ThemeManager.RequestedTheme="Dark">
-
-
-
     <Grid>
         <Frame x:Name="mainFrame"
                Grid.Row="1" />

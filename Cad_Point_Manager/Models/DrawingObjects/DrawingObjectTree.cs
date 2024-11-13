@@ -1,15 +1,4 @@
-﻿using netDxf.Tables;
-using SharpDX;
-using SharpDX.Direct2D1;
-using SharpDX.Mathematics.Interop;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
-using System.Windows.Media;
+﻿using System.Windows;
 using Point = System.Windows.Point;
 
 namespace Cad_Point_Manager.Models.DrawingObjects

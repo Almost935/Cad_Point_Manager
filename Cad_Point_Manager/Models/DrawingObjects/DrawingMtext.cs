@@ -4,16 +4,12 @@ using Cad_Point_Manager.Models.DrawingObjects;
 using Cad_Point_Manager.Models.SerializableObjects;
 using netDxf;
 using netDxf.Entities;
-using netDxf.Units;
 using SharpDX.Direct2D1;
-using SharpDX.Direct3D11;
 using SharpDX.DirectWrite;
 using SharpDX.Mathematics.Interop;
-using System.Security.AccessControl;
 using System.Windows;
 using System.Windows.Media;
 using Brush = SharpDX.Direct2D1.Brush;
-using DeviceContext1 = SharpDX.Direct2D1.DeviceContext1;
 using Factory1 = SharpDX.DirectWrite.Factory1;
 using Point = System.Windows.Point;
 
@@ -174,6 +170,8 @@ namespace Cad_Point_Manager.DrawingObjects
         }
         public override bool Hittest(RawVector2 p, float thickness)
         {
+            if (Geometry is null || Geometry.IsDisposed) { return false; }
+
             return Bounds.Contains(p.X, p.Y);
         }
         private Enums.TextAttachmentPoint GetAttachmentPoint(MTextAttachmentPoint mTextAttachment)

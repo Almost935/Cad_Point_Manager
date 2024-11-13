@@ -1,14 +1,5 @@
 ﻿using SharpDX.Mathematics.Interop;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using SharpDX.Direct2D1;
-using SharpDX.Direct3D;
-
-using FeatureLevel = SharpDX.Direct3D.FeatureLevel;
-using System.Net;
 using System.Windows;
 using SharpDX;
 using Point = System.Windows.Point;

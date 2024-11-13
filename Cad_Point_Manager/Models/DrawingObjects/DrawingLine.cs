@@ -1,21 +1,8 @@
-﻿using Cad_Point_Manager.Helpers;
-using Cad_Point_Manager.Models.DrawingObjects;
-using netDxf;
+﻿using Cad_Point_Manager.Models.DrawingObjects;
 using netDxf.Entities;
-using netDxf.Units;
 using SharpDX.Direct2D1;
 using SharpDX.Mathematics.Interop;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Diagnostics;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
-
-using Point = System.Windows.Point;
 
 namespace Cad_Point_Manager.DrawingObjects
 {
@@ -129,6 +116,8 @@ namespace Cad_Point_Manager.DrawingObjects
 
         public override bool Hittest(RawVector2 p, float thickness)
         {
+            if (Geometry is null || Geometry.IsDisposed) { return false; }
+
             return Geometry.StrokeContainsPoint(p, thickness); ;
         }
         #endregion

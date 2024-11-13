@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Cad_Point_Manager.Controls.D2DControl
+﻿namespace Cad_Point_Manager.Controls.D2DControl
 {
     public static class Disposer
     {

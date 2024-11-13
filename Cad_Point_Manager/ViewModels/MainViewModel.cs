@@ -1,11 +1,6 @@
 ﻿using Cad_Point_Manager.Commands;
 using Cad_Point_Manager.Models;
 using netDxf;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 
@@ -95,10 +90,16 @@ namespace Cad_Point_Manager.ViewModels
 
             if (result == MessageBoxResult.Yes)
             {
-                JobFileManager.SaveJob();
+                bool saved = JobFileManager.TrySaveJobFile();
+                if (saved)
+                {
+                    JobFileManager.NewJobFile();
+                }
+                else { return; }
             }
             else if (result == MessageBoxResult.No)
             {
+                JobFileManager.NewJobFile();
             }
             else
             {
@@ -133,7 +134,7 @@ namespace Cad_Point_Manager.ViewModels
         }
         public void SaveJob(RoutedEventArgs e)
         {
-
+            JobFileManager.TrySaveJobFile();
         }
         public void SaveJobAs(RoutedEventArgs e)
         {

@@ -1,9 +1,7 @@
 ﻿using Cad_Point_Manager.Helpers;
 using netDxf.Entities;
-using SharpDX.Direct2D1;
 using System.Collections.ObjectModel;
 using System.Windows;
-using static netDxf.Entities.HatchBoundaryPath;
 
 namespace Cad_Point_Manager.Models.DrawingObjects
 {

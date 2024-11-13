@@ -3,13 +3,6 @@ using Cad_Point_Manager.Models.SerializableObjects;
 using netDxf.Entities;
 using SharpDX.Direct2D1;
 using SharpDX.Mathematics.Interop;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using Ellipse = SharpDX.Direct2D1.Ellipse;
 
@@ -132,6 +125,8 @@ namespace Cad_Point_Manager.DrawingObjects
     
         public override bool Hittest(RawVector2 p, float thickness)
         {
+            if (Geometry is null || Geometry.IsDisposed) { return false; }
+
             return Geometry.StrokeContainsPoint(p, thickness);
         }
         #endregion

@@ -1,25 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
+﻿using System.Diagnostics;
 using netDxf;
 using netDxf.Entities;
 using netDxf.Header;
-using SharpDX;
 using SharpDX.Direct2D1;
 using Cad_Point_Manager.Models.DrawingObjects;
-using SharpDX.Mathematics.Interop;
 using System.Windows;
-using netDxf.Tables;
-using System.Net;
 using Cad_Point_Manager.Controls.D2DControl;
-
-using PathGeometry = SharpDX.Direct2D1.PathGeometry;
-using ArcSegment = SharpDX.Direct2D1.ArcSegment;
-using SweepDirection = SharpDX.Direct2D1.SweepDirection;
-using Geometry = SharpDX.Direct2D1.Geometry;
-using Ellipse = SharpDX.Direct2D1.Ellipse;
-using EllipseGeometry = SharpDX.Direct2D1.EllipseGeometry;
 using Vector3 = netDxf.Vector3;
 using Cad_Point_Manager.DrawingObjects;
 using Cad_Point_Manager.Models;

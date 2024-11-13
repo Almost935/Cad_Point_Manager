@@ -9,13 +9,12 @@
       xmlns:fa="http://schemas.fontawesome.io/icons/"
       xmlns:viewModels="clr-namespace:Cad_Point_Manager.ViewModels"
       mc:Ignorable="d"
-      Title="MainView"
-      
+      Title="MainView" 
       Background="{StaticResource MainBackgroundBrush}">
 
-    <Page.DataContext>
+    <!--<Page.DataContext>
         <viewModels:MainViewModel />
-    </Page.DataContext>
+    </Page.DataContext>-->
 
     <Page.Resources>
         <Style TargetType="fa:FontAwesome">
@@ -72,6 +71,16 @@
                             </MenuItem.Icon>
                         </MenuItem>
                     </MenuItem>
+                    <MenuItem Header="Insert"
+                              Style="{StaticResource MenuItemStyle1}">
+                        <MenuItem Header="Insert DXF"
+                                  Command="{Binding AttachDxfFileCommand}"
+                                  Style="{StaticResource MenuItemStyle1}">
+                            <MenuItem.Icon>
+                                <fa:FontAwesome Icon="Paperclip" />
+                            </MenuItem.Icon>
+                        </MenuItem>
+                    </MenuItem>
                     <MenuItem Header="Edit"
                               Style="{StaticResource MenuItemStyle1}">
                         <MenuItem Header="Undo"
@@ -125,7 +134,7 @@
                 <controls:Direct2DDxfControl x:Name="dxfControl"
                                              RenderOptions.BitmapScalingMode="HighQuality"
                                              Cursor="Cross"
-                                             CadManager="{Binding JobFile.CadManager}"/>
+                                             CadManager="{Binding JobFileManager.CadManager}"/>
             </Border>
         </Grid>
 

@@ -5,7 +5,6 @@ using System.Collections.ObjectModel;
 using System.Windows;
 using Cad_Point_Manager.Controls.D2DControl;
 using Cad_Point_Manager.Helpers;
-using System.Net;
 
 namespace Cad_Point_Manager.Models.DrawingObjects
 {
