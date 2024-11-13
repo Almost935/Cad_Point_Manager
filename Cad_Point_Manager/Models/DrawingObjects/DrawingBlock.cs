@@ -219,6 +219,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         #endregion
 
         #region Constructor
+        public DrawingBlockData() { }
         public DrawingBlockData(DrawingBlock drawingBlock, DrawingBlockData drawingBlockData = null, DrawingPolylineData drawingPolylineData = null)
         {
             Bounds = drawingBlock.Bounds;

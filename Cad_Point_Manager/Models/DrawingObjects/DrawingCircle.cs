@@ -136,6 +136,7 @@ namespace Cad_Point_Manager.DrawingObjects
         public float Radius { get; set; }
         public SerializablePoint Center { get; set; }
 
+        public DrawingCircleData() { }
         public DrawingCircleData(DrawingCircle drawingCircle, DrawingBlockData drawingBlockData = null, DrawingPolylineData drawingPolylineData = null)
         {
             Radius = drawingCircle.Radius;

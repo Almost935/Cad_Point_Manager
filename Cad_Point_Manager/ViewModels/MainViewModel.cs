@@ -108,7 +108,7 @@ namespace Cad_Point_Manager.ViewModels
         }
         public void LoadJob(RoutedEventArgs e)
         {
-
+            JobFileManager.TryLoadJobFile();
         }
         public void AttachDxfFile(RoutedEventArgs e)
         {

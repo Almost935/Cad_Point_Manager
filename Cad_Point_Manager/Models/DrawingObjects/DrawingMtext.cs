@@ -267,6 +267,7 @@ namespace Cad_Point_Manager.DrawingObjects
         public Enums.TextAttachmentPoint AttachmentPoint { get; set; }
         public SerializableMatrix Transform { get; set; }
 
+        public DrawingMtextData() { }
         public DrawingMtextData(DrawingMtext drawingMtext, DrawingBlockData drawingBlockData = null)
         {
             Text = drawingMtext.Text;

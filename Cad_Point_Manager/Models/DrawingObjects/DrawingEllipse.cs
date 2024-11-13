@@ -256,6 +256,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         public double Radius { get; set; }
         public SerializablePoint Center { get; set; }
 
+        public DrawingEllipseData() { }
         public DrawingEllipseData(DrawingEllipse DrawingEllipse, DrawingBlockData drawingBlockData = null, DrawingPolylineData drawingPolylineData = null)
         {
             Sweep = DrawingEllipse.Sweep;

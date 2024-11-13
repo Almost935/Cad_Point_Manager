@@ -125,6 +125,7 @@ namespace Cad_Point_Manager.DrawingObjects
 
     public class DrawingLineData : DrawingSegmentData
     {
+        public DrawingLineData() { }
         public DrawingLineData(DrawingLine drawingLine, DrawingBlockData drawingBlockData = null, DrawingPolylineData drawingPolylineData = null)
         {
             StartPoint = new(drawingLine.StartPoint.X, drawingLine.StartPoint.Y);

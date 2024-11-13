@@ -186,6 +186,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         #endregion
 
         #region Constructor
+        public DrawingArcData() { }
         public DrawingArcData(DrawingArc drawingArc, DrawingBlockData drawingBlockData = null, DrawingPolylineData drawingPolylineData = null)
         {
             Sweep = drawingArc.Sweep;

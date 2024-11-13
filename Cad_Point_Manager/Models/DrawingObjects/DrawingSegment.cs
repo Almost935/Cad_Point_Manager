@@ -48,6 +48,8 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         public bool IsPartOfPolyline { get; set; }
         public DrawingPolylineData DrawingPolylineData { get; set; }
 
+        public DrawingSegmentData() { }
+
         public abstract DrawingSegment CreateDrawingSegment(ObjectLayer layer, DrawingBlock block = null, DrawingPolyline pline = null);
     }
 }

@@ -3,6 +3,7 @@ using System.Windows.Media;
 
 namespace Cad_Point_Manager.Models.SerializableObjects
 {
+    [Serializable]
     public class SerializableMatrix
     {
         [JsonPropertyName("m11")]

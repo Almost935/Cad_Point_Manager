@@ -128,6 +128,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
     public class DrawingPolyline3DData : DrawingPolylineData
     {
+        public DrawingPolyline3DData() { }
         public DrawingPolyline3DData(DrawingPolyline3D drawingPolyline, DrawingBlockData drawingBlockData = null)
         {
             StartPoint = new(drawingPolyline.StartPoint.X, drawingPolyline.StartPoint.Y);

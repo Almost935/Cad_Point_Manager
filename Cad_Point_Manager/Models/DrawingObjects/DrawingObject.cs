@@ -170,6 +170,8 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         public bool IsPartOfBlock { get; set; }
         public DrawingBlockData DrawingBlockData { get; set; }
 
+        public DrawingObjectData() { }
+
         public abstract DrawingObject CreateDrawingObject(ObjectLayer layer, DrawingBlock block = null);
     }
 }

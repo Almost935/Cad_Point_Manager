@@ -3,6 +3,7 @@ using System.Windows;
 
 namespace Cad_Point_Manager.Models.SerializableObjects
 {
+    [Serializable]
     public class SerializablePoint
     {
         [JsonPropertyName("x")]

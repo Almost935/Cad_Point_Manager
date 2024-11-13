@@ -322,9 +322,17 @@ namespace Cad_Point_Manager.Models
         #endregion
     }
 
-    public class CadManagerData(CadManager cadManager)
+    public class CadManagerData
     {
-        public Rect Extents { get; set; } = cadManager.Extents;
-        public List<ObjectLayerData> ObjectLayerDatas { get; set; } = cadManager.Layers.Values.Select(layer => new ObjectLayerData(layer)).ToList();
+        public Rect Extents { get; set; }
+        public List<ObjectLayerData> ObjectLayerDatas { get; set; } 
+
+        public CadManagerData() { }
+
+        public CadManagerData(CadManager cadManager)
+        {
+            Extents = cadManager.Extents;
+            ObjectLayerDatas = cadManager.Layers.Values.Select(layer => new ObjectLayerData(layer)).ToList();
+        }
     }
 }

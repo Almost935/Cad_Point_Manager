@@ -258,6 +258,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         public SerializableColor Color { get; set; }
         public List<DrawingObjectData> DrawingObjects { get; set; } = [];
 
+        public ObjectLayerData() { }
         public ObjectLayerData(ObjectLayer layer)
         {
             Name = layer.Name;

@@ -1,7 +1,9 @@
 ﻿using SharpDX.Mathematics.Interop;
+using System.Text.Json.Serialization;
 
 namespace Cad_Point_Manager.Models.SerializableObjects
 {
+    [Serializable]
     public class SerializableColor
     {
         public byte R { get; set; }
