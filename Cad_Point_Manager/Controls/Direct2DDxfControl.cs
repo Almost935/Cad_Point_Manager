@@ -312,8 +312,8 @@ namespace Cad_Point_Manager.Controls
                     _deviceContextIsDirty = false;
                 }
 
-                //stopwatch.Stop();
-                //Debug.WriteLine($"Render Elapsed Time: {stopwatch.ElapsedMilliseconds} ms");
+                stopwatch.Stop();
+                Debug.WriteLineIf(stopwatch.ElapsedMilliseconds > 0, $"Render Elapsed Time: {stopwatch.ElapsedMilliseconds} ms");
             }
         }
         private void SetClip()
@@ -473,8 +473,9 @@ namespace Cad_Point_Manager.Controls
                 zoom = 1 / (_zoomFactor * zoomStepDelta);
                 CurrentZoomStep -= zoomStepDelta;
             }
-
             UpdateZoom(zoom);
+
+            e.Handled = true;
         }
         protected override void OnMouseMove(MouseEventArgs e)
         {
@@ -489,6 +490,8 @@ namespace Cad_Point_Manager.Controls
                 UpdateTranslate(translate);
                 _lastTranslatePos = PointerCoords;
             }
+
+            e.Handled = true;
         }
         protected override void OnMouseDown(MouseButtonEventArgs e)
         {
@@ -497,6 +500,8 @@ namespace Cad_Point_Manager.Controls
                 _isPanning = true;
                 _lastTranslatePos = e.GetPosition(this);
             }
+
+            e.Handled = true;
         }
         protected override void OnMouseUp(MouseButtonEventArgs e)
         {
@@ -520,6 +525,8 @@ namespace Cad_Point_Manager.Controls
                     }
                 }
             }
+
+            e.Handled = true;
         }
         protected override void OnMouseLeave(MouseEventArgs e)
         {
