@@ -264,6 +264,12 @@ namespace Cad_Point_Manager.Controls
 
         public override void Render()
         {
+            if (!Dispatcher.CheckAccess())
+            {
+                Dispatcher.Invoke(() => Render());
+                return;
+            }
+
             if (CadManager is not null)
             {
                 Stopwatch stopwatch = Stopwatch.StartNew();
@@ -312,8 +318,8 @@ namespace Cad_Point_Manager.Controls
                     _deviceContextIsDirty = false;
                 }
 
-                stopwatch.Stop();
-                Debug.WriteLineIf(stopwatch.ElapsedMilliseconds > 0, $"Render Elapsed Time: {stopwatch.ElapsedMilliseconds} ms");
+                //stopwatch.Stop();
+                //Debug.WriteLineIf(stopwatch.ElapsedMilliseconds > 0, $"Render Elapsed Time: {stopwatch.ElapsedMilliseconds} ms");
             }
         }
         private void SetClip()
@@ -639,8 +645,11 @@ namespace Cad_Point_Manager.Controls
         private void UpdateDxfPointerCoords()
         {
             var newMatrix = _overallMatrix;
-            newMatrix.Invert();
-            DxfPointerCoords = newMatrix.Transform(PointerCoords);
+            if (newMatrix.HasInverse)
+            {
+                newMatrix.Invert();
+                DxfPointerCoords = newMatrix.Transform(PointerCoords);
+            }
         }
         private void UpdateZoom(float zoom)
         {
