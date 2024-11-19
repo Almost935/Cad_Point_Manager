@@ -13,9 +13,10 @@ namespace Cad_Point_Manager.Controls.D3DControl
     {
         // - field -----------------------------------------------------------------------
         private SharpDX.Direct3D11.Device device;
-        private Texture2D texture2D;
         private Dx11ImageSource d3DSurface;
         private DeviceContext deviceContext;
+        private Texture2D texture2D;
+        private RenderTargetView renderTargetView;
 
         private readonly Stopwatch renderTimer = new();
 
@@ -144,37 +145,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         private void StartD3D()
         {
-            // SwapChain description
-            var desc = new SwapChainDescription()
-            {
-                BufferCount = 1,
-                ModeDescription =
-                    new ModeDescription(form.ClientSize.Width, form.ClientSize.Height,
-                                        new Rational(60, 1), Format.R8G8B8A8_UNorm),
-                IsWindowed = true,
-                OutputHandle = form.Handle,
-                SampleDescription = new SampleDescription(1, 0),
-                SwapEffect = SwapEffect.Discard,
-                Usage = Usage.RenderTargetOutput
-            };
-
-            Device device;
-            SwapChain swapChain;
-            Device.CreateWithSwapChain(DriverType.Hardware, DeviceCreationFlags.None, desc, out device, out swapChain);
-            var context = device.ImmediateContext;
-
-            // Ignore all windows events
-            var factory = swapChain.GetParent<Factory>();
-            factory.MakeWindowAssociation(form.Handle, WindowAssociationFlags.IgnoreAll);
-
-
-            using (var backBuffer = swapChain.GetBackBuffer<Texture2D>(0))
-            {
-                var renderTargetView = new RenderTargetView(device, backBuffer);
-                deviceContext.OutputMerger.SetRenderTargets(renderTargetView);
-            }
-
-
             d3DSurface = new Dx11ImageSource();
             d3DSurface.IsFrontBufferAvailableChanged += OnIsFrontBufferAvailableChanged;
 
@@ -223,7 +193,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
             };
 
             texture2D = new Texture2D(device, renderDesc);
-
+            renderTargetView = new(device, texture2D);
+            
             //var surface = texture2D.QueryInterface<Surface>();
 
             d3DSurface.SetRenderTarget(texture2D);
