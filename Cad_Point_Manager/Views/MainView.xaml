@@ -5,6 +5,7 @@
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
       xmlns:local="clr-namespace:Cad_Point_Manager.Views"
       xmlns:controls="clr-namespace:Cad_Point_Manager.Controls"
+      xmlns:d3D="clr-namespace:Cad_Point_Manager.Controls.D3DControl"
       xmlns:ui="http://schemas.modernwpf.com/2019"
       xmlns:fa="http://schemas.fontawesome.io/icons/"
       xmlns:viewModels="clr-namespace:Cad_Point_Manager.ViewModels"
@@ -131,10 +132,11 @@
                     CornerRadius="20"
                     ClipToBounds="True">
 
-                <controls:Direct2DDxfControl x:Name="dxfControl"
+                <!--<controls:Direct2DDxfControl x:Name="dxfControl"
                                              RenderOptions.BitmapScalingMode="HighQuality"
                                              Cursor="Cross"
-                                             CadManager="{Binding JobFileManager.CadManager}"/>
+                                             CadManager="{Binding JobFileManager.CadManager}"/>-->
+                <d3D:Direct3DControl />
             </Border>
         </Grid>
 

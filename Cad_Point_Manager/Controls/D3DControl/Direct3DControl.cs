@@ -50,7 +50,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         {
             var hwndSource = (HwndSource)PresentationSource.FromVisual(this);
             var hwnd = hwndSource.Handle;
-
+            
             var swapChainDesc = new SwapChainDescription
             {
                 BufferCount = 1,

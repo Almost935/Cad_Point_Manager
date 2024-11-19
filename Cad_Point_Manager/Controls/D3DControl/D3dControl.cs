@@ -145,6 +145,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         private void StartD3D()
         {
+            device = new(DriverType.Hardware, DeviceCreationFlags.BgraSupport);
+            resCache.Device = device;
+
             d3DSurface = new Dx11ImageSource();
             d3DSurface.IsFrontBufferAvailableChanged += OnIsFrontBufferAvailableChanged;
 
@@ -231,8 +234,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 return;
             }
 
-            deviceContext.ClearRenderTargetView(d3DSurface.RenderTargetView, SharpDX.Color.CornflowerBlue);
-
+            deviceContext.ClearRenderTargetView(renderTargetView, SharpDX.Color.CornflowerBlue);
+            
             CalcFps();
 
             device.ImmediateContext.Flush();
