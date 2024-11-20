@@ -74,7 +74,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             {
                 _renderTargetView = new RenderTargetView(_device, backBuffer);
             }
-
+            
             // Create depth stencil view
             var depthBuffer = new Texture2D(_device, new Texture2DDescription
             {
