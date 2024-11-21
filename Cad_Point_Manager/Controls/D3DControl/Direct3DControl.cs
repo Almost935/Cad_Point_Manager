@@ -18,7 +18,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
     public class Direct3DControl : Image
     {
         private Device _device;
-        private SwapChain _swapChain;
+        private SwapChain2 _swapChain;
         private RenderTargetView _renderTargetView;
         private DepthStencilView _depthStencilView;
         private Dx11ImageSource _d3dImage;
@@ -48,30 +48,35 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         private void InitializeDirect3D()
         {
-            var hwndSource = (HwndSource)PresentationSource.FromVisual(this);
-            var hwnd = hwndSource.Handle;
-            
-            var swapChainDesc = new SwapChainDescription
+            var width = Math.Max((int)ActualWidth, 100);
+            var height = Math.Max((int)ActualHeight, 100);
+
+            _device = new SharpDX.Direct3D11.Device(DriverType.Hardware, DeviceCreationFlags.BgraSupport);
+
+            // describe swap chain
+            SwapChainDescription1 swapChainDescription = new()
             {
-                BufferCount = 1,
-                ModeDescription = new ModeDescription(100, 100, new Rational(60, 1), Format.R8G8B8A8_UNorm),
-                IsWindowed = true,
-                OutputHandle = hwnd, // Use the actual HWND
+                AlphaMode = AlphaMode.Premultiplied,
+                BufferCount = 2,
+                Format = Format.R8G8B8A8_UNorm,
+                Height = height,
+                Width = width,
                 SampleDescription = new SampleDescription(1, 0),
-                SwapEffect = SwapEffect.Discard,
+                Scaling = Scaling.Stretch,
+                Stereo = false,
+                SwapEffect = SwapEffect.FlipSequential,
                 Usage = Usage.RenderTargetOutput
             };
 
-            Device.CreateWithSwapChain(DriverType.Hardware, DeviceCreationFlags.BgraSupport, swapChainDesc, out _device, out _swapChain);
-
-            var width = Math.Max((int)ActualWidth, 1);
-            var height = Math.Max((int)ActualHeight, 1);
-            _swapChain.ResizeBuffers(1, width, height, Format.B8G8R8A8_UNorm, SwapChainFlags.None);
-
+            using (var factory4 = new Factory4())
+            {
+                SwapChain1 swapChain1 = new(factory4, _device, ref swapChainDescription);
+                _swapChain = swapChain1.QueryInterface<SwapChain2>();
+            }
 
             // Create render target view
             using (var backBuffer = _swapChain.GetBackBuffer<Texture2D>(0))
-            {
+            { 
                 _renderTargetView = new RenderTargetView(_device, backBuffer);
             }
             
@@ -153,7 +158,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             {
                 _renderTargetView = new RenderTargetView(_device, backBuffer);
             }
-
+            
             // Recreate depth stencil view
             var depthBufferDesc = new Texture2DDescription
             {
@@ -200,7 +205,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         private void Render()
         {
-            _device.ImmediateContext.ClearRenderTargetView(_renderTargetView, new RawColor4(1.0f, 0.0f, 0.0f, 0.0f));
+            _device.ImmediateContext.ClearRenderTargetView(_renderTargetView, new RawColor4(1.0f, 0.0f, 0.0f, 1.0f));
             _device.ImmediateContext.ClearDepthStencilView(_depthStencilView, DepthStencilClearFlags.Depth, 1.0f, 0);
 
             // Bind buffers

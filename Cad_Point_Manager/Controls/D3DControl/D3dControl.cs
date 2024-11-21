@@ -78,7 +78,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             base.Stretch = System.Windows.Media.Stretch.Fill;
         }
 
-        public abstract void Render();
+        public abstract void Render(DeviceContext deviceContext);
 
         // - event handler ---------------------------------------------------------------
 
