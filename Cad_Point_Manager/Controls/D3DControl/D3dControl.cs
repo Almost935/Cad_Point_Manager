@@ -1,11 +1,13 @@
 ﻿using SharpDX.Direct3D;
 using SharpDX.Direct3D11;
-using SharpDX.Direct3D9;
 using SharpDX.DXGI;
+using SharpDX.D3DCompiler;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Interop;
+
 using Buffer = SharpDX.Direct3D11.Buffer;
 using FeatureLevel = SharpDX.Direct3D.FeatureLevel;
 
@@ -25,7 +27,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private InputLayout inputLayout;
         private VertexShader vertexShader;
         private PixelShader pixelShader;
-        private Buffer constantBuffer;
 
         private readonly Stopwatch renderTimer = new();
 
@@ -176,18 +177,18 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             using (var factory4 = new Factory4())
             {
-                SwapChain1 swapChain1 = new(factory4, _device, ref swapChainDescription);
+                SwapChain1 swapChain1 = new(factory4, device, ref swapChainDescription);
                 swapChain = swapChain1.QueryInterface<SwapChain2>();
             }
 
             // Create render target view
-            using (var backBuffer = _swapChain.GetBackBuffer<Texture2D>(0))
+            using (var backBuffer = swapChain.GetBackBuffer<Texture2D>(0))
             {
-                _renderTargetView = new RenderTargetView(_device, backBuffer);
+                renderTargetView = new RenderTargetView(device, backBuffer);
             }
 
             // Create depth stencil view
-            var depthBuffer = new Texture2D(_device, new Texture2DDescription
+            var depthBuffer = new Texture2D(device, new Texture2DDescription
             {
                 Format = Format.D32_Float,
                 ArraySize = 1,
@@ -198,17 +199,15 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 Usage = ResourceUsage.Default,
                 BindFlags = BindFlags.DepthStencil
             });
-            _depthStencilView = new DepthStencilView(_device, depthBuffer);
 
             // Set render targets
-            _device.ImmediateContext.OutputMerger.SetRenderTargets(_depthStencilView, _renderTargetView);
+            device.ImmediateContext.OutputMerger.SetRenderTargets(_depthStencilView, _renderTargetView);
 
             // Create geometry
             CreateGeometry();
 
             // Set viewport
             _device.ImmediateContext.Rasterizer.SetViewport(0, 0, width, height);
-
 
             device = new(DriverType.Hardware, DeviceCreationFlags.BgraSupport);
             resCache.Device = device;
@@ -217,7 +216,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             d3DSurface.IsFrontBufferAvailableChanged += OnIsFrontBufferAvailableChanged;
 
             CreateAndBindTargets();
-            
+
             base.Source = d3DSurface;
         }
 
@@ -295,6 +294,48 @@ namespace Cad_Point_Manager.Controls.D3DControl
             //device.ImmediateContext.Rasterizer.SetViewport(0, 0, width, height, 0.0f, 1.0f);
         }
 
+        private void CreateGeometry()
+        {
+            // Define vertices for a line
+            var vertices = new[]
+            { 
+            new Vertex(new SharpDX.Vector3(-0.5f, 0.5f, 0.0f), new SharpDX.Color4(1.0f, 0.0f, 0.0f, 1.0f)), // Start
+            new Vertex(new SharpDX.Vector3(0.5f, -0.5f, 0.0f), new SharpDX.Color4(0.0f, 1.0f, 0.0f, 1.0f))  // End
+        };
+
+            // Create vertex buffer
+            vertexBuffer = Buffer.Create(device, BindFlags.VertexBuffer, vertices);
+
+            // Create shaders
+            CreateShaders();
+        }
+
+        private void CreateShaders()
+        {
+            // Compile the vertex shader
+            var vertexShaderByteCode = ShaderBytecode.CompileFromFile("Shaders/VertexShader.hlsl", "VSMain", "vs_5_0");
+            vertexShader = new VertexShader(device, vertexShaderByteCode);
+
+            // Define the input layout
+            var layout = new InputElement[]
+            {
+            new InputElement("POSITION", 0, Format.R32G32B32_Float, 0, 0),
+            new InputElement("COLOR", 0, Format.R32G32B32A32_Float, 12, 0)
+            };
+
+            // Create the input layout
+            inputLayout = new InputLayout(device, ShaderSignature.GetInputSignature(vertexShaderByteCode), layout);
+
+            // Compile the pixel shader
+            var pixelShaderByteCode = ShaderBytecode.CompileFromFile("Shaders/PixelShader.hlsl", "PSMain", "ps_5_0");
+            pixelShader = new PixelShader(device, pixelShaderByteCode);
+
+            // Set shaders to the device context
+            device.ImmediateContext.InputAssembler.InputLayout = inputLayout;
+            device.ImmediateContext.VertexShader.Set(vertexShader);
+            device.ImmediateContext.PixelShader.Set(pixelShader);
+        }
+
         private void StartRendering()
         {
             if (renderTimer.IsRunning)
@@ -325,7 +366,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             }
 
             device.ImmediateContext.ClearRenderTargetView(renderTargetView, SharpDX.Color.Wheat);
-            
+
             CalcFps();
 
             device.ImmediateContext.Flush();
