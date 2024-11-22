@@ -1,10 +1,12 @@
 ﻿using SharpDX.Direct3D;
 using SharpDX.Direct3D11;
+using SharpDX.Direct3D9;
 using SharpDX.DXGI;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Windows;
-
+using System.Windows.Interop;
+using Buffer = SharpDX.Direct3D11.Buffer;
 using FeatureLevel = SharpDX.Direct3D.FeatureLevel;
 
 namespace Cad_Point_Manager.Controls.D3DControl
@@ -13,10 +15,17 @@ namespace Cad_Point_Manager.Controls.D3DControl
     {
         // - field -----------------------------------------------------------------------
         private SharpDX.Direct3D11.Device device;
-        private Dx11ImageSource d3DSurface;
-        private DeviceContext deviceContext;
-        private Texture2D texture2D;
+        private SwapChain2 swapChain;
         private RenderTargetView renderTargetView;
+        private Dx11ImageSource d3DSurface;
+        //private DeviceContext deviceContext;
+        //private Texture2D texture2D;
+        //private RenderTargetView renderTargetView;
+        private Buffer vertexBuffer;
+        private InputLayout inputLayout;
+        private VertexShader vertexShader;
+        private PixelShader pixelShader;
+        private Buffer constantBuffer;
 
         private readonly Stopwatch renderTimer = new();
 
@@ -145,6 +154,62 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         private void StartD3D()
         {
+            var width = Math.Max((int)ActualWidth, 500);
+            var height = Math.Max((int)ActualHeight, 500);
+
+            device = new SharpDX.Direct3D11.Device(DriverType.Hardware, DeviceCreationFlags.BgraSupport);
+
+            // describe swap chain
+            SwapChainDescription1 swapChainDescription = new()
+            {
+                AlphaMode = AlphaMode.Premultiplied,
+                BufferCount = 2,
+                Format = Format.R8G8B8A8_UNorm,
+                Height = height,
+                Width = width,
+                SampleDescription = new SampleDescription(1, 0),
+                Scaling = Scaling.Stretch,
+                Stereo = false,
+                SwapEffect = SwapEffect.FlipSequential,
+                Usage = Usage.RenderTargetOutput
+            };
+
+            using (var factory4 = new Factory4())
+            {
+                SwapChain1 swapChain1 = new(factory4, _device, ref swapChainDescription);
+                swapChain = swapChain1.QueryInterface<SwapChain2>();
+            }
+
+            // Create render target view
+            using (var backBuffer = _swapChain.GetBackBuffer<Texture2D>(0))
+            {
+                _renderTargetView = new RenderTargetView(_device, backBuffer);
+            }
+
+            // Create depth stencil view
+            var depthBuffer = new Texture2D(_device, new Texture2DDescription
+            {
+                Format = Format.D32_Float,
+                ArraySize = 1,
+                MipLevels = 1,
+                Width = width,
+                Height = height,
+                SampleDescription = new SampleDescription(1, 0),
+                Usage = ResourceUsage.Default,
+                BindFlags = BindFlags.DepthStencil
+            });
+            _depthStencilView = new DepthStencilView(_device, depthBuffer);
+
+            // Set render targets
+            _device.ImmediateContext.OutputMerger.SetRenderTargets(_depthStencilView, _renderTargetView);
+
+            // Create geometry
+            CreateGeometry();
+
+            // Set viewport
+            _device.ImmediateContext.Rasterizer.SetViewport(0, 0, width, height);
+
+
             device = new(DriverType.Hardware, DeviceCreationFlags.BgraSupport);
             resCache.Device = device;
 
@@ -173,36 +238,61 @@ namespace Cad_Point_Manager.Controls.D3DControl
             {
                 return;
             }
-            
-            d3DSurface.SetRenderTarget(null);
 
-            Disposer.SafeDispose(ref texture2D);
-
-            var width = Math.Max((int)ActualWidth, 100);
-            var height = Math.Max((int)ActualHeight, 100);
-
-            var renderDesc = new Texture2DDescription
+            var swapChainDescription = new SwapChainDescription
             {
-                BindFlags = BindFlags.RenderTarget | BindFlags.ShaderResource,
-                Format = Format.B8G8R8A8_UNorm,
-                Width = width,
-                Height = height,
-                MipLevels = 1,
+                BufferCount = 1,
+                ModeDescription = new ModeDescription(
+                (int)ActualWidth, (int)ActualHeight,
+                new Rational(60, 1), Format.R8G8B8A8_UNorm),
+                IsWindowed = true,
+                OutputHandle = new WindowInteropHelper(System.Windows.Application.Current.MainWindow).Handle,
                 SampleDescription = new SampleDescription(1, 0),
-                Usage = ResourceUsage.Default,
-                OptionFlags = ResourceOptionFlags.Shared,
-                CpuAccessFlags = CpuAccessFlags.None,
-                ArraySize = 1
+                SwapEffect = SwapEffect.Discard,
+                Usage = Usage.RenderTargetOutput
             };
 
-            texture2D = new Texture2D(device, renderDesc);
-            renderTargetView = new(device, texture2D);
-            
-            //var surface = texture2D.QueryInterface<Surface>();
+            device.CreateWithSwapChain(
+                DriverType.Hardware,
+                DeviceCreationFlags.BgraSupport,
+            swapChainDescription,
+                out device,
+                out swapChain);
+            context = device.ImmediateContext;
 
-            d3DSurface.SetRenderTarget(texture2D);
+            using (var backBuffer = swapChain.GetBackBuffer<Texture2D>(0))
+            {
+                renderTargetView = new RenderTargetView(device, backBuffer);
+            }
 
-            device.ImmediateContext.Rasterizer.SetViewport(0, 0, width, height, 0.0f, 1.0f);
+            context.OutputMerger.SetRenderTargets(renderTargetView);
+
+            //d3DSurface.SetRenderTarget(null);
+
+            //Disposer.SafeDispose(ref texture2D);
+
+            //var width = Math.Max((int)ActualWidth, 100);
+            //var height = Math.Max((int)ActualHeight, 100);
+
+            //var renderDesc = new Texture2DDescription
+            //{
+            //    BindFlags = BindFlags.RenderTarget | BindFlags.ShaderResource,
+            //    Format = Format.B8G8R8A8_UNorm,
+            //    Width = width,
+            //    Height = height,
+            //    MipLevels = 1,
+            //    SampleDescription = new SampleDescription(1, 0),
+            //    Usage = ResourceUsage.Default,
+            //    OptionFlags = ResourceOptionFlags.Shared,
+            //    CpuAccessFlags = CpuAccessFlags.None,
+            //    ArraySize = 1
+            //};
+
+            //texture2D = new Texture2D(device, renderDesc);
+            //renderTargetView = new(device, texture2D);
+            //device.ImmediateContext.OutputMerger.SetRenderTargets(renderTargetView);
+            //d3DSurface.SetRenderTarget(texture2D);
+            //device.ImmediateContext.Rasterizer.SetViewport(0, 0, width, height, 0.0f, 1.0f);
         }
 
         private void StartRendering()
@@ -234,7 +324,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 return;
             }
 
-            deviceContext.ClearRenderTargetView(renderTargetView, SharpDX.Color.CornflowerBlue);
+            device.ImmediateContext.ClearRenderTargetView(renderTargetView, SharpDX.Color.Wheat);
             
             CalcFps();
 

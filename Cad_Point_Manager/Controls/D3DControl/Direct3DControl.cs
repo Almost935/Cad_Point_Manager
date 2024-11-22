@@ -48,10 +48,10 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         private void InitializeDirect3D()
         {
-            var width = Math.Max((int)ActualWidth, 100);
-            var height = Math.Max((int)ActualHeight, 100);
+            var width = Math.Max((int)ActualWidth, 500);
+            var height = Math.Max((int)ActualHeight, 500);
 
-            _device = new SharpDX.Direct3D11.Device(DriverType.Hardware, DeviceCreationFlags.BgraSupport);
+            _device = new(DriverType.Hardware, DeviceCreationFlags.BgraSupport);
 
             // describe swap chain
             SwapChainDescription1 swapChainDescription = new()

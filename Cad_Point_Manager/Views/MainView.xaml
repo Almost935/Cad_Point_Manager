@@ -137,7 +137,7 @@
                                              Cursor="Cross"
                                              CadManager="{Binding JobFileManager.CadManager}"/>-->
                 <!--<d3D:Direct3DControl/>-->
-                <d3D:Direct3DControl />
+                <d3D:D3dDxfControl />
             </Border>
         </Grid>
 

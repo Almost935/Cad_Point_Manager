@@ -11,7 +11,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
     {
         public override void Render(DeviceContext deviceContext)
         {
-            deviceContext.
             throw new NotImplementedException();
         }
     }
