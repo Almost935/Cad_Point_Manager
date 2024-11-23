@@ -159,7 +159,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             var height = Math.Max((int)ActualHeight, 500);
 
             device = new SharpDX.Direct3D11.Device(DriverType.Hardware, DeviceCreationFlags.BgraSupport);
-
+            
             // describe swap chain
             SwapChainDescription1 swapChainDescription = new()
             {
