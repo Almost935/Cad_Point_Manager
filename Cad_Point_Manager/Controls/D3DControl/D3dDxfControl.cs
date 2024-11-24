@@ -11,11 +11,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
 {
     public class D3dDxfControl : D3dControl
     {
-        public override void Render(DeviceContext deviceContext)
+        public override void Render(DeviceContext deviceContext, RenderTargetView renderTargetView)
         {
             // Clear the render target
-            deviceContext.ClearRenderTargetView(renderTargetView, SharpDX.Color.CornflowerBlue);
-
+            deviceContext.ClearRenderTargetView(renderTargetView, Color.CornflowerBlue);
+            
             // Set the vertex buffer
             var vertexBufferBinding = new VertexBufferBinding(vertexBuffer, Utilities.SizeOf<Vertex>(), 0);
             deviceContext.InputAssembler.SetVertexBuffers(0, vertexBufferBinding);
