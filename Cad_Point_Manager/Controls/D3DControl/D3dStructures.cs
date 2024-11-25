@@ -13,5 +13,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
     {
         public Vector3 Position;
         public Vector4 Color; 
+
+        public Vertex(Vector3 position, Vector4 color)
+        {
+            Position = position;
+            Color = color;
+        }
     }
 }

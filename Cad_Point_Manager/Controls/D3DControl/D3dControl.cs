@@ -207,7 +207,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             CreateGeometry();
 
             // Set viewport
-            _device.ImmediateContext.Rasterizer.SetViewport(0, 0, width, height);
+            device.ImmediateContext.Rasterizer.SetViewport(0, 0, width, height);
 
             device = new(DriverType.Hardware, DeviceCreationFlags.BgraSupport);
             resCache.Device = device;
