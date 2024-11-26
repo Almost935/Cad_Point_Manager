@@ -132,7 +132,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             }
 
             PrepareAndCallRender();
-            _d3DSurface.InvalidateD3DImage();
+            _d3dImage.InvalidateD3DImage();
 
             lastRenderTime = renderTimer.ElapsedMilliseconds;
         }
@@ -145,7 +145,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         private void OnIsFrontBufferAvailableChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
-            if (_d3DSurface.IsFrontBufferAvailable)
+            if (_d3dImage.IsFrontBufferAvailable)
             {
                 StartRendering();
             }
@@ -158,79 +158,13 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private static void OnRenderWaitChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             var control = (D3dControl)d;
-            control._d3DSurface.RenderWait = (int)e.NewValue;
+            control._d3dImage.RenderWait = (int)e.NewValue;
         }
 
         // - private methods -------------------------------------------------------------
 
         private void StartD3D()
         {
-            //var width = Math.Max((int)ActualWidth, 500);
-            //var height = Math.Max((int)ActualHeight, 500);
-
-            //_device = new SharpDX.Direct3D11.Device(DriverType.Hardware, DeviceCreationFlags.BgraSupport);
-
-            //// describe swap chain
-            //SwapChainDescription1 swapChainDescription = new()
-            //{
-            //    AlphaMode = AlphaMode.Premultiplied,
-            //    BufferCount = 2,
-            //    Format = Format.R8G8B8A8_UNorm,
-            //    Height = height,
-            //    Width = width,
-            //    SampleDescription = new SampleDescription(1, 0),
-            //    Scaling = Scaling.Stretch,
-            //    Stereo = false,
-            //    SwapEffect = SwapEffect.FlipSequential,
-            //    Usage = Usage.RenderTargetOutput
-            //};
-
-            //using (var factory4 = new Factory4())
-            //{
-            //    SwapChain1 swapChain1 = new(factory4, _device, ref swapChainDescription);
-            //    _swapChain = swapChain1.QueryInterface<SwapChain2>();
-            //}
-
-            //// Create render target view
-            //using (var backBuffer = _swapChain.GetBackBuffer<Texture2D>(0))
-            //{
-            //    _renderTargetView = new RenderTargetView(_device, backBuffer);
-            //}
-
-            //// Create depth stencil view
-            //var depthBuffer = new Texture2D(_device, new Texture2DDescription
-            //{
-            //    Format = Format.D32_Float,
-            //    ArraySize = 1,
-            //    MipLevels = 1,
-            //    Width = width,
-            //    Height = height,
-            //    SampleDescription = new SampleDescription(1, 0),
-            //    Usage = ResourceUsage.Default,
-            //    BindFlags = BindFlags.DepthStencil
-            //});
-
-            //// Set render targets
-            //_device.ImmediateContext.OutputMerger.SetRenderTargets(_depthStencilView, _renderTargetView);
-
-            //// Create geometry
-            //CreateGeometry();
-
-            //// Set viewport
-            //_device.ImmediateContext.Rasterizer.SetViewport(0, 0, width, height);
-
-            //_device = new(DriverType.Hardware, DeviceCreationFlags.BgraSupport);
-            //resCache.Device = _device;
-
-            //_d3DSurface = new Dx11ImageSource();
-            //_d3DSurface.IsFrontBufferAvailableChanged += OnIsFrontBufferAvailableChanged;
-
-            //CreateAndBindTargets();
-
-            //base.Source = _d3DSurface;
-
-
-
             var width = Math.Max((int)ActualWidth, 100);
             var height = Math.Max((int)ActualHeight, 100);
 
@@ -250,7 +184,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 Scaling = Scaling.Stretch,
                 Stereo = false,
                 SwapEffect = SwapEffect.FlipSequential,
-                Usage = Usage.RenderTargetOutput
+                Usage = Usage.RenderTargetOutput, 
             };
 
             using (var factory4 = new Factory4())
@@ -261,6 +195,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             _backBuffer = Resource.FromSwapChain<Texture2D>(_swapChain, 0);
             _renderTargetView = new RenderTargetView(_device, _backBuffer);
+            _context = _device.ImmediateContext;
 
             // Create D3DImage to display on WPF
             _d3dImage = new();
@@ -297,38 +232,17 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         private void CreateAndBindTargets()
         {
-            if (_d3DSurface == null)
+            if (_d3dImage == null)
             {
                 return;
             }
 
-            var swapChainDescription = new SwapChainDescription
-            {
-                BufferCount = 1,
-                ModeDescription = new ModeDescription(
-                (int)ActualWidth, (int)ActualHeight,
-                new Rational(60, 1), Format.R8G8B8A8_UNorm),
-                IsWindowed = true,
-                OutputHandle = new WindowInteropHelper(System.Windows.Application.Current.MainWindow).Handle,
-                SampleDescription = new SampleDescription(1, 0),
-                SwapEffect = SwapEffect.Discard,
-                Usage = Usage.RenderTargetOutput
-            };
-
-            _device.CreateWithSwapChain(
-                DriverType.Hardware,
-                DeviceCreationFlags.BgraSupport,
-            swapChainDescription,
-                out _device,
-                out _swapChain);
-            context = _device.ImmediateContext;
 
             using (var backBuffer = _swapChain.GetBackBuffer<Texture2D>(0))
             {
                 _renderTargetView = new RenderTargetView(_device, backBuffer);
             }
-
-            context.OutputMerger.SetRenderTargets(_renderTargetView);
+            _context.OutputMerger.SetRenderTargets(_renderTargetView);
 
             //d3DSurface.SetRenderTarget(null);
 

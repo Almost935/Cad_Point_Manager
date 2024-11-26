@@ -21,7 +21,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private SwapChain2 _swapChain;
         private RenderTargetView _renderTargetView;
         private DepthStencilView _depthStencilView;
-        private Dx11ImageSource _d3dImage;
+        private Dx11ImageSource _d3DSurface;
         private Buffer _vertexBuffer;
         private Buffer _indexBuffer;
 
@@ -48,60 +48,69 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         private void InitializeDirect3D()
         {
-            var width = Math.Max((int)ActualWidth, 500);
-            var height = Math.Max((int)ActualHeight, 500);
+            _device = new Device(DriverType.Hardware, DeviceCreationFlags.BgraSupport);
+            _d3DSurface = new Dx11ImageSource();
+            _d3DSurface.IsFrontBufferAvailableChanged += OnIsFrontBufferAvailableChanged;
 
-            _device = new(DriverType.Hardware, DeviceCreationFlags.BgraSupport);
+            CreateAndBindTargets();
 
-            // describe swap chain
-            SwapChainDescription1 swapChainDescription = new()
+            base.Source = _d3DSurface;
+        }
+
+        private void CreateAndBindTargets()
+        {
+            if (_d3DSurface == null)
             {
-                AlphaMode = AlphaMode.Premultiplied,
-                BufferCount = 2,
-                Format = Format.R8G8B8A8_UNorm,
-                Height = height,
+                return;
+            }
+
+            _d3DSurface.SetRenderTarget(null);
+
+            Disposer.SafeDispose(ref d2DRenderTarget);
+            Disposer.SafeDispose(ref d2DDeviceContext);
+            Disposer.SafeDispose(ref renderTarget);
+
+            var width = Math.Max((int)ActualWidth, 100);
+            var height = Math.Max((int)ActualHeight, 100);
+
+            var renderDesc = new Texture2DDescription
+            {
+                BindFlags = BindFlags.RenderTarget | BindFlags.ShaderResource,
+                Format = Format.B8G8R8A8_UNorm,
                 Width = width,
-                SampleDescription = new SampleDescription(1, 0),
-                Scaling = Scaling.Stretch,
-                Stereo = false,
-                SwapEffect = SwapEffect.FlipSequential,
-                Usage = Usage.RenderTargetOutput
-            };
-
-            using (var factory4 = new Factory4())
-            {
-                SwapChain1 swapChain1 = new(factory4, _device, ref swapChainDescription);
-                _swapChain = swapChain1.QueryInterface<SwapChain2>();
-            }
-
-            // Create render target view
-            using (var backBuffer = _swapChain.GetBackBuffer<Texture2D>(0))
-            { 
-                _renderTargetView = new RenderTargetView(_device, backBuffer);
-            }
-            
-            // Create depth stencil view
-            var depthBuffer = new Texture2D(_device, new Texture2DDescription
-            {
-                Format = Format.D32_Float,
-                ArraySize = 1,
+                Height = height,
                 MipLevels = 1,
-                Width = width,
-                Height = height,
                 SampleDescription = new SampleDescription(1, 0),
                 Usage = ResourceUsage.Default,
-                BindFlags = BindFlags.DepthStencil
-            });
-            _depthStencilView = new DepthStencilView(_device, depthBuffer);
+                OptionFlags = ResourceOptionFlags.Shared,
+                CpuAccessFlags = CpuAccessFlags.None,
+                ArraySize = 1
+            };
 
-            // Set render targets
-            _device.ImmediateContext.OutputMerger.SetRenderTargets(_depthStencilView, _renderTargetView);
+            renderTarget = new Texture2D(device, renderDesc);
+            resCache.MaxBitmapSize = GetMaxSize(renderTarget.Device.FeatureLevel);
+            var surface = renderTarget.QueryInterface<Surface>();
 
-            // Create geometry
-            CreateGeometry();
+            if (d2DFactory is null)
+            {
+                d2DFactory = new SharpDX.Direct2D1.Factory1(FactoryType.MultiThreaded, DebugLevel.Information);
+                resCache.Factory = d2DFactory;
+            }
+            if (resCache.FactoryWrite is null)
+            {
+                var factory = new SharpDX.DirectWrite.Factory1(SharpDX.DirectWrite.FactoryType.Shared);
+                resCache.FactoryWrite = factory;
+            }
 
-            // Set viewport
-            _device.ImmediateContext.Rasterizer.SetViewport(0, 0, width, height);
+            var rtp = new RenderTargetProperties(new PixelFormat(Format.Unknown, SharpDX.Direct2D1.AlphaMode.Premultiplied));
+            d2DRenderTarget = new(d2DFactory, surface, rtp);
+            resCache.RenderTarget = d2DRenderTarget;
+            d2DDeviceContext = d2DRenderTarget.QueryInterface<DeviceContext1>();
+            resCache.DeviceContext = d2DDeviceContext;
+
+            d3DSurface.SetRenderTarget(renderTarget);
+
+            device.ImmediateContext.Rasterizer.SetViewport(0, 0, width, height, 0.0f, 1.0f);
         }
 
         private void CreateGeometry()
@@ -182,7 +191,17 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _device.ImmediateContext.Rasterizer.SetViewport(0, 0, width, height);
         }
 
-
+        private void OnIsFrontBufferAvailableChanged(object sender, DependencyPropertyChangedEventArgs e)
+        {
+            if (d3DSurface.IsFrontBufferAvailable)
+            {
+                StartRendering();
+            }
+            else
+            {
+                StopRendering();
+            }
+        }
 
         private void OnRendering(object sender, EventArgs e)
         {
@@ -205,7 +224,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         private void Render()
         {
-            _device.ImmediateContext.ClearRenderTargetView(_renderTargetView, new RawColor4(1.0f, 0.0f, 0.0f, 1.0f));
+            _device.ImmediateContext.ClearRenderTargetView(_renderTargetView, new RawColor4(1.0f, 1.0f, 0.0f, 1.0f));
             _device.ImmediateContext.ClearDepthStencilView(_depthStencilView, DepthStencilClearFlags.Depth, 1.0f, 0);
 
             // Bind buffers

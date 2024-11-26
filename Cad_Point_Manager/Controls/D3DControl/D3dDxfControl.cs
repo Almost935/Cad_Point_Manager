@@ -13,18 +13,18 @@ namespace Cad_Point_Manager.Controls.D3DControl
     {
         public override void Render(DeviceContext deviceContext)
         {
-            // Clear the render target
-            deviceContext.ClearRenderTargetView(_renderTargetView, SharpDX.Color.CornflowerBlue);
+            //// Clear the render target
+            //deviceContext.ClearRenderTargetView(_renderTargetView, SharpDX.Color.CornflowerBlue);
 
-            // Set the vertex buffer
-            var vertexBufferBinding = new VertexBufferBinding(_vertexBuffer, Utilities.SizeOf<Vertex>(), 0);
-            deviceContext.InputAssembler.SetVertexBuffers(0, vertexBufferBinding);
+            //// Set the vertex buffer
+            //var vertexBufferBinding = new VertexBufferBinding(_vertexBuffer, Utilities.SizeOf<Vertex>(), 0);
+            //deviceContext.InputAssembler.SetVertexBuffers(0, vertexBufferBinding);
 
-            // Set primitive topology
-            deviceContext.InputAssembler.PrimitiveTopology = PrimitiveTopology.LineList;
+            //// Set primitive topology
+            //deviceContext.InputAssembler.PrimitiveTopology = PrimitiveTopology.LineList;
             
-            // Draw the lines
-            deviceContext.Draw(2, 0);
+            //// Draw the lines
+            //deviceContext.Draw(2, 0);
         }
     }
 }
