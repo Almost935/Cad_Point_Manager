@@ -1,7 +1,8 @@
-﻿using SharpDX.Direct3D;
+﻿using SharpDX;
 using SharpDX.Direct3D11;
-using SharpDX.DXGI;
 using SharpDX.D3DCompiler;
+using SharpDX.Mathematics.Interop;
+using SharpDX.DXGI;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
@@ -9,24 +10,33 @@ using System.Windows;
 using System.Windows.Interop;
 
 using Buffer = SharpDX.Direct3D11.Buffer;
-using FeatureLevel = SharpDX.Direct3D.FeatureLevel;
+
+using Resource = SharpDX.Direct3D11.Resource;
 
 namespace Cad_Point_Manager.Controls.D3DControl
 {
     public abstract class D3dControl : System.Windows.Controls.Image
     {
         // - field -----------------------------------------------------------------------
-        private SharpDX.Direct3D11.Device device;
-        private SwapChain2 swapChain;
-        private RenderTargetView renderTargetView;
-        private Dx11ImageSource d3DSurface;
-        //private DeviceContext deviceContext;
-        //private Texture2D texture2D;
-        //private RenderTargetView renderTargetView;
-        private Buffer vertexBuffer;
-        private InputLayout inputLayout;
-        private VertexShader vertexShader;
-        private PixelShader pixelShader;
+        private SharpDX.Direct3D11.Device _device;
+        private DeviceContext _context;
+        private SwapChain2 _swapChain;
+        private RenderTargetView _renderTargetView;
+        private Texture2D _backBuffer;
+        private Dx11ImageSource _d3dImage;
+        private IntPtr _renderTargetHandle;
+
+
+        private Buffer _vertexBuffer;
+        private ShaderBytecode _vertexShaderBytecode;
+        private ShaderBytecode _pixelShaderBytecode;
+        private VertexShader _vertexShader;
+        private PixelShader _pixelShader;
+        private InputLayout _inputLayout;
+        
+        private Matrix _projectionMatrix;
+        private Matrix _viewMatrix;
+        private Matrix _worldMatrix;
 
         private readonly Stopwatch renderTimer = new();
 
@@ -122,7 +132,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             }
 
             PrepareAndCallRender();
-            d3DSurface.InvalidateD3DImage();
+            _d3DSurface.InvalidateD3DImage();
 
             lastRenderTime = renderTimer.ElapsedMilliseconds;
         }
@@ -135,7 +145,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         private void OnIsFrontBufferAvailableChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
-            if (d3DSurface.IsFrontBufferAvailable)
+            if (_d3DSurface.IsFrontBufferAvailable)
             {
                 StartRendering();
             }
@@ -148,19 +158,87 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private static void OnRenderWaitChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             var control = (D3dControl)d;
-            control.d3DSurface.RenderWait = (int)e.NewValue;
+            control._d3DSurface.RenderWait = (int)e.NewValue;
         }
 
         // - private methods -------------------------------------------------------------
 
         private void StartD3D()
         {
-            var width = Math.Max((int)ActualWidth, 500);
-            var height = Math.Max((int)ActualHeight, 500);
+            //var width = Math.Max((int)ActualWidth, 500);
+            //var height = Math.Max((int)ActualHeight, 500);
 
-            device = new SharpDX.Direct3D11.Device(DriverType.Hardware, DeviceCreationFlags.BgraSupport);
-            
-            // describe swap chain
+            //_device = new SharpDX.Direct3D11.Device(DriverType.Hardware, DeviceCreationFlags.BgraSupport);
+
+            //// describe swap chain
+            //SwapChainDescription1 swapChainDescription = new()
+            //{
+            //    AlphaMode = AlphaMode.Premultiplied,
+            //    BufferCount = 2,
+            //    Format = Format.R8G8B8A8_UNorm,
+            //    Height = height,
+            //    Width = width,
+            //    SampleDescription = new SampleDescription(1, 0),
+            //    Scaling = Scaling.Stretch,
+            //    Stereo = false,
+            //    SwapEffect = SwapEffect.FlipSequential,
+            //    Usage = Usage.RenderTargetOutput
+            //};
+
+            //using (var factory4 = new Factory4())
+            //{
+            //    SwapChain1 swapChain1 = new(factory4, _device, ref swapChainDescription);
+            //    _swapChain = swapChain1.QueryInterface<SwapChain2>();
+            //}
+
+            //// Create render target view
+            //using (var backBuffer = _swapChain.GetBackBuffer<Texture2D>(0))
+            //{
+            //    _renderTargetView = new RenderTargetView(_device, backBuffer);
+            //}
+
+            //// Create depth stencil view
+            //var depthBuffer = new Texture2D(_device, new Texture2DDescription
+            //{
+            //    Format = Format.D32_Float,
+            //    ArraySize = 1,
+            //    MipLevels = 1,
+            //    Width = width,
+            //    Height = height,
+            //    SampleDescription = new SampleDescription(1, 0),
+            //    Usage = ResourceUsage.Default,
+            //    BindFlags = BindFlags.DepthStencil
+            //});
+
+            //// Set render targets
+            //_device.ImmediateContext.OutputMerger.SetRenderTargets(_depthStencilView, _renderTargetView);
+
+            //// Create geometry
+            //CreateGeometry();
+
+            //// Set viewport
+            //_device.ImmediateContext.Rasterizer.SetViewport(0, 0, width, height);
+
+            //_device = new(DriverType.Hardware, DeviceCreationFlags.BgraSupport);
+            //resCache.Device = _device;
+
+            //_d3DSurface = new Dx11ImageSource();
+            //_d3DSurface.IsFrontBufferAvailableChanged += OnIsFrontBufferAvailableChanged;
+
+            //CreateAndBindTargets();
+
+            //base.Source = _d3DSurface;
+
+
+
+            var width = Math.Max((int)ActualWidth, 100);
+            var height = Math.Max((int)ActualHeight, 100);
+
+            // Create the Direct3D device and context
+            _device = new(SharpDX.Direct3D.DriverType.Hardware, DeviceCreationFlags.BgraSupport);
+            _context = _device.ImmediateContext;
+
+            //// describe swap chain
             SwapChainDescription1 swapChainDescription = new()
             {
                 AlphaMode = AlphaMode.Premultiplied,
@@ -177,63 +255,49 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             using (var factory4 = new Factory4())
             {
-                SwapChain1 swapChain1 = new(factory4, device, ref swapChainDescription);
-                swapChain = swapChain1.QueryInterface<SwapChain2>();
+                SwapChain1 swapChain1 = new(factory4, _device, ref swapChainDescription);
+                _swapChain = swapChain1.QueryInterface<SwapChain2>();
             }
 
-            // Create render target view
-            using (var backBuffer = swapChain.GetBackBuffer<Texture2D>(0))
-            {
-                renderTargetView = new RenderTargetView(device, backBuffer);
-            }
+            _backBuffer = Resource.FromSwapChain<Texture2D>(_swapChain, 0);
+            _renderTargetView = new RenderTargetView(_device, _backBuffer);
 
-            // Create depth stencil view
-            var depthBuffer = new Texture2D(device, new Texture2DDescription
-            {
-                Format = Format.D32_Float,
-                ArraySize = 1,
-                MipLevels = 1,
-                Width = width,
-                Height = height,
-                SampleDescription = new SampleDescription(1, 0),
-                Usage = ResourceUsage.Default,
-                BindFlags = BindFlags.DepthStencil
-            });
+            // Create D3DImage to display on WPF
+            _d3dImage = new();
+            _d3dImage.SetRenderTarget(_backBuffer);
 
-            // Set render targets
-            device.ImmediateContext.OutputMerger.SetRenderTargets(_depthStencilView, _renderTargetView);
+            // Set up the projection matrix (Orthographic for 2D)
+            _projectionMatrix = Matrix.OrthoLH(width, height, 0.1f, 100f);
+            _viewMatrix = Matrix.Identity;
+            _worldMatrix = Matrix.Identity;
 
-            // Create geometry
+            // Create vertex buffer, shaders, and input layout
             CreateGeometry();
-
-            // Set viewport
-            device.ImmediateContext.Rasterizer.SetViewport(0, 0, width, height);
-
-            device = new(DriverType.Hardware, DeviceCreationFlags.BgraSupport);
-            resCache.Device = device;
-
-            d3DSurface = new Dx11ImageSource();
-            d3DSurface.IsFrontBufferAvailableChanged += OnIsFrontBufferAvailableChanged;
-
-            CreateAndBindTargets();
-
-            base.Source = d3DSurface;
+            CreateShaders();
         }
 
         private void EndD3D()
         {
-            d3DSurface.IsFrontBufferAvailableChanged -= OnIsFrontBufferAvailableChanged;
+            _d3dImage.IsFrontBufferAvailableChanged -= OnIsFrontBufferAvailableChanged;
             base.Source = null;
 
-            Disposer.SafeDispose(ref d3DSurface);
-            Disposer.SafeDispose(ref texture2D);
-            Disposer.SafeDispose(ref device);
-            Disposer.SafeDispose(ref deviceContext);
+            Disposer.SafeDispose(ref _d3dImage);
+            Disposer.SafeDispose(ref _backBuffer);
+            Disposer.SafeDispose(ref _renderTargetView);
+            Disposer.SafeDispose(ref _swapChain);
+            Disposer.SafeDispose(ref _context);
+            Disposer.SafeDispose(ref _device);
+            Disposer.SafeDispose(ref _vertexBuffer);
+            Disposer.SafeDispose(ref _vertexShaderBytecode);
+            Disposer.SafeDispose(ref _pixelShaderBytecode);
+            Disposer.SafeDispose(ref _vertexShader);
+            Disposer.SafeDispose(ref _pixelShader);
+            Disposer.SafeDispose(ref _inputLayout);
         }
 
         private void CreateAndBindTargets()
         {
-            if (d3DSurface == null)
+            if (_d3DSurface == null)
             {
                 return;
             }
@@ -251,20 +315,20 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 Usage = Usage.RenderTargetOutput
             };
 
-            device.CreateWithSwapChain(
+            _device.CreateWithSwapChain(
                 DriverType.Hardware,
                 DeviceCreationFlags.BgraSupport,
             swapChainDescription,
-                out device,
-                out swapChain);
-            context = device.ImmediateContext;
+                out _device,
+                out _swapChain);
+            context = _device.ImmediateContext;
 
-            using (var backBuffer = swapChain.GetBackBuffer<Texture2D>(0))
+            using (var backBuffer = _swapChain.GetBackBuffer<Texture2D>(0))
             {
-                renderTargetView = new RenderTargetView(device, backBuffer);
+                _renderTargetView = new RenderTargetView(_device, backBuffer);
             }
 
-            context.OutputMerger.SetRenderTargets(renderTargetView);
+            context.OutputMerger.SetRenderTargets(_renderTargetView);
 
             //d3DSurface.SetRenderTarget(null);
 
@@ -297,14 +361,14 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private void CreateGeometry()
         {
             // Define vertices for a line
-            var vertices = new[]
+            Vertex[] vertices = new[]
             { 
-            new Vertex(new SharpDX.Vector3(-0.5f, 0.5f, 0.0f), new SharpDX.Color4(1.0f, 0.0f, 0.0f, 1.0f)), // Start
-            new Vertex(new SharpDX.Vector3(0.5f, -0.5f, 0.0f), new SharpDX.Color4(0.0f, 1.0f, 0.0f, 1.0f))  // End
+            new Vertex(new Vector3(-0.5f, 0.5f, 0.0f), new Color4(1.0f, 0.0f, 0.0f, 1.0f)), // Start
+            new Vertex(new Vector3(0.5f, -0.5f, 0.0f), new Color4(0.0f, 1.0f, 0.0f, 1.0f))  // End
         };
 
             // Create vertex buffer
-            vertexBuffer = Buffer.Create(device, BindFlags.VertexBuffer, vertices);
+            _vertexBuffer = Buffer.Create(_device, BindFlags.VertexBuffer, vertices);
 
             // Create shaders
             CreateShaders();
@@ -314,7 +378,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         {
             // Compile the vertex shader
             var vertexShaderByteCode = ShaderBytecode.CompileFromFile("Shaders/VertexShader.hlsl", "VSMain", "vs_5_0");
-            vertexShader = new VertexShader(device, vertexShaderByteCode);
+            _vertexShader = new VertexShader(_device, vertexShaderByteCode);
 
             // Define the input layout
             var layout = new InputElement[]
@@ -324,16 +388,16 @@ namespace Cad_Point_Manager.Controls.D3DControl
             };
 
             // Create the input layout
-            inputLayout = new InputLayout(device, ShaderSignature.GetInputSignature(vertexShaderByteCode), layout);
+            _inputLayout = new InputLayout(_device, ShaderSignature.GetInputSignature(vertexShaderByteCode), layout);
 
             // Compile the pixel shader
             var pixelShaderByteCode = ShaderBytecode.CompileFromFile("Shaders/PixelShader.hlsl", "PSMain", "ps_5_0");
-            pixelShader = new PixelShader(device, pixelShaderByteCode);
+            _pixelShader = new PixelShader(_device, pixelShaderByteCode);
 
             // Set shaders to the device context
-            device.ImmediateContext.InputAssembler.InputLayout = inputLayout;
-            device.ImmediateContext.VertexShader.Set(vertexShader);
-            device.ImmediateContext.PixelShader.Set(pixelShader);
+            _device.ImmediateContext.InputAssembler.InputLayout = _inputLayout;
+            _device.ImmediateContext.VertexShader.Set(_vertexShader);
+            _device.ImmediateContext.PixelShader.Set(_pixelShader);
         }
 
         private void StartRendering()
@@ -360,16 +424,16 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         private void PrepareAndCallRender()
         {
-            if (device == null)
+            if (_device == null)
             {
                 return;
             }
 
-            device.ImmediateContext.ClearRenderTargetView(renderTargetView, SharpDX.Color.Wheat);
+            _device.ImmediateContext.ClearRenderTargetView(_renderTargetView, SharpDX.Color.Wheat);
 
             CalcFps();
 
-            device.ImmediateContext.Flush();
+            _device.ImmediateContext.Flush();
         }
 
         private void CalcFps()
