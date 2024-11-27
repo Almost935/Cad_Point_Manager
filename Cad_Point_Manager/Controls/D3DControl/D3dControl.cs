@@ -40,7 +40,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         private readonly Stopwatch renderTimer = new();
 
-        protected ResourceCache resCache = new();
+        protected D3dResCache resCache = new();
 
         private long lastFrameTime = 0;
         private long lastRenderTime = 0;

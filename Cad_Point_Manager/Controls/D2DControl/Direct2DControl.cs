@@ -34,11 +34,6 @@ namespace Cad_Point_Manager.Controls.D2DControl
         private Queue<int> frameCountHist = new();
 
         // - property --------------------------------------------------------------------
-
-        /// <summary>
-        /// Decides whether or not the image needs to be refreshed.
-        /// </summary>
-
         public static bool IsInDesignMode
         {
             get
