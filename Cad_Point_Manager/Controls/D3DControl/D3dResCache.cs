@@ -11,7 +11,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private bool disposed = false;
 
         private Device _device = null;
+        private DeviceContext _deviceContext = null;
         private Texture2D _texture2D = null;
+        private RenderTargetView _renderTargetView = null;
         #endregion
 
         #region Properties
@@ -24,6 +26,15 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 OnPropertyChanged(nameof(Device));
             }
         }
+        public DeviceContext DeviceContext
+        {
+            get { return _deviceContext; }
+            set
+            {
+                _deviceContext = value;
+                OnPropertyChanged(nameof(DeviceContext));
+            }
+        }
         public Texture2D Texture2D
         {
             get { return _texture2D; }
@@ -31,6 +42,15 @@ namespace Cad_Point_Manager.Controls.D3DControl
             {
                 _texture2D = value;
                 OnPropertyChanged(nameof(Texture2D));
+            }
+        }
+        public RenderTargetView RenderTargetView
+        {
+            get { return _renderTargetView; }
+            set
+            {
+                _renderTargetView = value;
+                OnPropertyChanged(nameof(RenderTargetView));
             }
         }
         #endregion
@@ -56,10 +76,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
             {
                 if (disposing)
                 {
-                    DisposeDeviceDependentResources();
-                    DisposeDeviceIndependentResources();
-
                     _device?.Dispose();
+                    _texture2D?.Dispose();
+                    _renderTargetView?.Dispose();
                 }
 
                 disposed = true;

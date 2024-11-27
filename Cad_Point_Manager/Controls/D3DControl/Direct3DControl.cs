@@ -14,12 +14,14 @@ namespace Cad_Point_Manager.Controls.D3DControl
     {
         // - field -----------------------------------------------------------------------
         private SharpDX.Direct3D11.Device _device;
+        private DeviceContext _deviceContext;
         private Texture2D _texture2D;
+        private RenderTargetView _renderTargetView;
         private Dx11ImageSource _d3DSurface;
 
         private readonly Stopwatch _renderTimer = new();
 
-        protected D3dResCache _resCache = new();
+        protected D3dResCache _d3dResCache = new();
 
         private long _lastFrameTime = 0;
         private long _lastRenderTime = 0;
@@ -77,7 +79,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             base.Stretch = System.Windows.Media.Stretch.Fill;
         }
 
-        public abstract void Render();
+        public abstract void Render(D3dResCache d3DResCache);
 
         // - event handler ---------------------------------------------------------------
 
@@ -117,7 +119,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         protected override void OnRenderSizeChanged(SizeChangedInfo sizeInfo)
         {
-            _resCache.DisposeDeviceDependentResources();
             CreateAndBindTargets();
             base.OnRenderSizeChanged(sizeInfo);
         }
@@ -145,7 +146,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private void StartD3D()
         {
             _device = new SharpDX.Direct3D11.Device(DriverType.Hardware, DeviceCreationFlags.BgraSupport);
-            _resCache.Device = _device;
+            _d3dResCache.Device = _device;
+
+            _deviceContext = _device.ImmediateContext;
+            _d3dResCache.DeviceContext = _deviceContext;
+
             _d3DSurface = new Dx11ImageSource();
             _d3DSurface.IsFrontBufferAvailableChanged += OnIsFrontBufferAvailableChanged;
 
@@ -160,8 +165,10 @@ namespace Cad_Point_Manager.Controls.D3DControl
             base.Source = null;
 
             Disposer.SafeDispose(ref _d3DSurface);
-            Disposer.SafeDispose(ref _texture2D);
             Disposer.SafeDispose(ref _device);
+            Disposer.SafeDispose(ref _deviceContext);
+            Disposer.SafeDispose(ref _texture2D);
+            Disposer.SafeDispose(ref _renderTargetView);
         }
 
         private void CreateAndBindTargets()
@@ -174,6 +181,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _d3DSurface.SetRenderTarget(null);
 
             Disposer.SafeDispose(ref _texture2D);
+            Disposer.SafeDispose(ref _renderTargetView);
 
             var width = Math.Max((int)ActualWidth, 100);
             var height = Math.Max((int)ActualHeight, 100);
@@ -193,7 +201,12 @@ namespace Cad_Point_Manager.Controls.D3DControl
             };
 
             _texture2D = new Texture2D(_device, renderDesc);
-            _resCache.Texture2D = _texture2D;
+
+            _renderTargetView = new RenderTargetView(_device, _texture2D);
+            _d3dResCache.RenderTargetView = _renderTargetView;
+
+            _deviceContext.OutputMerger.SetRenderTargets(_renderTargetView);
+            _d3dResCache.Texture2D = _texture2D;
             _d3DSurface.SetRenderTarget(_texture2D);
 
             _device.ImmediateContext.Rasterizer.SetViewport(0, 0, width, height, 0.0f, 1.0f);
@@ -229,7 +242,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
             {
                 return;
             }
-            Render();
+
+            Render(_d3dResCache);
 
             CalcFps();
 
