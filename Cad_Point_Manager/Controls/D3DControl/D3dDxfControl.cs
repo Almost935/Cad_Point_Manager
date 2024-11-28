@@ -91,10 +91,18 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         private void InitializeShaders()
         {
-            var vertexShaderByteCode = ShaderBytecode.CompileFromFile("Shaders/VertexShader.hlsl", "VSMain", "vs_5_0");
+            //var vertexShaderByteCode = ShaderBytecode.CompileFromFile("Shaders/VertexShader.hlsl", "VSMain", "vs_5_0");
+            //_vertexShader = new VertexShader(_d3dResCache.Device, vertexShaderByteCode);
+
+            //var pixelShaderByteCode = ShaderBytecode.CompileFromFile("Shaders/PixelShader.hlsl", "PSMain", "ps_4_0");
+            //_pixelShader = new PixelShader(_d3dResCache.Device, pixelShaderByteCode);
+
+            var path = @"C:\Users\Tim\Desktop\Temp CadPointManager\Cad_Point_Manager\Controls\D3DControl\Shaders.hlsl";
+
+            var vertexShaderByteCode = ShaderBytecode.CompileFromFile("Shaders.hlsl", "VSMain", "vs_4_0");
             _vertexShader = new VertexShader(_d3dResCache.Device, vertexShaderByteCode);
 
-            var pixelShaderByteCode = ShaderBytecode.CompileFromFile("Shaders/PixelShader.hlsl", "PSMain", "ps_4_0");
+            var pixelShaderByteCode = ShaderBytecode.CompileFromFile("Shaders.hlsl", "PSMain", "ps_4_0");
             _pixelShader = new PixelShader(_d3dResCache.Device, pixelShaderByteCode);
 
             _inputLayout = new InputLayout(
