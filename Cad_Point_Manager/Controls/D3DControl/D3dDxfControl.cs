@@ -1,7 +1,10 @@
 ﻿using SharpDX;
 using SharpDX.D3DCompiler;
 using SharpDX.Direct3D11;
-
+using System.IO;
+using System.Reflection;
+using System.Windows;
+using System.Windows.Input;
 using Buffer = SharpDX.Direct3D11.Buffer;
 
 namespace Cad_Point_Manager.Controls.D3DControl
@@ -14,19 +17,31 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private VertexShader _vertexShader;
         private PixelShader _pixelShader;
         private InputLayout _inputLayout;
+
+        private Matrix _transformMatrix = Matrix.Identity;
         #endregion
 
         #region Properties
         public bool DxfIsDirty { get; set; } = true;
         public bool DrawingIsDirty { get; set; } = true;
         public bool ShadersLoaded { get; set; } = false;
+
+        public Matrix TransformMatrix
+        {
+            get { return _transformMatrix; }
+            set 
+            { 
+                _transformMatrix = value;
+                DrawingIsDirty = true;
+            }
+        }
         #endregion
 
         #region Constructors
         public D3dDxfControl() { }
         #endregion
 
-        #region Methods
+        #region Private Methods
         public override void Render()
         {
             if (_d3dResCache is null) { return; }
@@ -42,7 +57,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             // Set render target
             context.OutputMerger.SetRenderTargets(_d3dResCache.RenderTargetView);
-            context.ClearRenderTargetView(_d3dResCache.RenderTargetView, new SharpDX.Mathematics.Interop.RawColor4(0, 0, 0, 1));
+            context.ClearRenderTargetView(_d3dResCache.RenderTargetView, new SharpDX.Mathematics.Interop.RawColor4(0, 0, 0, 0));
 
             // Set shaders
             context.VertexShader.Set(_vertexShader);
@@ -63,22 +78,20 @@ namespace Cad_Point_Manager.Controls.D3DControl
         {
             if (_d3dResCache is null) { return; }
 
-            var vector11 = new Vector3(0, 0, 0);
-            var vector12 = new Vector3((float)ActualWidth, (float)ActualHeight, 0);
-            var vector21 = new Vector3(0, (float)ActualHeight, 0);
-            var vector22 = new Vector3((float)ActualWidth, 0, 0);
-
-            //_vertices =
-            //[
-            //    new Vertex { Position = vector11, Color = new Vector4(1f, 0f, 0f, 1f) },
-            //    new Vertex { Position = vector12, Color = new Vector4(1f, 0f, 0f, 1f) }
-            //];
-
-            _vertices = new[]
-            {
+            _vertices =
+            [
                 new Vertex { Position = new Vector3(-0.5f, 0.5f, 0f), Color = new Vector4(1f, 0f, 0f, 1f) },
-                new Vertex { Position = new Vector3(0.5f, -0.5f, 0f), Color = new Vector4(0f, 1f, 0f, 1f) }
-            };
+                new Vertex { Position = new Vector3(0.5f, 0.5f, 0f), Color = new Vector4(1f, 0f, 0f, 1f) },
+
+                new Vertex { Position = new Vector3(0.5f, 0.5f, 0f), Color = new Vector4(0f, 1f, 0f, 1f) },
+                new Vertex { Position = new Vector3(0.5f, -0.5f, 0f), Color = new Vector4(0f, 1f, 0f, 1f) },
+
+                new Vertex { Position = new Vector3(0.5f, -0.5f, 0f), Color = new Vector4(0f, 0f, 1f, 1f) },
+                new Vertex { Position = new Vector3(-0.5f, -0.5f, 0f), Color = new Vector4(0f, 0f, 1f, 1f) },
+
+                new Vertex { Position = new Vector3(-0.5f, -0.5f, 0f), Color = new Vector4(1f, 0f, 1f, 1f) },
+                new Vertex { Position = new Vector3(-0.5f, 0.5f, 0f), Color = new Vector4(1f, 0f, 1f, 1f) }
+            ];
 
             _vertexBuffer = Buffer.Create(
                 _d3dResCache.Device,
@@ -91,30 +104,47 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         private void InitializeShaders()
         {
-            //var vertexShaderByteCode = ShaderBytecode.CompileFromFile("Shaders/VertexShader.hlsl", "VSMain", "vs_5_0");
-            //_vertexShader = new VertexShader(_d3dResCache.Device, vertexShaderByteCode);
+            var path = AppDomain.CurrentDomain.BaseDirectory;
+            while (Path.GetFileName(path) != "Cad_Point_Manager")
+            {
+                path = Path.GetDirectoryName(path);
+                if (path == null)
+                {
+                    throw new DirectoryNotFoundException("The 'Cad_Point_Manager' directory could not be found in the path.");
+                }
+            }
+            string shadersPath = path + @"\Controls\D3DControl\Shaders.hlsl";
 
-            //var pixelShaderByteCode = ShaderBytecode.CompileFromFile("Shaders/PixelShader.hlsl", "PSMain", "ps_4_0");
-            //_pixelShader = new PixelShader(_d3dResCache.Device, pixelShaderByteCode);
-
-            var path = @"C:\Users\Tim\Desktop\Temp CadPointManager\Cad_Point_Manager\Controls\D3DControl\Shaders.hlsl";
-
-            var vertexShaderByteCode = ShaderBytecode.CompileFromFile("Shaders.hlsl", "VSMain", "vs_4_0");
+            var vertexShaderByteCode = ShaderBytecode.CompileFromFile(shadersPath, "VSMain", "vs_4_0");
             _vertexShader = new VertexShader(_d3dResCache.Device, vertexShaderByteCode);
 
-            var pixelShaderByteCode = ShaderBytecode.CompileFromFile("Shaders.hlsl", "PSMain", "ps_4_0");
+            var pixelShaderByteCode = ShaderBytecode.CompileFromFile(shadersPath, "PSMain", "ps_4_0");
             _pixelShader = new PixelShader(_d3dResCache.Device, pixelShaderByteCode);
 
             _inputLayout = new InputLayout(
                 _d3dResCache.Device,
                 ShaderSignature.GetInputSignature(vertexShaderByteCode),
-                new[]
-                {
+                [
                     new InputElement("POSITION", 0, SharpDX.DXGI.Format.R32G32B32_Float, 0, 0),
                     new InputElement("COLOR", 0, SharpDX.DXGI.Format.R32G32B32A32_Float, 12, 0)
-                });
+                ]);
 
             ShadersLoaded = true;
+        }
+
+        private void OnMouseMove(object sender, MouseEventArgs e)
+        {
+            var position = e.GetPosition(this);
+            
+            e.Handled = true;
+        }
+        #endregion
+
+        #region Public Methods
+        public void UpdateTransformMatrix(Matrix matrix)
+        {
+            TransformMatrix = matrix;
+            DrawingIsDirty = true;
         }
         #endregion
     }

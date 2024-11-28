@@ -1,6 +1,7 @@
 ﻿using Cad_Point_Manager.Commands;
 using Cad_Point_Manager.Models;
 using netDxf;
+using SharpDX;
 using System.Windows;
 using System.Windows.Input;
 
@@ -14,6 +15,7 @@ namespace Cad_Point_Manager.ViewModels
         private string _dxfFilePath;
         private string _dxfFileName;
         private DxfDocument _dxfDocument;
+        private Matrix _transformMatrix = Matrix.Identity;
         #endregion
 
         #region Properties
@@ -62,6 +64,15 @@ namespace Cad_Point_Manager.ViewModels
                 OnPropertyChanged(nameof(DxfDocument));
             }
         }
+        public Matrix TransformMatrix
+        {
+            get { return _transformMatrix; }
+            set
+            {
+                _transformMatrix = value;
+                OnPropertyChanged(nameof(TransformMatrix));
+            }
+        }
         #endregion
 
         #region Commands
@@ -70,6 +81,9 @@ namespace Cad_Point_Manager.ViewModels
         public ICommand AttachDxfFileCommand { get; set; }
         public ICommand SaveJobCommand { get; set; }
         public ICommand SaveAsJobCommand { get; set; }
+
+        public ICommand MouseMoveCommand { get; set; }
+        public ICommand MouseClickCommand { get; set; }
         #endregion
 
         #region Constructors
@@ -80,10 +94,13 @@ namespace Cad_Point_Manager.ViewModels
             AttachDxfFileCommand = new RelayCommand<RoutedEventArgs>(AttachDxfFile);
             SaveJobCommand = new RelayCommand<RoutedEventArgs>(SaveJob);
             SaveAsJobCommand = new RelayCommand<RoutedEventArgs>(SaveJobAs);
+
+            MouseMoveCommand = new RelayCommand<MouseEventArgs>(OnMouseMove);
+            MouseClickCommand = new RelayCommand<MouseButtonEventArgs>(OnMouseClick);
         }
         #endregion
 
-        #region Methods
+        #region Public Methods
         public void NewJob(RoutedEventArgs e)
         {
             var result = MessageBox.Show("Save current job before exiting?", "Warning", MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
@@ -139,6 +156,17 @@ namespace Cad_Point_Manager.ViewModels
         public void SaveJobAs(RoutedEventArgs e)
         {
 
+        }
+        #endregion
+
+        #region Private Methods
+        private void OnMouseMove(MouseEventArgs e)
+        {
+            // Handle mouse move event
+        }
+        private void OnMouseClick(MouseButtonEventArgs e)
+        {
+            // Handle mouse click event
         }
         #endregion
     }
