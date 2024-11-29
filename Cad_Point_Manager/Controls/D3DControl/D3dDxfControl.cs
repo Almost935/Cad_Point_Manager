@@ -83,39 +83,40 @@ namespace Cad_Point_Manager.Controls.D3DControl
             float redStart = 0;
             float blueStart = 1;
 
-            //for (int i = 0; i < numLines; i++)
-            //{
-            //    float factor = (float)i / numLines;
-
-            //    Vertex startVertex = new(new Vector3(factor, 1, 0f), new Vector4((redStart + factor), 0f, (blueStart - factor), 1f));
-            //    Vertex endVertex = new(new Vector3(factor, -1, 0f), new Vector4((redStart + factor), -1, (blueStart - factor), 1f));
-            //    _vertices[i] = startVertex;
-            //    _vertices[i + 1] = endVertex;
-
-            //    int x = 0;
-            //}
-
             for (int i = 0; i < numLines; i++)
             {
-                // Calculate normalized x-coordinate, evenly spaced in [-1, 1]
-                float x = -1f + 2f * i / (numLines - 1);
+                float factor = (float)i / numLines;
 
-                // Start point (top of control)
-                Vertex startVertex = new Vertex(
-                    new Vector3(x, 1, 0f),    // Top of control (y = 1)
-                    new Vector4(redStart + x, 0f, blueStart - x, 1f) // Color gradient
-                );
+                Vertex startVertex = new(new Vector3(factor, 1, 0f), new Vector4((redStart + factor), 0f, (blueStart - factor), 1f));
+                Vertex endVertex = new(new Vector3(factor, -1, 0f), new Vector4((redStart + factor), -1, (blueStart - factor), 1f));
+                _vertices[i] = startVertex;
+                _vertices[i + 1] = endVertex;
 
-                // End point (bottom of control)
-                Vertex endVertex = new Vertex(
-                    new Vector3(x, -1, 0f),   // Bottom of control (y = -1)
-                    new Vector4(redStart + x, 0f, blueStart - x, 1f) // Color gradient
-                );
-
-                // Assign vertices to array
-                _vertices[i * 2] = startVertex;
-                _vertices[i * 2 + 1] = endVertex;
+                
+                int x = 0;
             }
+
+            //for (int i = 0; i < numLines; i++)
+            //{
+            //    // Calculate normalized x-coordinate, evenly spaced in [-1, 1]
+            //    float x = -1f + 2f * i / (numLines - 1);
+
+            //    // Start point (top of control)
+            //    Vertex startVertex = new Vertex(
+            //        new Vector3(x, 1, 0f),    // Top of control (y = 1)
+            //        new Vector4(redStart + x, 0f, blueStart - x, 1f) // Color gradient
+            //    );
+
+            //    // End point (bottom of control)
+            //    Vertex endVertex = new Vertex(
+            //        new Vector3(x, -1, 0f),   // Bottom of control (y = -1)
+            //        new Vector4(redStart + x, 0f, blueStart - x, 1f) // Color gradient
+            //    );
+
+            //    // Assign vertices to array
+            //    _vertices[i * 2] = startVertex;
+            //    _vertices[i * 2 + 1] = endVertex;
+            //}
 
 
             //_vertices =
