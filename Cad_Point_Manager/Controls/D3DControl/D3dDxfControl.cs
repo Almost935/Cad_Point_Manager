@@ -78,61 +78,25 @@ namespace Cad_Point_Manager.Controls.D3DControl
         {
             if (_d3dResCache is null) { return; }
 
-            int numLines = 50;
+            int numLines = 100;
+
             _vertices = new Vertex[numLines * 2];
+            float factor = 2f / numLines;
             float redStart = 0;
             float blueStart = 1;
+            float startFactor = -1;
 
             for (int i = 0; i < numLines; i++)
             {
-                float factor = (float)i / numLines;
+                float x = -1 + factor * i;
 
-                Vertex startVertex = new(new Vector3(factor, 1, 0f), new Vector4((redStart + factor), 0f, (blueStart - factor), 1f));
-                Vertex endVertex = new(new Vector3(factor, -1, 0f), new Vector4((redStart + factor), -1, (blueStart - factor), 1f));
-                _vertices[i] = startVertex;
-                _vertices[i + 1] = endVertex;
+                Vertex startVertex = new(new Vector3(x, 1, 0f), new Vector4((redStart + factor * i), 0f, (blueStart - factor * i), 1f));
+                Vertex endVertex = new(new Vector3(x, -1, 0f), new Vector4((redStart + factor * i), 0f, (blueStart - factor * i), 1f));
+                _vertices[i * 2] = startVertex;
+                _vertices[i * 2 + 1] = endVertex;
 
-                
-                int x = 0;
+                int y = 0;
             }
-
-            //for (int i = 0; i < numLines; i++)
-            //{
-            //    // Calculate normalized x-coordinate, evenly spaced in [-1, 1]
-            //    float x = -1f + 2f * i / (numLines - 1);
-
-            //    // Start point (top of control)
-            //    Vertex startVertex = new Vertex(
-            //        new Vector3(x, 1, 0f),    // Top of control (y = 1)
-            //        new Vector4(redStart + x, 0f, blueStart - x, 1f) // Color gradient
-            //    );
-
-            //    // End point (bottom of control)
-            //    Vertex endVertex = new Vertex(
-            //        new Vector3(x, -1, 0f),   // Bottom of control (y = -1)
-            //        new Vector4(redStart + x, 0f, blueStart - x, 1f) // Color gradient
-            //    );
-
-            //    // Assign vertices to array
-            //    _vertices[i * 2] = startVertex;
-            //    _vertices[i * 2 + 1] = endVertex;
-            //}
-
-
-            //_vertices =
-            //[
-            //    new Vertex { Position = new Vector3(-0.5f, 0.5f, 0f), Color = new Vector4(1f, 0f, 0f, 1f) },
-            //    new Vertex { Position = new Vector3(0.5f, 0.5f, 0f), Color = new Vector4(1f, 0f, 0f, 1f) },
-
-            //    new Vertex { Position = new Vector3(0.5f, 0.5f, 0f), Color = new Vector4(0f, 1f, 0f, 1f) },
-            //    new Vertex { Position = new Vector3(0.5f, -0.5f, 0f), Color = new Vector4(0f, 1f, 0f, 1f) },
-
-            //    new Vertex { Position = new Vector3(0.5f, -0.5f, 0f), Color = new Vector4(0f, 0f, 1f, 1f) },
-            //    new Vertex { Position = new Vector3(-0.5f, -0.5f, 0f), Color = new Vector4(0f, 0f, 1f, 1f) },
-
-            //    new Vertex { Position = new Vector3(-0.5f, -0.5f, 0f), Color = new Vector4(1f, 0f, 1f, 1f) },
-            //    new Vertex { Position = new Vector3(-0.5f, 0.5f, 0f), Color = new Vector4(1f, 0f, 1f, 1f) }
-            //];
 
             _vertexBuffer = Buffer.Create(
                 _d3dResCache.Device,
