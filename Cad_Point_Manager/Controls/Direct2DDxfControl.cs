@@ -674,7 +674,7 @@ namespace Cad_Point_Manager.Controls
             _transformMatrix.Translate(translate.X, translate.Y);
             _currentOffscreenBitmapTransform.Translate(translate.X, translate.Y);
             _distFromOffscreenBitmapUpdate += translate;
-
+            
             ResetSnappedObjects();
 
             _visibleObjectsDirty = true;

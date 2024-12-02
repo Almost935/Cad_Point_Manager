@@ -20,4 +20,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
             Color = color;
         }
     }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct TransformationBuffer
+    {
+        public Matrix WorldViewProjection;  // This is the matrix you send to the shader
+    }
+
 }
