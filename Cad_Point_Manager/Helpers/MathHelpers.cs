@@ -8,6 +8,34 @@ namespace Cad_Point_Manager.Helpers
 {
     public static class MathHelpers
     {
+        public static Matrix ScaleToPoint(Matrix originalMatrix, float scaleX, float scaleY, float scaleZ, Vector3 scalePoint)
+        {
+            // Step 1: Translate to the origin
+            Matrix translationToOrigin = Matrix.Translation(-scalePoint);
+
+            // Step 2: Scale matrix
+            Matrix scalingMatrix = Matrix.Scaling(scaleX, scaleY, scaleZ);
+
+            // Step 3: Translate back
+            Matrix translationBack = Matrix.Translation(scalePoint);
+
+            // Combine transformations
+            Matrix resultMatrix = translationToOrigin * scalingMatrix * translationBack;
+
+            // Apply scaling to the original matrix
+            return resultMatrix * originalMatrix;
+        }
+
+        public static Vector2 ScreenToNDC(Point p, double screenWidth, double screenHeight)
+        { 
+            return new Vector2((float)(p.X / (screenWidth / 2)), (float)(p.Y / (screenHeight / 2)));
+        }
+        public static Vector2 ScreenToNDC(Vector v, double screenWidth, double screenHeight)
+        {
+            return new Vector2((float)(v.X / (screenWidth / 2)), (float)(v.Y / (screenHeight / 2)));
+        }
+
+
         public static bool IsGeometryInRect(RawRectangleF viewport, Geometry geometry, float strokeThickness)
         {
             // Attempt to get the bounds of the geometry

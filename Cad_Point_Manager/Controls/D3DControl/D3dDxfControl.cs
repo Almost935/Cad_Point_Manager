@@ -1,4 +1,5 @@
-﻿using SharpDX;
+﻿using Cad_Point_Manager.Helpers;
+using SharpDX;
 using SharpDX.D3DCompiler;
 using SharpDX.Direct3D11;
 using System.Configuration;
@@ -24,6 +25,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private VertexShader _vertexShader;
         private PixelShader _pixelShader;
         private InputLayout _inputLayout;
+        private Point _pointerCoords;
 
         //Panning and Zooming Fields
         private Matrix _viewMatrix = Matrix.Identity;
@@ -105,7 +107,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 _vertices[i * 2] = startVertex;
                 _vertices[i * 2 + 1] = endVertex;
             }
-
+            
             _vertexBuffer = Buffer.Create(
                 _d3dResCache.Device,
                 BindFlags.VertexBuffer,
@@ -193,31 +195,41 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         protected override void OnMouseMove(MouseEventArgs e)
         {
+            _pointerCoords = e.GetPosition(this);
+
             if (_isPanning && e.MiddleButton == MouseButtonState.Pressed)
             {
-                var currentPosition = e.GetPosition(this);
-                var delta = new Vector2(
-                    (float)(currentPosition.X - _previousMousePosition.X) / (float)(ActualWidth / 2),
-                    (float)(currentPosition.Y - _previousMousePosition.Y) / (float)(ActualHeight / 2)
-                );
+                var delta = MathHelpers.ScreenToNDC(_pointerCoords - _previousMousePosition, ActualWidth, ActualHeight);
 
                 _panOffset += delta * (1.0f / _currentZoom);
                 _viewMatrix = Matrix.Translation(_panOffset.X, -_panOffset.Y, 0);
 
-                _previousMousePosition = currentPosition;
+                _previousMousePosition = _pointerCoords;
 
                 D3dIsDirty = true;
+
+                e.Handled = true;
             }
         }
 
         protected override void OnMouseWheel(MouseWheelEventArgs e)
         {
-            float zoomFactor = (e.Delta > 0) ? 1.1f : 0.9f;
+            float zoomFactor = (e.Delta > 0) ? 1.25f : 0.8f;
             _currentZoom *= zoomFactor;
 
-            _projectionMatrix = Matrix.Scaling(_currentZoom, _currentZoom, 1);
-           Matrix.
+            var pos = e.GetPosition(this);
+            //_projectionMatrix = Matrix.Scaling(_currentZoom, _currentZoom, 1);
+            var ndcX = (float)(pos.X / ActualWidth * 2 - 1);
+            var ndcY = (float)(1 - pos.Y / ActualHeight * 2);
+
+            var ndcPoint = MathHelpers.ScreenToNDC(_pointerCoords, ActualWidth, ActualHeight);
+            _projectionMatrix = MathHelpers.ScaleToPoint(_projectionMatrix, zoomFactor, zoomFactor, 1, new Vector3(ndcX, ndcY, 0));
+            //_projectionMatrix = MathHelpers.ScaleToPoint(_projectionMatrix, zoomFactor, zoomFactor, 1, new Vector3(ndcPoint.X, ndcPoint.Y, 0));
+
+
             D3dIsDirty = true;
+
+            e.Handled = true;
         }
         #endregion
 

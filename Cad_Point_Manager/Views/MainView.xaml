@@ -136,7 +136,8 @@
                                              RenderOptions.BitmapScalingMode="HighQuality"
                                              Cursor="Cross"
                                              CadManager="{Binding JobFileManager.CadManager}"/>-->
-                <d3D:D3dDxfControl x:Name="d3dDxfControl" />
+                <d3D:D3dDxfControl x:Name="d3dDxfControl" 
+                                   Cursor="Cross"/>
                 <!--<d3D:D3dDxfControl />-->
             </Border>
         </Grid>
