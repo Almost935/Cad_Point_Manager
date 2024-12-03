@@ -17,7 +17,7 @@ struct PSInput
 // Constant buffer for 2D transformation matrix
 cbuffer TransformationBuffer : register(b0)
 {
-    matrix transformationMatrix; // 2D transformation matrix
+    row_major matrix transformationMatrix; // 2D transformation matrix
 };
 
 // Vertex Shader: Transforms input vertex and passes color through
@@ -26,7 +26,7 @@ PSInput VSMain(VSInput input)
     PSInput output;
 
     // Pass the position directly, converting to homogeneous coordinates (w = 1.0)
-    //output.Position = float4(input.Position, 1.0);
+    // output.Position = float4(input.Position, 1.0);
     output.Position = mul(float4(input.Position, 1.0), transformationMatrix);
 
     // Pass the color unchanged

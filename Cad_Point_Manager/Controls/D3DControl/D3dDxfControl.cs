@@ -26,16 +26,17 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private InputLayout _inputLayout;
 
         //Panning and Zooming Fields
-        private bool _isPanning = false;
-        private Point _lastTranslatePos;
-        private Point _pointerCoords;
+        private Matrix _viewMatrix = Matrix.Identity;
+        //private Matrix _projectionMatrix = Matrix.OrthoLH(2, 2, 0.1f, 1000f);
+        private Matrix _projectionMatrix = Matrix.Identity;
+        private Matrix _worldMatrix = Matrix.Identity;
 
-        private Matrix _transformMatrix = new(
-            1,0,0,0,
-            0,1,0,0,
-            0,0,1,0,
-            0,0,0,1
-            );
+        private Point _previousMousePosition;
+        private bool _isPanning = false;
+
+        private float _currentZoom = 1.0f;
+        private Vector2 _panOffset = new Vector2(0, 0);
+
         #endregion
 
         #region Properties
@@ -43,16 +44,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public bool D3dIsDirty { get; set; } = true;
         public bool ShadersLoaded { get; set; } = false;
         public bool ConstantBufferInitialized { get; set; } = false;
-
-        public Matrix TransformMatrix
-        {
-            get { return _transformMatrix; }
-            set
-            {
-                _transformMatrix = value;
-                D3dIsDirty = true;
-            }
-        }
         #endregion
 
         #region Constructors
@@ -78,15 +69,12 @@ namespace Cad_Point_Manager.Controls.D3DControl
             context.OutputMerger.SetRenderTargets(_d3dResCache.RenderTargetView);
             context.ClearRenderTargetView(_d3dResCache.RenderTargetView, new SharpDX.Mathematics.Interop.RawColor4(0, 0, 0, 0));
 
-            // Update constant buffer
             UpdateConstantBuffer();
 
             // Set shaders
             context.VertexShader.Set(_vertexShader);
             context.PixelShader.Set(_pixelShader);
             context.InputAssembler.InputLayout = _inputLayout;
-
-            // Set the constant buffer to the vertex shader
             context.VertexShader.SetConstantBuffer(0, _transformationBuffer);
 
             // Bind vertex buffer and draw
@@ -174,99 +162,61 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         private void UpdateConstantBuffer()
         {
-            // Create the MatrixBuffer structure and assign the current transformation matrix
-            var transposedMatrix = Matrix.Transpose(_transformMatrix);
+            // Update transformation matrix
+            var transformation = _worldMatrix * _viewMatrix * _projectionMatrix;
 
             var transformationBuffer = new TransformationBuffer
             {
-                WorldViewProjection = transposedMatrix
+                WorldViewProjection = transformation
             };
 
             // Update the constant buffer with the new matrix
             _d3dResCache.DeviceContext.UpdateSubresource(ref transformationBuffer, _transformationBuffer);
         }
 
-
-        protected override void OnMouseMove(MouseEventArgs e)
-        {
-            _pointerCoords = e.GetPosition(this);
-
-            if (_isPanning)
-            { 
-                var translate = _lastTranslatePos - _pointerCoords;
-
-                //if (translate.LengthSquared < 1) { return; } //Prevent unneccessary translations
-
-                //Matrix.Translation((float)translate.X, (float)translate.Y, 0, out Matrix translationMatrix);
-                //UpdateTransformMatrix(translationMatrix);
-
-                TranslateTransformMatrix((float)translate.X, (float)translate.Y);
-
-                _lastTranslatePos = _pointerCoords;
-            }
-
-            e.Handled = true;
-        }
-
         protected override void OnMouseDown(MouseButtonEventArgs e)
         {
-            if (e.ChangedButton == MouseButton.Middle)
+            if (e.MiddleButton == MouseButtonState.Pressed)
             {
                 _isPanning = true;
-                _lastTranslatePos = e.GetPosition(this);
-                this.Cursor = Cursors.Hand;
+                _previousMousePosition = e.GetPosition(this);
             }
-
-            e.Handled = true;
         }
 
         protected override void OnMouseUp(MouseButtonEventArgs e)
         {
-            if (e.ChangedButton == MouseButton.Middle)
+            if (e.MiddleButton == MouseButtonState.Released)
             {
                 _isPanning = false;
-                this.Cursor = null;
-
-                var translate = _pointerCoords - _lastTranslatePos;
-                Debug.WriteLine($"translate: {translate}");
             }
+        }
 
-            e.Handled = true;
+        protected override void OnMouseMove(MouseEventArgs e)
+        {
+            if (_isPanning && e.MiddleButton == MouseButtonState.Pressed)
+            {
+                var currentPosition = e.GetPosition(this);
+                var delta = new Vector2(
+                    (float)(currentPosition.X - _previousMousePosition.X) / (float)(ActualWidth / 2),
+                    (float)(currentPosition.Y - _previousMousePosition.Y) / (float)(ActualHeight / 2)
+                );
+
+                _panOffset += delta * (1.0f / _currentZoom);
+                _viewMatrix = Matrix.Translation(_panOffset.X, -_panOffset.Y, 0);
+
+                _previousMousePosition = currentPosition;
+
+                D3dIsDirty = true;
+            }
         }
 
         protected override void OnMouseWheel(MouseWheelEventArgs e)
         {
-            float scale = e.Delta > 0 ? 1.25f : 0.75f;
-            Matrix.Scaling(scale, scale, 1, out Matrix scaleMatrix);
-            UpdateTransformMatrix(scaleMatrix);
-        }
+            float zoomFactor = (e.Delta > 0) ? 1.1f : 0.9f;
+            _currentZoom *= zoomFactor;
 
-        public void ResetTransformMatrix()
-        {
-            TransformMatrix = Matrix.Identity;
-            D3dIsDirty = true;
-        }
-        public void TranslateTransformMatrix(float x, float y)
-        {
-            Debug.WriteLine($"Translate: {x} {y}");
-
-            Matrix.Translation(x / 100, y / 100, 0, out Matrix translationMatrix);
-            UpdateTransformMatrix(translationMatrix);
-        }
-        public void UpdateTransformMatrix(Matrix matrix)
-        {
-            Matrix.Multiply(ref _transformMatrix, ref matrix, out Matrix newTransformMatrix);
-
-            // Ensure that we are not changing the Z-axis, using only 2D transformations
-            //Matrix adjustedMatrix = new Matrix(newTransformMatrix.M11, newTransformMatrix.M12, 0, 0,
-            //                                   newTransformMatrix.M21, newTransformMatrix.M22, 0, 0,
-            //                                   0, 0, 1, 0,
-            //                                   newTransformMatrix.M41, newTransformMatrix.M42, 0, 1);
-
-
-            //Debug.WriteLine($"{adjustedMatrix.M11} {adjustedMatrix.M12} {adjustedMatrix.M21} {adjustedMatrix.M22}");
-
-            _transformMatrix = newTransformMatrix;
+            _projectionMatrix = Matrix.Scaling(_currentZoom, _currentZoom, 1);
+           Matrix.
             D3dIsDirty = true;
         }
         #endregion
