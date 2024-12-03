@@ -16,7 +16,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
     public class D3dDxfControl : Direct3DControl
     {
         #region Fields
-        private Buffer _vertexBuffer; 
+        private const float _scaleFactor = 1.25f;
+
+        private Buffer _vertexBuffer;
         private Buffer _transformationBuffer;
         private Vertex[] _vertices;
         private VertexShader _vertexShader;
@@ -28,7 +30,12 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private Point _lastTranslatePos;
         private Point _pointerCoords;
 
-        private Matrix _transformMatrix = Matrix.Identity;
+        private Matrix _transformMatrix = new(
+            1,0,0,0,
+            0,1,0,0,
+            0,0,1,0,
+            0,0,0,1
+            );
         #endregion
 
         #region Properties
@@ -40,8 +47,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public Matrix TransformMatrix
         {
             get { return _transformMatrix; }
-            set 
-            { 
+            set
+            {
                 _transformMatrix = value;
                 D3dIsDirty = true;
             }
@@ -168,9 +175,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private void UpdateConstantBuffer()
         {
             // Create the MatrixBuffer structure and assign the current transformation matrix
+            var transposedMatrix = Matrix.Transpose(_transformMatrix);
+
             var transformationBuffer = new TransformationBuffer
             {
-                WorldViewProjection = _transformMatrix
+                WorldViewProjection = transposedMatrix
             };
 
             // Update the constant buffer with the new matrix
@@ -183,15 +192,15 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _pointerCoords = e.GetPosition(this);
 
             if (_isPanning)
-            {
-                var translate = _pointerCoords - _lastTranslatePos;
+            { 
+                var translate = _lastTranslatePos - _pointerCoords;
 
-                if (translate.LengthSquared < 1) { return; } //Prevent unneccessary translations
+                //if (translate.LengthSquared < 1) { return; } //Prevent unneccessary translations
 
-                Matrix.Translation((float)translate.X, (float)translate.Y, 0, out Matrix translationMatrix);
-                Matrix.Multiply(ref _transformMatrix, ref translationMatrix, out Matrix newTransformMatrix);
-                _transformMatrix = newTransformMatrix;
-                D3dIsDirty = true;
+                //Matrix.Translation((float)translate.X, (float)translate.Y, 0, out Matrix translationMatrix);
+                //UpdateTransformMatrix(translationMatrix);
+
+                TranslateTransformMatrix((float)translate.X, (float)translate.Y);
 
                 _lastTranslatePos = _pointerCoords;
             }
@@ -224,14 +233,46 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             e.Handled = true;
         }
+
+        protected override void OnMouseWheel(MouseWheelEventArgs e)
+        {
+            float scale = e.Delta > 0 ? 1.25f : 0.75f;
+            Matrix.Scaling(scale, scale, 1, out Matrix scaleMatrix);
+            UpdateTransformMatrix(scaleMatrix);
+        }
+
+        public void ResetTransformMatrix()
+        {
+            TransformMatrix = Matrix.Identity;
+            D3dIsDirty = true;
+        }
+        public void TranslateTransformMatrix(float x, float y)
+        {
+            Debug.WriteLine($"Translate: {x} {y}");
+
+            Matrix.Translation(x / 100, y / 100, 0, out Matrix translationMatrix);
+            UpdateTransformMatrix(translationMatrix);
+        }
+        public void UpdateTransformMatrix(Matrix matrix)
+        {
+            Matrix.Multiply(ref _transformMatrix, ref matrix, out Matrix newTransformMatrix);
+
+            // Ensure that we are not changing the Z-axis, using only 2D transformations
+            //Matrix adjustedMatrix = new Matrix(newTransformMatrix.M11, newTransformMatrix.M12, 0, 0,
+            //                                   newTransformMatrix.M21, newTransformMatrix.M22, 0, 0,
+            //                                   0, 0, 1, 0,
+            //                                   newTransformMatrix.M41, newTransformMatrix.M42, 0, 1);
+
+
+            //Debug.WriteLine($"{adjustedMatrix.M11} {adjustedMatrix.M12} {adjustedMatrix.M21} {adjustedMatrix.M22}");
+
+            _transformMatrix = newTransformMatrix;
+            D3dIsDirty = true;
+        }
         #endregion
 
         #region Public Methods
-        public void UpdateTransformMatrix(Matrix matrix)
-        {
-            TransformMatrix = matrix;
-            D3dIsDirty = true;
-        }
+
         #endregion
     }
 }
