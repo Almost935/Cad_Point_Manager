@@ -1,4 +1,5 @@
-﻿using SharpDX;
+﻿using Cad_Point_Manager.Helpers;
+using SharpDX;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -30,14 +31,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
             ProjectionMatrix = Matrix.PerspectiveFovLH(fov, aspectRatio, nearPlane, farPlane);
         }
 
-        public void PanCamera(Vector2 dis, Matrix viewProjectionMatrix, Matrix inverseViewProjectionMatrix)
+        public void PanCamera(Vector2 startPanPos, Vector2 endPanPos, float screenWidth, float screenHeight, Matrix viewProjectionMatrix, Matrix inverseViewProjectionMatrix)
         {
             // Convert screen positions to normalized device coordinates (NDC)
-            Vector2 ndcCurrent = ScreenToNDC(currentMousePosition, screenWidth, screenHeight);
-            Vector2 ndcLast = ScreenToNDC(_lastMousePosition, screenWidth, screenHeight);
-
-            // Compute the delta in NDC
-            Vector2 ndcDelta = ndcCurrent - ndcLast;
+            Vector2 ndcCurrent = MathHelpers.ScreenToNDC(startPanPos, screenWidth, screenHeight);
+            Vector2 ndcLast = MathHelpers.ScreenToNDC(endPanPos, screenWidth, screenHeight);
 
             // Unproject the NDC points into world space
             Vector3 worldCurrent = Unproject(ndcCurrent, inverseViewProjectionMatrix);

@@ -26,13 +26,22 @@ namespace Cad_Point_Manager.Helpers
             return resultMatrix * originalMatrix;
         }
 
-        public static Vector2 ScreenToNDC(Point p, double screenWidth, double screenHeight)
-        { 
-            return new Vector2((float)(p.X / (screenWidth / 2)), (float)(p.Y / (screenHeight / 2)));
-        }
-        public static Vector2 ScreenToNDC(Vector v, double screenWidth, double screenHeight)
+        //public static Vector2 ScreenToNDC(Point p, double screenWidth, double screenHeight)
+        //{ 
+        //    return new Vector2((float)(p.X / (screenWidth / 2)), (float)(p.Y / (screenHeight / 2)));
+        //}
+        //public static Vector2 ScreenToNDC(Vector v, double screenWidth, double screenHeight)
+        //{
+        //    return new Vector2((float)(v.X / (screenWidth / 2)), (float)(v.Y / (screenHeight / 2)));
+        //}
+
+
+        public static Vector2 ScreenToNDC(Vector2 screenPos, float screenWidth, float screenHeight)
         {
-            return new Vector2((float)(v.X / (screenWidth / 2)), (float)(v.Y / (screenHeight / 2)));
+            return new Vector2(
+                (screenPos.X / screenWidth) * 2.0f - 1.0f, // Map x from [0, screenWidth] to [-1, 1]
+                1.0f - (screenPos.Y / screenHeight) * 2.0f  // Map y from [0, screenHeight] to [1, -1]
+            );
         }
 
 

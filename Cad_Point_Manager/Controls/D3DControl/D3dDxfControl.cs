@@ -42,10 +42,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private Vector2 _panOffset = new(0, 0);
 
         //Camera based fields
-        private Camera _camera = new(_zoomSpeed, _rotationSpeed);
+        private Camera _camera;
         private bool _isShiftPressed = false;
-        private Vector2 _lastPanPosition;
-        private Vector2 _lastRotatePosition;
+        private Vector2 _prevMousePos;
 
         #endregion
 
@@ -65,6 +64,15 @@ namespace Cad_Point_Manager.Controls.D3DControl
         {
             if (_d3dResCache is null) { return; }
 
+            if (_camera is null)
+            {
+                _camera = new(_zoomSpeed, _rotationSpeed)
+                {
+                    Position = new Vector3(0, 0, -10),
+                    Target = Vector3.Zero
+                };
+                _camera.SetProjection((float)Math.PI / 4, (float)ActualWidth / (float)ActualHeight, 0.1f, 1000f);
+            }
             if (!ShadersLoaded) { InitializeShaders(); }
             if (!ConstantBufferInitialized) { InitializeConstantBuffer(); }
             if (DxfIsDirty) { GetDxfLines(); }
@@ -204,20 +212,41 @@ namespace Cad_Point_Manager.Controls.D3DControl
         protected override void OnMouseMove(MouseEventArgs e)
         {
             _pointerCoords = e.GetPosition(this);
+            var currentMousePos = new Vector2((float)_pointerCoords.X, (float)_pointerCoords.Y);
 
-            if (_isPanning && e.MiddleButton == MouseButtonState.Pressed)
+            //if (_isPanning && e.MiddleButton == MouseButtonState.Pressed)
+            //{
+            //    var delta = MathHelpers.ScreenToNDC(_pointerCoords - _previousMousePosition, ActualWidth, ActualHeight);
+
+            //    _panOffset += delta * (1.0f / _currentZoom);
+            //    _viewMatrix = Matrix.Translation(_panOffset.X, -_panOffset.Y, 0);
+
+            //    _previousMousePosition = _pointerCoords;
+
+            //    D3dIsDirty = true;
+
+            //    e.Handled = true;
+            //}
+
+            _isShiftPressed = Keyboard.IsKeyDown(Key.LeftShift) || Keyboard.IsKeyDown(Key.RightShift);
+
+            if (e.MiddleButton == MouseButtonState.Pressed)
             {
-                var delta = MathHelpers.ScreenToNDC(_pointerCoords - _previousMousePosition, ActualWidth, ActualHeight);
-
-                _panOffset += delta * (1.0f / _currentZoom);
-                _viewMatrix = Matrix.Translation(_panOffset.X, -_panOffset.Y, 0);
-
-                _previousMousePosition = _pointerCoords;
+                var delta = currentMousePos - _prevMousePos;
+                if (_isShiftPressed)
+                {
+                    _camera.RotateCamera(delta);
+                }
+                else
+                {
+                    _camera.PanCamera(currentMousePos, _prevMousePos, (float)ActualWidth, (float)ActualHeight, _viewMatrix * _projectionMatrix, Matrix.Invert(_viewMatrix * _projectionMatrix));
+                }
 
                 D3dIsDirty = true;
-
                 e.Handled = true;
             }
+
+            _prevMousePos = currentMousePos;
         }
 
         protected override void OnMouseWheel(MouseWheelEventArgs e)
@@ -240,48 +269,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             e.Handled = true;
         }
-
-        //Camera based methods
-        public void HandleInput(Camera camera, Matrix viewProjectionMatrix)
-        {
-            _isShiftPressed = Keyboard.IsKeyDown(Key.LeftShift) || Keyboard.IsKeyDown(Key.RightShift);
-
-            var pos = Mouse.GetPosition(this);
-            var currentMousePosition = new Vector2((float)pos.X, (float)pos.Y);
-
-            if (Mouse.LeftButton == MouseButtonState.Pressed)
-            {
-                if (_isShiftPressed)
-                {
-                    RotateCamera(currentMousePosition - _lastMousePosition, camera);
-                }
-                else
-                {
-                    // Use the new panning function
-                    PanCamera(currentMousePosition, camera, viewProjectionMatrix, Matrix.Invert(viewProjectionMatrix));
-                }
-            }
-
-            if (mouseState.ScrollDelta != 0)
-            {
-                ZoomCamera(mouseState.ScrollDelta, camera);
-            }
-
-            //_lastMousePosition = currentMousePosition;
-        }
-
-
-        
-
-        private Vector2 ScreenToNDC(Vector2 screenPos, float screenWidth, float screenHeight)
-        {
-            return new Vector2(
-                (screenPos.X / screenWidth) * 2.0f - 1.0f, // Map x from [0, screenWidth] to [-1, 1]
-                1.0f - (screenPos.Y / screenHeight) * 2.0f  // Map y from [0, screenHeight] to [1, -1]
-            );
-        }
-
-       
         #endregion
 
         #region Public Methods
