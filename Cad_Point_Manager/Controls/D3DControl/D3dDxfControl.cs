@@ -18,6 +18,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
     {
         #region Fields
         private const float _scaleFactor = 1.25f;
+        private const float _zoomSpeed = 0.1f;
+        private const float _rotationSpeed = 0.005f;
 
         private Buffer _vertexBuffer;
         private Buffer _transformationBuffer;
@@ -37,7 +39,13 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private bool _isPanning = false;
 
         private float _currentZoom = 1.0f;
-        private Vector2 _panOffset = new Vector2(0, 0);
+        private Vector2 _panOffset = new(0, 0);
+
+        //Camera based fields
+        private Camera _camera = new(_zoomSpeed, _rotationSpeed);
+        private bool _isShiftPressed = false;
+        private Vector2 _lastPanPosition;
+        private Vector2 _lastRotatePosition;
 
         #endregion
 
@@ -214,23 +222,66 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         protected override void OnMouseWheel(MouseWheelEventArgs e)
         {
-            float zoomFactor = (e.Delta > 0) ? 1.25f : 0.8f;
-            _currentZoom *= zoomFactor;
+            //float zoomFactor = (e.Delta > 0) ? 1.25f : 0.8f;
+            //_currentZoom *= zoomFactor;
 
-            var pos = e.GetPosition(this);
-            //_projectionMatrix = Matrix.Scaling(_currentZoom, _currentZoom, 1);
-            var ndcX = (float)(pos.X / ActualWidth * 2 - 1);
-            var ndcY = (float)(1 - pos.Y / ActualHeight * 2);
+            //var pos = e.GetPosition(this);
+            ////_projectionMatrix = Matrix.Scaling(_currentZoom, _currentZoom, 1);
+            //var ndcX = (float)(pos.X / ActualWidth * 2 - 1);
+            //var ndcY = (float)(1 - pos.Y / ActualHeight * 2);
 
-            var ndcPoint = MathHelpers.ScreenToNDC(_pointerCoords, ActualWidth, ActualHeight);
-            _projectionMatrix = MathHelpers.ScaleToPoint(_projectionMatrix, zoomFactor, zoomFactor, 1, new Vector3(ndcX, ndcY, 0));
-            //_projectionMatrix = MathHelpers.ScaleToPoint(_projectionMatrix, zoomFactor, zoomFactor, 1, new Vector3(ndcPoint.X, ndcPoint.Y, 0));
+            //var ndcPoint = MathHelpers.ScreenToNDC(_pointerCoords, ActualWidth, ActualHeight);
+            //_projectionMatrix = MathHelpers.ScaleToPoint(_projectionMatrix, zoomFactor, zoomFactor, 1, new Vector3(ndcX, ndcY, 0));
+            ////_projectionMatrix = MathHelpers.ScaleToPoint(_projectionMatrix, zoomFactor, zoomFactor, 1, new Vector3(ndcPoint.X, ndcPoint.Y, 0));
 
+            _camera.ZoomCamera(e.Delta);
 
             D3dIsDirty = true;
 
             e.Handled = true;
         }
+
+        //Camera based methods
+        public void HandleInput(Camera camera, Matrix viewProjectionMatrix)
+        {
+            _isShiftPressed = Keyboard.IsKeyDown(Key.LeftShift) || Keyboard.IsKeyDown(Key.RightShift);
+
+            var pos = Mouse.GetPosition(this);
+            var currentMousePosition = new Vector2((float)pos.X, (float)pos.Y);
+
+            if (Mouse.LeftButton == MouseButtonState.Pressed)
+            {
+                if (_isShiftPressed)
+                {
+                    RotateCamera(currentMousePosition - _lastMousePosition, camera);
+                }
+                else
+                {
+                    // Use the new panning function
+                    PanCamera(currentMousePosition, camera, viewProjectionMatrix, Matrix.Invert(viewProjectionMatrix));
+                }
+            }
+
+            if (mouseState.ScrollDelta != 0)
+            {
+                ZoomCamera(mouseState.ScrollDelta, camera);
+            }
+
+            //_lastMousePosition = currentMousePosition;
+        }
+
+
+        
+
+        private Vector2 ScreenToNDC(Vector2 screenPos, float screenWidth, float screenHeight)
+        {
+            return new Vector2(
+                (screenPos.X / screenWidth) * 2.0f - 1.0f, // Map x from [0, screenWidth] to [-1, 1]
+                1.0f - (screenPos.Y / screenHeight) * 2.0f  // Map y from [0, screenHeight] to [1, -1]
+            );
+        }
+
+       
         #endregion
 
         #region Public Methods
