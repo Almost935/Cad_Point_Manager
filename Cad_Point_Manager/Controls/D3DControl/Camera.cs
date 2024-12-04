@@ -5,25 +5,28 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Media.Media3D;
 
 namespace Cad_Point_Manager.Controls.D3DControl
 {
     public class Camera
     {
-        private readonly float _zoomSpeed = 0.1f;
-        private readonly float _rotationSpeed = 0.005f;
+        private readonly float _rotationSpeed;
 
         public Vector3 Position { get; set; }
         public Vector3 Target { get; set; }
         public Vector3 Up { get; set; } = Vector3.UnitY;
+        public float ScreenWidth { get; set; }
+        public float ScreenHeight { get; set; }
 
         public Matrix ViewMatrix => Matrix.LookAtLH(Position, Target, Up);
         public Matrix ProjectionMatrix { get; private set; }
 
-        public Camera(float zoomSpeed, float rotationSpeed)
+        public Camera(float rotationSpeed, float screenWidth, float screenHeight)
         {
-            _zoomSpeed = zoomSpeed;
             _rotationSpeed = rotationSpeed;
+            ScreenWidth = screenWidth;
+            ScreenHeight = screenHeight;
         }
 
         public void SetProjection(float fov, float aspectRatio, float nearPlane, float farPlane)
@@ -65,10 +68,23 @@ namespace Cad_Point_Manager.Controls.D3DControl
             Target = Position + targetDirection;
         }
 
-        public void ZoomCamera(float scrollDelta)
+        public void ZoomCamera(float zoomAmount, Vector2 mousePosition, Matrix viewProjectionMatrix, Matrix inverseViewProjectionMatrix)
         {
-            var direction = Vector3.Normalize(Target - Position);
-            Position += direction * scrollDelta * _zoomSpeed;
+            // Convert the mouse position to NDC
+            Vector2 ndcMouse = MathHelpers.ScreenToNDC(mousePosition, ScreenWidth, ScreenHeight);
+
+            // Unproject the mouse NDC position into world space
+            Vector3 worldMouse = Unproject(ndcMouse, inverseViewProjectionMatrix);
+
+            // Calculate the zoom direction (from the camera position to the mouse world point)
+            Vector3 zoomDirection = Vector3.Normalize(worldMouse - Position);
+
+            // Adjust the camera position and target based on the scroll delta
+            Position += zoomDirection * zoomAmount;
+
+            // Optionally adjust the camera target to keep the scene centered
+            // This depends on your use case; remove the line below if not desired
+            Target += zoomDirection * zoomAmount;
         }
 
         public Vector3 Unproject(Vector2 ndc, Matrix inverseViewProjectionMatrix)
