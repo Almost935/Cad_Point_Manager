@@ -42,7 +42,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         //Camera based fields
         private Camera _camera;
-        private Buffer _cameraBuffer;
         private bool _isShiftPressed = false;
         private Vector2 _prevMousePos;
 
@@ -68,10 +67,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
             {
                 _camera = new(_rotationSpeed, (float)ActualWidth, (float)ActualHeight)
                 {
-                    Position = new Vector3(0, 0, -10),
+                    Position = new Vector3(0, 0, 1),
                     Target = Vector3.Zero
                 };
-                _camera.SetProjection((float)Math.PI / 4, (float)ActualWidth / (float)ActualHeight, 0.1f, 1000f);
+                //_camera.SetProjection((float)Math.PI / 4, (float)ActualWidth / (float)ActualHeight, 0.1f, 1000f);
+                _camera.UpdateView();
             }
             if (!ShadersLoaded) { InitializeShaders(); }
             if (!ConstantBufferInitialized) { InitializeConstantBuffer(); }
@@ -178,39 +178,23 @@ namespace Cad_Point_Manager.Controls.D3DControl
             ConstantBufferInitialized = true;
         }
 
+        //private void UpdateConstantBuffer()
+        //{
+        //    // Update transformation matrix
+        //    var transformation = _worldMatrix * _viewMatrix * _projectionMatrix;
+
+        //    var transformationBuffer = new TransformationBuffer
+        //    {
+        //        WorldViewProjection = transformation
+        //    };
+
+        //    // Update the constant buffer with the new matrix
+        //    _d3dResCache.DeviceContext.UpdateSubresource(ref transformationBuffer, _transformationBuffer);
+        //}
         private void UpdateConstantBuffer()
         {
             // Update transformation matrix
-            var transformation = _worldMatrix * _viewMatrix * _projectionMatrix;
-
-            var transformationBuffer = new TransformationBuffer
-            {
-                WorldViewProjection = transformation
-            };
-
-            // Update the constant buffer with the new matrix
-            _d3dResCache.DeviceContext.UpdateSubresource(ref transformationBuffer, _transformationBuffer);
-        }
-
-        private void InitializeCameraBuffer()
-        {
-            var bufferDesc = new BufferDescription
-            {
-                Usage = ResourceUsage.Default,
-                SizeInBytes = Utilities.SizeOf<TransformationBuffer>(),
-                BindFlags = BindFlags.ConstantBuffer,
-                CpuAccessFlags = CpuAccessFlags.None,
-                OptionFlags = ResourceOptionFlags.None
-            };
-
-            _transformationBuffer = new Buffer(_d3dResCache.Device, bufferDesc);
-            ConstantBufferInitialized = true;
-        }
-
-        private void UpdateCameraBuffer()
-        {
-            // Update transformation matrix
-            var transformation = _worldMatrix * _viewMatrix * _projectionMatrix;
+            var transformation = _camera.ViewMatrix * _camera.ProjectionMatrix;
 
             var transformationBuffer = new TransformationBuffer
             {
@@ -265,7 +249,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 if (_isShiftPressed)
                 {
                     _camera.RotateCamera(delta);
-                }
+                } 
                 else
                 {
                     _camera.PanCamera(currentMousePos, _prevMousePos, (float)ActualWidth, (float)ActualHeight, _viewMatrix * _projectionMatrix, Matrix.Invert(_viewMatrix * _projectionMatrix));
@@ -293,8 +277,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
             ////_projectionMatrix = MathHelpers.ScaleToPoint(_projectionMatrix, zoomFactor, zoomFactor, 1, new Vector3(ndcPoint.X, ndcPoint.Y, 0));
 
             int zoomSteps = e.Delta / Mouse.MouseWheelDeltaForOneLine;
-            float zoom = (float)(zoomSteps * _zoomFactor);
-            _camera.ZoomCamera(zoom, new Vector2((float)_pointerCoords.X, (float)_pointerCoords.Y), );
+            float zoom = (float)(Math.Pow(_zoomFactor, zoomSteps));
+           
+            _camera.ZoomCamera(zoom, new Vector2((float)_pointerCoords.X, (float)_pointerCoords.Y), (float)ActualWidth, (float)ActualHeight);
 
             D3dIsDirty = true;
 
