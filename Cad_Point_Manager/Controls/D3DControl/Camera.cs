@@ -31,6 +31,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
             ScreenHeight = screenHeight;
         }
 
+        public void SetOrthographic(float left, float right, float bottom, float top, float nearPlane, float farPlane)
+        {
+            ProjectionMatrix = Matrix.OrthoOffCenterLH(left, right, bottom, top, nearPlane, farPlane);
+            UpdateViewProjection();
+        }
         public void SetProjection(float fov, float aspectRatio, float nearPlane, float farPlane)
         {
             ProjectionMatrix = Matrix.PerspectiveFovLH(fov, aspectRatio, nearPlane, farPlane);
@@ -82,6 +87,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
             targetDirection = Vector3.TransformCoordinate(targetDirection, verticalRotation);
 
             Target = Position + targetDirection;
+
+            UpdateView();
+            UpdateViewProjection();
         }
 
         //public void ZoomCamera(float zoomAmount, Vector2 mousePosition, Matrix viewProjectionMatrix, Matrix inverseViewProjectionMatrix)
@@ -118,7 +126,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public Vector3 Unproject(Vector2 ndc, Matrix inverseViewProjectionMatrix)
         {
             // Create a homogeneous clip space position
-            Vector4 clipPos = new Vector4(ndc.X, ndc.Y, 0.0f, 1.0f);
+            Vector4 clipPos = new(ndc.X, ndc.Y, 0.0f, 1.0f);
 
             // Transform from clip space to world space
             Vector4 worldPos = Vector4.Transform(clipPos, inverseViewProjectionMatrix);
