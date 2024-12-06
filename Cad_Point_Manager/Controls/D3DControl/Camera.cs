@@ -1,10 +1,14 @@
 ﻿using Cad_Point_Manager.Helpers;
 using SharpDX;
+using SharpDX.Direct3D9;
+using SharpDX.Mathematics.Interop;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Media.Media3D;
 
 namespace Cad_Point_Manager.Controls.D3DControl
@@ -23,17 +27,26 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public Matrix ProjectionMatrix { get; private set; } = Matrix.Identity;
         public Matrix ViewProjectionMatrix { get; private set; }
         public Matrix InverseViewProjectionMatrix { get; private set; }
+        public float CurrentZoom { get; set; } = 1;
+        public Bounds InitialBounds { get; set; } = new(-1, 1, 1, -1);
+        public float InitialNearPlane { get; set; } = 0.1f;
+        public float InitialFarPlane { get; set; } = 100.0f;
+        public Bounds Bounds { get; set; }
+        public float NearPlane { get; set; }
+        public float FarPlane { get; set; }
 
         public Camera(float rotationSpeed, float screenWidth, float screenHeight)
         {
             _rotationSpeed = rotationSpeed;
             ScreenWidth = screenWidth;
             ScreenHeight = screenHeight;
+
+            UpdateBounds(InitialBounds);
         }
 
-        public void SetOrthographic(float left, float right, float bottom, float top, float nearPlane, float farPlane)
+        public void SetOrthographic()
         {
-            ProjectionMatrix = Matrix.OrthoOffCenterLH(left, right, bottom, top, nearPlane, farPlane);
+            ProjectionMatrix = Matrix.OrthoOffCenterLH(Bounds.Left, Bounds.Right, Bounds.Bottom, Bounds.Top, NearPlane, FarPlane);
             UpdateViewProjection();
         }
         public void SetProjection(float fov, float aspectRatio, float nearPlane, float farPlane)
@@ -52,25 +65,24 @@ namespace Cad_Point_Manager.Controls.D3DControl
             InverseViewProjectionMatrix = Matrix.Invert(ViewProjectionMatrix);
         }
 
-        public void PanCamera(Vector2 startPanPos, Vector2 endPanPos, float screenWidth, float screenHeight, Matrix viewProjectionMatrix, Matrix inverseViewProjectionMatrix)
+        public void PanCamera(Vector2 startPanPos, Vector2 endPanPos, Matrix viewProjectionMatrix, Matrix inverseViewProjectionMatrix)
         {
             // Convert screen positions to normalized device coordinates (NDC)
-            Vector2 ndcCurrent = MathHelpers.ScreenToNDC(startPanPos, screenWidth, screenHeight);
-            Vector2 ndcLast = MathHelpers.ScreenToNDC(endPanPos, screenWidth, screenHeight);
+            Vector2 ndcCurrent = MathHelpers.ScreenToNDC(startPanPos, ScreenWidth, ScreenHeight);
+            Vector2 ndcLast = MathHelpers.ScreenToNDC(endPanPos, ScreenWidth, ScreenHeight);
 
             // Unproject the NDC points into world space
             Vector3 worldCurrent = Unproject(ndcCurrent, inverseViewProjectionMatrix);
             Vector3 worldLast = Unproject(ndcLast, inverseViewProjectionMatrix);
 
             // Calculate the world space delta
-            Vector3 worldDelta = worldCurrent - worldLast;
+            Vector3 worldDelta = (worldCurrent - worldLast) / CurrentZoom;
 
             // Apply the delta to both the camera position and target
             Position = new(Position.X + worldDelta.X, Position.Y - worldDelta.Y, Position.Z + worldDelta.Z);
             Target = new(Target.X + worldDelta.X, Target.Y - worldDelta.Y, Target.Z + worldDelta.Z);
 
             UpdateView();
-            UpdateViewProjection();
         }
 
         public void RotateCamera(Vector2 delta)
@@ -112,14 +124,22 @@ namespace Cad_Point_Manager.Controls.D3DControl
         //}
         public void ZoomCamera(float zoomAmount, Vector2 mousePosition, float screenWidth, float screenHeight)
         {
-            var ndcMouse = MathHelpers.ScreenToNDC(mousePosition, screenWidth, screenHeight);
-            var worldMouse = Unproject(ndcMouse, InverseViewProjectionMatrix);
-            var direction = Vector3.Normalize(worldMouse - Position);
+            CurrentZoom *= zoomAmount;
 
-            Position += direction * zoomAmount;
-            Target += direction * zoomAmount;
+            var mouseNDC = MathHelpers.ScreenToNDC(mousePosition, screenWidth, screenHeight);
+            var worldMouse = Unproject(mouseNDC, InverseViewProjectionMatrix);
+            
+            float width = (Bounds.Right - Bounds.Left) / zoomAmount;
+            float height = (Bounds.Top - Bounds.Bottom) / zoomAmount;
 
-            UpdateView();
+            float left = worldMouse.X - (mouseNDC.X + 1) / 2.0f * width;
+            float right = left + width;
+            float bottom = worldMouse.Y - (mouseNDC.Y + 1) / 2.0f * height;
+            float top = bottom + height;
+
+            UpdateBounds(left, right, bottom, top);
+            
+            SetOrthographic();
             UpdateViewProjection();
         }
 
@@ -138,6 +158,21 @@ namespace Cad_Point_Manager.Controls.D3DControl
             }
 
             return new Vector3(worldPos.X, worldPos.Y, worldPos.Z);
+        }
+
+        public void UpdateBounds(float left, float right, float bottom, float top)
+        {
+            Bounds = new(left, right, top, bottom);
+            
+            NearPlane = InitialNearPlane;
+            FarPlane = InitialFarPlane;
+        }
+        public void UpdateBounds(Bounds bounds)
+        {
+            Bounds = bounds;
+
+            NearPlane = InitialNearPlane;
+            FarPlane = InitialFarPlane;
         }
     }
 }

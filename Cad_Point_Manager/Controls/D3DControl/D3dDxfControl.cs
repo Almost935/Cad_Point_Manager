@@ -67,18 +67,12 @@ namespace Cad_Point_Manager.Controls.D3DControl
             {
                 _camera = new(_rotationSpeed, (float)ActualWidth, (float)ActualHeight)
                 {
-                    Position = new Vector3(0, 0, 1.0),
-                    Target = Vector3.Zero
+                    Position = new Vector3(0, 0, 1), // Position the camera above the 2D plane, looking down
+                    Target = new Vector3(0, 0, 0),     // Look at the origin
+                    Up = Vector3.UnitY                 // Up direction is the Y-axis
                 };
-                //_camera.SetProjection((float)Math.PI / 4, (float)ActualWidth / (float)ActualHeight, 0.1f, 1000f);
-                _camera.UpdateView();
-
-                Camera testCamera = new(_rotationSpeed, (float)ActualWidth, (float)ActualHeight)
-                {
-                    Position = new Vector3(0, 0, 1),
-                    Target = Vector3.Zero
-                };
-                testCamera.UpdateView();
+                _camera.UpdateView(); // Update the view matrix to ensure all matrices are current
+                _camera.SetOrthographic(); // Set the orthographic projection
             }
             if (!ShadersLoaded) { InitializeShaders(); }
             if (!ConstantBufferInitialized) { InitializeConstantBuffer(); }
@@ -203,8 +197,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             // Update transformation matrix
             var transformation = _camera.ViewMatrix * _camera.ProjectionMatrix;
 
-            Matrix testMatrix = new(-1,0,0,0, 0,1,0,0, 0,0,-1,0, 0,0,1,1);
-
             var transformationBuffer = new TransformationBuffer
             {
                 WorldViewProjection = transformation
@@ -261,7 +253,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 } 
                 else
                 {
-                    _camera.PanCamera(currentMousePos, _prevMousePos, (float)ActualWidth, (float)ActualHeight, _viewMatrix * _projectionMatrix, Matrix.Invert(_viewMatrix * _projectionMatrix));
+                    _camera.PanCamera(currentMousePos, _prevMousePos, _viewMatrix * _projectionMatrix, Matrix.Invert(_viewMatrix * _projectionMatrix));
                 }
 
                 D3dIsDirty = true;

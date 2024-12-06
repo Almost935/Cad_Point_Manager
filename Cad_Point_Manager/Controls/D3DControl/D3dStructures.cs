@@ -27,4 +27,24 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public Matrix WorldViewProjection;  // This is the matrix you send to the shader
     }
 
+    public struct Bounds
+    {
+        public float Left;
+        public float Right;
+        public float Top;
+        public float Bottom;
+        public float Width;
+        public float Height;
+
+        public Bounds(float left, float right, float top, float bottom)
+        {
+            Left = left;
+            Right = right;
+            Top = top;
+            Bottom = bottom;
+
+            Width = right - left;
+            Height = top - bottom;
+        }
+    }
 }
