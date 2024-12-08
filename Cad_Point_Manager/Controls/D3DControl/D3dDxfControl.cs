@@ -42,6 +42,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         //Camera based fields
         private Camera _camera;
+        private TestCamera _testCamera;
         private bool _isShiftPressed = false;
         private Vector2 _prevMousePos;
 
@@ -73,6 +74,10 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 };
                 _camera.UpdateView(); // Update the view matrix to ensure all matrices are current
                 _camera.SetOrthographic(); // Set the orthographic projection
+            }
+            if (_testCamera is null)
+            {
+                _testCamera = new();
             }
             if (!ShadersLoaded) { InitializeShaders(); }
             if (!ConstantBufferInitialized) { InitializeConstantBuffer(); }
@@ -195,7 +200,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private void UpdateConstantBuffer()
         {
             // Update transformation matrix
-            var transformation = _camera.ViewMatrix * _camera.ProjectionMatrix;
+            //var transformation = _camera.ViewMatrix * _camera.ProjectionMatrix;
+            var testTransformation = _camera.ViewMatrix * _camera.ProjectionMatrix;
+            var transformation = _testCamera.ViewMatrix * _testCamera.ProjectionMatrix((float)ActualWidth, (float)ActualHeight);
 
             var transformationBuffer = new TransformationBuffer
             {
@@ -253,7 +260,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 } 
                 else
                 {
-                    _camera.PanCamera(currentMousePos, _prevMousePos, _viewMatrix * _projectionMatrix, Matrix.Invert(_viewMatrix * _projectionMatrix));
+                    //_camera.PanCamera(currentMousePos, _prevMousePos, _viewMatrix * _projectionMatrix, Matrix.Invert(_viewMatrix * _projectionMatrix));
+                    _testCamera.Pan((float)delta.X, (float)delta.Y);
                 }
 
                 D3dIsDirty = true;

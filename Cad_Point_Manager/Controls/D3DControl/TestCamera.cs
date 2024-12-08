@@ -29,9 +29,14 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public Matrix ProjectionMatrix(float width, float height)
         {
             if (is3DView)
+            {
                 return Matrix.PerspectiveFovLH(MathUtil.PiOverFour, width / height, 0.1f, 1000f);
+            }
             else
+            {
+                var bounds = GetViewBounds(width, height);
                 return Matrix.OrthoLH(width, height, 0.1f, 1000f);
+            }
         }
 
         public void ResetToDefaults()
@@ -63,7 +68,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         public void Pan(float deltaX, float deltaY)
         {
-            Vector3 panDirection = is3DView ? new Vector3(-deltaX, deltaY, 0) : new Vector3(-deltaX, -deltaY, 0);
+            Vector3 panDirection = is3DView ? new Vector3(-deltaX, deltaY, 0) : new Vector3(deltaX, deltaY, 0);
             position += panDirection * zoomFactor;
             target += panDirection * zoomFactor;
         }
@@ -106,6 +111,48 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 // Placeholder: Implement screen-to-world conversion for 3D
                 return Vector3.Zero;
             }
+        }
+
+        public RectangleF GetViewBounds(float viewportWidth, float viewportHeight)
+        {
+            // Calculate half-dimensions of the view in world space
+            float halfWidth = (viewportWidth / 2) * zoomFactor;
+            float halfHeight = (viewportHeight / 2) * zoomFactor;
+
+            // Determine bounds in world space
+            float left = position.X - halfWidth;
+            float right = position.X + halfWidth;
+            float bottom = position.Y - halfHeight;
+            float top = position.Y + halfHeight;
+
+            return new RectangleF(left, bottom, right - left, top - bottom);
+        }
+
+        public void FitToScreen2D(RectangleF boundingBox, float viewportWidth, float viewportHeight)
+        {
+            if (is3DView)
+            {
+                throw new InvalidOperationException("FitToScreen is only supported in 2D mode.");
+            }
+
+            // Calculate the bounding box center and size
+            Vector2 boxCenter = new Vector2(
+                boundingBox.Left + boundingBox.Width / 2,
+                boundingBox.Top + boundingBox.Height / 2
+            );
+
+            float boxWidth = boundingBox.Width;
+            float boxHeight = boundingBox.Height;
+
+            // Adjust zoom to fit the bounding box
+            float zoomX = viewportWidth / boxWidth;
+            float zoomY = viewportHeight / boxHeight;
+
+            zoomFactor = Math.Min(zoomX, zoomY); // Fit both dimensions
+
+            // Update position and target to center the view
+            target = new Vector3(boxCenter.X, boxCenter.Y, 0);
+            position = new Vector3(boxCenter.X, boxCenter.Y, 100 / zoomFactor);
         }
     }
 }
