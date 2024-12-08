@@ -78,11 +78,14 @@ namespace Cad_Point_Manager.Controls.D3DControl
             // Calculate the world space delta
             Vector3 worldDelta = (worldCurrent - worldLast) / CurrentZoom;
 
-            // Apply the delta to both the camera position and target
-            Position = new(Position.X + worldDelta.X, Position.Y - worldDelta.Y, Position.Z + worldDelta.Z);
-            Target = new(Target.X + worldDelta.X, Target.Y - worldDelta.Y, Target.Z + worldDelta.Z);
+            //// Apply the delta to both the camera position and target
+            //Position = new(Position.X + worldDelta.X, Position.Y - worldDelta.Y, Position.Z + worldDelta.Z);
+            //Target = new(Target.X + worldDelta.X, Target.Y - worldDelta.Y, Target.Z + worldDelta.Z);
 
-            UpdateView();
+            Bounds.Translate(worldDelta.X, -worldDelta.Y);
+            SetOrthographic();
+
+            //UpdateView();
         }
 
         public void RotateCamera(Vector2 delta)
@@ -140,7 +143,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             UpdateBounds(left, right, bottom, top);
             
             SetOrthographic();
-            UpdateViewProjection();
         }
 
         public Vector3 Unproject(Vector2 ndc, Matrix inverseViewProjectionMatrix)

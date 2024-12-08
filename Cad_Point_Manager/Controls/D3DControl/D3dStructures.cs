@@ -46,5 +46,13 @@ namespace Cad_Point_Manager.Controls.D3DControl
             Width = right - left;
             Height = top - bottom;
         }
+
+        public void Translate(float x, float y)
+        {
+            Left += x;
+            Right += y;
+            Top += y;
+            Bottom += y;
+        }
     }
 }
