@@ -128,7 +128,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             return new RectangleF(left, bottom, right - left, top - bottom);
         }
 
-        public void FitToScreen2D(RectangleF boundingBox, float viewportWidth, float viewportHeight)
+        public void FitToScreen2D(Bounds boundingBox, float viewportWidth, float viewportHeight)
         {
             if (is3DView)
             {
@@ -136,7 +136,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             }
 
             // Calculate the bounding box center and size
-            Vector2 boxCenter = new Vector2(
+            Vector2 boxCenter = new(
                 boundingBox.Left + boundingBox.Width / 2,
                 boundingBox.Top + boundingBox.Height / 2
             );

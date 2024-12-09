@@ -53,13 +53,14 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public bool D3dIsDirty { get; set; } = true;
         public bool ShadersLoaded { get; set; } = false;
         public bool ConstantBufferInitialized { get; set; } = false;
+        public Bounds DxfBounds { get; set; } = Bounds.Empty;
         #endregion
 
         #region Constructors
         public D3dDxfControl() { }
         #endregion
 
-        #region Private Methods
+        #region Methods
         public override void Render()
         {
             if (_d3dResCache is null) { return; }
@@ -78,6 +79,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
             if (_testCamera is null)
             {
                 _testCamera = new();
+                GetDxfBounds();
+                _testCamera.FitToScreen2D(DxfBounds, (float)ActualWidth, (float)ActualHeight);
             }
             if (!ShadersLoaded) { InitializeShaders(); }
             if (!ConstantBufferInitialized) { InitializeConstantBuffer(); }
@@ -213,6 +216,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _d3dResCache.DeviceContext.UpdateSubresource(ref transformationBuffer, _transformationBuffer);
         }
 
+        private void GetDxfBounds()
+        {
+            DxfBounds = new Bounds(-1, 1, 1, -1);
+        }
+
         protected override void OnMouseDown(MouseButtonEventArgs e)
         {
             if (e.MiddleButton == MouseButtonState.Pressed)
@@ -294,10 +302,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             e.Handled = true;
         }
-        #endregion
-
-        #region Public Methods
-
         #endregion
     }
 }

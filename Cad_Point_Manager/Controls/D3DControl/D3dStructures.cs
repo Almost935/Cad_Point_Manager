@@ -54,5 +54,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             Top += y;
             Bottom += y;
         }
+
+        public static Bounds Empty => new Bounds(0, 0, 0, 0);
     }
 }
