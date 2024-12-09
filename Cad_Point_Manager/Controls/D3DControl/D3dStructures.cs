@@ -57,4 +57,25 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         public static Bounds Empty => new Bounds(0, 0, 0, 0);
     }
+
+    public struct Rotation
+    {
+        public float X = 0;
+        public float Y = 0;
+        public float Z = 0;
+
+        public Rotation() { }
+        public Rotation(float x, float y, float z)
+        {
+            X = x;
+            Y = y;
+            Z = z;
+        }
+
+        public static Rotation NoRotation => new Rotation(0, 0, 0);
+
+        public void SetX(float x) { X = x; }
+        public void SetY(float y) { Y = y; }
+        public void SetZ(float z) { Z = z; }
+    }
 }

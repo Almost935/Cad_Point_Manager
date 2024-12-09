@@ -78,9 +78,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
             }
             if (_testCamera is null)
             {
-                _testCamera = new();
+                _testCamera = new((float)ActualWidth, (float)ActualHeight);
                 GetDxfBounds();
-                _testCamera.FitToScreen2D(DxfBounds, (float)ActualWidth, (float)ActualHeight);
+                //_testCamera.FitToScreen2D(DxfBounds, (float)ActualWidth, (float)ActualHeight);
             }
             if (!ShadersLoaded) { InitializeShaders(); }
             if (!ConstantBufferInitialized) { InitializeConstantBuffer(); }
@@ -205,7 +205,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             // Update transformation matrix
             //var transformation = _camera.ViewMatrix * _camera.ProjectionMatrix;
             var testTransformation = _camera.ViewMatrix * _camera.ProjectionMatrix;
-            var transformation = _testCamera.ViewMatrix * _testCamera.ProjectionMatrix((float)ActualWidth, (float)ActualHeight);
+            var transformation = _testCamera.ViewMatrix * _testCamera.ProjectionMatrix;
 
             var transformationBuffer = new TransformationBuffer
             {
@@ -295,8 +295,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             int zoomSteps = e.Delta / Mouse.MouseWheelDeltaForOneLine;
             float zoom = (float)(Math.Pow(_zoomFactor, zoomSteps));
-           
+
             _camera.ZoomCamera(zoom, new Vector2((float)_pointerCoords.X, (float)_pointerCoords.Y), (float)ActualWidth, (float)ActualHeight);
+            _testCamera.Zoom(zoom, new Vector2((float)_pointerCoords.X, (float)_pointerCoords.Y));
 
             D3dIsDirty = true;
 

@@ -68,8 +68,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public void PanCamera(Vector2 startPanPos, Vector2 endPanPos, Matrix viewProjectionMatrix, Matrix inverseViewProjectionMatrix)
         {
             // Convert screen positions to normalized device coordinates (NDC)
-            Vector2 ndcCurrent = MathHelpers.ScreenToNDC(startPanPos, ScreenWidth, ScreenHeight);
-            Vector2 ndcLast = MathHelpers.ScreenToNDC(endPanPos, ScreenWidth, ScreenHeight);
+            Vector2 ndcCurrent = ScreenToNDC(startPanPos, ScreenWidth, ScreenHeight);
+            Vector2 ndcLast = ScreenToNDC(endPanPos, ScreenWidth, ScreenHeight);
 
             // Unproject the NDC points into world space
             Vector3 worldCurrent = Unproject(ndcCurrent, inverseViewProjectionMatrix);
@@ -129,7 +129,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         {
             CurrentZoom *= zoomAmount;
 
-            var mouseNDC = MathHelpers.ScreenToNDC(mousePosition, screenWidth, screenHeight);
+            var mouseNDC = ScreenToNDC(mousePosition, screenWidth, screenHeight);
             var worldMouse = Unproject(mouseNDC, InverseViewProjectionMatrix);
             
             float width = (Bounds.Right - Bounds.Left) / zoomAmount;
@@ -145,7 +145,32 @@ namespace Cad_Point_Manager.Controls.D3DControl
             SetOrthographic();
         }
 
-        public Vector3 Unproject(Vector2 ndc, Matrix inverseViewProjectionMatrix)
+        public void UpdateBounds(float left, float right, float bottom, float top)
+        {
+            Bounds = new(left, right, top, bottom);
+            
+            NearPlane = InitialNearPlane;
+            FarPlane = InitialFarPlane;
+        }
+        public void UpdateBounds(Bounds bounds)
+        {
+            Bounds = bounds;
+            
+            NearPlane = InitialNearPlane;
+            FarPlane = InitialFarPlane;
+        }
+
+
+        #region Static Methods
+        public static Vector2 ScreenToNDC(Vector2 screenPos, float screenWidth, float screenHeight)
+        { 
+            return new Vector2(
+                (screenPos.X / screenWidth) * 2.0f - 1.0f, // Map x from [0, screenWidth] to [-1, 1]
+                1.0f - (screenPos.Y / screenHeight) * 2.0f  // Map y from [0, screenHeight] to [1, -1]
+            );
+        }
+
+        public static Vector3 Unproject(Vector2 ndc, Matrix inverseViewProjectionMatrix)
         {
             // Create a homogeneous clip space position
             Vector4 clipPos = new(ndc.X, ndc.Y, 0.0f, 1.0f);
@@ -161,20 +186,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             return new Vector3(worldPos.X, worldPos.Y, worldPos.Z);
         }
-
-        public void UpdateBounds(float left, float right, float bottom, float top)
-        {
-            Bounds = new(left, right, top, bottom);
-            
-            NearPlane = InitialNearPlane;
-            FarPlane = InitialFarPlane;
-        }
-        public void UpdateBounds(Bounds bounds)
-        {
-            Bounds = bounds;
-
-            NearPlane = InitialNearPlane;
-            FarPlane = InitialFarPlane;
-        }
+        #endregion
     }
 }

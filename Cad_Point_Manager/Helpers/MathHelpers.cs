@@ -36,13 +36,7 @@ namespace Cad_Point_Manager.Helpers
         //}
 
 
-        public static Vector2 ScreenToNDC(Vector2 screenPos, float screenWidth, float screenHeight)
-        {
-            return new Vector2(
-                (screenPos.X / screenWidth) * 2.0f - 1.0f, // Map x from [0, screenWidth] to [-1, 1]
-                1.0f - (screenPos.Y / screenHeight) * 2.0f  // Map y from [0, screenHeight] to [1, -1]
-            );
-        }
+        
 
 
         public static bool IsGeometryInRect(RawRectangleF viewport, Geometry geometry, float strokeThickness)
