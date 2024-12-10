@@ -12,6 +12,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
     public class TestCamera
     {
         #region Fields
+        private const float _zoomFactor = 1.25f;
+
         private Vector3 _position;   // Camera position
         private Vector3 _target;     // Camera target
         private Vector3 _up;         // Up direction
@@ -28,7 +30,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public Bounds OverallBounds { get; set; } = Bounds.Empty;
         public Bounds CurrentBounds { get; set; } = Bounds.Empty;
 
-        public float CurrentZoom { get; set; } = 1;
+        public int CurrentZoomStep { get; set; } = 0;
+        public float CurrentZoom => (float)Math.Pow(_zoomFactor, CurrentZoomStep);
         public Rotation CurrentRotation { get; set; } = Rotation.NoRotation;
         public bool IsIn3DView { get; set; } = false;
         #endregion
@@ -64,7 +67,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _position = new Vector3(0, 0, 100);
             _target = new Vector3(0, 0, 0);
             _up = Vector3.UnitY;
-            CurrentZoom = 1.0f;
+            CurrentZoomStep = 0;
             CurrentRotation.SetX(0);
             CurrentRotation.SetY(0);
             CurrentRotation.SetZ(0);
@@ -92,17 +95,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             }
         }
 
-        public void Pan(float deltaX, float deltaY)
-        {
-            Vector2 ndcVector = ScreenToNDC(new Vector2(deltaX, deltaY), ScreenWidth, ScreenHeight);
-
-            Vector3 worldVector = Unproject(ndcVector, InverseViewProjectionMatrix);
-
-            CurrentBounds = Bounds.Translate(CurrentBounds, worldVector.X, worldVector.Y);
-
-            UpdateProjection();
-            UpdateViewProjection();
-        }
         public void Pan(Vector2 startPanPos, Vector2 endPanPos)
         {
             // Convert screen positions to normalized device coordinates (NDC)
@@ -114,7 +106,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             Vector3 worldLast = Unproject(ndcLast, InverseViewProjectionMatrix);
 
             // Calculate the world space delta
-            Vector3 worldDelta = (worldCurrent - worldLast) / CurrentZoom;
+            Vector3 worldDelta = (worldCurrent - worldLast);
 
             CurrentBounds = Bounds.Translate(CurrentBounds, worldDelta.X, -worldDelta.Y);
 
@@ -123,17 +115,39 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
 
 
-        public void Zoom(float zoom, Vector2 mousePosition)
+        //public void Zoom(int zoomStepDelta, Vector2 mousePosition)
+        //{
+        //    CurrentZoomStep += zoomStepDelta;
+        //    float zoom = (float)Math.Pow(_zoomFactor, zoomStepDelta);
+
+        //    Vector2 ndcCurrent = ScreenToNDC(mousePosition, ScreenWidth, ScreenHeight);
+        //    Vector3 worldCurrent3D = Unproject(ndcCurrent, InverseViewProjectionMatrix);
+        //    Vector2 worldCurrent = new(worldCurrent3D.X, worldCurrent3D.Y);
+        //    CurrentBounds = Bounds.ScaleTo(CurrentBounds, zoom, worldCurrent);
+
+        //    UpdateProjection();
+        //    UpdateViewProjection();
+        //}
+
+        public void Zoom(int zoomStepDelta, Vector2 mousePosition)
         {
-            var originalPos = _position;
+            // Update the zoom step and calculate the new zoom factor
+            CurrentZoomStep += zoomStepDelta;
+            float scale = (float)Math.Pow(_zoomFactor, zoomStepDelta);
 
-            // Update zoom factor
-            CurrentZoom *= zoom;
+            // Convert mouse position to NDC space
+            Vector2 ndcCurrent = ScreenToNDC(mousePosition, ScreenWidth, ScreenHeight);
 
-            // Adjust position and target for zoom-to-mouse
-            Vector3 mouseWorldPosition = ScreenToWorld(mousePosition);
-            Vector3 zoomDirection = mouseWorldPosition - _position;
-            _position += zoomDirection * zoom;
+            // Unproject NDC to world space to get the zoom pivot point
+            Vector3 worldCurrent3D = Unproject(ndcCurrent, InverseViewProjectionMatrix);
+            Vector2 worldPivot = new(worldCurrent3D.X, worldCurrent3D.Y);
+
+            // Scale the bounds around the pivot point
+            CurrentBounds = Bounds.ScaleTo(CurrentBounds, scale, worldPivot);
+
+            // Update the projection and view-projection matrices
+            UpdateProjection();
+            UpdateViewProjection();
         }
 
         public void Rotate(float deltaX, float deltaY, bool shiftHeld)
@@ -182,29 +196,29 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         public void FitToScreen2D(Bounds boundingBox, float viewportWidth, float viewportHeight)
         {
-            if (IsIn3DView)
-            {
-                throw new InvalidOperationException("FitToScreen is only supported in 2D mode.");
-            }
+            //if (IsIn3DView)
+            //{
+            //    throw new InvalidOperationException("FitToScreen is only supported in 2D mode.");
+            //}
 
-            // Calculate the bounding box center and size
-            Vector2 boxCenter = new(
-                boundingBox.Left + boundingBox.Width / 2,
-                boundingBox.Top + boundingBox.Height / 2
-            );
+            //// Calculate the bounding box center and size
+            //Vector2 boxCenter = new(
+            //    boundingBox.Left + boundingBox.Width / 2,
+            //    boundingBox.Top + boundingBox.Height / 2
+            //);
 
-            float boxWidth = boundingBox.Width;
-            float boxHeight = boundingBox.Height;
+            //float boxWidth = boundingBox.Width;
+            //float boxHeight = boundingBox.Height;
 
-            // Adjust zoom to fit the bounding box
-            float zoomX = viewportWidth / boxWidth;
-            float zoomY = viewportHeight / boxHeight;
+            //// Adjust zoom to fit the bounding box
+            //float zoomX = viewportWidth / boxWidth;
+            //float zoomY = viewportHeight / boxHeight;
 
-            CurrentZoom = Math.Min(zoomX, zoomY); // Fit both dimensions
+            //CurrentZoom = Math.Min(zoomX, zoomY); // Fit both dimensions
 
-            // Update position and target to center the view
-            _target = new Vector3(boxCenter.X, boxCenter.Y, 0);
-            _position = new Vector3(boxCenter.X, boxCenter.Y, 100 / CurrentZoom);
+            //// Update position and target to center the view
+            //_target = new Vector3(boxCenter.X, boxCenter.Y, 0);
+            //_position = new Vector3(boxCenter.X, boxCenter.Y, 100 / CurrentZoom);
         }
         #endregion
 

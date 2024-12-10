@@ -28,7 +28,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public Matrix ViewProjectionMatrix { get; private set; }
         public Matrix InverseViewProjectionMatrix { get; private set; }
         public float CurrentZoom { get; set; } = 1;
-        public Bounds InitialBounds { get; set; } = new(-1, 1, 1, -1);
+        public Bounds InitialBounds { get; set; } = new(0, 2, 0, 2);
         public float InitialNearPlane { get; set; } = 0.1f;
         public float InitialFarPlane { get; set; } = 100.0f;
         public Bounds Bounds { get; set; }
@@ -82,7 +82,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             //Position = new(Position.X + worldDelta.X, Position.Y - worldDelta.Y, Position.Z + worldDelta.Z);
             //Target = new(Target.X + worldDelta.X, Target.Y - worldDelta.Y, Target.Z + worldDelta.Z);
 
-            Bounds.Translate(worldDelta.X, -worldDelta.Y);
+            Bounds = Bounds.Translate(Bounds, worldDelta.X, -worldDelta.Y);
             SetOrthographic();
 
             //UpdateView();
@@ -147,7 +147,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         public void UpdateBounds(float left, float right, float bottom, float top)
         {
-            Bounds = new(left, right, top, bottom);
+            Bounds = new(left, right, bottom, top);
             
             NearPlane = InitialNearPlane;
             FarPlane = InitialFarPlane;

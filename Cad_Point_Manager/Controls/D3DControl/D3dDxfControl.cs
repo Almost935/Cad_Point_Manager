@@ -17,7 +17,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
     public class D3dDxfControl : Direct3DControl
     {
         #region Fields
-        private const float _zoomFactor = 1.25f;
         private const float _rotationSpeed = 0.005f;
 
         private Buffer _vertexBuffer;
@@ -78,10 +77,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
             }
             if (_testCamera is null)
             {
-                Bounds bounds = new(-1, 1, 1, -1);
-                _testCamera = new((float)ActualWidth, (float)ActualHeight, bounds);
+                _testCamera = new((float)ActualWidth, (float)ActualHeight, DxfBounds);
                 GetDxfBounds();
-                //_testCamera.FitToScreen2D(DxfBounds, (float)ActualWidth, (float)ActualHeight);
             }
             if (!ShadersLoaded) { InitializeShaders(); }
             if (!ConstantBufferInitialized) { InitializeConstantBuffer(); }
@@ -126,12 +123,13 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             for (int i = 0; i < numLines; i++)
             {
-                float x = -1 + factor * i;
+                float x = 0 + factor * i;
 
-                Vertex startVertex = new(new Vector3(x, 1, 0f), new Vector4((redStart + factor * i), 0f, (blueStart - factor * i), 1f));
-                Vertex endVertex = new(new Vector3(x, -1, 0f), new Vector4((redStart + factor * i), 0f, (blueStart - factor * i), 1f));
+                Vertex startVertex = new(new Vector3(x, 2, 0f), new Vector4((redStart + factor * i), 0f, (blueStart - factor * i), 1f));
+                Vertex endVertex = new(new Vector3(x, 0, 0f), new Vector4((redStart + factor * i), 0f, (blueStart - factor * i), 1f));
                 _vertices[i * 2] = startVertex;
                 _vertices[i * 2 + 1] = endVertex;
+                int z = 0;
             }
             
             _vertexBuffer = Buffer.Create(
@@ -219,7 +217,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         private void GetDxfBounds()
         {
-            DxfBounds = new Bounds(-1, 1, 1, -1);
+            DxfBounds = new Bounds(0, 2, 0, 2);
         }
 
         protected override void OnMouseDown(MouseButtonEventArgs e)
@@ -283,23 +281,10 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         protected override void OnMouseWheel(MouseWheelEventArgs e)
         {
-            //float zoomFactor = (e.Delta > 0) ? 1.25f : 0.8f;
-            //_currentZoom *= zoomFactor;
-
-            //var pos = e.GetPosition(this);
-            ////_projectionMatrix = Matrix.Scaling(_currentZoom, _currentZoom, 1);
-            //var ndcX = (float)(pos.X / ActualWidth * 2 - 1);
-            //var ndcY = (float)(1 - pos.Y / ActualHeight * 2);
-
-            //var ndcPoint = MathHelpers.ScreenToNDC(_pointerCoords, ActualWidth, ActualHeight);
-            //_projectionMatrix = MathHelpers.ScaleToPoint(_projectionMatrix, zoomFactor, zoomFactor, 1, new Vector3(ndcX, ndcY, 0));
-            ////_projectionMatrix = MathHelpers.ScaleToPoint(_projectionMatrix, zoomFactor, zoomFactor, 1, new Vector3(ndcPoint.X, ndcPoint.Y, 0));
-
             int zoomSteps = e.Delta / Mouse.MouseWheelDeltaForOneLine;
-            float zoom = (float)(Math.Pow(_zoomFactor, zoomSteps));
 
-            _camera.ZoomCamera(zoom, new Vector2((float)_pointerCoords.X, (float)_pointerCoords.Y), (float)ActualWidth, (float)ActualHeight);
-            _testCamera.Zoom(zoom, new Vector2((float)_pointerCoords.X, (float)_pointerCoords.Y));
+            //_camera.ZoomCamera(zoom, new Vector2((float)_pointerCoords.X, (float)_pointerCoords.Y), (float)ActualWidth, (float)ActualHeight);
+            _testCamera.Zoom(zoomSteps, new Vector2((float)_pointerCoords.X, (float)_pointerCoords.Y));
 
             D3dIsDirty = true;
 
