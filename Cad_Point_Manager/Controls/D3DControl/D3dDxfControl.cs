@@ -77,8 +77,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
             }
             if (_testCamera is null)
             {
-                _testCamera = new((float)ActualWidth, (float)ActualHeight, DxfBounds);
                 GetDxfBounds();
+                _testCamera = new((float)ActualWidth, (float)ActualHeight, DxfBounds);
             }
             if (!ShadersLoaded) { InitializeShaders(); }
             if (!ConstantBufferInitialized) { InitializeConstantBuffer(); }
@@ -125,8 +125,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
             {
                 float x = 0 + factor * i;
 
-                Vertex startVertex = new(new Vector3(x, 2, 0f), new Vector4((redStart + factor * i), 0f, (blueStart - factor * i), 1f));
-                Vertex endVertex = new(new Vector3(x, 0, 0f), new Vector4((redStart + factor * i), 0f, (blueStart - factor * i), 1f));
+                Vertex startVertex = new(new Vector3(-x, 2, 0f), new Vector4((redStart + factor * i), 0f, (blueStart - factor * i), 1f));
+                Vertex endVertex = new(new Vector3(-x, 0, 0f), new Vector4((redStart + factor * i), 0f, (blueStart - factor * i), 1f));
                 _vertices[i * 2] = startVertex;
                 _vertices[i * 2 + 1] = endVertex;
                 int z = 0;
