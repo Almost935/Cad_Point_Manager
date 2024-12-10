@@ -2,6 +2,7 @@
 using SharpDX;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -24,7 +25,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         public float ScreenWidth { get; set; }
         public float ScreenHeight { get; set; }
-        public Bounds Bounds { get; set; } = Bounds.Empty;
+        public Bounds OverallBounds { get; set; } = Bounds.Empty;
+        public Bounds CurrentBounds { get; set; } = Bounds.Empty;
 
         public float CurrentZoom { get; set; } = 1;
         public Rotation CurrentRotation { get; set; } = Rotation.NoRotation;
@@ -32,10 +34,12 @@ namespace Cad_Point_Manager.Controls.D3DControl
         #endregion
 
         #region Constructors
-        public TestCamera(float screenWidth, float screenHeight)
+        public TestCamera(float screenWidth, float screenHeight, Bounds bounds)
         {
             ScreenWidth = screenWidth;
             ScreenHeight = screenHeight;
+            OverallBounds = bounds;
+            CurrentBounds = bounds;
 
             ResetToDefaults();
         }
@@ -44,14 +48,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         #region Methods
         public void UpdateProjection()
         {
-            if (IsIn3DView)
-            {
-                ProjectionMatrix = Matrix.PerspectiveFovLH(MathUtil.PiOverFour, ScreenWidth / ScreenHeight, 0.1f, 1000f);
-            }
-            else
-            {
-                ProjectionMatrix = Matrix.OrthoLH(ScreenWidth, ScreenHeight, 0.1f, 1000f);
-            }
+            ProjectionMatrix = Matrix.OrthoOffCenterLH(CurrentBounds.Left, CurrentBounds.Right, CurrentBounds.Bottom, CurrentBounds.Top, 0.1f, 1000f);
         }
         public void UpdateView()
         {
@@ -78,6 +75,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             UpdateViewProjection();
         }
 
+
         public void Toggle3DView(bool enable)
         {
             IsIn3DView = enable;
@@ -96,15 +94,37 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         public void Pan(float deltaX, float deltaY)
         {
-            Vector3 panDirection = IsIn3DView ? new Vector3(-deltaX, deltaY, 0) : new Vector3(deltaX, deltaY, 0);
-            //position += panDirection * zoomFactor;
-            //target += panDirection * zoomFactor;
-            _position += panDirection;
-            _target += panDirection;
+            Vector2 ndcVector = ScreenToNDC(new Vector2(deltaX, deltaY), ScreenWidth, ScreenHeight);
+
+            Vector3 worldVector = Unproject(ndcVector, InverseViewProjectionMatrix);
+
+            CurrentBounds = Bounds.Translate(CurrentBounds, worldVector.X, worldVector.Y);
+
+            UpdateProjection();
+            UpdateViewProjection();
+        }
+        public void Pan(Vector2 startPanPos, Vector2 endPanPos)
+        {
+            // Convert screen positions to normalized device coordinates (NDC)
+            Vector2 ndcCurrent = ScreenToNDC(startPanPos, ScreenWidth, ScreenHeight);
+            Vector2 ndcLast = ScreenToNDC(endPanPos, ScreenWidth, ScreenHeight);
+
+            // Unproject the NDC points into world space
+            Vector3 worldCurrent = Unproject(ndcCurrent, InverseViewProjectionMatrix);
+            Vector3 worldLast = Unproject(ndcLast, InverseViewProjectionMatrix);
+
+            // Calculate the world space delta
+            Vector3 worldDelta = (worldCurrent - worldLast) / CurrentZoom;
+
+            CurrentBounds = Bounds.Translate(CurrentBounds, worldDelta.X, -worldDelta.Y);
+
+            UpdateProjection();
+            UpdateViewProjection();
         }
 
+
         public void Zoom(float zoom, Vector2 mousePosition)
-        { 
+        {
             var originalPos = _position;
 
             // Update zoom factor

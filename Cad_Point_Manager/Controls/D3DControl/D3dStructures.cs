@@ -1,6 +1,7 @@
 ﻿using SharpDX;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -49,13 +50,26 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         public void Translate(float x, float y)
         {
+            Debug.WriteLine($"\nCurrentBounds: {this}");
+
             Left += x;
-            Right += y;
+            Right += x;
             Top += y;
             Bottom += y;
+
+            Debug.WriteLine($"CurrentBounds: {this}");
+        }
+        public override string ToString()
+        {
+            return $"Left: {Left}, Right: {Right}, Top: {Top}, Bottom: {Bottom})";
         }
 
         public static Bounds Empty => new Bounds(0, 0, 0, 0);
+
+        public static Bounds Translate(Bounds bounds, float x, float y)
+        {
+            return new Bounds(bounds.Left + x, bounds.Right + x, bounds.Top + y, bounds.Bottom + y);
+        }
     }
 
     public struct Rotation

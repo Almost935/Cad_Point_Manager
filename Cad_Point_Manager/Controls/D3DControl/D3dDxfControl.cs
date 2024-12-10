@@ -78,7 +78,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
             }
             if (_testCamera is null)
             {
-                _testCamera = new((float)ActualWidth, (float)ActualHeight);
+                Bounds bounds = new(-1, 1, 1, -1);
+                _testCamera = new((float)ActualWidth, (float)ActualHeight, bounds);
                 GetDxfBounds();
                 //_testCamera.FitToScreen2D(DxfBounds, (float)ActualWidth, (float)ActualHeight);
             }
@@ -204,7 +205,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         {
             // Update transformation matrix
             //var transformation = _camera.ViewMatrix * _camera.ProjectionMatrix;
-            var testTransformation = _camera.ViewMatrix * _camera.ProjectionMatrix;
+            //var testTransformation = _camera.ViewMatrix * _camera.ProjectionMatrix;
             var transformation = _testCamera.ViewMatrix * _testCamera.ProjectionMatrix;
 
             var transformationBuffer = new TransformationBuffer
@@ -269,7 +270,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 else
                 {
                     //_camera.PanCamera(currentMousePos, _prevMousePos, _viewMatrix * _projectionMatrix, Matrix.Invert(_viewMatrix * _projectionMatrix));
-                    _testCamera.Pan((float)delta.X, (float)delta.Y);
+                    //_testCamera.Pan((float)delta.X, (float)delta.Y);
+                    _testCamera.Pan(currentMousePos, _prevMousePos);
                 }
 
                 D3dIsDirty = true;
