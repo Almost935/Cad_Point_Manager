@@ -1,4 +1,5 @@
 ﻿using SharpDX;
+using SharpDX.Direct2D1.Effects;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -69,28 +70,50 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         public static Bounds Scale(Bounds bounds, float scale)
         {
-            return Bounds.Empty;
+            return new Bounds(bounds.Left / scale, bounds.Right / scale, bounds.Bottom / scale, bounds.Top / scale);
         }
 
-        //public static Bounds ScaleTo(Bounds bounds, float scale, Vector2 pos)
+        public static Bounds ScaleToCenter(Bounds overallBounds, float overallScale, float screenWidth, float screenHeight)
+        {
+            float addX = -(screenWidth / 8);
+            float addY = -screenHeight / 8;
+            //float addX = 0;
+            //float addY = 0;
+
+            Bounds newBounds = new Bounds((overallBounds.Left / overallScale) + addX, (overallBounds.Right / overallScale) + addX, (overallBounds.Bottom / overallScale) + addY, (overallBounds.Top / overallScale) + addY);
+            
+            return newBounds;
+        }
+
+        //public static Bounds ScaleTo(Bounds bounds, float scale, Vector2 pivot)
         //{
-        //    float newLeft = pos.X + (bounds.Left - pos.X) / scale;
-        //    float newRight = pos.X + (bounds.Right - pos.X) / scale;
-        //    float newTop = pos.Y + (bounds.Top - pos.Y) / scale;
-        //    float newBottom = pos.Y + (bounds.Bottom - pos.Y) / scale;
+        //    float newLeft = pivot.X + (bounds.Left - pivot.X) / scale;
+        //    float newRight = pivot.X + (bounds.Right - pivot.X) / scale;
+        //    float newTop = pivot.Y + (bounds.Top - pivot.Y) / scale;
+        //    float newBottom = pivot.Y + (bounds.Bottom - pivot.Y) / scale;
 
         //    return new Bounds(newLeft, newRight, newBottom, newTop);
         //}
-
         public static Bounds ScaleTo(Bounds bounds, float scale, Vector2 pivot)
         {
-            float newLeft = pivot.X + (bounds.Left - pivot.X) / scale;
-            float newRight = pivot.X + (bounds.Right - pivot.X) / scale;
-            float newTop = pivot.Y + (bounds.Top - pivot.Y) / scale;
-            float newBottom = pivot.Y + (bounds.Bottom - pivot.Y) / scale;
+            // Compute the distances of the bounds' edges from the pivot point
+            float leftOffset = bounds.Left - pivot.X;
+            float rightOffset = bounds.Right - pivot.X;
+            float topOffset = bounds.Top - pivot.Y;
+            float bottomOffset = bounds.Bottom - pivot.Y;
 
-            return new Bounds(newLeft, newRight, newBottom, newTop);
+            // Scale these offsets
+            float newLeft = pivot.X + leftOffset / scale;
+            float newRight = pivot.X + rightOffset / scale;
+            float newTop = pivot.Y + topOffset / scale;
+            float newBottom = pivot.Y + bottomOffset / scale;
+
+            Bounds  newBounds = new Bounds(newLeft, newRight, newBottom, newTop);
+
+            // Return the updated bounds
+            return newBounds;
         }
+
     }
 
     public struct Rotation

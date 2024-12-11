@@ -117,38 +117,51 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         //public void Zoom(int zoomStepDelta, Vector2 mousePosition)
         //{
+        //    // Update the zoom step and calculate the new zoom factor
         //    CurrentZoomStep += zoomStepDelta;
-        //    float zoom = (float)Math.Pow(_zoomFactor, zoomStepDelta);
+        //    float scale = (float)Math.Pow(_zoomFactor, zoomStepDelta);
 
+        //    // Convert mouse position to NDC space
         //    Vector2 ndcCurrent = ScreenToNDC(mousePosition, ScreenWidth, ScreenHeight);
-        //    Vector3 worldCurrent3D = Unproject(ndcCurrent, InverseViewProjectionMatrix);
-        //    Vector2 worldCurrent = new(worldCurrent3D.X, worldCurrent3D.Y);
-        //    CurrentBounds = Bounds.ScaleTo(CurrentBounds, zoom, worldCurrent);
 
+        //    // Unproject NDC to world space to get the zoom pivot point
+        //    Vector3 worldCurrent3D = Unproject(ndcCurrent, InverseViewProjectionMatrix);
+        //    Vector2 worldPivot = new(worldCurrent3D.X, worldCurrent3D.Y);
+
+        //    // Scale the bounds around the pivot point
+        //    CurrentBounds = Bounds.ScaleTo(CurrentBounds, scale, worldPivot);
+
+        //    // Update the projection and view-projection matrices
         //    UpdateProjection();
         //    UpdateViewProjection();
         //}
 
         public void Zoom(int zoomStepDelta, Vector2 mousePosition)
         {
-            // Update the zoom step and calculate the new zoom factor
+            // Update zoom step and calculate the scale
             CurrentZoomStep += zoomStepDelta;
             float scale = (float)Math.Pow(_zoomFactor, zoomStepDelta);
 
             // Convert mouse position to NDC space
             Vector2 ndcCurrent = ScreenToNDC(mousePosition, ScreenWidth, ScreenHeight);
 
-            // Unproject NDC to world space to get the zoom pivot point
-            Vector3 worldCurrent3D = Unproject(ndcCurrent, InverseViewProjectionMatrix);
-            Vector2 worldPivot = new(worldCurrent3D.X, worldCurrent3D.Y);
+            // Unproject NDC to world space for the zoom pivot point
+            Vector3 worldPivot3D = Unproject(ndcCurrent, InverseViewProjectionMatrix);
+            Vector2 worldPivot = new(worldPivot3D.X, worldPivot3D.Y);
 
-            // Scale the bounds around the pivot point
-            CurrentBounds = Bounds.ScaleTo(CurrentBounds, scale, worldPivot);
+            // Compute new bounds around the pivot
+            //Bounds scaledBounds = Bounds.ScaleTo(CurrentBounds, scale, worldPivot);
+            Bounds scaledBounds = Bounds.ScaleToCenter(CurrentBounds, scale, ScreenWidth, ScreenHeight);
+            //Bounds scaledBounds = Bounds.Scale(CurrentBounds, scale);
 
-            // Update the projection and view-projection matrices
+            // Correct for bounds centering
+            CurrentBounds = scaledBounds;
+
+            // Update matrices
             UpdateProjection();
             UpdateViewProjection();
         }
+
 
         public void Rotate(float deltaX, float deltaY, bool shiftHeld)
         {

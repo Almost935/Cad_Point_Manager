@@ -116,22 +116,39 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             int numLines = 100;
 
+            //_vertices = new Vertex[numLines * 2];
+            //float factor = 2f / numLines;
+            //float redStart = 0;
+            //float blueStart = 1;
+
+            //for (int i = 0; i < numLines; i++)
+            //{
+            //    float x = 0 + factor * i;
+
+            //    Vertex startVertex = new(new Vector3(-x, 2, 0f), new Vector4((redStart + factor * i), 0f, (blueStart - factor * i), 1f));
+            //    Vertex endVertex = new(new Vector3(-x, 0, 0f), new Vector4((redStart + factor * i), 0f, (blueStart - factor * i), 1f));
+            //    _vertices[i * 2] = startVertex;
+            //    _vertices[i * 2 + 1] = endVertex;
+            //    int z = 0;
+            //}
+
             _vertices = new Vertex[numLines * 2];
-            float factor = 2f / numLines;
+            float factor = (float)ActualWidth / numLines;
             float redStart = 0;
             float blueStart = 1;
 
             for (int i = 0; i < numLines; i++)
             {
                 float x = 0 + factor * i;
+                float colorFactor = ((float)i / (float)numLines);
 
-                Vertex startVertex = new(new Vector3(-x, 2, 0f), new Vector4((redStart + factor * i), 0f, (blueStart - factor * i), 1f));
-                Vertex endVertex = new(new Vector3(-x, 0, 0f), new Vector4((redStart + factor * i), 0f, (blueStart - factor * i), 1f));
+                Vertex startVertex = new(new Vector3(-x, (float)ActualHeight, 0), new Vector4(colorFactor, 0f, (blueStart - colorFactor), 1f));
+                Vertex endVertex = new(new Vector3(-x, 0, 0), new Vector4(colorFactor, 0f, (blueStart - colorFactor), 1f));
                 _vertices[i * 2] = startVertex;
                 _vertices[i * 2 + 1] = endVertex;
                 int z = 0;
             }
-            
+
             _vertexBuffer = Buffer.Create(
                 _d3dResCache.Device,
                 BindFlags.VertexBuffer,
@@ -217,7 +234,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         private void GetDxfBounds()
         {
-            DxfBounds = new Bounds(0, 2, 0, 2);
+            DxfBounds = new Bounds(0, (float)ActualWidth, 0, (float)ActualHeight);
         }
 
         protected override void OnMouseDown(MouseButtonEventArgs e)
