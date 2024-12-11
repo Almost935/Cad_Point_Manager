@@ -132,9 +132,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
             //    int z = 0;
             //}
 
-            _vertices = new Vertex[numLines * 2];
+            _vertices = new Vertex[numLines * 2 + 8];
             float factor = (float)ActualWidth / numLines;
-            float redStart = 0;
             float blueStart = 1;
 
             for (int i = 0; i < numLines; i++)
@@ -142,12 +141,31 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 float x = 0 + factor * i;
                 float colorFactor = ((float)i / (float)numLines);
 
-                Vertex startVertex = new(new Vector3(-x, (float)ActualHeight, 0), new Vector4(colorFactor, 0f, (blueStart - colorFactor), 1f));
-                Vertex endVertex = new(new Vector3(-x, 0, 0), new Vector4(colorFactor, 0f, (blueStart - colorFactor), 1f));
+                Vertex startVertex = new(new Vector3(x, (float)ActualHeight, 0), new Vector4(colorFactor, 0f, (blueStart - colorFactor), 1f));
+                Vertex endVertex = new(new Vector3(x, 0, 0), new Vector4(colorFactor, 0f, (blueStart - colorFactor), 1f));
                 _vertices[i * 2] = startVertex;
                 _vertices[i * 2 + 1] = endVertex;
-                int z = 0;
             }
+
+            // Add center lines to check zooming
+            Vertex verticalStart = new(new Vector3(((float)ActualWidth * 0.5f), (float)ActualHeight, 0), new Vector4(0, 1, 0, 1));
+            Vertex verticalEnd = new(new Vector3(((float)ActualWidth * 0.5f), 0, 0), new Vector4(0, 1, 0, 1));
+            Vertex horizontalStart = new(new Vector3((float)ActualWidth, ((float)ActualHeight * 0.5f), 0), new Vector4(0, 1, 0, 1));
+            Vertex horizontalEnd = new(new Vector3(0, ((float)ActualHeight * 0.5f), 0), new Vector4(0, 1, 0, 1));
+            _vertices[numLines * 2] = verticalStart;
+            _vertices[numLines * 2 + 1] = verticalEnd;
+            _vertices[numLines * 2 + 2] = horizontalStart;
+            _vertices[numLines * 2 + 3] = horizontalEnd;
+
+            // Add lines at zero
+            Vertex zeroVerticalStart = new(new Vector3(0, (float)ActualHeight, 0), new Vector4(0, 1, 0, 1));
+            Vertex zeroVerticalEnd = new(new Vector3(0, 0, 0), new Vector4(0, 1, 0, 1));
+            Vertex zeroHorizontalStart = new(new Vector3((float)ActualWidth, 0, 0), new Vector4(0, 1, 0, 1));
+            Vertex zeroHorizontalEnd = new(new Vector3(0, 0, 0), new Vector4(0, 1, 0, 1));
+            _vertices[numLines * 2 + 4] = zeroVerticalStart;
+            _vertices[numLines * 2 + 5] = zeroVerticalEnd;
+            _vertices[numLines * 2 + 6] = zeroHorizontalStart;
+            _vertices[numLines * 2 + 7] = zeroHorizontalEnd;
 
             _vertexBuffer = Buffer.Create(
                 _d3dResCache.Device,
@@ -234,7 +252,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         private void GetDxfBounds()
         {
-            DxfBounds = new Bounds(0, (float)ActualWidth, 0, (float)ActualHeight);
+            DxfBounds = new(0, (float)ActualWidth, 0, (float)ActualHeight);
         }
 
         protected override void OnMouseDown(MouseButtonEventArgs e)
@@ -298,7 +316,15 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         protected override void OnMouseWheel(MouseWheelEventArgs e)
         {
-            int zoomSteps = e.Delta / Mouse.MouseWheelDeltaForOneLine;
+            int zoomSteps;
+            if (e.Delta > 0)
+            {
+                zoomSteps = 1;
+            }
+            else
+            {
+                zoomSteps = -1;
+            }
 
             //_camera.ZoomCamera(zoom, new Vector2((float)_pointerCoords.X, (float)_pointerCoords.Y), (float)ActualWidth, (float)ActualHeight);
             _testCamera.Zoom(zoomSteps, new Vector2((float)_pointerCoords.X, (float)_pointerCoords.Y));

@@ -56,9 +56,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
             Height = top - bottom;
         }
 
-        public override string ToString()
+        public readonly override string ToString()
         {
-            return $"Left: {Left}, Right: {Right}, Top: {Top}, Bottom: {Bottom})";
+            return $"Left: {Left}, Right: {Right}, Bottom: {Bottom}, Top: {Top})";
         }
 
         public static Bounds Empty => new(0, 0, 0, 0);
@@ -75,32 +75,27 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         public static Bounds ScaleToCenter(Bounds overallBounds, float overallScale, float screenWidth, float screenHeight)
         {
-            float addX = -(screenWidth / 8);
-            float addY = -screenHeight / 8;
-            //float addX = 0;
-            //float addY = 0;
+            //float addX = -screenWidth / 8;
+            //float addY = -screenHeight / 8;
+            float addX = 0;
+            float addY = 0;
 
             Bounds newBounds = new Bounds((overallBounds.Left / overallScale) + addX, (overallBounds.Right / overallScale) + addX, (overallBounds.Bottom / overallScale) + addY, (overallBounds.Top / overallScale) + addY);
             
             return newBounds;
         }
 
-        //public static Bounds ScaleTo(Bounds bounds, float scale, Vector2 pivot)
-        //{
-        //    float newLeft = pivot.X + (bounds.Left - pivot.X) / scale;
-        //    float newRight = pivot.X + (bounds.Right - pivot.X) / scale;
-        //    float newTop = pivot.Y + (bounds.Top - pivot.Y) / scale;
-        //    float newBottom = pivot.Y + (bounds.Bottom - pivot.Y) / scale;
-
-        //    return new Bounds(newLeft, newRight, newBottom, newTop);
-        //}
         public static Bounds ScaleTo(Bounds bounds, float scale, Vector2 pivot)
         {
+            Debug.WriteLine($"pivot: {pivot}");
+
             // Compute the distances of the bounds' edges from the pivot point
             float leftOffset = bounds.Left - pivot.X;
             float rightOffset = bounds.Right - pivot.X;
-            float topOffset = bounds.Top - pivot.Y;
             float bottomOffset = bounds.Bottom - pivot.Y;
+            float topOffset = bounds.Top - pivot.Y;
+
+            Debug.WriteLine($"leftOffset: {leftOffset} rightOffset: {rightOffset} bottomOffset: {bottomOffset} topOffset: {topOffset}");
 
             // Scale these offsets
             float newLeft = pivot.X + leftOffset / scale;
@@ -108,12 +103,45 @@ namespace Cad_Point_Manager.Controls.D3DControl
             float newTop = pivot.Y + topOffset / scale;
             float newBottom = pivot.Y + bottomOffset / scale;
 
-            Bounds  newBounds = new Bounds(newLeft, newRight, newBottom, newTop);
+            Bounds newBounds = new(newLeft, newRight, newBottom, newTop);
 
             // Return the updated bounds
             return newBounds;
         }
 
+        //public static Bounds ScaleTo(Bounds bounds, int zoomStepDelta, float zoomFactor, Vector2 scalePoint, float screenWidth, float screenHeight)
+        //{
+        //    Debug.WriteLine($"scalePoint: {scalePoint}");
+
+        //    float scale = (float)Math.Pow(zoomFactor, zoomStepDelta);
+
+        //    float addX = screenWidth / 8;
+        //    float addY = screenHeight / 8;
+        //    //float addX = 0;
+        //    //float addY = 0;
+
+        //    Bounds newBounds = new Bounds((bounds.Left / scale) + addX, (bounds.Right / scale) + addX, (bounds.Bottom / scale) + addY, (bounds.Top / scale) + addY);
+
+        //    return newBounds;
+
+
+        //    //// Compute the distances of the bounds' edges from the pivot point
+        //    //float leftOffset = bounds.Left - pivot.X;
+        //    //float rightOffset = bounds.Right - pivot.X;
+        //    //float topOffset = bounds.Top - pivot.Y;
+        //    //float bottomOffset = bounds.Bottom - pivot.Y;
+
+        //    //// Scale these offsets
+        //    //float newLeft = pivot.X + leftOffset / scale;
+        //    //float newRight = pivot.X + rightOffset / scale;
+        //    //float newTop = pivot.Y + topOffset / scale;
+        //    //float newBottom = pivot.Y + bottomOffset / scale;
+
+        //    //Bounds  newBounds = new Bounds(newLeft, newRight, newBottom, newTop);
+
+        //    //// Return the updated bounds
+        //    //return newBounds;
+        //}
     }
 
     public struct Rotation

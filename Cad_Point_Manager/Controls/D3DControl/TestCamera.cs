@@ -64,8 +64,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
         public void ResetToDefaults()
         {
-            _position = new Vector3(0, 0, 100);
-            _target = new Vector3(0, 0, 0);
+            _position = new Vector3(ScreenWidth, 0, 100);
+            _target = new Vector3(ScreenWidth, 0, 0);
             _up = Vector3.UnitY;
             CurrentZoomStep = 0;
             CurrentRotation.SetX(0);
@@ -147,12 +147,10 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             // Unproject NDC to world space for the zoom pivot point
             Vector3 worldPivot3D = Unproject(ndcCurrent, InverseViewProjectionMatrix);
-            Vector2 worldPivot = new(worldPivot3D.X, worldPivot3D.Y);
+            Vector2 worldMousePos = new(worldPivot3D.X, worldPivot3D.Y);
 
             // Compute new bounds around the pivot
-            //Bounds scaledBounds = Bounds.ScaleTo(CurrentBounds, scale, worldPivot);
-            Bounds scaledBounds = Bounds.ScaleToCenter(CurrentBounds, scale, ScreenWidth, ScreenHeight);
-            //Bounds scaledBounds = Bounds.Scale(CurrentBounds, scale);
+            Bounds scaledBounds = Bounds.ScaleTo(CurrentBounds, (float)Math.Pow(_zoomFactor, zoomStepDelta), worldMousePos);
 
             // Correct for bounds centering
             CurrentBounds = scaledBounds;
