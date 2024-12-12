@@ -45,6 +45,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private bool _isShiftPressed = false;
         private Vector2 _prevMousePos;
 
+        // Fields for testing
+        private (int startIndex, int endIndex) _mouseLineIndices;
         #endregion
 
         #region Properties
@@ -132,7 +134,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             //    int z = 0;
             //}
 
-            _vertices = new Vertex[numLines * 2 + 8];
+            _vertices = new Vertex[numLines * 2 + 10];
             float factor = (float)ActualWidth / numLines;
             float blueStart = 1;
 
@@ -167,6 +169,13 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _vertices[numLines * 2 + 6] = zeroHorizontalStart;
             _vertices[numLines * 2 + 7] = zeroHorizontalEnd;
 
+            // Create the line that follows the mouse
+            _mouseLineIndices = (numLines * 2 + 8, numLines * 2 + 9);
+            Vertex mouseLineStart = new(new Vector3(0, 0, 0), new Vector4(0, 1, 0, 1));
+            Vertex mouseLineEnd = new(new Vector3(_testCamera.MouseCoords.X, _testCamera.MouseCoords.Y, 0), new Vector4(0, 1, 0, 1));
+            _vertices[_mouseLineIndices.startIndex] = zeroVerticalStart;
+            _vertices[_mouseLineIndices.endIndex] = mouseLineEnd;
+
             _vertexBuffer = Buffer.Create(
                 _d3dResCache.Device,
                 BindFlags.VertexBuffer,
@@ -174,6 +183,14 @@ namespace Cad_Point_Manager.Controls.D3DControl
             );
 
             DxfIsDirty = false;
+        }
+
+        private void UpdateMouseFollowingVertex()
+        {
+            Vertex mouseLineEnd = new(new Vector3(_testCamera.MouseCoords.X, _testCamera.MouseCoords.Y, 0), new Vector4(0, 1, 0, 1));
+            _vertices[_mouseLineIndices.endIndex] = mouseLineEnd;
+
+            Debug.WriteLine($"mouseLineEnd.Position: {mouseLineEnd.Position}");
         }
 
         private void InitializeShaders()
@@ -276,20 +293,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
         {
             _pointerCoords = e.GetPosition(this);
             var currentMousePos = new Vector2((float)_pointerCoords.X, (float)_pointerCoords.Y);
-
-            //if (_isPanning && e.MiddleButton == MouseButtonState.Pressed)
-            //{
-            //    var delta = MathHelpers.ScreenToNDC(_pointerCoords - _previousMousePosition, ActualWidth, ActualHeight);
-
-            //    _panOffset += delta * (1.0f / _currentZoom);
-            //    _viewMatrix = Matrix.Translation(_panOffset.X, -_panOffset.Y, 0);
-
-            //    _previousMousePosition = _pointerCoords;
-
-            //    D3dIsDirty = true;
-
-            //    e.Handled = true;
-            //}
+            _testCamera.UpdateMouseCoords(currentMousePos);
+            UpdateMouseFollowingVertex();
 
             _isShiftPressed = Keyboard.IsKeyDown(Key.LeftShift) || Keyboard.IsKeyDown(Key.RightShift);
 

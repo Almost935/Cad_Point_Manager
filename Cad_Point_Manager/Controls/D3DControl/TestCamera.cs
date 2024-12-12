@@ -34,6 +34,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public float CurrentZoom => (float)Math.Pow(_zoomFactor, CurrentZoomStep);
         public Rotation CurrentRotation { get; set; } = Rotation.NoRotation;
         public bool IsIn3DView { get; set; } = false;
+
+        public Vector2 MouseCoords { get; set; } = Vector2.Zero;
         #endregion
 
         #region Constructors
@@ -230,6 +232,12 @@ namespace Cad_Point_Manager.Controls.D3DControl
             //// Update position and target to center the view
             //_target = new Vector3(boxCenter.X, boxCenter.Y, 0);
             //_position = new Vector3(boxCenter.X, boxCenter.Y, 100 / CurrentZoom);
+        }
+
+        public void UpdateMouseCoords(Vector2 mousePosition)
+        {
+            MouseCoords = ScreenToNDC(mousePosition, ScreenWidth, ScreenHeight);
+            //MouseCoords = Unproject(ndxCoords, InverseViewProjectionMatrix);
         }
         #endregion
 
