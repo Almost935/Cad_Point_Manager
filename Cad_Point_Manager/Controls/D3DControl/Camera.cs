@@ -28,7 +28,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public Matrix ViewProjectionMatrix { get; private set; }
         public Matrix InverseViewProjectionMatrix { get; private set; }
         public float CurrentZoom { get; set; } = 1;
-        public Bounds InitialBounds { get; set; } = new(0, 2, 0, 2);
+        public Bounds InitialBounds { get; set; } 
         public float InitialNearPlane { get; set; } = 0.1f;
         public float InitialFarPlane { get; set; } = 100.0f;
         public Bounds Bounds { get; set; }

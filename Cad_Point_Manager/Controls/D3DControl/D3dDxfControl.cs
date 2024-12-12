@@ -64,17 +64,17 @@ namespace Cad_Point_Manager.Controls.D3DControl
         {
             if (_d3dResCache is null) { return; }
 
-            if (_camera is null)
-            {
-                _camera = new(_rotationSpeed, (float)ActualWidth, (float)ActualHeight)
-                {
-                    Position = new Vector3(0, 0, 1), // Position the camera above the 2D plane, looking down
-                    Target = new Vector3(0, 0, 0),     // Look at the origin
-                    Up = Vector3.UnitY                 // Up direction is the Y-axis
-                };
-                _camera.UpdateView(); // Update the view matrix to ensure all matrices are current
-                _camera.SetOrthographic(); // Set the orthographic projection
-            }
+            //if (_camera is null)
+            //{
+            //    _camera = new(_rotationSpeed, (float)ActualWidth, (float)ActualHeight)
+            //    {
+            //        Position = new Vector3(0, 0, 1), // Position the camera above the 2D plane, looking down
+            //        Target = new Vector3(0, 0, 0),     // Look at the origin
+            //        Up = Vector3.UnitY                 // Up direction is the Y-axis
+            //    };
+            //    _camera.UpdateView(); // Update the view matrix to ensure all matrices are current
+            //    _camera.SetOrthographic(); // Set the orthographic projection
+            //}
             if (_testCamera is null)
             {
                 GetDxfBounds();

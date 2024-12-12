@@ -7,8 +7,11 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
+using Matrix = SharpDX.Matrix;
 
 namespace Cad_Point_Manager.Controls.D3DControl
 {
@@ -97,13 +100,24 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             Debug.WriteLine($"leftOffset: {leftOffset} rightOffset: {rightOffset} bottomOffset: {bottomOffset} topOffset: {topOffset}");
 
+            Rect rect = new(bounds.Left, bounds.Top, bounds.Width, bounds.Height);
+            System.Windows.Media.Matrix matrix = new();
+            matrix.ScaleAt(1 / scale, 1 / scale, pivot.X, pivot.Y);
+            rect.Transform(matrix);
+
             // Scale these offsets
             float newLeft = pivot.X + leftOffset / scale;
             float newRight = pivot.X + rightOffset / scale;
             float newTop = pivot.Y + topOffset / scale;
             float newBottom = pivot.Y + bottomOffset / scale;
 
-            Bounds newBounds = new(newLeft, newRight, newBottom, newTop);
+            //float newLeft = bounds.Left / scale;
+            //float newRight = bounds.Right / scale;
+            //float newBottom = bounds.Bottom / scale;
+            //float newTop = bounds.Top / scale;
+
+            //Bounds newBounds = new(newLeft, newRight, newBottom, newTop);
+            Bounds newBounds = new((float)rect.Left, (float)rect.Right, (float)rect.Bottom, (float)rect.Top);
 
             // Return the updated bounds
             return newBounds;

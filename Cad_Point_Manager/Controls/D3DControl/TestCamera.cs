@@ -150,7 +150,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             Vector2 worldMousePos = new(worldPivot3D.X, worldPivot3D.Y);
 
             // Compute new bounds around the pivot
-            Bounds scaledBounds = Bounds.ScaleTo(CurrentBounds, (float)Math.Pow(_zoomFactor, zoomStepDelta), worldMousePos);
+            Bounds scaledBounds = Bounds.ScaleTo(CurrentBounds, scale, worldMousePos);
 
             // Correct for bounds centering
             CurrentBounds = scaledBounds;
