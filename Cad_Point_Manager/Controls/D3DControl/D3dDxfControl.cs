@@ -172,8 +172,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
             // Create the line that follows the mouse
             _mouseLineIndices = (numLines * 2 + 8, numLines * 2 + 9);
             Vertex mouseLineStart = new(new Vector3(0, 0, 0), new Vector4(0, 1, 0, 1));
-            Vertex mouseLineEnd = new(new Vector3(_testCamera.MouseCoords.X, _testCamera.MouseCoords.Y, 0), new Vector4(0, 1, 0, 1));
-            _vertices[_mouseLineIndices.startIndex] = zeroVerticalStart;
+            Vertex mouseLineEnd = new(new Vector3(100, 100, 0), new Vector4(0, 1, 0, 1));
+            _vertices[_mouseLineIndices.startIndex] = mouseLineStart;
             _vertices[_mouseLineIndices.endIndex] = mouseLineEnd;
 
             _vertexBuffer = Buffer.Create(
@@ -190,7 +190,13 @@ namespace Cad_Point_Manager.Controls.D3DControl
             Vertex mouseLineEnd = new(new Vector3(_testCamera.MouseCoords.X, _testCamera.MouseCoords.Y, 0), new Vector4(0, 1, 0, 1));
             _vertices[_mouseLineIndices.endIndex] = mouseLineEnd;
 
-            Debug.WriteLine($"mouseLineEnd.Position: {mouseLineEnd.Position}");
+            _vertexBuffer = Buffer.Create(
+               _d3dResCache.Device,
+               BindFlags.VertexBuffer,
+               _vertices
+           );
+
+            D3dIsDirty = true;
         }
 
         private void InitializeShaders()
@@ -304,7 +310,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 if (_isShiftPressed)
                 {
                     _camera.RotateCamera(delta);
-                } 
+                }
                 else
                 {
                     //_camera.PanCamera(currentMousePos, _prevMousePos, _viewMatrix * _projectionMatrix, Matrix.Invert(_viewMatrix * _projectionMatrix));

@@ -153,6 +153,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             // Compute new bounds around the pivot
             Bounds scaledBounds = Bounds.ScaleTo(CurrentBounds, scale, worldMousePos);
+            //Bounds scaledBounds = Bounds.Scale(CurrentBounds, scale);
 
             // Correct for bounds centering
             CurrentBounds = scaledBounds;
@@ -176,20 +177,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             direction = Vector3.TransformNormal(direction, rotationMatrix);
 
             _position = _target + direction * (_position - _target).Length();
-        }
-
-        public Vector3 ScreenToWorld(Vector2 screenPosition)
-        {
-            // Assume an orthographic projection for 2D and near plane for picking in 3D
-            if (!IsIn3DView)
-            {
-                return new Vector3(screenPosition.X, screenPosition.Y, 0) * CurrentZoom + _target;
-            }
-            else
-            {
-                // Placeholder: Implement screen-to-world conversion for 3D
-                return Vector3.Zero;
-            }
         }
 
         public RectangleF GetViewBounds(float viewportWidth, float viewportHeight)
@@ -236,8 +223,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         public void UpdateMouseCoords(Vector2 mousePosition)
         {
-            MouseCoords = ScreenToNDC(mousePosition, ScreenWidth, ScreenHeight);
-            //MouseCoords = Unproject(ndxCoords, InverseViewProjectionMatrix);
+            var ndcCoords = ScreenToNDC(mousePosition, ScreenWidth, ScreenHeight);
+            var vector3MouseCoords = Unproject(ndcCoords, InverseViewProjectionMatrix);
+            MouseCoords = new(vector3MouseCoords.X, vector3MouseCoords.Y);
         }
         #endregion
 

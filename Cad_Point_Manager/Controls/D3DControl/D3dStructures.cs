@@ -102,7 +102,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             Rect rect = new(bounds.Left, bounds.Top, bounds.Width, bounds.Height);
             System.Windows.Media.Matrix matrix = new();
-            matrix.ScaleAt(1 / scale, 1 / scale, pivot.X, pivot.Y);
+            matrix.ScaleAt(scale, scale, pivot.X, pivot.Y);
             rect.Transform(matrix);
 
             // Scale these offsets
@@ -116,8 +116,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
             //float newBottom = bounds.Bottom / scale;
             //float newTop = bounds.Top / scale;
 
-            //Bounds newBounds = new(newLeft, newRight, newBottom, newTop);
-            Bounds newBounds = new((float)rect.Left, (float)rect.Right, (float)rect.Bottom, (float)rect.Top);
+            Bounds newBounds = new(newLeft, newRight, newBottom, newTop);
+            //Bounds newBounds = new((float)rect.Left, (float)rect.Right, (float)rect.Top, (float)rect.Bottom);
 
             // Return the updated bounds
             return newBounds;
