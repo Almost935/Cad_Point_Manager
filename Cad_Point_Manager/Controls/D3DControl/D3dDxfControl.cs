@@ -18,6 +18,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
     {
         #region Fields
         private const float _rotationSpeed = 0.005f;
+        
+        private float _width;
+        private float _height;
 
         private Buffer _vertexBuffer;
         private Buffer _transformationBuffer;
@@ -41,7 +44,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         //Camera based fields
         private Camera _camera;
-        private TestCamera _testCamera;
         private bool _isShiftPressed = false;
         private Vector2 _prevMousePos;
 
@@ -57,7 +59,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public Bounds DxfBounds { get; set; } = Bounds.Empty;
         #endregion
 
-        #region Constructors
+        #region Constructors 
         public D3dDxfControl() { }
         #endregion
 
@@ -77,10 +79,13 @@ namespace Cad_Point_Manager.Controls.D3DControl
             //    _camera.UpdateView(); // Update the view matrix to ensure all matrices are current
             //    _camera.SetOrthographic(); // Set the orthographic projection
             //}
-            if (_testCamera is null)
+            if (_camera is null)
             {
+                _width = (float)ActualWidth;
+                _height = (float)ActualHeight;
                 GetDxfBounds();
-                _testCamera = new((float)ActualWidth, (float)ActualHeight, DxfBounds);
+
+                _camera = new(_width, _height, DxfBounds);
             }
             if (!ShadersLoaded) { InitializeShaders(); }
             if (!ConstantBufferInitialized) { InitializeConstantBuffer(); }
@@ -118,24 +123,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             int numLines = 100;
 
-            //_vertices = new Vertex[numLines * 2];
-            //float factor = 2f / numLines;
-            //float redStart = 0;
-            //float blueStart = 1;
-
-            //for (int i = 0; i < numLines; i++)
-            //{
-            //    float x = 0 + factor * i;
-
-            //    Vertex startVertex = new(new Vector3(-x, 2, 0f), new Vector4((redStart + factor * i), 0f, (blueStart - factor * i), 1f));
-            //    Vertex endVertex = new(new Vector3(-x, 0, 0f), new Vector4((redStart + factor * i), 0f, (blueStart - factor * i), 1f));
-            //    _vertices[i * 2] = startVertex;
-            //    _vertices[i * 2 + 1] = endVertex;
-            //    int z = 0;
-            //}
-
             _vertices = new Vertex[numLines * 2 + 10];
-            float factor = (float)ActualWidth / numLines;
+            float factor = _width / numLines;
             float blueStart = 1;
 
             for (int i = 0; i < numLines; i++)
@@ -150,19 +139,19 @@ namespace Cad_Point_Manager.Controls.D3DControl
             }
 
             // Add center lines to check zooming
-            Vertex verticalStart = new(new Vector3(((float)ActualWidth * 0.5f), (float)ActualHeight, 0), new Vector4(0, 1, 0, 1));
-            Vertex verticalEnd = new(new Vector3(((float)ActualWidth * 0.5f), 0, 0), new Vector4(0, 1, 0, 1));
-            Vertex horizontalStart = new(new Vector3((float)ActualWidth, ((float)ActualHeight * 0.5f), 0), new Vector4(0, 1, 0, 1));
-            Vertex horizontalEnd = new(new Vector3(0, ((float)ActualHeight * 0.5f), 0), new Vector4(0, 1, 0, 1));
+            Vertex verticalStart = new(new Vector3((_width * 0.5f), _height, 0), new Vector4(0, 1, 0, 1));
+            Vertex verticalEnd = new(new Vector3((_width * 0.5f), 0, 0), new Vector4(0, 1, 0, 1));
+            Vertex horizontalStart = new(new Vector3(_width, (_height * 0.5f), 0), new Vector4(0, 1, 0, 1));
+            Vertex horizontalEnd = new(new Vector3(0, (_height * 0.5f), 0), new Vector4(0, 1, 0, 1));
             _vertices[numLines * 2] = verticalStart;
             _vertices[numLines * 2 + 1] = verticalEnd;
             _vertices[numLines * 2 + 2] = horizontalStart;
             _vertices[numLines * 2 + 3] = horizontalEnd;
 
             // Add lines at zero
-            Vertex zeroVerticalStart = new(new Vector3(0, (float)ActualHeight, 0), new Vector4(0, 1, 0, 1));
+            Vertex zeroVerticalStart = new(new Vector3(0, _height, 0), new Vector4(0, 1, 0, 1));
             Vertex zeroVerticalEnd = new(new Vector3(0, 0, 0), new Vector4(0, 1, 0, 1));
-            Vertex zeroHorizontalStart = new(new Vector3((float)ActualWidth, 0, 0), new Vector4(0, 1, 0, 1));
+            Vertex zeroHorizontalStart = new(new Vector3(_width, 0, 0), new Vector4(0, 1, 0, 1));
             Vertex zeroHorizontalEnd = new(new Vector3(0, 0, 0), new Vector4(0, 1, 0, 1));
             _vertices[numLines * 2 + 4] = zeroVerticalStart;
             _vertices[numLines * 2 + 5] = zeroVerticalEnd;
@@ -187,7 +176,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         private void UpdateMouseFollowingVertex()
         {
-            Vertex mouseLineEnd = new(new Vector3(_testCamera.MouseCoords.X, _testCamera.MouseCoords.Y, 0), new Vector4(0, 1, 0, 1));
+            Vertex mouseLineEnd = new(new Vector3(_camera.MouseCoords.X, _camera.MouseCoords.Y, 0), new Vector4(0, 1, 0, 1));
             _vertices[_mouseLineIndices.endIndex] = mouseLineEnd;
 
             _vertexBuffer = Buffer.Create(
@@ -262,7 +251,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             // Update transformation matrix
             //var transformation = _camera.ViewMatrix * _camera.ProjectionMatrix;
             //var testTransformation = _camera.ViewMatrix * _camera.ProjectionMatrix;
-            var transformation = _testCamera.ViewMatrix * _testCamera.ProjectionMatrix;
+            var transformation = _camera.ViewMatrix * _camera.ProjectionMatrix;
 
             var transformationBuffer = new TransformationBuffer
             {
@@ -275,7 +264,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         private void GetDxfBounds()
         {
-            DxfBounds = new(0, (float)ActualWidth, 0, (float)ActualHeight);
+            DxfBounds = new(_width, 0, 0, _height);
         }
 
         protected override void OnMouseDown(MouseButtonEventArgs e)
@@ -299,7 +288,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         {
             _pointerCoords = e.GetPosition(this);
             var currentMousePos = new Vector2((float)_pointerCoords.X, (float)_pointerCoords.Y);
-            _testCamera.UpdateMouseCoords(currentMousePos);
+            _camera.UpdateMouseCoords(currentMousePos);
             UpdateMouseFollowingVertex();
 
             _isShiftPressed = Keyboard.IsKeyDown(Key.LeftShift) || Keyboard.IsKeyDown(Key.RightShift);
@@ -309,13 +298,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 var delta = currentMousePos - _prevMousePos;
                 if (_isShiftPressed)
                 {
-                    _camera.RotateCamera(delta);
+                    //_camera.RotateCamera(delta);
                 }
                 else
                 {
-                    //_camera.PanCamera(currentMousePos, _prevMousePos, _viewMatrix * _projectionMatrix, Matrix.Invert(_viewMatrix * _projectionMatrix));
-                    //_testCamera.Pan((float)delta.X, (float)delta.Y);
-                    _testCamera.Pan(currentMousePos, _prevMousePos);
+                    _camera.Pan(currentMousePos, _prevMousePos);
                 }
 
                 D3dIsDirty = true;
@@ -337,8 +324,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 zoomSteps = -1;
             }
 
-            //_camera.ZoomCamera(zoom, new Vector2((float)_pointerCoords.X, (float)_pointerCoords.Y), (float)ActualWidth, (float)ActualHeight);
-            _testCamera.Zoom(zoomSteps, new Vector2((float)_pointerCoords.X, (float)_pointerCoords.Y));
+            _camera.Zoom(zoomSteps, new Vector2((float)_pointerCoords.X, (float)_pointerCoords.Y));
 
             D3dIsDirty = true;
 

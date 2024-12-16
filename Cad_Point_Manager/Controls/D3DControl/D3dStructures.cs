@@ -88,73 +88,73 @@ namespace Cad_Point_Manager.Controls.D3DControl
             return newBounds;
         }
 
+        //public static Bounds ScaleTo(Bounds bounds, float scale, Vector2 pivot)
+        //{
+        //    // Calculate the current width and height of the box
+        //    float width = bounds.Right - bounds.Left;
+        //    float height = bounds.Top - bounds.Bottom;
+
+        //    // Calculate the new width and height after scaling
+        //    float newWidth = width * scale;
+        //    float newHeight = height * scale;
+
+        //    // Calculate the fixed offsets to maintain the point's position
+        //    float offsetX = (pivot.X - bounds.Left) * (1 - scale);
+        //    float offsetY = (pivot.Y - bounds.Bottom) * (1 - scale);
+
+        //    // Adjust the box edges
+        //    float newLeft = bounds.Left + offsetX;
+        //    float newRight = newLeft + newWidth;
+        //    float newBottom = bounds.Bottom + offsetY;
+        //    float newTop = newBottom + newHeight;
+
+        //    return new Bounds(newLeft, newRight, newBottom, newTop);
+        //}
+
         public static Bounds ScaleTo(Bounds bounds, float scale, Vector2 pivot)
         {
-            Debug.WriteLine($"pivot: {pivot}");
+            // Calculate the box center
+            float boxCenterX = (bounds.Left + bounds.Right) / 2f;
+            float boxCenterY = (bounds.Bottom + bounds.Top) / 2f;
 
-            // Compute the distances of the bounds' edges from the pivot point
-            float leftOffset = bounds.Left - pivot.X;
-            float rightOffset = bounds.Right - pivot.X;
-            float bottomOffset = bounds.Bottom - pivot.Y;
-            float topOffset = bounds.Top - pivot.Y;
+            // Calculate scaling offsets
+            float deltaX = (pivot.X - boxCenterX) * (1 - scale);
+            float deltaY = (pivot.Y - boxCenterY) * (1 - scale);
 
-            Debug.WriteLine($"leftOffset: {leftOffset} rightOffset: {rightOffset} bottomOffset: {bottomOffset} topOffset: {topOffset}");
+            // Calculate the new box edges
+            float newLeft = bounds.Left + deltaX;
+            float newRight = bounds.Right + deltaX;
+            float newBottom = bounds.Bottom + deltaY;
+            float newTop = bounds.Top + deltaY;
 
-            Rect rect = new(bounds.Left, bounds.Top, bounds.Width, bounds.Height);
-            System.Windows.Media.Matrix matrix = new();
-            matrix.ScaleAt(scale, scale, pivot.X, pivot.Y);
-            rect.Transform(matrix);
+            // Scale the box dimensions
+            float width = (newRight - newLeft) * (1 / scale);
+            float height = (newTop - newBottom) * (1 / scale);
 
-            // Scale these offsets
-            float newLeft = pivot.X + leftOffset / scale;
-            float newRight = pivot.X + rightOffset / scale;
-            float newTop = pivot.Y + topOffset / scale;
-            float newBottom = pivot.Y + bottomOffset / scale;
+            // Adjust the box edges based on the scaled dimensions
+            newLeft = pivot.X - (pivot.X - newLeft) * (1 / scale);
+            newRight = newLeft + width;
+            newBottom = pivot.Y - (pivot.Y - newBottom) * (1 / scale);
+            newTop = newBottom + height;
 
-            //float newLeft = bounds.Left / scale;
-            //float newRight = bounds.Right / scale;
-            //float newBottom = bounds.Bottom / scale;
-            //float newTop = bounds.Top / scale;
-
-            Bounds newBounds = new(newLeft, newRight, newBottom, newTop);
-            //Bounds newBounds = new((float)rect.Left, (float)rect.Right, (float)rect.Top, (float)rect.Bottom);
-
-            // Return the updated bounds
-            return newBounds;
+            return new Bounds(newLeft, newRight, newBottom, newTop);
         }
 
-        //public static Bounds ScaleTo(Bounds bounds, int zoomStepDelta, float zoomFactor, Vector2 scalePoint, float screenWidth, float screenHeight)
+        //public static Bounds ScaleTo(Bounds bounds, float scale, Vector2 pivot)
         //{
-        //    Debug.WriteLine($"scalePoint: {scalePoint}");
+        //    Debug.WriteLine($"bounds: {bounds.Width} {bounds.Height}");
 
-        //    float scale = (float)Math.Pow(zoomFactor, zoomStepDelta);
+        //    float newLeft = pivot.X + ((bounds.Left - pivot.X)) / scale;
+        //    float newRight = pivot.X + ((bounds.Right - pivot.X)) / scale;
+        //    //float newBottom = pivot.Y + ((bounds.Bottom - pivot.Y)) / scale;
+        //    //float newTop = pivot.Y + (bounds.Top - pivot.Y) / scale;
 
-        //    float addX = screenWidth / 8;
-        //    float addY = screenHeight / 8;
-        //    //float addX = 0;
-        //    //float addY = 0;
+        //    //float newLeft = bounds.Left / scale;
+        //    //float newRight = bounds.Right / scale;
+        //    float newBottom = bounds.Bottom / scale;
+        //    float newTop = bounds.Top / scale;
 
-        //    Bounds newBounds = new Bounds((bounds.Left / scale) + addX, (bounds.Right / scale) + addX, (bounds.Bottom / scale) + addY, (bounds.Top / scale) + addY);
-
-        //    return newBounds;
-
-
-        //    //// Compute the distances of the bounds' edges from the pivot point
-        //    //float leftOffset = bounds.Left - pivot.X;
-        //    //float rightOffset = bounds.Right - pivot.X;
-        //    //float topOffset = bounds.Top - pivot.Y;
-        //    //float bottomOffset = bounds.Bottom - pivot.Y;
-
-        //    //// Scale these offsets
-        //    //float newLeft = pivot.X + leftOffset / scale;
-        //    //float newRight = pivot.X + rightOffset / scale;
-        //    //float newTop = pivot.Y + topOffset / scale;
-        //    //float newBottom = pivot.Y + bottomOffset / scale;
-
-        //    //Bounds  newBounds = new Bounds(newLeft, newRight, newBottom, newTop);
-
-        //    //// Return the updated bounds
-        //    //return newBounds;
+        //    return new Bounds(newLeft, newRight, newBottom, newTop);
         //}
     }
 

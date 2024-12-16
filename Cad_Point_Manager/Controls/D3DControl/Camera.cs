@@ -1,169 +1,220 @@
 ﻿using Cad_Point_Manager.Helpers;
 using SharpDX;
-using SharpDX.Direct3D9;
-using SharpDX.Mathematics.Interop;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Media.Media3D;
 
 namespace Cad_Point_Manager.Controls.D3DControl
 {
     public class Camera
     {
-        private readonly float _rotationSpeed;
+        #region Fields
+        private const float _zoomFactor = 1.25f;
 
-        public Vector3 Position { get; set; }
-        public Vector3 Target { get; set; }
-        public Vector3 Up { get; set; } = Vector3.UnitY;
-        public float ScreenWidth { get; set; }
-        public float ScreenHeight { get; set; }
+        private Vector3 _position;   // Camera position
+        private Vector3 _target;     // Camera target
+        private Vector3 _up;         // Up direction
+        #endregion
 
+        #region Properties
         public Matrix ViewMatrix { get; private set; } = Matrix.Identity;
         public Matrix ProjectionMatrix { get; private set; } = Matrix.Identity;
         public Matrix ViewProjectionMatrix { get; private set; }
         public Matrix InverseViewProjectionMatrix { get; private set; }
-        public float CurrentZoom { get; set; } = 1;
-        public Bounds InitialBounds { get; set; } 
-        public float InitialNearPlane { get; set; } = 0.1f;
-        public float InitialFarPlane { get; set; } = 100.0f;
-        public Bounds Bounds { get; set; }
-        public float NearPlane { get; set; }
-        public float FarPlane { get; set; }
 
-        public Camera(float rotationSpeed, float screenWidth, float screenHeight)
+        public float ScreenWidth { get; set; }
+        public float ScreenHeight { get; set; }
+        public Bounds OverallBounds { get; set; } = Bounds.Empty;
+        public Bounds CurrentBounds { get; set; } = Bounds.Empty;
+
+        public int CurrentZoomStep { get; set; } = 0;
+        public float CurrentZoom => (float)Math.Pow(_zoomFactor, CurrentZoomStep);
+        public Rotation CurrentRotation { get; set; } = Rotation.NoRotation;
+        public bool IsIn3DView { get; set; } = false;
+
+        public Vector2 MouseCoords { get; set; } = Vector2.Zero;
+        #endregion
+
+        #region Constructors
+        public Camera(float screenWidth, float screenHeight, Bounds bounds)
         {
-            _rotationSpeed = rotationSpeed;
             ScreenWidth = screenWidth;
             ScreenHeight = screenHeight;
+            OverallBounds = bounds;
+            CurrentBounds = bounds;
 
-            UpdateBounds(InitialBounds);
+            ResetToDefaults();
         }
+        #endregion
 
-        public void SetOrthographic()
+        #region Methods
+        public void UpdateProjection()
         {
-            ProjectionMatrix = Matrix.OrthoOffCenterLH(Bounds.Left, Bounds.Right, Bounds.Bottom, Bounds.Top, NearPlane, FarPlane);
-            UpdateViewProjection();
-        }
-        public void SetProjection(float fov, float aspectRatio, float nearPlane, float farPlane)
-        {
-            ProjectionMatrix = Matrix.PerspectiveFovLH(fov, aspectRatio, nearPlane, farPlane);
-            UpdateViewProjection();
+            ProjectionMatrix = Matrix.OrthoOffCenterLH(CurrentBounds.Left, CurrentBounds.Right, CurrentBounds.Bottom, CurrentBounds.Top, 0.1f, 1000f);
         }
         public void UpdateView()
         {
-            ViewMatrix = Matrix.LookAtLH(Position, Target, Up);
-            UpdateViewProjection();
+            ViewMatrix = Matrix.LookAtLH(_position, _target, _up);
         }
         private void UpdateViewProjection()
         {
             ViewProjectionMatrix = ViewMatrix * ProjectionMatrix;
             InverseViewProjectionMatrix = Matrix.Invert(ViewProjectionMatrix);
         }
+        public void ResetToDefaults()
+        {
+            _position = new Vector3(ScreenWidth, 0, 100);
+            _target = new Vector3(ScreenWidth, 0, 0);
+            _up = Vector3.UnitY;
+            CurrentZoomStep = 0;
+            CurrentRotation.SetX(0);
+            CurrentRotation.SetY(0);
+            CurrentRotation.SetZ(0);
+            IsIn3DView = false;
 
-        public void PanCamera(Vector2 startPanPos, Vector2 endPanPos, Matrix viewProjectionMatrix, Matrix inverseViewProjectionMatrix)
+            UpdateProjection();
+            UpdateView();
+            UpdateViewProjection();
+        }
+
+
+        public void Toggle3DView(bool enable)
+        {
+            IsIn3DView = enable;
+
+            if (IsIn3DView)
+            {
+                _position = new Vector3(0, 50, 50); // Position camera for a 3D view
+                _target = new Vector3(0, 0, 0);
+                _up = Vector3.UnitY;
+            }
+            else
+            {
+                ResetToDefaults();
+            }
+        }
+
+        public void Pan(Vector2 startPanPos, Vector2 endPanPos)
         {
             // Convert screen positions to normalized device coordinates (NDC)
             Vector2 ndcCurrent = ScreenToNDC(startPanPos, ScreenWidth, ScreenHeight);
             Vector2 ndcLast = ScreenToNDC(endPanPos, ScreenWidth, ScreenHeight);
 
             // Unproject the NDC points into world space
-            Vector3 worldCurrent = Unproject(ndcCurrent, inverseViewProjectionMatrix);
-            Vector3 worldLast = Unproject(ndcLast, inverseViewProjectionMatrix);
+            Vector3 worldCurrent = Unproject(ndcCurrent, InverseViewProjectionMatrix);
+            Vector3 worldLast = Unproject(ndcLast, InverseViewProjectionMatrix);
 
             // Calculate the world space delta
-            Vector3 worldDelta = (worldCurrent - worldLast) / CurrentZoom;
+            Vector3 worldDelta = (worldCurrent - worldLast);
 
-            //// Apply the delta to both the camera position and target
-            //Position = new(Position.X + worldDelta.X, Position.Y - worldDelta.Y, Position.Z + worldDelta.Z);
-            //Target = new(Target.X + worldDelta.X, Target.Y - worldDelta.Y, Target.Z + worldDelta.Z);
+            CurrentBounds = Bounds.Translate(CurrentBounds, worldDelta.X, -worldDelta.Y);
 
-            Bounds = Bounds.Translate(Bounds, worldDelta.X, -worldDelta.Y);
-            SetOrthographic();
-
-            //UpdateView();
-        }
-
-        public void RotateCamera(Vector2 delta)
-        {
-            var targetDirection = Target - Position;
-
-            // Horizontal rotation (around the Y-axis)
-            var horizontalRotation = Matrix.RotationY(delta.X * _rotationSpeed);
-            targetDirection = Vector3.TransformCoordinate(targetDirection, horizontalRotation);
-
-            // Vertical rotation (around the right vector)
-            var right = Vector3.Cross(Up, targetDirection);
-            var verticalRotation = Matrix.RotationAxis(right, delta.Y * _rotationSpeed);
-            targetDirection = Vector3.TransformCoordinate(targetDirection, verticalRotation);
-
-            Target = Position + targetDirection;
-
-            UpdateView();
+            UpdateProjection();
             UpdateViewProjection();
         }
 
-        //public void ZoomCamera(float zoomAmount, Vector2 mousePosition, Matrix viewProjectionMatrix, Matrix inverseViewProjectionMatrix)
-        //{
-        //    // Convert the mouse position to NDC
-        //    Vector2 ndcMouse = MathHelpers.ScreenToNDC(mousePosition, ScreenWidth, ScreenHeight);
 
-        //    // Unproject the mouse NDC position into world space
-        //    Vector3 worldMouse = Unproject(ndcMouse, inverseViewProjectionMatrix);
-
-        //    // Calculate the zoom direction (from the camera position to the mouse world point)
-        //    Vector3 zoomDirection = Vector3.Normalize(worldMouse - Position);
-
-        //    // Adjust the camera position and target based on the scroll delta
-        //    Position += zoomDirection * zoomAmount;
-
-        //    // Optionally adjust the camera target to keep the scene centered
-        //    // This depends on your use case; remove the line below if not desired
-        //    Target += zoomDirection * zoomAmount;
-        //}
-        public void ZoomCamera(float zoomAmount, Vector2 mousePosition, float screenWidth, float screenHeight)
+        public void Pan(Vector2 distance)
         {
-            CurrentZoom *= zoomAmount;
+            CurrentBounds = Bounds.Translate(CurrentBounds, distance.X, -distance.Y);
 
-            var mouseNDC = ScreenToNDC(mousePosition, screenWidth, screenHeight);
-            var worldMouse = Unproject(mouseNDC, InverseViewProjectionMatrix);
-            
-            float width = (Bounds.Right - Bounds.Left) / zoomAmount;
-            float height = (Bounds.Top - Bounds.Bottom) / zoomAmount;
-
-            float left = worldMouse.X - (mouseNDC.X + 1) / 2.0f * width;
-            float right = left + width;
-            float bottom = worldMouse.Y - (mouseNDC.Y + 1) / 2.0f * height;
-            float top = bottom + height;
-
-            UpdateBounds(left, right, bottom, top);
-            
-            SetOrthographic();
+            UpdateProjection();
+            UpdateViewProjection();
         }
 
-        public void UpdateBounds(float left, float right, float bottom, float top)
+        public void Zoom(int zoomStepDelta, Vector2 mousePosition)
         {
-            Bounds = new(left, right, bottom, top);
-            
-            NearPlane = InitialNearPlane;
-            FarPlane = InitialFarPlane;
+            // Update zoom step and calculate the scale
+            CurrentZoomStep += zoomStepDelta;
+            float scale = (float)Math.Pow(_zoomFactor, zoomStepDelta);
+
+            // Convert mouse position to NDC space
+            Vector2 initialNDC = Camera.ScreenToNDC(mousePosition, (float)ScreenWidth, (float)ScreenHeight);
+
+            // Unproject NDC to world space for the zoom pivot point
+            Vector3 initialWorldPivot3D = Camera.Unproject(initialNDC, InverseViewProjectionMatrix);
+            Vector2 initialWorldMousePos = new(initialWorldPivot3D.X, initialWorldPivot3D.Y);
+
+            // Compute new bounds around the pivot
+            //Bounds scaledBounds = Bounds.ScaleTo(CurrentBounds, scale, worldMousePos);
+            Bounds scaledBounds = Bounds.Scale(CurrentBounds, scale);
+
+            // Correct for bounds centering
+            CurrentBounds = scaledBounds;
+
+            // Update matrices
+            UpdateProjection();
+            UpdateViewProjection();
+
+            Vector2 finalNDC = Camera.ScreenToNDC(mousePosition, (float)ScreenWidth, (float)ScreenHeight);
+
+            // Unproject NDC to world space for the zoom pivot point
+            Vector3 finalWorldPivot3D = Camera.Unproject(finalNDC, InverseViewProjectionMatrix);
+            Vector2 finalWorldMousePos = new(finalWorldPivot3D.X, finalWorldPivot3D.Y);
+
+            // Calculate the difference in world space
+            Vector2 worldDelta = finalWorldMousePos - initialWorldMousePos;
+            Pan(worldDelta);
         }
-        public void UpdateBounds(Bounds bounds)
+
+
+        public void Rotate(float deltaX, float deltaY, bool shiftHeld)
         {
-            Bounds = bounds;
-            
-            NearPlane = InitialNearPlane;
-            FarPlane = InitialFarPlane;
+            if (!IsIn3DView || !shiftHeld) return;
+
+            CurrentRotation.SetX(deltaY * 0.01f);
+            CurrentRotation.SetX(deltaX * 0.01f);
+
+            // Apply rotations around the target
+            Matrix rotationMatrix = Matrix.RotationYawPitchRoll(CurrentRotation.Y, CurrentRotation.X, 0);
+            Vector3 direction = Vector3.Normalize(_position - _target);
+            direction = Vector3.TransformNormal(direction, rotationMatrix);
+
+            _position = _target + direction * (_position - _target).Length();
         }
+
+        public void FitToScreen2D(Bounds boundingBox, float viewportWidth, float viewportHeight)
+        {
+            //if (IsIn3DView)
+            //{
+            //    throw new InvalidOperationException("FitToScreen is only supported in 2D mode.");
+            //}
+
+            //// Calculate the bounding box center and size
+            //Vector2 boxCenter = new(
+            //    boundingBox.Left + boundingBox.Width / 2,
+            //    boundingBox.Top + boundingBox.Height / 2
+            //);
+
+            //float boxWidth = boundingBox.Width;
+            //float boxHeight = boundingBox.Height;
+
+            //// Adjust zoom to fit the bounding box
+            //float zoomX = viewportWidth / boxWidth;
+            //float zoomY = viewportHeight / boxHeight;
+
+            //CurrentZoom = Math.Min(zoomX, zoomY); // Fit both dimensions
+
+            //// Update position and target to center the view
+            //_target = new Vector3(boxCenter.X, boxCenter.Y, 0);
+            //_position = new Vector3(boxCenter.X, boxCenter.Y, 100 / CurrentZoom);
+        }
+
+        public void UpdateMouseCoords(Vector2 mousePosition)
+        {
+            var ndcCoords = ScreenToNDC(mousePosition, ScreenWidth, ScreenHeight);
+            var vector3MouseCoords = Unproject(ndcCoords, InverseViewProjectionMatrix);
+            MouseCoords = new(vector3MouseCoords.X, vector3MouseCoords.Y);
+        }
+        #endregion
 
 
         #region Static Methods
         public static Vector2 ScreenToNDC(Vector2 screenPos, float screenWidth, float screenHeight)
-        { 
+        {
             return new Vector2(
                 (screenPos.X / screenWidth) * 2.0f - 1.0f, // Map x from [0, screenWidth] to [-1, 1]
                 1.0f - (screenPos.Y / screenHeight) * 2.0f  // Map y from [0, screenHeight] to [1, -1]
