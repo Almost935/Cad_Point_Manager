@@ -189,7 +189,6 @@ namespace Cad_Point_Manager.Controls
 
         private void CadManager_PropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
-            Debug.WriteLine(e.PropertyName);
             if (e.PropertyName == nameof(CadManager.DxfDirty) && CadManager.DxfDirty) { _deviceContextIsDirty = true; _offscreenBitmapIsDirty = true; }
         }
 

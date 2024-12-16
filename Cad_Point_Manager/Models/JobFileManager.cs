@@ -14,6 +14,7 @@ namespace Cad_Point_Manager.Models
         private string _dxfFilePath;
         private DxfDocument _dxfDoc;
         private CadManager _cadManager = new();
+        private CadManager3D _cadManager3D = new();
         private Rect _extents = new();
         #endregion
 
@@ -63,6 +64,15 @@ namespace Cad_Point_Manager.Models
                 OnPropertyChanged();
             }
         }
+        public CadManager3D CadManager3D
+        {
+            get { return _cadManager3D; }
+            set
+            {
+                _cadManager3D = value;
+                OnPropertyChanged();
+            }
+        }
         public Rect Extents
         {
             get { return _extents; }
@@ -85,6 +95,7 @@ namespace Cad_Point_Manager.Models
         public void NewJobFile()
         {
             CadManager.ClearDxfDocument();
+            CadManager3D.ClearDxf();
 
             JobName = string.Empty;
             JobFilePath = string.Empty;
@@ -189,6 +200,7 @@ namespace Cad_Point_Manager.Models
             JobFilePath = jobFileData.JobFilePath;
             DxfFilePath = jobFileData.DxfFilePath;
             Extents = jobFileData.Extents;
+
             CadManager.LoadDxfDocument(jobFileData.CadManagerData);
 
             return true;
@@ -198,6 +210,7 @@ namespace Cad_Point_Manager.Models
             if (dxfDoc is not null)
             {
                 CadManager.LoadDxfDocument(dxfDoc);
+                CadManager3D.LoadDxf(dxfDoc);
             }
         }
         #endregion

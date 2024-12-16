@@ -1,4 +1,5 @@
 ﻿using Cad_Point_Manager.Helpers;
+using Cad_Point_Manager.Models;
 using SharpDX;
 using SharpDX.D3DCompiler;
 using SharpDX.Direct3D11;
@@ -57,6 +58,21 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public bool ShadersLoaded { get; set; } = false;
         public bool ConstantBufferInitialized { get; set; } = false;
         public Bounds DxfBounds { get; set; } = Bounds.Empty;
+        #endregion
+
+        #region Dependency Properties
+        public CadManager3D CadManager3D
+        {
+            get { return (CadManager3D)GetValue(CadManager3DProperty); }
+            set { SetValue(CadManager3DProperty, value); }
+        }
+
+        public static readonly DependencyProperty CadManager3DProperty =
+        DependencyProperty.Register(
+            nameof(CadManager3D),
+            typeof(CadManager3D),
+            typeof(D3dDxfControl),
+            new PropertyMetadata(null));
         #endregion
 
         #region Constructors 

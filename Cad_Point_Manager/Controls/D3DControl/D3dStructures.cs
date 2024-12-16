@@ -16,7 +16,7 @@ using Matrix = SharpDX.Matrix;
 namespace Cad_Point_Manager.Controls.D3DControl
 {
     [StructLayout(LayoutKind.Sequential)]
-    struct Vertex
+    public struct Vertex
     {
         public Vector3 Position;
         public Vector4 Color; 
