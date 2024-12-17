@@ -1,4 +1,5 @@
-﻿using Cad_Point_Manager.Models.DrawingObjects3D;
+﻿using Cad_Point_Manager.Helpers;
+using Cad_Point_Manager.Models.DrawingObjects3D;
 using netDxf;
 using netDxf.Entities;
 using System;
@@ -9,6 +10,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
 
 namespace Cad_Point_Manager.Models
 {
@@ -17,6 +19,7 @@ namespace Cad_Point_Manager.Models
         public DxfDocument DxfDocument { get; set; }
 
         public List<DrawingLine3D> Lines = [];
+        public Rect Extents = new();
 
         public event PropertyChangedEventHandler PropertyChanged;
 
@@ -28,6 +31,8 @@ namespace Cad_Point_Manager.Models
         public void LoadDxf(DxfDocument dxfDocument)
         {
             DxfDocument = dxfDocument;
+            Extents = DxfHelpers.GetExtentsFromHeader(DxfDocument);
+
             foreach (var line in DxfDocument.Entities.Lines)
             {
                 if (line is not null)
