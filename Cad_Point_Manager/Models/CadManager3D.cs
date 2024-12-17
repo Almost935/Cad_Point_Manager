@@ -1,4 +1,6 @@
-﻿using Cad_Point_Manager.Helpers;
+﻿using Cad_Point_Manager.Controls;
+using Cad_Point_Manager.Helpers;
+using Cad_Point_Manager.Models.DrawingObjects;
 using Cad_Point_Manager.Models.DrawingObjects3D;
 using netDxf;
 using netDxf.Entities;
@@ -16,9 +18,20 @@ namespace Cad_Point_Manager.Models
 {
     public class CadManager3D : INotifyPropertyChanged
     {
-        public DxfDocument DxfDocument { get; set; }
+        private bool _dxfDirty = true;
 
-        public List<DrawingLine3D> Lines = [];
+        public bool DxfDirty
+        {
+            get => _dxfDirty;
+            set
+            {
+                _dxfDirty = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public DxfDocument DxfDocument { get; set; }
+        public LayerManager LayerManager { get; set; } = new();
         public Rect Extents = new();
 
         public event PropertyChangedEventHandler PropertyChanged;
@@ -28,24 +41,26 @@ namespace Cad_Point_Manager.Models
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
+
         public void LoadDxf(DxfDocument dxfDocument)
         {
             DxfDocument = dxfDocument;
             Extents = DxfHelpers.GetExtentsFromHeader(DxfDocument);
 
-            foreach (var line in DxfDocument.Entities.Lines)
+            foreach (var e in DxfDocument.Entities.All)
             {
-                if (line is not null)
+                if (e is Line line)
                 {
-                    Lines.Add(new DrawingLine3D(line));
+                    LayerManager.AddObjectToLayer(line.Layer.Name, new DrawingLine3D(line));
                 }
             }
+            DxfDirty = true;
         }
 
         public void ClearDxf()
         {
             DxfDocument = null;
-            Lines.Clear();
+            LayerManager.ClearAllLayers();
         }
     }
 }

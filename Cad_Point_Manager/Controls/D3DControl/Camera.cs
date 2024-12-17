@@ -51,6 +51,12 @@ namespace Cad_Point_Manager.Controls.D3DControl
         #endregion
 
         #region Methods
+        public void UpdateBounds(Bounds bounds)
+        {
+            OverallBounds = bounds;
+            CurrentBounds = bounds;
+            ResetToDefaults();
+        }
         public void UpdateProjection()
         {
             ProjectionMatrix = Matrix.OrthoOffCenterLH(CurrentBounds.Left, CurrentBounds.Right, CurrentBounds.Bottom, CurrentBounds.Top, 0.1f, 1000f);

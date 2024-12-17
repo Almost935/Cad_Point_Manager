@@ -13,7 +13,7 @@ using Vector4 = SharpDX.Vector4;
 
 namespace Cad_Point_Manager.Models.DrawingObjects3D
 {
-    public class DrawingLine3D : DrawingObject3D
+    public class DrawingArc3D : DrawingObject3D
     {
         public Vector3 Start { get; set; }
         public Vector3 End { get; set; }
@@ -23,9 +23,9 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         public Vertex StartVertex { get; set; }
         public Vertex EndVertex { get; set; }
 
-        private DrawingLine3D() { Type = DrawingObject3dType.DrawingLine3D; }
+        private DrawingArc3D() { Type = DrawingObject3dType.DrawingLine3D; }
 
-        public DrawingLine3D(Line line)
+        public DrawingArc3D(Line line)
         {
             Type = DrawingObject3dType.DrawingLine3D;
 
