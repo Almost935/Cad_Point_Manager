@@ -13,7 +13,7 @@ using Vector4 = SharpDX.Vector4;
 
 namespace Cad_Point_Manager.Models.DrawingObjects3D
 {
-    public class DrawingLine3D : DrawingObject3D
+    public class DrawingSegment3D : DrawingObject3D
     {
         public Vector4 Color { get; set; }
         public int StartVertexIndex { get; set; }
@@ -21,9 +21,9 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         public Vertex StartVertex { get; set; }
         public Vertex EndVertex { get; set; }
 
-        private DrawingLine3D() { Type = DrawingObject3dType.DrawingLine3D; }
+        private DrawingSegment3D() { Type = DrawingObject3dType.DrawingLine3D; }
 
-        public DrawingLine3D(Line line)
+        public DrawingSegment3D(Line line)
         {
             Type = DrawingObject3dType.DrawingLine3D;
 

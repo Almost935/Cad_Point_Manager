@@ -53,6 +53,10 @@ namespace Cad_Point_Manager.Models
                 {
                     LayerManager.AddObjectToLayer(line.Layer.Name, new DrawingLine3D(line));
                 }
+                if (e is Arc arc)
+                {
+                    LayerManager.AddObjectToLayer(arc.Layer.Name, new DrawingArc3D(arc));
+                }
             }
             DxfDirty = true;
         }
