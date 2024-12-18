@@ -8,6 +8,8 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
 {
     public enum DrawingObject3dType
     {
-        DrawingLine3D
+        DrawingLine3D,
+        DrawingArc3D,
+        DrawingPolyline3D
     }
 }

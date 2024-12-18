@@ -169,19 +169,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             D3dIsDirty = true;
         }
 
-        //private void UpdateMouseFollowingVertex()
-        //{
-        //    Vertex mouseLineEnd = new(new Vector3(_camera.MouseCoords.X, _camera.MouseCoords.Y, 0), new Vector4(0, 1, 0, 1));
-        //    _vertices[_mouseLineIndices.endIndex] = mouseLineEnd;
-
-        //    _vertexBuffer = Buffer.Create(
-        //       _d3dResCache.Device,
-        //       BindFlags.VertexBuffer,
-        //       _vertices
-        //   );
-
-        //    D3dIsDirty = true;
-        //}
 
         private void InitializeShaders()
         {
@@ -249,7 +236,13 @@ namespace Cad_Point_Manager.Controls.D3DControl
             }
             else
             {
-                DxfBounds = new((float)CadManager3D.Extents.Right, (float)CadManager3D.Extents.Left, (float)CadManager3D.Extents.Top, (float)CadManager3D.Extents.Bottom);
+                float centerX = (float)(CadManager3D.Extents.Left + CadManager3D.Extents.Right) * 0.5f;
+                float centerY = (float)(CadManager3D.Extents.Bottom + CadManager3D.Extents.Top) * 0.5f;
+
+                DxfBounds = new(centerX + _width / 2, centerX - _width / 2, centerY - _height / 2, centerY + _height / 2);
+                //DxfBounds = new((float)CadManager3D.Extents.Right, (float)CadManager3D.Extents.Left, (float)CadManager3D.Extents.Top, (float)CadManager3D.Extents.Bottom);
+
+                //DxfBounds = new(-1000 + _width, -1000, 5000, 5000 + _height);
             }
         }
 
