@@ -14,13 +14,10 @@ using Vector4 = SharpDX.Vector4;
 
 namespace Cad_Point_Manager.Models.DrawingObjects3D
 {
-    public class DrawingArc3D : DrawingObject3D
+    public class DrawingArc3D : DrawingSegment3D
     {
-        public Vertex StartVertex { get; set; }
-        public Vertex EndVertex { get; set; }
         public List<Vertex> IntermediateVertices { get; set; } = [];
         public bool IsLargeArc { get; set; }
-        public Vector4 Color { get; set; }
         public float Radius { get; set; }
         public float StartAngle { get; set; }
         public float EndAngle { get; set; }
@@ -31,20 +28,27 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         public DrawingArc3D(Arc arc)
         {
             Type = DrawingObject3dType.DrawingArc3D;
+            
+            LayerColor = new(arc.Layer.Color.R / 255, arc.Layer.Color.G / 255, arc.Layer.Color.B / 255, 1);
+            if (arc.Color == AciColor.ByLayer) { Color = LayerColor; }
+            else { Color = new(arc.Color.R / 255, arc.Color.G / 255, arc.Color.B / 255, 1); }
 
-            var verteces = arc.ToPolyline2D(50).Vertexes;
+            if (LayerColor == new Vector4(1, 1, 1, 1)) { Color = new(0, 0, 0, 1); }
+            if (Color == new Vector4(1, 1, 1, 1)) { Color = new(0, 0, 0, 1); }
 
-            for (int i = 0; i < verteces.Count;  i++)
+            var verteces = arc.ToPolyline2D(500).Vertexes;
+
+            for (int i = 0; i < verteces.Count; i++)
             {
                 if (i == verteces.Count - 1) { break; }
 
                 Vertex s = new(
                     new Vector3((float)verteces[i].Position.X, (float)verteces[i].Position.Y, 0),
-                    new(0, 0, 0, 1)
+                    Color
                     );
                 Vertex e = new(
                     new Vector3((float)verteces[i + 1].Position.X, (float)verteces[i + 1].Position.Y, 0),
-                    new(0, 0, 0, 1)
+                    Color
                     );
 
                 IntermediateVertices.Add(s);

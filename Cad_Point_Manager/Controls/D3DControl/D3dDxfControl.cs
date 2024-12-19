@@ -152,14 +152,14 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     }
                     if (drawingObject3D is DrawingPolyline3D polyline)
                     {
-                        foreach (var drawingObj in polyline.DrawingObject3Ds)
+                        foreach (var drawingObj in polyline.DrawingSegment3Ds)
                         {
-                            if (drawingObject3D is DrawingLine3D line2)
+                            if (drawingObj is DrawingLine3D line2)
                             {
                                 vertices.Add(line2.StartVertex);
                                 vertices.Add(line2.EndVertex);
                             }
-                            if (drawingObject3D is DrawingArc3D arc2)
+                            if (drawingObj is DrawingArc3D arc2)
                             {
                                 foreach (var vertex in arc2.IntermediateVertices)
                                 {
@@ -181,7 +181,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             vertices.Add(horizontalStart);
             vertices.Add(horizontalEnd);
 
-            _vertices = vertices.ToArray();
+            _vertices = [.. vertices];
 
             _vertexBuffer = Buffer.Create(
                 _d3dResCache.Device,

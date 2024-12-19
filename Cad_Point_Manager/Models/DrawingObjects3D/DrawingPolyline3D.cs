@@ -15,12 +15,11 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
 {
     public class DrawingPolyline3D : DrawingObject3D
     {
-        public Vector4 Color { get; set; }
         public int StartVertexIndex { get; set; }
         public int EndVertexIndex { get; set; }
         public Vertex StartVertex { get; set; }
         public Vertex EndVertex { get; set; }
-        public List<DrawingObject3D> DrawingObject3Ds { get; set; } = [];
+        public List<DrawingSegment3D> DrawingSegment3Ds { get; set; } = [];
 
         private DrawingPolyline3D() { Type = DrawingObject3dType.DrawingLine3D; }
 
@@ -40,11 +39,11 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             {
                 if (entity is Line line)
                 {
-                    DrawingObject3Ds.Add(new DrawingLine3D(line));
+                    DrawingSegment3Ds.Add(new DrawingLine3D(line));
                 }
                 else if (entity is Arc arc)
                 {
-                    DrawingObject3Ds.Add(new DrawingArc3D(arc));
+                    DrawingSegment3Ds.Add(new DrawingArc3D(arc));
                 }
             }
         }
@@ -65,11 +64,11 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             {
                 if (entity is Line line)
                 {
-                    DrawingObject3Ds.Add(new DrawingLine3D(line));
+                    DrawingSegment3Ds.Add(new DrawingLine3D(line));
                 }
                 else if (entity is Arc arc)
                 {
-                    DrawingObject3Ds.Add(new DrawingArc3D(arc));
+                    DrawingSegment3Ds.Add(new DrawingArc3D(arc));
                 }
             }
         }
