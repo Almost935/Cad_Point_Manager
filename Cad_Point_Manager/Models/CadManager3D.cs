@@ -57,6 +57,14 @@ namespace Cad_Point_Manager.Models
                 {
                     LayerManager.AddObjectToLayer(arc.Layer.Name, new DrawingArc3D(arc));
                 }
+                if (e is Polyline2D polyline2d)
+                {
+                    LayerManager.AddObjectToLayer(polyline2d.Layer.Name, new DrawingPolyline3D(polyline2d));
+                }
+                if (e is Polyline3D polyline3d)
+                {
+                    LayerManager.AddObjectToLayer(polyline3d.Layer.Name, new DrawingPolyline3D(polyline3d));
+                }
             }
             DxfDirty = true;
         }

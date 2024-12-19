@@ -143,6 +143,31 @@ namespace Cad_Point_Manager.Controls.D3DControl
                         vertices.Add(line.StartVertex);
                         vertices.Add(line.EndVertex);
                     }
+                    if (drawingObject3D is DrawingArc3D arc)
+                    {
+                        foreach (var vertex in arc.IntermediateVertices)
+                        {
+                            vertices.Add(vertex);
+                        }
+                    }
+                    if (drawingObject3D is DrawingPolyline3D polyline)
+                    {
+                        foreach (var drawingObj in polyline.DrawingObject3Ds)
+                        {
+                            if (drawingObject3D is DrawingLine3D line2)
+                            {
+                                vertices.Add(line2.StartVertex);
+                                vertices.Add(line2.EndVertex);
+                            }
+                            if (drawingObject3D is DrawingArc3D arc2)
+                            {
+                                foreach (var vertex in arc2.IntermediateVertices)
+                                {
+                                    vertices.Add(vertex);
+                                }
+                            }
+                        }
+                    }
                 }
             }
 

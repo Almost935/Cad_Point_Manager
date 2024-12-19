@@ -20,7 +20,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         public int EndVertexIndex { get; set; }
         public Vertex StartVertex { get; set; }
         public Vertex EndVertex { get; set; }
-        public List<Draw>
+        public List<DrawingObject3D> DrawingObject3Ds { get; set; } = [];
 
         private DrawingPolyline3D() { Type = DrawingObject3dType.DrawingLine3D; }
 
@@ -35,7 +35,43 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             StartVertex = new(new Vector3((float)start.Position.X, (float)start.Position.Y, 0), Color);
             EndVertex = new(new Vector3((float)end.Position.X, (float)end.Position.Y, 0), Color);
 
+            var entities = polyline2D.Explode();
+            foreach (var entity in entities)
+            {
+                if (entity is Line line)
+                {
+                    DrawingObject3Ds.Add(new DrawingLine3D(line));
+                }
+                else if (entity is Arc arc)
+                {
+                    DrawingObject3Ds.Add(new DrawingArc3D(arc));
+                }
+            }
+        }
 
+        public DrawingPolyline3D(Polyline3D polyline3D)
+        {
+            Type = DrawingObject3dType.DrawingPolyline3D;
+
+            Color = new(0, 0, 0, 1);
+
+            var start = polyline3D.Vertexes.First();
+            var end = polyline3D.Vertexes.Last();
+            StartVertex = new(new Vector3((float)start.X, (float)start.Y, 0), Color);
+            EndVertex = new(new Vector3((float)end.X, (float)end.Y, 0), Color);
+
+            var entities = polyline3D.Explode();
+            foreach (var entity in entities)
+            {
+                if (entity is Line line)
+                {
+                    DrawingObject3Ds.Add(new DrawingLine3D(line));
+                }
+                else if (entity is Arc arc)
+                {
+                    DrawingObject3Ds.Add(new DrawingArc3D(arc));
+                }
+            }
         }
     }
 }

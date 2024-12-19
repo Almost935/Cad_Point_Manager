@@ -5,7 +5,7 @@ using System.Windows;
 
 namespace Cad_Point_Manager.Models.DrawingObjects
 {
-    public class DrawingPolyline3D : DrawingPolyline
+    public class DrawingPolyline3DOld : DrawingPolyline
     {
         #region Fields
         private Polyline3D _dxfPolyline3D;
@@ -24,7 +24,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         #endregion
 
         #region Constructor
-        public DrawingPolyline3D(Polyline3D dxfPolyline3D, ObjectLayer layer, DrawingBlock drawingBlock = null)
+        public DrawingPolyline3DOld(Polyline3D dxfPolyline3D, ObjectLayer layer, DrawingBlock drawingBlock = null)
         {
             DxfPolyline3D = dxfPolyline3D;
             Entity = dxfPolyline3D;
@@ -33,7 +33,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             LoadFromDxfEntity(dxfPolyline3D);
         }
 
-        public DrawingPolyline3D(DrawingPolyline3DData polyline3DData, ObjectLayer layer, DrawingBlock drawingBlock = null)
+        public DrawingPolyline3DOld(DrawingPolyline3DData polyline3DData, ObjectLayer layer, DrawingBlock drawingBlock = null)
         {
             Layer = layer;
             Block = drawingBlock;
@@ -129,7 +129,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
     public class DrawingPolyline3DData : DrawingPolylineData
     {
         public DrawingPolyline3DData() { }
-        public DrawingPolyline3DData(DrawingPolyline3D drawingPolyline, DrawingBlockData drawingBlockData = null)
+        public DrawingPolyline3DData(DrawingPolyline3DOld drawingPolyline, DrawingBlockData drawingBlockData = null)
         {
             StartPoint = new(drawingPolyline.StartPoint.X, drawingPolyline.StartPoint.Y);
             EndPoint = new(drawingPolyline.EndPoint.X, drawingPolyline.EndPoint.Y);
@@ -147,7 +147,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         public override DrawingObject CreateDrawingObject(ObjectLayer layer, DrawingBlock block = null)
         {
             ArgumentNullException.ThrowIfNull(layer);
-            DrawingPolyline3D drawingpline = new(this, layer, block);
+            DrawingPolyline3DOld drawingpline = new(this, layer, block);
 
             return drawingpline;
         }
