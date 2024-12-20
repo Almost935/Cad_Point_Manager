@@ -23,7 +23,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             Type = DrawingObject3dType.DrawingLine3D;
             
             LayerColor = new(line.Layer.Color.R / 255, line.Layer.Color.G / 255, line.Layer.Color.B / 255, 1);
-            if (line.Color == AciColor.ByLayer) { Color = LayerColor; }
+            if (line.Color.IsByLayer) { Color = LayerColor; }
             else { Color = new(line.Color.R / 255, line.Color.G / 255, line.Color.B / 255, 1); }
 
             if (LayerColor == new Vector4(1, 1, 1, 1)) { Color = new(0, 0, 0, 1); }

@@ -73,6 +73,7 @@ namespace Cad_Point_Manager.Models
         {
             DxfDocument = null;
             LayerManager.ClearAllLayers();
+            DxfDirty = true;
         }
     }
 }

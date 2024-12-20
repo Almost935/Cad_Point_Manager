@@ -185,10 +185,10 @@ namespace Cad_Point_Manager.Controls.D3DControl
             }
 
             // Add center lines to check zooming
-            Vertex verticalStart = new(new Vector3((_width * 0.5f), _height, 0), new Vector4(0, 1, 0, 1));
-            Vertex verticalEnd = new(new Vector3((_width * 0.5f), 0, 0), new Vector4(0, 1, 0, 1));
-            Vertex horizontalStart = new(new Vector3(_width, (_height * 0.5f), 0), new Vector4(0, 1, 0, 1));
-            Vertex horizontalEnd = new(new Vector3(0, (_height * 0.5f), 0), new Vector4(0, 1, 0, 1));
+            Vertex verticalStart = new(new Vector3((_width), _height, 0), new Vector4(0, 1, 0, 1));
+            Vertex verticalEnd = new(new Vector3((_width), 0, 0), new Vector4(0, 1, 0, 1));
+            Vertex horizontalStart = new(new Vector3(_width, (_height), 0), new Vector4(0, 1, 0, 1));
+            Vertex horizontalEnd = new(new Vector3(0, (_height), 0), new Vector4(0, 1, 0, 1));
             vertices.Add(verticalStart);
             vertices.Add(verticalEnd);
             vertices.Add(horizontalStart);
@@ -277,8 +277,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 float centerX = (float)(CadManager3D.Extents.Left + CadManager3D.Extents.Right) * 0.5f;
                 float centerY = (float)(CadManager3D.Extents.Bottom + CadManager3D.Extents.Top) * 0.5f;
 
-                DxfBounds = new(centerX + _width / 2, centerX - _width / 2, centerY - _height / 2, centerY + _height / 2);
+                //DxfBounds = new(centerX - _width / 2, centerX + _width / 2, centerY - _height / 2, centerY + _height / 2);
                 //DxfBounds = new((float)CadManager3D.Extents.Right, (float)CadManager3D.Extents.Left, (float)CadManager3D.Extents.Top, (float)CadManager3D.Extents.Bottom);
+
+                DxfBounds = new(_width, 0, 0, _height);
+                DxfBounds = new(centerX, centerX - _width, centerY - _height / 2, centerY + _height / 2);
 
                 //DxfBounds = new(-1000 + _width, -1000, 5000, 5000 + _height);
             }
@@ -317,8 +320,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             if (!_isPanning)
             {
-                //Task.Run(() => UpdateDxfCoords(currentMousePos));
-                UpdateDxfCoords(currentMousePos);
+                Task.Run(() => UpdateDxfCoords(currentMousePos));
+                //UpdateDxfCoords(currentMousePos);
             }
 
             _isShiftPressed = Keyboard.IsKeyDown(Key.LeftShift) || Keyboard.IsKeyDown(Key.RightShift);

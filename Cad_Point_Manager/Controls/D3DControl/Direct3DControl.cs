@@ -153,7 +153,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 FillMode = FillMode.Solid,
                 CullMode = CullMode.Back,
                 IsFrontCounterClockwise = false,
-                IsMultisampleEnabled = false // Enable MSAA
+                IsMultisampleEnabled = false
             };
 
             var rasterizerState = new RasterizerState(_device, rasterizerStateDescription);
@@ -161,7 +161,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             _deviceContext = _device.ImmediateContext;
             _d3dResCache.DeviceContext = _deviceContext;
-
 
             _d3DSurface = new Dx11ImageSource();
             _d3DSurface.IsFrontBufferAvailableChanged += OnIsFrontBufferAvailableChanged;
