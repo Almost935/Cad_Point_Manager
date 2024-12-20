@@ -132,10 +132,6 @@
                     CornerRadius="20"
                     ClipToBounds="True">
 
-                <!--<controls:Direct2DDxfControl x:Name="dxfControl"
-                                             RenderOptions.BitmapScalingMode="HighQuality"
-                                             Cursor="Cross"
-                                             CadManager="{Binding JobFileManager.CadManager}"/>-->
                 <d3D:D3dDxfControl x:Name="d3dDxfControl" 
                                    Cursor="Cross"
                                    CadManager3D="{Binding JobFileManager.CadManager3D}"/>
@@ -144,15 +140,16 @@
 
         <WrapPanel Grid.Row="3">
             <TextBlock Margin="20,0,0,0"
-                       Foreground="White">
-                <TextBlock.Text>
+                       Foreground="White"
+                       Text="{Binding ElementName=d3dDxfControl, Path=DxfCoords}">
+                <!--<TextBlock.Text>
                     <MultiBinding StringFormat="{}{0:F3} {1:F3}">
-                        <Binding ElementName="dxfControl"
-                                 Path="DxfPointerCoords.X" />
-                        <Binding ElementName="dxfControl"
-                                 Path="DxfPointerCoords.Y" />
+                        <Binding ElementName="d3dDxfControl"
+                                 Path="DxfCoords.X" />
+                        <Binding ElementName="d3dDxfControl"
+                                 Path="DxfCoords.Y" />
                     </MultiBinding>
-                </TextBlock.Text>
+                </TextBlock.Text>-->
             </TextBlock>
         </WrapPanel>
     </Grid>

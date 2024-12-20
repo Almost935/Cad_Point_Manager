@@ -148,8 +148,20 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _device = new SharpDX.Direct3D11.Device(DriverType.Hardware, DeviceCreationFlags.BgraSupport);
             _d3dResCache.Device = _device;
 
+            var rasterizerStateDescription = new RasterizerStateDescription
+            {
+                FillMode = FillMode.Solid,
+                CullMode = CullMode.Back,
+                IsFrontCounterClockwise = false,
+                IsMultisampleEnabled = false // Enable MSAA
+            };
+
+            var rasterizerState = new RasterizerState(_device, rasterizerStateDescription);
+            _device.ImmediateContext.Rasterizer.State = rasterizerState;
+
             _deviceContext = _device.ImmediateContext;
             _d3dResCache.DeviceContext = _deviceContext;
+
 
             _d3DSurface = new Dx11ImageSource();
             _d3DSurface.IsFrontBufferAvailableChanged += OnIsFrontBufferAvailableChanged;

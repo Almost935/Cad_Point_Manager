@@ -34,8 +34,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public float CurrentZoom => (float)Math.Pow(_zoomFactor, CurrentZoomStep);
         public Rotation CurrentRotation { get; set; } = Rotation.NoRotation;
         public bool IsIn3DView { get; set; } = false;
-
-        public Vector2 MouseCoords { get; set; } = Vector2.Zero;
         #endregion
 
         #region Constructors
@@ -102,6 +100,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 ResetToDefaults();
             }
         }
+
 
         public void Pan(Vector2 startPanPos, Vector2 endPanPos)
         {
@@ -209,12 +208,12 @@ namespace Cad_Point_Manager.Controls.D3DControl
             //_position = new Vector3(boxCenter.X, boxCenter.Y, 100 / CurrentZoom);
         }
 
-        public void UpdateMouseCoords(Vector2 mousePosition)
-        {
-            var ndcCoords = ScreenToNDC(mousePosition, ScreenWidth, ScreenHeight);
-            var vector3MouseCoords = Unproject(ndcCoords, InverseViewProjectionMatrix);
-            MouseCoords = new(vector3MouseCoords.X, vector3MouseCoords.Y);
-        }
+        //public void UpdateMouseCoords(Vector2 mousePosition)
+        //{
+        //    var ndcCoords = ScreenToNDC(mousePosition, ScreenWidth, ScreenHeight);
+        //    var vector3MouseCoords = Unproject(ndcCoords, InverseViewProjectionMatrix);
+        //    MouseCoords = new(vector3MouseCoords.X, vector3MouseCoords.Y);
+        //}
         #endregion
 
 

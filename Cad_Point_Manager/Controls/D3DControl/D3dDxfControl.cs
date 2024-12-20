@@ -9,6 +9,7 @@ using System.Configuration;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Input;
 
@@ -17,7 +18,7 @@ using Point = System.Windows.Point;
 
 namespace Cad_Point_Manager.Controls.D3DControl
 {
-    public class D3dDxfControl : Direct3DControl
+    public class D3dDxfControl : Direct3DControl, INotifyPropertyChanged
     {
         #region Fields
         private const float _rotationSpeed = 0.005f;
@@ -36,7 +37,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
         //Panning and Zooming Fields
         private Matrix _viewMatrix = Matrix.Identity;
         private Matrix _projectionMatrix = Matrix.Identity;
-        private Matrix _worldMatrix = Matrix.Identity;
 
         private Point _previousMousePosition;
         private bool _isPanning = false;
@@ -49,8 +49,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private bool _isShiftPressed = false;
         private Vector2 _prevMousePos;
 
-        // Fields for testing
-        private (int startIndex, int endIndex) _mouseLineIndices;
+        private Vector2 _dxfCoords = new();
         #endregion
 
         #region Properties
@@ -60,6 +59,16 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public bool ShadersLoaded { get; set; } = false;
         public bool ConstantBufferInitialized { get; set; } = false;
         public Bounds DxfBounds { get; set; } = Bounds.Empty;
+
+        public Vector2 DxfCoords
+        {
+            get => _dxfCoords;
+            set
+            {
+                _dxfCoords = value;
+                OnPropertyChanged();
+            }
+        }
         #endregion
 
         #region Dependency Properties
@@ -79,6 +88,10 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         #region Constructors 
         public D3dDxfControl() { }
+        #endregion
+
+        #region Events
+        public event PropertyChangedEventHandler PropertyChanged;
         #endregion
 
         #region Methods
@@ -271,6 +284,15 @@ namespace Cad_Point_Manager.Controls.D3DControl
             }
         }
 
+        
+        private void UpdateDxfCoords(Vector2 mousePos)
+        {
+            var ndcCoords = Camera.ScreenToNDC(mousePos, _width, _height);
+            var vector3MouseCoords = Camera.Unproject(ndcCoords, _camera.InverseViewProjectionMatrix);
+            DxfCoords = new(vector3MouseCoords.X, vector3MouseCoords.Y);
+        }
+
+
         protected override void OnMouseDown(MouseButtonEventArgs e)
         {
             if (e.MiddleButton == MouseButtonState.Pressed)
@@ -292,6 +314,12 @@ namespace Cad_Point_Manager.Controls.D3DControl
         {
             _pointerCoords = e.GetPosition(this);
             var currentMousePos = new Vector2((float)_pointerCoords.X, (float)_pointerCoords.Y);
+
+            if (!_isPanning)
+            {
+                //Task.Run(() => UpdateDxfCoords(currentMousePos));
+                UpdateDxfCoords(currentMousePos);
+            }
 
             _isShiftPressed = Keyboard.IsKeyDown(Key.LeftShift) || Keyboard.IsKeyDown(Key.RightShift);
 
@@ -351,6 +379,12 @@ namespace Cad_Point_Manager.Controls.D3DControl
         {
             if (e.PropertyName == nameof(CadManager3D.DxfDirty) && CadManager3D.DxfDirty) { DxfIsDirty = true; }
         }
+
+        protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
         #endregion
     }
 }
