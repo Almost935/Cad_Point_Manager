@@ -1,4 +1,5 @@
-﻿using System;
+﻿using netDxf.Tables;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -14,18 +15,30 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         {
             ObjectLayer3D layer;
             var layerExists = Layers.TryGetValue(layerName, out layer);
-            if (layerExists)
-            {
-                return layer;
-            }
+
+            if (layerExists) { return layer; }
             else
             {
                 layer = new();
-                layer.LayerName = layerName;
+                layer.Name = layerName;
                 Layers.Add(layerName, layer);
                 return layer;
             }
         }
+        public ObjectLayer3D GetLayer(Layer dxfLayer)
+        {
+            var layerExists = Layers.TryGetValue(dxfLayer.Name, out ObjectLayer3D layer);
+
+            if (layerExists) { return layer; }
+            else
+            {
+                layer = new();
+                layer.Name = dxfLayer.Name;
+                Layers.Add(dxfLayer.Name, layer);
+                return layer;
+            }
+        }
+
         public void AddObjectToLayer(string layerName, DrawingObject3D drawingObject)
         {
             var layer = GetLayer(layerName);

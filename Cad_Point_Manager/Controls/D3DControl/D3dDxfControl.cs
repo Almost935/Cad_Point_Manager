@@ -22,7 +22,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
     {
         #region Fields
         private const float _rotationSpeed = 0.005f;
-        
+
         private float _width;
         private float _height;
 
@@ -101,8 +101,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
         {
             if (_d3dResCache is null) { return; }
 
-            if (DxfIsDirty) 
-            { 
+            if (DxfIsDirty)
+            {
                 GetDxfGeometries();
             }
             if (DxfNeedsReload)
@@ -153,7 +153,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             if (_d3dResCache is null) { return; }
 
             List<Vertex> vertices = [];
-            foreach (var layer in CadManager3D.LayerManager.Layers.Values)
+            foreach (var layer in CadManager3D.Layers.Values)
             {
                 foreach (var drawingObject3D in layer.DrawingObject3Ds)
                 {
@@ -190,32 +190,22 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 }
             }
 
-            // Add center lines to check zooming
-            //Vertex verticalStart = new(new Vector3((_width), _height, 0), new Vector4(0, 1, 0, 1));
-            //Vertex verticalEnd = new(new Vector3((_width), 0, 0), new Vector4(0, 1, 0, 1));
-            //Vertex horizontalStart = new(new Vector3(_width, (_height), 0), new Vector4(0, 1, 0, 1));
-            //Vertex horizontalEnd = new(new Vector3(0, (_height), 0), new Vector4(0, 1, 0, 1));
-            //vertices.Add(verticalStart);
-            //vertices.Add(verticalEnd);
-            //vertices.Add(horizontalStart);
-            //vertices.Add(horizontalEnd);
-
-            float left = (float)CadManager3D.Extents.Left;
-            float right = (float)CadManager3D.Extents.Right;
-            float bottom = (float)CadManager3D.Extents.Bottom;
-            float top = (float)CadManager3D.Extents.Top;
-            Vertex bottomLeft = new(new Vector3(left, bottom, 0), new Vector4(0, 1, 0, 1));
-            Vertex bottomRight = new(new Vector3(right, bottom, 0), new Vector4(0, 1, 0, 1));
-            Vertex topLeft = new(new Vector3(left, top, 0), new Vector4(0, 1, 0, 1));
-            Vertex topRight = new(new Vector3(right, top, 0), new Vector4(0, 1, 0, 1));
-            vertices.Add(bottomLeft);
-            vertices.Add(bottomRight);
-            vertices.Add(bottomRight);
-            vertices.Add(topRight);
-            vertices.Add(topRight);
-            vertices.Add(topLeft);
-            vertices.Add(topLeft);
-            vertices.Add(bottomLeft);
+            //float left = CadManager3D.Extents.Left;
+            //float right = CadManager3D.Extents.Right;
+            //float bottom = CadManager3D.Extents.Bottom;
+            //float top = CadManager3D.Extents.Top;
+            //Vertex bottomLeft = new(new Vector3(left, bottom, 0), new Vector4(0, 1, 0, 1));
+            //Vertex bottomRight = new(new Vector3(right, bottom, 0), new Vector4(0, 1, 0, 1));
+            //Vertex topLeft = new(new Vector3(left, top, 0), new Vector4(0, 1, 0, 1));
+            //Vertex topRight = new(new Vector3(right, top, 0), new Vector4(0, 1, 0, 1));
+            //vertices.Add(bottomLeft);
+            //vertices.Add(bottomRight);
+            //vertices.Add(bottomRight);
+            //vertices.Add(topRight);
+            //vertices.Add(topRight);
+            //vertices.Add(topLeft);
+            //vertices.Add(topLeft);
+            //vertices.Add(bottomLeft);
 
             _vertices = [.. vertices];
 
@@ -224,6 +214,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 BindFlags.VertexBuffer,
                 _vertices
             );
+
+            Getting error here after clicking new
 
             DxfInitialized = true;
             DxfIsDirty = false;
@@ -297,24 +289,30 @@ namespace Cad_Point_Manager.Controls.D3DControl
             }
             else
             {
-                float centerX = (float)(CadManager3D.Extents.Left + CadManager3D.Extents.Right) * 0.5f;
-                float centerY = (float)(CadManager3D.Extents.Bottom + CadManager3D.Extents.Top) * 0.5f;
+                float centerX = (CadManager3D.Extents.Left + CadManager3D.Extents.Right) * 0.5f;
+                float centerY = (CadManager3D.Extents.Bottom + CadManager3D.Extents.Top) * 0.5f;
 
-                //float left = centerX - _width;
-                //float right = centerX;
-                //float bottom = centerY - _height * 0.5f;
-                //float top = centerY + _height * 0.5f;
                 float left = centerX - _width * 0.5f;
                 float right = centerX + _width * 0.5f;
                 float bottom = centerY - _height * 0.5f;
                 float top = centerY + _height * 0.5f;
 
-                //DxfBounds = new(left, right, bottom, top);
-                DxfBounds = new(right, left, bottom, top);
+                Bounds dxfBounds = new(left, right, bottom, top);
+                float scale = Math.Min(_width / CadManager3D.Extents.Width, _height / CadManager3D.Extents.Height);
+                float newWidth = dxfBounds.Width / scale;
+                float newHeight = dxfBounds.Height / scale;
+                DxfBounds = new(dxfBounds.Center.X - newWidth / 2, dxfBounds.Center.X + newWidth / 2, dxfBounds.Center.Y - newHeight / 2, dxfBounds.Center.Y + newHeight / 2);
             }
         }
+        private Bounds ScaleBoundsToFit(Bounds dxfBounds)
+        {
+            float scaleX = _width / dxfBounds.Width;
+            float scaleY = _height / dxfBounds.Height;
+            float scale = Math.Min(scaleX, scaleY);
 
-        
+            return Bounds.ScaleToCenter(dxfBounds, scale);
+        }
+
         private void UpdateDxfCoords(Vector2 mousePos)
         {
             var ndcCoords = Camera.ScreenToNDC(mousePos, _width, _height);

@@ -18,20 +18,15 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
     {
         private DrawingLine3D() { Type = DrawingObject3dType.DrawingLine3D; }
 
-        public DrawingLine3D(Line line)
+        public DrawingLine3D(Line line, ObjectLayer3D layer, bool isPartOfBlock = false, DrawingBlock3D block = null)
         {
             Type = DrawingObject3dType.DrawingLine3D;
+            Layer = layer;
+            IsPartOfBlock = isPartOfBlock;
+            DrawingBlock3D = block;
+            EntityObject = line;
 
-            var r = line.Layer.Color.R / 255;
-            var g = line.Layer.Color.R / 255;
-            var b = line.Layer.Color.R / 255;
-            var a = line.Layer.Color.R / 255;
-            LayerColor = new(line.Layer.Color.R / 255.0f, line.Layer.Color.G / 255.0f, line.Layer.Color.B / 255.0f, 1);
-            if (line.Color.IsByLayer) { Color = LayerColor; }
-            else { Color = new(line.Color.R / 255.0f, line.Color.G / 255.0f, line.Color.B / 255.0f, 1); }
-
-            if (LayerColor == new Vector4(1, 1, 1, 1)) { Color = new(0, 0, 0, 1); }
-            if (Color == new Vector4(1, 1, 1, 1)) { Color = new(0, 0, 0, 1); }
+            UpdateColor();
 
             StartVertex = new(new Vector3((float)line.StartPoint.X, (float)line.StartPoint.Y, 0), Color);
             EndVertex = new(new Vector3((float)line.EndPoint.X, (float)line.EndPoint.Y, 0), Color);

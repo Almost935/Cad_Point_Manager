@@ -42,11 +42,14 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public float Bottom;
         public float Width;
         public float Height;
-        public Vector2 Center => new((Left + Right) / 2, (Top + Bottom) / 2);
-        public Vector2 TopLeft => new(Left, Top);
-        public Vector2 TopRight => new(Right, Top);
-        public Vector2 BottomLeft => new(Left, Bottom);
-        public Vector2 BottomRight => new(Right, Bottom);
+
+        public readonly Vector2 Center => new((Left + Right) / 2, (Top + Bottom) / 2);
+        public readonly Vector2 TopLeft => new(Left, Top);
+        public readonly Vector2 TopRight => new(Right, Top);
+        public readonly Vector2 BottomLeft => new(Left, Bottom);
+        public readonly Vector2 BottomRight => new(Right, Bottom);
+        public readonly float MaxDimension => Math.Max(Width, Height);
+        public readonly float MinimumDimension => Math.Min(Width, Height);
 
         public Bounds(float left, float right, float bottom, float top)
         {
@@ -76,40 +79,14 @@ namespace Cad_Point_Manager.Controls.D3DControl
             return new Bounds(bounds.Left / scale, bounds.Right / scale, bounds.Bottom / scale, bounds.Top / scale);
         }
 
-        public static Bounds ScaleToCenter(Bounds overallBounds, float overallScale, float screenWidth, float screenHeight)
+        public static Bounds ScaleToCenter(Bounds bounds, float scale)
         {
-            //float addX = -screenWidth / 8;
-            //float addY = -screenHeight / 8;
-            float addX = 0;
-            float addY = 0;
+            Bounds scaledBounds = Bounds.Scale(bounds, scale);
+            Vector2 centerOffset = new((bounds.Center.X - scaledBounds.Center.X), (bounds.Center.Y - scaledBounds.Center.Y));
+            scaledBounds = Bounds.Translate(scaledBounds, centerOffset.X, centerOffset.Y);
 
-            Bounds newBounds = new Bounds((overallBounds.Left / overallScale) + addX, (overallBounds.Right / overallScale) + addX, (overallBounds.Bottom / overallScale) + addY, (overallBounds.Top / overallScale) + addY);
-            
-            return newBounds;
+            return scaledBounds;
         }
-
-        //public static Bounds ScaleTo(Bounds bounds, float scale, Vector2 pivot)
-        //{
-        //    // Calculate the current width and height of the box
-        //    float width = bounds.Right - bounds.Left;
-        //    float height = bounds.Top - bounds.Bottom;
-
-        //    // Calculate the new width and height after scaling
-        //    float newWidth = width * scale;
-        //    float newHeight = height * scale;
-
-        //    // Calculate the fixed offsets to maintain the point's position
-        //    float offsetX = (pivot.X - bounds.Left) * (1 - scale);
-        //    float offsetY = (pivot.Y - bounds.Bottom) * (1 - scale);
-
-        //    // Adjust the box edges
-        //    float newLeft = bounds.Left + offsetX;
-        //    float newRight = newLeft + newWidth;
-        //    float newBottom = bounds.Bottom + offsetY;
-        //    float newTop = newBottom + newHeight;
-
-        //    return new Bounds(newLeft, newRight, newBottom, newTop);
-        //}
 
         public static Bounds ScaleTo(Bounds bounds, float scale, Vector2 pivot)
         {
@@ -139,23 +116,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             return new Bounds(newLeft, newRight, newBottom, newTop);
         }
-
-        //public static Bounds ScaleTo(Bounds bounds, float scale, Vector2 pivot)
-        //{
-        //    Debug.WriteLine($"bounds: {bounds.Width} {bounds.Height}");
-
-        //    float newLeft = pivot.X + ((bounds.Left - pivot.X)) / scale;
-        //    float newRight = pivot.X + ((bounds.Right - pivot.X)) / scale;
-        //    //float newBottom = pivot.Y + ((bounds.Bottom - pivot.Y)) / scale;
-        //    //float newTop = pivot.Y + (bounds.Top - pivot.Y) / scale;
-
-        //    //float newLeft = bounds.Left / scale;
-        //    //float newRight = bounds.Right / scale;
-        //    float newBottom = bounds.Bottom / scale;
-        //    float newTop = bounds.Top / scale;
-
-        //    return new Bounds(newLeft, newRight, newBottom, newTop);
-        //}
     }
 
     public struct Rotation

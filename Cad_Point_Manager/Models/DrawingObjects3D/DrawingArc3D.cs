@@ -25,16 +25,15 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
 
         private DrawingArc3D() { Type = DrawingObject3dType.DrawingLine3D; }
 
-        public DrawingArc3D(Arc arc)
+        public DrawingArc3D(Arc arc, ObjectLayer3D layer, bool isPartOfBlock = false, DrawingBlock3D block = null)
         {
             Type = DrawingObject3dType.DrawingArc3D;
-            
-            LayerColor = new(arc.Layer.Color.R / 255.0f, arc.Layer.Color.G / 255.0f, arc.Layer.Color.B / 255.0f, 1);
-            if (arc.Color.IsByLayer) { Color = LayerColor; }
-            else { Color = new(arc.Color.R / 255.0f, arc.Color.G / 255.0f, arc.Color.B / 255.0f, 1); }
+            Layer = layer;
+            IsPartOfBlock = isPartOfBlock;
+            DrawingBlock3D = block;
+            EntityObject = arc;
 
-            if (LayerColor == new Vector4(1, 1, 1, 1)) { Color = new(0, 0, 0, 1); }
-            if (Color == new Vector4(1, 1, 1, 1)) { Color = new(0, 0, 0, 1); }
+            UpdateColor();
 
             var verteces = arc.ToPolyline2D(500).Vertexes;
 

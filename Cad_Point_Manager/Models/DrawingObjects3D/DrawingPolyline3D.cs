@@ -1,4 +1,5 @@
 ﻿using Cad_Point_Manager.Controls.D3DControl;
+using Cad_Point_Manager.Helpers;
 using netDxf;
 using netDxf.Entities;
 using SharpDX;
@@ -23,16 +24,15 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
 
         private DrawingPolyline3D() { Type = DrawingObject3dType.DrawingLine3D; }
 
-        public DrawingPolyline3D(Polyline2D polyline2D)
+        public DrawingPolyline3D(Polyline2D polyline2D, ObjectLayer3D layer, bool isPartOfBlock = false, DrawingBlock3D block = null)
         {
             Type = DrawingObject3dType.DrawingPolyline3D;
+            Layer = layer;
+            IsPartOfBlock = isPartOfBlock;
+            DrawingBlock3D = block;
+            EntityObject = polyline2D;
 
-            LayerColor = new(polyline2D.Layer.Color.R / 255.0f, polyline2D.Layer.Color.G / 255.0f, polyline2D.Layer.Color.B / 255.0f, 1);
-            if (polyline2D.Color.IsByLayer) { Color = LayerColor; }
-            else { Color = new(polyline2D.Color.R / 255.0f, polyline2D.Color.G / 255.0f, polyline2D.Color.B / 255.0f, 1); }
-
-            if (LayerColor == new Vector4(1, 1, 1, 1)) { Color = new(0, 0, 0, 1); }
-            if (Color == new Vector4(1, 1, 1, 1)) { Color = new(0, 0, 0, 1); }
+            UpdateColor();
 
             var start = polyline2D.Vertexes.First();
             var end = polyline2D.Vertexes.Last();
@@ -42,29 +42,20 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             var entities = polyline2D.Explode();
             foreach (var entity in entities)
             {
-                if (entity is Line line)
-                {
-                    DrawingLine3D drawingLine3D = new(line);
-                    DrawingSegment3Ds.Add(drawingLine3D);
-                }
-                else if (entity is Arc arc)
-                {
-                    DrawingArc3D drawingArc3D = new(arc);
-                    DrawingSegment3Ds.Add(drawingArc3D);
-                }
+                var obj = DxfHelpers.GetDrawingSegment3D(entity, Layer);
+                if (obj is not null) { DrawingSegment3Ds.Add(obj); }
             }
         }
 
-        public DrawingPolyline3D(Polyline3D polyline3D)
+        public DrawingPolyline3D(Polyline3D polyline3D, ObjectLayer3D layer, bool isPartOfBlock = false, DrawingBlock3D block = null)
         {
             Type = DrawingObject3dType.DrawingPolyline3D;
+            Layer = layer;
+            IsPartOfBlock = isPartOfBlock;
+            DrawingBlock3D = block;
+            EntityObject = polyline3D;
 
-            LayerColor = new(polyline3D.Layer.Color.R / 255.0f, polyline3D.Layer.Color.G / 255.0f, polyline3D.Layer.Color.B / 255.0f, 1);
-            if (polyline3D.Color.IsByLayer) { Color = LayerColor; }
-            else { Color = new(polyline3D.Color.R / 255.0f, polyline3D.Color.G / 255.0f, polyline3D.Color.B / 255.0f, 1); }
-
-            if (LayerColor == new Vector4(1, 1, 1, 1)) { Color = new(0, 0, 0, 1); }
-            if (Color == new Vector4(1, 1, 1, 1)) { Color = new(0, 0, 0, 1); }
+            UpdateColor();
 
             var start = polyline3D.Vertexes.First();
             var end = polyline3D.Vertexes.Last();
@@ -74,16 +65,8 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             var entities = polyline3D.Explode();
             foreach (var entity in entities)
             {
-                if (entity is Line line)
-                {
-                    DrawingLine3D drawingLine3D = new(line);
-                    DrawingSegment3Ds.Add(drawingLine3D);
-                }
-                else if (entity is Arc arc)
-                {
-                    DrawingArc3D drawingArc3D = new(arc);
-                    DrawingSegment3Ds.Add(drawingArc3D);
-                }
+                var obj = DxfHelpers.GetDrawingSegment3D(entity, Layer);
+                if (obj is not null) { DrawingSegment3Ds.Add(obj); }
             }
         }
     }

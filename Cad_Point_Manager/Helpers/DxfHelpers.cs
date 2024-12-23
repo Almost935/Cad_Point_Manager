@@ -9,6 +9,8 @@ using Cad_Point_Manager.Controls.D2DControl;
 using Vector3 = netDxf.Vector3;
 using Cad_Point_Manager.DrawingObjects;
 using Cad_Point_Manager.Models;
+using Cad_Point_Manager.Controls.D3DControl;
+using Cad_Point_Manager.Models.DrawingObjects3D;
 
 namespace Cad_Point_Manager.Helpers
 {
@@ -30,6 +32,22 @@ namespace Cad_Point_Manager.Helpers
             return Rect.Empty;
         }
 
+        public static Bounds GetBoundsFromHeader(DxfDocument doc)
+        {
+            if (doc == null) return Bounds.Empty;
+
+            if (doc.DrawingVariables.TryGetCustomVariable("$EXTMIN", out HeaderVariable extMinHeaderVariable) &&
+                doc.DrawingVariables.TryGetCustomVariable("$EXTMAX", out HeaderVariable extMaxHeaderVariable))
+            {
+                Vector3 extMin = (Vector3)extMinHeaderVariable.Value;
+                Vector3 extMax = (Vector3)extMaxHeaderVariable.Value;
+
+                return new Bounds((float)extMin.X, (float)extMax.X, (float)extMin.Y, (float)extMax.Y);
+            }
+
+            return Bounds.Empty;
+        }
+
         public static CadManager GetLayers(DxfDocument dxfDocument)
         {
             CadManager layerManager = new();
@@ -42,6 +60,7 @@ namespace Cad_Point_Manager.Helpers
             return layerManager;
         }
 
+        // DrawingObject 2D getters
         public static int LoadEntityObject(EntityObject e, CadManager layerManager)
         {
             ObjectLayer layer = layerManager.GetLayer(e.Layer);
@@ -118,6 +137,37 @@ namespace Cad_Point_Manager.Helpers
                 _ => null
             };
         }
+
+
+        // DrawingObject3D getters
+        public static DrawingObject3D GetDrawingObject3D(EntityObject e, ObjectLayer3D layer)
+        {
+            return e switch
+            {
+                Line line => new DrawingLine3D(line, layer),
+                Arc arc => new DrawingArc3D(arc, layer),
+                Polyline2D polyline2D => new DrawingPolyline3D(polyline2D, layer),
+                Polyline3D polyline3D => new DrawingPolyline3D(polyline3D, layer),
+                Circle circle => new DrawingCircle3D(circle, layer),
+                Insert block => new DrawingBlock3D(block, layer),
+                _ => null,
+            };
+        }
+        public static DrawingSegment3D GetDrawingSegment3D(EntityObject e, ObjectLayer3D layer)
+        {
+            return e switch
+            {
+                Line line => new DrawingLine3D(line, layer),
+                Arc arc => new DrawingArc3D(arc, layer),
+                Circle circle => new DrawingCircle3D(circle, layer),
+                _ => null,
+            };
+        }
+        //public static Vector4 GetEntityObjectColor(EntityObject e)
+        //{
+        //    if (e.Is)
+        //}
+
 
         public static (byte r, byte g, byte b, byte a) GetRGBAColor(EntityObject entity)
         {
