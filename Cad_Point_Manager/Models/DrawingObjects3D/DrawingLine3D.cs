@@ -21,10 +21,14 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         public DrawingLine3D(Line line)
         {
             Type = DrawingObject3dType.DrawingLine3D;
-            
-            LayerColor = new(line.Layer.Color.R / 255, line.Layer.Color.G / 255, line.Layer.Color.B / 255, 1);
+
+            var r = line.Layer.Color.R / 255;
+            var g = line.Layer.Color.R / 255;
+            var b = line.Layer.Color.R / 255;
+            var a = line.Layer.Color.R / 255;
+            LayerColor = new(line.Layer.Color.R / 255.0f, line.Layer.Color.G / 255.0f, line.Layer.Color.B / 255.0f, 1);
             if (line.Color.IsByLayer) { Color = LayerColor; }
-            else { Color = new(line.Color.R / 255, line.Color.G / 255, line.Color.B / 255, 1); }
+            else { Color = new(line.Color.R / 255.0f, line.Color.G / 255.0f, line.Color.B / 255.0f, 1); }
 
             if (LayerColor == new Vector4(1, 1, 1, 1)) { Color = new(0, 0, 0, 1); }
             if (Color == new Vector4(1, 1, 1, 1)) { Color = new(0, 0, 0, 1); }

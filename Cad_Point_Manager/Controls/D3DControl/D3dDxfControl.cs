@@ -33,6 +33,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private PixelShader _pixelShader;
         private InputLayout _inputLayout;
         private Point _pointerCoords;
+        private bool _dxfInitialized = false;
 
         //Panning and Zooming Fields
         private Matrix _viewMatrix = Matrix.Identity;
@@ -55,6 +56,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         #region Properties
         public bool DxfInitialized { get; set; } = false;
         public bool DxfIsDirty { get; set; } = false;
+        private bool DxfNeedsReload { get; set; } = false;
         public bool D3dIsDirty { get; set; } = true;
         public bool ShadersLoaded { get; set; } = false;
         public bool ConstantBufferInitialized { get; set; } = false;
@@ -102,8 +104,12 @@ namespace Cad_Point_Manager.Controls.D3DControl
             if (DxfIsDirty) 
             { 
                 GetDxfGeometries();
+            }
+            if (DxfNeedsReload)
+            {
                 GetDxfBounds();
                 _camera.UpdateBounds(DxfBounds);
+                DxfNeedsReload = false;
             }
             if (_camera is null)
             {
@@ -185,14 +191,31 @@ namespace Cad_Point_Manager.Controls.D3DControl
             }
 
             // Add center lines to check zooming
-            Vertex verticalStart = new(new Vector3((_width), _height, 0), new Vector4(0, 1, 0, 1));
-            Vertex verticalEnd = new(new Vector3((_width), 0, 0), new Vector4(0, 1, 0, 1));
-            Vertex horizontalStart = new(new Vector3(_width, (_height), 0), new Vector4(0, 1, 0, 1));
-            Vertex horizontalEnd = new(new Vector3(0, (_height), 0), new Vector4(0, 1, 0, 1));
-            vertices.Add(verticalStart);
-            vertices.Add(verticalEnd);
-            vertices.Add(horizontalStart);
-            vertices.Add(horizontalEnd);
+            //Vertex verticalStart = new(new Vector3((_width), _height, 0), new Vector4(0, 1, 0, 1));
+            //Vertex verticalEnd = new(new Vector3((_width), 0, 0), new Vector4(0, 1, 0, 1));
+            //Vertex horizontalStart = new(new Vector3(_width, (_height), 0), new Vector4(0, 1, 0, 1));
+            //Vertex horizontalEnd = new(new Vector3(0, (_height), 0), new Vector4(0, 1, 0, 1));
+            //vertices.Add(verticalStart);
+            //vertices.Add(verticalEnd);
+            //vertices.Add(horizontalStart);
+            //vertices.Add(horizontalEnd);
+
+            float left = (float)CadManager3D.Extents.Left;
+            float right = (float)CadManager3D.Extents.Right;
+            float bottom = (float)CadManager3D.Extents.Bottom;
+            float top = (float)CadManager3D.Extents.Top;
+            Vertex bottomLeft = new(new Vector3(left, bottom, 0), new Vector4(0, 1, 0, 1));
+            Vertex bottomRight = new(new Vector3(right, bottom, 0), new Vector4(0, 1, 0, 1));
+            Vertex topLeft = new(new Vector3(left, top, 0), new Vector4(0, 1, 0, 1));
+            Vertex topRight = new(new Vector3(right, top, 0), new Vector4(0, 1, 0, 1));
+            vertices.Add(bottomLeft);
+            vertices.Add(bottomRight);
+            vertices.Add(bottomRight);
+            vertices.Add(topRight);
+            vertices.Add(topRight);
+            vertices.Add(topLeft);
+            vertices.Add(topLeft);
+            vertices.Add(bottomLeft);
 
             _vertices = [.. vertices];
 
@@ -255,7 +278,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         private void UpdateConstantBuffer()
         {
-            var transformation = _camera.ViewMatrix * _camera.ProjectionMatrix;
+            var transformation = _camera.ViewProjectionMatrix;
 
             var transformationBuffer = new TransformationBuffer
             {
@@ -277,13 +300,17 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 float centerX = (float)(CadManager3D.Extents.Left + CadManager3D.Extents.Right) * 0.5f;
                 float centerY = (float)(CadManager3D.Extents.Bottom + CadManager3D.Extents.Top) * 0.5f;
 
-                //DxfBounds = new(centerX - _width / 2, centerX + _width / 2, centerY - _height / 2, centerY + _height / 2);
-                //DxfBounds = new((float)CadManager3D.Extents.Right, (float)CadManager3D.Extents.Left, (float)CadManager3D.Extents.Top, (float)CadManager3D.Extents.Bottom);
+                //float left = centerX - _width;
+                //float right = centerX;
+                //float bottom = centerY - _height * 0.5f;
+                //float top = centerY + _height * 0.5f;
+                float left = centerX - _width * 0.5f;
+                float right = centerX + _width * 0.5f;
+                float bottom = centerY - _height * 0.5f;
+                float top = centerY + _height * 0.5f;
 
-                DxfBounds = new(_width, 0, 0, _height);
-                DxfBounds = new(centerX, centerX - _width, centerY - _height / 2, centerY + _height / 2);
-
-                //DxfBounds = new(-1000 + _width, -1000, 5000, 5000 + _height);
+                //DxfBounds = new(left, right, bottom, top);
+                DxfBounds = new(right, left, bottom, top);
             }
         }
 
@@ -380,7 +407,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         private void CadManager3D_PropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
-            if (e.PropertyName == nameof(CadManager3D.DxfDirty) && CadManager3D.DxfDirty) { DxfIsDirty = true; }
+            DxfIsDirty = CadManager3D.DxfDirty;
+            DxfNeedsReload = CadManager3D.DxfNeedsReload;
         }
 
         protected void OnPropertyChanged([CallerMemberName] string propertyName = null)

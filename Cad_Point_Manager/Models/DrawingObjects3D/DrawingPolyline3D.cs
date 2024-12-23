@@ -27,9 +27,9 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         {
             Type = DrawingObject3dType.DrawingPolyline3D;
 
-            LayerColor = new(polyline2D.Layer.Color.R / 255, polyline2D.Layer.Color.G / 255, polyline2D.Layer.Color.B / 255, 1);
+            LayerColor = new(polyline2D.Layer.Color.R / 255.0f, polyline2D.Layer.Color.G / 255.0f, polyline2D.Layer.Color.B / 255.0f, 1);
             if (polyline2D.Color.IsByLayer) { Color = LayerColor; }
-            else { Color = new(polyline2D.Color.R / 255, polyline2D.Color.G / 255, polyline2D.Color.B / 255, 1); }
+            else { Color = new(polyline2D.Color.R / 255.0f, polyline2D.Color.G / 255.0f, polyline2D.Color.B / 255.0f, 1); }
 
             if (LayerColor == new Vector4(1, 1, 1, 1)) { Color = new(0, 0, 0, 1); }
             if (Color == new Vector4(1, 1, 1, 1)) { Color = new(0, 0, 0, 1); }
@@ -59,9 +59,9 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         {
             Type = DrawingObject3dType.DrawingPolyline3D;
 
-            LayerColor = new(polyline3D.Layer.Color.R / 255, polyline3D.Layer.Color.G / 255, polyline3D.Layer.Color.B / 255, 1);
+            LayerColor = new(polyline3D.Layer.Color.R / 255.0f, polyline3D.Layer.Color.G / 255.0f, polyline3D.Layer.Color.B / 255.0f, 1);
             if (polyline3D.Color.IsByLayer) { Color = LayerColor; }
-            else { Color = new(polyline3D.Color.R / 255, polyline3D.Color.G / 255, polyline3D.Color.B / 255, 1); }
+            else { Color = new(polyline3D.Color.R / 255.0f, polyline3D.Color.G / 255.0f, polyline3D.Color.B / 255.0f, 1); }
 
             if (LayerColor == new Vector4(1, 1, 1, 1)) { Color = new(0, 0, 0, 1); }
             if (Color == new Vector4(1, 1, 1, 1)) { Color = new(0, 0, 0, 1); }
