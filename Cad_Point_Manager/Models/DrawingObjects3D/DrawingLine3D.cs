@@ -39,6 +39,9 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             {
                 StartVertex = new(new Vector3((float)line.StartPoint.X, (float)line.StartPoint.Y, 0), Color);
                 EndVertex = new(new Vector3((float)line.EndPoint.X, (float)line.EndPoint.Y, 0), Color);
+                Vertices.AddRange(new List<Vertex> { StartVertex, EndVertex });
+                Length = Vector3.Distance(StartVertex.Position, EndVertex.Position); 
+                MiddlePoint = (StartVertex.Position + EndVertex.Position) / 2;
             }
             else
             {

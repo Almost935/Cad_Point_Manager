@@ -1,21 +1,27 @@
-﻿using netDxf.Tables;
+﻿using Cad_Point_Manager.Controls.D3DControl;
+using netDxf.Tables;
 using SharpDX;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace Cad_Point_Manager.Models.DrawingObjects3D
 {
-    public class ObjectLayer3D
+    public class ObjectLayer3D : INotifyPropertyChanged
     {
+        #region Properties
         public string Name { get; set; }
         public Vector4 Color { get; set; }
         public Layer DxfLayer { get; set; }
         public List<DrawingObject3D> DrawingObject3Ds { get; set; } = [];
+        public List<Vertex> Vertices { get; set; } = [];
+        #endregion
 
-        public ObjectLayer3D() { }
+        #region Constructors
+        private ObjectLayer3D() { }
 
         public ObjectLayer3D(Layer layer)
         {
@@ -23,5 +29,31 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             Color = new(layer.Color.R / 255.0f, layer.Color.G / 255.0f, layer.Color.B / 255.0f, 1);
             DxfLayer = layer;
         }
+        #endregion
+
+        #region Events
+        public event PropertyChangedEventHandler PropertyChanged;
+        #endregion
+
+        #region Methods
+        public void AddDrawingObject(DrawingObject3D drawingObject3D)
+        {
+            if (drawingObject3D is DrawingSegment3D segment)
+            {
+                DrawingObject3Ds.Add(segment);
+                Vertices.AddRange(segment.Vertices);
+            }
+            else if (drawingObject3D is DrawingPolyline3D polyline)
+            {
+                DrawingObject3Ds.Add(polyline);
+                Vertices.AddRange(polyline.Vertices);
+            }
+            else if (drawingObject3D is DrawingBlock3D block)
+            {
+                DrawingObject3Ds.Add(block);
+                Vertices.AddRange(block.Vertices);
+            }
+        }
+        #endregion
     }
 }

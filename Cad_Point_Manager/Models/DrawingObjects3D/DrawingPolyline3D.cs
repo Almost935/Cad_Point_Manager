@@ -5,6 +5,7 @@ using netDxf.Entities;
 using SharpDX;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -16,11 +17,17 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
 {
     public class DrawingPolyline3D : DrawingObject3D
     {
+        #region Properties
         public int StartVertexIndex { get; set; }
         public int EndVertexIndex { get; set; }
         public Vertex StartVertex { get; set; }
         public Vertex EndVertex { get; set; }
-        public List<DrawingSegment3D> DrawingSegment3Ds { get; set; } = [];
+        public float Length { get; set; }
+        public bool IsClosed { get; set; }
+        public List<DrawingSegment3D> DrawingSegments { get; set; } = [];
+        public List<Vertex> Vertices { get; set; } = [];
+        public int NumberOfSegments => DrawingSegments.Count;
+        #endregion
 
         #region Constructors
         private DrawingPolyline3D() { Type = DrawingObject3dType.DrawingLine3D; }
@@ -55,37 +62,77 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         {
             if (entity is Polyline2D polyline2d)
             {
-                var start = polyline2d.Vertexes.First();
-                var end = polyline2d.Vertexes.Last();
-                StartVertex = new(new Vector3((float)start.Position.X, (float)start.Position.Y, 0), Color);
-                EndVertex = new(new Vector3((float)end.Position.X, (float)end.Position.Y, 0), Color);
+                IsClosed = polyline2d.IsClosed;
 
-                var entities = polyline2d.Explode();
-                foreach (var e in entities)
+                UpdateVertices(polyline2d);
+
+                Length = 0;
+                foreach (var segment in DrawingSegments)
                 {
-                    var obj = DxfHelpers.GetDrawingSegment3D(e, Layer);
-                    if (obj is not null) { DrawingSegment3Ds.Add(obj); }
+                    Length += segment.Length;
                 }
             }
             else if (entity is Polyline3D polyline3d)
             {
-                var start = polyline3d.Vertexes.First();
-                var end = polyline3d.Vertexes.Last();
-                StartVertex = new(new Vector3((float)start.X, (float)start.Y, 0), Color);
-                EndVertex = new(new Vector3((float)end.X, (float)end.Y, 0), Color);
+                IsClosed = polyline3d.IsClosed;
 
-                var entities = polyline3d.Explode();
-                foreach (var e in entities)
+                UpdateVertices(polyline3d);
+
+                Length = 0;
+                foreach (var segment in DrawingSegments)
                 {
-                    var obj = DxfHelpers.GetDrawingSegment3D(e, Layer);
-                    if (obj is not null) { DrawingSegment3Ds.Add(obj); }
+                    Length += segment.Length;
                 }
             }
             else
             {
-                throw new ArgumentException("entity must be of type Line");
+                throw new ArgumentException("entity must be of type Polyline2D or Polyline3D");
             }
         }
-        #endregion
+
+        public void UpdateVertices(EntityObject entity)
+        {
+            if (entity is Polyline2D polyline2D)
+            {
+                var start = polyline2D.Vertexes.First();
+                var end = polyline2D.Vertexes.Last();
+                StartVertex = new(new Vector3((float)start.Position.X, (float)start.Position.Y, 0), Color);
+                EndVertex = new(new Vector3((float)end.Position.X, (float)end.Position.Y, 0), Color);
+
+                var entities = polyline2D.Explode();
+                foreach (var e in entities)
+                {
+                    var obj = DxfHelpers.GetDrawingSegment3D(e, Layer);
+                    if (obj is not null) 
+                    { 
+                        DrawingSegments.Add(obj); 
+                        Vertices.AddRange(obj.Vertices);
+                    }
+                }
+            }
+            else if (entity is Polyline3D polyline3D)
+            {
+                var start = polyline3D.Vertexes.First();
+                var end = polyline3D.Vertexes.Last();
+                StartVertex = new(new Vector3((float)start.X, (float)start.Y, (float)start.Z), Color);
+                EndVertex = new(new Vector3((float)end.X, (float)end.Y, (float)end.Z), Color);
+
+                var entities = polyline3D.Explode();
+                foreach (var e in entities)
+                {
+                    var obj = DxfHelpers.GetDrawingSegment3D(e, Layer);
+                    if (obj is not null)
+                    {
+                        DrawingSegments.Add(obj);
+                        Vertices.AddRange(obj.Vertices);
+                    }
+                }
+            }
+            else
+            {
+                throw new ArgumentException("entity must be of type Polyline2D or Polyline3D");
+            }
+            #endregion
+        }
     }
 }

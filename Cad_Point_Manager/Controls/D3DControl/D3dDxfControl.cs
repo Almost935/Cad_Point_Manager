@@ -152,50 +152,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         {
             if (_d3dResCache is null) { return; }
 
-            List<Vertex> vertices = [];
-            foreach (var layer in CadManager3D.Layers.Values)
-            {
-                foreach (var drawingObject3D in layer.DrawingObject3Ds)
-                {
-                    if (drawingObject3D is DrawingLine3D line)
-                    {
-                        vertices.Add(line.StartVertex);
-                        vertices.Add(line.EndVertex);
-                    }
-                    if (drawingObject3D is DrawingArc3D arc)
-                    {
-                        foreach (var vertex in arc.IntermediateVertices)
-                        {
-                            vertices.Add(vertex);
-                        }
-                    }
-                    if (drawingObject3D is DrawingPolyline3D polyline)
-                    {
-                        foreach (var drawingObj in polyline.DrawingSegment3Ds)
-                        {
-                            if (drawingObj is DrawingLine3D line2)
-                            {
-                                vertices.Add(line2.StartVertex);
-                                vertices.Add(line2.EndVertex);
-                            }
-                            if (drawingObj is DrawingArc3D arc2)
-                            {
-                                foreach (var vertex in arc2.IntermediateVertices)
-                                {
-                                    vertices.Add(vertex);
-                                }
-                            }
-                        }
-                    }
-
-                    if (drawingObject3D is DrawingBlock3D block)
-                    {
-
-                    }
-                }
-            }
-
-            _vertices = [.. vertices];
+            _vertices = CadManager3D.Vertices.ToArray();
 
             if (_vertices is not null && _vertices.Length > 0)
             {

@@ -276,7 +276,6 @@ namespace Cad_Point_Manager.Models
 
         protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
-            Debug.WriteLine($"CadManager: {propertyName}");
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 

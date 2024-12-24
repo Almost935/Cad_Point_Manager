@@ -4,6 +4,7 @@ using netDxf.Entities;
 using SharpDX;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Text;
@@ -16,6 +17,10 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
 {
     public class DrawingArc3D : DrawingCurve3D
     {
+        #region Fields
+        private Arc _arc => EntityObject as Arc;
+        #endregion
+
         #region Properties
         public bool IsLargeArc { get; set; }
         #endregion
@@ -33,29 +38,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
 
             UpdateColor();
             UpdateData(arc);
-            UpdateVertices();
-
-            //var verteces = arc.ToPolyline2D(500).Vertexes;
-
-            //for (int i = 0; i < verteces.Count; i++)
-            //{
-            //    if (i == verteces.Count - 1) { break; }
-
-            //    Vertex s = new(
-            //        new Vector3((float)verteces[i].Position.X, (float)verteces[i].Position.Y, 0),
-            //        Color
-            //        );
-            //    Vertex e = new(
-            //        new Vector3((float)verteces[i + 1].Position.X, (float)verteces[i + 1].Position.Y, 0),
-            //        Color
-            //        );
-
-            //    Vertices.Add(s);
-            //    Vertices.Add(e);
-            //}
-
-            //StartVertex = Vertices.First();
-            //EndVertex = Vertices.Last();
         }
         #endregion
 
@@ -67,13 +49,14 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                 Radius = (float)arc.Radius;
                 StartAngle = (float)arc.StartAngle;
                 EndAngle = (float)arc.EndAngle;
-                Center = new Vector3((float)arc.Center.X, (float)arc.Center.Y, (float)arc.Center.Z);
-                
+                RadiusPoint = new Vector3((float)arc.Center.X, (float)arc.Center.Y, (float)arc.Center.Z);
                 Sweep = EndAngle - StartAngle;
                 if (Sweep < 0) { Sweep += 360; }
                 IsLargeArc = Sweep >= 180;
+                Length = (float)((Sweep * (Math.PI / 180)) * Radius);
 
-                Length = (float)((Sweep / 360) * (2 * Math.PI * Radius));
+                UpdateArcMidpoint();
+                UpdateVertices(arc);
             }
             else
             {
@@ -81,20 +64,56 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             }
         }
 
-        public override void UpdateVertices()
+        public override void UpdateVertices(EntityObject entity)
         {
-            Vertices.Clear();
-
-            NumberOfSegments = (int)Math.Ceiling(Math.Abs(Sweep) / ToleranceAngle);
-
-            for (int i = 0; i <= NumberOfSegments; i++)
+            if (entity is Arc arc)
             {
-                double theta = StartAngle + i * Sweep / NumberOfSegments;
-                float x = Center.X + (float)(Radius * Math.Cos(theta));
-                float y = Center.Y + (float)(Radius * Math.Sin(theta));
+                Vertices.Clear();
 
-                Vertices.Add();
+                NumberOfSegments = CalculateSegments(Radius, Sweep);
+                var vertices = arc.ToPolyline2D(NumberOfSegments).Vertexes;
+
+                for (int i = 0; i < vertices.Count; i++)
+                {
+                    if (i == vertices.Count - 1) { break; }
+
+                    Vertex s = new(
+                        new Vector3((float)vertices[i].Position.X, (float)vertices[i].Position.Y, 0),
+                        Color);
+                    Vertex e = new(
+                        new Vector3((float)vertices[i + 1].Position.X, (float)vertices[i + 1].Position.Y, 0),
+                        Color);
+
+                    Vertices.Add(s);
+                    Vertices.Add(e);
+                }
+
+                StartVertex = Vertices.First();
+                EndVertex = Vertices.Last();
             }
+            else
+            {
+                throw new ArgumentException("entity must be of type Arc");
+            }
+        }
+
+        public Vector3 UpdateArcMidpoint()
+        {
+            // Calculate the midpoint angle
+            float midAngle = StartAngle + (Sweep / 2); // Midpoint angle in degrees
+            double midAngleRadians = midAngle * Math.PI / 180; // Convert to radians
+
+            // Calculate midpoint in XY plane
+            float midX = RadiusPoint.X + (float)(Radius * Math.Cos(midAngleRadians));
+            float midY = RadiusPoint.Y + (float)(Radius * Math.Sin(midAngleRadians));
+
+            // Interpolate the Z coordinate along the arc
+            float startZ = StartVertex.Position.Z;
+            float endZ = EndVertex.Position.Z;
+            float midZ = startZ + ((endZ - startZ) * (midAngle - StartAngle) / Sweep);
+
+            // Return the midpoint as a 3D vector
+            return new Vector3(midX, midY, midZ);
         }
         #endregion
     }

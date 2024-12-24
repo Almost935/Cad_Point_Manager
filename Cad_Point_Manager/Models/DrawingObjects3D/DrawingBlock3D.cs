@@ -17,8 +17,12 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
 {
     public class DrawingBlock3D : DrawingObject3D
     {
+        #region Fields
+        private List<DrawingObject3D> _drawingObjects = [];
+        private List<Vertex> _vertices = [];
+        #endregion
+
         #region Properties
-        private List<DrawingObject3D> _drawingObjects = new();
         public List<DrawingObject3D> DrawingObjects
         {
             get => _drawingObjects;
@@ -28,8 +32,18 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                 OnPropertyChanged(nameof(DrawingObjects));
             }
         }
+        public List<Vertex> Vertices
+        {
+            get => _vertices;
+            set
+            {
+                _vertices = value;
+                OnPropertyChanged(nameof(Vertices));
+            }
+        }
 
-        public Insert Insert { get; set; }
+        public Vector3 InsertionPoint { get; set; }
+        public int NumberOfDrawingObjects => DrawingObjects.Count;
         #endregion
 
         #region Constructors
@@ -38,36 +52,59 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         public DrawingBlock3D(Insert insert, ObjectLayer3D layer, bool isPartOfBlock = false, DrawingBlock3D block = null)
         {
             Type = DrawingObject3dType.DrawingBlock3D;
+
             EntityObject = insert;
-            Insert = insert;
             Layer = layer;
             IsPartOfBlock = isPartOfBlock;
             DrawingBlock3D = block;
-
+           
             UpdateColor();
-            UpdateDrawingObjects();
+            UpdateData(insert);
         }
         #endregion
 
         #region Methods
-        private List<DrawingObject3D> UpdateDrawingObjects()
-        {
-            List<DrawingObject3D> drawingObjects = [];
-            
-            foreach (var e in Insert.Explode())
-            {
-                var obj = DxfHelpers.GetDrawingObject3D(e, Layer);
-                if (obj is not null) { drawingObjects.Add(obj); }
-            }
-
-            return drawingObjects;
-        }
-
         public override void UpdateData(EntityObject entity)
         {
             if (entity is Insert insert)
             {
+                InsertionPoint = new((float)insert.Position.X, (float)insert.Position.Y, (float)insert.Position.Z);
 
+                UpdateDrawingObjects(insert);
+                UpdateVertices();
+            }
+            else
+            {
+               throw new ArgumentException("entity must be of type Insert");
+            }
+        }
+
+        private void UpdateDrawingObjects(EntityObject entity)
+        {
+            if (entity is Insert insert)
+            {
+                foreach (var e in insert.Explode())
+                {
+                    var obj = DxfHelpers.GetDrawingObject3D(e, Layer);
+                    if (obj is not null) { DrawingObjects.Add(obj); }
+                }
+            }
+            else
+            {
+                throw new ArgumentException("entity must be of type Insert");
+            }
+        }
+
+        private void UpdateVertices()
+        {
+            Vertices.Clear();
+
+            foreach (var obj in DrawingObjects)
+            {
+                if (obj is DrawingSegment3D segment)
+                {
+                    Vertices.AddRange(segment.Vertices);
+                }
             }
         }
         #endregion

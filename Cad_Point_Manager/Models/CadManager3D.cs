@@ -26,6 +26,7 @@ namespace Cad_Point_Manager.Models
         private bool _dxfDirty = true;
         private bool _dxfNeedsLoad = true;
         private Bounds _extents;
+        private List<Vertex> _vertices = [];
 
         public bool DxfDirty
         {
@@ -54,6 +55,15 @@ namespace Cad_Point_Manager.Models
                 OnPropertyChanged(nameof(Extents));
             }
         }
+        public List<Vertex> Vertices
+        {
+            get => _vertices;
+            set
+            {
+                _vertices = value;
+                OnPropertyChanged(nameof(Vertices));
+            }
+        }
 
         public DxfDocument DxfDocument { get; set; }
         public SortedDictionary<string, ObjectLayer3D> Layers { get; set; } = [];
@@ -76,9 +86,12 @@ namespace Cad_Point_Manager.Models
                 var drawingObj3d = DxfHelpers.GetDrawingObject3D(e, layer);
                 if (layer is not null && drawingObj3d is not null)
                 {
-                    layer.DrawingObject3Ds.Add(drawingObj3d);
+                    layer.AddDrawingObject(drawingObj3d);
                 }
             }
+
+            GetVerticesList();
+
             DxfDirty = true;
             DxfNeedsReload = true;
         }
@@ -86,7 +99,10 @@ namespace Cad_Point_Manager.Models
         public void ClearDxf()
         {
             DxfDocument = null;
+
             Layers.Clear();
+            Vertices.Clear();
+
             DxfDirty = true;
         }
 
@@ -104,10 +120,12 @@ namespace Cad_Point_Manager.Models
             }
         }
 
-
-        public Vertex[] GetVerticesList()
+        public void GetVerticesList()
         {
-
+            foreach (var layer in Layers.Values)
+            {
+                Vertices.AddRange(layer.Vertices);
+            }
         }
     }
 }
