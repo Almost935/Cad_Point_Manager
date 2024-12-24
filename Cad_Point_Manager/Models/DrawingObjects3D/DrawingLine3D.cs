@@ -16,6 +16,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
 {
     public class DrawingLine3D : DrawingSegment3D
     {
+        #region Constructors
         private DrawingLine3D() { Type = DrawingObject3dType.DrawingLine3D; }
 
         public DrawingLine3D(Line line, ObjectLayer3D layer, bool isPartOfBlock = false, DrawingBlock3D block = null)
@@ -27,9 +28,23 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             EntityObject = line;
 
             UpdateColor();
-
-            StartVertex = new(new Vector3((float)line.StartPoint.X, (float)line.StartPoint.Y, 0), Color);
-            EndVertex = new(new Vector3((float)line.EndPoint.X, (float)line.EndPoint.Y, 0), Color);
+            UpdateData(line);
         }
+        #endregion
+
+        #region Methods
+        public override void UpdateData(EntityObject entity)
+        {
+            if (entity is Line line)
+            {
+                StartVertex = new(new Vector3((float)line.StartPoint.X, (float)line.StartPoint.Y, 0), Color);
+                EndVertex = new(new Vector3((float)line.EndPoint.X, (float)line.EndPoint.Y, 0), Color);
+            }
+            else
+            {
+                throw new ArgumentException("entity must be of type Line");
+            }
+        }
+        #endregion
     }
 }

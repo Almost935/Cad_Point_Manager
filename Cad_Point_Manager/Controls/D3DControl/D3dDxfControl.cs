@@ -187,35 +187,23 @@ namespace Cad_Point_Manager.Controls.D3DControl
                             }
                         }
                     }
+
+                    if (drawingObject3D is DrawingBlock3D block)
+                    {
+
+                    }
                 }
             }
 
-            //float left = CadManager3D.Extents.Left;
-            //float right = CadManager3D.Extents.Right;
-            //float bottom = CadManager3D.Extents.Bottom;
-            //float top = CadManager3D.Extents.Top;
-            //Vertex bottomLeft = new(new Vector3(left, bottom, 0), new Vector4(0, 1, 0, 1));
-            //Vertex bottomRight = new(new Vector3(right, bottom, 0), new Vector4(0, 1, 0, 1));
-            //Vertex topLeft = new(new Vector3(left, top, 0), new Vector4(0, 1, 0, 1));
-            //Vertex topRight = new(new Vector3(right, top, 0), new Vector4(0, 1, 0, 1));
-            //vertices.Add(bottomLeft);
-            //vertices.Add(bottomRight);
-            //vertices.Add(bottomRight);
-            //vertices.Add(topRight);
-            //vertices.Add(topRight);
-            //vertices.Add(topLeft);
-            //vertices.Add(topLeft);
-            //vertices.Add(bottomLeft);
-
             _vertices = [.. vertices];
 
-            _vertexBuffer = Buffer.Create(
+            if (_vertices is not null && _vertices.Length > 0)
+            {
+                _vertexBuffer = Buffer.Create(
                 _d3dResCache.Device,
                 BindFlags.VertexBuffer,
-                _vertices
-            );
-
-            Getting error here after clicking new
+                _vertices);
+            }
 
             DxfInitialized = true;
             DxfIsDirty = false;

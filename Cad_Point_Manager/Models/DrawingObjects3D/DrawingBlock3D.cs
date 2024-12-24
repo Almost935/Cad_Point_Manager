@@ -17,6 +17,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
 {
     public class DrawingBlock3D : DrawingObject3D
     {
+        #region Properties
         private List<DrawingObject3D> _drawingObjects = new();
         public List<DrawingObject3D> DrawingObjects
         {
@@ -29,7 +30,9 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         }
 
         public Insert Insert { get; set; }
+        #endregion
 
+        #region Constructors
         private DrawingBlock3D() { Type = DrawingObject3dType.DrawingLine3D; }
 
         public DrawingBlock3D(Insert insert, ObjectLayer3D layer, bool isPartOfBlock = false, DrawingBlock3D block = null)
@@ -44,7 +47,9 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             UpdateColor();
             UpdateDrawingObjects();
         }
+        #endregion
 
+        #region Methods
         private List<DrawingObject3D> UpdateDrawingObjects()
         {
             List<DrawingObject3D> drawingObjects = [];
@@ -57,5 +62,14 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
 
             return drawingObjects;
         }
+
+        public override void UpdateData(EntityObject entity)
+        {
+            if (entity is Insert insert)
+            {
+
+            }
+        }
+        #endregion
     }
 }

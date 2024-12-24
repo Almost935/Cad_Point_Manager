@@ -22,6 +22,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         public Vertex EndVertex { get; set; }
         public List<DrawingSegment3D> DrawingSegment3Ds { get; set; } = [];
 
+        #region Constructors
         private DrawingPolyline3D() { Type = DrawingObject3dType.DrawingLine3D; }
 
         public DrawingPolyline3D(Polyline2D polyline2D, ObjectLayer3D layer, bool isPartOfBlock = false, DrawingBlock3D block = null)
@@ -33,18 +34,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             EntityObject = polyline2D;
 
             UpdateColor();
-
-            var start = polyline2D.Vertexes.First();
-            var end = polyline2D.Vertexes.Last();
-            StartVertex = new(new Vector3((float)start.Position.X, (float)start.Position.Y, 0), Color);
-            EndVertex = new(new Vector3((float)end.Position.X, (float)end.Position.Y, 0), Color);
-
-            var entities = polyline2D.Explode();
-            foreach (var entity in entities)
-            {
-                var obj = DxfHelpers.GetDrawingSegment3D(entity, Layer);
-                if (obj is not null) { DrawingSegment3Ds.Add(obj); }
-            }
+            UpdateData(polyline2D);
         }
 
         public DrawingPolyline3D(Polyline3D polyline3D, ObjectLayer3D layer, bool isPartOfBlock = false, DrawingBlock3D block = null)
@@ -56,18 +46,46 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             EntityObject = polyline3D;
 
             UpdateColor();
+            UpdateData(polyline3D);
+        }
+        #endregion
 
-            var start = polyline3D.Vertexes.First();
-            var end = polyline3D.Vertexes.Last();
-            StartVertex = new(new Vector3((float)start.X, (float)start.Y, 0), Color);
-            EndVertex = new(new Vector3((float)end.X, (float)end.Y, 0), Color);
-
-            var entities = polyline3D.Explode();
-            foreach (var entity in entities)
+        #region Methods
+        public override void UpdateData(EntityObject entity)
+        {
+            if (entity is Polyline2D polyline2d)
             {
-                var obj = DxfHelpers.GetDrawingSegment3D(entity, Layer);
-                if (obj is not null) { DrawingSegment3Ds.Add(obj); }
+                var start = polyline2d.Vertexes.First();
+                var end = polyline2d.Vertexes.Last();
+                StartVertex = new(new Vector3((float)start.Position.X, (float)start.Position.Y, 0), Color);
+                EndVertex = new(new Vector3((float)end.Position.X, (float)end.Position.Y, 0), Color);
+
+                var entities = polyline2d.Explode();
+                foreach (var e in entities)
+                {
+                    var obj = DxfHelpers.GetDrawingSegment3D(e, Layer);
+                    if (obj is not null) { DrawingSegment3Ds.Add(obj); }
+                }
+            }
+            else if (entity is Polyline3D polyline3d)
+            {
+                var start = polyline3d.Vertexes.First();
+                var end = polyline3d.Vertexes.Last();
+                StartVertex = new(new Vector3((float)start.X, (float)start.Y, 0), Color);
+                EndVertex = new(new Vector3((float)end.X, (float)end.Y, 0), Color);
+
+                var entities = polyline3d.Explode();
+                foreach (var e in entities)
+                {
+                    var obj = DxfHelpers.GetDrawingSegment3D(e, Layer);
+                    if (obj is not null) { DrawingSegment3Ds.Add(obj); }
+                }
+            }
+            else
+            {
+                throw new ArgumentException("entity must be of type Line");
             }
         }
+        #endregion
     }
 }

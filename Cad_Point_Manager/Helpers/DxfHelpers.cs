@@ -163,10 +163,32 @@ namespace Cad_Point_Manager.Helpers
                 _ => null,
             };
         }
-        //public static Vector4 GetEntityObjectColor(EntityObject e)
-        //{
-        //    if (e.Is)
-        //}
+        public static List<Vertex> GetVertices(DrawingObject3D drawingObject3D)
+        {
+            List<Vertex> vertices = new List<Vertex>();
+
+           switch (drawingObject3D)
+            {
+                case DrawingLine3D line:
+                    vertices.Add(line.StartVertex);
+                    vertices.Add(line.EndVertex);
+                    break;
+                case DrawingArc3D arc:
+                    vertices.AddRange(arc.IntermediateVertices);
+                    break;
+                case DrawingCircle3D circle:
+                    vertices.AddRange(circle.GetVertices());
+                    break;
+                case DrawingPolyline3D polyline:
+                    vertices.AddRange(polyline.GetVertices());
+                    break;
+                case DrawingBlock3D block:
+                    vertices.AddRange(block.GetVertices());
+                    break;
+            }
+
+            return vertices;
+        }}
 
 
         public static (byte r, byte g, byte b, byte a) GetRGBAColor(EntityObject entity)

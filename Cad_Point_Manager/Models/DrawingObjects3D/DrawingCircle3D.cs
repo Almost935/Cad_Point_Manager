@@ -1,4 +1,5 @@
-﻿using Cad_Point_Manager.Models.DrawingObjects;
+﻿using Cad_Point_Manager.Controls.D3DControl;
+using Cad_Point_Manager.Models.DrawingObjects;
 using Cad_Point_Manager.Models.DrawingObjects3D;
 using Cad_Point_Manager.Models.SerializableObjects;
 using netDxf.Entities;
@@ -11,7 +12,7 @@ using Ellipse = SharpDX.Direct2D1.Ellipse;
 
 namespace Cad_Point_Manager.DrawingObjects
 {
-    public class DrawingCircle3D : DrawingSegment3D
+    public class DrawingCircle3D : DrawingCurve3D
     {
         #region Fields
         private Circle _dxfCircle;
@@ -30,6 +31,8 @@ namespace Cad_Point_Manager.DrawingObjects
 
         public float Radius { get; set; }
         public RawVector2 Center { get; set; }
+        public List<Vertex> IntermediateVertices { get; set; } = [];
+        public float Circumference { get; set; }
         #endregion
 
         #region Constructor
@@ -46,7 +49,25 @@ namespace Cad_Point_Manager.DrawingObjects
         #endregion
 
         #region Methods
+        public override void UpdateData(EntityObject entity)
+        {
+            if (entity is Circle circle)
+            {
+                Radius = (float)circle.Radius;
+                StartAngle = (float)circle.StartAngle;
+                EndAngle = (float)circle.EndAngle;
 
+                Sweep = EndAngle - StartAngle;
+                if (Sweep < 0) { Sweep += 360; }
+                IsLargeArc = Sweep >= 180;
+
+                Length = (float)((Sweep / 360) * (2 * Math.PI * Radius));
+            }
+            else
+            {
+                throw new ArgumentException("entity must be of type Circle");
+            }
+        }
         #endregion
     }
 }

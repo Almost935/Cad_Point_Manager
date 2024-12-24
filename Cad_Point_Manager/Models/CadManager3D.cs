@@ -103,5 +103,11 @@ namespace Cad_Point_Manager.Models
                 return layer;
             }
         }
+
+
+        public Vertex[] GetVerticesList()
+        {
+
+        }
     }
 }

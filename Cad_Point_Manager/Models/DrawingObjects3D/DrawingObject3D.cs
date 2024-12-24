@@ -6,8 +6,9 @@ using System.Runtime.CompilerServices;
 
 namespace Cad_Point_Manager.Models.DrawingObjects3D
 {
-    public class DrawingObject3D : INotifyPropertyChanged
+    public abstract class DrawingObject3D : INotifyPropertyChanged
     {
+        #region Properties
         public DrawingObject3dType Type { get; set; }
         public ObjectLayer3D Layer { get; set; }
         public EntityObject EntityObject { get; set; }
@@ -17,13 +18,14 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         public DrawingBlock3D DrawingBlock3D { get; set; }
         public bool IsSelected { get; set; } = false;
         public bool IsMouseOver { get; set; } = false;
+        #endregion
 
+        #region Events
         public event PropertyChangedEventHandler PropertyChanged;
+        #endregion
 
-        protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        }
+        #region Methods
+        public abstract void UpdateData(EntityObject entity);
 
         public void UpdateColor()
         {
@@ -48,6 +50,12 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             {
                 Color = new(0, 0, 0, 1);
             }
-        } 
+        }
+
+        protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+        #endregion
     }
 }
