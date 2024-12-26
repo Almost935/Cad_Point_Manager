@@ -1,5 +1,6 @@
 ﻿using Cad_Point_Manager.Controls.D3DControl;
 using Cad_Point_Manager.Helpers;
+using Cad_Point_Manager.Models.DrawingObjects;
 using netDxf;
 using netDxf.Entities;
 using SharpDX;
@@ -82,9 +83,16 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             }
         }
 
-        public override bool HitTest(Vector2 point)
+        public override bool HitTest(System.Windows.Point point, float tolerance)
         {
-            throw new NotImplementedException();
+            foreach (var obj in DrawingObjects)
+            {
+                if (obj.HitTest(point, tolerance))
+                {
+                    return true;
+                }
+            }
+            return false;
         }
 
 

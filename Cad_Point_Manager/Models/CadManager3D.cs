@@ -86,7 +86,6 @@ namespace Cad_Point_Manager.Models
                 }
             }
 
-            Rect rect = Extents.ToRect();
             DrawingObjectTree3D = new(this, Extents.ToRect(), 4);
 
             GetVerticesList();
@@ -103,17 +102,23 @@ namespace Cad_Point_Manager.Models
 
             if (node is null) { return null; }
 
-            DrawingObject3D drawingObject = null;
+            DrawingObject3D drawingObject3D = null;
 
             Parallel.ForEach(node.DrawingObjects, obj =>
             {
-                if (obj.Bounds.Contains(p))
+                if (drawingObject3D is null)
                 {
-
+                    if (obj.Bounds.Contains(p))
+                    {
+                        if (obj.HitTest(p, tolerance))
+                        {
+                            drawingObject3D = obj;
+                        }
+                    }
                 }
             });
 
-            return null;
+            return drawingObject3D;
         }
 
         public void ClearDxf()

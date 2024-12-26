@@ -221,6 +221,30 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _d3DSurface.SetRenderTarget(_texture2D);
 
             _device.ImmediateContext.Rasterizer.SetViewport(0, 0, width, height, 0.0f, 1.0f);
+
+            InitializeDirect2D();
+        }
+        private void InitializeDirect2D()
+        {
+            using (var dxgiDevice = _device.QueryInterface<SharpDX.DXGI.Device>())
+            {
+                var d2dFactory = new SharpDX.Direct2D1.Factory1();
+                _d3dResCache.D2DDevice = new SharpDX.Direct2D1.Device(d2dFactory, dxgiDevice);
+                _d3dResCache.D2DDeviceContext = new SharpDX.Direct2D1.DeviceContext(_d3dResCache.D2DDevice, SharpDX.Direct2D1.DeviceContextOptions.None);
+            }
+
+            var bitmapProperties = new SharpDX.Direct2D1.BitmapProperties1(
+                new SharpDX.Direct2D1.PixelFormat(SharpDX.DXGI.Format.B8G8R8A8_UNorm, SharpDX.Direct2D1.AlphaMode.Premultiplied),
+                dpiX: 96, dpiY: 96,
+                bitmapOptions: SharpDX.Direct2D1.BitmapOptions.Target | SharpDX.Direct2D1.BitmapOptions.CannotDraw);
+
+            using (var surface = _texture2D.QueryInterface<SharpDX.DXGI.Surface>())
+            {
+                _d3dResCache.D2DTargetBitmap = new SharpDX.Direct2D1.Bitmap1(_d3dResCache.D2DDeviceContext, surface, bitmapProperties);
+            }
+
+            _d3dResCache.D2DDeviceContext.Target = _d3dResCache.D2DTargetBitmap;
+            _d3dResCache.D2DDeviceContext.TextAntialiasMode = SharpDX.Direct2D1.TextAntialiasMode.Grayscale;
         }
 
         private void StartRendering()
@@ -254,7 +278,12 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 return;
             }
 
+            _d3dResCache.D2DDeviceContext.BeginDraw();
+            _d3dResCache.D2DDeviceContext.Clear(null);
+
             Render();
+
+            _d3dResCache.D2DDeviceContext.EndDraw();
 
             CalcFps();
 

@@ -1,4 +1,5 @@
 ﻿using Cad_Point_Manager.Controls.D3DControl;
+using Cad_Point_Manager.Helpers;
 using Cad_Point_Manager.Models.DrawingObjects;
 using Cad_Point_Manager.Models.DrawingObjects3D;
 using Cad_Point_Manager.Models.SerializableObjects;
@@ -121,9 +122,9 @@ namespace Cad_Point_Manager.DrawingObjects
             }
         }
 
-        public override bool HitTest(Vector2 point)
+        public override bool HitTest(System.Windows.Point point, float tolerance)
         {
-            throw new NotImplementedException();
+            return MathHelpers.IsPointOnCircle(point.X, point.Y, RadiusPoint.X, RadiusPoint.Y, Radius, tolerance);
         }
         #endregion
     }

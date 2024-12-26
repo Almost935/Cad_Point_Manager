@@ -1,4 +1,5 @@
 ﻿using Cad_Point_Manager.Controls.D3DControl;
+using Cad_Point_Manager.Helpers;
 using netDxf;
 using netDxf.Entities;
 using SharpDX;
@@ -64,9 +65,10 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             Bounds = Rect.Union(Bounds, new System.Windows.Point(EndVertex.Position.X, EndVertex.Position.Y));
         }
 
-        public override bool HitTest(Vector2 point)
+        public override bool HitTest(System.Windows.Point point, float tolerance)
         {
-            throw new NotImplementedException();
+            return MathHelpers.IsPointOnLine(point.X, point.Y, StartVertex.Position.X, StartVertex.Position.Y, 
+                EndVertex.Position.X, EndVertex.Position.Y, tolerance);
         }
         #endregion
     }

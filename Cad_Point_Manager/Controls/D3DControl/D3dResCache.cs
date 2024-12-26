@@ -1,7 +1,10 @@
 ﻿using System.ComponentModel;
 using SharpDX.Direct3D11;
+using SharpDX.Direct2D1;
 
 using Factory1 = SharpDX.Direct2D1.Factory1;
+using Device = SharpDX.Direct3D11.Device;
+using DeviceContext = SharpDX.Direct3D11.DeviceContext;
 
 namespace Cad_Point_Manager.Controls.D3DControl
 {
@@ -14,6 +17,10 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private DeviceContext _deviceContext = null;
         private Texture2D _texture2D = null;
         private RenderTargetView _renderTargetView = null;
+        private SharpDX.Direct2D1.Device _d2DDevice = null;
+        private SharpDX.Direct2D1.DeviceContext _d2DDeviceContext = null;
+        private Factory1 _d2DFactory = null;
+        private SharpDX.Direct2D1.Bitmap1 _d2dTargetBitmap = null;
         #endregion
 
         #region Properties
@@ -53,6 +60,42 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 OnPropertyChanged(nameof(RenderTargetView));
             }
         }
+        public SharpDX.Direct2D1.Device D2DDevice
+        {
+            get { return _d2DDevice; }
+            set
+            {
+                _d2DDevice = value;
+                OnPropertyChanged(nameof(D2DDevice));
+            }
+        }
+        public SharpDX.Direct2D1.DeviceContext D2DDeviceContext
+        {
+            get { return _d2DDeviceContext; }
+            set
+            {
+                _d2DDeviceContext = value;
+                OnPropertyChanged(nameof(D2DDeviceContext));
+            }
+        }
+        public Factory1 D2DFactory
+        {
+            get { return _d2DFactory; }
+            set
+            {
+                _d2DFactory = value;
+                OnPropertyChanged(nameof(D2DFactory));
+            }
+        }
+        public SharpDX.Direct2D1.Bitmap1 D2DTargetBitmap
+        {
+            get { return _d2dTargetBitmap; }
+            set
+            {
+                _d2dTargetBitmap = value;
+                OnPropertyChanged(nameof(D2DTargetBitmap));
+            }
+        }
         #endregion
 
         #region Events
@@ -60,11 +103,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
         #endregion
 
         #region Methods
-        public void ChangeDeviceContext(DeviceContext1 newDeviceContext)
-        {
-            
-        }
-
         public void Dispose()
         {
             Dispose(true);
@@ -77,8 +115,12 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 if (disposing)
                 {
                     _device?.Dispose();
+                    _deviceContext?.Dispose();
                     _texture2D?.Dispose();
                     _renderTargetView?.Dispose();
+                    _d2DDevice?.Dispose();
+                    _d2DDeviceContext?.Dispose();
+                    _d2DFactory?.Dispose();
                 }
 
                 disposed = true;

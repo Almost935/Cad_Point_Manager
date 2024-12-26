@@ -12,7 +12,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
     public class Camera
     {
         #region Fields
-        private const float _zoomFactor = 1.35f;
+        private readonly float _zoomFactor;
 
         private Vector3 _position;   // Camera position
         private Vector3 _target;     // Camera target
@@ -38,10 +38,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
         #endregion
 
         #region Constructors
-        public Camera(float screenWidth, float screenHeight, Bounds dxfBounds)
+        public Camera(float screenWidth, float screenHeight, Bounds dxfBounds, float zoomFactor)
         {
             ScreenWidth = screenWidth;
             ScreenHeight = screenHeight;
+            _zoomFactor = zoomFactor;
 
             UpdateBounds(dxfBounds);
 

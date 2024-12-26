@@ -44,7 +44,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         #region Methods
         public abstract void UpdateData(EntityObject entity);
         public abstract void UpdateBounds();
-        public abstract bool HitTest(Vector2 point, float tolerance);
+        public abstract bool HitTest(Point point, float tolerance);
 
         public void UpdateColor()
         {

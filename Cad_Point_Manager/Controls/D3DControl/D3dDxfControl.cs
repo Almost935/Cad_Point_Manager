@@ -4,6 +4,7 @@ using Cad_Point_Manager.Models.DrawingObjects3D;
 using SharpDX;
 using SharpDX.D3DCompiler;
 using SharpDX.Direct3D11;
+using SharpDX.Mathematics.Interop;
 using System.ComponentModel;
 using System.Configuration;
 using System.Diagnostics;
@@ -18,11 +19,12 @@ using Point = System.Windows.Point;
 
 namespace Cad_Point_Manager.Controls.D3DControl
 {
-    public class D3dDxfControl : Direct3DControl, INotifyPropertyChanged
+    public class D3dDxfControl : Direct3DControl, INotifyPropertyChanged, IDisposable
     {
         #region Fields
         private const float _rotationSpeed = 0.005f;
         private const float _panThreshold = 1.0f;
+        private const float _zoomFactor = 1.3f;
 
         private float _width;
         private float _height;
@@ -54,9 +56,18 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private Vector2 _dxfCoords = new();
         private string _dxfCoordsString = $"X: {0:F3}   Y: {0:F3}";
 
-        // Hittesting Fields
+        // Hit Testing Fields
         private bool _isHitTesting = false;
-        private float _hittestStrokeThickness;
+        private float _hittestStrokeThickness = 2;
+
+        // Snapped and Highlighted Objects Fields
+        private DrawingObject3D _snappedObject;
+        private DrawingObject3D _highlightedObject;
+
+        // Direct2D Fields
+        private SharpDX.Direct2D1.Brush _highlightedBrush;
+        private SharpDX.Direct2D1.Brush _highlightedOuterEdgeBrush;
+        private bool _d2dInitialized = false;
         #endregion
 
         #region Properties
@@ -132,10 +143,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 _height = (float)ActualHeight;
                 GetDxfBounds();
 
-                _camera = new(_width, _height, DxfBounds);
+                _camera = new(_width, _height, DxfBounds, _zoomFactor);
             }
             if (!ShadersLoaded) { InitializeShaders(); }
             if (!ConstantBufferInitialized) { InitializeConstantBuffer(); }
+            if (!_d2dInitialized) { InitializeDirect2D(); }
             if (D3dIsDirty) { DrawDxf(); }
         }
 
@@ -182,6 +194,15 @@ namespace Cad_Point_Manager.Controls.D3DControl
             D3dIsDirty = true;
         }
 
+        private void InitializeDirect2D()
+        {
+            _highlightedBrush?.Dispose();
+            _highlightedOuterEdgeBrush?.Dispose();
+
+            _highlightedBrush = new SharpDX.Direct2D1.SolidColorBrush(_d3dResCache.D2DDeviceContext, new RawColor4((97 / 255), 1.0f, 0.0f, 1.0f));
+            _highlightedOuterEdgeBrush = new SharpDX.Direct2D1.SolidColorBrush(_d3dResCache.D2DDeviceContext, new RawColor4((97 / 255), 1.0f, 0.0f, 1.0f))
+            { Opacity = 0.2f };
+        }
 
         private void InitializeShaders()
         {
@@ -301,7 +322,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             }
         }
 
-        protected override void OnMouseMove(MouseEventArgs e)
+        protected override async void OnMouseMove(MouseEventArgs e)
         {
             _pointerCoords = e.GetPosition(this);
             var currentMousePos = new Vector2((float)_pointerCoords.X, (float)_pointerCoords.Y);
@@ -313,10 +334,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     //Task.Run(() => UpdateDxfCoords(currentMousePos));
                     UpdateDxfCoords(currentMousePos);
 
-                    if (!_isHitTesting)
-                    {
-                        CadManager3D.HitTestPoint(new Point(DxfCoords.X, DxfCoords.Y));
-                    }
+                    await RunHitTestAsync();
                 }
 
                 _isShiftPressed = Keyboard.IsKeyDown(Key.LeftShift) || Keyboard.IsKeyDown(Key.RightShift);
@@ -359,6 +377,32 @@ namespace Cad_Point_Manager.Controls.D3DControl
             e.Handled = true;
         }
 
+
+        private async Task RunHitTestAsync()
+        {
+            if (!_isHitTesting)
+            {
+                float tolerance = _hittestStrokeThickness / (_camera.CurrentZoom);
+                Point p = new(DxfCoords.X, DxfCoords.Y);
+
+                if (_snappedObject is not null)
+                {
+                    if (_snappedObject.HitTest(p, tolerance))
+                    {
+
+                    }
+                    else
+                    {
+                        _snappedObject = CadManager3D.HitTestPoint(p, tolerance);
+                    }
+                }
+                else
+                {
+                    CadManager3D.HitTestPoint(p, tolerance);
+                }
+            }
+        }
+
         private static void OnCadManager3DChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             if (d is not D3dDxfControl control) { return; }
@@ -384,7 +428,35 @@ namespace Cad_Point_Manager.Controls.D3DControl
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
+        #endregion
 
+        #region IDisposable Support
+        private bool disposedValue = false; // To detect redundant calls
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    // Dispose managed state (managed objects).
+                    _vertexBuffer?.Dispose();
+                    _transformationBuffer?.Dispose();
+                    _vertexShader?.Dispose();
+                    _pixelShader?.Dispose();
+                    _inputLayout?.Dispose();
+                    _highlightedBrush?.Dispose();
+                    _highlightedOuterEdgeBrush?.Dispose();
+                }
+
+                disposedValue = true;
+            }
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+        }
         #endregion
     }
 }

@@ -101,9 +101,17 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             }
         }
 
-        public override bool HitTest(Vector2 point)
+        public override bool HitTest(System.Windows.Point point, float tolerance)
         {
-            throw new NotImplementedException();
+            foreach (var segment in DrawingSegments)
+            {
+                if (segment.HitTest(point, tolerance))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
 

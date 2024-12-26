@@ -1,4 +1,5 @@
 ﻿using Cad_Point_Manager.Controls.D3DControl;
+using Cad_Point_Manager.Helpers;
 using netDxf;
 using netDxf.Entities;
 using SharpDX;
@@ -103,32 +104,9 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             }
         }
 
-        public override bool HitTest(Vector2 point, float tolerance)
+        public override bool HitTest(System.Windows.Point point, float tolerance)
         {
-            // Step 1: Check if point is on the circle
-            double distance = Math.Sqrt(Math.Pow(point.X - RadiusPoint.X, 2) + Math.Pow(point.X - RadiusPoint.Y, 2));
-            if (Math.Abs(distance - Radius) > tolerance)
-                return false;
-
-            // Step 2: Check if the point is within the arc's angular bounds
-            double angle = Math.Atan2(point.Y - RadiusPoint.Y, px - cx) * (180.0 / Math.PI); // Convert to degrees
-            angle = (angle + 360) % 360; // Normalize to [0, 360]
-
-            // Normalize the start and end angles
-            startAngle = (startAngle + 360) % 360;
-            endAngle = (endAngle + 360) % 360;
-
-            if (startAngle <= endAngle)
-            {
-                return angle >= startAngle && angle <= endAngle;
-            }
-            else
-            {
-                // Arc crosses 360 boundary
-                return angle >= startAngle || angle <= endAngle;
-            }
-
-            return false;
+            return MathHelpers.IsPointOnArc(point.X, point.Y, RadiusPoint.X, RadiusPoint.Y, Radius, StartAngle, EndAngle, tolerance);
         }
 
 
