@@ -8,6 +8,8 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
+using Vector3 = SharpDX.Vector3;
 
 namespace Cad_Point_Manager.Models.DrawingObjects3D
 {
@@ -40,7 +42,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             return Math.Max(10, (int)Math.Ceiling(segments));
         }
 
-        public static int CalculateSegments(double radius, double sweep, double tolerance = 0.05)
+        public static int CalculateSegments(double radius, double sweep, double tolerance = 0.001)
         {
             // Convert sweep angle from degrees to radians
             double sweepRadians = sweep * Math.PI / 180.0;
@@ -55,8 +57,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             // Calculate the number of segments
             int numSegments = (int)Math.Ceiling(sweepRadians / angleStep);
 
-            Debug.WriteLine($"\nsweep: {sweep} radius: {radius}" +
-                    $"\nnumSegments: {numSegments}");
 
             // Ensure at least one segment for very small arcs
             return Math.Max(numSegments, 10);

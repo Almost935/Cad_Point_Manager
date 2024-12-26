@@ -22,6 +22,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
     {
         #region Fields
         private const float _rotationSpeed = 0.005f;
+        private const float _panThreshold = 1.0f;
 
         private float _width;
         private float _height;
@@ -35,7 +36,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private Point _pointerCoords;
         private bool _dxfInitialized = false;
 
-        //Panning and Zooming Fields
+        // Panning and Zooming Fields
         private Matrix _viewMatrix = Matrix.Identity;
         private Matrix _projectionMatrix = Matrix.Identity;
 
@@ -45,12 +46,17 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private float _currentZoom = 1.0f;
         private Vector2 _panOffset = new(0, 0);
 
-        //Camera based fields
+        // Camera based fields
         private Camera _camera;
         private bool _isShiftPressed = false;
         private Vector2 _prevMousePos;
 
         private Vector2 _dxfCoords = new();
+        private string _dxfCoordsString = $"X: {0:F3}   Y: {0:F3}";
+
+        // Hittesting Fields
+        private bool _isHitTesting = false;
+        private float _hittestStrokeThickness;
         #endregion
 
         #region Properties
@@ -68,6 +74,15 @@ namespace Cad_Point_Manager.Controls.D3DControl
             set
             {
                 _dxfCoords = value;
+                OnPropertyChanged();
+            }
+        }
+        public string DxfCoordsString
+        {
+            get => _dxfCoordsString;
+            set
+            {
+                _dxfCoordsString = value;
                 OnPropertyChanged();
             }
         }
@@ -249,6 +264,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 DxfBounds = new(dxfBounds.Center.X - newWidth / 2, dxfBounds.Center.X + newWidth / 2, dxfBounds.Center.Y - newHeight / 2, dxfBounds.Center.Y + newHeight / 2);
             }
         }
+
         private Bounds ScaleBoundsToFit(Bounds dxfBounds)
         {
             float scaleX = _width / dxfBounds.Width;
@@ -262,7 +278,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
         {
             var ndcCoords = Camera.ScreenToNDC(mousePos, _width, _height);
             var vector3MouseCoords = Camera.Unproject(ndcCoords, _camera.InverseViewProjectionMatrix);
+
             DxfCoords = new(vector3MouseCoords.X, vector3MouseCoords.Y);
+            DxfCoordsString = $"X: {DxfCoords.X:F3}   Y: {DxfCoords.Y:F3}";
         }
 
 
@@ -288,30 +306,38 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _pointerCoords = e.GetPosition(this);
             var currentMousePos = new Vector2((float)_pointerCoords.X, (float)_pointerCoords.Y);
 
-            if (!_isPanning)
+            if (Vector2.Distance(currentMousePos, _prevMousePos) > _panThreshold)
             {
-                Task.Run(() => UpdateDxfCoords(currentMousePos));
-                //UpdateDxfCoords(currentMousePos);
-            }
-
-            _isShiftPressed = Keyboard.IsKeyDown(Key.LeftShift) || Keyboard.IsKeyDown(Key.RightShift);
-
-            if (e.MiddleButton == MouseButtonState.Pressed)
-            {
-                if (_isShiftPressed)
+                if (!_isPanning)
                 {
+                    //Task.Run(() => UpdateDxfCoords(currentMousePos));
+                    UpdateDxfCoords(currentMousePos);
 
-                }
-                else
-                {
-                    _camera.Pan(currentMousePos, _prevMousePos);
+                    if (!_isHitTesting)
+                    {
+                        CadManager3D.HitTestPoint(new Point(DxfCoords.X, DxfCoords.Y));
+                    }
                 }
 
-                D3dIsDirty = true;
-                e.Handled = true;
-            }
+                _isShiftPressed = Keyboard.IsKeyDown(Key.LeftShift) || Keyboard.IsKeyDown(Key.RightShift);
 
-            _prevMousePos = currentMousePos;
+                if (e.MiddleButton == MouseButtonState.Pressed)
+                {
+                    if (_isShiftPressed)
+                    {
+
+                    }
+                    else
+                    {
+                        _camera.Pan(currentMousePos, _prevMousePos);
+                    }
+
+                    D3dIsDirty = true;
+                    e.Handled = true;
+                }
+
+                _prevMousePos = currentMousePos;
+            }
         }
 
         protected override void OnMouseWheel(MouseWheelEventArgs e)

@@ -9,7 +9,8 @@ using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-
+using System.Windows;
+using Vector2 = SharpDX.Vector2;
 using Vector3 = SharpDX.Vector3;
 using Vector4 = SharpDX.Vector4;
 
@@ -25,7 +26,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         public float Length { get; set; }
         public bool IsClosed { get; set; }
         public List<DrawingSegment3D> DrawingSegments { get; set; } = [];
-        public List<Vertex> Vertices { get; set; } = [];
         public int NumberOfSegments => DrawingSegments.Count;
         #endregion
 
@@ -65,6 +65,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                 IsClosed = polyline2d.IsClosed;
 
                 UpdateVertices(polyline2d);
+                UpdateBounds();
 
                 Length = 0;
                 foreach (var segment in DrawingSegments)
@@ -89,6 +90,22 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                 throw new ArgumentException("entity must be of type Polyline2D or Polyline3D");
             }
         }
+
+        public override void UpdateBounds()
+        {
+            Bounds = Rect.Empty;
+
+            foreach (var segment in DrawingSegments)
+            {
+                Bounds = Rect.Union(Bounds, segment.Bounds);
+            }
+        }
+
+        public override bool HitTest(Vector2 point)
+        {
+            throw new NotImplementedException();
+        }
+
 
         public void UpdateVertices(EntityObject entity)
         {

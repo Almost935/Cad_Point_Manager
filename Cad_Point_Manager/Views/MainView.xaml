@@ -141,15 +141,8 @@
         <WrapPanel Grid.Row="3">
             <TextBlock Margin="20,0,0,0"
                        Foreground="White"
-                       Text="{Binding ElementName=d3dDxfControl, Path=DxfCoords}">
-                <!--<TextBlock.Text>
-                    <MultiBinding StringFormat="{}{0:F3} {1:F3}">
-                        <Binding ElementName="d3dDxfControl"
-                                 Path="DxfCoords.X" />
-                        <Binding ElementName="d3dDxfControl"
-                                 Path="DxfCoords.Y" />
-                    </MultiBinding>
-                </TextBlock.Text>-->
+                       Text="{Binding ElementName=d3dDxfControl, Path=DxfCoordsString}">
+               
             </TextBlock>
         </WrapPanel>
     </Grid>

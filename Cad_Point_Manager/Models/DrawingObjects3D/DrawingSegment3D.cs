@@ -20,9 +20,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         public int EndVertexIndex { get; set; }
         public Vertex StartVertex { get; set; }
         public Vertex EndVertex { get; set; }
-        public List<Vertex> Vertices { get; set; } = [];
         public float Length { get; set; }
-        public Vector3 MiddlePoint { get; set; }
         #endregion
     }
 }

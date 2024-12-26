@@ -5,11 +5,15 @@ using SharpDX;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Drawing;
 using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
 
+
+using Vector2 = SharpDX.Vector2;
 using Vector3 = SharpDX.Vector3;
 using Vector4 = SharpDX.Vector4;
 
@@ -23,6 +27,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
 
         #region Properties
         public bool IsLargeArc { get; set; }
+        public Vector3 MidPoint { get; set; }
         #endregion
 
         #region Constructor
@@ -57,6 +62,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
 
                 UpdateArcMidpoint();
                 UpdateVertices(arc);
+                UpdateBounds();
             }
             else
             {
@@ -97,7 +103,36 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             }
         }
 
-        public Vector3 UpdateArcMidpoint()
+        public override bool HitTest(Vector2 point, float tolerance)
+        {
+            // Step 1: Check if point is on the circle
+            double distance = Math.Sqrt(Math.Pow(point.X - RadiusPoint.X, 2) + Math.Pow(point.X - RadiusPoint.Y, 2));
+            if (Math.Abs(distance - Radius) > tolerance)
+                return false;
+
+            // Step 2: Check if the point is within the arc's angular bounds
+            double angle = Math.Atan2(point.Y - RadiusPoint.Y, px - cx) * (180.0 / Math.PI); // Convert to degrees
+            angle = (angle + 360) % 360; // Normalize to [0, 360]
+
+            // Normalize the start and end angles
+            startAngle = (startAngle + 360) % 360;
+            endAngle = (endAngle + 360) % 360;
+
+            if (startAngle <= endAngle)
+            {
+                return angle >= startAngle && angle <= endAngle;
+            }
+            else
+            {
+                // Arc crosses 360 boundary
+                return angle >= startAngle || angle <= endAngle;
+            }
+
+            return false;
+        }
+
+
+        public void UpdateArcMidpoint()
         {
             // Calculate the midpoint angle
             float midAngle = StartAngle + (Sweep / 2); // Midpoint angle in degrees
@@ -112,8 +147,21 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             float endZ = EndVertex.Position.Z;
             float midZ = startZ + ((endZ - startZ) * (midAngle - StartAngle) / Sweep);
 
-            // Return the midpoint as a 3D vector
-            return new Vector3(midX, midY, midZ);
+            MidPoint = new(midX, midY, midZ);
+        }
+
+        public override void UpdateBounds()
+        {
+            Bounds = Rect.Empty;
+
+            if (_arc is not null)
+            {
+                var samplePoints = _arc.ToPolyline2D(5).Vertexes;
+                foreach (var vertex in samplePoints)
+                {
+                    Bounds = Rect.Union(Bounds, new System.Windows.Point(vertex.Position.X, vertex.Position.Y));
+                }
+            }
         }
         #endregion
     }

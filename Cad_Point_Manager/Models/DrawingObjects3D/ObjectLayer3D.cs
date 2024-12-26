@@ -38,21 +38,8 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         #region Methods
         public void AddDrawingObject(DrawingObject3D drawingObject3D)
         {
-            if (drawingObject3D is DrawingSegment3D segment)
-            {
-                DrawingObject3Ds.Add(segment);
-                Vertices.AddRange(segment.Vertices);
-            }
-            else if (drawingObject3D is DrawingPolyline3D polyline)
-            {
-                DrawingObject3Ds.Add(polyline);
-                Vertices.AddRange(polyline.Vertices);
-            }
-            else if (drawingObject3D is DrawingBlock3D block)
-            {
-                DrawingObject3Ds.Add(block);
-                Vertices.AddRange(block.Vertices);
-            }
+            DrawingObject3Ds.Add(drawingObject3D);
+            Vertices.AddRange(drawingObject3D.Vertices);
         }
         #endregion
     }

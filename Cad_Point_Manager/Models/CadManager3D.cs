@@ -1,23 +1,17 @@
-﻿using Cad_Point_Manager.Controls;
-using Cad_Point_Manager.Controls.D3DControl;
+﻿using Cad_Point_Manager.Controls.D3DControl;
 using Cad_Point_Manager.Helpers;
-using Cad_Point_Manager.Models.DrawingObjects;
 using Cad_Point_Manager.Models.DrawingObjects3D;
 using netDxf;
 using netDxf.Entities;
 using netDxf.Tables;
 using SharpDX;
-using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Media;
-using Vector3 = SharpDX.Vector3;
+
+using Point = System.Windows.Point;
+using Vector2 = SharpDX.Vector2;
 
 namespace Cad_Point_Manager.Models
 {
@@ -67,6 +61,8 @@ namespace Cad_Point_Manager.Models
 
         public DxfDocument DxfDocument { get; set; }
         public SortedDictionary<string, ObjectLayer3D> Layers { get; set; } = [];
+        public DrawingObjectTree3D DrawingObjectTree3D { get; set; }
+
 
         public event PropertyChangedEventHandler PropertyChanged;
 
@@ -90,10 +86,34 @@ namespace Cad_Point_Manager.Models
                 }
             }
 
+            Rect rect = Extents.ToRect();
+            DrawingObjectTree3D = new(this, Extents.ToRect(), 4);
+
             GetVerticesList();
 
             DxfDirty = true;
             DxfNeedsReload = true;
+        }
+
+        public DrawingObject3D HitTestPoint(Point p, float tolerance)
+        {
+            if (DrawingObjectTree3D is null) { return null; }
+
+            DrawingObjectNode3D node = DrawingObjectTree3D.GetIntersectingNode(p);
+
+            if (node is null) { return null; }
+
+            DrawingObject3D drawingObject = null;
+
+            Parallel.ForEach(node.DrawingObjects, obj =>
+            {
+                if (obj.Bounds.Contains(p))
+                {
+
+                }
+            });
+
+            return null;
         }
 
         public void ClearDxf()
@@ -115,7 +135,7 @@ namespace Cad_Point_Manager.Models
             {
                 layer = new(dxfLayer);
                 Layers.Add(dxfLayer.Name, layer);
-                
+
                 return layer;
             }
         }

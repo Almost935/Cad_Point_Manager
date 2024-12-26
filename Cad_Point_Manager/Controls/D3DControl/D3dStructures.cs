@@ -67,6 +67,12 @@ namespace Cad_Point_Manager.Controls.D3DControl
             return $"Left: {Left}, Right: {Right}, Bottom: {Bottom}, Top: {Top})";
         }
 
+        public Rect ToRect()
+        {
+            Rect rect = new Rect(this.Left, this.Bottom, this.Width, this.Height);
+            return rect;
+        }
+
         public static Bounds Empty => new(0, 0, 0, 0);
 
         public static Bounds Translate(Bounds bounds, float x, float y)
@@ -115,6 +121,12 @@ namespace Cad_Point_Manager.Controls.D3DControl
             newTop = newBottom + height;
 
             return new Bounds(newLeft, newRight, newBottom, newTop);
+        }
+
+        public static Rect ToRect(Bounds bounds)
+        {
+            Rect rect = new Rect(bounds.Left, bounds.Bottom, bounds.Width, bounds.Height);
+            return rect;
         }
     }
 

@@ -20,9 +20,7 @@ namespace Cad_Point_Manager.DrawingObjects
         #endregion
 
         #region Properties
-        public float Radius { get; set; }
         public RawVector2 Center { get; set; }
-        public List<Vertex> IntermediateVertices { get; set; } = [];
         public float Circumference { get; set; }
         #endregion
 
@@ -52,6 +50,7 @@ namespace Cad_Point_Manager.DrawingObjects
                 RadiusPoint = new Vector3((float)circle.Center.X, (float)circle.Center.Y, (float)circle.Center.Z);
                 Length = (float)((Sweep / 360) * (2 * Math.PI * Radius));
 
+                UpdateBounds();
                 UpdateVertices(circle);
             }
             else
@@ -106,6 +105,25 @@ namespace Cad_Point_Manager.DrawingObjects
             {
                 throw new ArgumentException("entity must be of type Arc");
             }
+        }
+
+        public override void UpdateBounds()
+        {
+            Bounds = Rect.Empty;
+
+            if (_circle is not null)
+            {
+                var samplePoints = _circle.ToPolyline2D(4).Vertexes;
+                foreach (var vertex in samplePoints)
+                {
+                    Bounds = Rect.Union(Bounds, new System.Windows.Point(vertex.Position.X, vertex.Position.Y));
+                }
+            }
+        }
+
+        public override bool HitTest(Vector2 point)
+        {
+            throw new NotImplementedException();
         }
         #endregion
     }

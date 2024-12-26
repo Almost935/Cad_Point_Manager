@@ -148,17 +148,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 sink.EndFigure(FigureEnd.Open);
                 sink.Close();
 
-                //var simplifiedGeometry = new PathGeometry(Factory);
-
-                //// Open a GeometrySink to store the simplified version of the original geometry
-                //using (var geometrySink = simplifiedGeometry.Open())
-                //{
-                //    // Simplify the geometry, reducing it to line segments
-                //    pathGeometry.Simplify(GeometrySimplificationOption.CubicsAndLines, 0.25f, geometrySink);
-                //    geometrySink.Close();
-                //}
-                //Geometry = simplifiedGeometry;
-
                 Geometry = pathGeometry;
 
                 var bounds = Geometry.GetWidenedBounds(_hitTestStrokeThickness);

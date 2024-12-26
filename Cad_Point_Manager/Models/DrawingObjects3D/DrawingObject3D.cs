@@ -3,16 +3,33 @@ using netDxf.Entities;
 using SharpDX;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Windows;
+using Point = System.Windows.Point;
 
 namespace Cad_Point_Manager.Models.DrawingObjects3D
 {
     public abstract class DrawingObject3D : INotifyPropertyChanged
     {
+        #region Fields
+        private List<Vertex> _vertices = [];
+        #endregion
+
         #region Properties
+        public List<Vertex> Vertices
+        {
+            get => _vertices;
+            set
+            {
+                _vertices = value;
+                OnPropertyChanged(nameof(Vertices));
+            }
+        }
+
         public DrawingObject3dType Type { get; set; }
         public ObjectLayer3D Layer { get; set; }
         public EntityObject EntityObject { get; set; }
         public Vector4 Color { get; set; }
+        public Rect Bounds { get; set; } = Rect.Empty;
         public DrawingObject3dColorType DrawingObject3DColorType { get; set; }
         public bool IsPartOfBlock { get; set; } = false;
         public DrawingBlock3D DrawingBlock3D { get; set; }
@@ -26,6 +43,8 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
 
         #region Methods
         public abstract void UpdateData(EntityObject entity);
+        public abstract void UpdateBounds();
+        public abstract bool HitTest(Vector2 point, float tolerance);
 
         public void UpdateColor()
         {
