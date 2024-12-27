@@ -119,8 +119,8 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             {
                 var start = polyline2D.Vertexes.First();
                 var end = polyline2D.Vertexes.Last();
-                StartVertex = new(new Vector3((float)start.Position.X, (float)start.Position.Y, 0), Color);
-                EndVertex = new(new Vector3((float)end.Position.X, (float)end.Position.Y, 0), Color);
+                StartVertex = new(new Vector3((float)start.Position.X, (float)start.Position.Y, 0), Color, IsHighlighted ? 1.0f : 0, IsMouseOver ? 1.0f : 0);
+                EndVertex = new(new Vector3((float)end.Position.X, (float)end.Position.Y, 0), Color, IsHighlighted ? 1.0f : 0, IsMouseOver ? 1.0f : 0);
 
                 var entities = polyline2D.Explode();
                 foreach (var e in entities)
@@ -137,8 +137,8 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             {
                 var start = polyline3D.Vertexes.First();
                 var end = polyline3D.Vertexes.Last();
-                StartVertex = new(new Vector3((float)start.X, (float)start.Y, (float)start.Z), Color);
-                EndVertex = new(new Vector3((float)end.X, (float)end.Y, (float)end.Z), Color);
+                StartVertex = new(new Vector3((float)start.X, (float)start.Y, (float)start.Z), Color, IsHighlighted ? 1.0f : 0, IsMouseOver ? 1.0f : 0);
+                EndVertex = new(new Vector3((float)end.X, (float)end.Y, (float)end.Z), Color, IsHighlighted ? 1.0f : 0, IsMouseOver ? 1.0f : 0);
 
                 var entities = polyline3D.Explode();
                 foreach (var e in entities)

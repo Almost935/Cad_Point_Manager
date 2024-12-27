@@ -246,12 +246,20 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             _inputLayout = new InputLayout(
                 _d3dResCache.Device,
-                ShaderSignature.GetInputSignature(vertexShaderByteCode),
+                ShaderSignature.GetInputSignature(vertexShaderByteCode), // Use the compiled vertex shader bytecode
                 new[]
                 {
+                    // Position (float3)
                     new InputElement("POSITION", 0, SharpDX.DXGI.Format.R32G32B32_Float, 0, 0),
+
+                    // Color (float4)
                     new InputElement("COLOR", 0, SharpDX.DXGI.Format.R32G32B32A32_Float, 12, 0),
-                    new InputElement("TEXCOORD", 0, SharpDX.DXGI.Format.R32_Float, 28, 0)
+
+                    // HighlightFlag (float)
+                    new InputElement("TEXCOORD", 0, SharpDX.DXGI.Format.R32_Float, 28, 0),
+
+                    // GlowFlag (float)
+                    new InputElement("TEXCOORD", 1, SharpDX.DXGI.Format.R32_Float, 32, 0)
                 });
         }
 
@@ -307,6 +315,50 @@ namespace Cad_Point_Manager.Controls.D3DControl
             // Update the constant buffer with the new matrix
             _d3dResCache.DeviceContext.UpdateSubresource(ref transformationBuffer, _transformationBuffer);
         }
+
+        private void HighlightLines(IEnumerable<int> lineIndices)
+        {
+            foreach (int lineIndex in lineIndices)
+            {
+                // Each line has two vertices
+                int vertexStartIndex = lineIndex * 2;
+
+                if (vertexStartIndex < _vertices.Length - 1)
+                {
+                    _vertices[vertexStartIndex].HighlightFlag = 1.0f; // Highlight start vertex
+                    _vertices[vertexStartIndex + 1].HighlightFlag = 1.0f; // Highlight end vertex
+                }
+            }
+
+            // Update the vertex buffer
+            _vertexBuffer = Buffer.Create(
+                _d3dResCache.Device,
+                BindFlags.VertexBuffer,
+                _vertices);
+
+            D3dIsDirty = true; // Mark for redraw
+        }
+        public void SetGlowEffect(IEnumerable<int> lineIndices)
+        {
+            foreach (int lineIndex in lineIndices)
+            {
+                int vertexStartIndex = lineIndex * 2;
+
+                if (vertexStartIndex < _vertices.Length - 1)
+                {
+                    _vertices[vertexStartIndex].GlowFlag = 1.0f;
+                    _vertices[vertexStartIndex + 1].GlowFlag = 1.0f;
+                }
+            }
+
+            _vertexBuffer = Buffer.Create(
+                _d3dResCache.Device,
+                BindFlags.VertexBuffer,
+                _vertices);
+
+            D3dIsDirty = true;
+        }
+
 
         private void GetDxfBounds()
         {

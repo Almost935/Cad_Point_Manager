@@ -147,9 +147,23 @@ namespace Cad_Point_Manager.Models
 
         public void GetVerticesList()
         {
+            //foreach (var layer in Layers.Values)
+            //{
+            //    Vertices.AddRange(layer.Vertices);
+            //}
+
+            List<DrawingObject3D> drawingObjects = [];
             foreach (var layer in Layers.Values)
             {
-                Vertices.AddRange(layer.Vertices);
+                drawingObjects.AddRange(layer.DrawingObject3Ds);
+            }
+
+            foreach (var obj in drawingObjects)
+            {
+                int startIndex = Vertices.Count;
+                Vertices.AddRange(obj.Vertices);
+                obj.StartVertexIndex = startIndex;
+                obj.EndVertexIndex = Vertices.Count;
             }
         }
     }

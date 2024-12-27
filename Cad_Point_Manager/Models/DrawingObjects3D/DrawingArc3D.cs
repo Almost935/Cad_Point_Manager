@@ -86,10 +86,10 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
 
                     Vertex s = new(
                         new Vector3((float)vertices[i].Position.X, (float)vertices[i].Position.Y, 0),
-                        Color);
+                        Color, IsHighlighted ? 1.0f : 0, IsMouseOver ? 1.0f : 0);
                     Vertex e = new(
                         new Vector3((float)vertices[i + 1].Position.X, (float)vertices[i + 1].Position.Y, 0),
-                        Color);
+                        Color, IsHighlighted ? 1.0f : 0, IsMouseOver ? 1.0f : 0);
 
                     Vertices.Add(s);
                     Vertices.Add(e);

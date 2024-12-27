@@ -43,8 +43,8 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         {
             if (entity is Line line)
             {
-                StartVertex = new(new Vector3((float)line.StartPoint.X, (float)line.StartPoint.Y, 0), Color);
-                EndVertex = new(new Vector3((float)line.EndPoint.X, (float)line.EndPoint.Y, 0), Color);
+                StartVertex = new(new Vector3((float)line.StartPoint.X, (float)line.StartPoint.Y, 0), Color, IsHighlighted ? 1.0f : 0, IsMouseOver ? 1.0f : 0);
+                EndVertex = new(new Vector3((float)line.EndPoint.X, (float)line.EndPoint.Y, 0), Color, IsHighlighted ? 1.0f : 0, IsMouseOver ? 1.0f : 0);
                 Vertices.AddRange(new List<Vertex> { StartVertex, EndVertex });
                 Length = Vector3.Distance(StartVertex.Position, EndVertex.Position); 
                 MidPoint = (StartVertex.Position + EndVertex.Position) / 2;

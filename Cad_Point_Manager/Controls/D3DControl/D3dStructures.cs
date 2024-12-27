@@ -18,22 +18,30 @@ namespace Cad_Point_Manager.Controls.D3DControl
     [StructLayout(LayoutKind.Sequential)]
     public struct Vertex
     {
-        public Vector3 Position;
-        public Vector4 Color; 
+        public Vector3 Position;      // 3D position of the vertex
+        public Vector4 Color;         // RGBA color of the vertex
+        public float HighlightFlag;   // 1.0 for highlighted, 0.0 otherwise
+        public float GlowFlag;        // 1.0 for glowing, 0.0 otherwise
 
-        public Vertex(Vector3 position, Vector4 color)
+        public Vertex(Vector3 position, Vector4 color, float highlightFlag, float glowFlag)
         {
             Position = position;
             Color = color;
+            HighlightFlag = highlightFlag;
+            GlowFlag = glowFlag;
         }
     }
+
 
     [StructLayout(LayoutKind.Sequential)]
     public struct HighlightBuffer
     {
-        public float LineWidth;
-        public float HighlightWidthBoost;
-        public Vector4 HighlightColor;
+        public float LineWidth;           // Base line width
+        public float HighlightWidthBoost; // Additional width for highlighted lines
+        public float GlowWidthBoost;      // Additional width for glowing lines
+        public float GlowOpacity;         // Opacity for glowing lines
+        public Vector4 HighlightColor;    // Highlight color (RGBA)
+        public Vector4 GlowColor;         // Glow color (RGBA)
     }
 
 
