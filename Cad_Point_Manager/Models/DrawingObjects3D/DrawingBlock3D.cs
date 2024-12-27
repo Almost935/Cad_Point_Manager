@@ -21,6 +21,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
     {
         #region Fields
         private List<DrawingObject3D> _drawingObjects = [];
+        private List<Vertex> _drawingGeometryVerteces = [];
         #endregion
 
         #region Properties
@@ -32,6 +33,15 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             {
                 _drawingObjects = value;
                 OnPropertyChanged(nameof(DrawingObjects));
+            }
+        }
+        public List<Vertex> DrawingGeometryVerteces
+        {
+            get => _drawingGeometryVerteces;
+            set
+            {
+                _drawingGeometryVerteces = value;
+                OnPropertyChanged(nameof(DrawingGeometryVerteces));
             }
         }
 
@@ -117,11 +127,18 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
 
         private void UpdateVertices()
         {
-            Vertices.Clear();
+            DrawingGeometryVerteces.Clear();
 
             foreach (var obj in DrawingObjects)
             {
-                Vertices.AddRange(obj.Vertices);    
+                if (obj is DrawingBlock3D block)
+                {
+                    DrawingGeometryVerteces.AddRange(block.DrawingGeometryVerteces);
+                }
+                if (obj is DrawingGeometry3D geometry)
+                {
+                    DrawingGeometryVerteces.AddRange(geometry.Vertices);
+                }  
             }
         }
         #endregion

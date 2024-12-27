@@ -175,6 +175,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
             D3dIsDirty = false;
         }
 
+        private void DrawInteractiveObjects()
+        {
+
+        }
+
         private void GetDxfGeometries()
         {
             if (_d3dResCache is null) { return; }

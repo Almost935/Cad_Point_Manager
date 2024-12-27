@@ -10,21 +10,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
 {
     public abstract class DrawingObject3D : INotifyPropertyChanged
     {
-        #region Fields
-        private List<Vertex> _vertices = [];
-        #endregion
-
         #region Properties
-        public List<Vertex> Vertices
-        {
-            get => _vertices;
-            set
-            {
-                _vertices = value;
-                OnPropertyChanged(nameof(Vertices));
-            }
-        }
-
         public DrawingObject3dType Type { get; set; }
         public ObjectLayer3D Layer { get; set; }
         public EntityObject EntityObject { get; set; }

@@ -279,7 +279,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             }
 
             _d3dResCache.D2DDeviceContext.BeginDraw();
-            _d3dResCache.D2DDeviceContext.Clear(null);
 
             Render();
 

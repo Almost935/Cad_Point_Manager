@@ -39,7 +39,15 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         public void AddDrawingObject(DrawingObject3D drawingObject3D)
         {
             DrawingObject3Ds.Add(drawingObject3D);
-            Vertices.AddRange(drawingObject3D.Vertices);
+
+            if (drawingObject3D is DrawingBlock3D block)
+            {
+                Vertices.AddRange(block.DrawingGeometryVerteces);
+            }
+            if (drawingObject3D is DrawingGeometry3D geometry)
+            {
+                Vertices.AddRange(geometry.Vertices);
+            }
         }
         #endregion
     }

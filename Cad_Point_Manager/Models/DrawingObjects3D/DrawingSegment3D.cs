@@ -13,13 +13,11 @@ using Vector4 = SharpDX.Vector4;
 
 namespace Cad_Point_Manager.Models.DrawingObjects3D
 {
-    public abstract class DrawingSegment3D : DrawingObject3D
+    public abstract class DrawingSegment3D : DrawingGeometry3D
     {
         #region Properties
-        public int StartVertexIndex { get; set; }
-        public int EndVertexIndex { get; set; }
-        public Vertex StartVertex { get; set; }
-        public Vertex EndVertex { get; set; }
+        public bool IsPartOfPolyline { get; set; } = false;
+        public DrawingPolyline3D DrawingPolyline3D { get; set; }
         public float Length { get; set; }
         #endregion
     }
