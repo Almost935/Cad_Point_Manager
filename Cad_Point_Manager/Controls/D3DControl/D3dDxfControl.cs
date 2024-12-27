@@ -29,13 +29,16 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private float _width;
         private float _height;
 
+
         private Buffer _vertexBuffer;
         private Buffer _transformationBuffer;
+        private Buffer _highlightBuffer;
         private Vertex[] _vertices = [];
         private VertexShader _vertexShader;
         private PixelShader _pixelShader;
+        private GeometryShader _geometryShader;
         private InputLayout _inputLayout;
-        private Point _pointerCoords;
+
         private bool _dxfInitialized = false;
 
         // Panning and Zooming Fields
@@ -53,7 +56,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private bool _isShiftPressed = false;
         private Vector2 _prevMousePos;
 
+        // Mouse pointer fields
         private Vector2 _dxfCoords = new();
+        private Point _pointerCoords;
         private string _dxfCoordsString = $"X: {0:F3}   Y: {0:F3}";
 
         // Hit Testing Fields
@@ -123,7 +128,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         #endregion
 
         #region Methods
-        public override void Render()
+        public override void Render3D()
         {
             if (_d3dResCache is null) { return; }
 
@@ -157,7 +162,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             // Set render target and clear it
             context.OutputMerger.SetRenderTargets(_d3dResCache.RenderTargetView);
-            context.ClearRenderTargetView(_d3dResCache.RenderTargetView, new SharpDX.Mathematics.Interop.RawColor4(0, 0, 0, 0));
+            context.ClearRenderTargetView(_d3dResCache.RenderTargetView, new(0, 0, 0, 0));
 
             UpdateConstantBuffer();
 
@@ -172,7 +177,18 @@ namespace Cad_Point_Manager.Controls.D3DControl
             context.InputAssembler.PrimitiveTopology = SharpDX.Direct3D.PrimitiveTopology.LineList;
             context.Draw(_vertices.Length, 0);
 
+
             D3dIsDirty = false;
+        }
+        public void DrawToBitmap()
+        {
+            //if (_snappedObject is not null)
+            //{
+            //    if (_snappedObject is DrawingLine3D line)
+            //    {
+            //        line.Highlighted = true;
+            //    }
+            //}
         }
 
         private void GetDxfGeometries()
@@ -196,6 +212,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         private void InitializeDirect2D()
         {
+            if (_d3dResCache.D2DDeviceContext is null) { return; }
+
             _highlightedBrush?.Dispose();
             _highlightedOuterEdgeBrush?.Dispose();
 
@@ -220,18 +238,46 @@ namespace Cad_Point_Manager.Controls.D3DControl
             var vertexShaderByteCode = ShaderBytecode.CompileFromFile(shadersPath, "VSMain", "vs_4_0");
             _vertexShader = new VertexShader(_d3dResCache.Device, vertexShaderByteCode);
 
+            var geometryShaderByteCode = ShaderBytecode.CompileFromFile(shadersPath, "GSMain", "gs_4_0");
+            _geometryShader = new GeometryShader(_d3dResCache.Device, geometryShaderByteCode);
+
             var pixelShaderByteCode = ShaderBytecode.CompileFromFile(shadersPath, "PSMain", "ps_4_0");
             _pixelShader = new PixelShader(_d3dResCache.Device, pixelShaderByteCode);
 
             _inputLayout = new InputLayout(
                 _d3dResCache.Device,
                 ShaderSignature.GetInputSignature(vertexShaderByteCode),
-                [
+                new[]
+                {
                     new InputElement("POSITION", 0, SharpDX.DXGI.Format.R32G32B32_Float, 0, 0),
-                    new InputElement("COLOR", 0, SharpDX.DXGI.Format.R32G32B32A32_Float, 12, 0)
-                ]);
+                    new InputElement("COLOR", 0, SharpDX.DXGI.Format.R32G32B32A32_Float, 12, 0),
+                    new InputElement("TEXCOORD", 0, SharpDX.DXGI.Format.R32_Float, 28, 0)
+                });
+        }
 
-            ShadersLoaded = true;
+        private void InitializeBuffers()
+        {
+            var bufferDesc = new BufferDescription
+            {
+                Usage = ResourceUsage.Default,
+                SizeInBytes = Utilities.SizeOf<HighlightBuffer>(),
+                BindFlags = BindFlags.ConstantBuffer,
+                CpuAccessFlags = CpuAccessFlags.None,
+                OptionFlags = ResourceOptionFlags.None
+            };
+            _highlightBuffer = new Buffer(_d3dResCache.Device, bufferDesc);
+        }
+
+        private void UpdateHighlightBuffer(float lineWidth, float widthBoost, Vector4 highlightColor)
+        {
+            var highlightState = new HighlightBuffer
+            {
+                LineWidth = lineWidth,
+                HighlightWidthBoost = widthBoost,
+                HighlightColor = highlightColor
+            };
+
+            _d3dResCache.DeviceContext.UpdateSubresource(ref highlightState, _highlightBuffer);
         }
 
         private void InitializeConstantBuffer()
@@ -389,7 +435,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 {
                     if (_snappedObject.HitTest(p, tolerance))
                     {
-
+                        return;
                     }
                     else
                     {

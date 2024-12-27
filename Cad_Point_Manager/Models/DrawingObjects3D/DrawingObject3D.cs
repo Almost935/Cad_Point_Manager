@@ -29,12 +29,16 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         public ObjectLayer3D Layer { get; set; }
         public EntityObject EntityObject { get; set; }
         public Vector4 Color { get; set; }
+        public Vector4 SelectedColor { get; set; }
         public Rect Bounds { get; set; } = Rect.Empty;
         public DrawingObject3dColorType DrawingObject3DColorType { get; set; }
         public bool IsPartOfBlock { get; set; } = false;
         public DrawingBlock3D DrawingBlock3D { get; set; }
         public bool IsSelected { get; set; } = false;
+        public bool IsHighlighted { get; set; } = false;
         public bool IsMouseOver { get; set; } = false;
+        public int StartVertexIndex { get; set; }
+        public int EndVertexIndex { get; set; }
         #endregion
 
         #region Events
@@ -69,6 +73,8 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             {
                 Color = new(0, 0, 0, 1);
             }
+
+            SelectedColor = new(Color.X, Color.Y, Color.Z, 0.25f);
         }
 
         protected void OnPropertyChanged([CallerMemberName] string propertyName = null)

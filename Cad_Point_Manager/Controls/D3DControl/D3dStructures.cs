@@ -29,6 +29,15 @@ namespace Cad_Point_Manager.Controls.D3DControl
     }
 
     [StructLayout(LayoutKind.Sequential)]
+    public struct HighlightBuffer
+    {
+        public float LineWidth;
+        public float HighlightWidthBoost;
+        public Vector4 HighlightColor;
+    }
+
+
+    [StructLayout(LayoutKind.Sequential)]
     public struct TransformationBuffer
     {
         public Matrix WorldViewProjection;  // This is the matrix you send to the shader

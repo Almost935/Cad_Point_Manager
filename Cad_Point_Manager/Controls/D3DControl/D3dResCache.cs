@@ -21,6 +21,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private SharpDX.Direct2D1.DeviceContext _d2DDeviceContext = null;
         private Factory1 _d2DFactory = null;
         private SharpDX.Direct2D1.Bitmap1 _d2dTargetBitmap = null;
+        private BitmapRenderTarget _bitmapRenderTarget = null;
         #endregion
 
         #region Properties
@@ -96,6 +97,15 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 OnPropertyChanged(nameof(D2DTargetBitmap));
             }
         }
+        public BitmapRenderTarget BitmapRenderTarget
+        {
+            get { return _bitmapRenderTarget; }
+            set
+            {
+                _bitmapRenderTarget = value;
+                OnPropertyChanged(nameof(BitmapRenderTarget));
+            }
+        }
         #endregion
 
         #region Events
@@ -121,6 +131,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     _d2DDevice?.Dispose();
                     _d2DDeviceContext?.Dispose();
                     _d2DFactory?.Dispose();
+                    _d2dTargetBitmap?.Dispose();
                 }
 
                 disposed = true;

@@ -79,7 +79,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             base.Stretch = System.Windows.Media.Stretch.Fill;
         }
 
-        public abstract void Render();
+        public abstract void Render3D();
 
         // - event handler ---------------------------------------------------------------
 
@@ -278,12 +278,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 return;
             }
 
-            _d3dResCache.D2DDeviceContext.BeginDraw();
-            _d3dResCache.D2DDeviceContext.Clear(null);
-
-            Render();
-
-            _d3dResCache.D2DDeviceContext.EndDraw();
+            Render3D();
 
             CalcFps();
 

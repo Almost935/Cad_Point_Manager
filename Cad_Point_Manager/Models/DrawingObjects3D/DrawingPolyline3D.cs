@@ -19,8 +19,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
     public class DrawingPolyline3D : DrawingObject3D
     {
         #region Properties
-        public int StartVertexIndex { get; set; }
-        public int EndVertexIndex { get; set; }
         public Vertex StartVertex { get; set; }
         public Vertex EndVertex { get; set; }
         public float Length { get; set; }
