@@ -26,7 +26,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         /// <summary>
         /// Consists of all the 0 level nodes in the tree.
         /// </summary>
-        public List<DrawingObjectNode3D> BaseLevelNodes { get; set; } = new();
+        public List<DrawingObjectNode3D> BaseLevelNodes { get; set; } = [];
         #endregion
 
         #region Constructors

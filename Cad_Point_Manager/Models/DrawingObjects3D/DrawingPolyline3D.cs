@@ -64,6 +64,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                 IsClosed = polyline3d.IsClosed;
 
                 UpdateVertices(polyline3d);
+                UpdateBounds();
 
                 Length = 0;
                 foreach (var segment in DrawingSegments)

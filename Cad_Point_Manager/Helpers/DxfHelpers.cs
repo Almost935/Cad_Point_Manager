@@ -89,14 +89,7 @@ namespace Cad_Point_Manager.Helpers
         public static int LoadDrawingObjects(DxfDocument dxfDocument, CadManager layerManager, Factory1 factory,
             DeviceContext1 deviceContext, ResourceCache resCache)
         {
-            Stopwatch stopwatch = Stopwatch.StartNew();
-
             int count = dxfDocument.Entities.All.Sum(e => LoadEntityObject(e, layerManager));
-
-            stopwatch.Stop();
-            Debug.WriteLine($"LoadDrawingObjects: {stopwatch.ElapsedMilliseconds} ms");
-
-            stopwatch.Restart();
 
             foreach (var layer in layerManager.Layers.Values)
             {
@@ -105,9 +98,6 @@ namespace Cad_Point_Manager.Helpers
                     obj.UpdateGeometry();
                 }
             }
-
-            stopwatch.Stop();
-            Debug.WriteLine($"Load Geometries: {stopwatch.ElapsedMilliseconds} ms");
 
             return count;
         }

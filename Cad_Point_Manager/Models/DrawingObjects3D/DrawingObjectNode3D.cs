@@ -82,10 +82,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         {
             DrawingObjectNode3D node = null;
 
-            //Debug.WriteLine($"\np: {p}");
-            //Debug.WriteLine($"Extents: {Extents.Left} {Extents.Right} {Extents.Bottom} {Extents.Top}");
-            //Debug.WriteLine($"Extents Width Height: {Extents.Width} {Extents.Height}");
-
             if (Extents.Contains(p))
             {
                 if (Level == 0)

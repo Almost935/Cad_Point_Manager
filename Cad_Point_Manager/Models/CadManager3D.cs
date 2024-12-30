@@ -86,7 +86,7 @@ namespace Cad_Point_Manager.Models
                 }
             }
 
-            DrawingObjectTree3D = new(this, Extents.ToRect(), 4);
+            DrawingObjectTree3D = new(this, Extents.ToRect(), 5);
 
             GetVerticesList();
 
@@ -104,19 +104,21 @@ namespace Cad_Point_Manager.Models
 
             DrawingObject3D drawingObject3D = null;
 
-            Parallel.ForEach(node.DrawingObjects, obj =>
+            foreach (var obj in node.DrawingObjects)
             {
-                if (drawingObject3D is null)
+                //Debug.WriteLine($"\nobj.GetType(): {obj.GetType()}" +
+                //    $"\nRect.Inflate(obj.Bounds, 2, 2).Contains(p): {Rect.Inflate(obj.Bounds, 2, 2).Contains(p)}");
+
+                if (Rect.Inflate(obj.Bounds, 5, 5).Contains(p))
                 {
-                    if (obj.Bounds.Contains(p))
+                    //Debug.WriteLine($"obj.HitTest(p, tolerance): {obj.HitTest(p, tolerance)}");
+
+                    if (obj.HitTest(p, tolerance))
                     {
-                        if (obj.HitTest(p, tolerance))
-                        {
-                            drawingObject3D = obj;
-                        }
+                        drawingObject3D = obj;
                     }
                 }
-            });
+            }
 
             return drawingObject3D;
         }
@@ -150,6 +152,21 @@ namespace Cad_Point_Manager.Models
             foreach (var layer in Layers.Values)
             {
                 Vertices.AddRange(layer.Vertices);
+            }
+
+            // Testing for Quadtree bounds
+            SharpDX.Vector4 color = new(0, 1, 0, 1);
+            foreach (var node in DrawingObjectTree3D.BaseLevelNodes)
+            {
+                Vertex tl = new(new SharpDX.Vector3((float)node.Extents.TopLeft.X, (float)node.Extents.TopLeft.Y, 0), color);
+                Vertex tr = new(new SharpDX.Vector3((float)node.Extents.TopRight.X, (float)node.Extents.TopRight.Y, 0), color);
+                Vertex bl = new(new SharpDX.Vector3((float)node.Extents.BottomLeft.X, (float)node.Extents.BottomLeft.Y, 0), color);
+                Vertex br = new(new SharpDX.Vector3((float)node.Extents.BottomRight.X, (float)node.Extents.BottomRight.Y, 0), color);
+
+                Vertices.Add(tl); Vertices.Add(tr);
+                Vertices.Add(tr); Vertices.Add(br);
+                Vertices.Add(br); Vertices.Add(bl);
+                Vertices.Add(bl); Vertices.Add(tl);
             }
         }
     }

@@ -112,23 +112,36 @@ namespace Cad_Point_Manager.Helpers
         /// <param name="y2">Y-coordinate of the second endpoint of the line.</param>
         /// <param name="tolerance">Allowed tolerance for floating-point comparison.</param>
         /// <returns>True if the point is on the line; otherwise, false.</returns>
-        public static bool IsPointOnLine(double px, double py, double x1, double y1, double x2, double y2, double tolerance = 0.01)
+        //public static bool IsPointOnLine(double px, double py, double x1, double y1, double x2, double y2, double tolerance = 0.01)
+        //{
+        //    // Calculate the cross-product to check if the point is collinear with the line
+        //    double crossProduct = (py - y1) * (x2 - x1) - (px - x1) * (y2 - y1);
+        //    if (Math.Abs(crossProduct) > tolerance)
+        //        return false;
+
+        //    // Check if the point lies within the bounds of the line segment
+        //    double dotProduct = (px - x1) * (x2 - x1) + (py - y1) * (y2 - y1);
+        //    if (dotProduct < 0)
+        //        return false;
+
+        //    double squaredLength = Math.Pow(x2 - x1, 2) + Math.Pow(y2 - y1, 2);
+        //    if (dotProduct > squaredLength)
+        //        return false;
+
+        //    return true;
+        //}
+
+        public static bool IsPointOnLine(Point point, Point start, Point end, double tolerance)
         {
-            // Calculate the cross-product to check if the point is collinear with the line
-            double crossProduct = (py - y1) * (x2 - x1) - (px - x1) * (y2 - y1);
-            if (Math.Abs(crossProduct) > tolerance)
-                return false;
+            double m = (end.Y - start.Y) / (end.X - start.X);
+            double c = start.Y - (m * start.X);
 
-            // Check if the point lies within the bounds of the line segment
-            double dotProduct = (px - x1) * (x2 - x1) + (py - y1) * (y2 - y1);
-            if (dotProduct < 0)
-                return false;
+            // If (x, y) satisfies the equation
+            // of the line
+            if (Math.Abs(point.Y - ((m * point.X) + c)) <= tolerance)
+                return true;
 
-            double squaredLength = Math.Pow(x2 - x1, 2) + Math.Pow(y2 - y1, 2);
-            if (dotProduct > squaredLength)
-                return false;
-
-            return true;
+            return false;
         }
 
         /// <summary>

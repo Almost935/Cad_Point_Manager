@@ -39,14 +39,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private bool _dxfInitialized = false;
 
         // Panning and Zooming Fields
-        private Matrix _viewMatrix = Matrix.Identity;
-        private Matrix _projectionMatrix = Matrix.Identity;
-
         private Point _previousMousePosition;
         private bool _isPanning = false;
 
-        private float _currentZoom = 1.0f;
-        private Vector2 _panOffset = new(0, 0);
 
         // Camera based fields
         private Camera _camera;
@@ -159,6 +154,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
             context.OutputMerger.SetRenderTargets(_d3dResCache.RenderTargetView);
             context.ClearRenderTargetView(_d3dResCache.RenderTargetView, new SharpDX.Mathematics.Interop.RawColor4(0, 0, 0, 0));
 
+            DrawInteractiveObjects();
+
             UpdateConstantBuffer();
 
             // Set shaders
@@ -177,7 +174,57 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         private void DrawInteractiveObjects()
         {
+            //if (CadManager3D is not null && CadManager3D.DrawingObjectTree3D is not null) 
+            //{
+            //    SharpDX.Direct2D1.Brush testBrush = new SharpDX.Direct2D1.SolidColorBrush(_d3dResCache.D2DDeviceContext, new RawColor4(1.0f, 0.0f, 0.0f, 1.0f));
 
+            //    RawMatrix3x2 matrix = new(1, 0, 0, 1, -1 * Math.Abs(_camera.ViewMatrix.M41), -1 * Math.Abs(_camera.ViewMatrix.M42));
+
+            //    _d3dResCache.D2DDeviceContext.Transform = matrix;
+
+            //    foreach (var node in CadManager3D.DrawingObjectTree3D.BaseLevelNodes)
+            //    {
+            //        _d3dResCache.D2DDeviceContext.DrawRectangle(new RawRectangleF((float)node.Extents.Left, (float)node.Extents.Top, (float)node.Extents.Right, (float)node.Extents.Bottom), testBrush, 0.5);
+            //    }
+
+            //    testBrush.Dispose();
+            //}
+
+            //Debug.WriteLine($"\n_snappedObject is null: {_snappedObject is null}");
+
+            if (_snappedObject is not null)
+            {
+                var copy = _snappedObject;
+
+                if (copy is DrawingSegment3D segment)
+                {
+                    SharpDX.Direct2D1.Brush brush = new SharpDX.Direct2D1.SolidColorBrush(_d3dResCache.D2DDeviceContext, new RawColor4(segment.Color.X, segment.Color.Y, segment.Color.Z, 0.5f));
+
+                    for (int i = 0; i < segment.Vertices.Count / 2; i++)
+                    {
+                        RawVector2 start = new(segment.Vertices[i * 2].Position.X, segment.Vertices[i * 2].Position.Y);
+                        RawVector2 end = new(segment.Vertices[i * 2 + 1].Position.X, segment.Vertices[i * 2 + 1].Position.Y);
+                        _d3dResCache.D2DDeviceContext.DrawLine(start, end, brush, 10);
+                    }
+
+                    brush.Dispose();
+                }
+
+                if (copy is DrawingPolyline3D polyline)
+                {
+
+                    SharpDX.Direct2D1.Brush brush = new SharpDX.Direct2D1.SolidColorBrush(_d3dResCache.D2DDeviceContext, new RawColor4(polyline.Color.X, polyline.Color.Y, polyline.Color.Z, 0.5f));
+
+                    for (int i = 0; i < polyline.Vertices.Count / 2; i++)
+                    {
+                        RawVector2 start = new(polyline.Vertices[i * 2].Position.X, polyline.Vertices[i * 2].Position.Y);
+                        RawVector2 end = new(polyline.Vertices[i * 2 + 1].Position.X, polyline.Vertices[i * 2 + 1].Position.Y);
+                        _d3dResCache.D2DDeviceContext.DrawLine(start, end, brush, 10);
+                    }
+
+                    brush.Dispose();
+                }
+            }
         }
 
         private void GetDxfGeometries()
@@ -327,7 +374,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             }
         }
 
-        protected override async void OnMouseMove(MouseEventArgs e)
+        protected override void OnMouseMove(MouseEventArgs e)
         {
             _pointerCoords = e.GetPosition(this);
             var currentMousePos = new Vector2((float)_pointerCoords.X, (float)_pointerCoords.Y);
@@ -339,7 +386,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     //Task.Run(() => UpdateDxfCoords(currentMousePos));
                     UpdateDxfCoords(currentMousePos);
 
-                    await RunHitTestAsync();
+                    RunHitTest();
                 }
 
                 _isShiftPressed = Keyboard.IsKeyDown(Key.LeftShift) || Keyboard.IsKeyDown(Key.RightShift);
@@ -383,28 +430,40 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
 
 
-        private async Task RunHitTestAsync()
+        private void RunHitTest()
         {
             if (!_isHitTesting)
             {
+                _isHitTesting = true;
+
+                //Stopwatch stopwatch = Stopwatch.StartNew();
+
                 float tolerance = _hittestStrokeThickness / (_camera.CurrentZoom);
                 Point p = new(DxfCoords.X, DxfCoords.Y);
 
                 if (_snappedObject is not null)
                 {
-                    if (_snappedObject.HitTest(p, tolerance))
-                    {
-
-                    }
-                    else
+                    if (!_snappedObject.HitTest(p, tolerance))
                     {
                         _snappedObject = CadManager3D.HitTestPoint(p, tolerance);
+
+                        if (_snappedObject is not null)
+                        {
+                            D3dIsDirty = true;
+                        }
                     }
                 }
                 else
                 {
-                    CadManager3D.HitTestPoint(p, tolerance);
+                    _snappedObject = CadManager3D.HitTestPoint(p, tolerance);
+
+                    if (_snappedObject is not null)
+                    {
+                        D3dIsDirty = true;
+                    }
                 }
+
+                _isHitTesting = false;
             }
         }
 

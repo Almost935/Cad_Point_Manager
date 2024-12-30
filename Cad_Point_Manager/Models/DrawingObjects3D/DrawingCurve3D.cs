@@ -35,9 +35,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
 
             double segments = (angleInRadians / radius) * smoothnessFactor;
 
-            //Debug.WriteLine($"\nangleInDegrees: {angleInDegrees} radius: {radius}" +
-            //        $"\nsegments: {segments}");
-
             // Return a value rounded to an integer, ensuring at least 4 segments
             return Math.Max(10, (int)Math.Ceiling(segments));
         }
