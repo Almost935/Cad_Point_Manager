@@ -22,7 +22,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         #region Properties
         public Matrix ViewMatrix { get; private set; } = Matrix.Identity;
         public Matrix ProjectionMatrix { get; private set; } = Matrix.Identity;
-        public Matrix ViewProjectionMatrix { get; private set; }
+        public Matrix ViewProjectionMatrix { get; private set; } = Matrix.Identity;
         public Matrix InverseViewProjectionMatrix { get; private set; } = Matrix.Identity;
 
         public float ScreenWidth { get; set; }
@@ -215,6 +215,16 @@ namespace Cad_Point_Manager.Controls.D3DControl
             }
 
             return new Vector3(worldPos.X, worldPos.Y, worldPos.Z);
+        }
+
+        public static Matrix3x2 Get2DTransformationMatrix(Matrix projectionMatrix)
+        {
+            // Map the 3D matrix to a 2D matrix
+            return new Matrix3x2(
+                projectionMatrix.M11, projectionMatrix.M12,
+                projectionMatrix.M21, projectionMatrix.M22,
+                projectionMatrix.M41, projectionMatrix.M42
+            );
         }
         #endregion
     }
