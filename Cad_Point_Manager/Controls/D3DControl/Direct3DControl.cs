@@ -228,9 +228,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
         {
             using (var dxgiDevice = _device.QueryInterface<SharpDX.DXGI.Device>())
             {
-                var d2dFactory = new SharpDX.Direct2D1.Factory1();
-                _d3dResCache.D2DDevice = new SharpDX.Direct2D1.Device(d2dFactory, dxgiDevice);
-                _d3dResCache.D2DDeviceContext = new SharpDX.Direct2D1.DeviceContext(_d3dResCache.D2DDevice, SharpDX.Direct2D1.DeviceContextOptions.None);
+                _d3dResCache.D2dFactory = new SharpDX.Direct2D1.Factory2();
+                _d3dResCache.D2DDevice = new(_d3dResCache.D2dFactory, dxgiDevice);
+                _d3dResCache.D2DDeviceContext = new(_d3dResCache.D2DDevice, SharpDX.Direct2D1.DeviceContextOptions.EnableMultithreadedOptimizations);
             }
 
             var bitmapProperties = new SharpDX.Direct2D1.BitmapProperties1(

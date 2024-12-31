@@ -17,9 +17,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private DeviceContext _deviceContext = null;
         private Texture2D _texture2D = null;
         private RenderTargetView _renderTargetView = null;
-        private SharpDX.Direct2D1.Device _d2DDevice = null;
-        private SharpDX.Direct2D1.DeviceContext _d2DDeviceContext = null;
-        private Factory1 _d2DFactory = null;
+        private SharpDX.Direct2D1.Device1 _d2DDevice = null;
+        private SharpDX.Direct2D1.DeviceContext1 _d2DDeviceContext = null;
+        private Factory2 _d2DFactory = null;
         private SharpDX.Direct2D1.Bitmap1 _d2dTargetBitmap = null;
         #endregion
 
@@ -60,7 +60,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 OnPropertyChanged(nameof(RenderTargetView));
             }
         }
-        public SharpDX.Direct2D1.Device D2DDevice
+        public SharpDX.Direct2D1.Device1 D2DDevice
         {
             get { return _d2DDevice; }
             set
@@ -69,7 +69,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 OnPropertyChanged(nameof(D2DDevice));
             }
         }
-        public SharpDX.Direct2D1.DeviceContext D2DDeviceContext
+        public SharpDX.Direct2D1.DeviceContext1 D2DDeviceContext
         {
             get { return _d2DDeviceContext; }
             set
@@ -78,13 +78,13 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 OnPropertyChanged(nameof(D2DDeviceContext));
             }
         }
-        public Factory1 D2DFactory
+        public Factory2 D2dFactory
         {
             get { return _d2DFactory; }
             set
             {
                 _d2DFactory = value;
-                OnPropertyChanged(nameof(D2DFactory));
+                OnPropertyChanged(nameof(D2dFactory));
             }
         }
         public SharpDX.Direct2D1.Bitmap1 D2DTargetBitmap
