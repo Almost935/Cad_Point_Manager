@@ -63,7 +63,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private SharpDX.Direct2D1.StrokeStyle1 _interactiveObjectStrokeStyle;
         private bool _d2dInitialized = false;
         private RawMatrix3x2 _d2dMatrix = new();
-        private System.Windows.Media.Matrix _testD2dMatrix = System.Windows.Media.Matrix.Identity;
         #endregion
 
         #region Properties
@@ -181,11 +180,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             // test
             if (CadManager3D is null || CadManager3D.DrawingObjectTree3D is null || _camera is null) { return; }
 
-            //var matrix = _camera.Get2DTransformationMatrix();
-            //_d3dResCache.D2DDeviceContext.Transform = new(matrix.M11, matrix.M12, matrix.M21, -matrix.M22, matrix.M31 + (Viewport.Width / 2), -matrix.M32 + (Viewport.Height / 2));
-
-            _d3dResCache.D2DDeviceContext.Transform = _d2dMatrix;
-            //_d3dResCache.D2DDeviceContext.Transform = new((float)_testD2dMatrix.M11, (float)_testD2dMatrix.M12, (float)_testD2dMatrix.M21, (float)_testD2dMatrix.M22, (float)_testD2dMatrix.OffsetX, (float)_testD2dMatrix.OffsetY);
+             _d3dResCache.D2DDeviceContext.Transform = _d2dMatrix;
 
             SharpDX.Direct2D1.Brush testBrush = new SharpDX.Direct2D1.SolidColorBrush(_d3dResCache.D2DDeviceContext, new RawColor4(0, 1, 1, 0.25f));
             foreach (var node in CadManager3D.DrawingObjectTree3D.BaseLevelNodes)
@@ -193,9 +188,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 _d3dResCache.D2DDeviceContext.DrawRectangle(new RawRectangleF((float)node.Extents.TopLeft.X, (float)node.Extents.TopLeft.Y, (float)node.Extents.BottomRight.X, (float)node.Extents.BottomRight.Y), testBrush, 5, _interactiveObjectStrokeStyle);
             }
             testBrush.Dispose();    
-            // End test
-
-
 
             if (_snappedObject is not null)
             {
@@ -355,31 +347,22 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 float newHeight = dxfBounds.Height / scale;
                 DxfBounds = new(dxfBounds.Center.X - newWidth / 2, dxfBounds.Center.X + newWidth / 2, dxfBounds.Center.Y - newHeight / 2, dxfBounds.Center.Y + newHeight / 2);
 
-
                 _dxfInitialMatrix = Matrix.Scaling(scale, scale, 1) * Matrix.Translation(-centerX, -centerY, 0);
 
                 if (_camera is not null)
                 {
                     _camera.UpdateInitialViewMatrix(_dxfInitialMatrix);
-                    
-                    Updated2DMatrix();
-
-                    _testD2dMatrix = new(_d2dMatrix.M11, _d2dMatrix.M12, _d2dMatrix.M21, _d2dMatrix.M22, _d2dMatrix.M31, _d2dMatrix.M32);
+                    UpdateD2dMatrix();
                 }
             }
         }
 
-        private void Updated2DMatrix()
+        private void UpdateD2dMatrix()
         {
             if (_camera is null) { return; }
 
             var matrix = _camera.Get2DTransformationMatrix();
-            //_d2dMatrix = new(matrix.M11, matrix.M12, matrix.M21, -matrix.M22, matrix.M31 + (Viewport.Width / 2), -matrix.M32 + (Viewport.Height / 2)); // add half of viewport width and height since d3d is centered on origin
-
-            _d2dMatrix = new(matrix.M11, matrix.M12, matrix.M21, -matrix.M22, _camera.InverseViewProjectionMatrix.M41 * matrix.M11 - (Viewport.Width / 2), _camera.InverseViewProjectionMatrix.M42 * matrix.M22 + (Viewport.Height / 2));
-
-            Debug.WriteLine($"\n_d2dMatrix: {_d2dMatrix.M11} {_d2dMatrix.M22} {_d2dMatrix.M31} {_d2dMatrix.M32}");
-            Debug.WriteLine($"_testD2dMatrix: {_testD2dMatrix.M11} {_testD2dMatrix.M22} {_testD2dMatrix.OffsetX} {_testD2dMatrix.OffsetY}");
+            _d2dMatrix = new(matrix.M11, matrix.M12, matrix.M21, -matrix.M22, (Viewport.Width / 2) - _camera.InverseViewProjectionMatrix.M41 * matrix.M11, _camera.InverseViewProjectionMatrix.M42 * matrix.M22 + (Viewport.Height / 2));
         }
 
         private void UpdateDxfCoords(Vector2 mousePos)
@@ -432,12 +415,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     else
                     {
                         _camera.Pan(currentMousePos, _prevMousePos);
-
-                        //Test
-                        var translate = currentMousePos - _prevMousePos;
-                        _testD2dMatrix.Translate(translate.X, translate.Y);
-
-                        Updated2DMatrix();
+                        UpdateD2dMatrix();
                     }
 
                     D3dIsDirty = true;
@@ -451,24 +429,19 @@ namespace Cad_Point_Manager.Controls.D3DControl
         protected override void OnMouseWheel(MouseWheelEventArgs e)
         {
             int zoomSteps;
-            double zoom;
             if (e.Delta > 0)
             {
                 zoomSteps = 1;
-                zoom = Math.Pow(_zoomFactor, zoomSteps);
             }
             else
             {
                 zoomSteps = -1;
-                zoom = Math.Pow(_zoomFactor, zoomSteps);
             }
 
             _camera.Zoom(zoomSteps, new Vector2((float)_pointerCoords.X, (float)_pointerCoords.Y));
-            _testD2dMatrix.ScaleAt(zoom, zoom, _pointerCoords.X, _pointerCoords.Y);
-            Updated2DMatrix();
+            UpdateD2dMatrix();
 
             D3dIsDirty = true;
-
             e.Handled = true;
         }
         protected override void OnRenderSizeChanged(SizeChangedInfo sizeInfo)
