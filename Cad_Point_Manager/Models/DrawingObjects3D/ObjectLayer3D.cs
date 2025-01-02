@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -12,12 +13,26 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
 {
     public class ObjectLayer3D : INotifyPropertyChanged
     {
+        #region Fields
+        public bool _isVisible = true;
+        #endregion
+
         #region Properties
         public string Name { get; set; }
         public Vector4 Color { get; set; }
         public Layer DxfLayer { get; set; }
         public List<DrawingObject3D> DrawingObject3Ds { get; set; } = [];
         public List<Vertex> Vertices { get; set; } = [];
+
+        public bool IsVisible
+        {
+            get => _isVisible;
+            set
+            {
+                _isVisible = value;
+                OnPropertyChanged();
+            }
+        }
         #endregion
 
         #region Constructors
@@ -48,6 +63,11 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             {
                 Vertices.AddRange(geometry.Vertices);
             }
+        }
+
+        protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
         #endregion
     }

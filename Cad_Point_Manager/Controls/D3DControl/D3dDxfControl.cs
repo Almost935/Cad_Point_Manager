@@ -72,7 +72,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public bool D3dIsDirty { get; set; } = true;
         public bool ShadersLoaded { get; set; } = false;
         public bool ConstantBufferInitialized { get; set; } = false;
-        public Bounds DxfBounds { get; set; } = Bounds.Empty;
         public ViewportF Viewport { get; set; }
 
         public Vector2 DxfCoords
@@ -134,14 +133,13 @@ namespace Cad_Point_Manager.Controls.D3DControl
             if (DxfNeedsReload)
             {
                 GetInitialMatrix();
-                _camera.UpdateBounds(DxfBounds);
+                _camera.ResetView(_dxfInitialMatrix);
                 DxfNeedsReload = false;
             }
             if (_camera is null)
             {
                 GetInitialMatrix();
-
-                _camera = new(Viewport, DxfBounds, _zoomFactor);
+                _camera = new(Viewport, _zoomFactor);
             }
             if (!ShadersLoaded) { InitializeShaders(); }
             if (!ConstantBufferInitialized) { InitializeConstantBuffer(); }
@@ -327,31 +325,20 @@ namespace Cad_Point_Manager.Controls.D3DControl
         {
             if (!DxfInitialized)
             {
-                DxfBounds = new(0, Viewport.Width, 0, Viewport.Height);
                 _dxfInitialMatrix = Matrix.Identity;
             }
-
             else
             {
                 float centerX = (CadManager3D.Extents.Left + CadManager3D.Extents.Right) * 0.5f;
                 float centerY = (CadManager3D.Extents.Bottom + CadManager3D.Extents.Top) * 0.5f;
 
-                float left = centerX - Viewport.Width * 0.5f;
-                float right = centerX + Viewport.Width * 0.5f;
-                float bottom = centerY - Viewport.Height * 0.5f;
-                float top = centerY + Viewport.Height * 0.5f;
-
-                Bounds dxfBounds = new(left, right, bottom, top);
                 float scale = Math.Min(Viewport.Width / CadManager3D.Extents.Width, Viewport.Height / CadManager3D.Extents.Height);
-                float newWidth = dxfBounds.Width / scale;
-                float newHeight = dxfBounds.Height / scale;
-                DxfBounds = new(dxfBounds.Center.X - newWidth / 2, dxfBounds.Center.X + newWidth / 2, dxfBounds.Center.Y - newHeight / 2, dxfBounds.Center.Y + newHeight / 2);
 
                 _dxfInitialMatrix = Matrix.Scaling(scale, scale, 1) * Matrix.Translation(-centerX, -centerY, 0);
 
                 if (_camera is not null)
                 {
-                    _camera.UpdateInitialViewMatrix(_dxfInitialMatrix);
+                    _camera.ResetView(_dxfInitialMatrix);
                     UpdateD2dMatrix();
                 }
             }
@@ -526,7 +513,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         #endregion
 
         #region IDisposable Support
-        private bool disposedValue = false; // To detect redundant calls
+        private bool disposedValue = false; 
 
         protected virtual void Dispose(bool disposing)
         {

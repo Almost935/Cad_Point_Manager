@@ -27,8 +27,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public Matrix InverseViewProjectionMatrix { get; private set; } = Matrix.Identity;
 
         public ViewportF Viewport { get; set; }
-        public Bounds OverallBounds { get; set; } = Bounds.Empty;
-        public Bounds CurrentBounds { get; set; } = Bounds.Empty;
         public Vector2 Translate { get; set; } = Vector2.Zero;
         public int CurrentZoomStep { get; set; } = 0;
         public float CurrentZoom => (float)Math.Pow(_zoomFactor, CurrentZoomStep);
@@ -37,26 +35,16 @@ namespace Cad_Point_Manager.Controls.D3DControl
         #endregion
 
         #region Constructors
-        public Camera(ViewportF viewport, Bounds dxfBounds, float zoomFactor)
+        public Camera(ViewportF viewport, float zoomFactor)
         {
             Viewport = viewport;
             _zoomFactor = zoomFactor;
-
-            UpdateBounds(dxfBounds);
 
             ResetToDefaults();
         }
         #endregion
 
         #region Methods
-        public void UpdateBounds(Bounds bounds)
-        {
-            OverallBounds = bounds;
-            CurrentBounds = bounds;
-
-            ResetToDefaults();
-        }
-
         public void UpdateViewportSize(ViewportF viewport)
         {
             Viewport = viewport;
@@ -67,16 +55,15 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         public void UpdateProjection()
         {
-            //ProjectionMatrix = Matrix.OrthoOffCenterLH(
-            //    CurrentBounds.Left, CurrentBounds.Right,
-            //    CurrentBounds.Bottom, CurrentBounds.Top,
-            //    0.1f, 1000f);
-
             ProjectionMatrix = Matrix.OrthoLH(Viewport.Width, Viewport.Height, 0.1f, 1000f);
         }
 
-        public void UpdateInitialViewMatrix(Matrix newInitialView)
+        public void ResetView(Matrix newInitialView)
         {
+            ZeroViews();
+
+            UpdateProjection();
+
             InitialViewMatrix = newInitialView;
             _scaledInitialViewMatrix = InitialViewMatrix;
 
@@ -87,9 +74,21 @@ namespace Cad_Point_Manager.Controls.D3DControl
             // Adjust M41 and M42 in the InitialViewMatrix
             _scaledInitialViewMatrix.M41 *= scaleX;
             _scaledInitialViewMatrix.M42 *= scaleY;
-            
+
             // Update dependent matrices
             UpdateViewProjection();
+        }
+        public void ZeroViews()
+        {
+            InitialViewMatrix = Matrix.Identity;
+            ViewMatrix = Matrix.Identity;
+            ProjectionMatrix = Matrix.Identity;
+            ViewProjectionMatrix = Matrix.Identity;
+            InverseViewProjectionMatrix = Matrix.Identity;
+            _scaledInitialViewMatrix = Matrix.Identity;
+            _scaledViewMatrix = Matrix.Identity;
+            CurrentZoomStep = 0;
+            Translate = Vector2.Zero;
         }
         public void UpdateView()
         {
@@ -196,7 +195,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
 
         public Vector2 ScreenToWorld(Vector2 screenSpace)
-        {   
+        {
             // Convert screen coordinates to normalized device coordinates (NDC)
             Vector2 ndc = ScreenToNDC(screenSpace);
 

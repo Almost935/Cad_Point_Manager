@@ -73,6 +73,8 @@ namespace Cad_Point_Manager.Models
 
         public void LoadDxf(DxfDocument dxfDocument)
         {
+            ClearDxf();
+
             DxfDocument = dxfDocument;
             Extents = DxfHelpers.GetBoundsFromHeader(DxfDocument);
 
@@ -85,10 +87,8 @@ namespace Cad_Point_Manager.Models
                     layer.AddDrawingObject(drawingObj3d);
                 }
             }
-
             DrawingObjectTree3D = new(this, Extents.ToRect(), 5);
-
-            GetVerticesList();
+            UpdateVerticesList();
 
             DxfDirty = true;
             DxfNeedsReload = true;
@@ -147,27 +147,37 @@ namespace Cad_Point_Manager.Models
             }
         }
 
-        public void GetVerticesList()
+        public void UpdateVerticesList()
         {
+            Stopwatch stopwatch = Stopwatch.StartNew();
+
+            Vertices.Clear();
+
             foreach (var layer in Layers.Values)
             {
-                Vertices.AddRange(layer.Vertices);
+                if (layer.IsVisible)
+                {
+                    Vertices.AddRange(layer.Vertices);
+                }
             }
 
-            // Testing for Quadtree bounds
-            SharpDX.Vector4 color = new(0, 1, 0, 1);
-            foreach (var node in DrawingObjectTree3D.BaseLevelNodes)
-            {
-                Vertex tl = new(new SharpDX.Vector3((float)node.Extents.TopLeft.X, (float)node.Extents.TopLeft.Y, 0), color);
-                Vertex tr = new(new SharpDX.Vector3((float)node.Extents.TopRight.X, (float)node.Extents.TopRight.Y, 0), color);
-                Vertex bl = new(new SharpDX.Vector3((float)node.Extents.BottomLeft.X, (float)node.Extents.BottomLeft.Y, 0), color);
-                Vertex br = new(new SharpDX.Vector3((float)node.Extents.BottomRight.X, (float)node.Extents.BottomRight.Y, 0), color);
+            stopwatch.Stop();
+            Debug.WriteLine($"UpdateVerticesList() took {stopwatch.ElapsedMilliseconds} ms");
 
-                Vertices.Add(tl); Vertices.Add(tr);
-                Vertices.Add(tr); Vertices.Add(br);
-                Vertices.Add(br); Vertices.Add(bl);
-                Vertices.Add(bl); Vertices.Add(tl);
-            }
+            //// Testing for Quadtree bounds
+            //SharpDX.Vector4 color = new(0, 1, 0, 1);
+            //foreach (var node in DrawingObjectTree3D.BaseLevelNodes)
+            //{
+            //    Vertex tl = new(new SharpDX.Vector3((float)node.Extents.TopLeft.X, (float)node.Extents.TopLeft.Y, 0), color);
+            //    Vertex tr = new(new SharpDX.Vector3((float)node.Extents.TopRight.X, (float)node.Extents.TopRight.Y, 0), color);
+            //    Vertex bl = new(new SharpDX.Vector3((float)node.Extents.BottomLeft.X, (float)node.Extents.BottomLeft.Y, 0), color);
+            //    Vertex br = new(new SharpDX.Vector3((float)node.Extents.BottomRight.X, (float)node.Extents.BottomRight.Y, 0), color);
+
+            //    Vertices.Add(tl); Vertices.Add(tr);
+            //    Vertices.Add(tr); Vertices.Add(br);
+            //    Vertices.Add(br); Vertices.Add(bl);
+            //    Vertices.Add(bl); Vertices.Add(tl);
+            //}
         }
     }
 }

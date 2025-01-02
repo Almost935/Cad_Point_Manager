@@ -21,6 +21,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         public DrawingBlock3D DrawingBlock3D { get; set; }
         public bool IsSelected { get; set; } = false;
         public bool IsMouseOver { get; set; } = false;
+        public bool IsVisible { get; set; } = true;
         #endregion
 
         #region Events
