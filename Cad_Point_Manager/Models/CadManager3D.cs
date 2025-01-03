@@ -104,14 +104,19 @@ namespace Cad_Point_Manager.Models
 
             DrawingObject3D drawingObject3D = null;
 
+            Debug.WriteLine($"node.DrawingObjects.Count(): {node.DrawingObjects.Count()}");
+
             foreach (var obj in node.DrawingObjects)
             {
-                //Debug.WriteLine($"\nobj.GetType(): {obj.GetType()}" +
-                //    $"\nRect.Inflate(obj.Bounds, 2, 2).Contains(p): {Rect.Inflate(obj.Bounds, 2, 2).Contains(p)}");
+                var inflatedBounds = Rect.Inflate(obj.Bounds, 5, 5);
 
-                if (Rect.Inflate(obj.Bounds, 5, 5).Contains(p))
+                Debug.WriteLine($"\nobj.GetType(): {obj.GetType()}" +
+                    $"\ninflatedBounds: {inflatedBounds}" +
+                    $"\np: {p}");
+
+                if (inflatedBounds.Contains(p))
                 {
-                    //Debug.WriteLine($"obj.HitTest(p, tolerance): {obj.HitTest(p, tolerance)}");
+                    Debug.WriteLine($"obj.HitTest(p, tolerance): {obj.HitTest(p, tolerance)}");
 
                     if (obj.HitTest(p, tolerance))
                     {
@@ -149,7 +154,7 @@ namespace Cad_Point_Manager.Models
 
         public void UpdateVerticesList()
         {
-            Stopwatch stopwatch = Stopwatch.StartNew();
+            //Stopwatch stopwatch = Stopwatch.StartNew();
 
             Vertices.Clear();
 
@@ -157,12 +162,20 @@ namespace Cad_Point_Manager.Models
             {
                 if (layer.IsVisible)
                 {
-                    Vertices.AddRange(layer.Vertices);
+                    foreach (var obj in layer.DrawingObject3Ds)
+                    {
+                        if (obj.IsVisible && obj is DrawingGeometry3D drawingGeometry)
+                        {
+                            drawingGeometry.StartVertexIndex = Vertices.Count;
+                            Vertices.AddRange(drawingGeometry.Vertices);
+                            drawingGeometry.EndVertexIndex = Vertices.Count - 1;
+                        }
+                    }
                 }
             }
 
-            stopwatch.Stop();
-            Debug.WriteLine($"UpdateVerticesList() took {stopwatch.ElapsedMilliseconds} ms");
+            //stopwatch.Stop();
+            //Debug.WriteLine($"UpdateVerticesList() took {stopwatch.ElapsedMilliseconds} ms");
 
             //// Testing for Quadtree bounds
             //SharpDX.Vector4 color = new(0, 1, 0, 1);

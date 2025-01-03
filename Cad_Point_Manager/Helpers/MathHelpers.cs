@@ -3,6 +3,7 @@ using SharpDX.Direct2D1;
 using System.Windows;
 using SharpDX;
 using Point = System.Windows.Point;
+using System.Diagnostics;
 
 namespace Cad_Point_Manager.Helpers
 {
@@ -112,37 +113,49 @@ namespace Cad_Point_Manager.Helpers
         /// <param name="y2">Y-coordinate of the second endpoint of the line.</param>
         /// <param name="tolerance">Allowed tolerance for floating-point comparison.</param>
         /// <returns>True if the point is on the line; otherwise, false.</returns>
-        //public static bool IsPointOnLine(double px, double py, double x1, double y1, double x2, double y2, double tolerance = 0.01)
-        //{
-        //    // Calculate the cross-product to check if the point is collinear with the line
-        //    double crossProduct = (py - y1) * (x2 - x1) - (px - x1) * (y2 - y1);
-        //    if (Math.Abs(crossProduct) > tolerance)
-        //        return false;
-
-        //    // Check if the point lies within the bounds of the line segment
-        //    double dotProduct = (px - x1) * (x2 - x1) + (py - y1) * (y2 - y1);
-        //    if (dotProduct < 0)
-        //        return false;
-
-        //    double squaredLength = Math.Pow(x2 - x1, 2) + Math.Pow(y2 - y1, 2);
-        //    if (dotProduct > squaredLength)
-        //        return false;
-
-        //    return true;
-        //}
-
-        public static bool IsPointOnLine(Point point, Point start, Point end, double tolerance)
+        public static bool IsPointOnLine(double px, double py, double x1, double y1, double x2, double y2, double tolerance = 0.01)
         {
-            double m = (end.Y - start.Y) / (end.X - start.X);
-            double c = start.Y - (m * start.X);
+            double crossProduct = (py - y1) * (x2 - x1) - (px - x1) * (y2 - y1);
+            Debug.WriteLine($"CrossProduct: {crossProduct}");
+            if (Math.Abs(crossProduct) > tolerance)
+                return false;
 
-            // If (x, y) satisfies the equation
-            // of the line
-            if (Math.Abs(point.Y - ((m * point.X) + c)) <= tolerance)
-                return true;
+            double dotProduct = (px - x1) * (x2 - x1) + (py - y1) * (y2 - y1);
+            Debug.WriteLine($"DotProduct: {dotProduct}");
+            if (dotProduct < 0)
+                return false;
 
-            return false;
+            double squaredLength = Math.Pow(x2 - x1, 2) + Math.Pow(y2 - y1, 2);
+            Debug.WriteLine($"SquaredLength: {squaredLength}");
+            if (dotProduct > squaredLength)
+                return false;
+
+            return true;
         }
+
+        //public static bool IsPointOnLine(Point point, Point start, Point end, double tolerance)
+        //{
+        //    double m = (end.Y - start.Y) / (end.X - start.X);
+
+        //    if (double.IsInfinity(m))
+        //    {
+        //        return Math.Abs(point.X - start.X) <= tolerance;
+        //    }
+
+        //    double c = start.Y - (m * start.X);
+
+        //    double d = Math.Abs(point.Y - ((m * point.X) + c));
+
+        //    //Debug.WriteLine($"m: {m} c: {c} d: {d}");
+        //    //Debug.WriteLine($"d: {d} tolerance: {tolerance}");
+
+        //    // If (x, y) satisfies the equation
+        //    // of the line
+        //    if (d <= tolerance)
+        //        return true;
+
+        //    return false;
+        //}
 
         /// <summary>
         /// Determines if a point lies on a circle.

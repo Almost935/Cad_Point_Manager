@@ -125,19 +125,21 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
 
                 foreach (var drawingObject in DrawingObjects)
                 {
-                    if (drawingObject.Bounds.IntersectsWith(extents1))
+                    var bounds = Rect.Inflate(drawingObject.Bounds, 0.5, 0.5);
+
+                    if (bounds.IntersectsWith(extents1))
                     {
                         objects1.Add(drawingObject);
                     }
-                    if (drawingObject.Bounds.IntersectsWith(extents2))
+                    if (bounds.IntersectsWith(extents2))
                     {
                         objects2.Add(drawingObject);
                     }
-                    if (drawingObject.Bounds.IntersectsWith(extents3))
+                    if (bounds.IntersectsWith(extents3))
                     {
                         objects3.Add(drawingObject);
                     }
-                    if (drawingObject.Bounds.IntersectsWith(extents4))
+                    if (bounds.IntersectsWith(extents4))
                     {
                         objects4.Add(drawingObject);
                     }

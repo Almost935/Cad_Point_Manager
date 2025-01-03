@@ -128,7 +128,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             if (DxfIsDirty)
             {
-                GetDxfGeometries();
+                UpdateDxfVertices();
             }
             if (DxfNeedsReload)
             {
@@ -153,10 +153,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             // Set render target and clear it
             context.OutputMerger.SetRenderTargets(_d3dResCache.RenderTargetView);
-            context.ClearRenderTargetView(_d3dResCache.RenderTargetView, new SharpDX.Mathematics.Interop.RawColor4(1, 1, 1, 1));
+            context.ClearRenderTargetView(_d3dResCache.RenderTargetView, new RawColor4(1, 1, 1, 1));
 
             DrawInteractiveObjects();
-
             UpdateConstantBuffer();
 
             // Set shaders
@@ -180,50 +179,70 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
              _d3dResCache.D2DDeviceContext.Transform = _d2dMatrix;
 
-            SharpDX.Direct2D1.Brush testBrush = new SharpDX.Direct2D1.SolidColorBrush(_d3dResCache.D2DDeviceContext, new RawColor4(0, 1, 1, 0.25f));
-            foreach (var node in CadManager3D.DrawingObjectTree3D.BaseLevelNodes)
+            SharpDX.Direct2D1.Brush testBrush = new SharpDX.Direct2D1.SolidColorBrush(_d3dResCache.D2DDeviceContext, new RawColor4(0.1f, 1, 0, 1f));
+            //foreach (var node in CadManager3D.DrawingObjectTree3D.BaseLevelNodes)
+            //{
+            //    _d3dResCache.D2DDeviceContext.DrawRectangle(new RawRectangleF((float)node.Extents.TopLeft.X, (float)node.Extents.TopLeft.Y, (float)node.Extents.BottomRight.X, (float)node.Extents.BottomRight.Y), testBrush, 5, _interactiveObjectStrokeStyle);
+            //}
+            foreach (var layer in CadManager3D.Layers.Values)
             {
-                _d3dResCache.D2DDeviceContext.DrawRectangle(new RawRectangleF((float)node.Extents.TopLeft.X, (float)node.Extents.TopLeft.Y, (float)node.Extents.BottomRight.X, (float)node.Extents.BottomRight.Y), testBrush, 5, _interactiveObjectStrokeStyle);
-            }
-            testBrush.Dispose();    
+                foreach (var obj in layer.DrawingObject3Ds)
+                {
+                    var inflatedBounds = Rect.Inflate(obj.Bounds, 1, 1);
+                    //var inflatedBounds = obj.Bounds;
 
+                    //Debug.WriteLine($"Bounds: {obj.Bounds}");
+                    //Debug.WriteLine($"Inflated Bounds: {inflatedBounds}");
+
+                    _d3dResCache.D2DDeviceContext.DrawRectangle(new RawRectangleF((float)inflatedBounds.TopLeft.X, (float)inflatedBounds.TopLeft.Y, (float)inflatedBounds.BottomRight.X, (float)inflatedBounds.BottomRight.Y), testBrush, 1, _interactiveObjectStrokeStyle);
+                }
+            }
+            testBrush.Dispose();
             if (_snappedObject is not null)
             {
                 var copy = _snappedObject;
-
                 if (copy is DrawingSegment3D segment)
                 {
-                    SharpDX.Direct2D1.Brush brush = new SharpDX.Direct2D1.SolidColorBrush(_d3dResCache.D2DDeviceContext, new RawColor4(segment.Color.X, segment.Color.Y, segment.Color.Z, 0.3f));
+                    SharpDX.Direct2D1.Brush innerBrush = new SharpDX.Direct2D1.SolidColorBrush(_d3dResCache.D2DDeviceContext, new RawColor4(segment.Color.X, segment.Color.Y, segment.Color.Z, segment.Color.W));
+                    SharpDX.Direct2D1.Brush outerBrush = new SharpDX.Direct2D1.SolidColorBrush(_d3dResCache.D2DDeviceContext, new RawColor4(segment.Color.X, segment.Color.Y, segment.Color.Z, 0.3f));
 
                     for (int i = 0; i < segment.Vertices.Count / 2; i++)
                     {
                         RawVector2 start = new(segment.Vertices[i * 2].Position.X, segment.Vertices[i * 2].Position.Y);
                         RawVector2 end = new(segment.Vertices[i * 2 + 1].Position.X, segment.Vertices[i * 2 + 1].Position.Y);
-                        _d3dResCache.D2DDeviceContext.DrawLine(start, end, brush, 4, _interactiveObjectStrokeStyle);
+
+                        _d3dResCache.D2DDeviceContext.DrawLine(start, end, outerBrush, 4, _interactiveObjectStrokeStyle);
+                        _d3dResCache.D2DDeviceContext.DrawLine(start, end, innerBrush, 1, _interactiveObjectStrokeStyle);
                     }
-                    brush.Dispose();
+                    innerBrush.Dispose();
+                    outerBrush.Dispose();
                 }
 
                 if (copy is DrawingPolyline3D polyline)
                 {
-                    SharpDX.Direct2D1.Brush brush = new SharpDX.Direct2D1.SolidColorBrush(_d3dResCache.D2DDeviceContext, new RawColor4(polyline.Color.X, polyline.Color.Y, polyline.Color.Z, 0.3f));
+                    SharpDX.Direct2D1.Brush innerBrush = new SharpDX.Direct2D1.SolidColorBrush(_d3dResCache.D2DDeviceContext, new RawColor4(polyline.Color.X, polyline.Color.Y, polyline.Color.Z, polyline.Color.W));
+                    SharpDX.Direct2D1.Brush outerBrush = new SharpDX.Direct2D1.SolidColorBrush(_d3dResCache.D2DDeviceContext, new RawColor4(polyline.Color.X, polyline.Color.Y, polyline.Color.Z, 0.3f));
 
                     //Geometry 
                     for (int i = 0; i < polyline.Vertices.Count / 2; i++)
                     {
                         RawVector2 start = new(polyline.Vertices[i * 2].Position.X, polyline.Vertices[i * 2].Position.Y);
                         RawVector2 end = new(polyline.Vertices[i * 2 + 1].Position.X, polyline.Vertices[i * 2 + 1].Position.Y);
-                        _d3dResCache.D2DDeviceContext.DrawLine(start, end, brush, 4, _interactiveObjectStrokeStyle);
+
+                        _d3dResCache.D2DDeviceContext.DrawLine(start, end, outerBrush, 4, _interactiveObjectStrokeStyle);
+                        _d3dResCache.D2DDeviceContext.DrawLine(start, end, innerBrush, 1, _interactiveObjectStrokeStyle);
                     }
-                    brush.Dispose();
+                    innerBrush.Dispose();
+                    outerBrush.Dispose();
                 }
             }
         }
 
-        private void GetDxfGeometries()
+        private void UpdateDxfVertices()
         {
             if (_d3dResCache is null) { return; }
 
+            CadManager3D.UpdateVerticesList();
             _vertices = CadManager3D.Vertices.ToArray();
 
             if (_vertices is not null && _vertices.Length > 0)
@@ -459,16 +478,28 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 float tolerance = _hittestStrokeThickness / (_camera.CurrentZoom);
                 Point p = new(DxfCoords.X, DxfCoords.Y);
 
+                Debug.WriteLine($"\n\n\n");
+
                 if (_snappedObject is not null)
                 {
+                    //Debug.WriteLine($"_snappedObject is not null: {_snappedObject is not null}");
+
                     if (!_snappedObject.HitTest(p, tolerance))
                     {
+                        _snappedObject.Deselect();
+                        _snappedObject = null;
+
+                        //Debug.WriteLine($"_snappedObject is not null: {_snappedObject is not null}");
+
                         _snappedObject = CadManager3D.HitTestPoint(p, tolerance);
 
                         if (_snappedObject is not null)
                         {
-                            D3dIsDirty = true;
+                            _snappedObject.Select();
                         }
+
+                        DxfIsDirty = true;
+                        D3dIsDirty = true;
                     }
                 }
                 else
@@ -477,6 +508,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
                     if (_snappedObject is not null)
                     {
+                        _snappedObject.Select();
+
+                        DxfIsDirty = true;
                         D3dIsDirty = true;
                     }
                 }

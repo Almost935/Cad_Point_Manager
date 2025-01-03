@@ -16,5 +16,16 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         public int StartVertexIndex { get; set; }
         public int EndVertexIndex { get; set; }
         public Geometry Geometry2D { get; set; }
+
+        public override void Select()
+        {
+            this.IsSelected = true;
+            this.IsVisible = false;
+        }
+        public override void Deselect()
+        {
+            this.IsSelected = false;
+            this.IsVisible = true;
+        }
     }
 }
