@@ -110,7 +110,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         #endregion
 
         #region Functions
-        Func<Vector2, string> formatVectorString = (vector) => $"X: {vector.X:F3}   Y: {vector.Y:F3}";
+        public readonly Func<Vector2, string> formatVectorString = (vector) => $"X: {vector.X:F3}   Y: {vector.Y:F3}";
         #endregion
 
         #region Constructors 
@@ -179,25 +179,26 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
              _d3dResCache.D2DDeviceContext.Transform = _d2dMatrix;
 
-            SharpDX.Direct2D1.Brush testBrush = new SharpDX.Direct2D1.SolidColorBrush(_d3dResCache.D2DDeviceContext, new RawColor4(0.1f, 1, 0, 1f));
+            //SharpDX.Direct2D1.Brush testBrush = new SharpDX.Direct2D1.SolidColorBrush(_d3dResCache.D2DDeviceContext, new RawColor4(0.1f, 1, 0, 1f));
             //foreach (var node in CadManager3D.DrawingObjectTree3D.BaseLevelNodes)
             //{
             //    _d3dResCache.D2DDeviceContext.DrawRectangle(new RawRectangleF((float)node.Extents.TopLeft.X, (float)node.Extents.TopLeft.Y, (float)node.Extents.BottomRight.X, (float)node.Extents.BottomRight.Y), testBrush, 5, _interactiveObjectStrokeStyle);
             //}
-            foreach (var layer in CadManager3D.Layers.Values)
-            {
-                foreach (var obj in layer.DrawingObject3Ds)
-                {
-                    var inflatedBounds = Rect.Inflate(obj.Bounds, 1, 1);
-                    //var inflatedBounds = obj.Bounds;
+            //foreach (var layer in CadManager3D.Layers.Values)
+            //{
+            //    foreach (var obj in layer.DrawingObject3Ds)
+            //    {
+            //        var inflatedBounds = Rect.Inflate(obj.Bounds, 1, 1);
+            //        //var inflatedBounds = obj.Bounds;
 
-                    //Debug.WriteLine($"Bounds: {obj.Bounds}");
-                    //Debug.WriteLine($"Inflated Bounds: {inflatedBounds}");
+            //        //Debug.WriteLine($"Bounds: {obj.Bounds}");
+            //        //Debug.WriteLine($"Inflated Bounds: {inflatedBounds}");
 
-                    _d3dResCache.D2DDeviceContext.DrawRectangle(new RawRectangleF((float)inflatedBounds.TopLeft.X, (float)inflatedBounds.TopLeft.Y, (float)inflatedBounds.BottomRight.X, (float)inflatedBounds.BottomRight.Y), testBrush, 1, _interactiveObjectStrokeStyle);
-                }
-            }
-            testBrush.Dispose();
+            //        _d3dResCache.D2DDeviceContext.DrawRectangle(new RawRectangleF((float)inflatedBounds.TopLeft.X, (float)inflatedBounds.TopLeft.Y, (float)inflatedBounds.BottomRight.X, (float)inflatedBounds.BottomRight.Y), testBrush, 1, _interactiveObjectStrokeStyle);
+            //    }
+            //}
+            //testBrush.Dispose();
+
             if (_snappedObject is not null)
             {
                 var copy = _snappedObject;
@@ -383,6 +384,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             if (e.MiddleButton == MouseButtonState.Pressed)
             {
                 _isPanning = true;
+                ResetSnappedObjects();  
                 _previousMousePosition = e.GetPosition(this);
             }
         }
@@ -478,7 +480,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 float tolerance = _hittestStrokeThickness / (_camera.CurrentZoom);
                 Point p = new(DxfCoords.X, DxfCoords.Y);
 
-                Debug.WriteLine($"\n\n\n");
+                //Debug.WriteLine($"\n\n\n");
 
                 if (_snappedObject is not null)
                 {
@@ -486,17 +488,12 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
                     if (!_snappedObject.HitTest(p, tolerance))
                     {
-                        _snappedObject.Deselect();
-                        _snappedObject = null;
+                        ResetSnappedObjects();
 
                         //Debug.WriteLine($"_snappedObject is not null: {_snappedObject is not null}");
 
                         _snappedObject = CadManager3D.HitTestPoint(p, tolerance);
-
-                        if (_snappedObject is not null)
-                        {
-                            _snappedObject.Select();
-                        }
+                        _snappedObject?.Select();
 
                         DxfIsDirty = true;
                         D3dIsDirty = true;
@@ -518,6 +515,14 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 _isHitTesting = false;
             }
         }
+
+        private void ResetSnappedObjects()
+        {
+            _snappedObject.Deselect();
+            _snappedObject = null;
+        }
+
+
 
         private static void OnCadManager3DChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {

@@ -104,19 +104,19 @@ namespace Cad_Point_Manager.Models
 
             DrawingObject3D drawingObject3D = null;
 
-            Debug.WriteLine($"node.DrawingObjects.Count(): {node.DrawingObjects.Count()}");
+            //Debug.WriteLine($"node.DrawingObjects.Count(): {node.DrawingObjects.Count()}");
 
             foreach (var obj in node.DrawingObjects)
             {
                 var inflatedBounds = Rect.Inflate(obj.Bounds, 5, 5);
 
-                Debug.WriteLine($"\nobj.GetType(): {obj.GetType()}" +
-                    $"\ninflatedBounds: {inflatedBounds}" +
-                    $"\np: {p}");
+                //Debug.WriteLine($"\nobj.GetType(): {obj.GetType()}" +
+                //    $"\ninflatedBounds: {inflatedBounds}" +
+                //    $"\np: {p}");
 
                 if (inflatedBounds.Contains(p))
                 {
-                    Debug.WriteLine($"obj.HitTest(p, tolerance): {obj.HitTest(p, tolerance)}");
+                    //Debug.WriteLine($"obj.HitTest(p, tolerance): {obj.HitTest(p, tolerance)}");
 
                     if (obj.HitTest(p, tolerance))
                     {
