@@ -19,12 +19,18 @@ namespace Cad_Point_Manager.Controls.D3DControl
     public struct Vertex
     {
         public Vector3 Position;
-        public Vector4 Color; 
+        public Vector4 Color;
 
-        public Vertex(Vector3 position, Vector4 color)
+        /// <summary>
+        /// float value indicating whether the vertex is visible or not. 1.0f is visible, 0.0f is not visible.
+        /// </summary>
+        public float IsVisible;
+
+        public Vertex(Vector3 position, Vector4 color, float isVisible = 1.0f)
         {
             Position = position;
             Color = color;
+            IsVisible = isVisible;
         }
     }
 

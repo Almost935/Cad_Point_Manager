@@ -109,11 +109,25 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         {
             this.IsSelected = true;
             this.IsVisible = false;
+
+            for (int i = 0; i < DrawingGeometryVerteces.Count(); i++)
+            {
+                var vertex = DrawingGeometryVerteces[i];
+                vertex.IsVisible = 0.0f;
+                DrawingGeometryVerteces[i] = vertex;
+            }
         }
         public override void Deselect()
         {
             this.IsSelected = false;
             this.IsVisible = true;
+
+            for (int i = 0; i < DrawingGeometryVerteces.Count(); i++)
+            {
+                var vertex = DrawingGeometryVerteces[i];
+                vertex.IsVisible = 1.0f;
+                DrawingGeometryVerteces[i] = vertex;
+            }
         }
 
 

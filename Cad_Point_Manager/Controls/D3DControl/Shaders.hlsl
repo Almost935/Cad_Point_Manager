@@ -5,6 +5,7 @@ struct VSInput
 {
     float3 Position : POSITION; // 3D position of the vertex
     float4 Color : COLOR; // RGBA color of the vertex
+    float IsVisible : ISVISIBLE;
 };
 
 // Output structure from the Vertex Shader and input for the Pixel Shader
@@ -24,6 +25,11 @@ cbuffer TransformationBuffer : register(b0)
 PSInput VSMain(VSInput input)
 {
     PSInput output;
+    
+    if (input.IsVisible < 0.5) // If not visible, skip the vertex
+    {
+        return output; // Return default values or handle accordingly
+    } 
 
     // Pass the position directly, converting to homogeneous coordinates (w = 1.0)
     // output.Position = float4(input.Position, 1.0);

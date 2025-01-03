@@ -125,6 +125,8 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
 
                 foreach (var drawingObject in DrawingObjects)
                 {
+                    if (drawingObject.Bounds.IsEmpty) { continue; }
+
                     var bounds = Rect.Inflate(drawingObject.Bounds, 0.5, 0.5);
 
                     if (bounds.IntersectsWith(extents1))

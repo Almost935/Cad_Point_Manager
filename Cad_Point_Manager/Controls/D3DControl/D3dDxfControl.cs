@@ -12,6 +12,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Security.Policy;
 using System.Windows;
 using System.Windows.Input;
 
@@ -244,6 +245,18 @@ namespace Cad_Point_Manager.Controls.D3DControl
             if (_d3dResCache is null) { return; }
 
             CadManager3D.UpdateVerticesList();
+
+            SetVertexBuffer();
+
+            DxfInitialized = true;
+            DxfIsDirty = false;
+            D3dIsDirty = true;
+        }
+
+        private void SetVertexBuffer()
+        {
+            if (_d3dResCache is null) { return; }
+
             _vertices = CadManager3D.Vertices.ToArray();
 
             if (_vertices is not null && _vertices.Length > 0)
@@ -307,7 +320,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 ShaderSignature.GetInputSignature(vertexShaderByteCode),
                 [
                     new InputElement("POSITION", 0, SharpDX.DXGI.Format.R32G32B32_Float, 0, 0),
-                    new InputElement("COLOR", 0, SharpDX.DXGI.Format.R32G32B32A32_Float, 12, 0)
+                    new InputElement("COLOR", 0, SharpDX.DXGI.Format.R32G32B32A32_Float, 12, 0),
+                    new InputElement("ISVISIBLE", 0, SharpDX.DXGI.Format.R32_Float, 28, 0)
                 ]);
 
             ShadersLoaded = true;
@@ -480,6 +494,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 float tolerance = _hittestStrokeThickness / (_camera.CurrentZoom);
                 Point p = new(DxfCoords.X, DxfCoords.Y);
 
+                need to add another field that records the coordinates used for last hittest because using the pan one is resulting in bad hit tests
+
                 //Debug.WriteLine($"\n\n\n");
 
                 if (_snappedObject is not null)
@@ -518,7 +534,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         private void ResetSnappedObjects()
         {
-            _snappedObject.Deselect();
+            _snappedObject?.Deselect();
             _snappedObject = null;
         }
 
