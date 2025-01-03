@@ -115,25 +115,30 @@ namespace Cad_Point_Manager.Helpers
         /// <returns>True if the point is on the line; otherwise, false.</returns>
         public static bool IsPointOnLine(Point p, Point s, Point e, double tolerance = 0.01)
         {
-            double SE = PointToPointDistance(s, e);
-            double SP = PointToPointDistance(s, p);
-            double EP = PointToPointDistance(e, p);
+            //double SE = PointToPointDistance(s, e);
+            //double SP = PointToPointDistance(s, p);
+            //double EP = PointToPointDistance(e, p);
 
-            if (SP + EP - SE < tolerance) { return true; }
-            if (SP <= tolerance || EP <= tolerance) { return true; }
-            return false;
+            //if (SP + EP - SE < tolerance) { return true; }
+            //if (SP <= tolerance || EP <= tolerance) { return true; }
+            //return false;
+
+            var d = GetPointToLineDistance(s.X, s.Y, e.X, e.Y, p.X, p.Y);
+            Debug.WriteLine($"d: {d}");
+
+
         }
 
-            /// <summary>
-            /// Determines if a point lies on a circle.
-            /// </summary>
-            /// <param name="px">X-coordinate of the point.</param>
-            /// <param name="py">Y-coordinate of the point.</param>
-            /// <param name="cx">X-coordinate of the circle's center.</param>
-            /// <param name="cy">Y-coordinate of the circle's center.</param>
-            /// <param name="radius">Radius of the circle.</param>
-            /// <param name="tolerance">Allowed tolerance for floating-point comparison.</param>
-            /// <returns>True if the point is on the circle; otherwise, false.</returns>
+        /// <summary>
+        /// Determines if a point lies on a circle.
+        /// </summary>
+        /// <param name="px">X-coordinate of the point.</param>
+        /// <param name="py">Y-coordinate of the point.</param>
+        /// <param name="cx">X-coordinate of the circle's center.</param>
+        /// <param name="cy">Y-coordinate of the circle's center.</param>
+        /// <param name="radius">Radius of the circle.</param>
+        /// <param name="tolerance">Allowed tolerance for floating-point comparison.</param>
+        /// <returns>True if the point is on the circle; otherwise, false.</returns>
         public static bool IsPointOnCircle(double px, double py, double cx, double cy, double radius, double tolerance = 0.01)
         {
             // Calculate the distance from the point to the circle's center
@@ -194,6 +199,25 @@ namespace Cad_Point_Manager.Helpers
             double deltaX = point2.X - point1.X;
             double deltaY = point2.Y - point1.Y;
             return Math.Sqrt(deltaX * deltaX + deltaY * deltaY);
+        }
+
+        public static double GetPointToLineDistance(
+        double x1, double y1, // Line point 1
+        double x2, double y2, // Line point 2
+        double px, double py  // Point
+    )
+        {
+            // Calculate the numerator of the distance formula
+            double numerator = Math.Abs((x2 - x1) * (py - y1) - (y2 - y1) * (px - x1));
+
+            // Calculate the denominator (length of the line segment)
+            double denominator = Math.Sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
+
+            // Avoid division by zero (if the two line points are identical)
+            if (denominator == 0) return 0;
+
+            // Return the distance
+            return numerator / denominator;
         }
     }
 }

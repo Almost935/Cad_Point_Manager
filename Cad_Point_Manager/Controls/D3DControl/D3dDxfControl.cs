@@ -15,8 +15,9 @@ using System.Runtime.CompilerServices;
 using System.Security.Policy;
 using System.Windows;
 using System.Windows.Input;
-
+using System.Windows.Media;
 using Buffer = SharpDX.Direct3D11.Buffer;
+using Matrix = SharpDX.Matrix;
 using Point = System.Windows.Point;
 
 namespace Cad_Point_Manager.Controls.D3DControl
@@ -25,7 +26,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
     {
         #region Fields
         private const float _rotationSpeed = 0.005f;
-        private const float _panThreshold = 2.0f;
         private const float _zoomFactor = 1.3f;
 
         private Buffer _vertexBuffer;
@@ -39,6 +39,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private Matrix _dxfInitialMatrix = Matrix.Identity;
 
         // Panning and Zooming Fields
+        private float _panThreshold = 1.0f;
         private Point _previousMousePosition;
         private bool _isPanning = false;
 
@@ -51,13 +52,15 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private string _dxfCoordsString = $"X: {0:F3}   Y: {0:F3}";
 
         // Hit Testing Fields
+        private float _hittestThreshold = 3.0f;
         private bool _isHitTesting = false;
-        private float _hittestStrokeThickness = 2;
+        private float _hittestStrokeThickness = 0.5f;
+        private Point _lastHitTestCoords = new();
 
         // Interactive features fields
         private DrawingObject3D _snappedObject;
         private DrawingObject3D _highlightedObject;
-
+        
         // Direct2D Fields
         private SharpDX.Direct2D1.Brush _highlightedBrush;
         private SharpDX.Direct2D1.Brush _highlightedOuterEdgeBrush;
@@ -180,25 +183,25 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
              _d3dResCache.D2DDeviceContext.Transform = _d2dMatrix;
 
-            //SharpDX.Direct2D1.Brush testBrush = new SharpDX.Direct2D1.SolidColorBrush(_d3dResCache.D2DDeviceContext, new RawColor4(0.1f, 1, 0, 1f));
+            SharpDX.Direct2D1.Brush testBrush = new SharpDX.Direct2D1.SolidColorBrush(_d3dResCache.D2DDeviceContext, new RawColor4(0.1f, 1, 0, 1f));
             //foreach (var node in CadManager3D.DrawingObjectTree3D.BaseLevelNodes)
             //{
             //    _d3dResCache.D2DDeviceContext.DrawRectangle(new RawRectangleF((float)node.Extents.TopLeft.X, (float)node.Extents.TopLeft.Y, (float)node.Extents.BottomRight.X, (float)node.Extents.BottomRight.Y), testBrush, 5, _interactiveObjectStrokeStyle);
             //}
-            //foreach (var layer in CadManager3D.Layers.Values)
-            //{
-            //    foreach (var obj in layer.DrawingObject3Ds)
-            //    {
-            //        var inflatedBounds = Rect.Inflate(obj.Bounds, 1, 1);
-            //        //var inflatedBounds = obj.Bounds;
+            foreach (var layer in CadManager3D.Layers.Values)
+            {
+                foreach (var obj in layer.DrawingObject3Ds)
+                {
+                    var inflatedBounds = Rect.Inflate(obj.Bounds, 1, 1);
+                    //var inflatedBounds = obj.Bounds;
 
-            //        //Debug.WriteLine($"Bounds: {obj.Bounds}");
-            //        //Debug.WriteLine($"Inflated Bounds: {inflatedBounds}");
+                    //Debug.WriteLine($"Bounds: {obj.Bounds}");
+                    //Debug.WriteLine($"Inflated Bounds: {inflatedBounds}");
 
-            //        _d3dResCache.D2DDeviceContext.DrawRectangle(new RawRectangleF((float)inflatedBounds.TopLeft.X, (float)inflatedBounds.TopLeft.Y, (float)inflatedBounds.BottomRight.X, (float)inflatedBounds.BottomRight.Y), testBrush, 1, _interactiveObjectStrokeStyle);
-            //    }
-            //}
-            //testBrush.Dispose();
+                    _d3dResCache.D2DDeviceContext.DrawRectangle(new RawRectangleF((float)inflatedBounds.TopLeft.X, (float)inflatedBounds.TopLeft.Y, (float)inflatedBounds.BottomRight.X, (float)inflatedBounds.BottomRight.Y), testBrush, 1, _interactiveObjectStrokeStyle);
+                }
+            }
+            testBrush.Dispose();
 
             if (_snappedObject is not null)
             {
@@ -423,7 +426,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     //Task.Run(() => UpdateDxfCoords(currentMousePos));
                     UpdateDxfCoords(currentMousePos);
 
-                    RunHitTest();
+                    if (MathHelpers.PointToPointDistance(_lastHitTestCoords, _pointerCoords) >= _hittestThreshold)
+                    {
+                        _lastHitTestCoords = new(DxfCoords.X, DxfCoords.Y);
+                        RunHitTest(_lastHitTestCoords);
+                    }
                 }
 
                 _isShiftPressed = Keyboard.IsKeyDown(Key.LeftShift) || Keyboard.IsKeyDown(Key.RightShift);
@@ -483,7 +490,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
 
 
-        private void RunHitTest()
+        private void RunHitTest(Point p)
         {
             if (!_isHitTesting)
             {
@@ -492,9 +499,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 //Stopwatch stopwatch = Stopwatch.StartNew();
 
                 float tolerance = _hittestStrokeThickness / (_camera.CurrentZoom);
-                Point p = new(DxfCoords.X, DxfCoords.Y);
 
-                need to add another field that records the coordinates used for last hittest because using the pan one is resulting in bad hit tests
+                //Debug.WriteLine($"tolerance: {tolerance}");
 
                 //Debug.WriteLine($"\n\n\n");
 
