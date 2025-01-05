@@ -126,6 +126,19 @@ namespace Cad_Point_Manager.DrawingObjects
         {
             return MathHelpers.IsPointOnCircle(point.X, point.Y, RadiusPoint.X, RadiusPoint.Y, Radius, tolerance);
         }
+
+        public override double DistanceToPoint(System.Windows.Point point)
+        {
+            // Calculate the distance from the point to the center of the circle
+            double dx = point.X - RadiusPoint.X;
+            double dy = point.Y - RadiusPoint.Y;
+            double distanceToCenter = Math.Sqrt(dx * dx + dy * dy);
+
+            // Calculate the distance to the circle
+            double distanceToCircle = distanceToCenter - Radius;
+
+            return distanceToCircle;
+        }
         #endregion
     }
 }

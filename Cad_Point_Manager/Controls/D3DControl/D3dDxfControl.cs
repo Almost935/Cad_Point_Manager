@@ -52,15 +52,18 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private string _dxfCoordsString = $"X: {0:F3}   Y: {0:F3}";
 
         // Hit Testing Fields
-        private float _hittestThreshold = 3.0f;
-        private bool _isHitTesting = false;
-        private float _hittestStrokeThickness = 0.5f;
+        private Task _hittestTask;
+        private bool _hitTestIsRunning = false;
+        private float _hittestStrokeThickness = 2.0f;
         private Point _lastHitTestCoords = new();
+        private CancellationTokenSource _cancellationTokenSource;
+
+        private List<(double distance, DrawingObject3D obj)> _nearestDrawingObjects = [];
 
         // Interactive features fields
         private DrawingObject3D _snappedObject;
         private DrawingObject3D _highlightedObject;
-        
+
         // Direct2D Fields
         private SharpDX.Direct2D1.Brush _highlightedBrush;
         private SharpDX.Direct2D1.Brush _highlightedOuterEdgeBrush;
@@ -69,14 +72,30 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private RawMatrix3x2 _d2dMatrix = new();
         #endregion
 
-        #region Properties
-        public bool DxfInitialized { get; set; } = false;
-        public bool DxfIsDirty { get; set; } = false;
+        #region Properties 
+        /// <summary>
+        /// Determines if the DXF file needs to be reloaded to the vertices list.
+        /// </summary>
+        public bool DxfIsDirty { get; set; } = true;
+
+        /// <summary>
+        /// Determines if the vertex buffer needs to be reloaded.
+        /// </summary>
+        public bool VertexBufferDirty { get; set; } = true;
+
+        /// <summary>
+        /// Determines if the view matrix needs to be reloaded. Occurs when the Dxf file is changed.
+        /// </summary>
         private bool DxfNeedsReload { get; set; } = false;
+
+        /// <summary>
+        /// Determines if the Direct3D control needs to be redrawn. Occurs when the camera is panned or zoomed.
+        /// </summary>
         public bool D3dIsDirty { get; set; } = true;
         public bool ShadersLoaded { get; set; } = false;
         public bool ConstantBufferInitialized { get; set; } = false;
         public ViewportF Viewport { get; set; }
+        public SnapMode CurrentSnapMode { get; set; } = SnapMode.Object;
 
         public Vector2 DxfCoords
         {
@@ -95,6 +114,13 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 _dxfCoordsString = value;
                 OnPropertyChanged();
             }
+        }
+
+
+        public enum SnapMode
+        {
+            Point,
+            Object
         }
         #endregion
 
@@ -130,10 +156,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
         {
             if (_d3dResCache is null) { return; }
 
-            if (DxfIsDirty)
-            {
-                UpdateDxfVertices();
-            }
+            if (DxfIsDirty) { UpdateDxfVertices(); }
+            if (VertexBufferDirty) { SetVertexBuffer(); }
             if (DxfNeedsReload)
             {
                 GetInitialMatrix();
@@ -149,6 +173,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
             if (!ConstantBufferInitialized) { InitializeConstantBuffer(); }
             if (!_d2dInitialized) { InitializeDirect2D(); }
             if (D3dIsDirty) { DrawDxf(); }
+            if (!_hitTestIsRunning)
+            {
+                _hitTestIsRunning = true;
+                _hittestTask = Task.Run(() => RunHitTestingAsync());
+            }
         }
 
         private void DrawDxf()
@@ -171,6 +200,15 @@ namespace Cad_Point_Manager.Controls.D3DControl
             // Bind vertex buffer and draw
             context.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding(_vertexBuffer, Utilities.SizeOf<Vertex>(), 0));
             context.InputAssembler.PrimitiveTopology = SharpDX.Direct3D.PrimitiveTopology.LineList;
+
+            int invisibleCount = 0;
+            foreach (var vertex in _vertices)
+            {
+                if (vertex.IsVisible < 0.5f)
+                {
+                    invisibleCount++;
+                }
+            }
             context.Draw(_vertices.Length, 0);
 
             D3dIsDirty = false;
@@ -181,27 +219,27 @@ namespace Cad_Point_Manager.Controls.D3DControl
             // test
             if (CadManager3D is null || CadManager3D.DrawingObjectTree3D is null || _camera is null) { return; }
 
-             _d3dResCache.D2DDeviceContext.Transform = _d2dMatrix;
+            _d3dResCache.D2DDeviceContext.Transform = _d2dMatrix;
 
-            SharpDX.Direct2D1.Brush testBrush = new SharpDX.Direct2D1.SolidColorBrush(_d3dResCache.D2DDeviceContext, new RawColor4(0.1f, 1, 0, 1f));
+            //SharpDX.Direct2D1.Brush testBrush = new SharpDX.Direct2D1.SolidColorBrush(_d3dResCache.D2DDeviceContext, new RawColor4(0.1f, 1, 0, 1f));
             //foreach (var node in CadManager3D.DrawingObjectTree3D.BaseLevelNodes)
             //{
             //    _d3dResCache.D2DDeviceContext.DrawRectangle(new RawRectangleF((float)node.Extents.TopLeft.X, (float)node.Extents.TopLeft.Y, (float)node.Extents.BottomRight.X, (float)node.Extents.BottomRight.Y), testBrush, 5, _interactiveObjectStrokeStyle);
             //}
-            foreach (var layer in CadManager3D.Layers.Values)
-            {
-                foreach (var obj in layer.DrawingObject3Ds)
-                {
-                    var inflatedBounds = Rect.Inflate(obj.Bounds, 1, 1);
-                    //var inflatedBounds = obj.Bounds;
+            //foreach (var layer in CadManager3D.Layers.Values)
+            //{
+            //    foreach (var obj in layer.DrawingObject3Ds)
+            //    {
+            //        var inflatedBounds = Rect.Inflate(obj.Bounds, 1, 1);
+            //        //var inflatedBounds = obj.Bounds;
 
-                    //Debug.WriteLine($"Bounds: {obj.Bounds}");
-                    //Debug.WriteLine($"Inflated Bounds: {inflatedBounds}");
+            //        //Debug.WriteLine($"Bounds: {obj.Bounds}");
+            //        //Debug.WriteLine($"Inflated Bounds: {inflatedBounds}");
 
-                    _d3dResCache.D2DDeviceContext.DrawRectangle(new RawRectangleF((float)inflatedBounds.TopLeft.X, (float)inflatedBounds.TopLeft.Y, (float)inflatedBounds.BottomRight.X, (float)inflatedBounds.BottomRight.Y), testBrush, 1, _interactiveObjectStrokeStyle);
-                }
-            }
-            testBrush.Dispose();
+            //        _d3dResCache.D2DDeviceContext.DrawRectangle(new RawRectangleF((float)inflatedBounds.TopLeft.X, (float)inflatedBounds.TopLeft.Y, (float)inflatedBounds.BottomRight.X, (float)inflatedBounds.BottomRight.Y), testBrush, 1, _interactiveObjectStrokeStyle);
+            //    }
+            //}
+            //testBrush.Dispose();
 
             if (_snappedObject is not null)
             {
@@ -216,7 +254,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
                         RawVector2 start = new(segment.Vertices[i * 2].Position.X, segment.Vertices[i * 2].Position.Y);
                         RawVector2 end = new(segment.Vertices[i * 2 + 1].Position.X, segment.Vertices[i * 2 + 1].Position.Y);
 
-                        _d3dResCache.D2DDeviceContext.DrawLine(start, end, outerBrush, 4, _interactiveObjectStrokeStyle);
+                        //Debug.WriteLine($"start: {start.X}, {start.Y} end: {end.X} {end.Y}");
+
+                        _d3dResCache.D2DDeviceContext.DrawLine(start, end, outerBrush, 6, _interactiveObjectStrokeStyle);
                         _d3dResCache.D2DDeviceContext.DrawLine(start, end, innerBrush, 1, _interactiveObjectStrokeStyle);
                     }
                     innerBrush.Dispose();
@@ -243,24 +283,30 @@ namespace Cad_Point_Manager.Controls.D3DControl
             }
         }
 
+        /// <summary>
+        /// Resets the _vertices field to the current list of vertices in the CadManager3D.
+        /// </summary>
         private void UpdateDxfVertices()
         {
             if (_d3dResCache is null) { return; }
 
             CadManager3D.UpdateVerticesList();
+            _vertices = CadManager3D.Vertices.ToArray();
 
             SetVertexBuffer();
 
-            DxfInitialized = true;
             DxfIsDirty = false;
             D3dIsDirty = true;
         }
 
+        /// <summary>
+        /// Sets the vertex buffer to the field _vertices. Does not update _vertices
+        /// </summary>
         private void SetVertexBuffer()
         {
             if (_d3dResCache is null) { return; }
 
-            _vertices = CadManager3D.Vertices.ToArray();
+            //_vertices = CadManager3D.Vertices.ToArray();
 
             if (_vertices is not null && _vertices.Length > 0)
             {
@@ -270,9 +316,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 _vertices);
             }
 
-            DxfInitialized = true;
-            DxfIsDirty = false;
-            D3dIsDirty = true;
+            VertexBufferDirty = false;
         }
 
         private void InitializeDirect2D()
@@ -360,7 +404,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         private void GetInitialMatrix()
         {
-            if (!DxfInitialized)
+            if (!CadManager3D.DxfLoaded)
             {
                 _dxfInitialMatrix = Matrix.Identity;
             }
@@ -401,7 +445,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
             if (e.MiddleButton == MouseButtonState.Pressed)
             {
                 _isPanning = true;
-                ResetSnappedObjects();  
+                
+                ResetSnappedObjects();
+                VertexBufferDirty = true;
+                D3dIsDirty = true;
+
                 _previousMousePosition = e.GetPosition(this);
             }
         }
@@ -425,12 +473,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 {
                     //Task.Run(() => UpdateDxfCoords(currentMousePos));
                     UpdateDxfCoords(currentMousePos);
-
-                    if (MathHelpers.PointToPointDistance(_lastHitTestCoords, _pointerCoords) >= _hittestThreshold)
-                    {
-                        _lastHitTestCoords = new(DxfCoords.X, DxfCoords.Y);
-                        RunHitTest(_lastHitTestCoords);
-                    }
                 }
 
                 _isShiftPressed = Keyboard.IsKeyDown(Key.LeftShift) || Keyboard.IsKeyDown(Key.RightShift);
@@ -473,6 +515,14 @@ namespace Cad_Point_Manager.Controls.D3DControl
             D3dIsDirty = true;
             e.Handled = true;
         }
+        protected override void OnMouseLeave(MouseEventArgs e)
+        {
+            ResetSnappedObjects();
+            VertexBufferDirty = true;
+            D3dIsDirty = true;
+
+            base.OnMouseLeave(e);
+        }
         protected override void OnRenderSizeChanged(SizeChangedInfo sizeInfo)
         {
             base.OnRenderSizeChanged(sizeInfo);
@@ -490,60 +540,144 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
 
 
-        private void RunHitTest(Point p)
+        public async Task RunHitTestingAsync()
         {
-            if (!_isHitTesting)
+            _cancellationTokenSource = new CancellationTokenSource();
+            try
             {
-                _isHitTesting = true;
-
-                //Stopwatch stopwatch = Stopwatch.StartNew();
-
-                float tolerance = _hittestStrokeThickness / (_camera.CurrentZoom);
-
-                //Debug.WriteLine($"tolerance: {tolerance}");
-
-                //Debug.WriteLine($"\n\n\n");
-
-                if (_snappedObject is not null)
+                while (!_cancellationTokenSource.Token.IsCancellationRequested)
                 {
-                    //Debug.WriteLine($"_snappedObject is not null: {_snappedObject is not null}");
+                    await Task.Run(() => RunObjectHitTest(_cancellationTokenSource.Token), _cancellationTokenSource.Token);
+                    await Task.Delay(30); // Adjust the delay as needed
+                }
+            }
+            catch (TaskCanceledException)
+            {
+                // Handle the task cancellation here
+                Debug.WriteLine("Task was canceled.");
+            }
+            catch (Exception ex)
+            {
+                // Handle other exceptions here
+                Debug.WriteLine($"An error occurred: {ex.Message}");
+            }
+        }
+        private void RunObjectHitTest(CancellationToken token)
+        {
+            // Check for cancellation
+            if (token.IsCancellationRequested)
+            {
+                token.ThrowIfCancellationRequested();
+            }
+            //Stopwatch stopwatch = Stopwatch.StartNew();
 
-                    if (!_snappedObject.HitTest(p, tolerance))
+            if (!Dispatcher.CheckAccess())
+            {
+                Dispatcher.Invoke(() => RunObjectHitTest(token));
+
+                return;
+            }
+
+            if (!CadManager3D.DxfLoaded) { return; }
+
+            _lastHitTestCoords = new(DxfCoords.X, DxfCoords.Y);
+
+            bool vertexBufferDirty = false;
+            bool d3dIsDirty = false;
+            float tolerance = _hittestStrokeThickness / (_camera.CurrentZoom);
+            var snappedCopy = _snappedObject;
+
+            if (snappedCopy is not null)
+            {
+                if (snappedCopy.DistanceToPoint(_lastHitTestCoords) > tolerance)
+                {
+                    DeselectObject(snappedCopy);
+                    _snappedObject = null;
+
+                    var (distance, obj) = CadManager3D.HitTestPoint(_lastHitTestCoords, tolerance);
+                    if (distance <= tolerance && obj is not null)
                     {
-                        ResetSnappedObjects();
-
-                        //Debug.WriteLine($"_snappedObject is not null: {_snappedObject is not null}");
-
-                        _snappedObject = CadManager3D.HitTestPoint(p, tolerance);
-                        _snappedObject?.Select();
-
-                        DxfIsDirty = true;
-                        D3dIsDirty = true;
+                        _snappedObject = obj;
+                        SelectObject(_snappedObject);
                     }
+                    vertexBufferDirty = true;
+                    d3dIsDirty = true;
                 }
                 else
                 {
-                    _snappedObject = CadManager3D.HitTestPoint(p, tolerance);
-
-                    if (_snappedObject is not null)
-                    {
-                        _snappedObject.Select();
-
-                        DxfIsDirty = true;
-                        D3dIsDirty = true;
-                    }
+                    return;
                 }
+            }
+            else
+            {
+                var (distance, obj) = CadManager3D.HitTestPoint(_lastHitTestCoords, tolerance);
 
-                _isHitTesting = false;
+                if (distance <= tolerance && obj is not null)
+                {
+                    _snappedObject = obj;
+                    SelectObject(_snappedObject);
+
+                    vertexBufferDirty = true;
+                    d3dIsDirty = true;
+                }
+            }
+
+            VertexBufferDirty = vertexBufferDirty;
+            D3dIsDirty = d3dIsDirty;
+
+            //stopwatch.Stop();
+            //Debug.WriteLine($"RunHitTest Time: {stopwatch.ElapsedMilliseconds}\n\n\n");
+        }
+        public void CancelHitTesting()
+        {
+            _cancellationTokenSource?.Cancel();
+        }
+
+
+        private void SelectObject(DrawingObject3D obj)
+        {
+            if (obj is not null && obj is DrawingGeometry3D geometry)
+            {
+                geometry.Select();
+
+                int count = 0;
+                for (int i = geometry.StartVertexIndex; i <= geometry.EndVertexIndex; i++)
+                {
+                    _vertices[i] = geometry.Vertices[count];
+                    count++;
+                }
+            }
+        }
+        private void DeselectObject(DrawingObject3D obj)
+        {
+            if (obj is not null && obj is DrawingGeometry3D geometry)
+            {
+                geometry.Deselect();
+
+                int count = 0;
+                for (int i = geometry.StartVertexIndex; i <= geometry.EndVertexIndex; i++)
+                {
+                    _vertices[i] = geometry.Vertices[count];
+                    count++;
+                }
+            }
+        }
+        private void ResetSnappedObjects()
+        {
+            if (_snappedObject is not null)
+            {
+                DeselectObject(_snappedObject);
+                _snappedObject = null;
             }
         }
 
-        private void ResetSnappedObjects()
-        {
-            _snappedObject?.Deselect();
-            _snappedObject = null;
-        }
 
+        private void ClearDxf()
+        {
+            ResetSnappedObjects();
+            VertexBufferDirty = true;
+            D3dIsDirty = true;
+        }
 
 
         private static void OnCadManager3DChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -565,6 +699,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
         {
             DxfIsDirty = CadManager3D.DxfDirty;
             DxfNeedsReload = CadManager3D.DxfNeedsReload;
+
+            if (e.PropertyName == nameof(CadManager3D.DxfLoaded) && !CadManager3D.DxfLoaded)
+            {
+                ClearDxf();
+            }
         }
 
         protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
@@ -574,7 +713,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         #endregion
 
         #region IDisposable Support
-        private bool disposedValue = false; 
+        private bool disposedValue = false;
 
         protected virtual void Dispose(bool disposing)
         {

@@ -72,6 +72,11 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
 
             return isPointOnLine;
         }
+
+        public override double DistanceToPoint(System.Windows.Point point)
+        {
+            return (float)MathHelpers.PointToLineDistance(point, new System.Windows.Point(StartVertex.Position.X, StartVertex.Position.Y), new System.Windows.Point(EndVertex.Position.X, EndVertex.Position.Y));
+        }
         #endregion
     }
 }

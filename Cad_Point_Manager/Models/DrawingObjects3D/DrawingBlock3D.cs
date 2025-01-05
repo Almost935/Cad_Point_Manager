@@ -105,6 +105,23 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             return false;
         }
 
+        public override double DistanceToPoint(System.Windows.Point point)
+        {
+            double distance = double.MaxValue;
+
+            Parallel.ForEach(DrawingObjects, obj =>
+            {
+                var d = obj.DistanceToPoint(point);
+                if (d < distance)
+                {
+                    distance = d;
+                }
+            });
+
+            return distance;
+        }
+
+
         public override void Select()
         {
             this.IsSelected = true;

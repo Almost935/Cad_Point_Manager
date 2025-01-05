@@ -32,6 +32,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         public abstract void UpdateData(EntityObject entity);
         public abstract void UpdateBounds();
         public abstract bool HitTest(Point point, float tolerance);
+        public abstract double DistanceToPoint(Point p);
         public abstract void Select();
         public abstract void Deselect();
 

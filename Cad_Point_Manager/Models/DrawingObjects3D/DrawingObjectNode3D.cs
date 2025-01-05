@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Xml.Linq;
 
 namespace Cad_Point_Manager.Models.DrawingObjects3D
 {
@@ -99,6 +100,29 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             }
             return node;
         }
+        public (double distance, DrawingObject3D obj) HitTestNode(Point p)
+        {
+            DrawingObject3D drawingObject3D = null;
+            double distance = double.MaxValue;
+
+            foreach (var obj in DrawingObjects)
+            {
+                var inflatedBounds = Rect.Inflate(obj.Bounds, 2, 2);
+
+                if (inflatedBounds.Contains(p))
+                {
+                    double d = obj.DistanceToPoint(p);
+
+                    if (d < distance)
+                    {
+                        distance = d;
+                        drawingObject3D = obj;
+                    }
+                }
+            }
+            return (distance, drawingObject3D);
+        }
+
         private void Subdivide()
         {
             if (Level > 0)

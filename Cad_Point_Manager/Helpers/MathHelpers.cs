@@ -115,18 +115,13 @@ namespace Cad_Point_Manager.Helpers
         /// <returns>True if the point is on the line; otherwise, false.</returns>
         public static bool IsPointOnLine(Point p, Point s, Point e, double tolerance = 0.01)
         {
-            //double SE = PointToPointDistance(s, e);
-            //double SP = PointToPointDistance(s, p);
-            //double EP = PointToPointDistance(e, p);
+            double SE = PointToPointDistance(s, e);
+            double SP = PointToPointDistance(s, p);
+            double EP = PointToPointDistance(e, p);
 
-            //if (SP + EP - SE < tolerance) { return true; }
-            //if (SP <= tolerance || EP <= tolerance) { return true; }
-            //return false;
-
-            var d = GetPointToLineDistance(s.X, s.Y, e.X, e.Y, p.X, p.Y);
-            Debug.WriteLine($"d: {d}");
-
-
+            if (SP + EP - SE < tolerance) { return true; }
+            if (SP <= tolerance || EP <= tolerance) { return true; }
+            return false;
         }
 
         /// <summary>
@@ -194,30 +189,29 @@ namespace Cad_Point_Manager.Helpers
             }
         }
 
-        public static double PointToPointDistance(Point point1, Point point2)
+
+        public static double PointToPointDistance(Point p1, Point p2)
         {
-            double deltaX = point2.X - point1.X;
-            double deltaY = point2.Y - point1.Y;
-            return Math.Sqrt(deltaX * deltaX + deltaY * deltaY);
+            return Math.Sqrt(
+                Math.Pow((p2.X - p1.X), 2) + Math.Pow((p2.Y - p1.Y), 2));
         }
 
-        public static double GetPointToLineDistance(
-        double x1, double y1, // Line point 1
-        double x2, double y2, // Line point 2
-        double px, double py  // Point
-    )
+        public static double PointToLineDistance(Point p, Point lineStart, Point lineEnd)
         {
-            // Calculate the numerator of the distance formula
-            double numerator = Math.Abs((x2 - x1) * (py - y1) - (y2 - y1) * (px - x1));
+            Point p2 = GetClosestPointOnLine(lineStart, lineEnd, p);
 
-            // Calculate the denominator (length of the line segment)
-            double denominator = Math.Sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
-
-            // Avoid division by zero (if the two line points are identical)
-            if (denominator == 0) return 0;
-
-            // Return the distance
-            return numerator / denominator;
+            return PointToPointDistance(p, p2);
+        }
+        public static Point GetClosestPointOnLine(Point start, Point end, Point p)
+        {
+            double length = (start - end).LengthSquared;
+            if (length == 0.0)
+            {
+                return start;
+            }
+            Vector v = end - start;
+            double param = (p - start) * v / length;
+            return (param < 0.0) ? start : (param > 1.0) ? end : (start + param * v);
         }
     }
 }

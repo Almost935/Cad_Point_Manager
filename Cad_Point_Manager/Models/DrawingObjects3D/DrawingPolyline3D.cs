@@ -1,6 +1,7 @@
 ﻿using Cad_Point_Manager.Controls.D3DControl;
 using Cad_Point_Manager.Helpers;
 using netDxf.Entities;
+using SharpDX;
 using System.Windows;
 using Vector3 = SharpDX.Vector3;
 
@@ -99,6 +100,22 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             }
 
             return false;
+        }
+
+        public override double DistanceToPoint(System.Windows.Point point)
+        {
+            double distance = double.MaxValue;
+
+            Parallel.ForEach(DrawingSegments, segment =>
+            {
+                var d = segment.DistanceToPoint(point);
+                if (d < distance)
+                {
+                    distance = d;
+                }
+            });
+
+            return distance;
         }
 
 

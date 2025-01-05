@@ -2,16 +2,8 @@
 using Cad_Point_Manager.Helpers;
 using netDxf;
 using netDxf.Entities;
-using SharpDX;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Drawing;
-using System.Linq;
-using System.Net;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
+using System;
 
 
 using Vector2 = SharpDX.Vector2;
@@ -107,6 +99,45 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         public override bool HitTest(System.Windows.Point point, float tolerance)
         {
             return MathHelpers.IsPointOnArc(point.X, point.Y, RadiusPoint.X, RadiusPoint.Y, Radius, StartAngle, EndAngle, tolerance);
+        }
+
+        public override double DistanceToPoint(System.Windows.Point point)
+        {
+            // Convert angles to radians
+            double startRad = StartAngle * Math.PI / 180;
+            double endRad = EndAngle * Math.PI / 180;
+
+            // Calculate the distance from the point to the center of the circle
+            double dx = point.X - RadiusPoint.X;
+            double dy = point.Y - RadiusPoint.Y;
+            double distanceToCenter = Math.Sqrt(dx * dx + dy * dy);
+
+            // Calculate the angle of the point relative to the center
+            double pointAngle = Math.Atan2(dy, dx);
+            if (pointAngle < 0) pointAngle += 2 * Math.PI; // Normalize angle to [0, 2*PI]
+
+            // Check if the point is within the angular range of the arc
+            bool withinArc = (startRad <= endRad && pointAngle >= startRad && pointAngle <= endRad) ||
+                             (startRad > endRad && (pointAngle >= startRad || pointAngle <= endRad));
+
+            if (withinArc)
+            {
+                // Point is within the angular range of the arc
+                return Math.Abs(distanceToCenter - Radius);
+            }
+            else
+            {
+                // Point is outside the angular range, calculate distance to the closest arc endpoint
+                double startX = RadiusPoint.X + Radius * Math.Cos(startRad);
+                double startY = RadiusPoint.Y + Radius * Math.Sin(startRad);
+                double endX = RadiusPoint.X + Radius * Math.Cos(endRad);
+                double endY = RadiusPoint.Y + Radius * Math.Sin(endRad);
+
+                double distanceToStart = Math.Sqrt((point.X - startX) * (point.X - startX) + (point.Y - startY) * (point.Y - startY));
+                double distanceToEnd = Math.Sqrt((point.X - endX) * (point.X - endX) + (point.Y - endY) * (point.Y - endY));
+
+                return Math.Min(distanceToStart, distanceToEnd);
+            }
         }
 
 

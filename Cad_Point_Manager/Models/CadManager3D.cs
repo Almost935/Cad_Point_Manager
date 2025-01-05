@@ -17,11 +17,21 @@ namespace Cad_Point_Manager.Models
 {
     public class CadManager3D : INotifyPropertyChanged
     {
+        private bool _dxfLoaded = false;
         private bool _dxfDirty = true;
         private bool _dxfNeedsLoad = true;
         private Bounds _extents;
         private List<Vertex> _vertices = [];
 
+        public bool DxfLoaded
+        {
+            get => _dxfLoaded;
+            set
+            {
+                _dxfLoaded = value;
+                OnPropertyChanged();
+            }
+        }
         public bool DxfDirty
         {
             get => _dxfDirty;
@@ -90,42 +100,31 @@ namespace Cad_Point_Manager.Models
             DrawingObjectTree3D = new(this, Extents.ToRect(), 5);
             UpdateVerticesList();
 
+            DxfLoaded = true;
             DxfDirty = true;
             DxfNeedsReload = true;
         }
 
-        public DrawingObject3D HitTestPoint(Point p, float tolerance)
+        public (double distance, DrawingObject3D obj) HitTestPoint(Point p, float tolerance)
         {
-            if (DrawingObjectTree3D is null) { return null; }
+            (double distance, DrawingObject3D obj) tup = (double.MaxValue, null);
 
-            DrawingObjectNode3D node = DrawingObjectTree3D.GetIntersectingNode(p);
+            if (DrawingObjectTree3D is null) { return tup; }
 
-            if (node is null) { return null; }
+            Rect rect = new(p.X - tolerance, p.Y - tolerance, tolerance * 2, tolerance * 2);
+            List<DrawingObjectNode3D> nodes = DrawingObjectTree3D.GetIntersectingNodes(rect);
 
-            DrawingObject3D drawingObject3D = null;
-
-            //Debug.WriteLine($"node.DrawingObjects.Count(): {node.DrawingObjects.Count()}");
-
-            foreach (var obj in node.DrawingObjects)
+            foreach (var node in nodes)
             {
-                var inflatedBounds = Rect.Inflate(obj.Bounds, 5, 5);
-
-                //Debug.WriteLine($"\nobj.GetType(): {obj.GetType()}" +
-                //    $"\ninflatedBounds: {inflatedBounds}" +
-                //    $"\np: {p}");
-
-                if (inflatedBounds.Contains(p))
+                (double distance, DrawingObject3D obj) objTup = node.HitTestNode(p);
+                
+                if (objTup.distance < tup.distance && objTup.distance < tolerance)
                 {
-                    //Debug.WriteLine($"obj.HitTest(p, tolerance): {obj.HitTest(p, tolerance)}");
-
-                    if (obj.HitTest(p, tolerance))
-                    {
-                        drawingObject3D = obj;
-                    }
+                    tup = objTup;
                 }
             }
 
-            return drawingObject3D;
+            return tup;
         }
 
         public void ClearDxf()
@@ -135,6 +134,7 @@ namespace Cad_Point_Manager.Models
             Layers.Clear();
             Vertices.Clear();
 
+            DxfLoaded = false;
             DxfDirty = true;
         }
 
@@ -164,7 +164,7 @@ namespace Cad_Point_Manager.Models
                 {
                     foreach (var obj in layer.DrawingObject3Ds)
                     {
-                        if (obj.IsVisible && obj is DrawingGeometry3D drawingGeometry)
+                        if (obj is DrawingGeometry3D drawingGeometry)
                         {
                             drawingGeometry.StartVertexIndex = Vertices.Count;
                             Vertices.AddRange(drawingGeometry.Vertices);

@@ -65,6 +65,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
 
             return quadTreeNodes;
         }
+
         public List<DrawingObjectNode3D> GetIntersectingNodes(Point p)
         {
             List<DrawingObjectNode3D> quadTreeNodes = [];
