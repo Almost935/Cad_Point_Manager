@@ -65,6 +65,12 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             }
         }
 
+
+        public override string ToString()
+        {
+            return Name;
+        }
+
         protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));

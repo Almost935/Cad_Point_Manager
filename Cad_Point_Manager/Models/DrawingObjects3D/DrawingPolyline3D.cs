@@ -4,6 +4,7 @@ using netDxf.Entities;
 using SharpDX;
 using SharpDX.Direct2D1;
 using SharpDX.Mathematics.Interop;
+using System.Diagnostics;
 using System.Windows;
 using Vector3 = SharpDX.Vector3;
 
@@ -134,6 +135,16 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                 geometrySink.EndFigure(FigureEnd.Open);
                 geometrySink.Close();
             }
+
+            //// AutoCAD arcs are always drawn in a counter-clockwise direction
+            //using (var geometrySink = pathGeometry.Open())
+            //{
+            //    for (int i = 0; i < DrawingSegments.Count; i++)
+            //    {
+            //        if ()
+            //    }
+            //}
+
             deviceContext.DrawGeometry(pathGeometry, brush, thickness, strokeStyle);
         }
 
@@ -148,16 +159,35 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                 EndVertex = new(new Vector3((float)end.Position.X, (float)end.Position.Y, 0), Color);
 
                 var entities = polyline2D.Explode();
+
+
+                Debug.WriteLineIf(Layer.Name == "TEST", $"\n{Layer}");
+
                 foreach (var e in entities)
                 {
                     var obj = DxfHelpers.GetDrawingSegment3D(e, Layer);
-                    if (obj is not null) 
-                    { 
-                        DrawingSegments.Add(obj); 
-                        Vertices.AddRange(obj.Vertices);
+                    if (obj is not null)
+                    {
+                        DrawingSegments.Add(obj);
                     }
                 }
+                for (int i = 0; i < DrawingSegments.Count; i++)
+                {
+                    if (DrawingSegments[i] is DrawingArc3D arc) // Autocad always draws arcs counter-clockwise so need to find the correct start and end vertices
+                    {
+                        var startArcVertex = Vertices.First();
+                        var endArcVertex = Vertices.Last();
+
+                        if (i == 0)
+                        {
+                            var nextSegment = entities[i + 1];
+                        }
+                    }
+                    Vertices.AddRange(DrawingSegments[i].Vertices);
+                }
+
             }
+
             else if (entity is Polyline3D polyline3D)
             {
                 var start = polyline3D.Vertexes.First();

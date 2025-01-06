@@ -32,6 +32,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
             Color = color;
             IsVisible = isVisible;
         }
+
+        public float GetDistanceTo(Vertex vertex)
+        {
+            return Vector3.Distance(Position, vertex.Position);
+        }
     }
 
     [StructLayout(LayoutKind.Sequential)]
