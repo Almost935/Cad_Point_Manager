@@ -4,6 +4,7 @@ using Cad_Point_Manager.Models.DrawingObjects;
 using netDxf;
 using netDxf.Entities;
 using SharpDX;
+using SharpDX.Direct2D1;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -145,6 +146,11 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                 vertex.IsVisible = 1.0f;
                 DrawingGeometryVerteces[i] = vertex;
             }
+        }
+
+        public override void DrawToD2D(DeviceContext1 deviceContext, Factory2 factory, Brush brush, float thickness, StrokeStyle1 strokeStyle)
+        {
+            throw new NotImplementedException();
         }
 
 

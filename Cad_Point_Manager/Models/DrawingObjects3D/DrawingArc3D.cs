@@ -9,6 +9,8 @@ using System;
 using Vector2 = SharpDX.Vector2;
 using Vector3 = SharpDX.Vector3;
 using Vector4 = SharpDX.Vector4;
+using SharpDX.Direct2D1;
+using SharpDX.Mathematics.Interop;
 
 namespace Cad_Point_Manager.Models.DrawingObjects3D
 {
@@ -138,6 +140,23 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
 
                 return Math.Min(distanceToStart, distanceToEnd);
             }
+        }
+
+        public override void DrawToD2D(DeviceContext1 deviceContext, Factory2 factory, Brush brush, float thickness, StrokeStyle1 strokeStyle)
+        {
+            PathGeometry pathGeometry = new(factory);
+            using (var geometrySink = pathGeometry.Open())
+            {
+                geometrySink.BeginFigure(new RawVector2(Vertices[0].Position.X, Vertices[0].Position.Y), FigureBegin.Hollow);
+                for (int i = 0; i < Vertices.Count / 2; i++)
+                {
+                    int index = 2 * i + 1;
+                    geometrySink.AddLine(new RawVector2(Vertices[index].Position.X, Vertices[index].Position.Y));
+                }
+                geometrySink.EndFigure(FigureEnd.Open);
+                geometrySink.Close();
+            }
+            deviceContext.DrawGeometry(pathGeometry, brush, thickness, strokeStyle);
         }
 
 

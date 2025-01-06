@@ -3,6 +3,8 @@ using Cad_Point_Manager.Helpers;
 using netDxf;
 using netDxf.Entities;
 using SharpDX;
+using SharpDX.Direct2D1;
+using SharpDX.Mathematics.Interop;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -76,6 +78,11 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         public override double DistanceToPoint(System.Windows.Point point)
         {
             return (float)MathHelpers.PointToLineDistance(point, new System.Windows.Point(StartVertex.Position.X, StartVertex.Position.Y), new System.Windows.Point(EndVertex.Position.X, EndVertex.Position.Y));
+        }
+
+        public override void DrawToD2D(DeviceContext1 deviceContext, Factory2 factory, Brush brush, float thickness, StrokeStyle1 strokeStyle)
+        {
+            deviceContext.DrawLine(new RawVector2(StartVertex.Position.X, StartVertex.Position.Y), new RawVector2(EndVertex.Position.X, EndVertex.Position.Y), brush, thickness, strokeStyle);
         }
         #endregion
     }

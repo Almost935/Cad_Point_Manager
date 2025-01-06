@@ -1,6 +1,7 @@
 ﻿using Cad_Point_Manager.Controls.D3DControl;
 using netDxf.Entities;
 using SharpDX;
+using SharpDX.Direct2D1;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows;
@@ -35,6 +36,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         public abstract double DistanceToPoint(Point p);
         public abstract void Select();
         public abstract void Deselect();
+        public abstract void DrawToD2D(DeviceContext1 deviceContext, Factory2 factory, Brush brush, float thickness, StrokeStyle1 strokeStyle);
 
         public void UpdateColor()
         {
@@ -59,6 +61,15 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             {
                 Color = new(0, 0, 0, 1);
             }
+        }
+
+        public bool BoundsInRect(Rect rect)
+        {
+            if (Bounds.IsEmpty || rect.IsEmpty) { return false; }
+
+            if (Bounds.IntersectsWith(rect) || Bounds.Contains(rect) || rect.Contains(Bounds)) { return true; }
+
+            return false;
         }
 
         protected void OnPropertyChanged([CallerMemberName] string propertyName = null)

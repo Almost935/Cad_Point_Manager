@@ -100,14 +100,21 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             }
             return node;
         }
-        public (double distance, DrawingObject3D obj) HitTestNode(Point p)
+
+        /// <summary>
+        /// Gets the closest object to the point p within the tolerance.
+        /// </summary>
+        /// <param name="p">The point n from which the closest objects are found.</param>
+        /// <param name="tolerance">The minimum distance from the point to the object</param>
+        /// <returns></returns>
+        public (double distance, DrawingObject3D obj) HitTestNode(Point p, float tolerance = 2)
         {
             DrawingObject3D drawingObject3D = null;
             double distance = double.MaxValue;
 
             foreach (var obj in DrawingObjects)
             {
-                var inflatedBounds = Rect.Inflate(obj.Bounds, 2, 2);
+                var inflatedBounds = Rect.Inflate(obj.Bounds, tolerance, tolerance);
 
                 if (inflatedBounds.Contains(p))
                 {
@@ -121,6 +128,29 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                 }
             }
             return (distance, drawingObject3D);
+        }
+
+        /// <summary>
+        /// Retunrs a list of objects sorted by distance from the point p.
+        /// </summary>
+        /// <param name="p">The point from which the distance to the objects is determined</param>
+        /// <param name="hitTestRange">The bounds that define the minimum distance from the point that the object can lie.</param>
+        /// <returns></returns>
+        public List<(double distance, DrawingObject3D obj)> HitTestNode(Point p, Rect hitTestRange)
+        {
+            List<(double distance, DrawingObject3D obj)> hits = [];
+
+            foreach (var obj in DrawingObjects)
+            {
+                //Debug.WriteLine($"{obj.GetType()} obj.BoundsInRect(hitTestRange): {obj.BoundsInRect(hitTestRange)}");
+
+                if (obj.BoundsInRect(hitTestRange))
+                {
+                    double d = obj.DistanceToPoint(p);
+                    hits.Add((d, obj));
+                }
+            }
+            return hits;
         }
 
         private void Subdivide()

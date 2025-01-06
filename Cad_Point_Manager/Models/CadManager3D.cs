@@ -105,6 +105,13 @@ namespace Cad_Point_Manager.Models
             DxfNeedsReload = true;
         }
 
+        /// <summary>
+        /// Finds the closest object to the point p within the tolerance.
+        /// </summary>
+        /// <param name="p">The point to find the closest objects to</param>
+        /// <param name="tolerance">the minimum distance the object can be from p.</param>
+        /// <returns></returns>
+
         public (double distance, DrawingObject3D obj) HitTestPoint(Point p, float tolerance)
         {
             (double distance, DrawingObject3D obj) tup = (double.MaxValue, null);
@@ -125,6 +132,25 @@ namespace Cad_Point_Manager.Models
             }
 
             return tup;
+        }
+
+        public List<(double distance, DrawingObject3D obj)> GetNearestDrawingObjects(Point p, float tolerance) 
+        {
+            List<(double distance, DrawingObject3D obj)> hits = [];
+
+            Rect rect = new(p.X - tolerance, p.Y - tolerance, tolerance * 2, tolerance * 2);
+            var nodes = DrawingObjectTree3D.GetIntersectingNodes(rect);
+
+            //Debug.WriteLine($"nodes.count: {nodes.Count}");
+
+            foreach (var node in nodes)
+            {
+                hits.AddRange(node.HitTestNode(p, rect));
+            }
+
+            hits.Sort((x, y) => x.distance.CompareTo(y.distance));
+
+            return hits;
         }
 
         public void ClearDxf()
