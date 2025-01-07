@@ -29,6 +29,8 @@ PSInput VSMain(VSInput input)
     if (input.IsVisible < 0.5) // If not visible, skip the vertex
     {
         output.Color.a = 0;
+        output.Position =  float4(0, 0, 0, 0);
+        
         return output; // Return default values or handle accordingly
     } 
     

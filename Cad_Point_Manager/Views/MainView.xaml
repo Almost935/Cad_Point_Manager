@@ -11,7 +11,9 @@
       xmlns:viewModels="clr-namespace:Cad_Point_Manager.ViewModels"
       mc:Ignorable="d"
       Title="MainView" 
-      Background="{StaticResource MainBackgroundBrush}">
+      Background="{StaticResource MainBackgroundBrush}"
+      Height="{x:Static SystemParameters.PrimaryScreenHeight}"
+      Width="{x:Static SystemParameters.PrimaryScreenWidth}">
 
     <!--<Page.DataContext>
         <viewModels:MainViewModel />
@@ -32,6 +34,7 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
+        
 
         <Grid x:Name="menuGrid"
               Grid.Row="0">
@@ -126,9 +129,8 @@
               Grid.Row="2">
             <Border x:Name="dxfBorder"
                     BorderBrush="Black"
-                    Background="White"
                     BorderThickness="1"
-                    Margin="20 10 20 20"
+                    Margin="20 10 20 80"
                     CornerRadius="20"
                     ClipToBounds="True">
 

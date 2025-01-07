@@ -19,6 +19,8 @@ using Buffer = SharpDX.Direct3D11.Buffer;
 using Matrix = SharpDX.Matrix;
 using Point = System.Windows.Point;
 using PathGeometry = SharpDX.Direct2D1.PathGeometry;
+using System.Windows.Media;
+using System.Windows.Controls;
 
 namespace Cad_Point_Manager.Controls.D3DControl
 {
@@ -37,6 +39,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private Point _pointerCoords;
         private bool _dxfInitialized = false;
         private Matrix _dxfInitialMatrix = Matrix.Identity;
+        private bool _clipSet = false;
 
         // Panning and Zooming Fields
         private float _panThreshold = 1.0f;
@@ -54,7 +57,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         // Hit Testing Fields
         private Task _hittestTask;
         private bool _hitTestIsRunning = false;
-        private float _hittestStrokeThickness = 2.0f;
+        private float _hittestStrokeThickness;
         private Rect _hitTestRange = new(0, 0, 10, 10);
         private Point _lastHitTestCoords = new();
         private CancellationTokenSource _cancellationTokenSource;
@@ -171,6 +174,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 GetInitialMatrix();
                 _camera = new(Viewport, _zoomFactor);
             }
+            if (!_clipSet) { SetClip(); _clipSet = true; }
             if (!ShadersLoaded) { InitializeShaders(); }
             if (!ConstantBufferInitialized) { InitializeConstantBuffer(); }
             if (!_d2dInitialized) { InitializeDirect2D(); }
@@ -249,19 +253,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 if (copy is DrawingSegment3D segment)
                 {
                     SharpDX.Direct2D1.Brush innerBrush = new SharpDX.Direct2D1.SolidColorBrush(_d3dResCache.D2DDeviceContext, new RawColor4(segment.Color.X, segment.Color.Y, segment.Color.Z, segment.Color.W));
-                    SharpDX.Direct2D1.Brush outerBrush = new SharpDX.Direct2D1.SolidColorBrush(_d3dResCache.D2DDeviceContext, new RawColor4(segment.Color.X, segment.Color.Y, segment.Color.Z, 0.3f));
+                    //SharpDX.Direct2D1.Brush outerBrush = new SharpDX.Direct2D1.SolidColorBrush(_d3dResCache.D2DDeviceContext, new RawColor4(segment.Color.X, segment.Color.Y, segment.Color.Z, 0.3f));
+                    SharpDX.Direct2D1.Brush outerBrush = new SharpDX.Direct2D1.SolidColorBrush(_d3dResCache.D2DDeviceContext, new RawColor4(0, 0, 0, 0.25f));
 
-                    segment.DrawToD2D(_d3dResCache.D2DDeviceContext, _d3dResCache.D2dFactory, outerBrush, 4, _interactiveObjectStrokeStyle);
-                    segment.DrawToD2D(_d3dResCache.D2DDeviceContext, _d3dResCache.D2dFactory, innerBrush, 1, _interactiveObjectStrokeStyle);
-
-                    //for (int i = 0; i < segment.Vertices.Count / 2; i++)
-                    //{
-                    //    RawVector2 start = new(segment.Vertices[i * 2].Position.X, segment.Vertices[i * 2].Position.Y);
-                    //    RawVector2 end = new(segment.Vertices[i * 2 + 1].Position.X, segment.Vertices[i * 2 + 1].Position.Y);
-
-                    //    _d3dResCache.D2DDeviceContext.DrawLine(start, end, outerBrush, 6, _interactiveObjectStrokeStyle);
-                    //    _d3dResCache.D2DDeviceContext.DrawLine(start, end, innerBrush, 1, _interactiveObjectStrokeStyle);
-                    //}
+                    segment.DrawToD2D(_d3dResCache.D2DDeviceContext, _d3dResCache.D2dFactory, outerBrush, 5, _interactiveObjectStrokeStyle);
+                    segment.DrawToD2D(_d3dResCache.D2DDeviceContext, _d3dResCache.D2dFactory, innerBrush, 1.5f, _interactiveObjectStrokeStyle);
 
                     innerBrush.Dispose();
                     outerBrush.Dispose();
@@ -270,20 +266,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 if (copy is DrawingPolyline3D polyline)
                 {
                     SharpDX.Direct2D1.Brush innerBrush = new SharpDX.Direct2D1.SolidColorBrush(_d3dResCache.D2DDeviceContext, new RawColor4(polyline.Color.X, polyline.Color.Y, polyline.Color.Z, polyline.Color.W));
-                    SharpDX.Direct2D1.Brush outerBrush = new SharpDX.Direct2D1.SolidColorBrush(_d3dResCache.D2DDeviceContext, new RawColor4(polyline.Color.X, polyline.Color.Y, polyline.Color.Z, 0.3f));
+                    //SharpDX.Direct2D1.Brush outerBrush = new SharpDX.Direct2D1.SolidColorBrush(_d3dResCache.D2DDeviceContext, new RawColor4(polyline.Color.X, polyline.Color.Y, polyline.Color.Z, 0.3f));
+                    SharpDX.Direct2D1.Brush outerBrush = new SharpDX.Direct2D1.SolidColorBrush(_d3dResCache.D2DDeviceContext, new RawColor4(0, 0, 0, 0.25f));
 
-                    polyline.DrawToD2D(_d3dResCache.D2DDeviceContext, _d3dResCache.D2dFactory, outerBrush, 4, _interactiveObjectStrokeStyle);
-                    polyline.DrawToD2D(_d3dResCache.D2DDeviceContext, _d3dResCache.D2dFactory, innerBrush, 1, _interactiveObjectStrokeStyle);
-
-                    ////Geometry 
-                    //for (int i = 0; i < polyline.Vertices.Count / 2; i++)
-                    //{
-                    //    RawVector2 start = new(polyline.Vertices[i * 2].Position.X, polyline.Vertices[i * 2].Position.Y);
-                    //    RawVector2 end = new(polyline.Vertices[i * 2 + 1].Position.X, polyline.Vertices[i * 2 + 1].Position.Y);
-
-                    //    _d3dResCache.D2DDeviceContext.DrawLine(start, end, outerBrush, 4, _interactiveObjectStrokeStyle);
-                    //    _d3dResCache.D2DDeviceContext.DrawLine(start, end, innerBrush, 1, _interactiveObjectStrokeStyle);
-                    //}
+                    polyline.DrawToD2D(_d3dResCache.D2DDeviceContext, _d3dResCache.D2dFactory, outerBrush, 5, _interactiveObjectStrokeStyle);
+                    polyline.DrawToD2D(_d3dResCache.D2DDeviceContext, _d3dResCache.D2dFactory, innerBrush, 1.5f, _interactiveObjectStrokeStyle);
 
                     innerBrush.Dispose();
                     outerBrush.Dispose();
@@ -339,8 +326,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             SharpDX.Direct2D1.StrokeStyleProperties1 props = new()
             {
-                StartCap = SharpDX.Direct2D1.CapStyle.Square,
-                EndCap = SharpDX.Direct2D1.CapStyle.Square,
+                StartCap = SharpDX.Direct2D1.CapStyle.Round,
+                EndCap = SharpDX.Direct2D1.CapStyle.Round,
                 DashCap = SharpDX.Direct2D1.CapStyle.Round,
                 LineJoin = SharpDX.Direct2D1.LineJoin.Miter,
                 MiterLimit = 10,
@@ -423,6 +410,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
                 float scale = Math.Min(Viewport.Width / CadManager3D.Extents.Width, Viewport.Height / CadManager3D.Extents.Height);
 
+                float hitTestFactor = 1.0f / 200;
                 _dxfInitialMatrix = Matrix.Scaling(scale, scale, 1) * Matrix.Translation(-centerX, -centerY, 0);
 
                 if (_camera is not null)
@@ -439,6 +427,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             var matrix = _camera.Get2DTransformationMatrix();
             _d2dMatrix = new(matrix.M11, matrix.M12, matrix.M21, -matrix.M22, (Viewport.Width / 2) - _camera.InverseViewProjectionMatrix.M41 * matrix.M11, _camera.InverseViewProjectionMatrix.M42 * matrix.M22 + (Viewport.Height / 2));
+            _hittestStrokeThickness = 7.0f / _d2dMatrix.M11;
         }
 
         private void UpdateDxfCoords(Vector2 mousePos)
@@ -592,24 +581,23 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             bool vertexBufferDirty = false;
             bool d3dIsDirty = false;
-            float tolerance = _hittestStrokeThickness / (_camera.CurrentZoom);
-            Rect rect = new(_lastHitTestCoords.X - tolerance, _lastHitTestCoords.Y - tolerance, tolerance * 2, tolerance * 2);
+            Rect rect = new(_lastHitTestCoords.X - _hittestStrokeThickness, _lastHitTestCoords.Y - _hittestStrokeThickness, _hittestStrokeThickness * 2, _hittestStrokeThickness * 2);
             var snappedCopy = _snappedObject;
 
             if (snappedCopy is not null)
             {
-                if (snappedCopy.DistanceToPoint(_lastHitTestCoords) > tolerance)
+                if (snappedCopy.DistanceToPoint(_lastHitTestCoords) > _hittestStrokeThickness)
                 {
                     DeselectObject(snappedCopy);
                     _snappedObject = null;
 
-                    _nearestDrawingObjects = CadManager3D.GetNearestDrawingObjects(_lastHitTestCoords, tolerance);
+                    _nearestDrawingObjects = CadManager3D.GetNearestDrawingObjects(_lastHitTestCoords, _hittestStrokeThickness);
 
                     if (_nearestDrawingObjects.Count > 0)
                     {
                         var (distance, obj) = _nearestDrawingObjects.First();
 
-                        if (distance <= tolerance)
+                        if (distance <= _hittestStrokeThickness)
                         {
                             _snappedObject = obj;
                             SelectObject(_snappedObject);
@@ -626,15 +614,13 @@ namespace Cad_Point_Manager.Controls.D3DControl
             }
             else
             {
-                _nearestDrawingObjects = CadManager3D.GetNearestDrawingObjects(_lastHitTestCoords, tolerance);
-
-                //Debug.WriteLine($"HitTest Count: {_nearestDrawingObjects.Count}");
+                _nearestDrawingObjects = CadManager3D.GetNearestDrawingObjects(_lastHitTestCoords, _hittestStrokeThickness);
 
                 if (_nearestDrawingObjects.Count > 0)
                 {
                    var (distance, obj) = _nearestDrawingObjects.First();
 
-                    if (distance <= tolerance)
+                    if (distance <= _hittestStrokeThickness)
                     {
                         _snappedObject = obj;
                         SelectObject(_snappedObject);
@@ -654,6 +640,23 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public void CancelHitTesting()
         {
             _cancellationTokenSource?.Cancel();
+        }
+
+
+        private void SetClip()
+        {
+            var parent = VisualTreeHelper.GetParent(this);
+            while (parent is not null)
+            {
+                if (parent is Border border)
+                {
+                    this.Clip = new RectangleGeometry(new Rect(0, 0, border.ActualWidth, border.ActualHeight),
+                        border.CornerRadius.TopRight, border.CornerRadius.TopRight);
+                    _clipSet = true;
+                    break;
+                }
+                parent = VisualTreeHelper.GetParent(parent);
+            }
         }
 
 

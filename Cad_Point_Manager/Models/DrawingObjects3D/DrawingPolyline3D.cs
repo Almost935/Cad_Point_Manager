@@ -136,15 +136,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                 geometrySink.Close();
             }
 
-            //// AutoCAD arcs are always drawn in a counter-clockwise direction
-            //using (var geometrySink = pathGeometry.Open())
-            //{
-            //    for (int i = 0; i < DrawingSegments.Count; i++)
-            //    {
-            //        if ()
-            //    }
-            //}
-
             deviceContext.DrawGeometry(pathGeometry, brush, thickness, strokeStyle);
         }
 
@@ -159,9 +150,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                 EndVertex = new(new Vector3((float)end.Position.X, (float)end.Position.Y, 0), Color);
 
                 var entities = polyline2D.Explode();
-
-
-                Debug.WriteLineIf(Layer.Name == "TEST", $"\n{Layer}");
+                var vertices = polyline2D.Vertexes;
 
                 foreach (var e in entities)
                 {
@@ -171,46 +160,71 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                         DrawingSegments.Add(obj);
                     }
                 }
-                for (int i = 0; i < DrawingSegments.Count; i++)
-                {
-                    if (DrawingSegments[i] is DrawingArc3D arc) // Autocad always draws arcs counter-clockwise so need to find the correct start and end vertices
-                    {
-                        var startArcVertex = Vertices.First();
-                        var endArcVertex = Vertices.Last();
 
-                        if (i == 0)
+                // Loop through vertices to verify that drawing arcs are correctly aligned. Autocad always draws arcs counter-clockwise
+                // so need to find the correct start and end vertices
+                for (int i = 0; i < vertices.Count - 1; i++)
+                {
+                    var segment = DrawingSegments[i];
+                    if (segment is DrawingArc3D arc)
+                    {
+                        var startArcVertex = arc.Vertices.First().Position;
+                        Vector3 dxfStartVertex = new((float)vertices[i].Position.X, (float)vertices[i].Position.Y, 0);
+                        var d = Vector3.Distance(startArcVertex, dxfStartVertex);
+
+                        if (d > 0)
                         {
-                            var nextSegment = entities[i + 1];
+                            arc.Vertices.Reverse();
                         }
                     }
-                    Vertices.AddRange(DrawingSegments[i].Vertices);
                 }
-
+                Vertices = DrawingSegments.SelectMany(s => s.Vertices).ToList();
             }
 
             else if (entity is Polyline3D polyline3D)
             {
                 var start = polyline3D.Vertexes.First();
                 var end = polyline3D.Vertexes.Last();
-                StartVertex = new(new Vector3((float)start.X, (float)start.Y, (float)start.Z), Color);
-                EndVertex = new(new Vector3((float)end.X, (float)end.Y, (float)end.Z), Color);
+                StartVertex = new(new Vector3((float)start.X, (float)start.Y, 0), Color);
+                EndVertex = new(new Vector3((float)end.X, (float)end.Y, 0), Color);
 
                 var entities = polyline3D.Explode();
+                var vertices = polyline3D.Vertexes;
+
                 foreach (var e in entities)
                 {
                     var obj = DxfHelpers.GetDrawingSegment3D(e, Layer);
                     if (obj is not null)
                     {
                         DrawingSegments.Add(obj);
-                        Vertices.AddRange(obj.Vertices);
                     }
                 }
+
+                // Loop through vertices to verify that drawing arcs are correctly aligned. Autocad always draws arcs counter-clockwise
+                // so need to find the correct start and end vertices
+                for (int i = 0; i < vertices.Count - 1; i++)
+                {
+                    var segment = DrawingSegments[i];
+                    if (segment is DrawingArc3D arc)
+                    {
+                        var startArcVertex = arc.Vertices.First().Position;
+                        Vector3 dxfStartVertex = new((float)vertices[i].X, (float)vertices[i].Y, 0);
+                        var d = Vector3.Distance(startArcVertex, dxfStartVertex);
+
+                        if (d > 0)
+                        {
+                            arc.Vertices.Reverse();
+                        }
+                    }
+                }
+                Vertices = DrawingSegments.SelectMany(s => s.Vertices).ToList();
             }
             else
             {
                 throw new ArgumentException("entity must be of type Polyline2D or Polyline3D");
             }
-            #endregion
         }
+        #endregion
+
     }
 }
