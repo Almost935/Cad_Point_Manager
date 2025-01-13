@@ -140,6 +140,7 @@ namespace Cad_Point_Manager.Helpers
                 Polyline3D polyline3D => new DrawingPolyline3D(polyline3D, layer),
                 Circle circle => new DrawingCircle3D(circle, layer),
                 Insert block => new DrawingBlock3D(block, layer),
+                MText mtext => new DrawingText3D(mtext, layer),
                 _ => null,
             };
         }

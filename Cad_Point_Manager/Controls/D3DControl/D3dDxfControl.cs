@@ -1,26 +1,26 @@
-﻿using Cad_Point_Manager.Helpers;
-using Cad_Point_Manager.Models;
+﻿using Cad_Point_Manager.Models;
 using Cad_Point_Manager.Models.DrawingObjects3D;
 using SharpDX;
 using SharpDX.D3DCompiler;
 using SharpDX.Direct3D11;
 using SharpDX.Mathematics.Interop;
 using System.ComponentModel;
-using System.Configuration;
-using System.Diagnostics;
 using System.IO;
-using System.Reflection;
 using System.Runtime.CompilerServices;
-using System.Security.Policy;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Controls;
+using SharpDX.Direct2D1;
 
 using Buffer = SharpDX.Direct3D11.Buffer;
 using Matrix = SharpDX.Matrix;
 using Point = System.Windows.Point;
-using PathGeometry = SharpDX.Direct2D1.PathGeometry;
-using System.Windows.Media;
-using System.Windows.Controls;
+using Brush = SharpDX.Direct2D1.Brush;
+using SolidColorBrush = SharpDX.Direct2D1.SolidColorBrush;
+using RectangleGeometry = System.Windows.Media.RectangleGeometry;
+using InputElement = SharpDX.Direct3D11.InputElement;
+using System.Diagnostics;
 
 namespace Cad_Point_Manager.Controls.D3DControl
 {
@@ -40,6 +40,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private bool _dxfInitialized = false;
         private Matrix _dxfInitialMatrix = Matrix.Identity;
         private bool _clipSet = false;
+        private bool _isMouseInside;
 
         // Panning and Zooming Fields
         private float _panThreshold = 1.0f;
@@ -60,7 +61,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private float _hittestStrokeThickness;
         private Rect _hitTestRange = new(0, 0, 10, 10);
         private Point _lastHitTestCoords = new();
-        private CancellationTokenSource _cancellationTokenSource;
+        private CancellationTokenSource _hitTestCancellationTokenSource;
 
         private List<(double distance, DrawingObject3D obj)> _nearestDrawingObjects = [];
         private double _hitTestSize = 20;
@@ -70,11 +71,12 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private DrawingObject3D _highlightedObject;
 
         // Direct2D Fields
-        private SharpDX.Direct2D1.Brush _highlightedBrush;
-        private SharpDX.Direct2D1.Brush _highlightedOuterEdgeBrush;
-        private SharpDX.Direct2D1.StrokeStyle1 _interactiveObjectStrokeStyle;
+        private Brush _highlightedBrush;
+        private Brush _highlightedOuterEdgeBrush;
+        private StrokeStyle1 _interactiveObjectStrokeStyle;
         private bool _d2dInitialized = false;
         private RawMatrix3x2 _d2dMatrix = new();
+        private Dictionary<(float r, float g, float b, float a), Brush> _brushes = [];
         #endregion
 
         #region Properties 
@@ -168,6 +170,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 GetInitialMatrix();
                 _camera.ResetView(_dxfInitialMatrix);
                 DxfNeedsReload = false;
+                CadManager3D.DxfNeedsReload = false;
             }
             if (_camera is null)
             {
@@ -195,6 +198,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             context.ClearRenderTargetView(_d3dResCache.RenderTargetView, new RawColor4(1, 1, 1, 1));
 
             DrawInteractiveObjects();
+            DrawTextObjects();
             UpdateConstantBuffer();
 
             // Set shaders
@@ -220,41 +224,65 @@ namespace Cad_Point_Manager.Controls.D3DControl
             D3dIsDirty = false;
         }
 
-        private void DrawInteractiveObjects()
+        private void DrawTextObjects()
         {
-            // test
             if (CadManager3D is null || CadManager3D.DrawingObjectTree3D is null || _camera is null) { return; }
 
             _d3dResCache.D2DDeviceContext.Transform = _d2dMatrix;
 
-            //SharpDX.Direct2D1.Brush testBrush = new SharpDX.Direct2D1.SolidColorBrush(_d3dResCache.D2DDeviceContext, new RawColor4(0.1f, 1, 0, 1f));
-            //foreach (var node in CadManager3D.DrawingObjectTree3D.BaseLevelNodes)
+            //Parallel.ForEach(CadManager3D.Layers, keyValuePair =>
             //{
-            //    _d3dResCache.D2DDeviceContext.DrawRectangle(new RawRectangleF((float)node.Extents.TopLeft.X, (float)node.Extents.TopLeft.Y, (float)node.Extents.BottomRight.X, (float)node.Extents.BottomRight.Y), testBrush, 5, _interactiveObjectStrokeStyle);
-            //}
-            //foreach (var layer in CadManager3D.Layers.Values)
-            //{
-            //    foreach (var obj in layer.DrawingObject3Ds)
+            //    var layer = keyValuePair.Value;
+
+            //    foreach (var text in layer.DrawingText3Ds)
             //    {
-            //        var inflatedBounds = Rect.Inflate(obj.Bounds, 1, 1);
-            //        //var inflatedBounds = obj.Bounds;
+            //        if (text is DrawingText3D text3D)
+            //        {
+            //            if (!text.TextFormatCreated) { text.GetTextFormat(_d3dResCache.FactoryWrite); }
+            //            if (!text.TextLayoutCreated) { text.GetTextLayout(_d3dResCache.FactoryWrite); }
 
-            //        //Debug.WriteLine($"Bounds: {obj.Bounds}");
-            //        //Debug.WriteLine($"Inflated Bounds: {inflatedBounds}");
+            //            var brush = _brushes.TryGetValue((text.Color.X, text.Color.Y, text.Color.Z, text.Color.W), out Brush b) ? b : new SolidColorBrush(_d3dResCache.D2DDeviceContext, new RawColor4(text.Color.X, text.Color.Y, text.Color.Z, text.Color.W));
 
-            //        _d3dResCache.D2DDeviceContext.DrawRectangle(new RawRectangleF((float)inflatedBounds.TopLeft.X, (float)inflatedBounds.TopLeft.Y, (float)inflatedBounds.BottomRight.X, (float)inflatedBounds.BottomRight.Y), testBrush, 1, _interactiveObjectStrokeStyle);
+            //            text3D.DrawToD2D(_d3dResCache.D2DDeviceContext, _d3dResCache.D2dFactory, brush, 1, _interactiveObjectStrokeStyle);
+            //        }
             //    }
-            //}
-            //testBrush.Dispose();
+            //});
+
+            foreach (var keyValuePair in CadManager3D.Layers)
+            {
+                var layer = keyValuePair.Value;
+
+                foreach (var text in layer.DrawingText3Ds)
+                {
+                    if (!text.TextFormatCreated) { text.GetTextFormat(_d3dResCache.FactoryWrite); }
+                    if (!text.TextLayoutCreated) { text.GetTextLayout(_d3dResCache.FactoryWrite); }
+
+                    var brushExists = _brushes.TryGetValue((text.Color.X, text.Color.Y, text.Color.Z, text.Color.W), out Brush brush);
+                    if (!brushExists)
+                    {
+                        brush = new SolidColorBrush(_d3dResCache.D2DDeviceContext, new RawColor4(text.Color.X, text.Color.Y, text.Color.Z, text.Color.W));
+                        _brushes.Add((text.Color.X, text.Color.Y, text.Color.Z, text.Color.W), brush);
+                    }
+
+                    text.DrawToD2D(_d3dResCache.D2DDeviceContext, _d3dResCache.D2dFactory, brush, 1, _interactiveObjectStrokeStyle);
+                }
+            }
+        }
+
+        private void DrawInteractiveObjects()
+        {
+            if (CadManager3D is null || CadManager3D.DrawingObjectTree3D is null || _camera is null) { return; }
+
+            _d3dResCache.D2DDeviceContext.Transform = _d2dMatrix;
 
             if (_snappedObject is not null)
             {
                 var copy = _snappedObject;
                 if (copy is DrawingSegment3D segment)
                 {
-                    SharpDX.Direct2D1.Brush innerBrush = new SharpDX.Direct2D1.SolidColorBrush(_d3dResCache.D2DDeviceContext, new RawColor4(segment.Color.X, segment.Color.Y, segment.Color.Z, segment.Color.W));
+                    Brush innerBrush = new SolidColorBrush(_d3dResCache.D2DDeviceContext, new RawColor4(segment.Color.X, segment.Color.Y, segment.Color.Z, segment.Color.W));
                     //SharpDX.Direct2D1.Brush outerBrush = new SharpDX.Direct2D1.SolidColorBrush(_d3dResCache.D2DDeviceContext, new RawColor4(segment.Color.X, segment.Color.Y, segment.Color.Z, 0.3f));
-                    SharpDX.Direct2D1.Brush outerBrush = new SharpDX.Direct2D1.SolidColorBrush(_d3dResCache.D2DDeviceContext, new RawColor4(0, 0, 0, 0.25f));
+                    Brush outerBrush = new SolidColorBrush(_d3dResCache.D2DDeviceContext, new RawColor4(0, 0, 0, 0.25f));
 
                     segment.DrawToD2D(_d3dResCache.D2DDeviceContext, _d3dResCache.D2dFactory, outerBrush, 5, _interactiveObjectStrokeStyle);
                     segment.DrawToD2D(_d3dResCache.D2DDeviceContext, _d3dResCache.D2dFactory, innerBrush, 1.5f, _interactiveObjectStrokeStyle);
@@ -265,9 +293,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
                 if (copy is DrawingPolyline3D polyline)
                 {
-                    SharpDX.Direct2D1.Brush innerBrush = new SharpDX.Direct2D1.SolidColorBrush(_d3dResCache.D2DDeviceContext, new RawColor4(polyline.Color.X, polyline.Color.Y, polyline.Color.Z, polyline.Color.W));
+                    Brush innerBrush = new SolidColorBrush(_d3dResCache.D2DDeviceContext, new RawColor4(polyline.Color.X, polyline.Color.Y, polyline.Color.Z, polyline.Color.W));
                     //SharpDX.Direct2D1.Brush outerBrush = new SharpDX.Direct2D1.SolidColorBrush(_d3dResCache.D2DDeviceContext, new RawColor4(polyline.Color.X, polyline.Color.Y, polyline.Color.Z, 0.3f));
-                    SharpDX.Direct2D1.Brush outerBrush = new SharpDX.Direct2D1.SolidColorBrush(_d3dResCache.D2DDeviceContext, new RawColor4(0, 0, 0, 0.25f));
+                    Brush outerBrush = new SolidColorBrush(_d3dResCache.D2DDeviceContext, new RawColor4(0, 0, 0, 0.25f));
 
                     polyline.DrawToD2D(_d3dResCache.D2DDeviceContext, _d3dResCache.D2dFactory, outerBrush, 5, _interactiveObjectStrokeStyle);
                     polyline.DrawToD2D(_d3dResCache.D2DDeviceContext, _d3dResCache.D2dFactory, innerBrush, 1.5f, _interactiveObjectStrokeStyle);
@@ -320,11 +348,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _highlightedOuterEdgeBrush?.Dispose();
             _interactiveObjectStrokeStyle?.Dispose();
 
-            _highlightedBrush = new SharpDX.Direct2D1.SolidColorBrush(_d3dResCache.D2DDeviceContext, new RawColor4((97 / 255), 1.0f, 0.0f, 1.0f));
-            _highlightedOuterEdgeBrush = new SharpDX.Direct2D1.SolidColorBrush(_d3dResCache.D2DDeviceContext, new RawColor4((97 / 255), 1.0f, 0.0f, 1.0f))
+            _highlightedBrush = new SolidColorBrush(_d3dResCache.D2DDeviceContext, new RawColor4((97 / 255), 1.0f, 0.0f, 1.0f));
+            _highlightedOuterEdgeBrush = new SolidColorBrush(_d3dResCache.D2DDeviceContext, new RawColor4((97 / 255), 1.0f, 0.0f, 1.0f))
             { Opacity = 0.2f };
 
-            SharpDX.Direct2D1.StrokeStyleProperties1 props = new()
+            StrokeStyleProperties1 props = new()
             {
                 StartCap = SharpDX.Direct2D1.CapStyle.Round,
                 EndCap = SharpDX.Direct2D1.CapStyle.Round,
@@ -442,7 +470,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             if (e.MiddleButton == MouseButtonState.Pressed)
             {
                 _isPanning = true;
-                
+
                 ResetSnappedObjects();
                 VertexBufferDirty = true;
                 D3dIsDirty = true;
@@ -493,7 +521,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 _prevMousePos = currentMousePos;
             }
         }
-
         protected override void OnMouseWheel(MouseWheelEventArgs e)
         {
             int zoomSteps;
@@ -514,11 +541,22 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
         protected override void OnMouseLeave(MouseEventArgs e)
         {
+            base.OnMouseLeave(e);
+
+            _isMouseInside = false;
+            _hitTestCancellationTokenSource.Cancel();
+
             ResetSnappedObjects();
             VertexBufferDirty = true;
             D3dIsDirty = true;
+        }
+        protected override void OnMouseEnter(MouseEventArgs e)
+        {
+            base.OnMouseEnter(e);
 
-            base.OnMouseLeave(e);
+            _isMouseInside = true;
+            _hitTestCancellationTokenSource = new CancellationTokenSource();
+            _ = RunHitTestingAsync();
         }
         protected override void OnRenderSizeChanged(SizeChangedInfo sizeInfo)
         {
@@ -539,24 +577,16 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         public async Task RunHitTestingAsync()
         {
-            _cancellationTokenSource = new CancellationTokenSource();
-            try
+            while (_isMouseInside)
             {
-                while (!_cancellationTokenSource.Token.IsCancellationRequested)
+                if (_hitTestCancellationTokenSource.Token.IsCancellationRequested)
                 {
-                    await Task.Run(() => RunObjectHitTest(_cancellationTokenSource.Token), _cancellationTokenSource.Token);
-                    await Task.Delay(30); // Adjust the delay as needed
+                    break;
                 }
-            }
-            catch (TaskCanceledException)
-            {
-                // Handle the task cancellation here
-                Debug.WriteLine("Task was canceled.");
-            }
-            catch (Exception ex)
-            {
-                // Handle other exceptions here
-                Debug.WriteLine($"An error occurred: {ex.Message}");
+
+                // Perform hit testing logic here
+                RunObjectHitTest(_hitTestCancellationTokenSource.Token);
+                await Task.Delay(50); // Adjust the delay as needed
             }
         }
         private void RunObjectHitTest(CancellationToken token)
@@ -595,6 +625,12 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
                     if (_nearestDrawingObjects.Count > 0)
                     {
+                        Debug.WriteLine($"\n");
+                        foreach (var (d, item) in _nearestDrawingObjects)
+                        {
+                            Debug.WriteLine($"item.GetType(): {item.GetType()} distance: {d}");
+                        }
+
                         var (distance, obj) = _nearestDrawingObjects.First();
 
                         if (distance <= _hittestStrokeThickness)
@@ -618,7 +654,13 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
                 if (_nearestDrawingObjects.Count > 0)
                 {
-                   var (distance, obj) = _nearestDrawingObjects.First();
+                    Debug.WriteLine($"\n");
+                    foreach (var (d, item) in _nearestDrawingObjects)
+                    {
+                        Debug.WriteLine($"item.GetType(): {item.GetType()} distance: {d}");
+                    }
+
+                    var (distance, obj) = _nearestDrawingObjects.First();
 
                     if (distance <= _hittestStrokeThickness)
                     {
@@ -639,7 +681,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
         public void CancelHitTesting()
         {
-            _cancellationTokenSource?.Cancel();
+            _hitTestCancellationTokenSource?.Cancel();
         }
 
 

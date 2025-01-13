@@ -114,16 +114,19 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
 
             foreach (var obj in DrawingObjects)
             {
-                var inflatedBounds = Rect.Inflate(obj.Bounds, tolerance, tolerance);
-
-                if (inflatedBounds.Contains(p))
+                if (obj.IsVisible && obj.Layer.IsVisible)
                 {
-                    double d = obj.DistanceToPoint(p);
+                    var inflatedBounds = Rect.Inflate(obj.Bounds, tolerance, tolerance);
 
-                    if (d < distance)
+                    if (inflatedBounds.Contains(p))
                     {
-                        distance = d;
-                        drawingObject3D = obj;
+                        double d = obj.DistanceToPoint(p);
+
+                        if (d < distance)
+                        {
+                            distance = d;
+                            drawingObject3D = obj;
+                        }
                     }
                 }
             }
@@ -143,11 +146,13 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             foreach (var obj in DrawingObjects)
             {
                 //Debug.WriteLine($"{obj.GetType()} obj.BoundsInRect(hitTestRange): {obj.BoundsInRect(hitTestRange)}");
-
-                if (obj.BoundsInRect(hitTestRange))
+                if (obj.IsVisible && obj.Layer.IsVisible)
                 {
-                    double d = obj.DistanceToPoint(p);
-                    hits.Add((d, obj));
+                    if (obj.BoundsInRect(hitTestRange))
+                    {
+                        double d = obj.DistanceToPoint(p);
+                        hits.Add((d, obj));
+                    }
                 }
             }
             return hits;

@@ -52,9 +52,9 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         }
         private void GetDrawingObjects()
         {
-            foreach (var layer in _cadManager.Layers.Values)
+            foreach (var keyValue in _cadManager.Layers)
             {
-                DrawingObjects.AddRange(layer.DrawingObject3Ds);
+                DrawingObjects.AddRange(keyValue.Value.DrawingObject3Ds);
             }
         }
         public List<DrawingObjectNode3D> GetIntersectingNodes(Rect view)

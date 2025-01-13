@@ -1,4 +1,4 @@
-﻿using Cad_Point_Manager.Controls.D3DControl;
+﻿    using Cad_Point_Manager.Controls.D3DControl;
 using Cad_Point_Manager.Helpers;
 using Cad_Point_Manager.Models.DrawingObjects;
 using netDxf;
@@ -47,6 +47,8 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         }
 
         public Vector3 InsertionPoint { get; set; }
+        public int StartVertexIndex { get; set; }
+        public int EndVertexIndex { get; set; }
         public int NumberOfDrawingObjects => DrawingObjects.Count;
         #endregion
 

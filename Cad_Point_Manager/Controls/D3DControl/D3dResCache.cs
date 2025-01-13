@@ -20,7 +20,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private SharpDX.Direct2D1.Device1 _d2DDevice = null;
         private SharpDX.Direct2D1.DeviceContext1 _d2DDeviceContext = null;
         private Factory2 _d2DFactory = null;
-        private SharpDX.Direct2D1.Bitmap1 _d2dTargetBitmap = null;
+        private Bitmap1 _d2dTargetBitmap = null;
+        private SharpDX.DirectWrite.Factory1 _factoryWrite = null;
         #endregion
 
         #region Properties
@@ -87,13 +88,22 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 OnPropertyChanged(nameof(D2dFactory));
             }
         }
-        public SharpDX.Direct2D1.Bitmap1 D2DTargetBitmap
+        public Bitmap1 D2DTargetBitmap
         {
             get { return _d2dTargetBitmap; }
             set
             {
                 _d2dTargetBitmap = value;
                 OnPropertyChanged(nameof(D2DTargetBitmap));
+            }
+        }
+        public SharpDX.DirectWrite.Factory1 FactoryWrite
+        {
+            get { return _factoryWrite; }
+            set
+            {
+                _factoryWrite = value;
+                OnPropertyChanged(nameof(FactoryWrite));
             }
         }
         #endregion

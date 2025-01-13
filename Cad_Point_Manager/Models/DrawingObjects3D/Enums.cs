@@ -12,7 +12,8 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         DrawingArc3D,
         DrawingCircle3D,
         DrawingPolyline3D,
-        DrawingBlock3D
+        DrawingBlock3D,
+        DrawingText3D
     }
 
     public enum DrawingObject3dColorType

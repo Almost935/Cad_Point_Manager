@@ -5,11 +5,13 @@ using netDxf;
 using netDxf.Entities;
 using netDxf.Tables;
 using SharpDX;
+using System;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Windows;
-
+using System.Windows.Data;
 using Point = System.Windows.Point;
 using Vector2 = SharpDX.Vector2;
 
@@ -19,9 +21,11 @@ namespace Cad_Point_Manager.Models
     {
         private bool _dxfLoaded = false;
         private bool _dxfDirty = true;
-        private bool _dxfNeedsLoad = true;
+        private bool _dxfNeedsReload = true;
         private Bounds _extents;
         private List<Vertex> _vertices = [];
+        private ObservableCollection<KeyValuePair<string, ObjectLayer3D>> _layers = [];
+        private ICollectionView _layesView;
 
         public bool DxfLoaded
         {
@@ -43,10 +47,11 @@ namespace Cad_Point_Manager.Models
         }
         public bool DxfNeedsReload
         {
-            get => _dxfNeedsLoad;
+            get => _dxfNeedsReload;
             set
             {
-                _dxfNeedsLoad = value;
+                Debug.WriteLine($"DxfNeedsReload Changed");
+                _dxfNeedsReload = value;
                 OnPropertyChanged();
             }
         }
@@ -68,9 +73,26 @@ namespace Cad_Point_Manager.Models
                 OnPropertyChanged(nameof(Vertices));
             }
         }
+        public ObservableCollection<KeyValuePair<string, ObjectLayer3D>> Layers
+        {
+            get => _layers;
+            set
+            {
+                _layers = value;
+                OnPropertyChanged(nameof(Layers));
+            }
+        }
+        public ICollectionView LayersView
+        {
+            get => _layesView;
+            set
+            {
+                _layesView = value;
+                OnPropertyChanged(nameof(LayersView));
+            }
+        }
 
         public DxfDocument DxfDocument { get; set; }
-        public SortedDictionary<string, ObjectLayer3D> Layers { get; set; } = [];
         public DrawingObjectTree3D DrawingObjectTree3D { get; set; }
 
 
@@ -87,16 +109,18 @@ namespace Cad_Point_Manager.Models
 
             DxfDocument = dxfDocument;
             Extents = DxfHelpers.GetBoundsFromHeader(DxfDocument);
-
+            
             foreach (var e in DxfDocument.Entities.All)
             {
                 var layer = GetLayer(e.Layer);
                 var drawingObj3d = DxfHelpers.GetDrawingObject3D(e, layer);
+
                 if (layer is not null && drawingObj3d is not null)
                 {
                     layer.AddDrawingObject(drawingObj3d);
                 }
             }
+            UpdateLayerView();
             DrawingObjectTree3D = new(this, Extents.ToRect(), 5);
             UpdateVerticesList();
 
@@ -105,12 +129,12 @@ namespace Cad_Point_Manager.Models
             DxfNeedsReload = true;
         }
 
-        /// <summary>
-        /// Finds the closest object to the point p within the tolerance.
-        /// </summary>
-        /// <param name="p">The point to find the closest objects to</param>
-        /// <param name="tolerance">the minimum distance the object can be from p.</param>
-        /// <returns></returns>
+        public void UpdateLayerView()
+        {
+            LayersView = CollectionViewSource.GetDefaultView(Layers);
+            LayersView.SortDescriptions.Clear();
+            LayersView.SortDescriptions.Add(new SortDescription("Key", ListSortDirection.Ascending));
+        }
 
         public (double distance, DrawingObject3D obj) HitTestPoint(Point p, float tolerance)
         {
@@ -166,13 +190,13 @@ namespace Cad_Point_Manager.Models
 
         public ObjectLayer3D GetLayer(Layer dxfLayer)
         {
-            var layerExists = Layers.TryGetValue(dxfLayer.Name, out ObjectLayer3D layer);
+            ObjectLayer3D layer = Layers.FirstOrDefault(x => x.Value.Name == dxfLayer.Name).Value;
 
-            if (layerExists) { return layer; }
+            if (layer is not null) { return layer; }
             else
             {
                 layer = new(dxfLayer);
-                Layers.Add(dxfLayer.Name, layer);
+                Layers.Add(new KeyValuePair<string, ObjectLayer3D>(dxfLayer.Name, layer));
 
                 return layer;
             }
@@ -184,8 +208,9 @@ namespace Cad_Point_Manager.Models
 
             Vertices.Clear();
 
-            foreach (var layer in Layers.Values)
+            foreach (var keyValuePair in Layers)
             {
+                var layer = keyValuePair.Value;
                 if (layer.IsVisible)
                 {
                     foreach (var obj in layer.DrawingObject3Ds)
@@ -196,27 +221,16 @@ namespace Cad_Point_Manager.Models
                             Vertices.AddRange(drawingGeometry.Vertices);
                             drawingGeometry.EndVertexIndex = Vertices.Count - 1;
                         }
+
+                        if (obj is DrawingBlock3D drawingBlock)
+                        {
+                            drawingBlock.StartVertexIndex = Vertices.Count;
+                            Vertices.AddRange(drawingBlock.DrawingGeometryVerteces);
+                            drawingBlock.EndVertexIndex = Vertices.Count - 1;
+                        }
                     }
                 }
             }
-
-            //stopwatch.Stop();
-            //Debug.WriteLine($"UpdateVerticesList() took {stopwatch.ElapsedMilliseconds} ms");
-
-            //// Testing for Quadtree bounds
-            //SharpDX.Vector4 color = new(0, 1, 0, 1);
-            //foreach (var node in DrawingObjectTree3D.BaseLevelNodes)
-            //{
-            //    Vertex tl = new(new SharpDX.Vector3((float)node.Extents.TopLeft.X, (float)node.Extents.TopLeft.Y, 0), color);
-            //    Vertex tr = new(new SharpDX.Vector3((float)node.Extents.TopRight.X, (float)node.Extents.TopRight.Y, 0), color);
-            //    Vertex bl = new(new SharpDX.Vector3((float)node.Extents.BottomLeft.X, (float)node.Extents.BottomLeft.Y, 0), color);
-            //    Vertex br = new(new SharpDX.Vector3((float)node.Extents.BottomRight.X, (float)node.Extents.BottomRight.Y, 0), color);
-
-            //    Vertices.Add(tl); Vertices.Add(tr);
-            //    Vertices.Add(tr); Vertices.Add(br);
-            //    Vertices.Add(br); Vertices.Add(bl);
-            //    Vertices.Add(bl); Vertices.Add(tl);
-            //}
         }
     }
 }

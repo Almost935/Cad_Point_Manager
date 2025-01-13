@@ -135,7 +135,7 @@ namespace Cad_Point_Manager.ViewModels
             dlg.InitialDirectory = @"C:\Users\fcraw\source\repos\Cad_Point_Manager\Cad_Point_Manager\Resources\DXF";
 
             Nullable<bool> result = dlg.ShowDialog();
-
+            
             if (result == true)
             {
                 DxfFilePath = dlg.FileName;
