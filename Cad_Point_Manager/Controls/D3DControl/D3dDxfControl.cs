@@ -20,7 +20,6 @@ using Brush = SharpDX.Direct2D1.Brush;
 using SolidColorBrush = SharpDX.Direct2D1.SolidColorBrush;
 using RectangleGeometry = System.Windows.Media.RectangleGeometry;
 using InputElement = SharpDX.Direct3D11.InputElement;
-using System.Diagnostics;
 
 namespace Cad_Point_Manager.Controls.D3DControl
 {
@@ -228,25 +227,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
         {
             if (CadManager3D is null || CadManager3D.DrawingObjectTree3D is null || _camera is null) { return; }
 
-            _d3dResCache.D2DDeviceContext.Transform = _d2dMatrix;
-
-            //Parallel.ForEach(CadManager3D.Layers, keyValuePair =>
-            //{
-            //    var layer = keyValuePair.Value;
-
-            //    foreach (var text in layer.DrawingText3Ds)
-            //    {
-            //        if (text is DrawingText3D text3D)
-            //        {
-            //            if (!text.TextFormatCreated) { text.GetTextFormat(_d3dResCache.FactoryWrite); }
-            //            if (!text.TextLayoutCreated) { text.GetTextLayout(_d3dResCache.FactoryWrite); }
-
-            //            var brush = _brushes.TryGetValue((text.Color.X, text.Color.Y, text.Color.Z, text.Color.W), out Brush b) ? b : new SolidColorBrush(_d3dResCache.D2DDeviceContext, new RawColor4(text.Color.X, text.Color.Y, text.Color.Z, text.Color.W));
-
-            //            text3D.DrawToD2D(_d3dResCache.D2DDeviceContext, _d3dResCache.D2dFactory, brush, 1, _interactiveObjectStrokeStyle);
-            //        }
-            //    }
-            //});
+            //_d3dResCache.D2DDeviceContext.Transform = _d2dMatrix;
+            //_d3dResCache.D2DDeviceContext.Transform = new(_d2dMatrix.M11, _d2dMatrix.M12, _d2dMatrix.M21, -_d2dMatrix.M22, _d2dMatrix.M31, _d2dMatrix.M32);
 
             foreach (var keyValuePair in CadManager3D.Layers)
             {
@@ -264,6 +246,17 @@ namespace Cad_Point_Manager.Controls.D3DControl
                         _brushes.Add((text.Color.X, text.Color.Y, text.Color.Z, text.Color.W), brush);
                     }
 
+                    var transform = Matrix3x2.Transformation(_d2dMatrix.M11, -_d2dMatrix.M22, 0, _d2dMatrix.M31, _d2dMatrix.M32);
+
+                    Vector2 point = Vector2.One;
+                    Matrix3x2 testTransform =
+                        Matrix3x2.Scaling((_d2dMatrix.M11), -(_d2dMatrix.M22)) *
+                        Matrix3x2.Translation(_d2dMatrix.M31, _d2dMatrix.M32) *
+                        Matrix3x2.Rotation(MathUtil.DegreesToRadians(1), new Vector2(_d2dMatrix.M31, _d2dMatrix.M32));
+
+
+
+                    _d3dResCache.D2DDeviceContext.Transform = testTransform;
                     text.DrawToD2D(_d3dResCache.D2DDeviceContext, _d3dResCache.D2dFactory, brush, 1, _interactiveObjectStrokeStyle);
                 }
             }
@@ -302,6 +295,21 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
                     innerBrush.Dispose();
                     outerBrush.Dispose();
+                }
+
+                if (copy is DrawingBlock3D block)
+                {
+                    foreach (var e in block.DrawingObjects)
+                    {
+                        Brush innerBrush = new SolidColorBrush(_d3dResCache.D2DDeviceContext, new RawColor4(e.Color.X, e.Color.Y, e.Color.Z, e.Color.W));
+                        Brush outerBrush = new SolidColorBrush(_d3dResCache.D2DDeviceContext, new RawColor4(0, 0, 0, 0.25f));
+
+                        e.DrawToD2D(_d3dResCache.D2DDeviceContext, _d3dResCache.D2dFactory, outerBrush, 5, _interactiveObjectStrokeStyle);
+                        e.DrawToD2D(_d3dResCache.D2DDeviceContext, _d3dResCache.D2dFactory, innerBrush, 1.5f, _interactiveObjectStrokeStyle);
+
+                        innerBrush.Dispose();
+                        outerBrush.Dispose();
+                    }
                 }
             }
         }
@@ -478,7 +486,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 _previousMousePosition = e.GetPosition(this);
             }
         }
-
         protected override void OnMouseUp(MouseButtonEventArgs e)
         {
             if (e.MiddleButton == MouseButtonState.Released)
@@ -486,7 +493,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 _isPanning = false;
             }
         }
-
         protected override void OnMouseMove(MouseEventArgs e)
         {
             _pointerCoords = e.GetPosition(this);
@@ -545,6 +551,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             _isMouseInside = false;
             _hitTestCancellationTokenSource.Cancel();
+            _isPanning = false;
 
             ResetSnappedObjects();
             VertexBufferDirty = true;
@@ -625,12 +632,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
                     if (_nearestDrawingObjects.Count > 0)
                     {
-                        Debug.WriteLine($"\n");
-                        foreach (var (d, item) in _nearestDrawingObjects)
-                        {
-                            Debug.WriteLine($"item.GetType(): {item.GetType()} distance: {d}");
-                        }
-
                         var (distance, obj) = _nearestDrawingObjects.First();
 
                         if (distance <= _hittestStrokeThickness)
@@ -654,12 +655,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
                 if (_nearestDrawingObjects.Count > 0)
                 {
-                    Debug.WriteLine($"\n");
-                    foreach (var (d, item) in _nearestDrawingObjects)
-                    {
-                        Debug.WriteLine($"item.GetType(): {item.GetType()} distance: {d}");
-                    }
-
                     var (distance, obj) = _nearestDrawingObjects.First();
 
                     if (distance <= _hittestStrokeThickness)
@@ -704,29 +699,57 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         private void SelectObject(DrawingObject3D obj)
         {
-            if (obj is not null && obj is DrawingGeometry3D geometry)
+            if (obj is not null)
             {
-                geometry.Select();
-
-                int count = 0;
-                for (int i = geometry.StartVertexIndex; i <= geometry.EndVertexIndex; i++)
+                if (obj is DrawingGeometry3D geometry)
                 {
-                    _vertices[i] = geometry.Vertices[count];
-                    count++;
+                    geometry.Select();
+
+                    int count = 0;
+                    for (int i = geometry.StartVertexIndex; i <= geometry.EndVertexIndex; i++)
+                    {
+                        _vertices[i] = geometry.Vertices[count];
+                        count++;
+                    }
+                }
+                if (obj is DrawingBlock3D block3D)
+                {
+                    block3D.Select();
+
+                    int count = 0;
+                    for (int i = block3D.StartVertexIndex; i <= block3D.EndVertexIndex; i++)
+                    {
+                        _vertices[i] = block3D.DrawingGeometryVerteces[count];
+                        count++;
+                    }
                 }
             }
         }
         private void DeselectObject(DrawingObject3D obj)
         {
-            if (obj is not null && obj is DrawingGeometry3D geometry)
+            if (obj is not null)
             {
-                geometry.Deselect();
-
-                int count = 0;
-                for (int i = geometry.StartVertexIndex; i <= geometry.EndVertexIndex; i++)
+                if (obj is DrawingGeometry3D geometry)
                 {
-                    _vertices[i] = geometry.Vertices[count];
-                    count++;
+                    geometry.Deselect();
+
+                    int count = 0;
+                    for (int i = geometry.StartVertexIndex; i <= geometry.EndVertexIndex; i++)
+                    {
+                        _vertices[i] = geometry.Vertices[count];
+                        count++;
+                    }
+                }
+                if (obj is DrawingBlock3D block3D)
+                {
+                    block3D.Deselect();
+
+                    int count = 0;
+                    for (int i = block3D.StartVertexIndex; i <= block3D.EndVertexIndex; i++)
+                    {
+                        _vertices[i] = block3D.DrawingGeometryVerteces[count];
+                        count++;
+                    }
                 }
             }
         }

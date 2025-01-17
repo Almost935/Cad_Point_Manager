@@ -16,7 +16,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         #region Fields
         public bool _isVisible = true;
         #endregion
-
+         
         #region Properties
         public string Name { get; set; }
         public Vector4 Color { get; set; }
@@ -58,6 +58,13 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
 
             if (drawingObject3D is DrawingBlock3D block)
             {
+                foreach (var obj in block.DrawingObjects)
+                {
+                    if (obj is DrawingText3D drawingText)
+                    {
+                        DrawingText3Ds.Add(drawingText);
+                    }
+                }
                 Vertices.AddRange(block.DrawingGeometryVerteces);
             }
             if (drawingObject3D is DrawingGeometry3D geometry)

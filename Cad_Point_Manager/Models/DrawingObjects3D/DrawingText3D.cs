@@ -24,7 +24,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
 
         private TextFormat _textFormat;
         private TextLayout _textLayout;
-        private Point _adjustedPos;
         #endregion
 
         #region Properties
@@ -40,6 +39,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
 
         public string Text { get; set; }
         public Point Position { get; set; }
+        public float Rotation { get; set; } = 0;
         public float FontSize { get; set; }
         public string FontFamilyName { get; set; }
         public Matrix Transform { get; set; }
@@ -64,7 +64,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         #region Methods
         public override void DrawToD2D(DeviceContext1 deviceContext, SharpDX.Direct2D1.Factory2 factory, Brush brush, float thickness, StrokeStyle1 strokeStyle)
         {
-            deviceContext.DrawTextLayout(new RawVector2((float)DxfMtext.Position.X, (float)DxfMtext.Position.Y), _textLayout, brush);
+            deviceContext.DrawTextLayout(new RawVector2((float)DxfMtext.Position.X, -(float)DxfMtext.Position.Y), _textLayout, brush);
         }
         public override void UpdateData(EntityObject entity)
         {
@@ -72,6 +72,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             {
                 Text = mText.PlainText();
                 Bounds = new(DxfMtext.Position.X, DxfMtext.Position.Y, DxfMtext.RectangleWidth * 2, DxfMtext.Height * 2);
+                Rotation = (float)mText.Rotation;
                 AttachmentPoint = GetAttachmentPoint(mText.AttachmentPoint);
                 Position = GetTextOrigin(AttachmentPoint, Bounds, new Point(mText.Position.X, mText.Position.Y));
                 FontSize = (float)(DxfMtext.Height * 1.25);
@@ -121,7 +122,8 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         }
         public void GetTextLayout(Factory1 factory)
         {
-            RawMatrix3x2 transform = new((float)Transform.M11, (float)Transform.M12, (float)Transform.M21, (float)Transform.M22, (float)Transform.OffsetX, (float)Transform.OffsetY);
+            //RawMatrix3x2 transform = new((float)Transform.M11, (float)Transform.M12, (float)Transform.M21, (float)Transform.M22, (float)Transform.OffsetX, (float)Transform.OffsetY);
+            RawMatrix3x2 transform = new(-1, 0, 0, -1, 0, 0);
             _textLayout = new(factory, Text, _textFormat, (float)Bounds.Width, (float)Bounds.Height, 96, transform, true);
         }
         private Enums.TextAttachmentPoint GetAttachmentPoint(MTextAttachmentPoint mTextAttachment)

@@ -16,27 +16,28 @@ using Matrix = SharpDX.Matrix;
 namespace Cad_Point_Manager.Controls.D3DControl
 {
     [StructLayout(LayoutKind.Sequential)]
-    public struct Vertex
+    public struct Vertex(Vector3 position, Vector4 color, float isVisible = 1.0f)
     {
-        public Vector3 Position;
-        public Vector4 Color;
+        public Vector3 Position = position;
+        public Vector4 Color = color;
 
         /// <summary>
         /// float value indicating whether the vertex is visible or not. 1.0f is visible, 0.0f is not visible.
         /// </summary>
-        public float IsVisible;
-
-        public Vertex(Vector3 position, Vector4 color, float isVisible = 1.0f)
-        {
-            Position = position;
-            Color = color;
-            IsVisible = isVisible;
-        }
+        public float IsVisible = isVisible;
 
         public float GetDistanceTo(Vertex vertex)
         {
             return Vector3.Distance(Position, vertex.Position);
         }
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct TextVertex(Vector3 position, Vector4 color, Vector2 textCoord)
+    {
+        public Vector3 Position = position; // Position of the character on the screen
+        public Vector4 Color = color;    // Color of the text
+        public Vector2 TextCoord = textCoord; // Texture coordinate on the font texture
     }
 
     [StructLayout(LayoutKind.Sequential)]

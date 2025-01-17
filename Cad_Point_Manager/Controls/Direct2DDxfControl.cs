@@ -133,7 +133,7 @@ namespace Cad_Point_Manager.Controls
             }
         }
 
-        public List<DrawingObject> HighlightedObjects { get; set; } = new();
+        public List<DrawingObject> HighlightedObjects { get; set; } = [];
         public Matrix ExtentsMatrix { get; set; } = new();
         public Rect InitialView { get; set; }
         #endregion
