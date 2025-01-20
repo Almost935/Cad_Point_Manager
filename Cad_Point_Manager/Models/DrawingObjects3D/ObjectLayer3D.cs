@@ -22,7 +22,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         public Vector4 Color { get; set; }
         public Layer DxfLayer { get; set; }
         public List<DrawingObject3D> DrawingObject3Ds { get; set; } = [];
-        public List<Vertex> Vertices { get; set; } = [];
+        public List<LineVertex> Vertices { get; set; } = [];
         public List<DrawingText3D> DrawingText3Ds { get; set; } = [];
 
         public bool IsVisible

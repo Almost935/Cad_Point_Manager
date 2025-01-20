@@ -1,4 +1,4 @@
-﻿// Shaders.hlsl
+﻿// LineShader.hlsl
 
 // Input structure for the Vertex Shader
 struct VSInput

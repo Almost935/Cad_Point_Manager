@@ -23,7 +23,8 @@ namespace Cad_Point_Manager.Models
         private bool _dxfDirty = true;
         private bool _dxfNeedsReload = true;
         private Bounds _extents;
-        private List<Vertex> _vertices = [];
+        private List<LineVertex> _lineVertices = [];
+        private List<TextVertex> _textVertices = [];
         private ObservableCollection<KeyValuePair<string, ObjectLayer3D>> _layers = [];
         private ICollectionView _layesView;
 
@@ -64,13 +65,22 @@ namespace Cad_Point_Manager.Models
                 OnPropertyChanged(nameof(Extents));
             }
         }
-        public List<Vertex> Vertices
+        public List<LineVertex> LineVertices
         {
-            get => _vertices;
+            get => _lineVertices;
             set
             {
-                _vertices = value;
-                OnPropertyChanged(nameof(Vertices));
+                _lineVertices = value;
+                OnPropertyChanged(nameof(LineVertices));
+            }
+        }
+        public List<TextVertex> TextVertices
+        {
+            get => _textVertices;
+            set
+            {
+                _textVertices = value;
+                OnPropertyChanged(nameof(TextVertices));
             }
         }
         public ObservableCollection<KeyValuePair<string, ObjectLayer3D>> Layers
@@ -182,7 +192,7 @@ namespace Cad_Point_Manager.Models
             DxfDocument = null;
 
             Layers.Clear();
-            Vertices.Clear();
+            LineVertices.Clear();
 
             DxfLoaded = false;
             DxfDirty = true;
@@ -206,7 +216,8 @@ namespace Cad_Point_Manager.Models
         {
             //Stopwatch stopwatch = Stopwatch.StartNew();
 
-            Vertices.Clear();
+            LineVertices.Clear();
+            TextVertices.Clear();
 
             foreach (var keyValuePair in Layers)
             {
@@ -217,16 +228,23 @@ namespace Cad_Point_Manager.Models
                     {
                         if (obj is DrawingGeometry3D drawingGeometry)
                         {
-                            drawingGeometry.StartVertexIndex = Vertices.Count;
-                            Vertices.AddRange(drawingGeometry.Vertices);
-                            drawingGeometry.EndVertexIndex = Vertices.Count - 1;
+                            drawingGeometry.StartVertexIndex = LineVertices.Count;
+                            LineVertices.AddRange(drawingGeometry.Vertices);
+                            drawingGeometry.EndVertexIndex = LineVertices.Count - 1;
                         }
 
                         if (obj is DrawingBlock3D drawingBlock)
                         {
-                            drawingBlock.StartVertexIndex = Vertices.Count;
-                            Vertices.AddRange(drawingBlock.DrawingGeometryVerteces);
-                            drawingBlock.EndVertexIndex = Vertices.Count - 1;
+                            drawingBlock.StartVertexIndex = LineVertices.Count;
+                            LineVertices.AddRange(drawingBlock.DrawingGeometryVerteces);
+                            drawingBlock.EndVertexIndex = LineVertices.Count - 1;
+                        }
+
+                        if (obj is DrawingText3D drawingText)
+                        {
+                            drawingText.StartVertexIndex = TextVertices.Count;
+                            TextVertices.AddRange(drawingText.TextVertices);
+                            drawingText.EndVertexIndex = TextVertices.Count - 1;
                         }
                     }
                 }

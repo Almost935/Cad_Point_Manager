@@ -29,17 +29,29 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private const float _rotationSpeed = 0.005f;
         private const float _zoomFactor = 1.3f;
 
-        private Buffer _vertexBuffer;
         private Buffer _transformationBuffer;
-        private Vertex[] _vertices = [];
-        private VertexShader _vertexShader;
-        private PixelShader _pixelShader;
-        private InputLayout _inputLayout;
         private Point _pointerCoords;
         private bool _dxfInitialized = false;
         private Matrix _dxfInitialMatrix = Matrix.Identity;
         private bool _clipSet = false;
         private bool _isMouseInside;
+
+        // Line Shader related fields
+        private Buffer _lineVertexBuffer;
+        private VertexShader _lineVertexShader;
+        private PixelShader _linePixelShader;
+        private InputLayout _lineInputLayout;
+        private LineVertex[] _lineVertices = [];
+        private bool _lineShaderLoaded = false;
+
+
+        // Text Shader related fields
+        private Buffer _textVertexBuffer;
+        private VertexShader _textVertexShader;
+        private PixelShader _textPixelShader;
+        private InputLayout _textInputLayout;
+        private TextVertex[] _textVertices = [];
+        private bool _textShaderLoaded = false;
 
         // Panning and Zooming Fields
         private float _panThreshold = 1.0f;
@@ -63,7 +75,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private CancellationTokenSource _hitTestCancellationTokenSource;
 
         private List<(double distance, DrawingObject3D obj)> _nearestDrawingObjects = [];
-        private double _hitTestSize = 20;
 
         // Interactive features fields
         private DrawingObject3D _snappedObject;
@@ -98,7 +109,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
         /// Determines if the Direct3D control needs to be redrawn. Occurs when the camera is panned or zoomed.
         /// </summary>
         public bool D3dIsDirty { get; set; } = true;
-        public bool ShadersLoaded { get; set; } = false;
         public bool ConstantBufferInitialized { get; set; } = false;
         public ViewportF Viewport { get; set; }
         public SnapMode CurrentSnapMode { get; set; } = SnapMode.Object;
@@ -163,7 +173,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             if (_d3dResCache is null) { return; }
 
             if (DxfIsDirty) { UpdateDxfVertices(); }
-            if (VertexBufferDirty) { SetVertexBuffer(); }
+            if (VertexBufferDirty) { SetVertexBuffers(); }
             if (DxfNeedsReload)
             {
                 GetInitialMatrix();
@@ -177,7 +187,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 _camera = new(Viewport, _zoomFactor);
             }
             if (!_clipSet) { SetClip(); _clipSet = true; }
-            if (!ShadersLoaded) { InitializeShaders(); }
+            if (!_lineShaderLoaded) { InitializeLineShader(); }
+            if (!_textShaderLoaded) { InitializeTextShader(); }
             if (!ConstantBufferInitialized) { InitializeConstantBuffer(); }
             if (!_d2dInitialized) { InitializeDirect2D(); }
             if (D3dIsDirty) { DrawDxf(); }
@@ -200,27 +211,43 @@ namespace Cad_Point_Manager.Controls.D3DControl
             DrawTextObjects();
             UpdateConstantBuffer();
 
+            DrawLinesWithShader();
+
+            D3dIsDirty = false;
+        }
+
+        private void DrawLinesWithShader()
+        {
+            var context = _d3dResCache.DeviceContext;
+
             // Set shaders
-            context.VertexShader.Set(_vertexShader);
-            context.PixelShader.Set(_pixelShader);
-            context.InputAssembler.InputLayout = _inputLayout;
+            context.VertexShader.Set(_lineVertexShader);
+            context.PixelShader.Set(_linePixelShader);
+            context.InputAssembler.InputLayout = _lineInputLayout;
             context.VertexShader.SetConstantBuffer(0, _transformationBuffer);
 
             // Bind vertex buffer and draw
-            context.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding(_vertexBuffer, Utilities.SizeOf<Vertex>(), 0));
+            context.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding(_lineVertexBuffer, Utilities.SizeOf<LineVertex>(), 0));
             context.InputAssembler.PrimitiveTopology = SharpDX.Direct3D.PrimitiveTopology.LineList;
 
-            int invisibleCount = 0;
-            foreach (var vertex in _vertices)
-            {
-                if (vertex.IsVisible < 0.5f)
-                {
-                    invisibleCount++;
-                }
-            }
-            context.Draw(_vertices.Length, 0);
+            context.Draw(_lineVertices.Length, 0);
+        }
+        private void DrawTextWithShader()
+        {
+            var context = _d3dResCache.DeviceContext;
 
-            D3dIsDirty = false;
+            // Use the text shaders for rendering text
+            context.VertexShader.Set(_textVertexShader);
+            context.PixelShader.Set(_textPixelShader);
+            context.InputAssembler.InputLayout = _textInputLayout;  // Use the correct input layout for text
+            context.VertexShader.SetConstantBuffer(0, _transformationBuffer);
+
+            // Create the vertex buffer and bind it
+            Buffer textVertexBuffer = Buffer.Create(_d3dResCache.Device, BindFlags.VertexBuffer, _textVertices.ToArray());
+            context.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding(textVertexBuffer, Utilities.SizeOf<TextVertex>(), 0));
+            context.InputAssembler.PrimitiveTopology = SharpDX.Direct3D.PrimitiveTopology.TriangleList;
+
+            context.Draw(_textVertices.Length, 0);
         }
 
         private void DrawTextObjects()
@@ -322,9 +349,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
             if (_d3dResCache is null) { return; }
 
             CadManager3D.UpdateVerticesList();
-            _vertices = CadManager3D.Vertices.ToArray();
+            _lineVertices = CadManager3D.LineVertices.ToArray();
 
-            SetVertexBuffer();
+            SetVertexBuffers();
 
             DxfIsDirty = false;
             D3dIsDirty = true;
@@ -333,18 +360,18 @@ namespace Cad_Point_Manager.Controls.D3DControl
         /// <summary>
         /// Sets the vertex buffer to the field _vertices. Does not update _vertices
         /// </summary>
-        private void SetVertexBuffer()
+        private void SetVertexBuffers()
         {
             if (_d3dResCache is null) { return; }
 
             //_vertices = CadManager3D.Vertices.ToArray();
 
-            if (_vertices is not null && _vertices.Length > 0)
+            if (_lineVertices is not null && _lineVertices.Length > 0)
             {
-                _vertexBuffer = Buffer.Create(
+                _lineVertexBuffer = Buffer.Create(
                 _d3dResCache.Device,
                 BindFlags.VertexBuffer,
-                _vertices);
+                _lineVertices);
             }
 
             VertexBufferDirty = false;
@@ -374,7 +401,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _interactiveObjectStrokeStyle = new(_d3dResCache.D2dFactory, props);
         }
 
-        private void InitializeShaders()
+        private void InitializeLineShader()
         {
             var path = AppDomain.CurrentDomain.BaseDirectory;
             while (Path.GetFileName(path) != "Cad_Point_Manager")
@@ -385,25 +412,55 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     throw new DirectoryNotFoundException("The 'Cad_Point_Manager' directory could not be found in the path.");
                 }
             }
-            string shadersPath = path + @"\Controls\D3DControl\Shaders.hlsl";
+            string shadersPath = path + @"\Controls\D3DControl\Shaders\LineShader.hlsl";
 
-            var vertexShaderByteCode = ShaderBytecode.CompileFromFile(shadersPath, "VSMain", "vs_4_0");
-            _vertexShader = new VertexShader(_d3dResCache.Device, vertexShaderByteCode);
+            var lineVertexShaderByteCode = ShaderBytecode.CompileFromFile(shadersPath, "VSMain", "vs_4_0");
+            _lineVertexShader = new VertexShader(_d3dResCache.Device, lineVertexShaderByteCode);
 
-            var pixelShaderByteCode = ShaderBytecode.CompileFromFile(shadersPath, "PSMain", "ps_4_0");
-            _pixelShader = new PixelShader(_d3dResCache.Device, pixelShaderByteCode);
+            var linePixelShaderByteCode = ShaderBytecode.CompileFromFile(shadersPath, "PSMain", "ps_4_0");
+            _linePixelShader = new PixelShader(_d3dResCache.Device, linePixelShaderByteCode);
 
-            _inputLayout = new InputLayout(
+            _lineInputLayout = new InputLayout(
                 _d3dResCache.Device,
-                ShaderSignature.GetInputSignature(vertexShaderByteCode),
+                ShaderSignature.GetInputSignature(lineVertexShaderByteCode),
                 [
                     new InputElement("POSITION", 0, SharpDX.DXGI.Format.R32G32B32_Float, 0, 0),
                     new InputElement("COLOR", 0, SharpDX.DXGI.Format.R32G32B32A32_Float, 12, 0),
                     new InputElement("ISVISIBLE", 0, SharpDX.DXGI.Format.R32_Float, 28, 0)
                 ]);
 
-            ShadersLoaded = true;
+            _lineShaderLoaded = true;
         }
+        private void InitializeTextShader()
+        {
+            var path = AppDomain.CurrentDomain.BaseDirectory;
+            while (Path.GetFileName(path) != "Cad_Point_Manager")
+            {
+                path = Path.GetDirectoryName(path);
+                if (path == null)
+                {
+                    throw new DirectoryNotFoundException("The 'Cad_Point_Manager' directory could not be found in the path.");
+                }
+            }
+            string textShadersPath = path + @"\Controls\D3DControl\Shaders\TextShader.hlsl";
+            var textVertexShaderByteCode = ShaderBytecode.CompileFromFile(textShadersPath, "VSMain", "vs_4_0");
+            _textVertexShader = new VertexShader(_d3dResCache.Device, textVertexShaderByteCode);
+
+            var textPixelShaderByteCode = ShaderBytecode.CompileFromFile(textShadersPath, "PSMain", "ps_4_0");
+            _textPixelShader = new PixelShader(_d3dResCache.Device, textPixelShaderByteCode);
+
+            _textInputLayout = new InputLayout(
+            _d3dResCache.Device,
+            ShaderSignature.GetInputSignature(textVertexShaderByteCode),
+            new InputElement[]
+            {
+                new InputElement("POSITION", 0, SharpDX.DXGI.Format.R32G32B32_Float, 0, 0),
+                new InputElement("COLOR", 0, SharpDX.DXGI.Format.R32G32B32A32_Float, 12, 0),
+                new InputElement("TEXCOORD", 0, SharpDX.DXGI.Format.R32G32_Float, 28, 0),  // Only for text
+                new InputElement("ISVISIBLE", 0, SharpDX.DXGI.Format.R32_Float, 36, 0)  // Add IsVisible here
+            });
+        }
+
 
         private void InitializeConstantBuffer()
         {
@@ -708,7 +765,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     int count = 0;
                     for (int i = geometry.StartVertexIndex; i <= geometry.EndVertexIndex; i++)
                     {
-                        _vertices[i] = geometry.Vertices[count];
+                        _lineVertices[i] = geometry.Vertices[count];
                         count++;
                     }
                 }
@@ -719,7 +776,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     int count = 0;
                     for (int i = block3D.StartVertexIndex; i <= block3D.EndVertexIndex; i++)
                     {
-                        _vertices[i] = block3D.DrawingGeometryVerteces[count];
+                        _lineVertices[i] = block3D.DrawingGeometryVerteces[count];
                         count++;
                     }
                 }
@@ -736,7 +793,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     int count = 0;
                     for (int i = geometry.StartVertexIndex; i <= geometry.EndVertexIndex; i++)
                     {
-                        _vertices[i] = geometry.Vertices[count];
+                        _lineVertices[i] = geometry.Vertices[count];
                         count++;
                     }
                 }
@@ -747,7 +804,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     int count = 0;
                     for (int i = block3D.StartVertexIndex; i <= block3D.EndVertexIndex; i++)
                     {
-                        _vertices[i] = block3D.DrawingGeometryVerteces[count];
+                        _lineVertices[i] = block3D.DrawingGeometryVerteces[count];
                         count++;
                     }
                 }
@@ -812,15 +869,46 @@ namespace Cad_Point_Manager.Controls.D3DControl
             {
                 if (disposing)
                 {
-                    // Dispose managed state (managed objects).
-                    _vertexBuffer?.Dispose();
+                    // Dispose managed state (managed objects)
                     _transformationBuffer?.Dispose();
-                    _vertexShader?.Dispose();
-                    _pixelShader?.Dispose();
-                    _inputLayout?.Dispose();
+                    _lineVertexBuffer?.Dispose();
+                    _lineVertexShader?.Dispose();
+                    _linePixelShader?.Dispose();
+                    _lineInputLayout?.Dispose();
+                    _textVertexBuffer?.Dispose();
+                    _textVertexShader?.Dispose();
+                    _textPixelShader?.Dispose();
+                    _textInputLayout?.Dispose();
                     _highlightedBrush?.Dispose();
                     _highlightedOuterEdgeBrush?.Dispose();
+                    _interactiveObjectStrokeStyle?.Dispose();
+                    if (_brushes != null)
+                    {
+                        foreach (var brush in _brushes.Values)
+                        {
+                            brush.Dispose();
+                        }
+                        _brushes.Clear();
+                    }
+                    _hitTestCancellationTokenSource?.Dispose();
                 }
+
+                // Free unmanaged resources (unmanaged objects) and override finalizer
+                // Set large fields to null
+                _transformationBuffer = null;
+                _lineVertexBuffer = null;
+                _lineVertexShader = null;
+                _linePixelShader = null;
+                _lineInputLayout = null;
+                _textVertexBuffer = null;
+                _textVertexShader = null;
+                _textPixelShader = null;
+                _textInputLayout = null;
+                _highlightedBrush = null;
+                _highlightedOuterEdgeBrush = null;
+                _interactiveObjectStrokeStyle = null;
+                _brushes = null;
+                _hitTestCancellationTokenSource = null;
 
                 disposedValue = true;
             }

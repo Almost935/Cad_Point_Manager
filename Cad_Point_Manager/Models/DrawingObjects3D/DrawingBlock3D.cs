@@ -22,7 +22,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
     {
         #region Fields
         private List<DrawingObject3D> _drawingObjects = [];
-        private List<Vertex> _drawingGeometryVerteces = [];
+        private List<LineVertex> _drawingGeometryVerteces = [];
         #endregion
 
         #region Properties
@@ -36,7 +36,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                 OnPropertyChanged(nameof(DrawingObjects));
             }
         }
-        public List<Vertex> DrawingGeometryVerteces
+        public List<LineVertex> DrawingGeometryVerteces
         {
             get => _drawingGeometryVerteces;
             set

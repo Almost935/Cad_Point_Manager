@@ -10,9 +10,9 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
 {
     public abstract class DrawingGeometry3D : DrawingObject3D
     {
-        public Vertex StartVertex { get; set; }
-        public Vertex EndVertex { get; set; }
-        public List<Vertex> Vertices { get; set; } = [];
+        public LineVertex StartVertex { get; set; }
+        public LineVertex EndVertex { get; set; }
+        public List<LineVertex> Vertices { get; set; } = [];
         public int StartVertexIndex { get; set; }
         public int EndVertexIndex { get; set; }
         public Geometry Geometry2D { get; set; }

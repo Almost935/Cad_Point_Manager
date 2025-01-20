@@ -78,10 +78,10 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                 {
                     if (i == vertices.Count - 1) { break; }
 
-                    Vertex s = new(
+                    LineVertex s = new(
                         new Vector3((float)vertices[i].Position.X, (float)vertices[i].Position.Y, 0),
                         Color);
-                    Vertex e = new(
+                    LineVertex e = new(
                         new Vector3((float)vertices[i + 1].Position.X, (float)vertices[i + 1].Position.Y, 0),
                         Color);
 
