@@ -33,12 +33,13 @@ namespace Cad_Point_Manager.Controls.D3DControl
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct TextVertex(Vector3 position, Vector4 color, Vector3 textCoord, float isVisible = 1.0f)
+    public struct TextVertex(Vector3 position, Vector4 color, Vector3 textCoord, float isVisible = 1.0f, Matrix? rotationMatrix = null)
     {
         public Vector3 Position = position; // Position of the character on the screen
         public Vector4 Color = color;    // Color of the text
         public Vector3 TextCoord = textCoord; // Texture coordinate on the font texture
         public float IsVisible = isVisible;   // Whether the character is visible (1.0f = visible, 0.0f = not visible)
+        public Matrix RotationMatrix = rotationMatrix ?? Matrix.Identity; // Rotation matrix for the character
     }
 
     [StructLayout(LayoutKind.Sequential)]

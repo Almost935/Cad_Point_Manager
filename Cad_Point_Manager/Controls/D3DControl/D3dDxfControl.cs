@@ -44,9 +44,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private LineVertex[] _lineVertices = [];
         private bool _lineShaderLoaded = false;
 
-
         // Text Shader related fields
         private Buffer _textVertexBuffer;
+        private Buffer _textIndexBuffer;
         private VertexShader _textVertexShader;
         private PixelShader _textPixelShader;
         private InputLayout _textInputLayout;
@@ -174,6 +174,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             if (DxfIsDirty) { UpdateDxfVertices(); }
             if (VertexBufferDirty) { SetVertexBuffers(); }
+            if (_camera is null)
+            {
+                GetInitialMatrix();
+                _camera = new(Viewport, _zoomFactor);
+            }
             if (DxfNeedsReload)
             {
                 GetInitialMatrix();
@@ -181,11 +186,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 DxfNeedsReload = false;
                 CadManager3D.DxfNeedsReload = false;
             }
-            if (_camera is null)
-            {
-                GetInitialMatrix();
-                _camera = new(Viewport, _zoomFactor);
-            }
+            if (!CadManager3D.DxfTextLoaded) { CadManager3D.UpdateTextVertices(_d3dResCache.Device); }
             if (!_clipSet) { SetClip(); _clipSet = true; }
             if (!_lineShaderLoaded) { InitializeLineShader(); }
             if (!_textShaderLoaded) { InitializeTextShader(); }
@@ -208,7 +209,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             context.ClearRenderTargetView(_d3dResCache.RenderTargetView, new RawColor4(1, 1, 1, 1));
 
             DrawInteractiveObjects();
-            DrawTextObjects();
+            //DrawTextObjects();
             UpdateConstantBuffer();
 
             DrawLinesWithShader();
@@ -217,7 +218,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
 
         private void DrawLinesWithShader()
-        {
+        { 
             var context = _d3dResCache.DeviceContext;
 
             // Set shaders
@@ -349,8 +350,10 @@ namespace Cad_Point_Manager.Controls.D3DControl
             if (_d3dResCache is null) { return; }
 
             CadManager3D.UpdateVerticesList();
-            _lineVertices = CadManager3D.LineVertices.ToArray();
+            CadManager3D.UpdateTextVertices(_d3dResCache.Device);
 
+            _lineVertices = CadManager3D.LineVertices.ToArray();
+            
             SetVertexBuffers();
 
             DxfIsDirty = false;
@@ -372,6 +375,14 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 _d3dResCache.Device,
                 BindFlags.VertexBuffer,
                 _lineVertices);
+            }
+
+            if (_textVertices is not null && _textVertices.Length > 0)
+            {
+                _textVertexBuffer = Buffer.Create(
+                _d3dResCache.Device,
+                BindFlags.VertexBuffer,
+                _textVertices);
             }
 
             VertexBufferDirty = false;
@@ -459,6 +470,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 new InputElement("TEXCOORD", 0, SharpDX.DXGI.Format.R32G32_Float, 28, 0),  // Only for text
                 new InputElement("ISVISIBLE", 0, SharpDX.DXGI.Format.R32_Float, 36, 0)  // Add IsVisible here
             });
+
+            _textShaderLoaded = true;
         }
 
 
@@ -660,7 +673,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             {
                 token.ThrowIfCancellationRequested();
             }
-            //Stopwatch stopwatch = Stopwatch.StartNew();
 
             if (!Dispatcher.CheckAccess())
             {
@@ -691,7 +703,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     {
                         var (distance, obj) = _nearestDrawingObjects.First();
 
-                        if (distance <= _hittestStrokeThickness)
+                        if (distance <= _hittestStrokeThickness && obj is not DrawingText3D)
                         {
                             _snappedObject = obj;
                             SelectObject(_snappedObject);
@@ -714,7 +726,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 {
                     var (distance, obj) = _nearestDrawingObjects.First();
 
-                    if (distance <= _hittestStrokeThickness)
+                    if (distance <= _hittestStrokeThickness && obj is not DrawingText3D)
                     {
                         _snappedObject = obj;
                         SelectObject(_snappedObject);
@@ -727,9 +739,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             VertexBufferDirty = vertexBufferDirty;
             D3dIsDirty = d3dIsDirty;
-
-            //stopwatch.Stop();
-            //Debug.WriteLine($"RunHitTest Time: {stopwatch.ElapsedMilliseconds}\n\n\n");
         }
         public void CancelHitTesting()
         {

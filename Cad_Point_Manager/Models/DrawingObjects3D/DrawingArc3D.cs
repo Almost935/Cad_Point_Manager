@@ -17,7 +17,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
     public class DrawingArc3D : DrawingCurve3D
     {
         #region Fields
-        private Arc _arc => EntityObject as Arc;
+        private Arc _dxfArc => EntityObject as Arc;
         #endregion
 
         #region Properties
@@ -182,9 +182,9 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         {
             Bounds = Rect.Empty;
 
-            if (_arc is not null)
+            if (_dxfArc is not null)
             {
-                var samplePoints = _arc.ToPolyline2D(5).Vertexes;
+                var samplePoints = _dxfArc.ToPolyline2D(5).Vertexes;
                 foreach (var vertex in samplePoints)
                 {
                     Bounds = Rect.Union(Bounds, new System.Windows.Point(vertex.Position.X, vertex.Position.Y));

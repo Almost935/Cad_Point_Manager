@@ -1,15 +1,21 @@
 ﻿using Cad_Point_Manager.Controls.D3DControl;
 using Cad_Point_Manager.Helpers;
 using Cad_Point_Manager.Models.DrawingObjects3D;
+using Cad_Point_Manager.Models.TextRendering;
+using FreeTypeSharp;
 using netDxf;
 using netDxf.Entities;
 using netDxf.Tables;
 using SharpDX;
+using SharpDX.Direct3D11;
+using SkiaSharp;
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.IO;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Data;
 using Point = System.Windows.Point;
@@ -19,23 +25,42 @@ namespace Cad_Point_Manager.Models
 {
     public class CadManager3D : INotifyPropertyChanged
     {
+        #region Fields
+        D3dResCache _d3dResCache;
+        private bool _dxfTextLoading = false;
+
         private bool _dxfLoaded = false;
+        private bool _dxfTextLoaded = false;
         private bool _dxfDirty = true;
         private bool _dxfNeedsReload = true;
         private Bounds _extents;
         private List<LineVertex> _lineVertices = [];
-        private List<TextVertex> _textVertices = [];
+        private List<DrawingText3D> _drawingText = [];
+        private Dictionary<string, (ShaderResourceView textureAtlas, List<TextVertex> textVertices)> _textVerticesByAtlas = [];
         private ObservableCollection<KeyValuePair<string, ObjectLayer3D>> _layers = [];
-        private ICollectionView _layesView;
+        private ICollectionView _layersView;
+        private FreeTypeCache _freeTypeCache = new();
+        #endregion
 
+        #region Properties
         public bool DxfLoaded
         {
             get => _dxfLoaded;
             set
             {
                 _dxfLoaded = value;
-                OnPropertyChanged();
+                OnPropertyChanged(nameof(DxfLoaded));
             }
+        }
+        public bool DxfTextLoaded
+        {
+            get => _dxfTextLoaded;
+            set
+            {
+                _dxfTextLoaded = value;
+                OnPropertyChanged(nameof(DxfTextLoaded));
+            }
+
         }
         public bool DxfDirty
         {
@@ -51,7 +76,6 @@ namespace Cad_Point_Manager.Models
             get => _dxfNeedsReload;
             set
             {
-                Debug.WriteLine($"DxfNeedsReload Changed");
                 _dxfNeedsReload = value;
                 OnPropertyChanged();
             }
@@ -74,13 +98,22 @@ namespace Cad_Point_Manager.Models
                 OnPropertyChanged(nameof(LineVertices));
             }
         }
-        public List<TextVertex> TextVertices
+        public List<DrawingText3D> DrawingText
         {
-            get => _textVertices;
+            get => _drawingText;
             set
             {
-                _textVertices = value;
-                OnPropertyChanged(nameof(TextVertices));
+                _drawingText = value;
+                OnPropertyChanged(nameof(DrawingText));
+            }
+        }
+        public Dictionary<string, (ShaderResourceView textureAtlas, List<TextVertex> textVertices)> TextVerticesByAtlas
+        {
+            get => _textVerticesByAtlas;
+            set
+            {
+                _textVerticesByAtlas = value;
+                OnPropertyChanged(nameof(TextVerticesByAtlas));
             }
         }
         public ObservableCollection<KeyValuePair<string, ObjectLayer3D>> Layers
@@ -94,20 +127,32 @@ namespace Cad_Point_Manager.Models
         }
         public ICollectionView LayersView
         {
-            get => _layesView;
+            get => _layersView;
             set
             {
-                _layesView = value;
+                _layersView = value;
                 OnPropertyChanged(nameof(LayersView));
+            }
+        }
+        public FreeTypeCache FreeTypeCache
+        {
+            get => _freeTypeCache;
+            set
+            {
+                _freeTypeCache = value;
+                OnPropertyChanged(nameof(FreeTypeCache));
             }
         }
 
         public DxfDocument DxfDocument { get; set; }
         public DrawingObjectTree3D DrawingObjectTree3D { get; set; }
+        #endregion
 
-
+        #region Events
         public event PropertyChangedEventHandler PropertyChanged;
+        #endregion
 
+        #region Methods
         protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
@@ -132,6 +177,7 @@ namespace Cad_Point_Manager.Models
             }
             UpdateLayerView();
             DrawingObjectTree3D = new(this, Extents.ToRect(), 5);
+
             UpdateVerticesList();
 
             DxfLoaded = true;
@@ -175,8 +221,6 @@ namespace Cad_Point_Manager.Models
             Rect rect = new(p.X - tolerance, p.Y - tolerance, tolerance * 2, tolerance * 2);
             var nodes = DrawingObjectTree3D.GetIntersectingNodes(rect);
 
-            //Debug.WriteLine($"nodes.count: {nodes.Count}");
-
             foreach (var node in nodes)
             {
                 hits.AddRange(node.HitTestNode(p, rect));
@@ -214,10 +258,8 @@ namespace Cad_Point_Manager.Models
 
         public void UpdateVerticesList()
         {
-            //Stopwatch stopwatch = Stopwatch.StartNew();
-
             LineVertices.Clear();
-            TextVertices.Clear();
+            DrawingText.Clear();
 
             foreach (var keyValuePair in Layers)
             {
@@ -240,15 +282,65 @@ namespace Cad_Point_Manager.Models
                             drawingBlock.EndVertexIndex = LineVertices.Count - 1;
                         }
 
-                        if (obj is DrawingText3D drawingText)
+                        if(obj is DrawingText3D drawingText)
                         {
-                            drawingText.StartVertexIndex = TextVertices.Count;
-                            TextVertices.AddRange(drawingText.TextVertices);
-                            drawingText.EndVertexIndex = TextVertices.Count - 1;
+                            DrawingText.Add(drawingText);
                         }
                     }
                 }
             }
         }
+
+        public unsafe void UpdateTextVertices(Device device)
+        {
+            if (_dxfTextLoading || device is null) { return; }
+
+            _dxfTextLoading = true;
+            ResetTextVerticesDict();
+
+            foreach (var drawingText in DrawingText)
+            {
+                FT_FaceRec_ face = FreeTypeCache.GetFont(drawingText.FontFamilyName, 12);
+
+                foreach (var character in drawingText.Text)
+                {
+                    FT_GlyphSlotRec_ glyph = FreeTypeCache.GetGlyph(face, character);
+
+                    var contoursPointer = glyph.outline.contours;
+                    var coordsPointer = glyph.outline.points;
+                    var tagsPointer = glyph.outline.tags;
+
+                    var insideBorder = FT.FT_Outline_GetInsideBorder(&glyph.outline);
+                    var outsideBorder = FT.FT_Outline_GetOutsideBorder(&glyph.outline);
+                    
+
+                    Debug.WriteLine($"\ncharacter: {character}");
+
+                    for (int i = 0; i < glyph.outline.n_points; i++)
+                    {
+                        var point = coordsPointer[i];
+                    }
+                    for (int i = 0; i < glyph.outline.n_contours; i++)
+                    {
+                        var contourIndex = contoursPointer[i];
+                        Debug.WriteLine($"i: {i} contourIndex: {contourIndex}");
+                    }
+                }
+            }
+            DxfTextLoaded = true;
+
+            _dxfTextLoading = false;
+        }
+
+        public void ResetTextVerticesDict()
+        {
+            foreach (var (textureAtlas, textVertices) in TextVerticesByAtlas.Values)
+            {
+                textureAtlas?.Dispose();
+            }
+            TextVerticesByAtlas.Clear();
+            DxfTextLoaded = false;
+        }
+        #endregion
     }
 }

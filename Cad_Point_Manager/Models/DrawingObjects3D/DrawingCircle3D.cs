@@ -18,7 +18,7 @@ namespace Cad_Point_Manager.DrawingObjects
     public class DrawingCircle3D : DrawingCurve3D
     {
         #region Fields
-        private Circle _circle => EntityObject as Circle;
+        private Circle _dxfCircle => EntityObject as Circle;
         #endregion
 
         #region Properties
@@ -29,7 +29,7 @@ namespace Cad_Point_Manager.DrawingObjects
         #region Constructor
         public DrawingCircle3D(Circle circle, ObjectLayer3D layer, bool isPartOfBlock = false, DrawingBlock3D block = null)
         {
-            Type = DrawingObject3dType.DrawingArc3D;
+            Type = DrawingObject3dType.DrawingCircle3D;
             Layer = layer;
             IsPartOfBlock = isPartOfBlock;
             DrawingBlock3D = block;
@@ -113,9 +113,9 @@ namespace Cad_Point_Manager.DrawingObjects
         {
             Bounds = Rect.Empty;
 
-            if (_circle is not null)
+            if (_dxfCircle is not null)
             {
-                var samplePoints = _circle.ToPolyline2D(4).Vertexes;
+                var samplePoints = _dxfCircle.ToPolyline2D(4).Vertexes;
                 foreach (var vertex in samplePoints)
                 {
                     Bounds = Rect.Union(Bounds, new System.Windows.Point(vertex.Position.X, vertex.Position.Y));

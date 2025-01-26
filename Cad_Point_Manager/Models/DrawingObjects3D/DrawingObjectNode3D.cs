@@ -145,7 +145,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
 
             foreach (var obj in DrawingObjects)
             {
-                //Debug.WriteLine($"{obj.GetType()} obj.BoundsInRect(hitTestRange): {obj.BoundsInRect(hitTestRange)}");
                 if (obj.IsVisible && obj.Layer.IsVisible)
                 {
                     if (obj.BoundsInRect(hitTestRange))

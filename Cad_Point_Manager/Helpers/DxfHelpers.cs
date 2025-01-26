@@ -140,7 +140,8 @@ namespace Cad_Point_Manager.Helpers
                 Polyline3D polyline3D => new DrawingPolyline3D(polyline3D, layer),
                 Circle circle => new DrawingCircle3D(circle, layer),
                 Insert block => new DrawingBlock3D(block, layer),
-                MText mtext => new DrawingText3D(mtext, layer),
+                MText mtext => new DrawingMtext3D(mtext, layer),
+                Text text => new DrawingSText3D(text, layer),
                 _ => null,
             };
         }
@@ -154,33 +155,6 @@ namespace Cad_Point_Manager.Helpers
                 _ => null,
             };
         }
-
-        //public static List<Vertex> GetVertices(DrawingObject3D drawingObject3D)
-        //{
-        //    List<Vertex> vertices = new List<Vertex>();
-
-        //   switch (drawingObject3D)
-        //    {
-        //        case DrawingLine3D line:
-        //            vertices.Add(line.StartVertex);
-        //            vertices.Add(line.EndVertex);
-        //            break;
-        //        case DrawingArc3D arc:
-        //            vertices.AddRange(arc.Vertices);
-        //            break;
-        //        case DrawingCircle3D circle:
-        //            vertices.AddRange(circle.Vertices);
-        //            break;
-        //        case DrawingPolyline3D polyline:
-        //            vertices.AddRange(polyline.GetVertices());
-        //            break;
-        //        case DrawingBlock3D block:
-        //            vertices.AddRange(block.GetVertices());
-        //            break;
-        //    }
-
-        //    return vertices;
-        //}
 
         public static (byte r, byte g, byte b, byte a) GetRGBAColor(EntityObject entity)
         {

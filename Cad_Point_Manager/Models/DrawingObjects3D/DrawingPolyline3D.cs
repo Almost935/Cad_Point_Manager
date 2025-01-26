@@ -20,7 +20,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         #endregion
 
         #region Constructors
-        private DrawingPolyline3D() { Type = DrawingObject3dType.DrawingLine3D; }
+        private DrawingPolyline3D() { Type = DrawingObject3dType.DrawingPolyline3D; }
 
         public DrawingPolyline3D(Polyline2D polyline2D, ObjectLayer3D layer, bool isPartOfBlock = false, DrawingBlock3D block = null)
         {

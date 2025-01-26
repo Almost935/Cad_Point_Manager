@@ -26,7 +26,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         #endregion
 
         #region Properties
-        public Insert Insert { get; set; }
+        public Insert DxfInsert { get; set; }
         public List<DrawingObject3D> DrawingObjects
         {
             get => _drawingObjects;
@@ -58,7 +58,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         public DrawingBlock3D(Insert insert, ObjectLayer3D layer, bool isPartOfBlock = false, DrawingBlock3D block = null)
         {
             Type = DrawingObject3dType.DrawingBlock3D;
-            Insert = insert;
+            DxfInsert = insert;
 
             EntityObject = insert;
             Layer = layer;
