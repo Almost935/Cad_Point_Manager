@@ -145,7 +145,7 @@ namespace Cad_Point_Manager.DrawingObjects
             }
         }
 
-        public override void DrawToD2D(DeviceContext1 deviceContext, Factory2 factory, Brush brush, float thickness, StrokeStyle1 strokeStyle)
+        public override void DrawToD2dDeviceContext(DeviceContext1 deviceContext, Factory2 factory, Brush brush, float thickness, StrokeStyle1 strokeStyle)
         {
             PathGeometry pathGeometry = new(factory);
             using (var geometrySink = pathGeometry.Open())

@@ -2,24 +2,25 @@
 using Cad_Point_Manager.Models.DrawingObjects3D;
 using SharpDX;
 using SharpDX.D3DCompiler;
+using SharpDX.Direct2D1;
+using SharpDX.Direct3D;
 using SharpDX.Direct3D11;
 using SharpDX.Mathematics.Interop;
 using System.ComponentModel;
 using System.IO;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Controls;
-using SharpDX.Direct2D1;
-
+using Brush = SharpDX.Direct2D1.Brush;
 using Buffer = SharpDX.Direct3D11.Buffer;
+using InputElement = SharpDX.Direct3D11.InputElement;
 using Matrix = SharpDX.Matrix;
 using Point = System.Windows.Point;
-using Brush = SharpDX.Direct2D1.Brush;
-using SolidColorBrush = SharpDX.Direct2D1.SolidColorBrush;
 using RectangleGeometry = System.Windows.Media.RectangleGeometry;
-using InputElement = SharpDX.Direct3D11.InputElement;
+using SolidColorBrush = SharpDX.Direct2D1.SolidColorBrush;
 
 namespace Cad_Point_Manager.Controls.D3DControl
 {
@@ -50,8 +51,10 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private VertexShader _textVertexShader;
         private PixelShader _textPixelShader;
         private InputLayout _textInputLayout;
-        private TextVertex[] _textVertices = [];
+        private TextQuadVertex[] _textQuadVertices = [];
         private bool _textShaderLoaded = false;
+        private SamplerState _textSampler;
+        private ShaderResourceView _textSRV;
 
         // Panning and Zooming Fields
         private float _panThreshold = 1.0f;
@@ -172,7 +175,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
         {
             if (_d3dResCache is null) { return; }
 
-            if (DxfIsDirty) { UpdateDxfVertices(); }
+            if (DxfIsDirty) 
+            { 
+                UpdateLineVertices(); 
+                UpdateTextVertices();
+            }
             if (VertexBufferDirty) { SetVertexBuffers(); }
             if (_camera is null)
             {
@@ -186,7 +193,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 DxfNeedsReload = false;
                 CadManager3D.DxfNeedsReload = false;
             }
-            if (!CadManager3D.DxfTextLoaded) { CadManager3D.UpdateTextVertices(_d3dResCache.Device); }
+            if (!CadManager3D.DxfTextLoaded) { CadManager3D.UpdateTextVerticesList(_d3dResCache); }
             if (!_clipSet) { SetClip(); _clipSet = true; }
             if (!_lineShaderLoaded) { InitializeLineShader(); }
             if (!_textShaderLoaded) { InitializeTextShader(); }
@@ -213,6 +220,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             UpdateConstantBuffer();
 
             DrawLinesWithShader();
+            DrawTextWithShader();
 
             D3dIsDirty = false;
         }
@@ -237,18 +245,15 @@ namespace Cad_Point_Manager.Controls.D3DControl
         {
             var context = _d3dResCache.DeviceContext;
 
-            // Use the text shaders for rendering text
-            context.VertexShader.Set(_textVertexShader);
-            context.PixelShader.Set(_textPixelShader);
-            context.InputAssembler.InputLayout = _textInputLayout;  // Use the correct input layout for text
-            context.VertexShader.SetConstantBuffer(0, _transformationBuffer);
+            foreach (var )
+            _textVertexBuffer = Buffer.Create(_d3dResCache.Device, BindFlags.VertexBuffer, _textQuadVertices.ToArray());
+            context.InputAssembler.PrimitiveTopology = PrimitiveTopology.TriangleStrip;
+            context.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding(_textVertexBuffer, Marshal.SizeOf(typeof(TextQuadVertex)), 0));
 
-            // Create the vertex buffer and bind it
-            Buffer textVertexBuffer = Buffer.Create(_d3dResCache.Device, BindFlags.VertexBuffer, _textVertices.ToArray());
-            context.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding(textVertexBuffer, Utilities.SizeOf<TextVertex>(), 0));
-            context.InputAssembler.PrimitiveTopology = SharpDX.Direct3D.PrimitiveTopology.TriangleList;
+            context.PixelShader.SetShaderResource(0, _textSRV);
+            context.PixelShader.SetSampler(0, _textSampler);
 
-            context.Draw(_textVertices.Length, 0);
+            context.Draw(_textQuadVertices.Length, 0); 
         }
 
         private void DrawTextObjects()
@@ -285,7 +290,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
 
                     _d3dResCache.D2DDeviceContext.Transform = testTransform;
-                    text.DrawToD2D(_d3dResCache.D2DDeviceContext, _d3dResCache.D2dFactory, brush, 1, _interactiveObjectStrokeStyle);
+                    text.DrawToD2dDeviceContext(_d3dResCache.D2DDeviceContext, _d3dResCache.D2dFactory, brush, 1, _interactiveObjectStrokeStyle);
                 }
             }
         }
@@ -305,8 +310,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     //SharpDX.Direct2D1.Brush outerBrush = new SharpDX.Direct2D1.SolidColorBrush(_d3dResCache.D2DDeviceContext, new RawColor4(segment.Color.X, segment.Color.Y, segment.Color.Z, 0.3f));
                     Brush outerBrush = new SolidColorBrush(_d3dResCache.D2DDeviceContext, new RawColor4(0, 0, 0, 0.25f));
 
-                    segment.DrawToD2D(_d3dResCache.D2DDeviceContext, _d3dResCache.D2dFactory, outerBrush, 5, _interactiveObjectStrokeStyle);
-                    segment.DrawToD2D(_d3dResCache.D2DDeviceContext, _d3dResCache.D2dFactory, innerBrush, 1.5f, _interactiveObjectStrokeStyle);
+                    segment.DrawToD2dDeviceContext(_d3dResCache.D2DDeviceContext, _d3dResCache.D2dFactory, outerBrush, 5, _interactiveObjectStrokeStyle);
+                    segment.DrawToD2dDeviceContext(_d3dResCache.D2DDeviceContext, _d3dResCache.D2dFactory, innerBrush, 1.5f, _interactiveObjectStrokeStyle);
 
                     innerBrush.Dispose();
                     outerBrush.Dispose();
@@ -318,8 +323,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     //SharpDX.Direct2D1.Brush outerBrush = new SharpDX.Direct2D1.SolidColorBrush(_d3dResCache.D2DDeviceContext, new RawColor4(polyline.Color.X, polyline.Color.Y, polyline.Color.Z, 0.3f));
                     Brush outerBrush = new SolidColorBrush(_d3dResCache.D2DDeviceContext, new RawColor4(0, 0, 0, 0.25f));
 
-                    polyline.DrawToD2D(_d3dResCache.D2DDeviceContext, _d3dResCache.D2dFactory, outerBrush, 5, _interactiveObjectStrokeStyle);
-                    polyline.DrawToD2D(_d3dResCache.D2DDeviceContext, _d3dResCache.D2dFactory, innerBrush, 1.5f, _interactiveObjectStrokeStyle);
+                    polyline.DrawToD2dDeviceContext(_d3dResCache.D2DDeviceContext, _d3dResCache.D2dFactory, outerBrush, 5, _interactiveObjectStrokeStyle);
+                    polyline.DrawToD2dDeviceContext(_d3dResCache.D2DDeviceContext, _d3dResCache.D2dFactory, innerBrush, 1.5f, _interactiveObjectStrokeStyle);
 
                     innerBrush.Dispose();
                     outerBrush.Dispose();
@@ -332,8 +337,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
                         Brush innerBrush = new SolidColorBrush(_d3dResCache.D2DDeviceContext, new RawColor4(e.Color.X, e.Color.Y, e.Color.Z, e.Color.W));
                         Brush outerBrush = new SolidColorBrush(_d3dResCache.D2DDeviceContext, new RawColor4(0, 0, 0, 0.25f));
 
-                        e.DrawToD2D(_d3dResCache.D2DDeviceContext, _d3dResCache.D2dFactory, outerBrush, 5, _interactiveObjectStrokeStyle);
-                        e.DrawToD2D(_d3dResCache.D2DDeviceContext, _d3dResCache.D2dFactory, innerBrush, 1.5f, _interactiveObjectStrokeStyle);
+                        e.DrawToD2dDeviceContext(_d3dResCache.D2DDeviceContext, _d3dResCache.D2dFactory, outerBrush, 5, _interactiveObjectStrokeStyle);
+                        e.DrawToD2dDeviceContext(_d3dResCache.D2DDeviceContext, _d3dResCache.D2dFactory, innerBrush, 1.5f, _interactiveObjectStrokeStyle);
 
                         innerBrush.Dispose();
                         outerBrush.Dispose();
@@ -345,15 +350,31 @@ namespace Cad_Point_Manager.Controls.D3DControl
         /// <summary>
         /// Resets the _vertices field to the current list of vertices in the CadManager3D.
         /// </summary>
-        private void UpdateDxfVertices()
+        private void UpdateLineVertices()
         {
             if (_d3dResCache is null) { return; }
 
-            CadManager3D.UpdateVerticesList();
-            CadManager3D.UpdateTextVertices(_d3dResCache.Device);
+            CadManager3D.UpdateLineVerticesList();
 
             _lineVertices = CadManager3D.LineVertices.ToArray();
             
+            SetVertexBuffers();
+
+            DxfIsDirty = false;
+            D3dIsDirty = true;
+        }
+
+        /// <summary>
+        /// Resets the _vertices field to the current list of vertices in the CadManager3D.
+        /// </summary>
+        private void UpdateTextVertices()
+        {
+            if (_d3dResCache is null) { return; }
+
+            CadManager3D.UpdateTextVerticesList(_d3dResCache);
+
+            _textQuadVertices = CadManager3D.LineVertices.ToArray();
+
             SetVertexBuffers();
 
             DxfIsDirty = false;
@@ -377,12 +398,12 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 _lineVertices);
             }
 
-            if (_textVertices is not null && _textVertices.Length > 0)
+            if (_textQuadVertices is not null && _textQuadVertices.Length > 0)
             {
                 _textVertexBuffer = Buffer.Create(
                 _d3dResCache.Device,
                 BindFlags.VertexBuffer,
-                _textVertices);
+                _textQuadVertices);
             }
 
             VertexBufferDirty = false;

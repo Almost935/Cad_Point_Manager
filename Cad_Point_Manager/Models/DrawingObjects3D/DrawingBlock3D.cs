@@ -150,11 +150,11 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             }
         }
 
-        public override void DrawToD2D(DeviceContext1 deviceContext, Factory2 factory, Brush brush, float thickness, StrokeStyle1 strokeStyle)
+        public override void DrawToD2dDeviceContext(DeviceContext1 deviceContext, Factory2 factory, Brush brush, float thickness, StrokeStyle1 strokeStyle)
         {
             foreach (var obj in DrawingObjects)
             {
-                obj.DrawToD2D(deviceContext, factory, brush, thickness, strokeStyle);
+                obj.DrawToD2dDeviceContext(deviceContext, factory, brush, thickness, strokeStyle);
             }
         }
 

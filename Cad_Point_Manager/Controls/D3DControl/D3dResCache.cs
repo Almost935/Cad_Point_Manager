@@ -106,6 +106,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 OnPropertyChanged(nameof(FactoryWrite));
             }
         }
+
+        public int MaxSize { get; set; }
         #endregion
 
         #region Events

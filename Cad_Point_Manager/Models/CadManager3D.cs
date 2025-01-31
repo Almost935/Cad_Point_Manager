@@ -2,13 +2,11 @@
 using Cad_Point_Manager.Helpers;
 using Cad_Point_Manager.Models.DrawingObjects3D;
 using Cad_Point_Manager.Models.TextRendering;
-using FreeTypeSharp;
 using netDxf;
 using netDxf.Entities;
 using netDxf.Tables;
 using SharpDX;
 using SharpDX.Direct3D11;
-using SkiaSharp;
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -26,8 +24,9 @@ namespace Cad_Point_Manager.Models
     public class CadManager3D : INotifyPropertyChanged
     {
         #region Fields
-        D3dResCache _d3dResCache;
+        private D3dResCache _d3dResCache;
         private bool _dxfTextLoading = false;
+        private FontCache _fontCache = new();
 
         private bool _dxfLoaded = false;
         private bool _dxfTextLoaded = false;
@@ -36,10 +35,9 @@ namespace Cad_Point_Manager.Models
         private Bounds _extents;
         private List<LineVertex> _lineVertices = [];
         private List<DrawingText3D> _drawingText = [];
-        private Dictionary<string, (ShaderResourceView textureAtlas, List<TextVertex> textVertices)> _textVerticesByAtlas = [];
+        private Dictionary<string, (ShaderResourceView textureAtlas, List<TextQuadVertex> textVertices)> _textVerticesByAtlas = [];
         private ObservableCollection<KeyValuePair<string, ObjectLayer3D>> _layers = [];
         private ICollectionView _layersView;
-        private FreeTypeCache _freeTypeCache = new();
         #endregion
 
         #region Properties
@@ -107,7 +105,7 @@ namespace Cad_Point_Manager.Models
                 OnPropertyChanged(nameof(DrawingText));
             }
         }
-        public Dictionary<string, (ShaderResourceView textureAtlas, List<TextVertex> textVertices)> TextVerticesByAtlas
+        public Dictionary<string, (ShaderResourceView textureAtlas, List<TextQuadVertex> textVertices)> TextVerticesByAtlas
         {
             get => _textVerticesByAtlas;
             set
@@ -134,18 +132,10 @@ namespace Cad_Point_Manager.Models
                 OnPropertyChanged(nameof(LayersView));
             }
         }
-        public FreeTypeCache FreeTypeCache
-        {
-            get => _freeTypeCache;
-            set
-            {
-                _freeTypeCache = value;
-                OnPropertyChanged(nameof(FreeTypeCache));
-            }
-        }
 
         public DxfDocument DxfDocument { get; set; }
         public DrawingObjectTree3D DrawingObjectTree3D { get; set; }
+        public TextAtlas TextAtlas { get; set; }
         #endregion
 
         #region Events
@@ -178,7 +168,7 @@ namespace Cad_Point_Manager.Models
             UpdateLayerView();
             DrawingObjectTree3D = new(this, Extents.ToRect(), 5);
 
-            UpdateVerticesList();
+            UpdateLineVerticesList();
 
             DxfLoaded = true;
             DxfDirty = true;
@@ -256,7 +246,7 @@ namespace Cad_Point_Manager.Models
             }
         }
 
-        public void UpdateVerticesList()
+        public void UpdateLineVerticesList()
         {
             LineVertices.Clear();
             DrawingText.Clear();
@@ -291,44 +281,19 @@ namespace Cad_Point_Manager.Models
             }
         }
 
-        public unsafe void UpdateTextVertices(Device device)
+        public unsafe void UpdateTextVerticesList(D3dResCache d3DResCache)
         {
-            if (_dxfTextLoading || device is null) { return; }
+            if (_dxfTextLoading || d3DResCache.Device is null) { return; }
 
             _dxfTextLoading = true;
             ResetTextVerticesDict();
 
-            foreach (var drawingText in DrawingText)
-            {
-                FT_FaceRec_ face = FreeTypeCache.GetFont(drawingText.FontFamilyName, 12);
+            TextAtlas?.Dispose(); 
 
-                foreach (var character in drawingText.Text)
-                {
-                    FT_GlyphSlotRec_ glyph = FreeTypeCache.GetGlyph(face, character);
-
-                    var contoursPointer = glyph.outline.contours;
-                    var coordsPointer = glyph.outline.points;
-                    var tagsPointer = glyph.outline.tags;
-
-                    var insideBorder = FT.FT_Outline_GetInsideBorder(&glyph.outline);
-                    var outsideBorder = FT.FT_Outline_GetOutsideBorder(&glyph.outline);
-                    
-
-                    Debug.WriteLine($"\ncharacter: {character}");
-
-                    for (int i = 0; i < glyph.outline.n_points; i++)
-                    {
-                        var point = coordsPointer[i];
-                    }
-                    for (int i = 0; i < glyph.outline.n_contours; i++)
-                    {
-                        var contourIndex = contoursPointer[i];
-                        Debug.WriteLine($"i: {i} contourIndex: {contourIndex}");
-                    }
-                }
-            }
+            TextAtlas = new(d3DResCache.Device, new Size2F(d3DResCache.MaxSize, d3DResCache.MaxSize));
+            TextAtlas.LoadTextListToAtlas(DrawingText);
+            
             DxfTextLoaded = true;
-
             _dxfTextLoading = false;
         }
 

@@ -36,7 +36,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         public abstract double DistanceToPoint(Point p);
         public abstract void Select();
         public abstract void Deselect();
-        public abstract void DrawToD2D(DeviceContext1 deviceContext, Factory2 factory, Brush brush, float thickness, StrokeStyle1 strokeStyle);
+        public abstract void DrawToD2dDeviceContext(DeviceContext1 deviceContext, Factory2 factory, Brush brush, float thickness, StrokeStyle1 strokeStyle);
 
         public void UpdateColor()
         {

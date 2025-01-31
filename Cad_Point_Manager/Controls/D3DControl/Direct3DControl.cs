@@ -147,7 +147,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
         {
             _device = new SharpDX.Direct3D11.Device(DriverType.Hardware, DeviceCreationFlags.BgraSupport);
             _d3dResCache.Device = _device;
-
+            _d3dResCache.MaxSize = GetMaxSize(_device.FeatureLevel);
+            
             var rasterizerStateDescription = new RasterizerStateDescription
             {
                 FillMode = FillMode.Solid,
@@ -162,10 +163,10 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _deviceContext = _device.ImmediateContext;
             _d3dResCache.DeviceContext = _deviceContext;
             _d3dResCache.FactoryWrite = new();
-
+            
             _d3DSurface = new Dx11ImageSource();
             _d3DSurface.IsFrontBufferAvailableChanged += OnIsFrontBufferAvailableChanged;
-
+            
             CreateAndBindTargets();
 
             base.Source = _d3DSurface;
@@ -235,11 +236,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
             }
 
             var bitmapProperties = new SharpDX.Direct2D1.BitmapProperties1(
-                new SharpDX.Direct2D1.PixelFormat(SharpDX.DXGI.Format.B8G8R8A8_UNorm, SharpDX.Direct2D1.AlphaMode.Premultiplied),
+                new SharpDX.Direct2D1.PixelFormat(Format.B8G8R8A8_UNorm, SharpDX.Direct2D1.AlphaMode.Premultiplied),
                 dpiX: 96, dpiY: 96,
                 bitmapOptions: SharpDX.Direct2D1.BitmapOptions.Target | SharpDX.Direct2D1.BitmapOptions.CannotDraw);
 
-            using (var surface = _texture2D.QueryInterface<SharpDX.DXGI.Surface>())
+            using (var surface = _texture2D.QueryInterface<Surface>())
             {
                 _d3dResCache.D2DTargetBitmap = new SharpDX.Direct2D1.Bitmap1(_d3dResCache.D2DDeviceContext, surface, bitmapProperties);
             }
@@ -306,6 +307,23 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
                 _frameCount = 0;
                 _lastFrameTime = _renderTimer.ElapsedMilliseconds;
+            }
+        }
+
+        private static int GetMaxSize(FeatureLevel featureLevel)
+        {
+            switch (featureLevel)
+            {
+                case FeatureLevel.Level_10_0:
+                case FeatureLevel.Level_10_1:
+                    return 8192;
+                case FeatureLevel.Level_11_0:
+                case FeatureLevel.Level_11_1:
+                case FeatureLevel.Level_12_0:
+                case FeatureLevel.Level_12_1:
+                    return 16384;
+                default:
+                    throw new NotSupportedException("Unsupported feature level");
             }
         }
     }

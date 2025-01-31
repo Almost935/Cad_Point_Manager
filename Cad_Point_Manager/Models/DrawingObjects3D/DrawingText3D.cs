@@ -1,7 +1,9 @@
 ﻿using Cad_Point_Manager.Common;
 using Cad_Point_Manager.Controls.D3DControl;
+using Cad_Point_Manager.Models.TextRendering;
 using netDxf.Entities;
 using SharpDX;
+using SharpDX.Direct2D1;
 using SharpDX.DirectWrite;
 using SharpDX.Mathematics.Interop;
 using System;
@@ -18,7 +20,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
     {
         #region Fields
         private protected TextFormat _textFormat;
-        private protected TextLayout _textLayout;
         #endregion
 
         #region Properties
@@ -33,8 +34,13 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         public float WidthFactor { get; set; } = 1.0f;
         public System.Windows.Media.Matrix Transform { get; set; }
         public Enums.TextAttachmentPoint AttachmentPoint { get; set; }
+
+        public TextLayout TextLayout { get; set; }
         public bool TextFormatCreated => _textFormat != null;
-        public bool TextLayoutCreated => _textLayout != null;
+        public bool TextLayoutCreated => TextLayout != null;
+        
+        public RectangleF TextAtlasBounds { get; set; }
+        public TextAtlas TextAtlas { get; set; }
         #endregion
 
         #region Methods
@@ -58,7 +64,11 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         {
             throw new NotImplementedException();
         }
-        
+        public override void DrawToD2dDeviceContext(DeviceContext1 deviceContext, SharpDX.Direct2D1.Factory2 factory, Brush brush, float thickness, StrokeStyle1 strokeStyle)
+        {
+            deviceContext.DrawTextLayout(new RawVector2((float)Position.X, -(float)Position.Y), TextLayout, brush);
+        }
+
 
 
         private protected Enums.TextAttachmentPoint GetAttachmentPoint(MTextAttachmentPoint mTextAttachment)
@@ -122,16 +132,16 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
 
 
 
-        public void GetTextFormat(Factory1 factory)
+        public void GetTextFormat(SharpDX.DirectWrite.Factory1 factory)
         {
             _textFormat = new(factory, FontFamilyName, FontSize);
         }
 
-        public void GetTextLayout(Factory1 factory)
+        public void GetTextLayout(SharpDX.DirectWrite.Factory1 factory)
         {
             //RawMatrix3x2 transform = new((float)Transform.M11, (float)Transform.M12, (float)Transform.M21, (float)Transform.M22, (float)Transform.OffsetX, (float)Transform.OffsetY);
             RawMatrix3x2 transform = new(-1, 0, 0, -1, 0, 0);
-            _textLayout = new(factory, Text, _textFormat, (float)Bounds.Width, (float)Bounds.Height, 96, transform, true);
+            TextLayout = new(factory, Text, _textFormat, (float)Bounds.Width, (float)Bounds.Height, 96, transform, true);
         }
 
 

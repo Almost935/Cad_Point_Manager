@@ -80,7 +80,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             return (float)MathHelpers.PointToLineDistance(point, new System.Windows.Point(StartVertex.Position.X, StartVertex.Position.Y), new System.Windows.Point(EndVertex.Position.X, EndVertex.Position.Y));
         }
 
-        public override void DrawToD2D(DeviceContext1 deviceContext, Factory2 factory, Brush brush, float thickness, StrokeStyle1 strokeStyle)
+        public override void DrawToD2dDeviceContext(DeviceContext1 deviceContext, Factory2 factory, Brush brush, float thickness, StrokeStyle1 strokeStyle)
         {
             deviceContext.DrawLine(new RawVector2(StartVertex.Position.X, StartVertex.Position.Y), new RawVector2(EndVertex.Position.X, EndVertex.Position.Y), brush, thickness, strokeStyle);
         }

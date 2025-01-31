@@ -37,10 +37,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         #endregion
 
         #region Methods
-        public override void DrawToD2D(DeviceContext1 deviceContext, SharpDX.Direct2D1.Factory2 factory, Brush brush, float thickness, StrokeStyle1 strokeStyle)
-        {
-            deviceContext.DrawTextLayout(new RawVector2((float)Position.X, -(float)Position.Y), _textLayout, brush);
-        }
         public override void UpdateData(EntityObject entity)
         {
             if (entity is Text text)
