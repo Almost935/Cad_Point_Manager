@@ -5,6 +5,7 @@ using SharpDX.D3DCompiler;
 using SharpDX.Direct2D1;
 using SharpDX.Direct3D;
 using SharpDX.Direct3D11;
+using SharpDX.DXGI;
 using SharpDX.Mathematics.Interop;
 using System.ComponentModel;
 using System.IO;
@@ -14,6 +15,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+
 using Brush = SharpDX.Direct2D1.Brush;
 using Buffer = SharpDX.Direct3D11.Buffer;
 using InputElement = SharpDX.Direct3D11.InputElement;
@@ -51,10 +53,10 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private VertexShader _textVertexShader;
         private PixelShader _textPixelShader;
         private InputLayout _textInputLayout;
-        private TextQuadVertex[] _textQuadVertices = [];
         private bool _textShaderLoaded = false;
         private SamplerState _textSampler;
         private ShaderResourceView _textSRV;
+        private TextQuadVertex[] _textQuadVertices = [];
 
         // Panning and Zooming Fields
         private float _panThreshold = 1.0f;
@@ -175,9 +177,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
         {
             if (_d3dResCache is null) { return; }
 
-            if (DxfIsDirty) 
-            { 
-                UpdateLineVertices(); 
+            if (DxfIsDirty)
+            {
+                UpdateLineVertices();
                 UpdateTextVertices();
             }
             if (VertexBufferDirty) { SetVertexBuffers(); }
@@ -216,7 +218,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             context.ClearRenderTargetView(_d3dResCache.RenderTargetView, new RawColor4(1, 1, 1, 1));
 
             DrawInteractiveObjects();
-            //DrawTextObjects();
             UpdateConstantBuffer();
 
             DrawLinesWithShader();
@@ -226,7 +227,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
 
         private void DrawLinesWithShader()
-        { 
+        {
             var context = _d3dResCache.DeviceContext;
 
             // Set shaders
@@ -237,7 +238,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             // Bind vertex buffer and draw
             context.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding(_lineVertexBuffer, Utilities.SizeOf<LineVertex>(), 0));
-            context.InputAssembler.PrimitiveTopology = SharpDX.Direct3D.PrimitiveTopology.LineList;
+            context.InputAssembler.PrimitiveTopology = PrimitiveTopology.LineList;
 
             context.Draw(_lineVertices.Length, 0);
         }
@@ -245,15 +246,70 @@ namespace Cad_Point_Manager.Controls.D3DControl
         {
             var context = _d3dResCache.DeviceContext;
 
-            foreach (var )
-            _textVertexBuffer = Buffer.Create(_d3dResCache.Device, BindFlags.VertexBuffer, _textQuadVertices.ToArray());
-            context.InputAssembler.PrimitiveTopology = PrimitiveTopology.TriangleStrip;
-            context.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding(_textVertexBuffer, Marshal.SizeOf(typeof(TextQuadVertex)), 0));
+            if (_textVertexBuffer == null || _textSRV == null)
+                return;
 
+            context.InputAssembler.PrimitiveTopology = PrimitiveTopology.TriangleList;
+            context.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding(_textVertexBuffer, Marshal.SizeOf<TextQuadVertex>(), 0));
+
+            // Bind the texture array
             context.PixelShader.SetShaderResource(0, _textSRV);
             context.PixelShader.SetSampler(0, _textSampler);
 
-            context.Draw(_textQuadVertices.Length, 0); 
+            context.Draw(CadManager3D.TextAtlasManager.TextQuadVertices.Count, 0);
+        }
+
+        private void CreateTextTextureArray()
+        {
+            var device = _d3dResCache.Device;
+            var context = _d3dResCache.DeviceContext;
+
+            var atlasList = CadManager3D.TextAtlasManager.TextAtlases;
+            if (atlasList.Count == 0) { return; };
+
+            int width = (int)CadManager3D.TextAtlasManager.AtlasSize.Width;
+            int height = (int)CadManager3D.TextAtlasManager.AtlasSize.Height;
+            int arraySize = atlasList.Count;
+
+            var textureDesc = new Texture2DDescription
+            {
+                Width = width,
+                Height = height,
+                MipLevels = 1,
+                ArraySize = arraySize,
+                Format = Format.B8G8R8A8_UNorm,
+                SampleDescription = new SampleDescription(1, 0),
+                Usage = ResourceUsage.Default,
+                BindFlags = BindFlags.ShaderResource,
+                CpuAccessFlags = CpuAccessFlags.None,
+                OptionFlags = ResourceOptionFlags.None
+            };
+
+            var textureArray = new Texture2D(device, textureDesc);
+
+            // Copy textures into array layers
+            for (int i = 0; i < atlasList.Count; i++)
+            {
+                var atlasTexture = atlasList[i].Texture;
+                context.CopySubresourceRegion(atlasTexture, 0, null, textureArray, i);
+            }
+
+            // Create Shader Resource View
+            var srvDesc = new ShaderResourceViewDescription
+            {
+                Format = textureDesc.Format,
+                Dimension = ShaderResourceViewDimension.Texture2DArray,
+                Texture2DArray = new ShaderResourceViewDescription.Texture2DArrayResource
+                {
+                    MipLevels = 1,
+                    MostDetailedMip = 0,
+                    FirstArraySlice = 0,
+                    ArraySize = arraySize
+                }
+            };
+
+            _textSRV?.Dispose();
+            _textSRV = new ShaderResourceView(device, textureArray, srvDesc);
         }
 
         private void DrawTextObjects()
@@ -357,7 +413,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             CadManager3D.UpdateLineVerticesList();
 
             _lineVertices = CadManager3D.LineVertices.ToArray();
-            
+
             SetVertexBuffers();
 
             DxfIsDirty = false;
@@ -373,7 +429,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             CadManager3D.UpdateTextVerticesList(_d3dResCache);
 
-            _textQuadVertices = CadManager3D.LineVertices.ToArray();
+            _textQuadVertices = CadManager3D.TextAtlasManager.TextQuadVertices.ToArray();
 
             SetVertexBuffers();
 
@@ -388,7 +444,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
         {
             if (_d3dResCache is null) { return; }
 
-            //_vertices = CadManager3D.Vertices.ToArray();
+            _lineVertexBuffer?.Dispose();
+            _textVertexBuffer?.Dispose();
 
             if (_lineVertices is not null && _lineVertices.Length > 0)
             {
@@ -398,16 +455,16 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 _lineVertices);
             }
 
-            if (_textQuadVertices is not null && _textQuadVertices.Length > 0)
+            if (CadManager3D.TextAtlasManager is not null && CadManager3D.TextAtlasManager.TextQuadVertices.Count > 0)
             {
-                _textVertexBuffer = Buffer.Create(
-                _d3dResCache.Device,
-                BindFlags.VertexBuffer,
-                _textQuadVertices);
+                // Create the vertex buffer
+                _textVertexBuffer?.Dispose();
+                _textVertexBuffer = Buffer.Create(_d3dResCache.Device, BindFlags.VertexBuffer, _textQuadVertices);
             }
 
             VertexBufferDirty = false;
         }
+
 
         private void InitializeDirect2D()
         {
@@ -421,14 +478,14 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             StrokeStyleProperties1 props = new()
             {
-                StartCap = SharpDX.Direct2D1.CapStyle.Round,
-                EndCap = SharpDX.Direct2D1.CapStyle.Round,
-                DashCap = SharpDX.Direct2D1.CapStyle.Round,
-                LineJoin = SharpDX.Direct2D1.LineJoin.Miter,
+                StartCap = CapStyle.Round,
+                EndCap = CapStyle.Round,
+                DashCap = CapStyle.Round,
+                LineJoin = LineJoin.Miter,
                 MiterLimit = 10,
                 DashStyle = SharpDX.Direct2D1.DashStyle.Solid,
                 DashOffset = 0,
-                TransformType = SharpDX.Direct2D1.StrokeTransformType.Fixed
+                TransformType = StrokeTransformType.Fixed
             };
             _interactiveObjectStrokeStyle = new(_d3dResCache.D2dFactory, props);
         }
@@ -456,9 +513,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 _d3dResCache.Device,
                 ShaderSignature.GetInputSignature(lineVertexShaderByteCode),
                 [
-                    new InputElement("POSITION", 0, SharpDX.DXGI.Format.R32G32B32_Float, 0, 0),
-                    new InputElement("COLOR", 0, SharpDX.DXGI.Format.R32G32B32A32_Float, 12, 0),
-                    new InputElement("ISVISIBLE", 0, SharpDX.DXGI.Format.R32_Float, 28, 0)
+                    new InputElement("POSITION", 0, Format.R32G32B32_Float, 0, 0),
+                    new InputElement("COLOR", 0, Format.R32G32B32A32_Float, 12, 0),
+                    new InputElement("ISVISIBLE", 0, Format.R32_Float, 28, 0)
                 ]);
 
             _lineShaderLoaded = true;
@@ -474,23 +531,34 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     throw new DirectoryNotFoundException("The 'Cad_Point_Manager' directory could not be found in the path.");
                 }
             }
+
             string textShadersPath = path + @"\Controls\D3DControl\Shaders\TextShader.hlsl";
+
+            // Compile Vertex Shader
             var textVertexShaderByteCode = ShaderBytecode.CompileFromFile(textShadersPath, "VSMain", "vs_4_0");
             _textVertexShader = new VertexShader(_d3dResCache.Device, textVertexShaderByteCode);
 
+            // Compile Pixel Shader
             var textPixelShaderByteCode = ShaderBytecode.CompileFromFile(textShadersPath, "PSMain", "ps_4_0");
             _textPixelShader = new PixelShader(_d3dResCache.Device, textPixelShaderByteCode);
 
+            // Create Input Layout
             _textInputLayout = new InputLayout(
-            _d3dResCache.Device,
-            ShaderSignature.GetInputSignature(textVertexShaderByteCode),
-            new InputElement[]
-            {
-                new InputElement("POSITION", 0, SharpDX.DXGI.Format.R32G32B32_Float, 0, 0),
-                new InputElement("COLOR", 0, SharpDX.DXGI.Format.R32G32B32A32_Float, 12, 0),
-                new InputElement("TEXCOORD", 0, SharpDX.DXGI.Format.R32G32_Float, 28, 0),  // Only for text
-                new InputElement("ISVISIBLE", 0, SharpDX.DXGI.Format.R32_Float, 36, 0)  // Add IsVisible here
-            });
+                _d3dResCache.Device,
+                ShaderSignature.GetInputSignature(textVertexShaderByteCode),
+                new[]
+                {
+                new InputElement("POSITION", 0, Format.R32G32B32_Float, 0, 0),
+                new InputElement("SIZE", 0, Format.R32G32_Float, 12, 0),
+                new InputElement("TEXCOORD", 0, Format.R32G32B32A32_Float, 20, 0),
+                new InputElement("COLOR", 0, Format.R32G32B32A32_Float, 36, 0),
+                new InputElement("ISVISIBLE", 0, Format.R32_Float, 52, 0),
+                new InputElement("ROTATION", 0, Format.R32G32B32A32_Float, 56, 0),  // First row of matrix
+                new InputElement("ROTATION", 1, Format.R32G32B32A32_Float, 72, 0),  // Second row
+                new InputElement("ROTATION", 2, Format.R32G32B32A32_Float, 88, 0),  // Third row
+                new InputElement("ROTATION", 3, Format.R32G32B32A32_Float, 104, 0), // Fourth row
+                new InputElement("ATLASINDEX", 0, Format.R32_SInt, 120, 0),
+                });
 
             _textShaderLoaded = true;
         }
@@ -571,6 +639,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 _isPanning = true;
 
                 ResetSnappedObjects();
+
                 VertexBufferDirty = true;
                 D3dIsDirty = true;
 

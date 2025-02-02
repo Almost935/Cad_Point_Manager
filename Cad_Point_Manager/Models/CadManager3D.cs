@@ -35,7 +35,6 @@ namespace Cad_Point_Manager.Models
         private Bounds _extents;
         private List<LineVertex> _lineVertices = [];
         private List<DrawingText3D> _drawingText = [];
-        private Dictionary<string, (ShaderResourceView textureAtlas, List<TextQuadVertex> textVertices)> _textVerticesByAtlas = [];
         private ObservableCollection<KeyValuePair<string, ObjectLayer3D>> _layers = [];
         private ICollectionView _layersView;
         #endregion
@@ -105,15 +104,6 @@ namespace Cad_Point_Manager.Models
                 OnPropertyChanged(nameof(DrawingText));
             }
         }
-        public Dictionary<string, (ShaderResourceView textureAtlas, List<TextQuadVertex> textVertices)> TextVerticesByAtlas
-        {
-            get => _textVerticesByAtlas;
-            set
-            {
-                _textVerticesByAtlas = value;
-                OnPropertyChanged(nameof(TextVerticesByAtlas));
-            }
-        }
         public ObservableCollection<KeyValuePair<string, ObjectLayer3D>> Layers
         {
             get => _layers;
@@ -135,7 +125,7 @@ namespace Cad_Point_Manager.Models
 
         public DxfDocument DxfDocument { get; set; }
         public DrawingObjectTree3D DrawingObjectTree3D { get; set; }
-        public TextAtlas TextAtlas { get; set; }
+        public TextAtlasManager TextAtlasManager { get; set; }
         #endregion
 
         #region Events
@@ -288,10 +278,10 @@ namespace Cad_Point_Manager.Models
             _dxfTextLoading = true;
             ResetTextVerticesDict();
 
-            TextAtlas?.Dispose(); 
+            TextAtlasManager?.Dispose(); 
 
-            TextAtlas = new(d3DResCache.Device, new Size2F(d3DResCache.MaxSize, d3DResCache.MaxSize));
-            TextAtlas.LoadTextListToAtlas(DrawingText);
+            TextAtlasManager = new(d3DResCache.Device, new Size2F(d3DResCache.MaxSize, d3DResCache.MaxSize));
+            TextAtlasManager.LoadTextListToAtlas(DrawingText);
             
             DxfTextLoaded = true;
             _dxfTextLoading = false;
@@ -299,11 +289,8 @@ namespace Cad_Point_Manager.Models
 
         public void ResetTextVerticesDict()
         {
-            foreach (var (textureAtlas, textVertices) in TextVerticesByAtlas.Values)
-            {
-                textureAtlas?.Dispose();
-            }
-            TextVerticesByAtlas.Clear();
+            TextAtlasManager?.Dispose();
+            TextAtlasManager = null;
             DxfTextLoaded = false;
         }
         #endregion

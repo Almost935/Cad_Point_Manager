@@ -46,8 +46,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                 FontSize = (int)Math.Ceiling(mText.Height * 1.25);
                 FontFamilyName = mText.Style.FontFamilyName;
                 Transform = GetTransform(mText.Position);
-
-                UpdateTextVertices(mText);
             }
             else
             {
@@ -56,24 +54,24 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         }
 
 
-        public void UpdateTextVertices(MText mtext)
-        {
-            float xOffset = 0;  // Starting position for each line of text
-            float lineHeight = 1.0f;  // Adjust based on your font size
+        //public void UpdateTextVertices(MText mtext)
+        //{
+        //    float xOffset = 0;  // Starting position for each line of text
+        //    float lineHeight = 1.0f;  // Adjust based on your font size
 
-            var lines = mtext.Value.Split('\n');
-            foreach (var line in lines)  // Split by newline for multiline text
-            {
-                for (int i = 0; i < line.Length; i++)
-                {
-                    char c = line[i];
-                    TextVertex vertex = CreateTextVertex(Position, c, xOffset, lineHeight, Color);
-                    TextVertices.Add(vertex);
-                    xOffset += lineHeight;
-                }
-                lineHeight *= 1.2f;  // Increase line height for next line (optional)
-            }
-        }
+        //    var lines = mtext.Value.Split('\n');
+        //    foreach (var line in lines)  // Split by newline for multiline text
+        //    {
+        //        for (int i = 0; i < line.Length; i++)
+        //        {
+        //            char c = line[i];
+        //            TextVertex vertex = CreateTextVertex(Position, c, xOffset, lineHeight, Color);
+        //            TextVertices.Add(vertex);
+        //            xOffset += lineHeight;
+        //        }
+        //        lineHeight *= 1.2f;  // Increase line height for next line (optional)
+        //    }
+        //}
 
         /// <summary>
         /// Gets the upper left point of the MText.

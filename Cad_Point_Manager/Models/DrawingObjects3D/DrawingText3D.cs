@@ -27,7 +27,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         public Vector3 Position { get; set; }
         public int StartVertexIndex { get; set; }
         public int EndVertexIndex { get; set; }
-        public List<TextVertex> TextVertices { get; set; } = [];
+        //public List<TextQuadVertex> TextVertices { get; set; } = [];
         public float Rotation { get; set; } = 0;
         public int FontSize { get; set; }
         public string FontFamilyName { get; set; }
@@ -40,7 +40,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         public bool TextLayoutCreated => TextLayout != null;
         
         public RectangleF TextAtlasBounds { get; set; }
-        public TextAtlas TextAtlas { get; set; }
+        public TextAtlasManager TextAtlas { get; set; }
         #endregion
 
         #region Methods
@@ -111,15 +111,15 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             return matrix;
         }
 
-        private protected TextVertex CreateTextVertex(Vector3 position, char c, float xOffset, float lineHeight, Vector4 color)
-        {
-            Vector3 vertexPosition = new(position.X + xOffset, position.Y, 0);
-            Vector3 texCoord = GetTextureCoordinatesForChar(c); // You'll need a font texture atlas
-            float isVisible = 1.0f;  // Set this based on visibility rules
-            Matrix rotation = Matrix.RotationZ(Rotation);
+        //private protected TextQuadVertex CreateTextVertex(Vector3 position, char c, float xOffset, float lineHeight, Vector4 color)
+        //{
+        //    Vector3 vertexPosition = new(position.X + xOffset, position.Y, 0);
+        //    Vector3 texCoord = GetTextureCoordinatesForChar(c); // You'll need a font texture atlas
+        //    float isVisible = 1.0f;  // Set this based on visibility rules
+        //    Matrix rotation = Matrix.RotationZ(Rotation);
 
-            return new TextVertex(vertexPosition, color, texCoord, isVisible, rotation);
-        }
+        //    return new TextQuadVertex(vertexPosition, color, texCoord, isVisible, rotation);
+        //}
 
         private protected Vector3 GetTextureCoordinatesForChar(char c)
         {

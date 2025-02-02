@@ -1,88 +1,53 @@
-﻿// TextShader.hlsl
+﻿Texture2DArray TextAtlasArray : register(t0);
+SamplerState TextSampler : register(s0);
 
 cbuffer TransformBuffer : register(b0)
 {
-    matrix worldViewProjection;
+    matrix WorldViewProjection;
 };
 
 struct VS_INPUT
 {
-    float3 Position : POSITION; // Text quad position
-    float2 Size : TEXCOORD0; // Text quad size
-    float4 UVCoords : TEXCOORD1; // Texture UV coordinates
-    float4 color : COLOR; // Text color
-    float IsVisible : TEXCOORD2; // Visibility flag
-    matrix RotationMatrix : TEXCOORD3; // Rotation matrix for entire text
-};
-
-struct VS_OUTPUT
-{
-    float4 Position : SV_POSITION;
-    float2 UVCoords : TEXCOORD0;
+    float3 Position : POSITION;
+    float2 Size : SIZE;
+    float4 UVCoords : TEXCOORD;
     float4 Color : COLOR;
-    float IsVisible : TEXCOORD1;
+    float IsVisible : ISVISIBLE;
+    matrix RotationMatrix : ROTATION;
+    uint AtlasIndex : ATLASINDEX;
 };
-
-VS_OUTPUT main(VS_INPUT input)
-{
-    VS_OUTPUT output;
-
-    // Define quad corners
-    float3 quadCorners[4] =
-    {
-        float3(0, 0, 0),
-        float3(input.Size.x, 0, 0),
-        float3(0, input.Size.y, 0),
-        float3(input.Size.x, input.Size.y, 0)
-    };
-
-    // Rotate and translate quad
-    float4 rotatedPos = mul(float4(quadCorners[input.IsVisible], 1.0f), input.RotationMatrix);
-    rotatedPos.xyz += input.Position;
-
-    // Transform to clip space
-    output.Position = mul(rotatedPos, worldViewProjection);
-
-    // UV mapping
-    float2 uvCorners[4] =
-    {
-        input.UVCoords.xy,
-        float2(input.UVCoords.z, input.UVCoords.y),
-        float2(input.UVCoords.x, input.UVCoords.w),
-        input.UVCoords.zw
-    };
-
-    output.UVCoords = uvCorners[input.IsVisible];
-    output.Color = input.color; // Pass color to pixel shader
-    output.IsVisible = input.IsVisible;
-
-    return output;
-}
-
-
-// Pixel Shader
-Texture2D textAtlas : register(t0);
-SamplerState samp : register(s0);
 
 struct PS_INPUT
 {
     float4 Position : SV_POSITION;
-    float2 UVCoords : TEXCOORD0;
+    float2 TexCoord : TEXCOORD;
     float4 Color : COLOR;
-    float IsVisible : TEXCOORD1;
+    uint AtlasIndex : ATLASINDEX;
 };
 
-float4 main(PS_INPUT input) : SV_TARGET
+PS_INPUT VSMain(VS_INPUT input)
 {
-    if (input.IsVisible < 0.5f)
-        discard; // Ignore invisible quads
-
-    float4 sampledColor = textAtlas.Sample(samp, input.UVCoords);
+    PS_INPUT output;
     
-    // Apply text color
-    return sampledColor * input.Color;
+    // Transform position using rotation and projection
+    float4 worldPos = mul(float4(input.Position, 1.0f), input.RotationMatrix);
+    worldPos = mul(worldPos, WorldViewProjection);
+    
+    output.Position = worldPos;
+    
+    // Calculate texture coordinates
+    output.TexCoord = input.UVCoords.xy; // Only using Top-Left UV
+    output.Color = input.Color;
+    output.AtlasIndex = input.AtlasIndex;
+
+    return output;
 }
 
-
-
-
+float4 PSMain(PS_INPUT input) : SV_TARGET
+{
+    // Sample the correct texture from the Texture2DArray
+    float4 textColor = TextAtlasArray.Sample(TextSampler, float3(input.TexCoord, input.AtlasIndex));
+    
+    // Multiply texture color with input color for tinting
+    return textColor * input.Color;
+}

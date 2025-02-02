@@ -41,13 +41,15 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public Vector4 Color;       // Text color (RGBA)
         public float IsVisible;     // Visibility flag
         public Matrix RotationMatrix; // Rotation matrix for the entire text block
+        public int AtlasIndex;      // Index of the atlas texture containing the text
 
-        public TextQuadVertex(Vector3 position, Vector2 size, Vector4 uv, Vector4 color, float isVisible = 1.0f, Matrix? rotationMatrix = null)
+        public TextQuadVertex(Vector3 position, Vector2 size, Vector4 uv, Vector4 color, int atlasIndex, float isVisible = 1.0f, Matrix? rotationMatrix = null)
         {
             Position = position;
             Size = size;
             UVCoords = uv;
             Color = color;
+            AtlasIndex = atlasIndex;
             IsVisible = isVisible;
             RotationMatrix = rotationMatrix ?? Matrix.Identity;
         }
