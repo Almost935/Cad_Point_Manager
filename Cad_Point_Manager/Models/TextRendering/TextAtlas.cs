@@ -65,7 +65,7 @@ namespace Cad_Point_Manager.Models.TextRendering
                 }
             }
             RawVector2 point = new(CurrentX, CurrentY);
-
+            
             Brush brush = BrushDict.TryGetValue((drawingText3D.Color.X, drawingText3D.Color.Y, drawingText3D.Color.Z, drawingText3D.Color.W), out brush) ? brush : new SolidColorBrush(RenderTarget, new RawColor4(drawingText3D.Color.X, drawingText3D.Color.Y, drawingText3D.Color.Z, drawingText3D.Color.W));
 
             RenderTarget.DrawTextLayout(point, drawingText3D.TextLayout, brush);

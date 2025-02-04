@@ -260,6 +260,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
 
         private void CreateTextTextureArray()
+
         {
             var device = _d3dResCache.Device;
             var context = _d3dResCache.DeviceContext;
