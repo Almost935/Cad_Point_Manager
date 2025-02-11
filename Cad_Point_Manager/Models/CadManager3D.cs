@@ -276,18 +276,18 @@ namespace Cad_Point_Manager.Models
             if (_dxfTextLoading || d3DResCache.Device is null) { return; }
 
             _dxfTextLoading = true;
-            ResetTextVerticesDict();
+            ResetTextAtlasManager();
 
             TextAtlasManager?.Dispose(); 
 
             TextAtlasManager = new(d3DResCache.Device, new Size2F(d3DResCache.MaxSize, d3DResCache.MaxSize));
             TextAtlasManager.LoadTextListToAtlas(DrawingText);
-            
+
             DxfTextLoaded = true;
             _dxfTextLoading = false;
         }
 
-        public void ResetTextVerticesDict()
+        public void ResetTextAtlasManager()
         {
             TextAtlasManager?.Dispose();
             TextAtlasManager = null;

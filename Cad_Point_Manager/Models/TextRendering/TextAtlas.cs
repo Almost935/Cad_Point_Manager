@@ -21,7 +21,7 @@ namespace Cad_Point_Manager.Models.TextRendering
         public Texture2D Texture { get; set; }
         public RenderTarget RenderTarget { get; set; }
         public Size2F AtlasSize { get; set; } = new Size2F();
-        public List<TextQuadVertex> TextQuadVertices { get; set; } = [];
+        public List<TextVertex> TextVertices { get; set; } = [];
         public float CurrentX { get; set; }
         public float CurrentY { get; set; }
         public RectangleF CurrentBounds { get; set; } = RectangleF.Empty;
@@ -47,37 +47,26 @@ namespace Cad_Point_Manager.Models.TextRendering
             RenderTarget = new(_factory, surface, rtp);
         }
 
-        public bool AddTextToAtlas(DrawingText3D drawingText3D)
+        public void AddTextToAtlas(DrawingText3D drawingText3D)
         {
-            var width = drawingText3D.TextLayout.Metrics.WidthIncludingTrailingWhitespace;
-            var height = drawingText3D.TextLayout.Metrics.Height;
+            var textLayout = drawingText3D.TextLayout;
+            if (textLayout is null) { return; }
 
-            if (CurrentX + width > AtlasSize.Width)
-            {
-                if (CurrentY + height > AtlasSize.Height)
-                {
-                    return false;
-                }
-                else
-                {
-                    CurrentX = 0;
-                    CurrentY = CurrentBounds.Bottom;
-                }
+            RawVector2 point = new(drawingText3D.Position.X, drawingText3D.Position.Y);
+            var brush = GetBrush(drawingText3D.Color);
+            RenderTarget.DrawTextLayout(point, textLayout, brush);
+        }
+
+        public Brush GetBrush(Vector4 color)
+        {
+            if (BrushDict.TryGetValue((color.X, color.Y, color.Z, color.W), out Brush brush)) { return brush; }
+            else 
+            {                 
+                brush = new SolidColorBrush(RenderTarget, new RawColor4(color.X, color.Y, color.Z, color.W));
+                BrushDict.Add((color.X, color.Y, color.Z, color.W), brush);
+
+                return brush;
             }
-            RawVector2 point = new(CurrentX, CurrentY);
-            
-            Brush brush = BrushDict.TryGetValue((drawingText3D.Color.X, drawingText3D.Color.Y, drawingText3D.Color.Z, drawingText3D.Color.W), out brush) ? brush : new SolidColorBrush(RenderTarget, new RawColor4(drawingText3D.Color.X, drawingText3D.Color.Y, drawingText3D.Color.Z, drawingText3D.Color.W));
-
-            RenderTarget.DrawTextLayout(point, drawingText3D.TextLayout, brush);
-            TextQuadVertex textQuadVertex = new(new Vector3(point.X, point.Y, 0), )
-            {
-                Position = new Vector3(point.X, point.Y, 0),
-                Color = drawingText3D.Color,
-                TexCoord = new Vector2(CurrentX / AtlasSize.Width, CurrentY / AtlasSize.Height)
-            };
-            CurrentBounds = RectangleF.Union(CurrentBounds, new RectangleF(CurrentX, CurrentY, width, height));
-
-            return true;
         }
         #endregion
 

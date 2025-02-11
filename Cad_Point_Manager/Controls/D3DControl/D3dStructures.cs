@@ -33,27 +33,18 @@ namespace Cad_Point_Manager.Controls.D3DControl
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct TextQuadVertex
+    public struct TextVertex
     {
-        public Vector3 Position;    // Position in world space
-        public Vector2 Size;        // Width & height of text block
-        public Vector4 UVCoords;    // UV coordinates for the text texture
-        public Vector4 Color;       // Text color (RGBA)
-        public float IsVisible;     // Visibility flag
-        public Matrix RotationMatrix; // Rotation matrix for the entire text block
-        public int AtlasIndex;      // Index of the atlas texture containing the text
+        public Vector3 Position; // 3D position (X, Y, Z)
+        public Vector2 TexCoord; // Texture coordinates (U, V)
 
-        public TextQuadVertex(Vector3 position, Vector2 size, Vector4 uv, Vector4 color, int atlasIndex, float isVisible = 1.0f, Matrix? rotationMatrix = null)
+        public TextVertex(Vector3 position, Vector2 texCoord)
         {
             Position = position;
-            Size = size;
-            UVCoords = uv;
-            Color = color;
-            AtlasIndex = atlasIndex;
-            IsVisible = isVisible;
-            RotationMatrix = rotationMatrix ?? Matrix.Identity;
+            TexCoord = texCoord;
         }
     }
+
 
     [StructLayout(LayoutKind.Sequential)]
     public struct TransformationBuffer

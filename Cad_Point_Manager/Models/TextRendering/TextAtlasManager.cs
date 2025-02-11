@@ -27,7 +27,7 @@ namespace Cad_Point_Manager.Models.TextRendering
         public Size2F AtlasSize { get; set; } = new Size2F();
         public List<TextAtlas> TextAtlases { get; set; } = [];
         public List<Texture2D> Texture2Ds { get; set; } = [];
-        public List<TextQuadVertex> TextQuadVertices { get; set; } = [];
+        public List<TextVertex> TextVertices { get; set; } = [];
         public TextAtlas CurrentTexture { get; set; }
         public bool IsDisposed { get; private set; } = false;
         #endregion
@@ -45,10 +45,10 @@ namespace Cad_Point_Manager.Models.TextRendering
         #region Methods
         public void CreateAtlas()
         {
-            GetNextTexture();
+            GetTexture();
         }
 
-        private void GetNextTexture()
+        private void GetTexture()
         {
             // Create a texture for the atlas
             var texture = new Texture2D(_device, new Texture2DDescription()
@@ -71,19 +71,28 @@ namespace Cad_Point_Manager.Models.TextRendering
         public void LoadTextListToAtlas(List<DrawingText3D> textList)
         {
             CurrentTexture.RenderTarget.BeginDraw();
+            CurrentTexture.RenderTarget.Clear(new RawColor4(1.0f, 0.0f, 0.0f, 1.0f));
             foreach (var text in textList)
             {
-                bool isAdded = CurrentTexture.AddTextToAtlas(text);
-
-                if (!isAdded)
-                {
-                    GetNextTexture();
-                    CurrentTexture.AddTextToAtlas(text);
-                }
+                CurrentTexture.AddTextToAtlas(text);
             }
             CurrentTexture.RenderTarget.EndDraw();
+
+            LoadTextVertices();
         }
 
+        public void LoadTextVertices()
+        {
+            TextVertices = new()
+            {
+                new(new Vector3(980, 4950, 0.0f), new Vector2(980, 4950)),
+                new(new Vector3(980, 5230, 0.0f), new Vector2(980, 5230)),
+                new(new Vector3(1340, 5230, 0.0f), new Vector2(1340, 5230)),
+                new(new Vector3(980, 4950, 0.0f), new Vector2(980, 4950)),
+                new(new Vector3(1340, 5230, 0.0f), new Vector2(1340, 5230)),
+                new(new Vector3(1340, 4950, 0.0f), new Vector2(1340, 4950))
+            };
+        }
 
         protected virtual void Dispose(bool disposing)
         {
