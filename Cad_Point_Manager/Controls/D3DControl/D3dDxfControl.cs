@@ -200,7 +200,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             }
             if (!CadManager3D.DxfTextLoaded) { CadManager3D.UpdateTextVerticesList(_d3dResCache); }
             if (!_clipSet) { SetClip(); _clipSet = true; }
-            //if (!_lineShaderLoaded) { InitializeLineShader(); }
+            if (!_lineShaderLoaded) { InitializeLineShader(); }
             if (!_textShaderLoaded) { InitializeTextShader(); }
             if (!ConstantBufferInitialized) { InitializeConstantBuffer(); }
             if (!_d2dInitialized) { InitializeDirect2D(); }
@@ -223,7 +223,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             DrawInteractiveObjects();
             UpdateConstantBuffer();
 
-            //DrawLinesWithShader();
+            DrawLinesWithShader();
             DrawTextWithShader();
 
             D3dIsDirty = false;
@@ -245,7 +245,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             context.Draw(_lineVertices.Length, 0);
         }
-        private void DrawTextWithShader()
+        private void DrawTextWithShader() 
         {
             var context = _d3dResCache.DeviceContext;
 
