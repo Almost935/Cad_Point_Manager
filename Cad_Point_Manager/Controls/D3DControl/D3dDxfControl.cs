@@ -223,8 +223,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
             DrawInteractiveObjects();
             UpdateConstantBuffer();
 
-            DrawLinesWithShader();
             DrawTextWithShader();
+            DrawLinesWithShader();
 
             D3dIsDirty = false;
         }
@@ -254,6 +254,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             context.InputAssembler.PrimitiveTopology = PrimitiveTopology.TriangleList;
             context.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding(_textVertexBuffer, Marshal.SizeOf<TextVertex>(), 0));
+
+            context.VertexShader.Set(_textVertexShader);
+            context.PixelShader.Set(_textPixelShader);
 
             _textSRV = new(_d3dResCache.Device, CadManager3D.TextAtlasManager.CurrentTexture.Texture);
             context.PixelShader.SetShaderResource(0, _textSRV);
@@ -376,17 +379,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             if (_d3dResCache is null) { return; }
 
             CadManager3D.UpdateTextVerticesList(_d3dResCache);
-
-            //TextVertex[] textVertices =
-            //{
-            //    new(new Vector3(980, 4950, 0.0f), new Vector2(980, 4950)),
-            //    new(new Vector3(980, 5230, 0.0f), new Vector2(980, 5230)),
-            //    new(new Vector3(1340, 5230, 0.0f), new Vector2(1340, 5230)),
-            //    new(new Vector3(980, 4950, 0.0f), new Vector2(980, 4950)),
-            //    new(new Vector3(1340, 5230, 0.0f), new Vector2(1340, 5230)),
-            //    new(new Vector3(1340, 4950, 0.0f), new Vector2(1340, 4950))
-            //};
-            //_textVertices = textVertices;
 
             _textVertices = CadManager3D.TextAtlasManager.TextVertices.ToArray();
 
@@ -515,9 +507,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _textSampler = new SamplerState(_d3dResCache.Device, new SamplerStateDescription()
             {
                 Filter = Filter.MinMagMipLinear,
-                AddressU = TextureAddressMode.Wrap,
-                AddressV = TextureAddressMode.Wrap,
-                AddressW = TextureAddressMode.Wrap,
+                AddressU = TextureAddressMode.Clamp,
+                AddressV = TextureAddressMode.Clamp,
+                AddressW = TextureAddressMode.Clamp,
                 ComparisonFunction = Comparison.Never,
                 MinimumLod = 0,
                 MaximumLod = float.MaxValue,
@@ -570,7 +562,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
                 float scale = Math.Min(Viewport.Width / CadManager3D.Extents.Width, Viewport.Height / CadManager3D.Extents.Height);
 
-                float hitTestFactor = 1.0f / 200;
                 _dxfInitialMatrix = Matrix.Scaling(scale, scale, 1) * Matrix.Translation(-centerX, -centerY, 0);
 
                 if (_camera is not null)
@@ -695,6 +686,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             base.OnRenderSizeChanged(sizeInfo);
 
             Viewport = new(0, 0, (float)ActualWidth, (float)ActualHeight);
+            CadManager3D.ViewportSize = new((float)ActualWidth, (float)ActualHeight);
 
             GetInitialMatrix();
 
@@ -900,7 +892,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             {
                 oldCadManager3D.PropertyChanged -= control.CadManager3D_PropertyChanged;
             }
-
+            
             if (e.NewValue is CadManager3D newCadManager3D)
             {
                 newCadManager3D.PropertyChanged += control.CadManager3D_PropertyChanged;

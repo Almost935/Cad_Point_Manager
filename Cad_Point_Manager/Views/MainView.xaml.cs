@@ -10,7 +10,7 @@ namespace Cad_Point_Manager.Views
     public partial class MainView : Page
     {
         public MainView(MainViewModel mainViewModel)
-        {
+        {    
             this.DataContext = mainViewModel;
 
             InitializeComponent();

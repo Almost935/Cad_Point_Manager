@@ -1,5 +1,6 @@
 ﻿using Cad_Point_Manager.Common;
 using Cad_Point_Manager.Controls.D3DControl;
+using Cad_Point_Manager.Helpers;
 using Cad_Point_Manager.Models.TextRendering;
 using netDxf.Entities;
 using SharpDX;
@@ -27,17 +28,18 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         public Vector3 Position { get; set; }
         public int StartVertexIndex { get; set; }
         public int EndVertexIndex { get; set; }
-        //public List<TextQuadVertex> TextVertices { get; set; } = [];
         public float Rotation { get; set; } = 0;
         public int FontSize { get; set; }
         public string FontFamilyName { get; set; }
         public float WidthFactor { get; set; } = 1.0f;
         public System.Windows.Media.Matrix Transform { get; set; }
         public Enums.TextAttachmentPoint AttachmentPoint { get; set; }
-
         public TextLayout TextLayout { get; set; }
+        public TextGeometryVertex[] TextGeometryVertices { get; set; } = [];
+
         public bool TextFormatCreated => _textFormat != null;
         public bool TextLayoutCreated => TextLayout != null;
+        public bool TextGeometryCreated => TextGeometryVertices.Length > 0;
         
         public RectangleF TextAtlasBounds { get; set; }
         public TextAtlasManager TextAtlas { get; set; }
@@ -66,7 +68,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         }
         public override void DrawToD2dDeviceContext(DeviceContext1 deviceContext, SharpDX.Direct2D1.Factory2 factory, Brush brush, float thickness, StrokeStyle1 strokeStyle)
         {
-            deviceContext.DrawTextLayout(new RawVector2((float)Position.X, -(float)Position.Y), TextLayout, brush);
+            //deviceContext.DrawTextLayout(new RawVector2((float)Position.X, -(float)Position.Y), TextLayout, brush);
         }
 
 
@@ -107,7 +109,8 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         private protected System.Windows.Media.Matrix GetTransform(netDxf.Vector3 dxfPos)
         {
             System.Windows.Media.Matrix matrix = new();
-            matrix.ScaleAt(-1, -1, dxfPos.X, dxfPos.Y);
+            //matrix.ScaleAt(1, 1, dxfPos.X, dxfPos.Y);
+            matrix.Translate(dxfPos.X, dxfPos.Y);
             return matrix;
         }
 
@@ -121,17 +124,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         //    return new TextQuadVertex(vertexPosition, color, texCoord, isVisible, rotation);
         //}
 
-        private protected Vector3 GetTextureCoordinatesForChar(char c)
-        {
-            // Assuming a font texture atlas where characters are placed in a grid
-            // You need a way to map each character to its coordinates in the texture
-            // For example, 'A' might be mapped to (0.0f, 0.0f), 'B' to (0.1f, 0.0f), etc.
-            // This will vary depending on your font texture atlas setup.
-            return new Vector3(c % 16 * 0.0625f, c / 16 * 0.0625f, 0); // Example assuming 16x16 grid of characters
-        }
-
-
-
         public void GetTextFormat(SharpDX.DirectWrite.Factory1 factory)
         {
             _textFormat = new(factory, FontFamilyName, FontSize);
@@ -139,12 +131,35 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
 
         public void GetTextLayout(SharpDX.DirectWrite.Factory1 factory)
         {
-            //RawMatrix3x2 transform = new((float)Transform.M11, (float)Transform.M12, (float)Transform.M21, (float)Transform.M22, (float)Transform.OffsetX, (float)Transform.OffsetY);
-            RawMatrix3x2 transform = new(-1, 0, 0, -1, 0, 0);
-            TextLayout = new(factory, Text, _textFormat, (float)Bounds.Width, (float)Bounds.Height, 96, transform, true);
+            RawMatrix3x2 transform = new((float)Transform.M11, (float)Transform.M12, (float)Transform.M21, (float)Transform.M22, (float)Transform.OffsetX, (float)Transform.OffsetY);
+            TextLayout = new(factory, Text, _textFormat, (float)Bounds.Width, (float)Bounds.Height, 96, true);
         }
 
+        public void Tesselate(SharpDX.Direct2D1.Factory2 factory, SharpDX.Direct2D1.RenderTarget renderTarget)
+        {
+            var geometry = TextRenderingHelpers.CreateTextGeometry(factory, Text, _textFormat);
+            var vertices = TextRenderingHelpers.TessellateGeometry(renderTarget, geometry);
+            
+            TextGeometryVertices = GetVertices(vertices);
 
+            geometry.Dispose();
+        }
+
+        public TextGeometryVertex[] GetVertices(List<Vector2> vertices)
+        {
+            List<TextGeometryVertex> textGeometries = [];
+            Matrix transform = Matrix.Translation((float)Transform.OffsetX, (float)Transform.OffsetY, 0);
+
+            foreach (var vertex in vertices)
+            {
+                var translatedVector = Vector2.TransformCoordinate(vertex, transform);
+
+                TextGeometryVertex textGeometryVertex = new(new Vector3(translatedVector, 0), Color);
+                textGeometries.Add(textGeometryVertex);
+            }
+
+            return textGeometries.ToArray();
+        }
 
         public static float ConvertDxfHeightToFontSize(float height)
         {

@@ -1,6 +1,4 @@
-﻿
-
-struct VS_INPUT
+﻿struct VS_INPUT
 {
     float3 Position : POSITION;
     float2 TexCoord : TEXCOORD0;
@@ -26,10 +24,10 @@ VS_OUTPUT VSMain(VS_INPUT input)
     output.Position = mul(float4(input.Position, 1.0), transformationMatrix);
 
     output.TexCoord = input.TexCoord; // Pass texture coordinate to pixel shader
+    //output.TexCoord = mul(float4(input.TexCoord, 0.0, 1.0), transformationMatrix).xy;
 
     return output;
 }
-
 
 
 

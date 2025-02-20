@@ -15,7 +15,7 @@ namespace Cad_Point_Manager.ViewModels
         private string _dxfFilePath;
         private string _dxfFileName;
         private DxfDocument _dxfDocument;
-        private Matrix _transformMatrix = Matrix.Identity;
+        private Size2F _viewportSize = Size2F.Empty;
         #endregion
 
         #region Properties
@@ -64,13 +64,13 @@ namespace Cad_Point_Manager.ViewModels
                 OnPropertyChanged(nameof(DxfDocument));
             }
         }
-        public Matrix TransformMatrix
+        public Size2F ViewportSize
         {
-            get { return _transformMatrix; }
+            get { return _viewportSize; }
             set
             {
-                _transformMatrix = value;
-                OnPropertyChanged(nameof(TransformMatrix));
+                _viewportSize = value;
+                OnPropertyChanged(nameof(ViewportSize));
             }
         }
         #endregion
@@ -143,7 +143,7 @@ namespace Cad_Point_Manager.ViewModels
 
                 DxfDocument = DxfDocument.Load(DxfFilePath);
                 if (DxfDocument is not null)
-                {
+                { 
                     DxfFileName = DxfDocument.Name;
                     JobFileManager.LoadDxf(DxfDocument);
                 }

@@ -16,6 +16,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Data;
+using System.Windows.Media.Media3D;
 using Point = System.Windows.Point;
 using Vector2 = SharpDX.Vector2;
 
@@ -26,7 +27,6 @@ namespace Cad_Point_Manager.Models
         #region Fields
         private D3dResCache _d3dResCache;
         private bool _dxfTextLoading = false;
-        private FontCache _fontCache = new();
 
         private bool _dxfLoaded = false;
         private bool _dxfTextLoaded = false;
@@ -37,6 +37,7 @@ namespace Cad_Point_Manager.Models
         private List<DrawingText3D> _drawingText = [];
         private ObservableCollection<KeyValuePair<string, ObjectLayer3D>> _layers = [];
         private ICollectionView _layersView;
+        private Size2F _viewportSize = Size2F.Empty;
         #endregion
 
         #region Properties
@@ -122,6 +123,15 @@ namespace Cad_Point_Manager.Models
                 OnPropertyChanged(nameof(LayersView));
             }
         }
+        public Size2F ViewportSize
+        {
+            get => _viewportSize;
+            set
+            {
+                _viewportSize = value;
+                OnPropertyChanged(nameof(ViewportSize));
+            }
+        }
 
         public DxfDocument DxfDocument { get; set; }
         public DrawingObjectTree3D DrawingObjectTree3D { get; set; }
@@ -144,7 +154,7 @@ namespace Cad_Point_Manager.Models
 
             DxfDocument = dxfDocument;
             Extents = DxfHelpers.GetBoundsFromHeader(DxfDocument);
-            
+
             foreach (var e in DxfDocument.Entities.All)
             {
                 var layer = GetLayer(e.Layer);
@@ -184,7 +194,7 @@ namespace Cad_Point_Manager.Models
             foreach (var node in nodes)
             {
                 (double distance, DrawingObject3D obj) objTup = node.HitTestNode(p);
-                
+
                 if (objTup.distance < tup.distance && objTup.distance < tolerance)
                 {
                     tup = objTup;
@@ -194,7 +204,7 @@ namespace Cad_Point_Manager.Models
             return tup;
         }
 
-        public List<(double distance, DrawingObject3D obj)> GetNearestDrawingObjects(Point p, float tolerance) 
+        public List<(double distance, DrawingObject3D obj)> GetNearestDrawingObjects(Point p, float tolerance)
         {
             List<(double distance, DrawingObject3D obj)> hits = [];
 
@@ -239,7 +249,6 @@ namespace Cad_Point_Manager.Models
         public void UpdateLineVerticesList()
         {
             LineVertices.Clear();
-            DrawingText.Clear();
 
             foreach (var keyValuePair in Layers)
             {
@@ -261,11 +270,6 @@ namespace Cad_Point_Manager.Models
                             LineVertices.AddRange(drawingBlock.DrawingGeometryVerteces);
                             drawingBlock.EndVertexIndex = LineVertices.Count - 1;
                         }
-
-                        if(obj is DrawingText3D drawingText)
-                        {
-                            DrawingText.Add(drawingText);
-                        }
                     }
                 }
             }
@@ -275,12 +279,34 @@ namespace Cad_Point_Manager.Models
         {
             if (_dxfTextLoading || d3DResCache.Device is null) { return; }
 
+            _d3dResCache = d3DResCache;
+            DrawingText.Clear();
+
+            foreach (var keyValuePair in Layers)
+            {
+                var layer = keyValuePair.Value;
+                if (layer.IsVisible)
+                {
+                    foreach (var obj in layer.DrawingObject3Ds)
+                    {
+                        if (obj is DrawingText3D drawingText)
+                        {
+                            if (!drawingText.TextFormatCreated) { drawingText.GetTextFormat(_d3dResCache.FactoryWrite); }
+                            if (!drawingText.TextLayoutCreated) { drawingText.GetTextLayout(_d3dResCache.FactoryWrite); }
+                            if (!drawingText.TextGeometryCreated) { drawingText.Tesselate(_d3dResCache.D2dFactory, _d3dResCache.D2DRenderTarget); }
+
+                            DrawingText.Add(drawingText);
+                        }
+                    }
+                }
+            }
+
             _dxfTextLoading = true;
             ResetTextAtlasManager();
 
-            TextAtlasManager?.Dispose(); 
+            TextAtlasManager?.Dispose();
 
-            TextAtlasManager = new(d3DResCache.Device, new Size2F(d3DResCache.MaxSize, d3DResCache.MaxSize));
+            TextAtlasManager = new(d3DResCache.Device, Extents, ViewportSize);
             TextAtlasManager.LoadTextListToAtlas(DrawingText);
 
             DxfTextLoaded = true;

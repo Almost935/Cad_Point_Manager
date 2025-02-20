@@ -1,4 +1,5 @@
 ﻿using netDxf;
+using SharpDX;
 using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -82,7 +83,6 @@ namespace Cad_Point_Manager.Models
                 OnPropertyChanged();
             }
         }
-
         public bool JobPathSet { get; set; } = false;
         public bool DxfLoaded { get { return CadManager is not null; } }
         #endregion

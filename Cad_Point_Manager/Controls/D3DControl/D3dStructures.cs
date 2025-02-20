@@ -3,6 +3,7 @@ using SharpDX.Direct2D1.Effects;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Drawing;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -25,11 +26,18 @@ namespace Cad_Point_Manager.Controls.D3DControl
         /// float value indicating whether the vertex is visible or not. 1.0f is visible, 0.0f is not visible.
         /// </summary>
         public float IsVisible = isVisible;
+    }
 
-        public float GetDistanceTo(LineVertex vertex)
-        {
-            return Vector3.Distance(Position, vertex.Position);
-        }
+    [StructLayout(LayoutKind.Sequential)]
+    public struct TextGeometryVertex(Vector3 position, Vector4 color, float isVisible = 1.0f)
+    {
+        public Vector3 Position = position;
+        public Vector4 Color = color;
+
+        /// <summary>
+        /// float value indicating whether the vertex is visible or not. 1.0f is visible, 0.0f is not visible.
+        /// </summary>
+        public float IsVisible = isVisible;
     }
 
     [StructLayout(LayoutKind.Sequential)]

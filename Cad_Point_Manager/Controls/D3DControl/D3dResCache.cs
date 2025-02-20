@@ -19,6 +19,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private RenderTargetView _renderTargetView = null;
         private SharpDX.Direct2D1.Device1 _d2DDevice = null;
         private SharpDX.Direct2D1.DeviceContext1 _d2DDeviceContext = null;
+        private SharpDX.Direct2D1.RenderTarget _d2dRenderTarget = null;
         private Factory2 _d2DFactory = null;
         private Bitmap1 _d2dTargetBitmap = null;
         private SharpDX.DirectWrite.Factory1 _factoryWrite = null;
@@ -79,6 +80,15 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 OnPropertyChanged(nameof(D2DDeviceContext));
             }
         }
+        public SharpDX.Direct2D1.RenderTarget D2DRenderTarget
+        {
+            get { return _d2dRenderTarget; }
+            set
+            {
+                _d2dRenderTarget = value;
+                OnPropertyChanged(nameof(D2DRenderTarget));
+            }
+        }
         public Factory2 D2dFactory
         {
             get { return _d2DFactory; }
@@ -133,6 +143,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     _d2DDevice?.Dispose();
                     _d2DDeviceContext?.Dispose();
                     _d2DFactory?.Dispose();
+                    _d2dRenderTarget?.Dispose();
                 }
 
                 disposed = true;

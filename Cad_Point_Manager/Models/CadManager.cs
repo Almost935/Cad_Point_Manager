@@ -171,13 +171,6 @@ namespace Cad_Point_Manager.Models
                 layer.InitializeResources(resCache);
             }
 
-            //foreach (var layer in Layers.Values)
-            //{
-            //    stopwatch.Restart();
-
-            //    layer.InitializeGeometries();
-            //}
-
             Parallel.ForEach(Layers.Values, layer =>
             {
                 layer.InitializeGeometries();

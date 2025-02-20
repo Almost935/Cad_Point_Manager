@@ -243,6 +243,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
             using (var surface = _texture2D.QueryInterface<Surface>())
             {
                 _d3dResCache.D2DTargetBitmap = new SharpDX.Direct2D1.Bitmap1(_d3dResCache.D2DDeviceContext, surface, bitmapProperties);
+
+                var rtp = new SharpDX.Direct2D1.RenderTargetProperties(new SharpDX.Direct2D1.PixelFormat(SharpDX.DXGI.Format.Unknown, SharpDX.Direct2D1.AlphaMode.Premultiplied));
+                _d3dResCache.D2DRenderTarget = new(_d3dResCache.D2dFactory, surface, rtp);
             }
 
             _d3dResCache.D2DDeviceContext.Target = _d3dResCache.D2DTargetBitmap;

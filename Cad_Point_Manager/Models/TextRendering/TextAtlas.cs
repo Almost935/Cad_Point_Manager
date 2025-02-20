@@ -20,7 +20,6 @@ namespace Cad_Point_Manager.Models.TextRendering
         #region Properties
         public Texture2D Texture { get; set; }
         public RenderTarget RenderTarget { get; set; }
-        public Size2F AtlasSize { get; set; } = new Size2F();
         public List<TextVertex> TextVertices { get; set; } = [];
         public float CurrentX { get; set; }
         public float CurrentY { get; set; }

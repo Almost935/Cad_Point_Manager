@@ -9,6 +9,41 @@ namespace Cad_Point_Manager.Helpers
 {
     public static class MathHelpers
     {
+        /// <summary>
+        /// Calculates the transform required to scale up and center a bounding box of objects to the bounding box of a viewport.
+        /// </summary>
+        /// <param name="boundingBox">A RawRectangleF object that corresponds to the bounds of the objects.</param>
+        /// <param name="targetBox">The bounds of the viewport that the objects need to be shown in.</param>
+        /// <returns></returns>
+        public static Matrix3x2 GetFitTransform(RawRectangleF boundingBox, RawRectangleF targetBox)
+        {
+            // Compute the width and height of the bounding box
+            float objectWidth = boundingBox.Right - boundingBox.Left;
+            float objectHeight = boundingBox.Bottom - boundingBox.Top;
+
+            // Compute the width and height of the target box
+            float targetWidth = targetBox.Right - targetBox.Left;
+            float targetHeight = targetBox.Bottom - targetBox.Top;
+
+            // Compute scale factors for both axes
+            float scaleX = targetWidth / objectWidth;
+            float scaleY = targetHeight / objectHeight;
+
+            // Use the smaller scale to maintain aspect ratio
+            float scale = Math.Min(scaleX, scaleY);
+
+            // Compute the new scaled width and height
+            float scaledWidth = objectWidth * scale;
+            float scaledHeight = objectHeight * scale;
+
+            // Compute the translation needed to center the objects
+            float offsetX = targetBox.Left + (targetWidth - scaledWidth) / 2 - (boundingBox.Left * scale);
+            float offsetY = targetBox.Top + (targetHeight - scaledHeight) / 2 - (boundingBox.Top * scale);
+
+            // Create the transformation matrix
+            return Matrix3x2.Scaling(scale) * Matrix3x2.Translation(offsetX, offsetY);
+        }
+
         public static bool IsGeometryInRect(RawRectangleF viewport, Geometry geometry, float strokeThickness)
         {
             // Attempt to get the bounds of the geometry

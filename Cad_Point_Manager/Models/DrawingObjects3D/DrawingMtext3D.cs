@@ -80,7 +80,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         /// <param name="rect"></param>
         /// <param name="position"></param>
         /// <returns></returns>
-        public Vector3 GetTextOrigin(Enums.TextAttachmentPoint attachmentPoint, RectangleF rect, Vector3 position)
+         public Vector3 GetTextOrigin(Enums.TextAttachmentPoint attachmentPoint, RectangleF rect, Vector3 position)
         {
             Vector3 adjustedPos = Vector3.Zero;
 
