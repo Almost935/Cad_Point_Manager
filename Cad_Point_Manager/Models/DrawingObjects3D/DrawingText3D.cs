@@ -32,6 +32,8 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         public int FontSize { get; set; }
         public string FontFamilyName { get; set; }
         public float WidthFactor { get; set; } = 1.0f;
+        public bool IsBold { get; set; }
+        public bool IsItalic { get; set; }
         public System.Windows.Media.Matrix Transform { get; set; }
         public Enums.TextAttachmentPoint AttachmentPoint { get; set; }
         public TextLayout TextLayout { get; set; }
@@ -39,10 +41,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
 
         public bool TextFormatCreated => _textFormat != null;
         public bool TextLayoutCreated => TextLayout != null;
-        public bool TextGeometryCreated => TextGeometryVertices.Length > 0;
-        
-        public RectangleF TextAtlasBounds { get; set; }
-        public TextAtlasManager TextAtlas { get; set; }
+        public bool TextVerticesCreated => TextGeometryVertices.Length > 0;
         #endregion
 
         #region Methods
@@ -131,14 +130,13 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
 
         public void GetTextLayout(SharpDX.DirectWrite.Factory1 factory)
         {
-            RawMatrix3x2 transform = new((float)Transform.M11, (float)Transform.M12, (float)Transform.M21, (float)Transform.M22, (float)Transform.OffsetX, (float)Transform.OffsetY);
             TextLayout = new(factory, Text, _textFormat, (float)Bounds.Width, (float)Bounds.Height, 96, true);
         }
 
-        public void Tesselate(SharpDX.Direct2D1.Factory2 factory, SharpDX.Direct2D1.RenderTarget renderTarget)
+        public void Tesselate(SharpDX.Direct2D1.Factory2 factory, RenderTarget renderTarget)
         {
-            var geometry = TextRenderingHelpers.CreateTextGeometry(factory, Text, _textFormat);
-            var vertices = TextRenderingHelpers.TessellateGeometry(renderTarget, geometry);
+            var geometry = TextRenderingHelpers.CreateTextGeometry(factory, Text, TextLayout);
+            var vertices = TextRenderingHelpers.TessellateGeometry(geometry);
             
             TextGeometryVertices = GetVertices(vertices);
 
@@ -154,7 +152,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             {
                 var translatedVector = Vector2.TransformCoordinate(vertex, transform);
 
-                TextGeometryVertex textGeometryVertex = new(new Vector3(translatedVector, 0), Color);
+                TextGeometryVertex textGeometryVertex = new(new Vector3(translatedVector.X, translatedVector.Y, 0), Color);
                 textGeometries.Add(textGeometryVertex);
             }
 

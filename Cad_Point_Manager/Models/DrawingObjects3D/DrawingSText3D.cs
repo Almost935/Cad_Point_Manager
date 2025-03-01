@@ -43,7 +43,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             {
                 Text = text.Value;
                 WidthFactor = (float)text.WidthFactor;
-
+                
                 float widthPerCharacter = (float)(0.6f * text.Height);
                 float textWidth = widthPerCharacter * Text.Length * WidthFactor;
 

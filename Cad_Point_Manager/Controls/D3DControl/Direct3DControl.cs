@@ -152,7 +152,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             var rasterizerStateDescription = new RasterizerStateDescription
             {
                 FillMode = FillMode.Solid,
-                CullMode = CullMode.Back,
+                CullMode = CullMode.None,
                 IsFrontCounterClockwise = false,
                 IsMultisampleEnabled = false
             };

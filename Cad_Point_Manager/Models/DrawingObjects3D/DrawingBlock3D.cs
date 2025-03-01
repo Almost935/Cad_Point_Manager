@@ -36,13 +36,13 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                 OnPropertyChanged(nameof(DrawingObjects));
             }
         }
-        public List<LineVertex> DrawingGeometryVerteces
+        public List<LineVertex> DrawingGeometryVertices
         {
             get => _drawingGeometryVerteces;
             set
             {
                 _drawingGeometryVerteces = value;
-                OnPropertyChanged(nameof(DrawingGeometryVerteces));
+                OnPropertyChanged(nameof(DrawingGeometryVertices));
             }
         }
 
@@ -130,11 +130,11 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             this.IsSelected = true;
             this.IsVisible = false;
 
-            for (int i = 0; i < DrawingGeometryVerteces.Count(); i++)
+            for (int i = 0; i < DrawingGeometryVertices.Count(); i++)
             {
-                var vertex = DrawingGeometryVerteces[i];
+                var vertex = DrawingGeometryVertices[i];
                 vertex.IsVisible = 0.0f;
-                DrawingGeometryVerteces[i] = vertex;
+                DrawingGeometryVertices[i] = vertex;
             }
         }
         public override void Deselect()
@@ -142,11 +142,11 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             this.IsSelected = false;
             this.IsVisible = true;
 
-            for (int i = 0; i < DrawingGeometryVerteces.Count(); i++)
+            for (int i = 0; i < DrawingGeometryVertices.Count(); i++)
             {
-                var vertex = DrawingGeometryVerteces[i];
+                var vertex = DrawingGeometryVertices[i];
                 vertex.IsVisible = 1.0f;
-                DrawingGeometryVerteces[i] = vertex;
+                DrawingGeometryVertices[i] = vertex;
             }
         }
 
@@ -180,17 +180,17 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
 
         private void UpdateVertices()
         {
-            DrawingGeometryVerteces.Clear();
+            DrawingGeometryVertices.Clear();
 
             foreach (var obj in DrawingObjects)
             {
                 if (obj is DrawingBlock3D block)
                 {
-                    DrawingGeometryVerteces.AddRange(block.DrawingGeometryVerteces);
+                    DrawingGeometryVertices.AddRange(block.DrawingGeometryVertices);
                 }
                 if (obj is DrawingGeometry3D geometry)
                 {
-                    DrawingGeometryVerteces.AddRange(geometry.Vertices);
+                    DrawingGeometryVertices.AddRange(geometry.Vertices);
                 }  
             }
         }

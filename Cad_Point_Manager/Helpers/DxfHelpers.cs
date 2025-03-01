@@ -11,6 +11,10 @@ using Cad_Point_Manager.DrawingObjects;
 using Cad_Point_Manager.Models;
 using Cad_Point_Manager.Controls.D3DControl;
 using Cad_Point_Manager.Models.DrawingObjects3D;
+using netDxf.Tables;
+using System.Text.RegularExpressions;
+using System.Security.Policy;
+using TextAlignment = netDxf.Entities.TextAlignment;
 
 namespace Cad_Point_Manager.Helpers
 {

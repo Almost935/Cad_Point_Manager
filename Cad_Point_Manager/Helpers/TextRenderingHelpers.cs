@@ -3,6 +3,7 @@ using SharpDX.Direct2D1;
 using SharpDX.DirectWrite;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -11,7 +12,7 @@ namespace Cad_Point_Manager.Helpers
 {
     public static class TextRenderingHelpers
     {
-        public static PathGeometry CreateTextGeometry(SharpDX.Direct2D1.Factory d2dFactory, string text, TextFormat textFormat)
+        public static PathGeometry CreateTextGeometry(SharpDX.Direct2D1.Factory d2dFactory, string text, TextLayout textLayout, float flatteningTolerance = 0.001f)
         {
             using (var dwriteFactory = new SharpDX.DirectWrite.Factory())
             {
@@ -19,51 +20,78 @@ namespace Cad_Point_Manager.Helpers
                 FontCollection fontCollection = dwriteFactory.GetSystemFontCollection(false);
 
                 // Find the index of the font in the collection
-                int fontIndex;
-                bool exists = fontCollection.FindFamilyName(textFormat.FontFamilyName, out fontIndex);
+                bool exists = fontCollection.FindFamilyName(textLayout.FontFamilyName, out int fontIndex);
                 if (!exists) fontIndex = 0; // Fallback to the first font if not found
 
                 // Get the font family and font
                 FontFamily fontFamily = fontCollection.GetFontFamily(fontIndex);
+
+                //Debug.WriteLine($"\n");
+
+                for (int j = 0; j < fontFamily.FontCount; j++)
+                {
+                    var candidateFont = fontFamily.GetFont(j);
+
+                    //Debug.WriteLine($"candidateFont: {candidateFont}");
+                    //Debug.WriteLine($"Style: {candidateFont.Style}");
+                    //Debug.WriteLine($"Weight: {candidateFont.Weight}");
+                }
+
                 Font font = fontFamily.GetFont(0); // Use the first font style
 
                 // Create a font face from the font
-                FontFace fontFace = new FontFace(font);
+                FontFace fontFace = new(font);
 
                 // Create a path geometry for storing text outlines
                 var pathGeometry = new PathGeometry(d2dFactory);
-                using (var sink = pathGeometry.Open())
+                pathGeometry.FlatteningTolerance = flatteningTolerance;
+
+                using (var finalSink = pathGeometry.Open())
                 {
+                    var clusterMetrics = textLayout.GetClusterMetrics();
+                    float charOffset = 0;
+                    
                     for (int i = 0; i < text.Length; i++)
                     {
-                        short[] glyphIndices = fontFace.GetGlyphIndices(new int[] { text[i] });
+                        var glyphGeometry = new PathGeometry(d2dFactory);
+                        glyphGeometry.FlatteningTolerance = flatteningTolerance;
 
-                        fontFace.GetGlyphRunOutline(
-                            textFormat.FontSize,
-                            glyphIndices,
-                            null,
-                            null,
-                            1,
-                            false,
-                            false,
-                            sink
-                        );
+                        using (var glyphSink = glyphGeometry.Open())
+                        {
+                            short[] glyphIndices = fontFace.GetGlyphIndices(new int[] { text[i] });
+
+                            fontFace.GetGlyphRunOutline(
+                                textLayout.FontSize,
+                                glyphIndices,
+                                null,
+                                null,
+                                1,
+                                false,
+                                false,
+                                glyphSink
+                            );
+                            glyphSink.Close();
+                        }
+                        var transformedGlyph = new TransformedGeometry(d2dFactory, glyphGeometry, Matrix3x2.Translation(charOffset, 0) * Matrix3x2.Scaling(1, -1));
+                        transformedGlyph.FlatteningTolerance = flatteningTolerance;
+                        transformedGlyph.Outline(flatteningTolerance, finalSink);
+
+                        charOffset += clusterMetrics[i].Width;
                     }
-
-                    sink.Close();
+                    finalSink.Close();
                 }
 
                 return pathGeometry;
             }
         }
 
-        public static List<Vector2> TessellateGeometry(RenderTarget renderTarget, Geometry geometry)
+        public static List<Vector2> TessellateGeometry(Geometry geometry, float flatteningTolerance = 0.001f)
         {
             var vertices = new List<Vector2>();
 
             using (var sink = new CustomTessellationSink())
             {
-                geometry.Tessellate(sink);
+                geometry.Tessellate(flatteningTolerance, sink);
                 vertices.AddRange(sink.Vertices); 
             }
 

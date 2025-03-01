@@ -52,14 +52,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         // Text Shader related fields
         private Buffer _textVertexBuffer;
-        private Buffer _textIndexBuffer;
         private VertexShader _textVertexShader;
         private PixelShader _textPixelShader;
         private InputLayout _textInputLayout;
         private bool _textShaderLoaded = false;
-        private SamplerState _textSampler;
-        private ShaderResourceView _textSRV;
-        private TextVertex[] _textVertices = [];
+        private TextGeometryVertex[] _textVertices = [];
 
         // Panning and Zooming Fields
         private float _panThreshold = 1.0f;
@@ -198,7 +195,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 DxfNeedsReload = false;
                 CadManager3D.DxfNeedsReload = false;
             }
-            if (!CadManager3D.DxfTextLoaded) { CadManager3D.UpdateTextVerticesList(_d3dResCache); }
             if (!_clipSet) { SetClip(); _clipSet = true; }
             if (!_lineShaderLoaded) { InitializeLineShader(); }
             if (!_textShaderLoaded) { InitializeTextShader(); }
@@ -233,6 +229,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
         {
             var context = _d3dResCache.DeviceContext;
 
+            if (_lineVertexBuffer is null) { return; }
+
             // Set shaders
             context.VertexShader.Set(_lineVertexShader);
             context.PixelShader.Set(_linePixelShader);
@@ -245,24 +243,21 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             context.Draw(_lineVertices.Length, 0);
         }
-        private void DrawTextWithShader() 
+        private void DrawTextWithShader()
         {
             var context = _d3dResCache.DeviceContext;
 
-            if (_textVertexBuffer == null || _textSRV == null)
-                return;
-
-            context.InputAssembler.PrimitiveTopology = PrimitiveTopology.TriangleList;
-            context.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding(_textVertexBuffer, Marshal.SizeOf<TextVertex>(), 0));
+            if (_textVertexBuffer is null) { return; }
 
             context.VertexShader.Set(_textVertexShader);
             context.PixelShader.Set(_textPixelShader);
+            context.InputAssembler.InputLayout = _textInputLayout;
+            context.VertexShader.SetConstantBuffer(0, _transformationBuffer);
 
-            _textSRV = new(_d3dResCache.Device, CadManager3D.TextAtlasManager.CurrentTexture.Texture);
-            context.PixelShader.SetShaderResource(0, _textSRV);
-            context.PixelShader.SetSampler(0, _textSampler);
+            context.InputAssembler.PrimitiveTopology = PrimitiveTopology.TriangleList;
+            context.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding(_textVertexBuffer, Marshal.SizeOf<TextGeometryVertex>(), 0));
 
-            context.Draw(_textVertices.Length , 0);
+            context.Draw(_textVertices.Length, 0);
         }
 
         private void DrawTextObjects()
@@ -380,7 +375,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             CadManager3D.UpdateTextVerticesList(_d3dResCache);
 
-            _textVertices = CadManager3D.TextAtlasManager.TextVertices.ToArray();
+            _textVertices = CadManager3D.TextVertices.ToArray();
 
             SetVertexBuffers();
 
@@ -406,11 +401,14 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 _lineVertices);
             }
 
-            if (CadManager3D.TextAtlasManager is not null && _textVertices.Length > 0)
+            if (_textVertices.Length > 0 && _textVertices.Length > 0)
             {
                 // Create the vertex buffer
                 _textVertexBuffer?.Dispose();
-                _textVertexBuffer = Buffer.Create(_d3dResCache.Device, BindFlags.VertexBuffer, _textVertices);
+                _textVertexBuffer = Buffer.Create(
+                    _d3dResCache.Device,
+                    BindFlags.VertexBuffer,
+                    _textVertices);
             }
 
             VertexBufferDirty = false;
@@ -497,25 +495,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _textInputLayout = new InputLayout(
                 _d3dResCache.Device,
                 ShaderSignature.GetInputSignature(textVertexShaderByteCode),
-                new[]
-                {
-                    new InputElement("POSITION", 0, Format.R32G32B32_Float, 0, 0, InputClassification.PerVertexData, 0),
-                    new InputElement("TEXCOORD", 0, Format.R32G32_Float, 12, 0, InputClassification.PerVertexData, 0),
-                }
-            );
-
-            _textSampler = new SamplerState(_d3dResCache.Device, new SamplerStateDescription()
-            {
-                Filter = Filter.MinMagMipLinear,
-                AddressU = TextureAddressMode.Clamp,
-                AddressV = TextureAddressMode.Clamp,
-                AddressW = TextureAddressMode.Clamp,
-                ComparisonFunction = Comparison.Never,
-                MinimumLod = 0,
-                MaximumLod = float.MaxValue,
-            });
-
-            _textSRV = new(_d3dResCache.Device, CadManager3D.TextAtlasManager.CurrentTexture.Texture);
+                [
+                    new InputElement("POSITION", 0, Format.R32G32B32_Float, 0, 0),
+                    new InputElement("COLOR", 0, Format.R32G32B32A32_Float, 12, 0),
+                    new InputElement("ISVISIBLE", 0, Format.R32_Float, 28, 0)
+                ]);
 
             _textShaderLoaded = true;
         }
@@ -832,7 +816,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     int count = 0;
                     for (int i = block3D.StartVertexIndex; i <= block3D.EndVertexIndex; i++)
                     {
-                        _lineVertices[i] = block3D.DrawingGeometryVerteces[count];
+                        _lineVertices[i] = block3D.DrawingGeometryVertices[count];
                         count++;
                     }
                 }
@@ -860,7 +844,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     int count = 0;
                     for (int i = block3D.StartVertexIndex; i <= block3D.EndVertexIndex; i++)
                     {
-                        _lineVertices[i] = block3D.DrawingGeometryVerteces[count];
+                        _lineVertices[i] = block3D.DrawingGeometryVertices[count];
                         count++;
                     }
                 }
@@ -892,7 +876,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             {
                 oldCadManager3D.PropertyChanged -= control.CadManager3D_PropertyChanged;
             }
-            
+
             if (e.NewValue is CadManager3D newCadManager3D)
             {
                 newCadManager3D.PropertyChanged += control.CadManager3D_PropertyChanged;
