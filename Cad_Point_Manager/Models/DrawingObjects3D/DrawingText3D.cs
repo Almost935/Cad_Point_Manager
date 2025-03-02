@@ -20,6 +20,8 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
     public abstract class DrawingText3D : DrawingObject3D
     {
         #region Fields
+        protected const double _textHeightToFontSizeFactor = 0.75;
+
         private protected TextFormat _textFormat;
         #endregion
 

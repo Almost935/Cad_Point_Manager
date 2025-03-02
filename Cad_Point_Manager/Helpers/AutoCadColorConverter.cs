@@ -1,5 +1,5 @@
 ﻿using netDxf;
-=using SharpDX.Direct2D1;
+using SharpDX.Direct2D1;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -17,7 +17,7 @@ namespace Cad_Point_Manager.Helpers
             if (aciNumber >= 1 && aciNumber <= 255)
             {
                 AciColor aciColor = AciColor.FromCadIndex(aciNumber);
-                return new Vector4(aciColor.R / 255, aciColor.G / 255, aciColor.B / 255, 1);
+                return new Vector4(aciColor.R / 255.0, aciColor.G / 255.0, aciColor.B / 255.0, 1);
             }
             else
             {
@@ -27,12 +27,14 @@ namespace Cad_Point_Manager.Helpers
 
         public static Vector4 ConvertTrueColorToVector4(int trueColor)
         {
-            double r = ((trueColor >> 16) & 0xFF) / 255; // Extract Red and normalize
-            double g = ((trueColor >> 8) & 0xFF) / 255;  // Extract Green and normalize
-            double b = (trueColor & 0xFF) / 255;         // Extract Blue and normalize
-            double a = 1;  // AutoCAD TrueColor doesn't store alpha, assume fully opaque
+            byte[] bytes = BitConverter.GetBytes(trueColor);
+            double r = bytes[0] / 255.0;  // Extract Red from correct position
+            double g = bytes[1] / 255.0;  // Extract Green
+            double b = bytes[2] / 255.0;  // Extract Blue
+            double a = 1;                 // Assume fully opaque
 
             return new Vector4(r, g, b, a);
         }
+
     }
 }

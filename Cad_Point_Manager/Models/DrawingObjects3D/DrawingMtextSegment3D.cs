@@ -81,9 +81,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         public void GetTextLayout(Factory1 factory)
         {
             TextLayout = new(factory, Text, TextFormat, (float)Bounds.Width, (float)Bounds.Height, 96, true);
-
-            if (IsUnderlined) { TextLayout.SetUnderline(true, new TextRange(0, Text.Length)); }
-            if (IsStrikeThroughed) { TextLayout.SetStrikethrough(true, new TextRange(0, Text.Length)); }
         }
 
         public void Tesselate(SharpDX.Direct2D1.Factory2 factory)

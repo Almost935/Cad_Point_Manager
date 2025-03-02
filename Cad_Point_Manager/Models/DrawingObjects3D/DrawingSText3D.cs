@@ -52,7 +52,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                 AttachmentPoint = GetAttachmentPoint(text.Alignment);
                 Position = GetTextOrigin(AttachmentPoint, new RectangleF((float)Bounds.Left, (float)Bounds.Top, (float)Bounds.Width, (float)Bounds.Height), 
                     new Vector3((float)text.Position.X, (float)text.Position.Y, 0));
-                FontSize = (int)Math.Ceiling(text.Height * 1.25);
+                FontSize = (int)Math.Ceiling(text.Height * _textHeightToFontSizeFactor);
                 FontFamilyName = text.Style.FontFamilyName;
                 Transform = GetTransform(text.Position);
             }
