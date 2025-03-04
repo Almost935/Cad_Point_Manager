@@ -1,42 +1,29 @@
 ﻿using SharpDX;
 using SharpDX.Direct2D1;
 using SharpDX.DirectWrite;
+using SharpDX.Mathematics.Interop;
 
 namespace Cad_Point_Manager.Helpers
 {
     public static class TextRenderingHelpers
     {
-        public static PathGeometry CreateTextGeometry(SharpDX.Direct2D1.Factory d2dFactory, string text, TextLayout textLayout, float flatteningTolerance = 0.001f)
+        public static (TransformedGeometry geometry, RawRectangleF bounds) CreateTextGeometry(
+            SharpDX.Direct2D1.Factory d2dFactory,
+            string text,
+            TextLayout textLayout,
+            float fontSizeScaleFactor,
+            float flatteningTolerance = 0.001f)
         {
             using (var dwriteFactory = new SharpDX.DirectWrite.Factory())
             {
-                // Get the system font collection
                 FontCollection fontCollection = dwriteFactory.GetSystemFontCollection(false);
-
-                // Find the index of the font in the collection
                 bool exists = fontCollection.FindFamilyName(textLayout.FontFamilyName, out int fontIndex);
                 if (!exists) fontIndex = 0; // Fallback to the first font if not found
-
-                // Get the font family and font
                 FontFamily fontFamily = fontCollection.GetFontFamily(fontIndex);
 
-                //Debug.WriteLine($"\n");
-
-                for (int j = 0; j < fontFamily.FontCount; j++)
-                {
-                    var candidateFont = fontFamily.GetFont(j);
-
-                    //Debug.WriteLine($"candidateFont: {candidateFont}");
-                    //Debug.WriteLine($"Style: {candidateFont.Style}");
-                    //Debug.WriteLine($"Weight: {candidateFont.Weight}");
-                }
-
                 Font font = fontFamily.GetFont(0); // Use the first font style
-
-                // Create a font face from the font
                 FontFace fontFace = new(font);
 
-                // Create a path geometry for storing text outlines
                 var pathGeometry = new PathGeometry(d2dFactory);
                 pathGeometry.FlatteningTolerance = flatteningTolerance;
 
@@ -66,7 +53,8 @@ namespace Cad_Point_Manager.Helpers
                             );
                             glyphSink.Close();
                         }
-                        var transformedGlyph = new TransformedGeometry(d2dFactory, glyphGeometry, Matrix3x2.Translation(charOffset, 0) * Matrix3x2.Scaling(1, -1));
+
+                        var transformedGlyph = new TransformedGeometry(d2dFactory, glyphGeometry, Matrix3x2.Translation(charOffset, 0));
                         transformedGlyph.FlatteningTolerance = flatteningTolerance;
                         transformedGlyph.Outline(flatteningTolerance, finalSink);
 
@@ -75,9 +63,17 @@ namespace Cad_Point_Manager.Helpers
                     finalSink.Close();
                 }
 
-                return pathGeometry;
+                // Get the unscaled bounds before applying the scale
+                var bounds = pathGeometry.GetBounds();
+
+                // Apply scaling transformation
+                var scaledGeometry = new TransformedGeometry(d2dFactory, pathGeometry,
+                    Matrix3x2.Scaling(fontSizeScaleFactor, -fontSizeScaleFactor));
+
+                return (scaledGeometry, bounds);
             }
         }
+
 
         public static List<Vector2> TessellateGeometry(Geometry geometry, float flatteningTolerance = 0.001f)
         {

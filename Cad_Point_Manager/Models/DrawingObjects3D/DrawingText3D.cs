@@ -21,6 +21,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
     {
         #region Fields
         protected const double _textHeightToFontSizeFactor = 0.75;
+        protected const int _fontRenderingMinimumSize = 30;
 
         private protected TextFormat _textFormat;
         #endregion
@@ -135,9 +136,10 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             TextLayout = new(factory, Text, _textFormat, (float)Bounds.Width, (float)Bounds.Height, 96, true);
         }
 
-        public void Tesselate(SharpDX.Direct2D1.Factory2 factory, RenderTarget renderTarget)
+        public void Tesselate(SharpDX.Direct2D1.Factory2 factory)
         {
-            var geometry = TextRenderingHelpers.CreateTextGeometry(factory, Text, TextLayout);
+            float fontSizeScaleFactor = (float)FontSize / _fontRenderingMinimumSize;
+            (TransformedGeometry geometry, RawRectangleF bounds) = TextRenderingHelpers.CreateTextGeometry(factory, Text, TextLayout, fontSizeScaleFactor);
             var vertices = TextRenderingHelpers.TessellateGeometry(geometry);
             
             TextGeometryVertices = GetVertices(vertices);

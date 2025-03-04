@@ -1,16 +1,11 @@
 ﻿using Cad_Point_Manager.Common;
 using Cad_Point_Manager.Controls.D3DControl;
 using Cad_Point_Manager.Helpers;
-using netDxf.Entities;
 using SharpDX;
 using SharpDX.DirectWrite;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using SharpDX.Mathematics.Interop;
 using System.Windows;
+
 using FontStyle = SharpDX.DirectWrite.FontStyle;
 using FontWeight = SharpDX.DirectWrite.FontWeight;
 
@@ -18,6 +13,12 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
 {
     public class DrawingMtextSegment3D
     {
+        #region Fields
+        private const float _flatteningTolerance = 0.001f;
+
+        private int _fontRenderingMinimumSize;
+        #endregion
+
         #region Properties
         public DrawingMtext3D DrawingMtext3D { get; set; }
         public string Text { get; set; }
@@ -31,7 +32,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         public TextLayout TextLayout { get; set; }
         public TextGeometryVertex[] TextGeometryVertices { get; set; } = [];
         public float DxfTextHeight { get; set; }
-        public float Width { get; set; }
+        public float MaxWidth { get;set; }
         public Rect Bounds { get; set; }
         public bool IsItalic { get; set; } = false;
         public bool IsBold { get; set; } = false;
@@ -45,7 +46,8 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
 
         #region Constructors
         public DrawingMtextSegment3D(DrawingMtext3D drawingMtext3D, string text, Vector4 color, Vector3 position, float rotation, 
-            int fontSize, string fontFamilyName, float dxfTextHeight, float width, bool isItalic, bool isBold, bool isUnderlined, bool isStrikethroughed)
+            int fontSize, string fontFamilyName, float dxfTextHeight, bool isItalic, bool isBold, bool isUnderlined, bool isStrikethroughed, 
+            int fontRenderingMinimumSize, float maxWidth)
         {
             DrawingMtext3D = drawingMtext3D;
             Text = text;
@@ -55,12 +57,12 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             FontSize = fontSize;
             FontFamilyName = fontFamilyName;
             DxfTextHeight = dxfTextHeight;
-            Width = width;
-            Bounds = new(Position.X, Position.Y, Width, DxfTextHeight * 1.2f);
             IsItalic = isItalic; 
             IsBold = isBold; 
             IsUnderlined = isUnderlined;
             IsStrikeThroughed = isStrikethroughed;
+            _fontRenderingMinimumSize = fontRenderingMinimumSize;
+            MaxWidth = maxWidth;
 
             Transform = GetTransform(new netDxf.Vector3(Position.X, Position.Y, Position.Z));
         }
@@ -85,35 +87,85 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
 
         public void Tesselate(SharpDX.Direct2D1.Factory2 factory)
         {
-            var geometry = TextRenderingHelpers.CreateTextGeometry(factory, Text, TextLayout);
-            var vertices = TextRenderingHelpers.TessellateGeometry(geometry);
-            TextGeometryVertices = GetVertices(vertices);
+            float fontSizeScaleFactor = _fontRenderingMinimumSize / (float)FontSize;
+
+            (SharpDX.Direct2D1.TransformedGeometry geometry, RawRectangleF bounds) = TextRenderingHelpers.CreateTextGeometry(factory, Text, TextLayout, fontSizeScaleFactor, _flatteningTolerance);
+            var vertices = TextRenderingHelpers.TessellateGeometry(geometry, _flatteningTolerance);
+
+            UpdateBounds(bounds);
+            
+            TextGeometryVertices = GetVertices(vertices, 1.00f / fontSizeScaleFactor);
 
             geometry.Dispose();
         }
 
-        private protected System.Windows.Media.Matrix GetTransform(netDxf.Vector3 dxfPos)
+        private void UpdateBounds(RawRectangleF textGeometryBounds)
+        {
+            if (Text.EndsWith(" "))
+            {
+                var clusterMetrics = TextLayout.GetClusterMetrics();
+                foreach (var cluster in clusterMetrics)
+                {
+                    if (cluster.Length == 1 && cluster.IsWhitespace)
+                    {
+                        Bounds = new(
+                            textGeometryBounds.Left, 
+                            textGeometryBounds.Top, 
+                            textGeometryBounds.Right - textGeometryBounds.Left + cluster.Width, 
+                            textGeometryBounds.Bottom - textGeometryBounds.Top);
+                    }
+                }
+            }
+            else
+            {
+                Bounds = new Rect(
+                    textGeometryBounds.Left, 
+                    textGeometryBounds.Top, 
+                    textGeometryBounds.Right - textGeometryBounds.Left, 
+                    textGeometryBounds.Bottom - textGeometryBounds.Top);
+            }
+        }
+
+        private System.Windows.Media.Matrix GetTransform(netDxf.Vector3 dxfPos)
         {
             System.Windows.Media.Matrix matrix = new();
-            //matrix.ScaleAt(1, 1, dxfPos.X, dxfPos.Y);
             matrix.Translate(dxfPos.X, dxfPos.Y);
             return matrix;
         }
 
-        public TextGeometryVertex[] GetVertices(List<Vector2> vertices)
+        public TextGeometryVertex[] GetVertices(List<Vector2> vertices, float scaleFactor = 1)
         {
             List<TextGeometryVertex> textGeometries = [];
-            Matrix transform = Matrix.Translation((float)Transform.OffsetX, (float)Transform.OffsetY, 0);
+            Matrix scaleTransform = Matrix.Scaling(scaleFactor, scaleFactor, 1);
+            Matrix translationTransform = Matrix.Translation((float)Transform.OffsetX, (float)Transform.OffsetY, 0);
 
-            foreach (var vertex in vertices)
+            foreach (var vector in vertices)
             {
-                var translatedVector = Vector2.TransformCoordinate(vertex, transform);
+                // Apply the scale transform
+                var scaledVector = Vector2.TransformCoordinate(vector, scaleTransform);
+                var translatedVector = Vector2.TransformCoordinate(scaledVector, translationTransform);
 
                 TextGeometryVertex textGeometryVertex = new(new Vector3(translatedVector.X, translatedVector.Y, 0), Color);
                 textGeometries.Add(textGeometryVertex);
             }
 
             return textGeometries.ToArray();
+        }
+
+        public void Translate(Vector2 offset)
+        {
+            for (int i = 0; i < TextGeometryVertices.Length; i++)
+            {
+                TextGeometryVertices[i] = TextGeometryVertices[i].Translate(offset);
+            }
+        }
+
+        public void Translate(Vector3 offset)
+        {
+            for (int i = 0; i < TextGeometryVertices.Length; i++)
+            {
+                TextGeometryVertices[i] = TextGeometryVertices[i].Translate(offset);
+            }
         }
         #endregion
     }

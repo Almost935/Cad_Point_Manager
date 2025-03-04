@@ -237,7 +237,7 @@ namespace Cad_Point_Manager.Models
 
         public void GetTextStyles(DxfDocument dxfDocument)
         {
-            TextStyles = new();
+            TextStyles = [];
 
             foreach (var textStyle in dxfDocument.TextStyles)
             {
@@ -293,15 +293,16 @@ namespace Cad_Point_Manager.Models
                         {
                             if (!drawingText.TextFormatCreated) { drawingText.GetTextFormat(_d3dResCache.FactoryWrite); }
                             if (!drawingText.TextLayoutCreated) { drawingText.GetTextLayout(_d3dResCache.FactoryWrite); }
-                            if (!drawingText.TextVerticesCreated) { drawingText.Tesselate(_d3dResCache.D2dFactory, _d3dResCache.D2DRenderTarget); }
+                            if (!drawingText.TextVerticesCreated) { drawingText.Tesselate(_d3dResCache.D2dFactory); }
 
                             TextVertices.AddRange(drawingText.TextGeometryVertices);
                         }
                         if (obj is DrawingMtext3D drawingMtext)
                         {
-                            if (!drawingMtext.TextFormatsCreated) { drawingMtext.GetTextFormat(_d3dResCache.FactoryWrite); }
-                            if (!drawingMtext.TextLayoutsCreated) { drawingMtext.GetTextLayout(_d3dResCache.FactoryWrite); }
-                            if (!drawingMtext.TextVerticesCreated) { drawingMtext.Tesselate(_d3dResCache.D2dFactory, _d3dResCache.D2DRenderTarget); }
+                            drawingMtext.GetSegments(_d3dResCache.FactoryWrite, _d3dResCache.D2dFactory);
+                            //if (!drawingMtext.TextFormatsCreated) { drawingMtext.GetTextFormat(_d3dResCache.FactoryWrite); }
+                            //if (!drawingMtext.TextLayoutsCreated) { drawingMtext.GetTextLayout(_d3dResCache.FactoryWrite); }
+                            //if (!drawingMtext.TextVerticesCreated) { drawingMtext.Tesselate(_d3dResCache.D2dFactory); }
 
                             foreach (var segment in drawingMtext.SegmentsList)
                             {

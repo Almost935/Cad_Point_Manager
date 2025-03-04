@@ -38,6 +38,16 @@ namespace Cad_Point_Manager.Controls.D3DControl
         /// float value indicating whether the vertex is visible or not. 1.0f is visible, 0.0f is not visible.
         /// </summary>
         public float IsVisible = isVisible;
+
+        public readonly TextGeometryVertex Translate(Vector3 offset)
+        {
+            return new TextGeometryVertex(Position + offset, Color, IsVisible);
+        }
+
+        public readonly TextGeometryVertex Translate(Vector2 offset)
+        {
+            return new TextGeometryVertex(new Vector3(Position.X + offset.X, Position.Y + offset.Y, Position.Z), Color, IsVisible);
+        }
     }
 
     [StructLayout(LayoutKind.Sequential)]

@@ -22,14 +22,17 @@ using Vector4 = SharpDX.Vector4;
 using FontStyle = netDxf.Tables.FontStyle;
 using netDxf.Collections;
 using System.Windows;
+using SharpDX.DXGI;
+using SharpDX.Direct3D9;
 
 namespace Cad_Point_Manager.Models.DrawingObjects3D
 {
     public class DrawingMtext3D : DrawingObject3D
     {
         #region Fields
-        private const double _textHeightToFontSizeFactor = 0.75;
+        private const double _textHeightToFontSizeFactor = 1.25;
         private const double _mtextLineSpacingFactor = 1.5;
+        private const int _fontRenderingMinimumSize = 50;
         #endregion
 
         #region Properties
@@ -47,9 +50,10 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         public MText DxfMtext { get; set; }
         public List<DrawingMtextSegment3D> SegmentsList { get; set; } = [];
 
-        public bool TextFormatsCreated = false;
-        public bool TextLayoutsCreated = false;
-        public bool TextVerticesCreated = false;
+        public bool TextFormatsCreated { get; set; } = false;
+        public bool TextLayoutsCreated { get; set; } = false;
+        public bool TextVerticesCreated { get; set; } = false;
+        public bool TextSegmentsLoaded { get; set; } = false;
         #endregion
 
         #region Constructor
@@ -109,9 +113,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                 FontSize = (int)Math.Ceiling(mText.Height * _textHeightToFontSizeFactor);
                 FontFamilyName = mText.Style.FontFamilyName;
                 Transform = GetTransform(mText.Position);
-
-                GetSegments();
-                UpdateBounds();
             }
             else
             {
@@ -192,23 +193,29 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             return adjustedPos;
         }
 
-        public void GetSegments()
+        public void GetSegments(Factory1 factory, SharpDX.Direct2D1.Factory2 d2dFactory)
         {
             if (DxfMtext is null) { return; }
 
             SegmentsList.Clear();
-            SegmentsList = GetMtextSegments();
+            SegmentsList = GetMtextSegments(factory, d2dFactory);
+            TextSegmentsLoaded = true;
+            UpdateBounds();
         }
 
-        public List<DrawingMtextSegment3D> GetMtextSegments()
+        public List<DrawingMtextSegment3D> GetMtextSegments(Factory1 factory, SharpDX.Direct2D1.Factory2 d2dFactory)
         {
             List<DrawingMtextSegment3D> mtextSegmentList = new();
             string rawText = DxfMtext.Value;
 
             if (!rawText.Contains('\\'))
             {
-                DrawingMtextSegment3D textSegment = new(this, DxfMtext.Value, Color, Position, Rotation, FontSize, FontFamilyName, (float)DxfMtext.Height, (float)DxfMtext.RectangleWidth, false, false, false, false);
+                DrawingMtextSegment3D textSegment = new(this, DxfMtext.Value, Color, Position, Rotation, FontSize, FontFamilyName, (float)DxfMtext.Height, 
+                    false, false, false, false, _fontRenderingMinimumSize, (float)DxfMtext.RectangleWidth);
+                textSegment.GetTextFormat(factory);
+                textSegment.GetTextLayout(factory);
                 mtextSegmentList.Add(textSegment);
+
                 return mtextSegmentList;
             }
 
@@ -236,9 +243,13 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             string alignDistributedPattern = @"\\pxqd;";
 
             // Extract formatting changes and text segments
-            List<(string text, Vector4 color, string font, double textHeight, bool bold, bool italic, bool underline, bool overstrike, bool strikethrough)> formattedSegments = new();
+            List<TextSegmentInformation> textSegments = [];
+            List<(string text, Vector4 color, string font, double textHeight, bool bold, bool italic, bool underline, bool overstrike, 
+                bool strikethrough)> formattedSegments = new();
 
-            string pattern = $@"({aciColorPattern}|{trueTypeColorPattern}|{fontPattern}|{italicPattern}|{boldPattern}|{heightPattern}|{lineBreakPattern}|{underlineStartPattern}|{underlineEndPattern}|{overstrikeStartPattern}|{overstrikeEndPattern}|{strikethroughStartPattern}|{strikethroughEndPattern}|{alignLeftPattern}|{alignCenterPattern}|{alignRightPattern}|{alignJustifyPattern}|{alignDistributedPattern}|[^{{}}\\]+)";
+            string pattern = $@"({aciColorPattern}|{trueTypeColorPattern}|{fontPattern}|{italicPattern}|{boldPattern}|{heightPattern}|{lineBreakPattern}|
+{underlineStartPattern}|{underlineEndPattern}|{overstrikeStartPattern}|{overstrikeEndPattern}|{strikethroughStartPattern}|{strikethroughEndPattern}|
+{alignLeftPattern}|{alignCenterPattern}|{alignRightPattern}|{alignJustifyPattern}|{alignDistributedPattern}|[^{{}}\\]+)";
 
             foreach (var text in texts)
             {
@@ -246,56 +257,59 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
 
                 // Default text properties
                 string currentText = "";
-                double currentTextHeight = DxfMtext.Height;
                 Vector4 currentColor = Color;
+                double currentTextHeight = DxfMtext.Height;
                 string currentFont = FontFamilyName;
                 bool currentIsBold = IsBold;
                 bool currentIsItalic = IsItalic;
-                bool isUnderlined = false;
-                bool isOverstriked = false;
-                bool isStrikethrough = false;
-
+                bool currentIsUnderlined = false;
+                bool currentIsOverstriked = false;
+                bool currentIsStrikethrough = false;
+                
+                Debug.WriteLine($"\n");
                 foreach (Match match in matches)
                 {
                     string value = match.Value;
                     if (string.IsNullOrWhiteSpace(value)) { continue; }
 
+                    TextSegmentInformation segment = new("", Color, FontFamilyName, DxfMtext.Height, IsBold, IsItalic, false, false, false);
+
                     if (Regex.IsMatch(value, aciColorPattern))
                     {
                         int colorI = int.Parse(Regex.Match(value, aciColorPattern).Groups[1].Value);
-                        Vector4 newColor = new(0, 0, 0, 1);
+                        //Vector4 newColor = new(0, 0, 0, 1);
 
                         if (colorI == 0)
                         {
                             if (IsPartOfBlock)
                             {
-                                newColor = DrawingBlock3D.Color;
+                                currentColor = DrawingBlock3D.Color;
                             }
                             else
                             {
                                 var aciColor = AciColor.Default;
-                                newColor = new(aciColor.R / 255.0f, aciColor.G / 255.0f, aciColor.B / 255.0f, 1.0f);
+                                currentColor = new(aciColor.R / 255.0f, aciColor.G / 255.0f, aciColor.B / 255.0f, 1.0f);
                             }
                         }
                         else if (colorI == 256)
                         {
-                            newColor = Layer.Color;
+                            currentColor = Layer.Color;
                         }
                         else
                         {
                             var vector = AutoCadColorConverter.ConvertACINumberToRGBA((short)colorI);
-                            newColor = new((float)vector.X, (float)vector.Y, (float)vector.Z, (float)vector.W);
+                            currentColor = new((float)vector.X, (float)vector.Y, (float)vector.Z, (float)vector.W);
                         }
 
-                        if (newColor != currentColor)
-                        {
-                            if (!string.IsNullOrEmpty(currentText))
-                            {
-                                formattedSegments.Add((currentText, currentColor, currentFont, currentTextHeight, currentIsBold, currentIsItalic, isUnderlined, isOverstriked, isStrikethrough));
-                                currentText = "";
-                            }
-                            currentColor = newColor;
-                        }
+                        //if (newColor != currentColor)
+                        //{
+                        //    if (!string.IsNullOrEmpty(currentText))
+                        //    {
+                        //        formattedSegments.Add((currentText, currentColor, currentFont, currentTextHeight, currentIsBold, currentIsItalic, currentIsUnderlined, currentIsOverstriked, currentIsStrikethrough));
+                        //        currentText = "";
+                        //    }
+                        //    currentColor = newColor;
+                        //}
                     }
                     else if (Regex.IsMatch(value, trueTypeColorPattern))
                     {
@@ -308,7 +322,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                         {
                             if (!string.IsNullOrEmpty(currentText))
                             {
-                                formattedSegments.Add((currentText, currentColor, currentFont, currentTextHeight, currentIsBold, currentIsItalic, isUnderlined, isOverstriked, isStrikethrough));
+                                formattedSegments.Add((currentText, currentColor, currentFont, currentTextHeight, currentIsBold, currentIsItalic, currentIsUnderlined, currentIsOverstriked, currentIsStrikethrough));
                                 currentText = "";
                             }
                             currentColor = newColor;
@@ -321,7 +335,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                         {
                             if (!string.IsNullOrEmpty(currentText))
                             {
-                                formattedSegments.Add((currentText, currentColor, currentFont, currentTextHeight, currentIsBold, currentIsItalic, isUnderlined, isOverstriked, isStrikethrough));
+                                formattedSegments.Add((currentText, currentColor, currentFont, currentTextHeight, currentIsBold, currentIsItalic, currentIsUnderlined, currentIsOverstriked, currentIsStrikethrough));
                                 currentText = "";
                             }
                             currentFont = newFont;
@@ -342,7 +356,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                         {
                             if (!string.IsNullOrEmpty(currentText))
                             {
-                                formattedSegments.Add((currentText, currentColor, currentFont, currentTextHeight, currentIsBold, currentIsItalic, isUnderlined, isOverstriked, isStrikethrough));
+                                formattedSegments.Add((currentText, currentColor, currentFont, currentTextHeight, currentIsBold, currentIsItalic, currentIsUnderlined, currentIsOverstriked, currentIsStrikethrough));
                                 currentText = "";
                             }
                             currentTextHeight = newTextHeight;
@@ -352,30 +366,30 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                     {
                         if (!string.IsNullOrEmpty(currentText))
                         {
-                            formattedSegments.Add((currentText, currentColor, currentFont, currentTextHeight, currentIsBold, currentIsItalic, isUnderlined, isOverstriked, isStrikethrough));
+                            formattedSegments.Add((currentText, currentColor, currentFont, currentTextHeight, currentIsBold, currentIsItalic, currentIsUnderlined, currentIsOverstriked, currentIsStrikethrough));
                             currentText = "";
                         }
-                        formattedSegments.Add(("\n", currentColor, currentFont, currentTextHeight, currentIsBold, currentIsItalic, isUnderlined, isOverstriked, isStrikethrough));
+                        formattedSegments.Add(("\n", currentColor, currentFont, currentTextHeight, currentIsBold, currentIsItalic, currentIsUnderlined, currentIsOverstriked, currentIsStrikethrough));
                     }
                     else if (Regex.IsMatch(value, underlineStartPattern))
                     {
-                        isUnderlined = true;
+                        currentIsUnderlined = true;
                     }
                     else if (Regex.IsMatch(value, underlineEndPattern))
                     {
-                        isUnderlined = false;
+                        currentIsUnderlined = false;
                     }
                     else if (Regex.IsMatch(value, overstrikeStartPattern))
                     {
-                        isOverstriked = true;
+                        currentIsOverstriked = true;
                     }
                     else if (Regex.IsMatch(value, overstrikeEndPattern))
                     {
-                        isOverstriked = false;
+                        currentIsOverstriked = false;
                     }
                     else if (Regex.IsMatch(value, strikethroughStartPattern))
                     {
-                        isStrikethrough = true;
+                        currentIsStrikethrough = true;
                     }
                     else if (Regex.IsMatch(value, strikethroughEndPattern))
                     {
@@ -392,19 +406,19 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                     }
                 }
 
-                if (!string.IsNullOrEmpty(currentText))
-                {
-                    var segment = (currentText, currentColor, currentFont, currentTextHeight, currentIsBold, currentIsItalic, isUnderlined, isOverstriked, isStrikethrough);
-                    formattedSegments.Add(segment);
-                }
+                //if (!string.IsNullOrEmpty(currentText))
+                //{
+                //    var segment = (currentText, currentColor, currentFont, currentTextHeight, currentIsBold, currentIsItalic, isUnderlined, isOverstriked, isStrikethrough);
+                //    formattedSegments.Add(segment);
+                //}
 
                 // Convert each segment to a TEXT entity
                 Vector3 basePosition = Position;
                 float yOffset = 0;
                 float xOffset = 0;
-
                 double currentLineWidth = 0;
 
+                //Debug.WriteLine($"\n");
                 foreach (var segment in formattedSegments)
                 {
                     if (segment.text == "\n")
@@ -413,57 +427,80 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                         xOffset = 0;
                         currentLineWidth = 0;
                     }
-                    if (!string.IsNullOrWhiteSpace(segment.text))
-                    {
-                        netDxf.Vector3 pos = new(basePosition.X + xOffset, basePosition.Y + yOffset, 0);
-                        TextStyle newTextStyle = new($"{segment.font}", $"{segment.font}.ttf");
-                        Text dxfText = new(segment.text, pos, segment.textHeight, DxfMtext.Style);
-                        DrawingMtextSegment3D mtextSegment = new(this, segment.text, segment.color, new Vector3(basePosition.X + xOffset, basePosition.Y + yOffset, 0), Rotation, (int)Math.Ceiling(segment.textHeight * 1.25), segment.font, (float)(dxfText.Height), (float)dxfText.Width, segment.italic, segment.bold, segment.underline, segment.strikethrough);
+                    List<string> textList = segment.text.Split(' ').ToList();
+                    //if (textList.Count > 0)
+                    //{
+                    //    var mtextSegmentList = CreateMtextSegments()
+                    //}
+                    
+                    //Debug.WriteLine($"text: \"{segment.text}\" font: {segment.font} color: {segment.color} text: {segment.textHeight}");
 
-                        mtextSegmentList.Add(mtextSegment);
-                        xOffset += (float)dxfText.Width;
 
-                        if (currentLineWidth + dxfText.Width > DxfMtext.RectangleWidth)
-                        {
-                            yOffset -= (float)(segment.textHeight * _mtextLineSpacingFactor * DxfMtext.LineSpacingFactor);
-                            xOffset = 0;
-                            currentLineWidth = 0;
-                        }
-                        currentLineWidth += dxfText.Width;
-                    }
+                    //if (segment.text == "\n")
+                    //{
+                    //    yOffset -= (float)(segment.textHeight * _mtextLineSpacingFactor * DxfMtext.LineSpacingFactor);
+                    //    xOffset = 0;
+                    //    currentLineWidth = 0;
+                    //}
+                    //if (!string.IsNullOrWhiteSpace(segment.text))
+                    //{
+                    //    netDxf.Vector3 pos = new(basePosition.X + xOffset, basePosition.Y + yOffset, 0);
+                    //    TextStyle newTextStyle = new($"{segment.font}", $"{segment.font}.ttf");
+
+                    //    DrawingMtextSegment3D mtextSegment = new(this, segment.text, segment.color, new Vector3(basePosition.X + xOffset, basePosition.Y + yOffset, 0), 
+                    //        Rotation, (int)Math.Ceiling(segment.textHeight * _textHeightToFontSizeFactor), segment.font, (float)segment.textHeight, segment.italic, segment.bold, 
+                    //        segment.underline, segment.strikethrough, _fontRenderingMinimumSize, (float)DxfMtext.RectangleWidth);
+                    //    mtextSegment.GetTextFormat(factory);
+                    //    mtextSegment.GetTextLayout(factory);
+                    //    mtextSegment.Tesselate(d2dFactory);
+
+                    //    mtextSegmentList.Add(mtextSegment);
+                    //    xOffset += (float)mtextSegment.Bounds.Width;
+
+                    //    if (currentLineWidth + mtextSegment.Bounds.Width > DxfMtext.RectangleWidth)
+                    //    {
+                    //        yOffset -= (float)(segment.textHeight * _mtextLineSpacingFactor * DxfMtext.LineSpacingFactor);
+                    //        xOffset = 0;
+                    //        currentLineWidth = 0;
+                    //    }
+                    //    currentLineWidth += mtextSegment.Bounds.Width;
+                    //}
                 }
             }
             return mtextSegmentList;
         }
-
-        public void GetTextFormat(Factory1 factory)
-        {
-            foreach (var segment in SegmentsList)
-            {
-                if (!segment.TextFormatCreated) { segment.GetTextFormat(factory); }
-            }
-            TextFormatsCreated = true;
-        }
-
-        public void GetTextLayout(Factory1 factory)
-        {
-            foreach (var segment in SegmentsList)
-            {
-                if (!segment.TextLayoutCreated) { segment.GetTextLayout(factory); }
-            }
-            TextLayoutsCreated = true;
-        }
-
-        public void Tesselate(SharpDX.Direct2D1.Factory2 factory, RenderTarget renderTarget)
-        {
-            foreach (var segment in SegmentsList)
-            {
-                segment.Tesselate(factory);
-            }
-        }
         #endregion
 
         #region Static Methods
+        private static List<DrawingMtextSegment3D> CreateMtextSegments(netDxf.Vector3 basePosition, float maxWidth, DrawingMtext3D drawingMtext, 
+            List<string> texts, Vector4 color, string font, double textHeight, bool isBold, bool isItalic, bool isOverstrike, bool isStrikethrough,
+            Factory1 factory, SharpDX.Direct2D1.Factory2 d2dFactory)
+        {
+            List<DrawingMtextSegment3D> segments = [];
+
+            float yOffset = 0;
+            float xOffset = 0;
+
+            foreach (var text in texts)
+            {
+                DrawingMtextSegment3D segment = new(drawingMtext, text, color, new Vector3((float)basePosition.X, (float)basePosition.Y, 0), 0, 
+                    (int)Math.Ceiling(textHeight * 1.25), font, (float)textHeight, isItalic, isBold, false, false, _fontRenderingMinimumSize, 0);
+                segment.GetTextFormat(factory);
+                segment.GetTextLayout(factory);
+                segment.Tesselate(d2dFactory);
+                segments.Add(segment);
+
+                xOffset += (float)segment.Bounds.Width;
+
+                if (xOffset + segment.Bounds.Width > maxWidth)
+                {
+                    yOffset -= (float)(textHeight * _mtextLineSpacingFactor * drawingMtext.DxfMtext.LineSpacingFactor);
+                    xOffset = 0;
+                }
+            }
+
+            return segments;
+        }
         private static protected Enums.TextAttachmentPoint GetAttachmentPoint(MTextAttachmentPoint mTextAttachment)
         {
             return mTextAttachment switch
@@ -496,7 +533,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                 _ => Enums.TextAttachmentPoint.MiddleCenter,
             };
         }
-        static TextAlignment ConvertMTextAlignment(MTextAttachmentPoint attach)
+        private static TextAlignment ConvertMTextAlignment(MTextAttachmentPoint attach)
         {
             return attach switch
             {
@@ -511,6 +548,39 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                 MTextAttachmentPoint.TopRight => TextAlignment.TopRight,
                 _ => TextAlignment.BaselineLeft,
             };
+        }
+        #endregion
+    }
+
+    public class TextSegmentInformation
+    {
+        #region Properties
+        public string Text { get; set; }
+        public Vector4 Color { get; set; }
+        public string Font { get; set; }
+        public double TextHeight { get; set; }
+        public bool IsBold { get; set; }
+        public bool IsItalic { get; set; }
+        public bool IsOverstrike { get; set; }
+        public bool IsStrikethrough { get; set; }
+        public bool IsUnderlined { get; set; }
+
+        public bool HasValue => !string.IsNullOrEmpty(Text);
+        #endregion
+
+        #region Constructors
+        public TextSegmentInformation(string text = "", Vector4? color = null, string font = "Arial", double textHeight = 5, bool isBold = false, 
+            bool isItalic = false, bool isUnderlined = false, bool isOverstrike = false, bool isStrikethrough = false)
+        {
+            Text = text;
+            Color = color ?? new Vector4(0, 0, 0, 1);
+            Font = font;
+            TextHeight = textHeight;
+            IsBold = isBold;
+            IsItalic = isItalic;
+            IsUnderlined = isUnderlined;
+            IsOverstrike = isOverstrike;
+            IsStrikethrough = isStrikethrough;
         }
         #endregion
     }
