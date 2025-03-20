@@ -14,13 +14,6 @@
     <Compile Remove="Controls\D3DControl\D3dControl.cs" />
     <Compile Remove="Helpers\DxfHelper.cs" />
     <Compile Remove="Models\Enums.cs" />
-    <Compile Remove="Models\TextRendering\D3dTextRenderer.cs" />
-    <Compile Remove="Models\TextRendering\Font.cs" />
-    <Compile Remove="Models\TextRendering\FontCache.cs" />
-    <Compile Remove="Models\TextRendering\FreeTypeCache.cs" />
-    <Compile Remove="Models\TextRendering\FreeTypeLoader.cs" />
-    <Compile Remove="Models\TextRendering\FreeTypeSharpDemo.cs" />
-    <Compile Remove="Models\TextRendering\TextRenderer.cs" />
     <Compile Remove="Services\DxfService.cs" />
   </ItemGroup>
 

@@ -23,6 +23,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         #region Fields
         private List<DrawingObject3D> _drawingObjects = [];
         private List<LineVertex> _drawingGeometryVerteces = [];
+        private List<TextVertex> _drawingTextVerteces = [];
         #endregion
 
         #region Properties
@@ -45,11 +46,22 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                 OnPropertyChanged(nameof(DrawingGeometryVertices));
             }
         }
+        public List<TextVertex> DrawingTextVertices
+        {
+            get => _drawingTextVerteces;
+            set
+            {
+                _drawingTextVerteces = value;
+                OnPropertyChanged(nameof(DrawingTextVertices));
+            }
+        }
 
         public Vector3 InsertionPoint { get; set; }
         public int StartVertexIndex { get; set; }
         public int EndVertexIndex { get; set; }
         public int NumberOfDrawingObjects => DrawingObjects.Count;
+
+        public bool TextVerticesCreated = false;
         #endregion
 
         #region Constructors
@@ -187,11 +199,16 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                 if (obj is DrawingBlock3D block)
                 {
                     DrawingGeometryVertices.AddRange(block.DrawingGeometryVertices);
+                    DrawingTextVertices.AddRange(block.DrawingTextVertices);
                 }
                 if (obj is DrawingGeometry3D geometry)
                 {
                     DrawingGeometryVertices.AddRange(geometry.Vertices);
-                }  
+                }
+                if (obj is DrawingText3D text)
+                {
+                    DrawingTextVertices.AddRange(text.TextVertices);
+                }
             }
         }
         #endregion

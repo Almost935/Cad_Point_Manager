@@ -7,11 +7,28 @@ namespace Cad_Point_Manager.Helpers
 {
     public static class TextRenderingHelpers
     {
+        public static float GetSpaceWidth(SharpDX.DirectWrite.Factory directWriteFactory, string fontFamily, float fontSize)
+        {
+            using (var textFormat = new TextFormat(directWriteFactory, fontFamily, fontSize))
+            {
+                // Measure width of "A A" and subtract width of "AA" to get accurate space width.
+                using (var layoutWithSpace = new TextLayout(directWriteFactory, "A A", textFormat, float.MaxValue, float.MaxValue))
+                using (var layoutWithoutSpace = new TextLayout(directWriteFactory, "AA", textFormat, float.MaxValue, float.MaxValue))
+                {
+                    var widthWithSpace = layoutWithSpace.Metrics.Width;
+                    var widthWithoutSpace = layoutWithoutSpace.Metrics.Width;
+
+                    return widthWithSpace - widthWithoutSpace;
+                }
+            }
+        }
+
         public static (TransformedGeometry geometry, RawRectangleF bounds) CreateTextGeometry(
             SharpDX.Direct2D1.Factory d2dFactory,
             string text,
             TextLayout textLayout,
             float fontSizeScaleFactor,
+            float maxWidth,
             float flatteningTolerance = 0.001f)
         {
             using (var dwriteFactory = new SharpDX.DirectWrite.Factory())

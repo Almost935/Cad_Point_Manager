@@ -1,7 +1,6 @@
 ﻿using Cad_Point_Manager.Common;
 using Cad_Point_Manager.Controls.D3DControl;
 using Cad_Point_Manager.Helpers;
-using Cad_Point_Manager.Models.TextRendering;
 using netDxf.Entities;
 using SharpDX;
 using SharpDX.Direct2D1;
@@ -13,11 +12,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Xml.Linq;
 using Point = System.Windows.Point;
 
 namespace Cad_Point_Manager.Models.DrawingObjects3D
 {
-    public abstract class DrawingText3D : DrawingObject3D
+    public class DrawingText3D : DrawingObject3D
     {
         #region Fields
         protected const double _textHeightToFontSizeFactor = 0.75;
@@ -27,8 +27,10 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         #endregion
 
         #region Properties
+        public Text DxfText { get; set; }
         public string Text { get; set; }
         public Vector3 Position { get; set; }
+        public float MaxWidth { get; set; }
         public int StartVertexIndex { get; set; }
         public int EndVertexIndex { get; set; }
         public float Rotation { get; set; } = 0;
@@ -40,11 +42,118 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         public System.Windows.Media.Matrix Transform { get; set; }
         public Enums.TextAttachmentPoint AttachmentPoint { get; set; }
         public TextLayout TextLayout { get; set; }
-        public TextGeometryVertex[] TextGeometryVertices { get; set; } = [];
+        public TextVertex[] TextVertices { get; set; } = [];
 
         public bool TextFormatCreated => _textFormat != null;
         public bool TextLayoutCreated => TextLayout != null;
-        public bool TextVerticesCreated => TextGeometryVertices.Length > 0;
+        public bool TextVerticesCreated => TextVertices.Length > 0;
+        #endregion
+
+        #region Constructor
+        public DrawingText3D(Text text, ObjectLayer3D layer, bool isPartOfBlock = false, DrawingBlock3D block = null)
+        {
+            Type = DrawingObject3dType.DrawingText3D;
+            EntityObject = text;
+            DxfText = text;
+            Layer = layer;
+            DrawingBlock3D = block;
+
+            UpdateColor();
+            UpdateData(text);
+        }
+        #endregion
+
+        #region Methods
+        public override void UpdateData(EntityObject entity)
+        {
+            if (entity is Text text)
+            {
+                Text = text.Value;
+                WidthFactor = (float)text.WidthFactor;
+
+                float widthPerCharacter = (float)(0.6f * text.Height);
+                float textWidth = widthPerCharacter * Text.Length * WidthFactor;
+
+                Bounds = new(text.Position.X, text.Position.Y, textWidth * 2, text.Height * 2);
+                Rotation = (float)text.Rotation;
+                AttachmentPoint = GetAttachmentPoint(text.Alignment);
+                Position = GetTextOrigin(AttachmentPoint, new RectangleF((float)Bounds.Left, (float)Bounds.Top, (float)Bounds.Width, (float)Bounds.Height),
+                    new Vector3((float)text.Position.X, (float)text.Position.Y, 0));
+                FontSize = (int)Math.Ceiling(text.Height * _textHeightToFontSizeFactor);
+                FontFamilyName = text.Style.FontFamilyName;
+                Transform = GetTransform(text.Position);
+            }
+            else
+            {
+                throw new ArgumentException("EntityObject must be of type MText or Text");
+            }
+        }
+
+
+        /// <summary>
+        /// Gets the upper left point of the MText.
+        /// </summary>
+        /// <param name="mText"></param>
+        /// <param name="rect"></param>
+        /// <param name="position"></param>
+        /// <returns></returns>
+        public Vector3 GetTextOrigin(Enums.TextAttachmentPoint attachmentPoint, RectangleF rect, Vector3 position)
+        {
+            Vector3 adjustedPos = Vector3.Zero;
+
+            switch (attachmentPoint)
+            {
+                case Enums.TextAttachmentPoint.TopLeft:
+                    adjustedPos = position;
+                    break;
+
+                case Enums.TextAttachmentPoint.TopCenter:
+                    adjustedPos = new Vector3(position.X - (rect.Width) / 2,
+                        position.Y, 0);
+                    break;
+
+                case Enums.TextAttachmentPoint.TopRight:
+                    adjustedPos = new Vector3(position.X - (rect.Width),
+                        position.Y, 0);
+                    break;
+
+                case Enums.TextAttachmentPoint.MiddleLeft:
+                    adjustedPos = new Vector3(position.X,
+                        position.Y - (rect.Height / 2), 0);
+                    break;
+
+                case Enums.TextAttachmentPoint.MiddleCenter:
+                    adjustedPos = new Vector3(position.X - (rect.Width) / 2,
+                        position.Y - (rect.Height / 2), 0);
+                    break;
+
+                case Enums.TextAttachmentPoint.MiddleRight:
+                    adjustedPos = new Vector3(position.X - (rect.Width),
+                        position.Y - (rect.Height / 2), 0);
+                    break;
+
+                case Enums.TextAttachmentPoint.BottomLeft:
+                    adjustedPos = new Vector3(position.X,
+                        position.Y - (rect.Height), 0);
+                    break;
+
+                case Enums.TextAttachmentPoint.BottomCenter:
+                    adjustedPos = new Vector3(position.X - (rect.Width) / 2,
+                        position.Y - (rect.Height), 0);
+                    break;
+
+                case Enums.TextAttachmentPoint.BottomRight:
+                    adjustedPos = new Vector3(position.X - (rect.Width),
+                        position.Y - (rect.Height), 0);
+                    break;
+
+                default:
+                    adjustedPos = position;
+                    break;
+            }
+
+            return adjustedPos;
+        }
         #endregion
 
         #region Methods
@@ -72,8 +181,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         {
             //deviceContext.DrawTextLayout(new RawVector2((float)Position.X, -(float)Position.Y), TextLayout, brush);
         }
-
-
 
         private protected Enums.TextAttachmentPoint GetAttachmentPoint(MTextAttachmentPoint mTextAttachment)
         {
@@ -139,24 +246,24 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         public void Tesselate(SharpDX.Direct2D1.Factory2 factory)
         {
             float fontSizeScaleFactor = (float)FontSize / _fontRenderingMinimumSize;
-            (TransformedGeometry geometry, RawRectangleF bounds) = TextRenderingHelpers.CreateTextGeometry(factory, Text, TextLayout, fontSizeScaleFactor);
+            (TransformedGeometry geometry, RawRectangleF bounds) = TextRenderingHelpers.CreateTextGeometry(factory, Text, TextLayout, fontSizeScaleFactor, 10000);
             var vertices = TextRenderingHelpers.TessellateGeometry(geometry);
             
-            TextGeometryVertices = GetVertices(vertices);
+            TextVertices = GetVertices(vertices);
 
             geometry.Dispose();
         }
 
-        public TextGeometryVertex[] GetVertices(List<Vector2> vertices)
+        public TextVertex[] GetVertices(List<Vector2> vertices)
         {
-            List<TextGeometryVertex> textGeometries = [];
+            List<TextVertex> textGeometries = [];
             Matrix transform = Matrix.Translation((float)Transform.OffsetX, (float)Transform.OffsetY, 0);
 
             foreach (var vertex in vertices)
             {
                 var translatedVector = Vector2.TransformCoordinate(vertex, transform);
 
-                TextGeometryVertex textGeometryVertex = new(new Vector3(translatedVector.X, translatedVector.Y, 0), Color);
+                TextVertex textGeometryVertex = new(new Vector3(translatedVector.X, translatedVector.Y, 0), Color);
                 textGeometries.Add(textGeometryVertex);
             }
 

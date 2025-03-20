@@ -11,7 +11,7 @@ using FontWeight = SharpDX.DirectWrite.FontWeight;
 
 namespace Cad_Point_Manager.Models.DrawingObjects3D
 {
-    public class DrawingMtextSegment3D
+    public class DrawingMtextSegment3D : IDisposable
     {
         #region Fields
         private const float _flatteningTolerance = 0.001f;
@@ -30,7 +30,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         public System.Windows.Media.Matrix Transform { get; set; }
         public TextFormat TextFormat { get; set; }
         public TextLayout TextLayout { get; set; }
-        public TextGeometryVertex[] TextGeometryVertices { get; set; } = [];
+        public TextVertex[] TextGeometryVertices { get; set; } = [];
         public float DxfTextHeight { get; set; }
         public float MaxWidth { get;set; }
         public Rect Bounds { get; set; }
@@ -64,7 +64,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             _fontRenderingMinimumSize = fontRenderingMinimumSize;
             MaxWidth = maxWidth;
 
-            Transform = GetTransform(new netDxf.Vector3(Position.X, Position.Y, Position.Z));
+            UpdateTransform();
         }
         #endregion
 
@@ -126,6 +126,10 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             }
         }
 
+        public void UpdateTransform()
+        {
+            Transform = GetTransform(new netDxf.Vector3(Position.X, Position.Y, Position.Z));
+        }
         private System.Windows.Media.Matrix GetTransform(netDxf.Vector3 dxfPos)
         {
             System.Windows.Media.Matrix matrix = new();
@@ -133,9 +137,9 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             return matrix;
         }
 
-        public TextGeometryVertex[] GetVertices(List<Vector2> vertices, float scaleFactor = 1)
+        public TextVertex[] GetVertices(List<Vector2> vertices, float scaleFactor = 1)
         {
-            List<TextGeometryVertex> textGeometries = [];
+            List<TextVertex> textGeometries = [];
             Matrix scaleTransform = Matrix.Scaling(scaleFactor, scaleFactor, 1);
             Matrix translationTransform = Matrix.Translation((float)Transform.OffsetX, (float)Transform.OffsetY, 0);
 
@@ -145,7 +149,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                 var scaledVector = Vector2.TransformCoordinate(vector, scaleTransform);
                 var translatedVector = Vector2.TransformCoordinate(scaledVector, translationTransform);
 
-                TextGeometryVertex textGeometryVertex = new(new Vector3(translatedVector.X, translatedVector.Y, 0), Color);
+                TextVertex textGeometryVertex = new(new Vector3(translatedVector.X, translatedVector.Y, 0), Color);
                 textGeometries.Add(textGeometryVertex);
             }
 
@@ -166,6 +170,34 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             {
                 TextGeometryVertices[i] = TextGeometryVertices[i].Translate(offset);
             }
+        }
+
+        public void Split(int index)
+        {
+            //var firstSegment = new DrawingMtextSegment3D(DrawingMtext3D, Text.Substring(0, index), Color, Position, Rotation, FontSize, FontFamilyName, DxfTextHeight, IsItalic, IsBold, IsUnderlined, IsStrikeThroughed, _fontRenderingMinimumSize, MaxWidth);
+            //var secondSegment = new DrawingMtextSegment3D(DrawingMtext3D, Text.Substring(index), Color, Position, Rotation, FontSize, FontFamilyName, DxfTextHeight, IsItalic, IsBold, Is
+        }
+        #endregion
+
+        #region IDisposable Support
+        private bool disposedValue = false;
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    TextFormat?.Dispose();
+                    TextLayout?.Dispose();
+                }
+                disposedValue = true;
+            }
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
         }
         #endregion
     }

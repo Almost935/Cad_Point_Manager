@@ -29,7 +29,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct TextGeometryVertex(Vector3 position, Vector4 color, float isVisible = 1.0f)
+    public struct TextVertex(Vector3 position, Vector4 color, float isVisible = 1.0f)
     {
         public Vector3 Position = position;
         public Vector4 Color = color;
@@ -39,27 +39,14 @@ namespace Cad_Point_Manager.Controls.D3DControl
         /// </summary>
         public float IsVisible = isVisible;
 
-        public readonly TextGeometryVertex Translate(Vector3 offset)
+        public readonly TextVertex Translate(Vector3 offset)
         {
-            return new TextGeometryVertex(Position + offset, Color, IsVisible);
+            return new TextVertex(Position + offset, Color, IsVisible);
         }
 
-        public readonly TextGeometryVertex Translate(Vector2 offset)
+        public readonly TextVertex Translate(Vector2 offset)
         {
-            return new TextGeometryVertex(new Vector3(Position.X + offset.X, Position.Y + offset.Y, Position.Z), Color, IsVisible);
-        }
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    public struct TextVertex
-    {
-        public Vector3 Position; // 3D position (X, Y, Z)
-        public Vector2 TexCoord; // Texture coordinates (U, V)
-
-        public TextVertex(Vector3 position, Vector2 texCoord)
-        {
-            Position = position;
-            TexCoord = texCoord;
+            return new TextVertex(new Vector3(Position.X + offset.X, Position.Y + offset.Y, Position.Z), Color, IsVisible);
         }
     }
 

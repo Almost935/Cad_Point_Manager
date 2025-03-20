@@ -2,7 +2,6 @@
 using Cad_Point_Manager.DrawingObjects;
 using Cad_Point_Manager.Helpers;
 using Cad_Point_Manager.Models.DrawingObjects3D;
-using Cad_Point_Manager.Models.TextRendering;
 using netDxf;
 using netDxf.Entities;
 using netDxf.Tables;
@@ -33,7 +32,7 @@ namespace Cad_Point_Manager.Models
         private bool _dxfNeedsReload = true;
         private Bounds _extents;
         private List<LineVertex> _lineVertices = [];
-        private List<TextGeometryVertex> _textVertices = [];
+        private List<TextVertex> _textVertices = [];
         private ObservableCollection<KeyValuePair<string, ObjectLayer3D>> _layers = [];
         private ICollectionView _layersView;
         private Size2F _viewportSize = Size2F.Empty;
@@ -85,7 +84,7 @@ namespace Cad_Point_Manager.Models
                 OnPropertyChanged(nameof(LineVertices));
             }
         }
-        public List<TextGeometryVertex> TextVertices
+        public List<TextVertex> TextVertices
         {
             get => _textVertices;
             set
@@ -295,19 +294,20 @@ namespace Cad_Point_Manager.Models
                             if (!drawingText.TextLayoutCreated) { drawingText.GetTextLayout(_d3dResCache.FactoryWrite); }
                             if (!drawingText.TextVerticesCreated) { drawingText.Tesselate(_d3dResCache.D2dFactory); }
 
-                            TextVertices.AddRange(drawingText.TextGeometryVertices);
+                            TextVertices.AddRange(drawingText.TextVertices);
                         }
                         if (obj is DrawingMtext3D drawingMtext)
                         {
                             drawingMtext.GetSegments(_d3dResCache.FactoryWrite, _d3dResCache.D2dFactory);
-                            //if (!drawingMtext.TextFormatsCreated) { drawingMtext.GetTextFormat(_d3dResCache.FactoryWrite); }
-                            //if (!drawingMtext.TextLayoutsCreated) { drawingMtext.GetTextLayout(_d3dResCache.FactoryWrite); }
-                            //if (!drawingMtext.TextVerticesCreated) { drawingMtext.Tesselate(_d3dResCache.D2dFactory); }
 
                             foreach (var segment in drawingMtext.SegmentsList)
                             {
                                 TextVertices.AddRange(segment.TextGeometryVertices);
                             }
+                        }
+                        if (obj is DrawingBlock3D drawingBlock)
+                        {
+
                         }
                     }
                 }

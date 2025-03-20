@@ -1,6 +1,5 @@
 ﻿using Cad_Point_Manager.Models;
 using Cad_Point_Manager.Models.DrawingObjects3D;
-using Cad_Point_Manager.Models.TextRendering;
 using SharpDX;
 using SharpDX.D3DCompiler;
 using SharpDX.Direct2D1;
@@ -56,7 +55,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private PixelShader _textPixelShader;
         private InputLayout _textInputLayout;
         private bool _textShaderLoaded = false;
-        private TextGeometryVertex[] _textVertices = [];
+        private TextVertex[] _textVertices = [];
 
         // Panning and Zooming Fields
         private float _panThreshold = 1.0f;
@@ -255,7 +254,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             context.VertexShader.SetConstantBuffer(0, _transformationBuffer);
 
             context.InputAssembler.PrimitiveTopology = PrimitiveTopology.TriangleList;
-            context.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding(_textVertexBuffer, Marshal.SizeOf<TextGeometryVertex>(), 0));
+            context.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding(_textVertexBuffer, Marshal.SizeOf<TextVertex>(), 0));
 
             context.Draw(_textVertices.Length, 0);
         }
