@@ -1,13 +1,7 @@
-﻿ using Cad_Point_Manager.Controls.D3DControl;
-using netDxf.Tables;
+﻿using netDxf.Tables;
 using SharpDX;
-using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Cad_Point_Manager.Models.DrawingObjects3D
 {

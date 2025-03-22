@@ -1,10 +1,7 @@
-﻿using Cad_Point_Manager.Controls.D3DControl;
-using Cad_Point_Manager.Helpers;
+﻿using Cad_Point_Manager.Helpers;
 using netDxf.Entities;
-using SharpDX;
 using SharpDX.Direct2D1;
 using SharpDX.Mathematics.Interop;
-using System.Diagnostics;
 using System.Windows;
 using Vector3 = SharpDX.Vector3;
 

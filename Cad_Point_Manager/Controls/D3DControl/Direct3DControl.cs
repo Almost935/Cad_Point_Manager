@@ -163,7 +163,20 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _deviceContext = _device.ImmediateContext;
             _d3dResCache.DeviceContext = _deviceContext;
             _d3dResCache.FactoryWrite = new();
-            
+
+            var blendDesc = new BlendStateDescription();
+            blendDesc.RenderTarget[0].IsBlendEnabled = true; // Enable blending
+            blendDesc.RenderTarget[0].SourceBlend = BlendOption.SourceAlpha;
+            blendDesc.RenderTarget[0].DestinationBlend = BlendOption.InverseSourceAlpha;
+            blendDesc.RenderTarget[0].BlendOperation = BlendOperation.Add;
+            blendDesc.RenderTarget[0].SourceAlphaBlend = BlendOption.One;
+            blendDesc.RenderTarget[0].DestinationAlphaBlend = BlendOption.Zero;
+            blendDesc.RenderTarget[0].AlphaBlendOperation = BlendOperation.Add;
+            blendDesc.RenderTarget[0].RenderTargetWriteMask = ColorWriteMaskFlags.All;
+
+            var blendState = new BlendState(_device, blendDesc);
+            _deviceContext.OutputMerger.SetBlendState(blendState);
+
             _d3DSurface = new Dx11ImageSource();
             _d3DSurface.IsFrontBufferAvailableChanged += OnIsFrontBufferAvailableChanged;
             

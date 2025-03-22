@@ -1,9 +1,4 @@
 ﻿using netDxf;
-using SharpDX.Direct2D1;
-using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.Reflection;
 
 namespace Cad_Point_Manager.Helpers
 {

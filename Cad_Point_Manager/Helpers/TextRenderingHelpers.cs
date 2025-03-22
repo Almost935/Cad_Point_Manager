@@ -7,6 +7,14 @@ namespace Cad_Point_Manager.Helpers
 {
     public static class TextRenderingHelpers
     {
+        public const double TextHeightToFontSizeFactor = 1.25;
+
+
+        public static int TextHeightToFontSize(double textHeight)
+        {
+            return (int)Math.Ceiling(textHeight * TextHeightToFontSizeFactor);
+        }
+
         public static float GetSpaceWidth(SharpDX.DirectWrite.Factory directWriteFactory, string fontFamily, float fontSize)
         {
             using (var textFormat = new TextFormat(directWriteFactory, fontFamily, fontSize))
@@ -23,13 +31,8 @@ namespace Cad_Point_Manager.Helpers
             }
         }
 
-        public static (TransformedGeometry geometry, RawRectangleF bounds) CreateTextGeometry(
-            SharpDX.Direct2D1.Factory d2dFactory,
-            string text,
-            TextLayout textLayout,
-            float fontSizeScaleFactor,
-            float maxWidth,
-            float flatteningTolerance = 0.001f)
+        public static (TransformedGeometry geometry, RawRectangleF bounds) CreateTextGeometry(SharpDX.Direct2D1.Factory d2dFactory, string text,
+            TextLayout textLayout, float fontSizeScaleFactor, float maxWidth, float flatteningTolerance = 0.001f)
         {
             using (var dwriteFactory = new SharpDX.DirectWrite.Factory())
             {

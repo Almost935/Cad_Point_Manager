@@ -1,14 +1,4 @@
-﻿using Cad_Point_Manager.Controls.D3DControl;
-using netDxf.Entities;
-using SharpDX;
-using SharpDX.Direct3D11;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
+﻿using netDxf.Entities;
 using Vector3 = SharpDX.Vector3;
 
 namespace Cad_Point_Manager.Models.DrawingObjects3D

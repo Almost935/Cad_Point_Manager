@@ -1,13 +1,5 @@
 ﻿using Cad_Point_Manager.Helpers;
-using Cad_Point_Manager.Models.DrawingObjects;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
-using System.Xml.Linq;
 
 namespace Cad_Point_Manager.Models.DrawingObjects3D
 {

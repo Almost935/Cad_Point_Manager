@@ -92,5 +92,14 @@
             BottomCenter,
             BottomRight
         }
+
+        public enum TextAlignment
+        {
+            Left,
+            Center,
+            Right,
+            Justified,
+            Distributed
+        }
     }
 }

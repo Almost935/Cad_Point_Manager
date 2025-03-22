@@ -13,6 +13,7 @@
     <Compile Remove="Controls\D3DControl\D3D11ImageSource.cs" />
     <Compile Remove="Controls\D3DControl\D3dControl.cs" />
     <Compile Remove="Helpers\DxfHelper.cs" />
+    <Compile Remove="Models\DrawingObjects3D\DrawingSText3D.cs" />
     <Compile Remove="Models\Enums.cs" />
     <Compile Remove="Services\DxfService.cs" />
   </ItemGroup>

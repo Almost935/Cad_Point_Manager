@@ -1,5 +1,4 @@
 ﻿using netDxf;
-using SharpDX;
 using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;

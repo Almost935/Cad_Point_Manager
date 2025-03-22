@@ -1,12 +1,5 @@
-﻿using Cad_Point_Manager.Helpers;
-using SharpDX;
+﻿using SharpDX;
 using SharpDX.Mathematics.Interop;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Cad_Point_Manager.Controls.D3DControl
 {

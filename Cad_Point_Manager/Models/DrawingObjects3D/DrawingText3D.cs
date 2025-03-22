@@ -6,13 +6,6 @@ using SharpDX;
 using SharpDX.Direct2D1;
 using SharpDX.DirectWrite;
 using SharpDX.Mathematics.Interop;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
-using System.Xml.Linq;
 using Point = System.Windows.Point;
 
 namespace Cad_Point_Manager.Models.DrawingObjects3D
@@ -20,7 +13,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
     public class DrawingText3D : DrawingObject3D
     {
         #region Fields
-        protected const double _textHeightToFontSizeFactor = 0.75;
         protected const int _fontRenderingMinimumSize = 30;
 
         private protected TextFormat _textFormat;
@@ -79,7 +71,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                 AttachmentPoint = GetAttachmentPoint(text.Alignment);
                 Position = GetTextOrigin(AttachmentPoint, new RectangleF((float)Bounds.Left, (float)Bounds.Top, (float)Bounds.Width, (float)Bounds.Height),
                     new Vector3((float)text.Position.X, (float)text.Position.Y, 0));
-                FontSize = (int)Math.Ceiling(text.Height * _textHeightToFontSizeFactor);
+                FontSize = TextRenderingHelpers.TextHeightToFontSize(text.Height);
                 FontFamilyName = text.Style.FontFamilyName;
                 Transform = GetTransform(text.Position);
             }
@@ -268,6 +260,13 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             }
 
             return textGeometries.ToArray();
+        }
+
+        public void UpdateTextVertices(SharpDX.DirectWrite.Factory1 factory, SharpDX.Direct2D1.Factory2 d2dFactory)
+        {
+            GetTextFormat(factory);
+            GetTextLayout(factory);
+            Tesselate(d2dFactory);
         }
 
         public static float ConvertDxfHeightToFontSize(float height)

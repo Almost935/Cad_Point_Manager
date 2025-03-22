@@ -8,7 +8,6 @@ using SharpDX.Direct3D11;
 using SharpDX.DXGI;
 using SharpDX.Mathematics.Interop;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -19,7 +18,6 @@ using System.Windows.Media;
 
 using Brush = SharpDX.Direct2D1.Brush;
 using Buffer = SharpDX.Direct3D11.Buffer;
-using Filter = SharpDX.Direct3D11.Filter;
 using InputElement = SharpDX.Direct3D11.InputElement;
 using Matrix = SharpDX.Matrix;
 using Point = System.Windows.Point;
@@ -815,7 +813,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     int count = 0;
                     for (int i = block3D.StartVertexIndex; i <= block3D.EndVertexIndex; i++)
                     {
-                        _lineVertices[i] = block3D.DrawingGeometryVertices[count];
+                        _lineVertices[i] = block3D.GeometryVertices[count];
                         count++;
                     }
                 }
@@ -843,7 +841,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     int count = 0;
                     for (int i = block3D.StartVertexIndex; i <= block3D.EndVertexIndex; i++)
                     {
-                        _lineVertices[i] = block3D.DrawingGeometryVertices[count];
+                        _lineVertices[i] = block3D.GeometryVertices[count];
                         count++;
                     }
                 }

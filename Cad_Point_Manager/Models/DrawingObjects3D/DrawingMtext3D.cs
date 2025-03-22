@@ -1,45 +1,37 @@
 ﻿using Cad_Point_Manager.Common;
 using Cad_Point_Manager.Controls.D3DControl;
+using Cad_Point_Manager.DrawingObjects;
+using Cad_Point_Manager.Helpers;
+using netDxf;
 using netDxf.Entities;
 using SharpDX;
 using SharpDX.Direct2D1;
-using SharpDX.DirectWrite;
-using SharpDX.Mathematics.Interop;
-using FreeTypeSharp;
+using System.Diagnostics;
+using System.Text.RegularExpressions;
+using System.Windows;
 
 using Brush = SharpDX.Direct2D1.Brush;
 using Factory1 = SharpDX.DirectWrite.Factory1;
-using Point = System.Windows.Point;
-using System.Diagnostics;
-using System.Text.RegularExpressions;
-using TextAlignment = netDxf.Entities.TextAlignment;
-using netDxf;
-using Vector3 = SharpDX.Vector3;
-using Cad_Point_Manager.Helpers;
-using netDxf.Tables;
-using System.Runtime.CompilerServices;
-using Vector4 = SharpDX.Vector4;
 using FontStyle = netDxf.Tables.FontStyle;
-using netDxf.Collections;
-using System.Windows;
-using SharpDX.DXGI;
-using SharpDX.Direct3D9;
-using System.Numerics;
-using static System.Net.Mime.MediaTypeNames;
+using Point = System.Windows.Point;
+using Vector3 = SharpDX.Vector3;
+using Vector4 = SharpDX.Vector4;
 
 namespace Cad_Point_Manager.Models.DrawingObjects3D
 {
     public class DrawingMtext3D : DrawingObject3D
     {
         #region Fields
-        private const double _textHeightToFontSizeFactor = 1.25;
         private const double _mtextLineSpacingFactor = 1.5;
         private const int _fontRenderingMinimumSize = 50;
         #endregion
 
         #region Properties
+        public MText DxfMtext { get; set; }
         public string Text { get; set; }
+        public double MaxWidth { get; set; }
         public Vector3 Position { get; set; }
+        public TextBox TextBox { get; set; } = TextBox.Empty;
         public int StartVertexIndex { get; set; }
         public int EndVertexIndex { get; set; }
         public float Rotation { get; set; } = 0;
@@ -49,14 +41,10 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         public bool IsItalic { get; set; }
         public System.Windows.Media.Matrix Transform { get; set; }
         public Enums.TextAttachmentPoint AttachmentPoint { get; set; }
-        public MText DxfMtext { get; set; }
         public List<DrawingMtextSegment3D> SegmentsList { get; set; } = [];
+        public List<TextVertex> TextVertices { get; set; } = [];
 
         public bool TextSegmentsLoaded { get; set; } = false;
-        #endregion
-
-        #region Functions
-        Func<double, double, int> textHeightToPoints = (textHeight, textHeightToFontSizeFactor) => (int)Math.Ceiling(textHeight * textHeightToFontSizeFactor);
         #endregion
 
         #region Constructor
@@ -89,16 +77,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         {
             return false;
         }
-        public override void UpdateBounds()
-        {
-            Bounds = Rect.Empty;
-
-            foreach (var segment in SegmentsList)
-            {
-                Bounds = Rect.Union(Bounds, segment.Bounds);
-            }
-        }
-        public override void DrawToD2dDeviceContext(DeviceContext1 deviceContext, SharpDX.Direct2D1.Factory2 factory, Brush brush, float thickness, StrokeStyle1 strokeStyle)
+        public override void DrawToD2dDeviceContext(DeviceContext1 deviceContext, Factory2 factory, Brush brush, float thickness, StrokeStyle1 strokeStyle)
         {
             //deviceContext.DrawTextLayout(new RawVector2((float)Position.X, -(float)Position.Y), TextLayout, brush);
         }
@@ -106,16 +85,18 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         {
             if (entity is MText mText)
             {
+                DxfMtext = mText;
                 Text = mText.Value;
-                Bounds = new(mText.Position.X, mText.Position.Y, mText.RectangleWidth, mText.Height * 1.2);
+                MaxWidth = mText.RectangleWidth;
+                Position = new((float)mText.Position.X, (float)mText.Position.Y, 0);
                 Rotation = (float)mText.Rotation;
+                UpdateBounds();
                 AttachmentPoint = GetAttachmentPoint(mText.AttachmentPoint);
                 IsBold = mText.Style.FontStyle == FontStyle.Bold;
                 IsItalic = mText.Style.FontStyle == FontStyle.Italic;
-                Position = GetTextOrigin(AttachmentPoint, new RectangleF((float)Bounds.Left, (float)Bounds.Top, (float)Bounds.Width, (float)Bounds.Height), new Vector3((float)mText.Position.X, (float)mText.Position.Y, 0));
-                FontSize = (int)Math.Ceiling(mText.Height * _textHeightToFontSizeFactor);
+                FontSize = TextRenderingHelpers.TextHeightToFontSize(mText.Height);
                 FontFamilyName = mText.Style.FontFamilyName;
-                Transform = GetTransform(mText.Position);
+                //Transform = GetTransform(mText.Position);
             }
             else
             {
@@ -126,8 +107,8 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         private protected System.Windows.Media.Matrix GetTransform(netDxf.Vector3 dxfPos)
         {
             System.Windows.Media.Matrix matrix = new();
-            //matrix.ScaleAt(1, 1, dxfPos.X, dxfPos.Y);
             matrix.Translate(dxfPos.X, dxfPos.Y);
+
             return matrix;
         }
 
@@ -138,24 +119,25 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         /// <param name="rect"></param>
         /// <param name="position"></param>
         /// <returns></returns>
-        public Vector3 GetTextOrigin(Enums.TextAttachmentPoint attachmentPoint, RectangleF rect, Vector3 position)
+        public Vector3 GetMtextOrigin(Enums.TextAttachmentPoint attachmentPoint, RectangleF rect, Vector3 position)
         {
             Vector3 adjustedPos = Vector3.Zero;
 
             switch (attachmentPoint)
             {
                 case Enums.TextAttachmentPoint.TopLeft:
-                    adjustedPos = position;
+                    adjustedPos = new Vector3(position.X,
+                        position.Y - rect.Height, 0);
                     break;
 
                 case Enums.TextAttachmentPoint.TopCenter:
                     adjustedPos = new Vector3(position.X - (rect.Width) / 2,
-                        position.Y, 0);
+                        position.Y - rect.Height, 0);
                     break;
 
                 case Enums.TextAttachmentPoint.TopRight:
                     adjustedPos = new Vector3(position.X - (rect.Width),
-                        position.Y, 0);
+                        position.Y - rect.Height, 0);
                     break;
 
                 case Enums.TextAttachmentPoint.MiddleLeft:
@@ -174,18 +156,17 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                     break;
 
                 case Enums.TextAttachmentPoint.BottomLeft:
-                    adjustedPos = new Vector3(position.X,
-                        position.Y - (rect.Height), 0);
+                    adjustedPos = position;
                     break;
 
                 case Enums.TextAttachmentPoint.BottomCenter:
                     adjustedPos = new Vector3(position.X - (rect.Width) / 2,
-                        position.Y - (rect.Height), 0);
+                        position.Y, 0);
                     break;
 
                 case Enums.TextAttachmentPoint.BottomRight:
                     adjustedPos = new Vector3(position.X - (rect.Width),
-                        position.Y - (rect.Height), 0);
+                        position.Y, 0);
                     break;
 
                 default:
@@ -196,27 +177,101 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             return adjustedPos;
         }
 
-        public void GetSegments(Factory1 factory, SharpDX.Direct2D1.Factory2 d2dFactory)
+        public void InitializeTextBox(double initialTextHeight)
+        {
+            var spacing = (float)(initialTextHeight * _mtextLineSpacingFactor * DxfMtext.LineSpacingFactor);
+            switch (AttachmentPoint)
+            {
+                case Enums.TextAttachmentPoint.TopLeft:
+                    TextBox = new TextBox(new Point(Position.X, Position.Y), new Point(Position.X, Position.Y), new Point(Position.X + MaxWidth, Position.Y - initialTextHeight));
+                    break;
+
+                case Enums.TextAttachmentPoint.TopCenter:
+                    TextBox = new TextBox(new Point(Position.X, Position.Y), new Point(Position.X - MaxWidth * 0.5f, Position.Y), new Point(Position.X + MaxWidth * 0.5f, Position.Y - initialTextHeight));
+                    break;
+
+                case Enums.TextAttachmentPoint.TopRight:
+                    TextBox = new TextBox(new Point(Position.X, Position.Y), new Point(Position.X - MaxWidth * 0.5f, Position.Y), new Point(Position.X - MaxWidth, Position.Y - initialTextHeight));
+                    break;
+
+                case Enums.TextAttachmentPoint.MiddleLeft:
+                    TextBox = new TextBox(new Point(Position.X, Position.Y), new Point(Position.X, Position.Y - initialTextHeight * 0.5f), new Point(Position.X + MaxWidth, Position.Y + initialTextHeight * 0.5f));
+                    break;
+
+                case Enums.TextAttachmentPoint.MiddleCenter:
+                    TextBox = new TextBox(new Point(Position.X, Position.Y), new Point(Position.X - MaxWidth * 0.5f, Position.Y - initialTextHeight * 0.5f), new Point(Position.X + (float)MaxWidth * 0.5f, Position.Y + initialTextHeight * 0.5f));
+                    break;
+
+                case Enums.TextAttachmentPoint.MiddleRight:
+                    TextBox = new TextBox(new Point(Position.X, Position.Y), new Point(Position.X - MaxWidth, Position.Y - initialTextHeight * 0.5f), new Point(Position.X - (float)MaxWidth * 0.5f, Position.Y + initialTextHeight * 0.5f));
+                    break;
+
+                case Enums.TextAttachmentPoint.BottomLeft:
+                    TextBox = new TextBox(new Point(Position.X, Position.Y), new Point(Position.X, Position.Y - initialTextHeight), new Point(Position.X + MaxWidth, Position.Y));
+                    break;
+
+                case Enums.TextAttachmentPoint.BottomCenter:
+                    TextBox = new TextBox(new Point(Position.X, Position.Y), new Point(Position.X - MaxWidth * 0.5f, Position.Y - initialTextHeight), new Point(Position.X + MaxWidth * 0.5f, Position.Y));
+                    break;
+
+                case Enums.TextAttachmentPoint.BottomRight:
+                    TextBox = new TextBox(new Point(Position.X, Position.Y), new Point(Position.X - MaxWidth, Position.Y - initialTextHeight), new Point(Position.X - MaxWidth * 0.5f, Position.Y));
+                    break;
+
+                default:
+                    break;
+            }
+        }
+
+        public override void UpdateBounds()
+        {
+            Bounds = Rect.Empty;
+
+            Bounds = AttachmentPoint switch
+            {
+                Enums.TextAttachmentPoint.TopLeft => new Rect(DxfMtext.Position.X, DxfMtext.Position.Y, MaxWidth, DxfMtext.Height),
+                Enums.TextAttachmentPoint.TopCenter => new Rect(DxfMtext.Position.X - (MaxWidth * 0.5), DxfMtext.Position.Y, MaxWidth, DxfMtext.Height),
+                Enums.TextAttachmentPoint.TopRight => new Rect(DxfMtext.Position.X - (MaxWidth * 0.5), DxfMtext.Position.Y, MaxWidth, DxfMtext.Height),
+                Enums.TextAttachmentPoint.MiddleLeft => new Rect(DxfMtext.Position.X, DxfMtext.Position.Y - (DxfMtext.Height * 0.5), MaxWidth, DxfMtext.Height),
+                Enums.TextAttachmentPoint.MiddleCenter => new Rect(DxfMtext.Position.X - (MaxWidth * 0.5), DxfMtext.Position.Y - (DxfMtext.Height * 0.5), MaxWidth, DxfMtext.Height),
+                Enums.TextAttachmentPoint.MiddleRight => new Rect(DxfMtext.Position.X - (MaxWidth * 0.5), DxfMtext.Position.Y - (DxfMtext.Height * 0.5), MaxWidth, DxfMtext.Height),
+                Enums.TextAttachmentPoint.BottomLeft => new Rect(DxfMtext.Position.X, DxfMtext.Position.Y - DxfMtext.Height, MaxWidth, DxfMtext.Height),
+                Enums.TextAttachmentPoint.BottomCenter => new Rect(DxfMtext.Position.X - (MaxWidth * 0.5), DxfMtext.Position.Y - DxfMtext.Height, MaxWidth, DxfMtext.Height),
+                Enums.TextAttachmentPoint.BottomRight => new Rect(DxfMtext.Position.X - (MaxWidth * 0.5), DxfMtext.Position.Y - DxfMtext.Height, MaxWidth, DxfMtext.Height),
+                _ => new Rect(DxfMtext.Position.X, DxfMtext.Position.Y, MaxWidth, DxfMtext.Height),
+            };
+        }
+
+        public void UpdateTextVertices(Factory1 factory, Factory2 d2dFactory)
         {
             if (DxfMtext is null) { return; }
 
             SegmentsList.Clear();
+            TextVertices.Clear();
+
             SegmentsList = GetMtextSegments(factory, d2dFactory);
+            foreach (var segment in SegmentsList)
+            {
+                TextVertices.AddRange(segment.TextVertices);
+            }
+
             TextSegmentsLoaded = true;
             UpdateBounds();
         }
 
-        public List<DrawingMtextSegment3D> GetMtextSegments(Factory1 factory, SharpDX.Direct2D1.Factory2 d2dFactory)
+        public List<DrawingMtextSegment3D> GetMtextSegments(Factory1 factory, Factory2 d2dFactory)
         {
             List<DrawingMtextSegment3D> mtextSegmentList = new();
             string rawText = DxfMtext.Value;
 
             if (!rawText.Contains('\\'))
             {
+                InitializeTextBox(DxfMtext.Height);
                 DrawingMtextSegment3D textSegment = new(this, DxfMtext.Value, Color, Position, Rotation, FontSize, FontFamilyName, (float)DxfMtext.Height,
-                    false, false, false, false, _fontRenderingMinimumSize, (float)DxfMtext.RectangleWidth);
+                    false, false, false, false, _fontRenderingMinimumSize, (float)MaxWidth);
                 textSegment.GetTextFormat(factory);
                 textSegment.GetTextLayout(factory);
+                textSegment.Tesselate(d2dFactory);
                 mtextSegmentList.Add(textSegment);
 
                 return mtextSegmentList;
@@ -340,11 +395,26 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                     {
                         currentSegment.IsStrikethrough = false;
                     }
-                    else if (Regex.IsMatch(value, alignLeftPattern)) { }
-                    else if (Regex.IsMatch(value, alignCenterPattern)) { }
-                    else if (Regex.IsMatch(value, alignRightPattern)) { }
-                    else if (Regex.IsMatch(value, alignJustifyPattern)) { }
-                    else if (Regex.IsMatch(value, alignDistributedPattern)) { }
+                    else if (Regex.IsMatch(value, alignLeftPattern))
+                    {
+
+                    }
+                    else if (Regex.IsMatch(value, alignCenterPattern))
+                    {
+
+                    }
+                    else if (Regex.IsMatch(value, alignRightPattern))
+                    {
+
+                    }
+                    else if (Regex.IsMatch(value, alignJustifyPattern))
+                    {
+
+                    }
+                    else if (Regex.IsMatch(value, alignDistributedPattern))
+                    {
+
+                    }
                     else
                     {
                         currentSegment.Text += value;
@@ -363,15 +433,13 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
 
                 for (int i = 0; i < textSegments.Count; i++)
                 {
+                    if (i == 0) { InitializeTextBox(textSegments[i].TextHeight); }
+
                     var textSegment = textSegments[i];
 
-                    //List<string> textList = new List<string> { textSegment.Text };
-
                     var splitTexts = textSegment.Text.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries).ToList();
-
-                    var spaceWidth = TextRenderingHelpers.GetSpaceWidth(factory, textSegment.Font, textHeightToPoints(textSegment.TextHeight, _textHeightToFontSizeFactor)) * _textHeightToFontSizeFactor;
-
-                    var segments = CreateMtextSegments(new Vector3(basePosition.X, basePosition.Y, 0), (float)DxfMtext.RectangleWidth, factory, d2dFactory, this, textSegment, splitTexts,
+                    var spaceWidth = TextRenderingHelpers.GetSpaceWidth(factory, textSegment.Font, TextRenderingHelpers.TextHeightToFontSize(textSegment.TextHeight));
+                    var segments = CreateMtextSegments(new Vector3(basePosition.X, basePosition.Y, 0), (float)MaxWidth, factory, d2dFactory, this, textSegment, splitTexts,
                         (float)spaceWidth, ref xOffset, ref yOffset);
 
                     mtextSegmentList.AddRange(segments);
@@ -383,13 +451,13 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         #endregion
 
         #region Static Methods
-        private static List<DrawingMtextSegment3D> CreateMtextSegments(Vector3 basePosition, float maxWidth, Factory1 factory, SharpDX.Direct2D1.Factory2 d2dFactory,
+        private List<DrawingMtextSegment3D> CreateMtextSegments(Vector3 basePosition, float maxWidth, Factory1 factory, Factory2 d2dFactory,
             DrawingMtext3D drawingMtext, TextSegmentInformation segmentInfo, List<string> texts, float spaceWidth, ref float xOffset, ref float yOffset)
         {
             List<DrawingMtextSegment3D> segments = new();
 
             float lineSpacing = (float)(segmentInfo.TextHeight * _mtextLineSpacingFactor * drawingMtext.DxfMtext.LineSpacingFactor);
-            int fontSize = (int)Math.Ceiling(segmentInfo.TextHeight * _textHeightToFontSizeFactor);
+            var fontSize = TextRenderingHelpers.TextHeightToFontSize(segmentInfo.TextHeight);
 
             foreach (string text in texts)
             {
@@ -405,13 +473,18 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                 segment.Tesselate(d2dFactory);
 
                 float segmentWidth = (float)segment.Bounds.Width;
-
                 bool shouldWrapLine = segmentInfo.IsNewLine || (xOffset != 0 && (xOffset + segmentWidth + spaceWidth) > maxWidth);
 
                 if (shouldWrapLine)
                 {
                     yOffset -= lineSpacing;
                     xOffset = 0;
+
+                    Debug.WriteLine($"\nsegment.Text: {segment.Text}" +
+                        $"\nInitial: {TextBox}" +
+                        $"\nlineSpacing: {lineSpacing}");
+                    TextBox.Expand(0, lineSpacing, 0, 0); 
+                    Debug.WriteLine($"Final: {TextBox}");
 
                     segment.Position = new Vector3(basePosition.X, basePosition.Y + yOffset, 0);
                     segment.UpdateTransform();
@@ -428,7 +501,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
 
             return segments;
         }
-       
+
         private static protected Enums.TextAttachmentPoint GetAttachmentPoint(MTextAttachmentPoint mTextAttachment)
         {
             return mTextAttachment switch
@@ -443,38 +516,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                 MTextAttachmentPoint.BottomCenter => Enums.TextAttachmentPoint.BottomCenter,
                 MTextAttachmentPoint.BottomRight => Enums.TextAttachmentPoint.BottomRight,
                 _ => Enums.TextAttachmentPoint.MiddleCenter,
-            };
-        }
-        private static protected Enums.TextAttachmentPoint GetAttachmentPoint(TextAlignment mTextAttachment)
-        {
-            return mTextAttachment switch
-            {
-                netDxf.Entities.TextAlignment.TopLeft => Enums.TextAttachmentPoint.TopLeft,
-                netDxf.Entities.TextAlignment.TopCenter => Enums.TextAttachmentPoint.TopCenter,
-                netDxf.Entities.TextAlignment.TopRight => Enums.TextAttachmentPoint.TopRight,
-                netDxf.Entities.TextAlignment.MiddleLeft => Enums.TextAttachmentPoint.MiddleLeft,
-                netDxf.Entities.TextAlignment.MiddleCenter => Enums.TextAttachmentPoint.MiddleCenter,
-                netDxf.Entities.TextAlignment.MiddleRight => Enums.TextAttachmentPoint.MiddleRight,
-                netDxf.Entities.TextAlignment.BottomLeft => Enums.TextAttachmentPoint.BottomLeft,
-                netDxf.Entities.TextAlignment.BottomCenter => Enums.TextAttachmentPoint.BottomCenter,
-                netDxf.Entities.TextAlignment.BottomRight => Enums.TextAttachmentPoint.BottomRight,
-                _ => Enums.TextAttachmentPoint.MiddleCenter,
-            };
-        }
-        private static TextAlignment ConvertMTextAlignment(MTextAttachmentPoint attach)
-        {
-            return attach switch
-            {
-                MTextAttachmentPoint.BottomLeft => TextAlignment.BottomLeft,
-                MTextAttachmentPoint.BottomCenter => TextAlignment.BottomCenter,
-                MTextAttachmentPoint.BottomRight => TextAlignment.BottomRight,
-                MTextAttachmentPoint.MiddleLeft => TextAlignment.MiddleLeft,
-                MTextAttachmentPoint.MiddleCenter => TextAlignment.MiddleCenter,
-                MTextAttachmentPoint.MiddleRight => TextAlignment.MiddleRight,
-                MTextAttachmentPoint.TopLeft => TextAlignment.TopLeft,
-                MTextAttachmentPoint.TopCenter => TextAlignment.TopCenter,
-                MTextAttachmentPoint.TopRight => TextAlignment.TopRight,
-                _ => TextAlignment.BaselineLeft,
             };
         }
         #endregion

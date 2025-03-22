@@ -1,24 +1,16 @@
 ﻿using Cad_Point_Manager.Controls.D3DControl;
-using Cad_Point_Manager.DrawingObjects;
 using Cad_Point_Manager.Helpers;
 using Cad_Point_Manager.Models.DrawingObjects3D;
 using netDxf;
-using netDxf.Entities;
 using netDxf.Tables;
 using SharpDX;
-using SharpDX.Direct3D11;
-using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Diagnostics;
-using System.IO;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Data;
-using System.Windows.Media.Media3D;
+
 using Point = System.Windows.Point;
-using Vector2 = SharpDX.Vector2;
 
 namespace Cad_Point_Manager.Models
 {
@@ -265,7 +257,7 @@ namespace Cad_Point_Manager.Models
                         if (obj is DrawingBlock3D drawingBlock)
                         {
                             drawingBlock.StartVertexIndex = LineVertices.Count;
-                            LineVertices.AddRange(drawingBlock.DrawingGeometryVertices);
+                            LineVertices.AddRange(drawingBlock.GeometryVertices);
                             drawingBlock.EndVertexIndex = LineVertices.Count - 1;
                         }
                     }
@@ -278,7 +270,7 @@ namespace Cad_Point_Manager.Models
             if (d3DResCache.Device is null) { return; }
 
             _d3dResCache = d3DResCache;
-            
+
             TextVertices.Clear();
 
             foreach (var keyValuePair in Layers)
@@ -290,24 +282,27 @@ namespace Cad_Point_Manager.Models
                     {
                         if (obj is DrawingText3D drawingText)
                         {
-                            if (!drawingText.TextFormatCreated) { drawingText.GetTextFormat(_d3dResCache.FactoryWrite); }
-                            if (!drawingText.TextLayoutCreated) { drawingText.GetTextLayout(_d3dResCache.FactoryWrite); }
-                            if (!drawingText.TextVerticesCreated) { drawingText.Tesselate(_d3dResCache.D2dFactory); }
-
+                            drawingText.UpdateTextVertices(_d3dResCache.FactoryWrite, _d3dResCache.D2dFactory);
                             TextVertices.AddRange(drawingText.TextVertices);
                         }
                         if (obj is DrawingMtext3D drawingMtext)
                         {
-                            drawingMtext.GetSegments(_d3dResCache.FactoryWrite, _d3dResCache.D2dFactory);
+                            drawingMtext.UpdateTextVertices(_d3dResCache.FactoryWrite, _d3dResCache.D2dFactory);
+                            TextVertices.AddRange(drawingMtext.TextVertices);
 
-                            foreach (var segment in drawingMtext.SegmentsList)
-                            {
-                                TextVertices.AddRange(segment.TextGeometryVertices);
-                            }
+                            SharpDX.Vector4 color = new(1, 0, 0, 0.5f);
+                            TextVertex tl = new(new SharpDX.Vector3((float)drawingMtext.TextBox.Left, (float)drawingMtext.TextBox.Top, 0), color);
+                            TextVertex tr = new(new SharpDX.Vector3((float)drawingMtext.TextBox.Right, (float)drawingMtext.TextBox.Top, 0), color);
+                            TextVertex bl = new(new SharpDX.Vector3((float)drawingMtext.TextBox.Left, (float)drawingMtext.TextBox.Bottom, 0), color);
+                            TextVertex br = new(new SharpDX.Vector3((float)drawingMtext.TextBox.Right, (float)drawingMtext.TextBox.Bottom, 0), color);
+
+                            TextVertices.Add(bl); TextVertices.Add(tl); TextVertices.Add(tr);
+                            TextVertices.Add(bl); TextVertices.Add(tr); TextVertices.Add(br);
                         }
                         if (obj is DrawingBlock3D drawingBlock)
                         {
-
+                            drawingBlock.UpdateTextVertices(_d3dResCache.FactoryWrite, _d3dResCache.D2dFactory);
+                            TextVertices.AddRange(drawingBlock.TextVertices);
                         }
                     }
                 }

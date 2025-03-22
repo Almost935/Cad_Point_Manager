@@ -1,5 +1,4 @@
-﻿using System.Diagnostics;
-using netDxf;
+﻿using netDxf;
 using netDxf.Entities;
 using netDxf.Header;
 using SharpDX.Direct2D1;
@@ -11,10 +10,6 @@ using Cad_Point_Manager.DrawingObjects;
 using Cad_Point_Manager.Models;
 using Cad_Point_Manager.Controls.D3DControl;
 using Cad_Point_Manager.Models.DrawingObjects3D;
-using netDxf.Tables;
-using System.Text.RegularExpressions;
-using System.Security.Policy;
-using TextAlignment = netDxf.Entities.TextAlignment;
 
 namespace Cad_Point_Manager.Helpers
 {
@@ -145,7 +140,7 @@ namespace Cad_Point_Manager.Helpers
                 Circle circle => new DrawingCircle3D(circle, layer),
                 Insert block => new DrawingBlock3D(block, layer),
                 MText mtext => new DrawingMtext3D(mtext, layer),
-                Text text => new DrawingSText3D(text, layer),
+                Text text => new DrawingText3D(text, layer),
                 _ => null,
             };
         }

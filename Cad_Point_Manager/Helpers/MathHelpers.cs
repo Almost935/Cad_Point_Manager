@@ -3,7 +3,6 @@ using SharpDX.Direct2D1;
 using System.Windows;
 using SharpDX;
 using Point = System.Windows.Point;
-using System.Diagnostics;
 
 namespace Cad_Point_Manager.Helpers
 {

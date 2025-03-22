@@ -30,7 +30,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         public System.Windows.Media.Matrix Transform { get; set; }
         public TextFormat TextFormat { get; set; }
         public TextLayout TextLayout { get; set; }
-        public TextVertex[] TextGeometryVertices { get; set; } = [];
+        public TextVertex[] TextVertices { get; set; } = [];
         public float DxfTextHeight { get; set; }
         public float MaxWidth { get;set; }
         public Rect Bounds { get; set; }
@@ -38,16 +38,17 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         public bool IsBold { get; set; } = false;
         public bool IsUnderlined { get;set; } = false;
         public bool IsStrikeThroughed { get; set; } = false;
+        public Enums.TextAlignment TextAlignment { get; set; } 
 
         public bool TextFormatCreated => TextFormat != null;
         public bool TextLayoutCreated => TextLayout != null;
-        public bool TextVerticesCreated => TextGeometryVertices.Length > 0;
+        public bool TextVerticesCreated => TextVertices.Length > 0;
         #endregion
 
         #region Constructors
         public DrawingMtextSegment3D(DrawingMtext3D drawingMtext3D, string text, Vector4 color, Vector3 position, float rotation, 
             int fontSize, string fontFamilyName, float dxfTextHeight, bool isItalic, bool isBold, bool isUnderlined, bool isStrikethroughed, 
-            int fontRenderingMinimumSize, float maxWidth)
+            int fontRenderingMinimumSize, float maxWidth, Enums.TextAlignment textAlignment = Enums.TextAlignment.Left)
         {
             DrawingMtext3D = drawingMtext3D;
             Text = text;
@@ -63,6 +64,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             IsStrikeThroughed = isStrikethroughed;
             _fontRenderingMinimumSize = fontRenderingMinimumSize;
             MaxWidth = maxWidth;
+            TextAlignment = textAlignment;
 
             UpdateTransform();
         }
@@ -94,7 +96,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
 
             UpdateBounds(bounds);
             
-            TextGeometryVertices = GetVertices(vertices, 1.00f / fontSizeScaleFactor);
+            TextVertices = GetVertices(vertices, 1.00f / fontSizeScaleFactor);
 
             geometry.Dispose();
         }
@@ -155,27 +157,21 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
 
             return textGeometries.ToArray();
         }
+        
 
         public void Translate(Vector2 offset)
         {
-            for (int i = 0; i < TextGeometryVertices.Length; i++)
+            for (int i = 0; i < TextVertices.Length; i++)
             {
-                TextGeometryVertices[i] = TextGeometryVertices[i].Translate(offset);
+                TextVertices[i] = TextVertices[i].Translate(offset);
             }
         }
-
         public void Translate(Vector3 offset)
         {
-            for (int i = 0; i < TextGeometryVertices.Length; i++)
+            for (int i = 0; i < TextVertices.Length; i++)
             {
-                TextGeometryVertices[i] = TextGeometryVertices[i].Translate(offset);
+                TextVertices[i] = TextVertices[i].Translate(offset);
             }
-        }
-
-        public void Split(int index)
-        {
-            //var firstSegment = new DrawingMtextSegment3D(DrawingMtext3D, Text.Substring(0, index), Color, Position, Rotation, FontSize, FontFamilyName, DxfTextHeight, IsItalic, IsBold, IsUnderlined, IsStrikeThroughed, _fontRenderingMinimumSize, MaxWidth);
-            //var secondSegment = new DrawingMtextSegment3D(DrawingMtext3D, Text.Substring(index), Color, Position, Rotation, FontSize, FontFamilyName, DxfTextHeight, IsItalic, IsBold, Is
         }
         #endregion
 

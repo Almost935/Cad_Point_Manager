@@ -1,8 +1,6 @@
 ﻿using System.ComponentModel;
 using SharpDX.Direct3D11;
 using SharpDX.Direct2D1;
-
-using Factory1 = SharpDX.Direct2D1.Factory1;
 using Device = SharpDX.Direct3D11.Device;
 using DeviceContext = SharpDX.Direct3D11.DeviceContext;
 

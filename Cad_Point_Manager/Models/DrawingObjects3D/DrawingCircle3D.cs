@@ -1,17 +1,11 @@
 ﻿using Cad_Point_Manager.Controls.D3DControl;
 using Cad_Point_Manager.Helpers;
-using Cad_Point_Manager.Models.DrawingObjects;
 using Cad_Point_Manager.Models.DrawingObjects3D;
-using Cad_Point_Manager.Models.SerializableObjects;
 using netDxf.Entities;
-using netDxf.Tables;
 using SharpDX;
 using SharpDX.Direct2D1;
 using SharpDX.Mathematics.Interop;
-using System.Diagnostics;
 using System.Windows;
-using static netDxf.Entities.HatchBoundaryPath;
-using Ellipse = SharpDX.Direct2D1.Ellipse;
 
 namespace Cad_Point_Manager.DrawingObjects
 {

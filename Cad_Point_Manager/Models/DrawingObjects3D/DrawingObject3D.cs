@@ -1,5 +1,4 @@
-﻿using Cad_Point_Manager.Controls.D3DControl;
-using netDxf.Entities;
+﻿using netDxf.Entities;
 using SharpDX;
 using SharpDX.Direct2D1;
 using System.ComponentModel;
