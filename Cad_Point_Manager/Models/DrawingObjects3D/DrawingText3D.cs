@@ -26,6 +26,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         public int StartVertexIndex { get; set; }
         public int EndVertexIndex { get; set; }
         public float Rotation { get; set; } = 0;
+        public float FontHeight { get; set; }
         public int FontSize { get; set; }
         public string FontFamilyName { get; set; }
         public float WidthFactor { get; set; } = 1.0f;
@@ -71,6 +72,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                 AttachmentPoint = GetAttachmentPoint(text.Alignment);
                 Position = GetTextOrigin(AttachmentPoint, new RectangleF((float)Bounds.Left, (float)Bounds.Top, (float)Bounds.Width, (float)Bounds.Height),
                     new Vector3((float)text.Position.X, (float)text.Position.Y, 0));
+                FontHeight = (float)text.Height;
                 FontSize = TextRenderingHelpers.TextHeightToFontSize(text.Height);
                 FontFamilyName = text.Style.FontFamilyName;
                 Transform = GetTransform(text.Position);
@@ -227,7 +229,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
 
         public void GetTextFormat(SharpDX.DirectWrite.Factory1 factory)
         {
-            _textFormat = new(factory, FontFamilyName, FontSize);
+            _textFormat = new(factory, FontFamilyName, FontHeight);
         }
 
         public void GetTextLayout(SharpDX.DirectWrite.Factory1 factory)
@@ -237,23 +239,42 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
 
         public void Tesselate(SharpDX.Direct2D1.Factory2 factory)
         {
-            float fontSizeScaleFactor = (float)FontSize / _fontRenderingMinimumSize;
+            float fontSizeScaleFactor = _fontRenderingMinimumSize / FontHeight;
+
             (TransformedGeometry geometry, RawRectangleF bounds) = TextRenderingHelpers.CreateTextGeometry(factory, Text, TextLayout, fontSizeScaleFactor, 10000);
             var vertices = TextRenderingHelpers.TessellateGeometry(geometry);
-            
-            TextVertices = GetVertices(vertices);
+
+            TextVertices = GetVertices(vertices, 1.00f / fontSizeScaleFactor);
 
             geometry.Dispose();
         }
 
-        public TextVertex[] GetVertices(List<Vector2> vertices)
+        //public TextVertex[] GetVertices(List<Vector2> vertices)
+        //{
+        //    List<TextVertex> textGeometries = [];
+        //    Matrix transform = Matrix.Translation((float)Transform.OffsetX, (float)Transform.OffsetY, 0);
+
+        //    foreach (var vertex in vertices)
+        //    {
+        //        var translatedVector = Vector2.TransformCoordinate(vertex, transform);
+
+        //        TextVertex textGeometryVertex = new(new Vector3(translatedVector.X, translatedVector.Y, 0), Color);
+        //        textGeometries.Add(textGeometryVertex);
+        //    }
+
+        //    return textGeometries.ToArray();
+        //}
+        public TextVertex[] GetVertices(List<Vector2> vertices, float scaleFactor = 1)
         {
             List<TextVertex> textGeometries = [];
-            Matrix transform = Matrix.Translation((float)Transform.OffsetX, (float)Transform.OffsetY, 0);
+            Matrix scaleTransform = Matrix.Scaling(scaleFactor, scaleFactor, 1);
+            Matrix translationTransform = Matrix.Translation((float)Transform.OffsetX, (float)Transform.OffsetY, 0);
 
-            foreach (var vertex in vertices)
+            foreach (var vector in vertices)
             {
-                var translatedVector = Vector2.TransformCoordinate(vertex, transform);
+                // Apply the scale transform
+                var scaledVector = Vector2.TransformCoordinate(vector, scaleTransform);
+                var translatedVector = Vector2.TransformCoordinate(scaledVector, translationTransform);
 
                 TextVertex textGeometryVertex = new(new Vector3(translatedVector.X, translatedVector.Y, 0), Color);
                 textGeometries.Add(textGeometryVertex);

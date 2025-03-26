@@ -25,20 +25,22 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         public Vector4 Color { get; set; }
         public Vector3 Position { get; set; }
         public float Rotation { get; set; } = 0;
-        public int FontSize { get; set; }
+        public float FontHeight { get; set; }
+        public float FontSize { get;set; }
         public string FontFamilyName { get; set; }
         public System.Windows.Media.Matrix Transform { get; set; }
         public TextFormat TextFormat { get; set; }
         public TextLayout TextLayout { get; set; }
         public TextVertex[] TextVertices { get; set; } = [];
-        public float DxfTextHeight { get; set; }
-        public float MaxWidth { get;set; }
+        public float MaxWidth { get; set; }
         public Rect Bounds { get; set; }
         public bool IsItalic { get; set; } = false;
         public bool IsBold { get; set; } = false;
-        public bool IsUnderlined { get;set; } = false;
+        public bool IsUnderlined { get; set; } = false;
         public bool IsStrikeThroughed { get; set; } = false;
-        public Enums.TextAlignment TextAlignment { get; set; } 
+        public Enums.TextAlignment TextAlignment { get; set; }
+        public int MtextRowNumber { get; set; }
+        public int MtextColumnNumber { get;set; }
 
         public bool TextFormatCreated => TextFormat != null;
         public bool TextLayoutCreated => TextLayout != null;
@@ -46,8 +48,8 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         #endregion
 
         #region Constructors
-        public DrawingMtextSegment3D(DrawingMtext3D drawingMtext3D, string text, Vector4 color, Vector3 position, float rotation, 
-            int fontSize, string fontFamilyName, float dxfTextHeight, bool isItalic, bool isBold, bool isUnderlined, bool isStrikethroughed, 
+        public DrawingMtextSegment3D(DrawingMtext3D drawingMtext3D, string text, Vector4 color, Vector3 position, float rotation,
+            float fontHeight, string fontFamilyName, bool isItalic, bool isBold, bool isUnderlined, bool isStrikethroughed,
             int fontRenderingMinimumSize, float maxWidth, Enums.TextAlignment textAlignment = Enums.TextAlignment.Left)
         {
             DrawingMtext3D = drawingMtext3D;
@@ -55,11 +57,11 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             Color = color;
             Position = position;
             Rotation = rotation;
-            FontSize = fontSize;
+            FontHeight = fontHeight;
+            FontSize = TextRenderingHelpers.TextHeightToFontSize(fontHeight);
             FontFamilyName = fontFamilyName;
-            DxfTextHeight = dxfTextHeight;
-            IsItalic = isItalic; 
-            IsBold = isBold; 
+            IsItalic = isItalic;
+            IsBold = isBold;
             IsUnderlined = isUnderlined;
             IsStrikeThroughed = isStrikethroughed;
             _fontRenderingMinimumSize = fontRenderingMinimumSize;
@@ -71,31 +73,28 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         #endregion
 
         #region Methods
-        public void GetTextFormat(Factory1 factory)
+        public void GetTextLayout(Factory1 factory)
         {
             FontWeight fontWeight;
             if (IsBold) { fontWeight = FontWeight.Bold; } else { fontWeight = FontWeight.Normal; }
 
-            FontStyle fontStyle; 
+            FontStyle fontStyle;
             if (IsItalic) { fontStyle = FontStyle.Italic; } else { fontStyle = FontStyle.Normal; }
 
-            TextFormat = new(factory, FontFamilyName, fontWeight, fontStyle, FontSize);
-        }
-
-        public void GetTextLayout(Factory1 factory)
-        {
+            TextFormat = new(factory, FontFamilyName, fontWeight, fontStyle, FontHeight);
             TextLayout = new(factory, Text, TextFormat, (float)Bounds.Width, (float)Bounds.Height, 96, true);
         }
 
         public void Tesselate(SharpDX.Direct2D1.Factory2 factory)
         {
-            float fontSizeScaleFactor = _fontRenderingMinimumSize / (float)FontSize;
+            float fontSizeScaleFactor = _fontRenderingMinimumSize / FontHeight;
 
-            (SharpDX.Direct2D1.TransformedGeometry geometry, RawRectangleF bounds) = TextRenderingHelpers.CreateTextGeometry(factory, Text, TextLayout, fontSizeScaleFactor, _flatteningTolerance);
+            (SharpDX.Direct2D1.TransformedGeometry geometry, RawRectangleF bounds) = TextRenderingHelpers.CreateTextGeometry(factory, Text, TextLayout, 
+                fontSizeScaleFactor, FontHeight, _flatteningTolerance);
             var vertices = TextRenderingHelpers.TessellateGeometry(geometry, _flatteningTolerance);
-
-            UpdateBounds(bounds);
             
+            UpdateBounds(bounds);
+
             TextVertices = GetVertices(vertices, 1.00f / fontSizeScaleFactor);
 
             geometry.Dispose();
@@ -111,9 +110,9 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                     if (cluster.Length == 1 && cluster.IsWhitespace)
                     {
                         Bounds = new(
-                            textGeometryBounds.Left, 
-                            textGeometryBounds.Top, 
-                            textGeometryBounds.Right - textGeometryBounds.Left + cluster.Width, 
+                            textGeometryBounds.Left,
+                            textGeometryBounds.Top,
+                            textGeometryBounds.Right - textGeometryBounds.Left + cluster.Width,
                             textGeometryBounds.Bottom - textGeometryBounds.Top);
                     }
                 }
@@ -121,9 +120,9 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             else
             {
                 Bounds = new Rect(
-                    textGeometryBounds.Left, 
-                    textGeometryBounds.Top, 
-                    textGeometryBounds.Right - textGeometryBounds.Left, 
+                    textGeometryBounds.Left,
+                    textGeometryBounds.Top,
+                    textGeometryBounds.Right - textGeometryBounds.Left,
                     textGeometryBounds.Bottom - textGeometryBounds.Top);
             }
         }
@@ -157,10 +156,11 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
 
             return textGeometries.ToArray();
         }
-        
+
 
         public void Translate(Vector2 offset)
         {
+            Position = Vector3.TransformCoordinate(Position, Matrix.Translation(offset.X, offset.Y, 0));
             for (int i = 0; i < TextVertices.Length; i++)
             {
                 TextVertices[i] = TextVertices[i].Translate(offset);
@@ -168,6 +168,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         }
         public void Translate(Vector3 offset)
         {
+            Position += offset;
             for (int i = 0; i < TextVertices.Length; i++)
             {
                 TextVertices[i] = TextVertices[i].Translate(offset);
