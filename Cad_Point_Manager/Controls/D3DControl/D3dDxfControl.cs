@@ -55,13 +55,13 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private bool _textShaderLoaded = false;
         private TextVertex[] _textVertices = [];
 
-        // Text glow shader related fields
-        private Buffer _textGlowVertexBuffer;
-        private VertexShader _textGlowVertexShader;
-        private PixelShader _textGlowPixelShader;
-        private InputLayout _textGlowInputLayout;
-        private bool _textGlowShaderLoaded = false;
-        private TextVertex[] _textGlowVertices = [];
+        //// Text glow shader related fields
+        //private Buffer _textGlowVertexBuffer;
+        //private VertexShader _textGlowVertexShader;
+        //private PixelShader _textGlowPixelShader;
+        //private InputLayout _textGlowInputLayout;
+        //private bool _textGlowShaderLoaded = false;
+        //private TextVertex[] _textGlowVertices = [];
 
         // Panning and Zooming Fields
         private float _panThreshold = 1.0f;
@@ -382,7 +382,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             if (_textVertices.Length > 0 && _textVertices.Length > 0)
             {
-                // Create the vertex buffer
                 _textVertexBuffer = Buffer.Create(
                     _d3dResCache.Device,
                     BindFlags.VertexBuffer,
@@ -484,7 +483,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     new InputElement("POSITION", 0, Format.R32G32B32_Float, 0, 0),
                     new InputElement("COLOR", 0, Format.R32G32B32A32_Float, 12, 0),
                     new InputElement("ISVISIBLE", 0, Format.R32_Float, 28, 0),
-                    new InputElement("ISMOUSEOVER", 0, Format.R32_Float, 32, 0)
+                    new InputElement("ISMOUSEOVER", 0, Format.R32_Float, 32, 0),
+                    new InputElement("GLOWDIRECTION", 0, Format.R32G32_Float, 36, 0)
                 ]);
 
             _textShaderLoaded = true;

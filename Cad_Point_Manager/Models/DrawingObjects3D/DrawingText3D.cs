@@ -266,21 +266,42 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         //}
         public TextVertex[] GetVertices(List<Vector2> vertices, float scaleFactor = 1)
         {
-            List<TextVertex> textGeometries = [];
+            List<TextVertex> textVertices = [];
             Matrix scaleTransform = Matrix.Scaling(scaleFactor, scaleFactor, 1);
             Matrix translationTransform = Matrix.Translation((float)Transform.OffsetX, (float)Transform.OffsetY, 0);
 
-            foreach (var vector in vertices)
-            {
-                // Apply the scale transform
-                var scaledVector = Vector2.TransformCoordinate(vector, scaleTransform);
-                var translatedVector = Vector2.TransformCoordinate(scaledVector, translationTransform);
+            //foreach (var vector in vertices)
+            //{
+            //    // Apply the scale transform
+            //    var scaledVector = Vector2.TransformCoordinate(vector, scaleTransform);
+            //    var translatedVector = Vector2.TransformCoordinate(scaledVector, translationTransform);
 
-                TextVertex textGeometryVertex = new(new Vector3(translatedVector.X, translatedVector.Y, 0), Color);
-                textGeometries.Add(textGeometryVertex);
+            //    TextVertex textGeometryVertex = new(new Vector3(translatedVector.X, translatedVector.Y, 0), Color);
+            //    textVertices.Add(textGeometryVertex);
+            //}
+
+            for (int i = 0; i < vertices.Count / 3; i += 3)
+            {
+                var v1 = vertices[i];
+                var v2 = vertices[i + 1];
+                var v3 = vertices[i + 2];
+                Vector2 centroid = (v1 + v2 + v3) / 3;
+
+                Vector2 direction1 = v1 - centroid;
+                Vector2 direction2 = v2 - centroid;
+                Vector2 direction3 = v3 - centroid;
+
+                var scaledVector1 = Vector2.TransformCoordinate(v1, scaleTransform);
+                TextVertex textVertex1 = new(new Vector3(scaledVector1.X, scaledVector1.Y, 0), Color, direction1, 1, 0);
+                var scaledVector2 = Vector2.TransformCoordinate(v1, scaleTransform);
+                TextVertex textVertex2 = new(new Vector3(scaledVector2.X, scaledVector2.Y, 0), Color, direction2, 1, 0);
+                var scaledVector3 = Vector2.TransformCoordinate(v1, scaleTransform);
+                TextVertex textVertex3 = new(new Vector3(scaledVector3.X, scaledVector3.Y, 0), Color, direction3, 1, 0);
+
+                textVertices.AddRange([textVertex1, textVertex2, textVertex3]);
             }
 
-            return textGeometries.ToArray();
+            return textVertices.ToArray();
         }
 
         public void UpdateTextVertices(SharpDX.DirectWrite.Factory1 factory, SharpDX.Direct2D1.Factory2 d2dFactory)

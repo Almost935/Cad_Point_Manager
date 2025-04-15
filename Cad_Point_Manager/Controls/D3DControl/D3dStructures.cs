@@ -56,7 +56,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
        
         public readonly TextVertex SetMouseOver(bool isMouseOver)
         {
-            return new TextVertex(new Vector3(Position.X, Position.Y, Position.Z), Color, GlowDirection, IsVisible, IsMouseOver);
+            return new TextVertex(new Vector3(Position.X, Position.Y, Position.Z), Color, GlowDirection, IsVisible, isMouseOver ? 1 : 0);
         }
 
         public static implicit operator System.Windows.Point(TextVertex v)
