@@ -84,6 +84,9 @@ namespace Cad_Point_Manager.ViewModels
 
         public ICommand MouseMoveCommand { get; set; }
         public ICommand MouseClickCommand { get; set; }
+
+        // View Commands
+        public ICommand ZoomToExtentsCommand { get; set; }
         #endregion
 
         #region Constructors
@@ -97,6 +100,8 @@ namespace Cad_Point_Manager.ViewModels
 
             MouseMoveCommand = new RelayCommand<MouseEventArgs>(OnMouseMove);
             MouseClickCommand = new RelayCommand<MouseButtonEventArgs>(OnMouseClick);
+
+            ZoomToExtentsCommand = new RelayCommand<RoutedEventArgs>(ZoomToExtents);
         }
         #endregion
 
@@ -156,6 +161,11 @@ namespace Cad_Point_Manager.ViewModels
         public void SaveJobAs(RoutedEventArgs e)
         {
 
+        }
+
+        public void ZoomToExtents(RoutedEventArgs e)
+        {
+            JobFileManager.CadManager3D?.ZoomToExtents();
         }
         #endregion
 

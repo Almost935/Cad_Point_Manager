@@ -6,6 +6,7 @@ using netDxf.Tables;
 using SharpDX;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Data;
@@ -115,11 +116,12 @@ namespace Cad_Point_Manager.Models
 
         public DxfDocument DxfDocument { get; set; }
         public DrawingObjectTree3D DrawingObjectTree3D { get; set; }
-        public Dictionary<string, TextStyle> TextStyles { get; set; }
         #endregion
 
         #region Events
         public event PropertyChangedEventHandler PropertyChanged;
+
+        public event Action ZoomToExtentsRequested; // This event is used to reset the camera in the 3D view
         #endregion
 
         #region Methods
@@ -131,7 +133,7 @@ namespace Cad_Point_Manager.Models
         public void LoadDxf(DxfDocument dxfDocument)
         {
             ClearDxf();
-
+            
             DxfDocument = dxfDocument;
             Extents = DxfHelpers.GetBoundsFromHeader(DxfDocument);
 
@@ -146,9 +148,6 @@ namespace Cad_Point_Manager.Models
                 }
             }
             UpdateLayerView();
-            DrawingObjectTree3D = new(this, Extents.ToRect(), 5);
-
-            UpdateLineVerticesList();
 
             DxfLoaded = true;
             DxfDirty = true;
@@ -160,28 +159,6 @@ namespace Cad_Point_Manager.Models
             LayersView = CollectionViewSource.GetDefaultView(Layers);
             LayersView.SortDescriptions.Clear();
             LayersView.SortDescriptions.Add(new SortDescription("Key", ListSortDirection.Ascending));
-        }
-
-        public (double distance, DrawingObject3D obj) HitTestPoint(Point p, float tolerance)
-        {
-            (double distance, DrawingObject3D obj) tup = (double.MaxValue, null);
-
-            if (DrawingObjectTree3D is null) { return tup; }
-
-            Rect rect = new(p.X - tolerance, p.Y - tolerance, tolerance * 2, tolerance * 2);
-            List<DrawingObjectNode3D> nodes = DrawingObjectTree3D.GetIntersectingNodes(rect);
-
-            foreach (var node in nodes)
-            {
-                (double distance, DrawingObject3D obj) objTup = node.HitTestNode(p);
-
-                if (objTup.distance < tup.distance && objTup.distance < tolerance)
-                {
-                    tup = objTup;
-                }
-            }
-
-            return tup;
         }
 
         public List<(double distance, DrawingObject3D obj)> GetNearestDrawingObjects(Point p, float tolerance)
@@ -212,6 +189,11 @@ namespace Cad_Point_Manager.Models
             DxfDirty = true;
         }
 
+        public void ZoomToExtents()
+        {
+            ZoomToExtentsRequested?.Invoke();
+        }
+
         public ObjectLayer3D GetLayer(Layer dxfLayer)
         {
             ObjectLayer3D layer = Layers.FirstOrDefault(x => x.Value.Name == dxfLayer.Name).Value;
@@ -223,16 +205,6 @@ namespace Cad_Point_Manager.Models
                 Layers.Add(new KeyValuePair<string, ObjectLayer3D>(dxfLayer.Name, layer));
 
                 return layer;
-            }
-        }
-
-        public void GetTextStyles(DxfDocument dxfDocument)
-        {
-            TextStyles = [];
-
-            foreach (var textStyle in dxfDocument.TextStyles)
-            {
-                TextStyles.Add(textStyle.Name, textStyle);
             }
         }
 
@@ -256,16 +228,16 @@ namespace Cad_Point_Manager.Models
 
                         if (obj is DrawingBlock3D drawingBlock)
                         {
-                            drawingBlock.StartVertexIndex = LineVertices.Count;
+                            drawingBlock.StartLineVertexIndex = LineVertices.Count;
                             LineVertices.AddRange(drawingBlock.GeometryVertices);
-                            drawingBlock.EndVertexIndex = LineVertices.Count - 1;
+                            drawingBlock.EndLineVertexIndex = LineVertices.Count - 1;
                         }
                     }
                 }
             }
         }
 
-        public unsafe void UpdateTextVerticesList(D3dResCache d3DResCache)
+        public void UpdateTextVerticesList(D3dResCache d3DResCache)
         {
             if (d3DResCache.Device is null) { return; }
 
@@ -283,31 +255,44 @@ namespace Cad_Point_Manager.Models
                         if (obj is DrawingText3D drawingText)
                         {
                             drawingText.UpdateTextVertices(_d3dResCache.FactoryWrite, _d3dResCache.D2dFactory);
+                            drawingText.StartVertexIndex = TextVertices.Count;
                             TextVertices.AddRange(drawingText.TextVertices);
+                            drawingText.EndVertexIndex = TextVertices.Count - 1;
                         }
                         if (obj is DrawingMtext3D drawingMtext)
                         {
                             drawingMtext.UpdateTextVertices(_d3dResCache.FactoryWrite, _d3dResCache.D2dFactory);
+                            drawingMtext.StartVertexIndex = TextVertices.Count;
                             TextVertices.AddRange(drawingMtext.TextVertices);
+                            drawingMtext.EndVertexIndex = TextVertices.Count - 1;
 
-                            SharpDX.Vector4 color = new(1, 0, 0, 0.5f);
-                            TextVertex tl = new(new SharpDX.Vector3((float)drawingMtext.TextBox.Left, (float)drawingMtext.TextBox.Top, 0), color);
-                            TextVertex tr = new(new SharpDX.Vector3((float)drawingMtext.TextBox.Right, (float)drawingMtext.TextBox.Top, 0), color);
-                            TextVertex bl = new(new SharpDX.Vector3((float)drawingMtext.TextBox.Left, (float)drawingMtext.TextBox.Bottom, 0), color);
-                            TextVertex br = new(new SharpDX.Vector3((float)drawingMtext.TextBox.Right, (float)drawingMtext.TextBox.Bottom, 0), color);
+                            //// Testing 
+                            //SharpDX.Vector4 color = new(1, 0, 0, 0.5f);
+                            //TextVertex tl = new(new SharpDX.Vector3((float)drawingMtext.MtextBlock.TextBox.Left, (float)drawingMtext.MtextBlock.TextBox.Top, 0), color);
+                            //TextVertex tr = new(new SharpDX.Vector3((float)drawingMtext.MtextBlock.TextBox.Right, (float)drawingMtext.MtextBlock.TextBox.Top, 0), color);
+                            //TextVertex bl = new(new SharpDX.Vector3((float)drawingMtext.MtextBlock.TextBox.Left, (float)drawingMtext.MtextBlock.TextBox.Bottom, 0), color);
+                            //TextVertex br = new(new SharpDX.Vector3((float)drawingMtext.MtextBlock.TextBox.Right, (float)drawingMtext.MtextBlock.TextBox.Bottom, 0), color);
 
-                            TextVertices.Add(bl); TextVertices.Add(tl); TextVertices.Add(tr);
-                            TextVertices.Add(bl); TextVertices.Add(tr); TextVertices.Add(br);
+                            //TextVertices.Add(bl); TextVertices.Add(tl); TextVertices.Add(tr);
+                            //TextVertices.Add(bl); TextVertices.Add(tr); TextVertices.Add(br);
                         }
                         if (obj is DrawingBlock3D drawingBlock)
                         {
                             drawingBlock.UpdateTextVertices(_d3dResCache.FactoryWrite, _d3dResCache.D2dFactory);
+                            drawingBlock.StartTextVertexIndex = TextVertices.Count;
                             TextVertices.AddRange(drawingBlock.TextVertices);
+                            drawingBlock.EndTextVertexIndex = TextVertices.Count - 1;
                         }
                     }
                 }
             }
 
+            UpdateDrawingObjectTree();
+        }
+
+        public void UpdateDrawingObjectTree()
+        {
+            DrawingObjectTree3D = new(this, Extents.ToRect(), 5);
         }
         #endregion
     }

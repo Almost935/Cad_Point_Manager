@@ -248,18 +248,62 @@ namespace Cad_Point_Manager.Helpers
             return (param < 0.0) ? start : (param > 1.0) ? end : (start + param * v);
         }
 
-
-        public static RawMatrix3x2 CombineMatrices(RawMatrix3x2 a, RawMatrix3x2 b)
+        public static double PointToRectDistance(Rect rect, Point point)
         {
-            return new RawMatrix3x2
-            {
-                M11 = a.M11 * b.M11 + a.M12 * b.M21,
-                M12 = a.M11 * b.M12 + a.M12 * b.M22,
-                M21 = a.M21 * b.M11 + a.M22 * b.M21,
-                M22 = a.M21 * b.M12 + a.M22 * b.M22,
-                M31 = a.M31 * b.M11 + a.M32 * b.M21 + b.M31,
-                M32 = a.M31 * b.M12 + a.M32 * b.M22 + b.M32
-            };
+            // Clamp point to rect bounds
+            double clampedX = Math.Max(rect.Left, Math.Min(point.X, rect.Right));
+            double clampedY = Math.Max(rect.Top, Math.Min(point.Y, rect.Bottom));
+
+            // If the point is inside the rect, distance is 0
+            if (rect.Contains(point))
+                return 0;
+
+            // Compute Euclidean distance from the point to the closest point on the rect
+            double dx = point.X - clampedX;
+            double dy = point.Y - clampedY;
+
+            return Math.Sqrt(dx * dx + dy * dy);
+        }
+
+
+        // Triangular Methods
+        public static bool IsPointInTriangle(Vector2 p, Vector2 a, Vector2 b, Vector2 c)
+        {
+            var v0 = c - a;
+            var v1 = b - a;
+            var v2 = p - a;
+
+            float dot00 = Vector2.Dot(v0, v0);
+            float dot01 = Vector2.Dot(v0, v1);
+            float dot02 = Vector2.Dot(v0, v2);
+            float dot11 = Vector2.Dot(v1, v1);
+            float dot12 = Vector2.Dot(v1, v2);
+
+            float denom = dot00 * dot11 - dot01 * dot01;
+            if (Math.Abs(denom) < float.Epsilon) return false; // Degenerate triangle
+
+            float invDenom = 1f / denom;
+            float u = (dot11 * dot02 - dot01 * dot12) * invDenom;
+            float v = (dot00 * dot12 - dot01 * dot02) * invDenom;
+
+            return (u >= 0) && (v >= 0) && (u + v <= 1);
+        }
+        public static float DistanceToTriangle(Vector2 p, Vector2 a, Vector2 b, Vector2 c)
+        {
+            float d1 = DistanceToSegment(p, a, b);
+            float d2 = DistanceToSegment(p, b, c);
+            float d3 = DistanceToSegment(p, c, a);
+
+            return MathF.Min(d1, MathF.Min(d2, d3));
+        }
+        public static float DistanceToSegment(Vector2 p, Vector2 a, Vector2 b)
+        {
+            Vector2 ab = b - a;
+            Vector2 ap = p - a;
+            float t = Vector2.Dot(ap, ab) / Vector2.Dot(ab, ab);
+            t = Math.Clamp(t, 0, 1);
+            Vector2 closest = a + t * ab;
+            return Vector2.Distance(p, closest);
         }
     }
 }

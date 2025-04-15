@@ -12,10 +12,10 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         public int EndVertexIndex { get; set; }
         public Geometry Geometry2D { get; set; }
 
-        public override void Select()
+        public override void MouseEnter()
         {
-            this.IsSelected = true;
             this.IsVisible = false;
+            this.IsMouseOver = true;
 
             for (int i = 0; i < Vertices.Count; i++)
             {
@@ -24,10 +24,10 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                 Vertices[i] = vertex;
             }
         }
-        public override void Deselect()
+        public override void MouseLeave()
         {
-            this.IsSelected = false;
             this.IsVisible = true;
+            this.IsMouseOver = false;
 
             for (int i = 0; i < Vertices.Count; i++)
             {

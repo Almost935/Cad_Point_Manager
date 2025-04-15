@@ -117,6 +117,7 @@
                             </MenuItem.Icon>
                         </MenuItem>
                         <MenuItem Header="Zoom To Extents"
+                                  Command="{Binding ZoomToExtentsCommand}"
                                   Style="{StaticResource MenuItemStyle1}">
                             <MenuItem.Icon>
                                 <fa:FontAwesome Icon="SquareOutline" />

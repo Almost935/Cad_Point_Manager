@@ -1,4 +1,4 @@
-﻿// LineShader.hlsl
+﻿// TextShader.hlsl
 
 // Input structure for the Vertex Shader
 struct VSInput
@@ -6,6 +6,7 @@ struct VSInput
     float3 Position : POSITION; // 3D position of the vertex
     float4 Color : COLOR; // RGBA color of the vertex
     float IsVisible : ISVISIBLE;
+    float IsMouseOver : ISMOUSEOVER;
 };
 
 // Output structure from the Vertex Shader and input for the Pixel Shader
@@ -13,6 +14,7 @@ struct PSInput
 {
     float4 Position : SV_POSITION; // Transformed position in screen space
     float4 Color : COLOR; // RGBA color passed to the Pixel Shader
+    float IsMouseOver : ISMOUSEOVER;
 };
 
 // Constant buffer for 2D transformation matrix
@@ -40,6 +42,8 @@ PSInput VSMain(VSInput input)
 
     // Pass the color unchanged
     output.Color = input.Color;
+    
+    output.IsMouseOver = input.IsMouseOver;
 
     return output;
 }
@@ -47,6 +51,12 @@ PSInput VSMain(VSInput input)
 // Pixel Shader: Determines the color of each pixel
 float4 PSMain(PSInput input) : SV_TARGET
 {
+    if (input.IsMouseOver > 0.5)
+    { 
+        //input.Color.rgb = lerp(input.Color.rgb, float3(0.2, 0.2, 0.7), 0.6);
+        input.Color.rgb = float3(0.5, 0.5, 0.9);
+    }
+    
     // Return the color passed from the Vertex Shader
     return input.Color;
 }

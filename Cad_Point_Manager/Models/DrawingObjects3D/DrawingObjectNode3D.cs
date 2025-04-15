@@ -1,4 +1,5 @@
 ﻿using Cad_Point_Manager.Helpers;
+using System.Diagnostics;
 using System.Windows;
 
 namespace Cad_Point_Manager.Models.DrawingObjects3D
@@ -137,6 +138,16 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
 
             foreach (var obj in DrawingObjects)
             {
+                //if (obj is DrawingMtext3D drawingMtext)
+                //{
+                //    Debug.WriteLine($"\n{drawingMtext.Text}" +
+                //        $"\nBounds: {drawingMtext.Bounds.TopLeft} {drawingMtext.Bounds.BottomRight}" +
+                //        $"\np: {p}" +
+                //        $"\nhitTestRange: {hitTestRange.TopLeft} {hitTestRange.BottomRight}" +
+                //        $"\ndrawingMtext.BoundsInRect(hitTestRange): {drawingMtext.BoundsInRect(hitTestRange)}" +
+                //        $"\ndrawingMtext.DistanceToPoint(p): {drawingMtext.DistanceToPoint(p)}" +
+                //        $"\nobj.IsVisible: {obj.IsVisible} obj.Layer.IsVisible: {obj.Layer.IsVisible}");
+                //}
                 if (obj.IsVisible && obj.Layer.IsVisible)
                 {
                     if (obj.BoundsInRect(hitTestRange))

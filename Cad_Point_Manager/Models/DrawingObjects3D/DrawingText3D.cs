@@ -151,11 +151,11 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         #endregion
 
         #region Methods
-        public override void Select()
+        public override void MouseEnter()
         {
             throw new NotImplementedException();
         }
-        public override void Deselect()
+        public override void MouseLeave()
         {
             throw new NotImplementedException();
         }

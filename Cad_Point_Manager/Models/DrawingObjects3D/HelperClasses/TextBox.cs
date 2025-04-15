@@ -23,7 +23,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         public double Top => TopLeft.Y;
         public double Bottom => BottomRight.Y;
         public double Width => BottomRight.X - TopLeft.X;
-        public double Height => BottomRight.Y - TopLeft.Y;
+        public double Height => TopLeft.Y - BottomRight.Y;
         #endregion
 
         #region Static Properties
@@ -42,7 +42,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         #region Public Methods
         public override string ToString()
         {
-            return $"Left: {Left} Right: {Right} Top: {Top} Bottom: {Bottom}";
+            return $"Left: {Left} Right: {Right} Top: {Top} Bottom: {Bottom} Width: {Width} Height: {Height}";
         }
 
 

@@ -6,7 +6,10 @@ using netDxf;
 using netDxf.Entities;
 using SharpDX;
 using SharpDX.Direct2D1;
+using SkiaSharp;
 using System.Diagnostics;
+using System.Drawing;
+using System.Net;
 using System.Text.RegularExpressions;
 using System.Windows;
 
@@ -14,6 +17,7 @@ using Brush = SharpDX.Direct2D1.Brush;
 using Factory1 = SharpDX.DirectWrite.Factory1;
 using FontStyle = netDxf.Tables.FontStyle;
 using Point = System.Windows.Point;
+using Vector2 = SharpDX.Vector2;
 using Vector3 = SharpDX.Vector3;
 using Vector4 = SharpDX.Vector4;
 
@@ -22,7 +26,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
     public class DrawingMtext3D : DrawingObject3D
     {
         #region Fields
-        private const double _mtextLineSpacingFactor = 1.5;
+        private const float _mtextLineSpacingFactor = 0.4f;
         private const int _fontRenderingMinimumSize = 50;
         #endregion
 
@@ -31,7 +35,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         public string Text { get; set; }
         public double MaxWidth { get; set; }
         public Vector3 Position { get; set; }
-        public TextBox TextBox { get; set; } = TextBox.Empty;
         public int StartVertexIndex { get; set; }
         public int EndVertexIndex { get; set; }
         public float Rotation { get; set; } = 0;
@@ -39,13 +42,10 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         public string FontFamilyName { get; set; }
         public bool IsBold { get; set; }
         public bool IsItalic { get; set; }
-        public System.Windows.Media.Matrix Transform { get; set; }
         public Enums.TextAttachmentPoint AttachmentPoint { get; set; }
-        public List<DrawingMtextSegment3D> SegmentsList { get; set; } = [];
-        public List<List<DrawingMtextSegment3D>> SegmentsArray { get; set; } = [];
+        public DrawingMtext3DBlock MtextBlock { get; set; }
         public List<TextVertex> TextVertices { get; set; } = [];
-
-        public bool TextSegmentsLoaded { get; set; } = false;
+        public Vector3 TextAttachmentOffset { get; set; } = Vector3.Zero;
         #endregion
 
         #region Constructor
@@ -62,17 +62,52 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         #endregion
 
         #region Methods
-        public override void Select()
+        public override void MouseEnter()
         {
-            throw new NotImplementedException();
+            this.IsMouseOver = true;
+
+            for (int i = 0; i < TextVertices.Count; i++)
+            {
+                var vertex = TextVertices[i];
+                vertex.IsMouseOver = 1.0f;
+                TextVertices[i] = vertex;
+            }
         }
-        public override void Deselect()
+        public override void MouseLeave()
         {
-            throw new NotImplementedException();
+            this.IsMouseOver = false;
+
+            for (int i = 0; i < TextVertices.Count; i++)
+            {
+                var vertex = TextVertices[i];
+                vertex.IsMouseOver = 0.0f;
+                TextVertices[i] = vertex;
+            }
         }
         public override double DistanceToPoint(Point p)
         {
-            return 1000;
+            double finalDist = double.MaxValue;
+
+            if (PointInTextGeometry(new Vector2((float)p.X, (float)p.Y), TextVertices))
+            {
+                return 0;
+            }
+            else
+            {
+                for (int i = 0; i < TextVertices.Count; i += 3)
+                {
+                    var v1 = TextVertices[i];
+                    var v2 = TextVertices[i + 1];
+                    var v3 = TextVertices[i + 2];
+
+                    var dist = MathHelpers.DistanceToTriangle(new Vector2((float)p.X, (float)p.Y), new Vector2(v1.Position.X, v1.Position.Y),
+                        new Vector2(v2.Position.X, v2.Position.Y), new Vector2(v3.Position.X, v3.Position.Y));
+
+                    if (dist < finalDist) { finalDist = dist; }
+                }
+            }
+
+            return finalDist;
         }
         public override bool HitTest(Point point, float tolerance)
         {
@@ -92,12 +127,10 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                 Position = new((float)mText.Position.X, (float)mText.Position.Y, 0);
                 Rotation = (float)mText.Rotation;
                 UpdateBounds();
-                AttachmentPoint = GetAttachmentPoint(mText.AttachmentPoint);
                 IsBold = mText.Style.FontStyle == FontStyle.Bold;
                 IsItalic = mText.Style.FontStyle == FontStyle.Italic;
                 FontHeight = (float)mText.Height;
                 FontFamilyName = mText.Style.FontFamilyName;
-                //Transform = GetTransform(mText.Position);
             }
             else
             {
@@ -105,221 +138,52 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             }
         }
 
-        private protected System.Windows.Media.Matrix GetTransform(netDxf.Vector3 dxfPos)
-        {
-            System.Windows.Media.Matrix matrix = new();
-            matrix.Translate(dxfPos.X, dxfPos.Y);
-
-            return matrix;
-        }
-
-        /// <summary>
-        /// Gets the upper left point of the MText.
-        /// </summary>
-        /// <param name="mText"></param>
-        /// <param name="rect"></param>
-        /// <param name="position"></param>
-        /// <returns></returns>
-        public Vector3 GetMtextOrigin(Enums.TextAttachmentPoint attachmentPoint, RectangleF rect, Vector3 position)
-        {
-            Vector3 adjustedPos = Vector3.Zero;
-
-            switch (attachmentPoint)
-            {
-                case Enums.TextAttachmentPoint.TopLeft:
-                    adjustedPos = new Vector3(position.X,
-                        position.Y - rect.Height, 0);
-                    break;
-
-                case Enums.TextAttachmentPoint.TopCenter:
-                    adjustedPos = new Vector3(position.X - (rect.Width) / 2,
-                        position.Y - rect.Height, 0);
-                    break;
-
-                case Enums.TextAttachmentPoint.TopRight:
-                    adjustedPos = new Vector3(position.X - (rect.Width),
-                        position.Y - rect.Height, 0);
-                    break;
-
-                case Enums.TextAttachmentPoint.MiddleLeft:
-                    adjustedPos = new Vector3(position.X,
-                        position.Y - (rect.Height / 2), 0);
-                    break;
-
-                case Enums.TextAttachmentPoint.MiddleCenter:
-                    adjustedPos = new Vector3(position.X - (rect.Width) / 2,
-                        position.Y - (rect.Height / 2), 0);
-                    break;
-
-                case Enums.TextAttachmentPoint.MiddleRight:
-                    adjustedPos = new Vector3(position.X - (rect.Width),
-                        position.Y - (rect.Height / 2), 0);
-                    break;
-
-                case Enums.TextAttachmentPoint.BottomLeft:
-                    adjustedPos = position;
-                    break;
-
-                case Enums.TextAttachmentPoint.BottomCenter:
-                    adjustedPos = new Vector3(position.X - (rect.Width) / 2,
-                        position.Y, 0);
-                    break;
-
-                case Enums.TextAttachmentPoint.BottomRight:
-                    adjustedPos = new Vector3(position.X - (rect.Width),
-                        position.Y, 0);
-                    break;
-
-                default:
-                    adjustedPos = position;
-                    break;
-            }
-
-            return adjustedPos;
-        }
-
-        public void InitializeTextBox(double initialTextHeight)
-        {
-            var spacing = (float)(initialTextHeight * _mtextLineSpacingFactor * DxfMtext.LineSpacingFactor);
-            switch (AttachmentPoint)
-            {
-                case Enums.TextAttachmentPoint.TopLeft:
-                    TextBox = new TextBox(new Point(Position.X, Position.Y), new Point(Position.X, Position.Y), new Point(Position.X + MaxWidth, Position.Y - initialTextHeight));
-                    break;
-
-                case Enums.TextAttachmentPoint.TopCenter:
-                    TextBox = new TextBox(new Point(Position.X, Position.Y), new Point(Position.X - MaxWidth * 0.5f, Position.Y), new Point(Position.X + MaxWidth * 0.5f, Position.Y - initialTextHeight));
-                    break;
-
-                case Enums.TextAttachmentPoint.TopRight:
-                    TextBox = new TextBox(new Point(Position.X, Position.Y), new Point(Position.X - MaxWidth * 0.5f, Position.Y), new Point(Position.X - MaxWidth, Position.Y - initialTextHeight));
-                    break;
-
-                case Enums.TextAttachmentPoint.MiddleLeft:
-                    TextBox = new TextBox(new Point(Position.X, Position.Y), new Point(Position.X, Position.Y + initialTextHeight * 0.5f), new Point(Position.X + MaxWidth, Position.Y - initialTextHeight * 0.5f));
-                    break;
-
-                case Enums.TextAttachmentPoint.MiddleCenter:
-                    TextBox = new TextBox(new Point(Position.X, Position.Y), new Point(Position.X - MaxWidth * 0.5f, Position.Y + initialTextHeight * 0.5f), new Point(Position.X + (float)MaxWidth * 0.5f, Position.Y - initialTextHeight * 0.5f));
-                    break;
-
-                case Enums.TextAttachmentPoint.MiddleRight:
-                    TextBox = new TextBox(new Point(Position.X, Position.Y), new Point(Position.X - MaxWidth, Position.Y + initialTextHeight * 0.5f), new Point(Position.X - (float)MaxWidth * 0.5f, Position.Y - initialTextHeight * 0.5f));
-                    break;
-
-                case Enums.TextAttachmentPoint.BottomLeft:
-                    TextBox = new TextBox(new Point(Position.X, Position.Y), new Point(Position.X, Position.Y + initialTextHeight), new Point(Position.X + MaxWidth, Position.Y));
-                    break;
-
-                case Enums.TextAttachmentPoint.BottomCenter:
-                    TextBox = new TextBox(new Point(Position.X, Position.Y), new Point(Position.X - MaxWidth * 0.5f, Position.Y + initialTextHeight), new Point(Position.X + MaxWidth * 0.5f, Position.Y));
-                    break;
-
-                case Enums.TextAttachmentPoint.BottomRight:
-                    TextBox = new TextBox(new Point(Position.X, Position.Y), new Point(Position.X - MaxWidth, Position.Y + initialTextHeight), new Point(Position.X - MaxWidth * 0.5f, Position.Y));
-                    break;
-
-                default:
-                    break;
-            }
-        }
-        public void UpdateTextBox(Enums.TextAttachmentPoint textAttachmentPoint, double expansionDistance)
-        {
-            switch (textAttachmentPoint)
-            {
-                case Enums.TextAttachmentPoint.TopLeft:
-                    TextBox.Expand(0, -expansionDistance, 0, 0);
-                    break;
-
-                case Enums.TextAttachmentPoint.TopRight:
-                    TextBox.Expand(0, -expansionDistance, 0, 0);
-                    break;
-
-                case Enums.TextAttachmentPoint.TopCenter:
-                    TextBox.Expand(0, -expansionDistance, 0, 0);
-                    break;
-
-                case Enums.TextAttachmentPoint.MiddleLeft:
-                    TextBox.Expand(0, -expansionDistance / 2, 0, -expansionDistance / 2);
-                    break;
-
-                case Enums.TextAttachmentPoint.MiddleRight:
-                    TextBox.Expand(0, -expansionDistance / 2, 0, expansionDistance / 2);
-                    break;
-
-                case Enums.TextAttachmentPoint.MiddleCenter:
-                    TextBox.Expand(0, -expansionDistance / 2, 0, expansionDistance / 2);
-                    break;
-
-                case Enums.TextAttachmentPoint.BottomLeft:
-                    TextBox.Expand(0, 0, 0, expansionDistance);
-                    break;
-
-                case Enums.TextAttachmentPoint.BottomRight:
-                    TextBox.Expand(0, 0, 0, expansionDistance);
-                    break;
-
-                case Enums.TextAttachmentPoint.BottomCenter:
-                    TextBox.Expand(0, 0, 0, expansionDistance);
-                    break;
-
-                default:
-                    break;
-            }
-        }
-
         public override void UpdateBounds()
         {
             Bounds = Rect.Empty;
 
-            Bounds = AttachmentPoint switch
+            foreach (var vertex in TextVertices)
             {
-                Enums.TextAttachmentPoint.TopLeft => new Rect(DxfMtext.Position.X, DxfMtext.Position.Y, MaxWidth, DxfMtext.Height),
-                Enums.TextAttachmentPoint.TopCenter => new Rect(DxfMtext.Position.X - (MaxWidth * 0.5), DxfMtext.Position.Y, MaxWidth, DxfMtext.Height),
-                Enums.TextAttachmentPoint.TopRight => new Rect(DxfMtext.Position.X - (MaxWidth * 0.5), DxfMtext.Position.Y, MaxWidth, DxfMtext.Height),
-                Enums.TextAttachmentPoint.MiddleLeft => new Rect(DxfMtext.Position.X, DxfMtext.Position.Y - (DxfMtext.Height * 0.5), MaxWidth, DxfMtext.Height),
-                Enums.TextAttachmentPoint.MiddleCenter => new Rect(DxfMtext.Position.X - (MaxWidth * 0.5), DxfMtext.Position.Y - (DxfMtext.Height * 0.5), MaxWidth, DxfMtext.Height),
-                Enums.TextAttachmentPoint.MiddleRight => new Rect(DxfMtext.Position.X - (MaxWidth * 0.5), DxfMtext.Position.Y - (DxfMtext.Height * 0.5), MaxWidth, DxfMtext.Height),
-                Enums.TextAttachmentPoint.BottomLeft => new Rect(DxfMtext.Position.X, DxfMtext.Position.Y - DxfMtext.Height, MaxWidth, DxfMtext.Height),
-                Enums.TextAttachmentPoint.BottomCenter => new Rect(DxfMtext.Position.X - (MaxWidth * 0.5), DxfMtext.Position.Y - DxfMtext.Height, MaxWidth, DxfMtext.Height),
-                Enums.TextAttachmentPoint.BottomRight => new Rect(DxfMtext.Position.X - (MaxWidth * 0.5), DxfMtext.Position.Y - DxfMtext.Height, MaxWidth, DxfMtext.Height),
-                _ => new Rect(DxfMtext.Position.X, DxfMtext.Position.Y, MaxWidth, DxfMtext.Height),
-            };
+                Bounds = Rect.Union(Bounds, (Point)vertex);
+            }
         }
 
         public void UpdateTextVertices(Factory1 factory, Factory2 d2dFactory)
         {
             if (DxfMtext is null) { return; }
 
-            SegmentsList.Clear();
             TextVertices.Clear();
 
-            SegmentsList = GetMtextSegments(factory, d2dFactory);
-            foreach (var segment in SegmentsList)
-            {
-                TextVertices.AddRange(segment.TextVertices);
-            }
+            UpdateMtextBlock(factory, d2dFactory);
+            MtextBlock.SetTextPositions();
+            MtextBlock.GetTextBox(MtextBlock.Height);
+            TextVertices.AddRange(MtextBlock.Vertices);
 
-            TextSegmentsLoaded = true;
             UpdateBounds();
         }
 
-        public List<DrawingMtextSegment3D> GetMtextSegments(Factory1 factory, Factory2 d2dFactory)
+        public void UpdateMtextBlock(Factory1 factory, Factory2 d2dFactory)
         {
-            List<DrawingMtextSegment3D> mtextSegmentList = new();
+            MtextBlock?.Dispose();
+            MtextBlock = new((float)MaxWidth, Position, DxfMtext.AttachmentPoint);
+            //DrawingMtext3DBlock mtextBlock = new((float)MaxWidth, Position, DxfMtext.AttachmentPoint);
 
             string rawText = DxfMtext.Value;
 
             if (!rawText.Contains('\\'))
             {
-                InitializeTextBox(DxfMtext.Height);
-                DrawingMtextSegment3D textSegment = new(this, DxfMtext.Value, Color, Position, Rotation, FontHeight, FontFamilyName,
-                    false, false, false, false, _fontRenderingMinimumSize, (float)MaxWidth);
-                textSegment.GetTextLayout(factory);
-                textSegment.Tesselate(d2dFactory);
-                mtextSegmentList.Add(textSegment);
+                var segmentTexts = rawText.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
 
-                return mtextSegmentList;
+                foreach (var text in segmentTexts)
+                {
+                    TextSegmentInformation segmentInfo = new(text, Color, FontFamilyName, DxfMtext.Height, IsBold, IsItalic, false, false, false, false, Enums.TextAlignment.Left);
+                    var textSegment = CreateMtextSegment(segmentInfo, factory, d2dFactory);
+                    textSegment.GetTextLayout(factory);
+                    textSegment.Tesselate(d2dFactory);
+                    MtextBlock.AddSegment(textSegment);
+                }
+
+                return;
             }
 
             var texts = rawText.Split(new[] { '{', '}' }, StringSplitOptions.RemoveEmptyEntries);
@@ -344,35 +208,25 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             string alignJustifyPattern = @"\\pxqj;";
             string alignDistributedPattern = @"\\pxqd;";
 
-            // Extract formatting changes and text segments
-            List<TextSegmentInformation> textSegments = [];
-
             string pattern = $@"((\\[LOkoK])|{aciColorPattern}|{trueTypeColorPattern}|{fontPattern}|{italicPattern}|{boldPattern}|{heightPattern}|{lineBreakPattern}|{underlineStartPattern}|{underlineEndPattern}|{overstrikeStartPattern}|{overstrikeEndPattern}|{strikethroughStartPattern}|{strikethroughEndPattern}|{alignLeftPattern}|{alignCenterPattern}|{alignRightPattern}|{alignJustifyPattern}|{alignDistributedPattern}|[^{{}}\\]+)";
 
             Enums.TextAlignment baseAlignment;
-            if (AttachmentPoint == Enums.TextAttachmentPoint.TopRight || AttachmentPoint == Enums.TextAttachmentPoint.MiddleRight || AttachmentPoint == Enums.TextAttachmentPoint.BottomRight)
-            {
-                baseAlignment = Enums.TextAlignment.Right;
-            }
-            else if (AttachmentPoint == Enums.TextAttachmentPoint.TopCenter || AttachmentPoint == Enums.TextAttachmentPoint.MiddleCenter || AttachmentPoint == Enums.TextAttachmentPoint.BottomCenter)
-            {
-                baseAlignment = Enums.TextAlignment.Center;
-            }
-            else
-            {
-                baseAlignment = Enums.TextAlignment.Left;
-            }
+            if (AttachmentPoint == Enums.TextAttachmentPoint.TopRight || AttachmentPoint == Enums.TextAttachmentPoint.MiddleRight || AttachmentPoint == Enums.TextAttachmentPoint.BottomRight) { baseAlignment = Enums.TextAlignment.Right; }
+            else if (AttachmentPoint == Enums.TextAttachmentPoint.TopCenter || AttachmentPoint == Enums.TextAttachmentPoint.MiddleCenter || AttachmentPoint == Enums.TextAttachmentPoint.BottomCenter) { baseAlignment = Enums.TextAlignment.Center; }
+            else { baseAlignment = Enums.TextAlignment.Left; }
 
             TextSegmentInformation currentSegment = new("", Color, FontFamilyName, DxfMtext.Height, IsBold, IsItalic, false, false, false, false, baseAlignment);
 
             foreach (var text in texts)
             {
+                List<TextSegmentInformation> textSegments = [];
                 MatchCollection matches = Regex.Matches(text, pattern);
                 currentSegment.Color = Color;
 
                 foreach (Match match in matches)
                 {
                     string value = match.Value;
+
                     if (string.IsNullOrWhiteSpace(value)) { continue; }
 
                     if (Regex.IsMatch(value, aciColorPattern))
@@ -422,7 +276,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                     }
                     else if (Regex.IsMatch(value, heightPattern))
                     {
-                        currentSegment.TextHeight = double.Parse(Regex.Match(value, heightPattern).Groups[1].Value);
+                        currentSegment.TextHeight *= double.Parse(Regex.Match(value, heightPattern).Groups[1].Value);
                     }
                     else if (Regex.IsMatch(value, lineBreakPattern))
                     {
@@ -475,11 +329,11 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                     else
                     {
                         currentSegment.Text += value;
-
+                        currentSegment.Text = currentSegment.Text.TrimEnd();
                         if (currentSegment.HasValue) { textSegments.Add(currentSegment); }
 
-                        currentSegment = new("", currentSegment.Color, currentSegment.Font, currentSegment.TextHeight, currentSegment.IsBold, 
-                            currentSegment.IsItalic, currentSegment.IsUnderlined, currentSegment.IsOverstriked, currentSegment.IsStrikethrough, 
+                        currentSegment = new("", currentSegment.Color, currentSegment.Font, currentSegment.TextHeight, currentSegment.IsBold,
+                            currentSegment.IsItalic, currentSegment.IsUnderlined, currentSegment.IsOverstriked, currentSegment.IsStrikethrough,
                             currentSegment.IsNewLine, currentSegment.TextAlignment);
 
                         currentSegment.IsNewLine = false;
@@ -487,103 +341,89 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                 }
 
                 Vector3 basePosition = Position;
-                float yOffset = 0;
-                float xOffset = 0;
 
-                for (int i = 0; i < textSegments.Count; i++)
+                foreach (var segmentInfo in textSegments)
                 {
-                    if (i == 0) { InitializeTextBox(textSegments[i].TextHeight); }
+                    var segmentTexts = segmentInfo.Text.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
 
-                    var textSegment = textSegments[i];
+                    if (segmentTexts.Length > 1)
+                    {
+                        for (int i = 0; i < segmentTexts.Count(); i++)
+                        {
+                            var segmentText = segmentTexts[i];
 
-                    var splitTexts = textSegment.Text.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries).ToList();
-                    var spaceWidth = TextRenderingHelpers.GetSpaceWidth(factory, textSegment.Font, TextRenderingHelpers.TextHeightToFontSize(textSegment.TextHeight));
-                    var segments = CreateMtextSegments(new Vector3(basePosition.X, basePosition.Y, 0), (float)MaxWidth, factory, d2dFactory, this, textSegment, splitTexts,
-                        (float)spaceWidth, ref xOffset, ref yOffset);
+                            bool isNewLine = segmentInfo.IsNewLine;
+                            if (i != 0) { isNewLine = false; } // Only the very first segment can be a new line.    
 
-                    mtextSegmentList.AddRange(segments);
+                            var newSegmentInfo = new TextSegmentInformation(segmentText, segmentInfo.Color, segmentInfo.Font, segmentInfo.TextHeight,
+                                segmentInfo.IsBold, segmentInfo.IsItalic, segmentInfo.IsUnderlined, segmentInfo.IsOverstriked, segmentInfo.IsStrikethrough,
+                                isNewLine, segmentInfo.TextAlignment);
+                            var newSegment = CreateMtextSegment(newSegmentInfo, factory, d2dFactory);
+                            MtextBlock.AddSegment(newSegment);
+                        }
+                    }
+                    else
+                    {
+                        var segment = CreateMtextSegment(segmentInfo, factory, d2dFactory);
+                        MtextBlock.AddSegment(segment); // Add the segment to the block for vertex generation and other purposes.
+                    }
                 }
             }
+        }
 
-            return mtextSegmentList;
+        private DrawingMtextSegment3D CreateMtextSegment(TextSegmentInformation segmentInfo, Factory1 factory, Factory2 d2dFactory)
+        {
+            var segment = new DrawingMtextSegment3D(this, segmentInfo.Text, segmentInfo.Color, Vector3.Zero, 0, (float)segmentInfo.TextHeight, segmentInfo.Font,
+                segmentInfo.IsItalic, segmentInfo.IsBold, segmentInfo.IsUnderlined, segmentInfo.IsStrikethrough, segmentInfo.IsNewLine, _fontRenderingMinimumSize, 0);
+            segment.GetTextLayout(factory);
+            segment.Tesselate(d2dFactory);
+
+            return segment;
         }
         #endregion
 
         #region Static Methods
-        private List<DrawingMtextSegment3D> CreateMtextSegments(Vector3 basePosition, float maxWidth, Factory1 factory, Factory2 d2dFactory,
-            DrawingMtext3D drawingMtext, TextSegmentInformation segmentInfo, List<string> texts, float spaceWidth, ref float xOffset, ref float yOffset)
+        public static bool PointInTextGeometry(Vector2 point, List<TextVertex> textVertices)
         {
-            List<DrawingMtextSegment3D> segments = new();
+            int triangleCount = textVertices.Count / 3;
+            bool hit = false;
+            object lockObj = new();
 
-            float lineSpacing = (float)(segmentInfo.TextHeight * _mtextLineSpacingFactor * drawingMtext.DxfMtext.LineSpacingFactor);
-
-            foreach (string text in texts)
+            Parallel.For(0, triangleCount, (i, state) =>
             {
-                var segment = new DrawingMtextSegment3D(
-                    drawingMtext, text, segmentInfo.Color,
-                    new Vector3(basePosition.X + xOffset, basePosition.Y + yOffset, 0),
-                    0, (float)segmentInfo.TextHeight, segmentInfo.Font,
-                    segmentInfo.IsItalic, segmentInfo.IsBold, segmentInfo.IsUnderlined,
-                    segmentInfo.IsStrikethrough, _fontRenderingMinimumSize, 0);
-
-                segment.GetTextLayout(factory);
-                segment.Tesselate(d2dFactory);
-
-                float segmentWidth = (float)segment.Bounds.Width;
-                bool shouldWrapLine = segmentInfo.IsNewLine || (xOffset != 0 && (xOffset + segmentWidth + spaceWidth) > maxWidth);
-
-                if (shouldWrapLine)
+                // Exit early if already hit
+                if (hit)
                 {
-                    yOffset -= lineSpacing;
-                    xOffset = 0;
-
-                    UpdateTextBox(AttachmentPoint, lineSpacing);
-
-                    segment.Position = new Vector3(basePosition.X + xOffset, basePosition.Y + yOffset, 0);
-                    segment.UpdateTransform();
-
-                    segment.GetTextLayout(factory);
-                    segment.Tesselate(d2dFactory);
+                    state.Stop();
+                    return;
                 }
 
-                segments.Add(segment);
-                xOffset += segmentWidth + spaceWidth;
-            }
+                var v0 = (Vector2)textVertices[i * 3].Position;
+                var v1 = (Vector2)textVertices[i * 3 + 1].Position;
+                var v2 = (Vector2)textVertices[i * 3 + 2].Position;
 
-            return segments;
-        }
+                if (MathHelpers.IsPointInTriangle(point, v0, v1, v2))
+                {
+                    lock (lockObj) // ensure no race condition on write
+                    {
+                        hit = true;
+                        state.Stop(); // stop the rest
+                    }
+                }
+            });
 
-        private static protected Enums.TextAttachmentPoint GetAttachmentPoint(MTextAttachmentPoint mTextAttachment)
-        {
-            return mTextAttachment switch
-            {
-                MTextAttachmentPoint.TopLeft => Enums.TextAttachmentPoint.TopLeft,
-                MTextAttachmentPoint.TopCenter => Enums.TextAttachmentPoint.TopCenter,
-                MTextAttachmentPoint.TopRight => Enums.TextAttachmentPoint.TopRight,
-                MTextAttachmentPoint.MiddleLeft => Enums.TextAttachmentPoint.MiddleLeft,
-                MTextAttachmentPoint.MiddleCenter => Enums.TextAttachmentPoint.MiddleCenter,
-                MTextAttachmentPoint.MiddleRight => Enums.TextAttachmentPoint.MiddleRight,
-                MTextAttachmentPoint.BottomLeft => Enums.TextAttachmentPoint.BottomLeft,
-                MTextAttachmentPoint.BottomCenter => Enums.TextAttachmentPoint.BottomCenter,
-                MTextAttachmentPoint.BottomRight => Enums.TextAttachmentPoint.BottomRight,
-                _ => Enums.TextAttachmentPoint.MiddleCenter,
-            };
-        }
+            return hit;
 
-        private static Vector3 GetMtextSegmentTopLeft(Vector3 insertionPoint, MTextAttachmentPoint attachmentPoint, Enums.TextAlignment textAlignment, TextBox textBox)
-        {
-            switch (attachmentPoint)
-            {
-                case MTextAttachmentPoint.TopLeft:
-                    return new Vector3(insertionPoint.X, insertionPoint.Y, 0);
 
-                case MTextAttachmentPoint.TopCenter:
-                    return new Vector3();
+            //for (int i = 0; i < textVertices.Count; i += 3)
+            //{
+            //    var v0 = new Vector2(textVertices[i].Position.X, textVertices[i].Position.Y);
+            //    var v1 = new Vector2(textVertices[i + 1].Position.X, textVertices[i + 1].Position.Y);
+            //    var v2 = new Vector2(textVertices[i + 2].Position.X, textVertices[i + 2].Position.Y);
 
-                default:
-                    return new Vector3(insertionPoint.X, insertionPoint.Y, 0);
-
-            }
+            //    if (MathHelpers.IsPointInTriangle(point, v0, v1, v2)) { return true; }
+            //}
+            //return false;
         }
         #endregion
     }

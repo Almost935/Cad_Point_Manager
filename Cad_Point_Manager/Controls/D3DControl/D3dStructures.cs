@@ -18,7 +18,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct TextVertex(Vector3 position, Vector4 color, float isVisible = 1.0f)
+    public struct TextVertex(Vector3 position, Vector4 color, Vector2 glowDirection, float isVisible = 1.0f, float isMouseOver = 0)
     {
         public Vector3 Position = position;
         public Vector4 Color = color;
@@ -28,14 +28,40 @@ namespace Cad_Point_Manager.Controls.D3DControl
         /// </summary>
         public float IsVisible = isVisible;
 
+        /// <summary>
+        /// float value indicating whether the mouse is currently over the text object. 1.0f is true, 0.0f is false.
+        /// </summary>
+        public float IsMouseOver = isMouseOver;
+
+        public Vector2 GlowDirection = glowDirection;
+
         public readonly TextVertex Translate(Vector3 offset)
         {
-            return new TextVertex(Position + offset, Color, IsVisible);
-        }
+            //return new TextVertex(Position + offset, Color, IsVisible);
 
+            return new TextVertex(Position + offset, Color, GlowDirection, IsVisible, IsMouseOver);
+        }
         public readonly TextVertex Translate(Vector2 offset)
         {
-            return new TextVertex(new Vector3(Position.X + offset.X, Position.Y + offset.Y, Position.Z), Color, IsVisible);
+            //return new TextVertex(new Vector3(Position.X + offset.X, Position.Y + offset.Y, Position.Z), Color, IsVisible);
+
+            return new TextVertex(new Vector3(Position.X + offset.X, Position.Y + offset.Y, Position.Z), Color, GlowDirection, IsVisible, IsMouseOver);
+        }
+        public readonly TextVertex Translate(float x, float y, float z)
+        {
+            //return new TextVertex(new Vector3(Position.X + x, Position.Y + y, Position.Z + z), Color, IsVisible);
+
+            return new TextVertex(new Vector3(Position.X + x, Position.Y + y, Position.Z + z), Color, GlowDirection, IsVisible, IsMouseOver);
+        }
+       
+        public readonly TextVertex SetMouseOver(bool isMouseOver)
+        {
+            return new TextVertex(new Vector3(Position.X, Position.Y, Position.Z), Color, GlowDirection, IsVisible, IsMouseOver);
+        }
+
+        public static implicit operator System.Windows.Point(TextVertex v)
+        {
+            return new System.Windows.Point(v.Position.X, v.Position.Y);
         }
     }
 

@@ -2,8 +2,10 @@
 using Cad_Point_Manager.Controls.D3DControl;
 using Cad_Point_Manager.Helpers;
 using SharpDX;
+using SharpDX.Direct2D1;
 using SharpDX.DirectWrite;
 using SharpDX.Mathematics.Interop;
+using System.Diagnostics;
 using System.Windows;
 
 using FontStyle = SharpDX.DirectWrite.FontStyle;
@@ -38,9 +40,10 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         public bool IsBold { get; set; } = false;
         public bool IsUnderlined { get; set; } = false;
         public bool IsStrikeThroughed { get; set; } = false;
+        public bool IsNewLine { get; set; } = false;
         public Enums.TextAlignment TextAlignment { get; set; }
-        public int MtextRowNumber { get; set; }
-        public int MtextColumnNumber { get;set; }
+        public float SpaceWidth { get; set; }
+        public float RowXOffset { get; set; } = 0; // This is used to offset the segment within a row for alignment purposes.
 
         public bool TextFormatCreated => TextFormat != null;
         public bool TextLayoutCreated => TextLayout != null;
@@ -49,8 +52,8 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
 
         #region Constructors
         public DrawingMtextSegment3D(DrawingMtext3D drawingMtext3D, string text, Vector4 color, Vector3 position, float rotation,
-            float fontHeight, string fontFamilyName, bool isItalic, bool isBold, bool isUnderlined, bool isStrikethroughed,
-            int fontRenderingMinimumSize, float maxWidth, Enums.TextAlignment textAlignment = Enums.TextAlignment.Left)
+            float fontHeight, string fontFamilyName, bool isItalic, bool isBold, bool isUnderlined, bool isStrikethroughed, 
+            bool isNewLine, int fontRenderingMinimumSize, float maxWidth, Enums.TextAlignment textAlignment = Enums.TextAlignment.Left)
         {
             DrawingMtext3D = drawingMtext3D;
             Text = text;
@@ -64,6 +67,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             IsBold = isBold;
             IsUnderlined = isUnderlined;
             IsStrikeThroughed = isStrikethroughed;
+            IsNewLine = isNewLine;
             _fontRenderingMinimumSize = fontRenderingMinimumSize;
             MaxWidth = maxWidth;
             TextAlignment = textAlignment;
@@ -73,7 +77,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         #endregion
 
         #region Methods
-        public void GetTextLayout(Factory1 factory)
+        public void GetTextLayout(SharpDX.DirectWrite.Factory1 factory)
         {
             FontWeight fontWeight;
             if (IsBold) { fontWeight = FontWeight.Bold; } else { fontWeight = FontWeight.Normal; }
@@ -83,16 +87,30 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
 
             TextFormat = new(factory, FontFamilyName, fontWeight, fontStyle, FontHeight);
             TextLayout = new(factory, Text, TextFormat, (float)Bounds.Width, (float)Bounds.Height, 96, true);
+
+            //SpaceWidth = TextRenderingHelpers.GetSpaceWidth(factory, FontFamilyName, FontHeight);
+            SpaceWidth = FontHeight * 0.6f;
         }
 
         public void Tesselate(SharpDX.Direct2D1.Factory2 factory)
         {
             float fontSizeScaleFactor = _fontRenderingMinimumSize / FontHeight;
 
-            (SharpDX.Direct2D1.TransformedGeometry geometry, RawRectangleF bounds) = TextRenderingHelpers.CreateTextGeometry(factory, Text, TextLayout, 
+            (TransformedGeometry geometry, RawRectangleF bounds) = TextRenderingHelpers.CreateTextGeometry(factory, Text, TextLayout, 
                 fontSizeScaleFactor, FontHeight, _flatteningTolerance);
+
             var vertices = TextRenderingHelpers.TessellateGeometry(geometry, _flatteningTolerance);
-            
+
+            var rawMatrix = new RawMatrix3x2
+            {
+                M11 = 1.00f / fontSizeScaleFactor,
+                M12 = 0,
+                M21 = 0,
+                M22 = 1.00f / fontSizeScaleFactor,
+                M31 = (float)Transform.OffsetX,
+                M32 = (float)Transform.OffsetY
+            };
+
             UpdateBounds(bounds);
 
             TextVertices = GetVertices(vertices, 1.00f / fontSizeScaleFactor);
@@ -140,33 +158,25 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
 
         public TextVertex[] GetVertices(List<Vector2> vertices, float scaleFactor = 1)
         {
-            List<TextVertex> textGeometries = [];
+            List<TextVertex> textVertices = [];
             Matrix scaleTransform = Matrix.Scaling(scaleFactor, scaleFactor, 1);
-            Matrix translationTransform = Matrix.Translation((float)Transform.OffsetX, (float)Transform.OffsetY, 0);
 
             foreach (var vector in vertices)
             {
-                // Apply the scale transform
                 var scaledVector = Vector2.TransformCoordinate(vector, scaleTransform);
-                var translatedVector = Vector2.TransformCoordinate(scaledVector, translationTransform);
-
-                TextVertex textGeometryVertex = new(new Vector3(translatedVector.X, translatedVector.Y, 0), Color);
-                textGeometries.Add(textGeometryVertex);
+                TextVertex textGeometryVertex = new(new Vector3(scaledVector.X, scaledVector.Y, 0), Color, 1, 0);
+                textVertices.Add(textGeometryVertex);
             }
 
-            return textGeometries.ToArray();
+            return textVertices.ToArray();
         }
 
-
-        public void Translate(Vector2 offset)
+        public void ApplyTranslate(Vector3 rowTransform)
         {
-            Position = Vector3.TransformCoordinate(Position, Matrix.Translation(offset.X, offset.Y, 0));
-            for (int i = 0; i < TextVertices.Length; i++)
-            {
-                TextVertices[i] = TextVertices[i].Translate(offset);
-            }
+            Vector3 transform = new(rowTransform.X + RowXOffset, rowTransform.Y, rowTransform.Z);
+            Translate(transform);
         }
-        public void Translate(Vector3 offset)
+        private void Translate(Vector3 offset)
         {
             Position += offset;
             for (int i = 0; i < TextVertices.Length; i++)

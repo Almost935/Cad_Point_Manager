@@ -1,4 +1,6 @@
-﻿using SharpDX;
+﻿using Cad_Point_Manager.Common;
+using netDxf.Entities;
+using SharpDX;
 using SharpDX.Direct2D1;
 using SharpDX.DirectWrite;
 using SharpDX.Mathematics.Interop;
@@ -64,11 +66,9 @@ namespace Cad_Point_Manager.Helpers
                     fontToTextHeightFactor = _dictBaseTextSize / actualTextHeight;
                     FontSizeFactorDict.TryAdd((textLayout.FontFamilyName, textLayout.FontWeight, textLayout.FontStyle), fontToTextHeightFactor);
 
-                    Debug.WriteLine($"textLayout.FontFamilyName: {textLayout.FontFamilyName} text: {text} textLayout.FontSize: {textLayout.FontSize} boundsFactor: {fontToTextHeightFactor}");
-
                     boundsPathGeometry.Dispose();
                     textFormatForBounds.Dispose();
-                    textLayout.Dispose();
+                    textLayoutForBounds.Dispose();
                 }
                 
                 var boundsScaledGeometry = new TransformedGeometry(d2dFactory, pathGeometry,
@@ -142,6 +142,23 @@ namespace Cad_Point_Manager.Helpers
             }
 
             return vertices;
+        }
+
+        public static Enums.TextAttachmentPoint GetAttachmentPoint(MTextAttachmentPoint mTextAttachment)
+        {
+            return mTextAttachment switch
+            {
+                MTextAttachmentPoint.TopLeft => Enums.TextAttachmentPoint.TopLeft,
+                MTextAttachmentPoint.TopCenter => Enums.TextAttachmentPoint.TopCenter,
+                MTextAttachmentPoint.TopRight => Enums.TextAttachmentPoint.TopRight,
+                MTextAttachmentPoint.MiddleLeft => Enums.TextAttachmentPoint.MiddleLeft,
+                MTextAttachmentPoint.MiddleCenter => Enums.TextAttachmentPoint.MiddleCenter,
+                MTextAttachmentPoint.MiddleRight => Enums.TextAttachmentPoint.MiddleRight,
+                MTextAttachmentPoint.BottomLeft => Enums.TextAttachmentPoint.BottomLeft,
+                MTextAttachmentPoint.BottomCenter => Enums.TextAttachmentPoint.BottomCenter,
+                MTextAttachmentPoint.BottomRight => Enums.TextAttachmentPoint.BottomRight,
+                _ => Enums.TextAttachmentPoint.MiddleCenter,
+            };
         }
 
         public class CustomTessellationSink : CallbackBase, TessellationSink
