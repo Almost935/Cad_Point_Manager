@@ -80,7 +80,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 OnPropertyChanged(nameof(D2DDeviceContext));
             }
         }
-        public SharpDX.Direct2D1.RenderTarget D2DRenderTarget
+        public RenderTarget D2DRenderTarget
         {
             get { return _d2dRenderTarget; }
             set

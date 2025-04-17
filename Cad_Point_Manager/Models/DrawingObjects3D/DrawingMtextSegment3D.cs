@@ -91,7 +91,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             TextFormat = new(factory, FontFamilyName, fontWeight, fontStyle, FontHeight);
             TextLayout = new(factory, Text, TextFormat, (float)Bounds.Width, (float)Bounds.Height, 96, true);
 
-            //SpaceWidth = TextRenderingHelpers.GetSpaceWidth(factory, FontFamilyName, FontHeight);
             SpaceWidth = FontHeight * 0.6f;
         }
 

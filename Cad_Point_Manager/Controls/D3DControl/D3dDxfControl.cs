@@ -57,6 +57,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private List<TextVertex> _snappedTextVertices = [];
         private TextVertex[] _totalTextVertices = [];
 
+
         // Panning and Zooming Fields
         private float _panThreshold = 1.0f;
         private bool _isPanning = false;
@@ -248,22 +249,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             context.Draw(_totalTextVertices.Length, 0);
         }
-        //private void DrawTextGlowWithShader()
-        //{
-        //    var context = _d3dResCache.DeviceContext;
-
-        //    if (_textVertexBuffer is null) { return; }
-
-        //    context.VertexShader.Set(_textGlowVertexShader);
-        //    context.PixelShader.Set(_textGlowPixelShader);
-        //    context.InputAssembler.InputLayout = _textGlowInputLayout;
-        //    context.VertexShader.SetConstantBuffer(0, _transformationBuffer);
-
-        //    context.InputAssembler.PrimitiveTopology = PrimitiveTopology.TriangleList;
-        //    context.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding(_textGlowVertexBuffer, Marshal.SizeOf<TextVertex>(), 0));
-
-        //    context.Draw(_textGlowVertices.Length, 0);
-        //}
 
         private void DrawInteractiveObjects()
         {
@@ -371,14 +356,29 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             if (_textVertices.Length > 0)
             {
-                List<TextVertex> combined = new(_snappedTextVertices);
-                combined.AddRange(_textVertices);
-                _totalTextVertices = combined.ToArray();
+                _textVertexBuffer?.Dispose();
 
-                _textVertexBuffer = Buffer.Create(
-                    _d3dResCache.Device,
-                    BindFlags.VertexBuffer,
-                    _totalTextVertices);
+                var bufferDesc = new BufferDescription
+                {
+                    SizeInBytes = Utilities.SizeOf<TextVertex>() * GlobalHelperProperties._maxTextVertices,
+                    BindFlags = BindFlags.VertexBuffer,
+                    Usage = ResourceUsage.Dynamic,
+                    CpuAccessFlags = CpuAccessFlags.Write,
+                    OptionFlags = ResourceOptionFlags.None,
+                    StructureByteStride = Utilities.SizeOf<TextVertex>()
+                };
+
+                _textVertexBuffer = new Buffer(_d3dResCache.Device, bufferDesc);
+
+
+                //List<TextVertex> combined = new(_snappedTextVertices);
+                //combined.AddRange(_textVertices);
+                //_totalTextVertices = combined.ToArray();
+
+                //_textVertexBuffer = Buffer.Create(
+                //    _d3dResCache.Device,
+                //    BindFlags.VertexBuffer,
+                //    _totalTextVertices);
             }
 
             VertexBufferDirty = false;

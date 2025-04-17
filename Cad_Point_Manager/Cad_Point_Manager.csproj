@@ -10,6 +10,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Resources\Shaders\**" />
+    <EmbeddedResource Remove="Resources\Shaders\**" />
+    <None Remove="Resources\Shaders\**" />
+    <Page Remove="Resources\Shaders\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Compile Remove="Controls\D3DControl\D3D11ImageSource.cs" />
     <Compile Remove="Controls\D3DControl\D3dControl.cs" />
     <Compile Remove="Helpers\DxfHelper.cs" />

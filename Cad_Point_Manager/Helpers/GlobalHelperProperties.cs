@@ -9,6 +9,8 @@ namespace Cad_Point_Manager.Helpers
         public const float _zoomFactor = 1.3f;
         public const float _glowTransparency = 0.3f;
         public const float _textHeightToGlowOffsetFactor = 0.05f;
+        public const int _maxLineVertices = 10000000;
+        public const int _maxTextVertices = 10000000;
 
         public static readonly List<Vector2> _glowOffsetDirections =
         [

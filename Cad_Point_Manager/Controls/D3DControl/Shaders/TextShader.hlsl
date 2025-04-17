@@ -45,9 +45,6 @@ PSInput VSMain(VSInput input)
     
     if (input.IsMouseOver > 0.5) // If not mouse over, set color alpha to 0
     {
-        //output.Position.x += input.GlowDirection.x * input.GlowOffset * transformationMatrix._11;
-        //output.Position.y += input.GlowDirection.y * input.GlowOffset * transformationMatrix._11;
-        
         output.Position.xy += input.GlowOffset * input.GlowDirection * transformationMatrix._11; // Apply glow direction offset
     }
 
