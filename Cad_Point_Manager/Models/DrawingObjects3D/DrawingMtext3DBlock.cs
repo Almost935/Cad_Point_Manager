@@ -29,9 +29,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         public float Width => _drawingMtext3DRows.Max(row => row.Width);
         public float MaxWidth { get; set; }
         public Vector3 BasePosition { get; set; } = Vector3.Zero;
-        public List<TextVertex> Vertices => _drawingMtext3DRows.SelectMany(row => row.Segments.SelectMany(segment => segment.TextVertices)).ToList();
-        public List<string> TestingTextList => _drawingMtext3DRows.SelectMany(row => row.Segments.Select(segment => segment.Text)).ToList();
-        public bool ContainsBottom => TestingTextList.Any(s => s.Contains("Bottom"));
+        public float Rotation { get; set; } = 0;
         public int NumberOfRows => Rows.Count;
         public TextBox TextBox { get; set; } = TextBox.Empty;
         public Enums.TextAttachmentPoint AttachmentPoint { get; set; }
@@ -39,11 +37,12 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         #endregion
 
         #region Constructors
-        public DrawingMtext3DBlock(float maxWidth, Vector3 basePosition, MTextAttachmentPoint attachmentPoint)
+        public DrawingMtext3DBlock(float maxWidth, Vector3 basePosition, MTextAttachmentPoint attachmentPoint, float rotation)
         {
             MaxWidth = maxWidth;
             BasePosition = basePosition;
             AttachmentPoint = TextRenderingHelpers.GetAttachmentPoint(attachmentPoint);
+            Rotation = rotation;
         }
         #endregion
 
@@ -258,7 +257,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                     break;
             }
         }
-
 
         private void SetRowBasePositions()
         {

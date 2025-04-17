@@ -57,13 +57,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             Bounds = Rect.Union(Bounds, new System.Windows.Point(EndVertex.Position.X, EndVertex.Position.Y));
         }
 
-        public override bool HitTest(System.Windows.Point point, float tolerance)
-        {
-            bool isPointOnLine = MathHelpers.IsPointOnLine(point, new System.Windows.Point(StartVertex.Position.X, StartVertex.Position.Y),
-                new System.Windows.Point(EndVertex.Position.X, EndVertex.Position.Y), tolerance);
-
-            return isPointOnLine;
-        }
 
         public override double DistanceToPoint(System.Windows.Point point)
         {

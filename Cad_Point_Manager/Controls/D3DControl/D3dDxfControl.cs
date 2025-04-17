@@ -1,4 +1,5 @@
-﻿using Cad_Point_Manager.Models;
+﻿using Cad_Point_Manager.Helpers;
+using Cad_Point_Manager.Models;
 using Cad_Point_Manager.Models.DrawingObjects3D;
 using SharpDX;
 using SharpDX.D3DCompiler;
@@ -30,11 +31,10 @@ namespace Cad_Point_Manager.Controls.D3DControl
     public class D3dDxfControl : Direct3DControl, INotifyPropertyChanged, IDisposable
     {
         #region Fields
-        private const float _rotationSpeed = 0.005f;
-        private const float _zoomFactor = 1.3f;
-
         private Buffer _transformationBuffer;
         private Point _pointerCoords;
+        private Vector2 _dxfCoords = new();
+        private string _dxfCoordsString = $"X: {0:F3}   Y: {0:F3}";
         private Matrix _dxfInitialMatrix = Matrix.Identity;
         private bool _clipSet = false;
         private bool _isMouseInside;
@@ -54,18 +54,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private InputLayout _textInputLayout;
         private bool _textShaderLoaded = false;
         private TextVertex[] _textVertices = [];
-
-        //// Text glow shader related fields
-        //private Buffer _textGlowVertexBuffer;
-        //private VertexShader _textGlowVertexShader;
-        //private PixelShader _textGlowPixelShader;
-        //private InputLayout _textGlowInputLayout;
-        //private bool _textGlowShaderLoaded = false;
-        //private TextVertex[] _textGlowVertices = [];
+        private List<TextVertex> _snappedTextVertices = [];
+        private TextVertex[] _totalTextVertices = [];
 
         // Panning and Zooming Fields
         private float _panThreshold = 1.0f;
-        private Point _previousMousePosition;
         private bool _isPanning = false;
 
         // Camera based fields
@@ -73,16 +66,12 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private bool _isShiftPressed = false;
         private Vector2 _prevMousePos;
 
-        private Vector2 _dxfCoords = new();
-        private string _dxfCoordsString = $"X: {0:F3}   Y: {0:F3}";
-
         // Hit Testing Fields
         private Task _hittestTask;
         private bool _hitTestIsRunning = false;
         private float _hittestStrokeThickness;
         private Point _lastHitTestCoords = new();
         private CancellationTokenSource _hitTestCancellationTokenSource;
-
         private List<(double distance, DrawingObject3D obj)> _nearestDrawingObjects = [];
 
         // Interactive features fields
@@ -185,7 +174,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             if (_camera is null)
             {
                 GetInitialMatrix();
-                _camera = new(Viewport, _zoomFactor);
+                _camera = new(Viewport, GlobalHelperProperties._zoomFactor);
             }
             if (DxfNeedsReload)
             {
@@ -257,7 +246,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             context.InputAssembler.PrimitiveTopology = PrimitiveTopology.TriangleList;
             context.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding(_textVertexBuffer, Marshal.SizeOf<TextVertex>(), 0));
 
-            context.Draw(_textVertices.Length, 0);
+            context.Draw(_totalTextVertices.Length, 0);
         }
         //private void DrawTextGlowWithShader()
         //{
@@ -380,22 +369,17 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 _lineVertices);
             }
 
-            if (_textVertices.Length > 0 && _textVertices.Length > 0)
+            if (_textVertices.Length > 0)
             {
+                List<TextVertex> combined = new(_snappedTextVertices);
+                combined.AddRange(_textVertices);
+                _totalTextVertices = combined.ToArray();
+
                 _textVertexBuffer = Buffer.Create(
                     _d3dResCache.Device,
                     BindFlags.VertexBuffer,
-                    _textVertices);
+                    _totalTextVertices);
             }
-
-            //if (_textGlowVertices.Length > 0 && _textGlowVertices.Length > 0)
-            //{
-            //    // Create the vertex buffer
-            //    _textGlowVertexBuffer = Buffer.Create(
-            //        _d3dResCache.Device,
-            //        BindFlags.VertexBuffer,
-            //        _textGlowVertices);
-            //}
 
             VertexBufferDirty = false;
         }
@@ -484,12 +468,13 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     new InputElement("COLOR", 0, Format.R32G32B32A32_Float, 12, 0),
                     new InputElement("ISVISIBLE", 0, Format.R32_Float, 28, 0),
                     new InputElement("ISMOUSEOVER", 0, Format.R32_Float, 32, 0),
-                    new InputElement("GLOWDIRECTION", 0, Format.R32G32_Float, 36, 0)
+                    new InputElement("GLOWDIRECTION", 0, Format.R32G32_Float, 36 , 0),
+                    new InputElement("TRANSPARENCY", 0, Format.R32_Float, 44, 0),
+                    new InputElement("GLOWOFFSET", 0, Format.R32_Float, 48, 0)
                 ]);
 
             _textShaderLoaded = true;
         }
-
 
         private void InitializeConstantBuffer()
         {
@@ -505,7 +490,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _transformationBuffer = new Buffer(_d3dResCache.Device, bufferDesc);
             ConstantBufferInitialized = true;
         }
-
         private void UpdateConstantBuffer()
         {
             var transformation = _camera.ViewProjectionMatrix;
@@ -518,7 +502,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             // Update the constant buffer with the new matrix
             _d3dResCache.DeviceContext.UpdateSubresource(ref transformationBuffer, _transformationBuffer);
         }
-
         private void GetInitialMatrix()
         {
             if (!CadManager3D.DxfLoaded)
@@ -541,7 +524,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 }
             }
         }
-
         private void UpdateD2dMatrix()
         {
             if (_camera is null) { return; }
@@ -550,13 +532,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _d2dMatrix = new(matrix.M11, matrix.M12, matrix.M21, -matrix.M22, (Viewport.Width / 2) - _camera.InverseViewProjectionMatrix.M41 * matrix.M11, _camera.InverseViewProjectionMatrix.M42 * matrix.M22 + (Viewport.Height / 2));
             _hittestStrokeThickness = 7.0f / _d2dMatrix.M11;
         }
-
         private void UpdateDxfCoords(Vector2 mousePos)
         {
             DxfCoords = _camera.ScreenToWorld(mousePos);
             DxfCoordsString = formatVectorString(DxfCoords);
         }
-
 
         protected override void OnMouseDown(MouseButtonEventArgs e)
         {
@@ -568,8 +548,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
                 VertexBufferDirty = true;
                 D3dIsDirty = true;
-
-                _previousMousePosition = e.GetPosition(this);
             }
         }
         protected override void OnMouseUp(MouseButtonEventArgs e)
@@ -675,6 +653,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _camera.ResetView(_dxfInitialMatrix);
             ResetSnappedObjects();
             D3dIsDirty = true;
+            VertexBufferDirty = true;
         }
 
         public async Task RunHitTestingAsync()
@@ -719,7 +698,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             {
                 if (snappedCopy.DistanceToPoint(_lastHitTestCoords) > _hittestStrokeThickness)
                 {
-                    DeselectObject(snappedCopy);
+                    UnsnapObject(snappedCopy);
                     _snappedObject = null;
 
                     _nearestDrawingObjects = CadManager3D.GetNearestDrawingObjects(_lastHitTestCoords, _hittestStrokeThickness);
@@ -731,7 +710,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                         if (distance <= _hittestStrokeThickness && obj is not DrawingText3D)
                         {
                             _snappedObject = obj;
-                            SelectObject(_snappedObject);
+                            SnapObject(_snappedObject);
                         }
                     }
 
@@ -754,7 +733,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     if (distance <= _hittestStrokeThickness && obj is not DrawingText3D)
                     {
                         _snappedObject = obj;
-                        SelectObject(_snappedObject);
+                        SnapObject(_snappedObject);
 
                         vertexBufferDirty = true;
                         d3dIsDirty = true;
@@ -786,7 +765,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             }
         }
 
-        private void SelectObject(DrawingObject3D obj)
+        private void SnapObject(DrawingObject3D obj)
         {
             if (obj is not null)
             {
@@ -821,18 +800,25 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 }
                 if (obj is DrawingMtext3D drawingMtext)
                 {
-                    drawingMtext.MouseEnter();
+                    //drawingMtext.MouseEnter();
 
-                    int count = 0;
-                    for (int i = drawingMtext.StartVertexIndex; i <= drawingMtext.EndVertexIndex; i++)
-                    {
-                        _textVertices[i] = drawingMtext.TextVertices[count];
-                        count++;
-                    }
+                    //foreach (var row in drawingMtext.MtextBlock.Rows)
+                    //{
+                    //    foreach (var segment in row.Segments)
+                    //    {
+                    //        int count = 0;
+                    //        for (int i = drawingMtext.StartVertexIndex; i <= drawingMtext.EndVertexIndex; i++)
+                    //        {
+                    //            _textVertices[i] = segment.TextVertices[count];
+                    //            _snappedTextVertices.AddRange(segment.GlowVertices);
+                    //            count++;
+                    //        }
+                    //    }
+                    //}
                 }
             }
         }
-        private void DeselectObject(DrawingObject3D obj)
+        private void UnsnapObject(DrawingObject3D obj)
         {
             if (obj is not null)
             {
@@ -867,14 +853,20 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 }
                 if (obj is DrawingMtext3D drawingMtext)
                 {
-                    drawingMtext.MouseLeave();
+                    //drawingMtext.MouseLeave();
 
-                    int count = 0;
-                    for (int i = drawingMtext.StartVertexIndex; i <= drawingMtext.EndVertexIndex; i++)
-                    {
-                        _textVertices[i] = drawingMtext.TextVertices[count];
-                        count++;
-                    }
+                    //foreach (var row in drawingMtext.MtextBlock.Rows)
+                    //{
+                    //    foreach (var segment in row.Segments)
+                    //    {
+                    //        int count = 0;
+                    //        for (int i = drawingMtext.StartVertexIndex; i <= drawingMtext.EndVertexIndex; i++)
+                    //        {
+                    //            _textVertices[i] = segment.TextVertices[count];
+                    //            count++;
+                    //        }
+                    //    }
+                    //}
                 }
             }
         }
@@ -882,9 +874,10 @@ namespace Cad_Point_Manager.Controls.D3DControl
         {
             if (_snappedObject is not null)
             {
-                DeselectObject(_snappedObject);
+                UnsnapObject(_snappedObject);
                 _snappedObject = null;
             }
+            _snappedTextVertices.Clear();
         }
 
         private void ClearDxf()

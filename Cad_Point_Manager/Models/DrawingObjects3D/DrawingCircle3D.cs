@@ -117,11 +117,6 @@ namespace Cad_Point_Manager.DrawingObjects
             }
         }
 
-        public override bool HitTest(System.Windows.Point point, float tolerance)
-        {
-            return MathHelpers.IsPointOnCircle(point.X, point.Y, RadiusPoint.X, RadiusPoint.Y, Radius, tolerance);
-        }
-
         public override double DistanceToPoint(System.Windows.Point point)
         {
             // Calculate the distance from the point to the center of the circle

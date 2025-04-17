@@ -263,18 +263,16 @@ namespace Cad_Point_Manager.Models
                         {
                             drawingMtext.UpdateTextVertices(_d3dResCache.FactoryWrite, _d3dResCache.D2dFactory);
                             drawingMtext.StartVertexIndex = TextVertices.Count;
-                            TextVertices.AddRange(drawingMtext.TextVertices);
+
+                            foreach (var row in drawingMtext.MtextBlock.Rows)
+                            {
+                                foreach (var segment in row.Segments)
+                                {
+                                    TextVertices.AddRange(segment.TextVertices);
+                                }
+                            }
+
                             drawingMtext.EndVertexIndex = TextVertices.Count - 1;
-
-                            //// Testing 
-                            //SharpDX.Vector4 color = new(1, 0, 0, 0.5f);
-                            //TextVertex tl = new(new SharpDX.Vector3((float)drawingMtext.MtextBlock.TextBox.Left, (float)drawingMtext.MtextBlock.TextBox.Top, 0), color);
-                            //TextVertex tr = new(new SharpDX.Vector3((float)drawingMtext.MtextBlock.TextBox.Right, (float)drawingMtext.MtextBlock.TextBox.Top, 0), color);
-                            //TextVertex bl = new(new SharpDX.Vector3((float)drawingMtext.MtextBlock.TextBox.Left, (float)drawingMtext.MtextBlock.TextBox.Bottom, 0), color);
-                            //TextVertex br = new(new SharpDX.Vector3((float)drawingMtext.MtextBlock.TextBox.Right, (float)drawingMtext.MtextBlock.TextBox.Bottom, 0), color);
-
-                            //TextVertices.Add(bl); TextVertices.Add(tl); TextVertices.Add(tr);
-                            //TextVertices.Add(bl); TextVertices.Add(tr); TextVertices.Add(br);
                         }
                         if (obj is DrawingBlock3D drawingBlock)
                         {

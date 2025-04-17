@@ -89,19 +89,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             }
         }
 
-        public override bool HitTest(System.Windows.Point point, float tolerance)
-        {
-            foreach (var segment in DrawingSegments)
-            {
-                if (segment.HitTest(point, tolerance))
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
         public override double DistanceToPoint(System.Windows.Point point)
         {
             double distance = double.MaxValue;

@@ -100,18 +100,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             }
         }
 
-        public override bool HitTest(System.Windows.Point point, float tolerance)
-        {
-            foreach (var obj in DrawingObjects)
-            {
-                if (obj.HitTest(point, tolerance))
-                {
-                    return true;
-                }
-            }
-            return false;
-        }
-
         public override double DistanceToPoint(System.Windows.Point point)
         {
             double distance = double.MaxValue;
@@ -134,7 +122,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             this.IsMouseOver = true;
             this.IsVisible = false;
 
-            for (int i = 0; i < GeometryVertices.Count(); i++)
+            for (int i = 0; i < GeometryVertices.Count; i++)
             {
                 var vertex = GeometryVertices[i];
                 vertex.IsVisible = 0.0f;
@@ -146,7 +134,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             this.IsMouseOver = false;
             this.IsVisible = true;
 
-            for (int i = 0; i < GeometryVertices.Count(); i++)
+            for (int i = 0; i < GeometryVertices.Count; i++)
             {
                 var vertex = GeometryVertices[i];
                 vertex.IsVisible = 1.0f;
@@ -217,7 +205,14 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                 if (obj is DrawingMtext3D mtext)
                 {
                     mtext.UpdateTextVertices(factory, d2dFactory);
-                    TextVertices.AddRange(mtext.TextVertices);
+
+                    foreach (var row in mtext.MtextBlock.Rows)
+                    {
+                        foreach (var segment in row.Segments)
+                        {
+                            TextVertices.AddRange(segment.TextVertices);
+                        }
+                    }
                 }
             }
         }

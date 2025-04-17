@@ -44,7 +44,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         public bool IsItalic { get; set; }
         public Enums.TextAttachmentPoint AttachmentPoint { get; set; }
         public DrawingMtext3DBlock MtextBlock { get; set; }
-        public List<TextVertex> TextVertices { get; set; } = [];
         public Vector3 TextAttachmentOffset { get; set; } = Vector3.Zero;
         #endregion
 
@@ -66,39 +65,52 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         {
             this.IsMouseOver = true;
 
-            for (int i = 0; i < TextVertices.Count; i++)
+            foreach (var row in MtextBlock.Rows)
             {
-                var vertex = TextVertices[i];
-                vertex.IsMouseOver = 1.0f;
-                TextVertices[i] = vertex;
+                foreach (var segment in row.Segments)
+                {
+                    for (int i = 0; i < segment.TextVertices.Length; i++)
+                    {
+                        var vertex = segment.TextVertices[i];
+                        vertex.IsMouseOver = 1.0f;
+                        segment.TextVertices[i] = vertex;
+                    }
+                }
             }
         }
         public override void MouseLeave()
         {
             this.IsMouseOver = false;
 
-            for (int i = 0; i < TextVertices.Count; i++)
+            foreach (var row in MtextBlock.Rows)
             {
-                var vertex = TextVertices[i];
-                vertex.IsMouseOver = 0.0f;
-                TextVertices[i] = vertex;
+                foreach (var segment in row.Segments)
+                {
+                    for (int i = 0; i < segment.TextVertices.Length; i++)
+                    {
+                        var vertex = segment.TextVertices[i];
+                        vertex.IsMouseOver = 0.0f;
+                        segment.TextVertices[i] = vertex;
+                    }
+                }
             }
         }
         public override double DistanceToPoint(Point p)
         {
             double finalDist = double.MaxValue;
+            var vertices = MtextBlock.Rows.SelectMany(row => row.Segments.SelectMany(segment => segment.TextVertices)).ToList();
 
-            if (PointInTextGeometry(new Vector2((float)p.X, (float)p.Y), TextVertices))
+            if (PointInTextGeometry(new Vector2((float)p.X, (float)p.Y), vertices))
             {
                 return 0;
             }
             else
             {
-                for (int i = 0; i < TextVertices.Count; i += 3)
+                for (int i = 0; i < vertices.Count; i += 3)
                 {
-                    var v1 = TextVertices[i];
-                    var v2 = TextVertices[i + 1];
-                    var v3 = TextVertices[i + 2];
+                    var v1 = vertices[i];
+                    var v2 = vertices[i + 1];
+                    var v3 = vertices[i + 2];
 
                     var dist = MathHelpers.DistanceToTriangle(new Vector2((float)p.X, (float)p.Y), new Vector2(v1.Position.X, v1.Position.Y),
                         new Vector2(v2.Position.X, v2.Position.Y), new Vector2(v3.Position.X, v3.Position.Y));
@@ -108,10 +120,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             }
 
             return finalDist;
-        }
-        public override bool HitTest(Point point, float tolerance)
-        {
-            return false;
         }
         public override void DrawToD2dDeviceContext(DeviceContext1 deviceContext, Factory2 factory, Brush brush, float thickness, StrokeStyle1 strokeStyle)
         {
@@ -140,11 +148,18 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
 
         public override void UpdateBounds()
         {
-            Bounds = Rect.Empty;
+            if (MtextBlock is null) { return; } // No text to update bounds for.
 
-            foreach (var vertex in TextVertices)
+            Bounds = Rect.Empty;
+            foreach (var row in MtextBlock.Rows)
             {
-                Bounds = Rect.Union(Bounds, (Point)vertex);
+                foreach (var segment in row.Segments)
+                {
+                    for (int i = 0; i < segment.TextVertices.Length; i++)
+                    {
+                        Bounds = Rect.Union(Bounds, (Point)segment.TextVertices[i]);
+                    }
+                }
             }
         }
 
@@ -152,21 +167,28 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         {
             if (DxfMtext is null) { return; }
 
-            TextVertices.Clear();
-
             UpdateMtextBlock(factory, d2dFactory);
             MtextBlock.SetTextPositions();
             MtextBlock.GetTextBox(MtextBlock.Height);
-            TextVertices.AddRange(MtextBlock.Vertices);
-
+            SetRotation();
             UpdateBounds();
+            GetGlowVertices();
+        }
+        public void GetGlowVertices()
+        {
+            foreach (var row in MtextBlock.Rows)
+            {
+                foreach (var segment in row.Segments)
+                {
+                    segment.GetGlowVertices();
+                }
+            }
         }
 
         public void UpdateMtextBlock(Factory1 factory, Factory2 d2dFactory)
         {
             MtextBlock?.Dispose();
-            MtextBlock = new((float)MaxWidth, Position, DxfMtext.AttachmentPoint);
-            //DrawingMtext3DBlock mtextBlock = new((float)MaxWidth, Position, DxfMtext.AttachmentPoint);
+            MtextBlock = new((float)MaxWidth, Position, DxfMtext.AttachmentPoint, Rotation);
 
             string rawText = DxfMtext.Value;
 
@@ -348,7 +370,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
 
                     if (segmentTexts.Length > 1)
                     {
-                        for (int i = 0; i < segmentTexts.Count(); i++)
+                        for (int i = 0; i < segmentTexts.Length; i++)
                         {
                             var segmentText = segmentTexts[i];
 
@@ -370,7 +392,24 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                 }
             }
         }
+        private void SetRotation()
+        {
+            foreach (var row in MtextBlock.Rows)
+            {
+                foreach (var segment in row.Segments)
+                {
+                    for (int i = 0; i < segment.TextVertices.Length; i++)
+                    {
+                        segment.TextVertices[i] = TextVertex.RotateAroundPoint(segment.TextVertices[i], new Vector2(Position.X, Position.Y), (float)(MathHelper.DegToRad * Rotation));
+                    }
+                }
+            }
 
+            //for (int i = 0; i < TextVertices.Count(); i++)
+            //{
+            //    TextVertices[i] = TextVertex.RotateAroundPoint(TextVertices[i], new Vector2(Position.X, Position.Y), (float)(MathHelper.DegToRad * Rotation));
+            //}
+        }
         private DrawingMtextSegment3D CreateMtextSegment(TextSegmentInformation segmentInfo, Factory1 factory, Factory2 d2dFactory)
         {
             var segment = new DrawingMtextSegment3D(this, segmentInfo.Text, segmentInfo.Color, Vector3.Zero, 0, (float)segmentInfo.TextHeight, segmentInfo.Font,

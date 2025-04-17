@@ -73,6 +73,7 @@ namespace Cad_Point_Manager.Helpers
                 
                 var boundsScaledGeometry = new TransformedGeometry(d2dFactory, pathGeometry,
                     Matrix3x2.Scaling(fontToTextHeightFactor, fontToTextHeightFactor));
+                
                 var updatedBounds = boundsScaledGeometry.GetBounds();
 
                 var scaledGeometry = new TransformedGeometry(d2dFactory, boundsScaledGeometry,
@@ -131,7 +132,7 @@ namespace Cad_Point_Manager.Helpers
             return pathGeometry;
         }
 
-        public static List<Vector2> TessellateGeometry(Geometry geometry, float flatteningTolerance = 0.001f)
+        public static List<Vector2> TessellateGeometry(Geometry geometry, float flatteningTolerance = 0.001f, float rotation = 0)
         {
             var vertices = new List<Vector2>();
             

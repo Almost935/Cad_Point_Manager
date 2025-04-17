@@ -28,7 +28,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         public Vector3 Position { get; set; }
         public float Rotation { get; set; } = 0;
         public float FontHeight { get; set; }
-        public float FontSize { get;set; }
+        public float FontSize { get; set; }
         public string FontFamilyName { get; set; }
         public System.Windows.Media.Matrix Transform { get; set; }
         public TextFormat TextFormat { get; set; }
@@ -44,6 +44,8 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         public Enums.TextAlignment TextAlignment { get; set; }
         public float SpaceWidth { get; set; }
         public float RowXOffset { get; set; } = 0; // This is used to offset the segment within a row for alignment purposes.
+        public float GlowOffset { get; set; }
+        public List<TextVertex> GlowVertices { get; set; } = [];
 
         public bool TextFormatCreated => TextFormat != null;
         public bool TextLayoutCreated => TextLayout != null;
@@ -52,7 +54,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
 
         #region Constructors
         public DrawingMtextSegment3D(DrawingMtext3D drawingMtext3D, string text, Vector4 color, Vector3 position, float rotation,
-            float fontHeight, string fontFamilyName, bool isItalic, bool isBold, bool isUnderlined, bool isStrikethroughed, 
+            float fontHeight, string fontFamilyName, bool isItalic, bool isBold, bool isUnderlined, bool isStrikethroughed,
             bool isNewLine, int fontRenderingMinimumSize, float maxWidth, Enums.TextAlignment textAlignment = Enums.TextAlignment.Left)
         {
             DrawingMtext3D = drawingMtext3D;
@@ -71,6 +73,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             _fontRenderingMinimumSize = fontRenderingMinimumSize;
             MaxWidth = maxWidth;
             TextAlignment = textAlignment;
+            GlowOffset = FontHeight * GlobalHelperProperties._textHeightToGlowOffsetFactor;
 
             UpdateTransform();
         }
@@ -96,20 +99,10 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         {
             float fontSizeScaleFactor = _fontRenderingMinimumSize / FontHeight;
 
-            (TransformedGeometry geometry, RawRectangleF bounds) = TextRenderingHelpers.CreateTextGeometry(factory, Text, TextLayout, 
+            (TransformedGeometry geometry, RawRectangleF bounds) = TextRenderingHelpers.CreateTextGeometry(factory, Text, TextLayout,
                 fontSizeScaleFactor, FontHeight, _flatteningTolerance);
 
             var vertices = TextRenderingHelpers.TessellateGeometry(geometry, _flatteningTolerance);
-
-            var rawMatrix = new RawMatrix3x2
-            {
-                M11 = 1.00f / fontSizeScaleFactor,
-                M12 = 0,
-                M21 = 0,
-                M22 = 1.00f / fontSizeScaleFactor,
-                M31 = (float)Transform.OffsetX,
-                M32 = (float)Transform.OffsetY
-            };
 
             UpdateBounds(bounds);
 
@@ -161,36 +154,49 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             List<TextVertex> textVertices = [];
             Matrix scaleTransform = Matrix.Scaling(scaleFactor, scaleFactor, 1);
 
-            //foreach (var vector in vertices)
-            //{
-            //var scaledVector = Vector2.TransformCoordinate(vector, scaleTransform);
-            //TextVertex textGeometryVertex = new(new Vector3(scaledVector.X, scaledVector.Y, 0), Color, 1, 0);
-            //textVertices.Add(textGeometryVertex);
-            //}
-
-            for (int i = 0; i  < vertices.Count / 3; i += 3)
+            for (int i = 0; i < vertices.Count; i += 3)
             {
                 var v1 = vertices[i];
                 var v2 = vertices[i + 1];
                 var v3 = vertices[i + 2];
                 Vector2 centroid = (v1 + v2 + v3) / 3;
 
-                Vector2 direction1 = v1 - centroid;
-                Vector2 direction2 = v2 - centroid;
-                Vector2 direction3 = v3 - centroid;
+                Vector2 direction1 = Vector2.Normalize(v1 - centroid);
+                Vector2 direction2 = Vector2.Normalize(v2 - centroid);
+                Vector2 direction3 = Vector2.Normalize(v3 - centroid);
 
                 var scaledVector1 = Vector2.TransformCoordinate(v1, scaleTransform);
-                TextVertex textVertex1 = new(new Vector3(scaledVector1.X, scaledVector1.Y, 0), Color, direction1, 1, 0);
-                var scaledVector2 = Vector2.TransformCoordinate(v1, scaleTransform);
-                TextVertex textVertex2 = new(new Vector3(scaledVector2.X, scaledVector2.Y, 0), Color, direction2, 1, 0);
-                var scaledVector3 = Vector2.TransformCoordinate(v1, scaleTransform);
-                TextVertex textVertex3 = new(new Vector3(scaledVector3.X, scaledVector3.Y, 0), Color, direction3, 1, 0);
+                TextVertex textVertex1 = new(new Vector3(scaledVector1.X, scaledVector1.Y, 0), Color, direction1, 1, 0, 1, GlowOffset);
+                var scaledVector2 = Vector2.TransformCoordinate(v2, scaleTransform);
+                TextVertex textVertex2 = new(new Vector3(scaledVector2.X, scaledVector2.Y, 0), Color, direction2, 1, 0, 1, GlowOffset);
+                var scaledVector3 = Vector2.TransformCoordinate(v3, scaleTransform);
+                TextVertex textVertex3 = new(new Vector3(scaledVector3.X, scaledVector3.Y, 0), Color, direction3, 1, 0, 1, GlowOffset);
 
                 textVertices.AddRange([textVertex1, textVertex2, textVertex3]);
             }
 
             return textVertices.ToArray();
         }
+
+        public void GetGlowVertices()
+        {
+            GlowVertices.Clear();
+
+            foreach (var dir in GlobalHelperProperties._glowOffsetDirections)
+            {
+                for (int i = 0; i < TextVertices.Length; i++)
+                {
+                    var textVertex = TextVertices[i].SetMouseOver(true);
+                    textVertex.Transparency = GlobalHelperProperties._glowTransparency;
+                    textVertex.GlowOffset = GlowOffset;
+                    textVertex.GlowDirection = dir;
+
+                    GlowVertices.Add(textVertex);
+                }
+            }
+
+        }
+
 
         public void ApplyTranslate(Vector3 rowTransform)
         {

@@ -266,7 +266,7 @@ namespace Cad_Point_Manager.Helpers
         }
 
 
-        // Triangular Methods
+        // Tessellation Methods
         public static bool IsPointInTriangle(Vector2 p, Vector2 a, Vector2 b, Vector2 c)
         {
             var v0 = c - a;

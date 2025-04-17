@@ -164,18 +164,31 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _d3dResCache.DeviceContext = _deviceContext;
             _d3dResCache.FactoryWrite = new();
 
-            var blendDesc = new BlendStateDescription();
-            blendDesc.RenderTarget[0].IsBlendEnabled = true; // Enable blending
-            blendDesc.RenderTarget[0].SourceBlend = BlendOption.SourceAlpha;
-            blendDesc.RenderTarget[0].DestinationBlend = BlendOption.InverseSourceAlpha;
-            blendDesc.RenderTarget[0].BlendOperation = BlendOperation.Add;
-            blendDesc.RenderTarget[0].SourceAlphaBlend = BlendOption.One;
-            blendDesc.RenderTarget[0].DestinationAlphaBlend = BlendOption.Zero;
-            blendDesc.RenderTarget[0].AlphaBlendOperation = BlendOperation.Add;
-            blendDesc.RenderTarget[0].RenderTargetWriteMask = ColorWriteMaskFlags.All;
+            var baseBlendDesc = new BlendStateDescription();
+            baseBlendDesc.RenderTarget[0].IsBlendEnabled = true; // Enable blending
+            baseBlendDesc.RenderTarget[0].SourceBlend = BlendOption.SourceAlpha;
+            baseBlendDesc.RenderTarget[0].DestinationBlend = BlendOption.InverseSourceAlpha;
+            baseBlendDesc.RenderTarget[0].BlendOperation = BlendOperation.Add;
+            baseBlendDesc.RenderTarget[0].SourceAlphaBlend = BlendOption.One;
+            baseBlendDesc.RenderTarget[0].DestinationAlphaBlend = BlendOption.Zero;
+            baseBlendDesc.RenderTarget[0].AlphaBlendOperation = BlendOperation.Add;
+            baseBlendDesc.RenderTarget[0].RenderTargetWriteMask = ColorWriteMaskFlags.All;
+            var baseBlendState = new BlendState(_device, baseBlendDesc);
+            _d3dResCache.BaseBlendState = baseBlendState;
 
-            var blendState = new BlendState(_device, blendDesc);
-            _deviceContext.OutputMerger.SetBlendState(blendState);
+            var glowBlendDesc = new BlendStateDescription();
+            glowBlendDesc.RenderTarget[0].IsBlendEnabled = true; // Enable blending
+            glowBlendDesc.RenderTarget[0].SourceBlend = BlendOption.SourceAlpha;
+            glowBlendDesc.RenderTarget[0].DestinationBlend = BlendOption.InverseSourceAlpha;
+            glowBlendDesc.RenderTarget[0].BlendOperation = BlendOperation.Add;
+            glowBlendDesc.RenderTarget[0].SourceAlphaBlend = BlendOption.SourceAlpha;
+            glowBlendDesc.RenderTarget[0].DestinationAlphaBlend = BlendOption.SourceAlpha;
+            glowBlendDesc.RenderTarget[0].AlphaBlendOperation = BlendOperation.Add;
+            glowBlendDesc.RenderTarget[0].RenderTargetWriteMask = ColorWriteMaskFlags.All;
+            var glowBlendState = new BlendState(_device, glowBlendDesc);
+            _d3dResCache.BaseBlendState = glowBlendState;
+
+            _deviceContext.OutputMerger.SetBlendState(glowBlendState);
 
             _d3DSurface = new Dx11ImageSource();
             _d3DSurface.IsFrontBufferAvailableChanged += OnIsFrontBufferAvailableChanged;
@@ -228,7 +241,13 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             _texture2D = new Texture2D(_device, renderDesc);
 
-            _renderTargetView = new RenderTargetView(_device, _texture2D);
+            RenderTargetViewDescription rtvDesc = new RenderTargetViewDescription
+            {
+                Dimension = RenderTargetViewDimension.Texture2D,
+                Format = renderDesc.Format,
+                Texture2D = { MipSlice = 0 }
+            };
+            _renderTargetView = new RenderTargetView(_device, _texture2D, rtvDesc);
             _d3dResCache.RenderTargetView = _renderTargetView;
 
             _deviceContext.OutputMerger.SetRenderTargets(_renderTargetView);

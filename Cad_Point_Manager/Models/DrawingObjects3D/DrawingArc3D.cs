@@ -92,11 +92,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             }
         }
 
-        public override bool HitTest(System.Windows.Point point, float tolerance)
-        {
-            return MathHelpers.IsPointOnArc(point.X, point.Y, RadiusPoint.X, RadiusPoint.Y, Radius, StartAngle, EndAngle, tolerance);
-        }
-
         public override double DistanceToPoint(System.Windows.Point point)
         {
             // Convert angles to radians

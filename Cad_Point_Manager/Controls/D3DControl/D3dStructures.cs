@@ -18,7 +18,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct TextVertex(Vector3 position, Vector4 color, Vector2 glowDirection, float isVisible = 1.0f, float isMouseOver = 0)
+    public struct TextVertex(Vector3 position, Vector4 color, Vector2 glowDirection, float isVisible = 1.0f, float isMouseOver = 0, float transparency = 1, float glowOffset = 0)
     {
         public Vector3 Position = position;
         public Vector4 Color = color;
@@ -34,6 +34,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public float IsMouseOver = isMouseOver;
 
         public Vector2 GlowDirection = glowDirection;
+        public float Transparency = transparency;
+        public float GlowOffset = glowOffset; 
 
         public readonly TextVertex Translate(Vector3 offset)
         {
@@ -53,11 +55,26 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             return new TextVertex(new Vector3(Position.X + x, Position.Y + y, Position.Z + z), Color, GlowDirection, IsVisible, IsMouseOver);
         }
-       
+
+        public static TextVertex RotateAroundPoint(TextVertex textVertex, Vector2 basePoint, float radians)
+        {
+            float cos = MathF.Cos(radians);
+            float sin = MathF.Sin(radians);
+
+            float dx = textVertex.Position.X - basePoint.X;
+            float dy = textVertex.Position.Y - basePoint.Y;
+
+            float rotatedX = cos * dx - sin * dy + basePoint.X;
+            float rotatedY = sin * dx + cos * dy + basePoint.Y;
+
+            return new TextVertex(new Vector3(rotatedX, rotatedY, textVertex.Position.Z), textVertex.Color, textVertex.GlowDirection, textVertex.IsVisible, textVertex.IsMouseOver, textVertex.Transparency, textVertex.GlowOffset);
+        }
+
         public readonly TextVertex SetMouseOver(bool isMouseOver)
         {
             return new TextVertex(new Vector3(Position.X, Position.Y, Position.Z), Color, GlowDirection, IsVisible, isMouseOver ? 1 : 0);
         }
+
 
         public static implicit operator System.Windows.Point(TextVertex v)
         {

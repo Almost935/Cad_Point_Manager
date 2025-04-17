@@ -21,6 +21,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private Factory2 _d2DFactory = null;
         private Bitmap1 _d2dTargetBitmap = null;
         private SharpDX.DirectWrite.Factory1 _factoryWrite = null;
+        private BlendState _baseBlendState = null;
+        private BlendState _glowBlendState = null;
         #endregion
 
         #region Properties
@@ -114,6 +116,24 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 OnPropertyChanged(nameof(FactoryWrite));
             }
         }
+        public BlendState BaseBlendState
+        {
+            get { return _baseBlendState; }
+            set
+            {
+                _baseBlendState = value;
+                OnPropertyChanged(nameof(BaseBlendState));
+            }
+        }
+        public BlendState GlowBlendState
+        {
+            get { return _glowBlendState; }
+            set
+            {
+                _glowBlendState = value;
+                OnPropertyChanged(nameof(GlowBlendState));
+            }
+        }
 
         public int MaxSize { get; set; }
         #endregion
@@ -142,6 +162,10 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     _d2DDeviceContext?.Dispose();
                     _d2DFactory?.Dispose();
                     _d2dRenderTarget?.Dispose();
+                    _d2dTargetBitmap?.Dispose();
+                    _factoryWrite?.Dispose();
+                    _baseBlendState?.Dispose();
+                    _glowBlendState?.Dispose();
                 }
 
                 disposed = true;
