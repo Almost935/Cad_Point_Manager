@@ -14,7 +14,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
 
         public override void MouseEnter()
         {
-            this.IsVisible = false;
             this.IsMouseOver = true;
 
             for (int i = 0; i < Vertices.Count; i++)
@@ -26,7 +25,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         }
         public override void MouseLeave()
         {
-            this.IsVisible = true;
             this.IsMouseOver = false;
 
             for (int i = 0; i < Vertices.Count; i++)

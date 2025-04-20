@@ -1,4 +1,5 @@
-﻿using SharpDX;
+﻿using Cad_Point_Manager.Helpers;
+using SharpDX;
 using System.Runtime.InteropServices;
 using System.Windows;
 using Matrix = SharpDX.Matrix;
@@ -6,7 +7,7 @@ using Matrix = SharpDX.Matrix;
 namespace Cad_Point_Manager.Controls.D3DControl
 {
     [StructLayout(LayoutKind.Sequential)]
-    public struct LineVertex(Vector3 position, Vector4 color, float isVisible = 1.0f)
+    public struct LineVertex(Vector3 position, Vector4 color, float isVisible = 1.0f, float isMouseOver = 0)
     {
         public Vector3 Position = position;
         public Vector4 Color = color;
@@ -15,6 +16,32 @@ namespace Cad_Point_Manager.Controls.D3DControl
         /// float value indicating whether the vertex is visible or not. 1.0f is visible, 0.0f is not visible.
         /// </summary>
         public float IsVisible = isVisible;
+
+        /// <summary>
+        /// float value indicating whether the mouse is currently over the text object. 1.0f is true, 0.0f is false.
+        /// </summary>
+        public float IsMouseOver = isMouseOver;
+
+        public void SetMouseOver(bool isMouseOver)
+        {
+            IsMouseOver = isMouseOver ? 1 : 0;
+        }
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct LineGlowSettingsBuffer
+    {
+        public float GlowOffset;
+        public float GlowTransparency;
+        private Vector2 Padding; // Padding to ensure the structure is 16-byte aligned
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct TextGlowSettingsBuffer
+    {
+        public float GlowOffset;
+        public float GlowTransparency;
+        private Vector2 Padding; // Padding to ensure the structure is 16-byte aligned
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -35,7 +62,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         public Vector2 GlowDirection = glowDirection;
         public float Transparency = transparency;
-        public float GlowOffset = glowOffset; 
+        public float GlowOffset = glowOffset;
 
         public readonly TextVertex Translate(Vector3 offset)
         {
@@ -70,9 +97,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
             return new TextVertex(new Vector3(rotatedX, rotatedY, textVertex.Position.Z), textVertex.Color, textVertex.GlowDirection, textVertex.IsVisible, textVertex.IsMouseOver, textVertex.Transparency, textVertex.GlowOffset);
         }
 
-        public readonly TextVertex SetMouseOver(bool isMouseOver)
+        public void SetMouseOver(bool isMouseOver)
         {
-            return new TextVertex(new Vector3(Position.X, Position.Y, Position.Z), Color, GlowDirection, IsVisible, isMouseOver ? 1 : 0);
+            IsMouseOver = isMouseOver ? 1 : 0;
         }
 
 

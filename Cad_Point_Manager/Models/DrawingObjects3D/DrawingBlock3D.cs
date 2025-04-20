@@ -26,13 +26,13 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                 OnPropertyChanged(nameof(DrawingObjects));
             }
         }
-        public List<LineVertex> GeometryVertices
+        public List<LineVertex> LineVertices
         {
             get => _geometryVertices;
             set
             {
                 _geometryVertices = value;
-                OnPropertyChanged(nameof(GeometryVertices));
+                OnPropertyChanged(nameof(LineVertices));
             }
         }
         public List<TextVertex> TextVertices
@@ -122,11 +122,11 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             this.IsMouseOver = true;
             this.IsVisible = false;
 
-            for (int i = 0; i < GeometryVertices.Count; i++)
+            for (int i = 0; i < LineVertices.Count; i++)
             {
-                var vertex = GeometryVertices[i];
+                var vertex = LineVertices[i];
                 vertex.IsVisible = 0.0f;
-                GeometryVertices[i] = vertex;
+                LineVertices[i] = vertex;
             }
         }
         public override void MouseLeave()
@@ -134,11 +134,11 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             this.IsMouseOver = false;
             this.IsVisible = true;
 
-            for (int i = 0; i < GeometryVertices.Count; i++)
+            for (int i = 0; i < LineVertices.Count; i++)
             {
-                var vertex = GeometryVertices[i];
+                var vertex = LineVertices[i];
                 vertex.IsVisible = 1.0f;
-                GeometryVertices[i] = vertex;
+                LineVertices[i] = vertex;
             }
         }
 
@@ -172,17 +172,17 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
 
         private void UpdateGeometryVertices()
         {
-            GeometryVertices.Clear();
+            LineVertices.Clear();
 
             foreach (var obj in DrawingObjects)
             {
                 if (obj is DrawingBlock3D block)
                 {
-                    GeometryVertices.AddRange(block.GeometryVertices);
+                    LineVertices.AddRange(block.LineVertices);
                 }
                 if (obj is DrawingGeometry3D geometry)
                 {
-                    GeometryVertices.AddRange(geometry.Vertices);
+                    LineVertices.AddRange(geometry.Vertices);
                 }
             }
         }

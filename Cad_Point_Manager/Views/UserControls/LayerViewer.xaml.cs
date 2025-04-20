@@ -163,7 +163,8 @@ namespace Cad_Point_Manager.Views.UserControls
             }
             if (CadManager is not null)
             {
-                CadManager.DxfDirty = true;
+                CadManager.LineVerticesDirty = true;
+                CadManager.TextVerticesDirty = true;
             }
         }
 
@@ -175,7 +176,8 @@ namespace Cad_Point_Manager.Views.UserControls
             }
             if (CadManager is not null)
             {
-                CadManager.DxfDirty = true;
+                CadManager.LineVerticesDirty = true;
+                CadManager.TextVerticesDirty = true;
             }
         }
     }

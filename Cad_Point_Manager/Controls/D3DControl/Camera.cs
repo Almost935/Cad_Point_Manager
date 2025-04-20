@@ -132,8 +132,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             UpdateView();
             UpdateViewProjection();
         }
-
-
         public void Zoom(int zoomStepDelta, Vector2 mousePosition)
         {
             // Update zoom step and calculate the scale
@@ -162,7 +160,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             UpdateView();
             UpdateViewProjection();
         }
-
 
         public void Rotate(float deltaX, float deltaY, bool shiftHeld)
         {
@@ -223,6 +220,23 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             return new Vector3(worldVec.X, worldVec.Y, worldVec.Z);
         }
+
+        /// <summary>
+        /// Returns how many world units correspond to one screen-space pixel.
+        /// </summary>
+        public float GetWorldUnitsPerPixel()
+        {
+            // Unproject two screen points that are 1 pixel apart in X (screen space)
+            Vector2 screenCenter = new(Viewport.Width / 2f, Viewport.Height / 2f);
+            Vector2 screenRight = new(screenCenter.X + 1, screenCenter.Y);
+
+            Vector2 worldCenter = ScreenToWorld(screenCenter);
+            Vector2 worldRight = ScreenToWorld(screenRight);
+
+            float worldUnitsPerPixel = Vector2.Distance(worldCenter, worldRight);
+            return worldUnitsPerPixel;
+        }
+
         #endregion
     }
 }

@@ -1,5 +1,6 @@
 ﻿
 
+using Cad_Point_Manager.Controls.D3DControl;
 using SharpDX;
 
 namespace Cad_Point_Manager.Helpers
@@ -7,7 +8,14 @@ namespace Cad_Point_Manager.Helpers
     public static class GlobalHelperProperties
     {
         public const float _zoomFactor = 1.3f;
-        public const float _glowTransparency = 0.3f;
+
+        public const float _lineGlowTransparency = 0.4f;
+        public const float _lineGlowPixelWidth = 5;
+
+        public const float _textGlowTransparency = 0.4f;
+        public const float _textGlowPixelWidth = 10;
+        public const float _textHeightToTextGlowOffsetFactor = 0.15f;
+
         public const float _textHeightToGlowOffsetFactor = 0.05f;
         public const int _maxLineVertices = 10000000;
         public const int _maxTextVertices = 10000000;
@@ -23,5 +31,10 @@ namespace Cad_Point_Manager.Helpers
             new Vector2(-(float)Math.Sqrt(2), (float)Math.Sqrt(2)),
             new Vector2(-(float)Math.Sqrt(2), -(float)Math.Sqrt(2)),
         ];
+
+        public static float GetGlowOffset(Matrix dxfInitialViewMatrix)
+        {
+            return 0;
+        }
     }
 }

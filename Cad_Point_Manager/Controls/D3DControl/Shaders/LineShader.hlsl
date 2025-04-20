@@ -6,6 +6,7 @@ struct VSInput
     float3 Position : POSITION; // 3D position of the vertex
     float4 Color : COLOR; // RGBA color of the vertex
     float IsVisible : ISVISIBLE;
+    float IsMouseOver : ISMOUSEOVER;
 };
 
 // Output structure from the Vertex Shader and input for the Pixel Shader
@@ -13,6 +14,7 @@ struct PSInput
 {
     float4 Position : SV_POSITION; // Transformed position in screen space
     float4 Color : COLOR; // RGBA color passed to the Pixel Shader
+    float IsMouseOver : ISMOUSEOVER;
 };
 
 // Constant buffer for 2D transformation matrix
@@ -40,6 +42,9 @@ PSInput VSMain(VSInput input)
 
     // Pass the color unchanged
     output.Color = input.Color;
+    
+    // Pass the mouse over state
+    output.IsMouseOver = input.IsMouseOver;
 
     return output;
 }
@@ -47,6 +52,11 @@ PSInput VSMain(VSInput input)
 // Pixel Shader: Determines the color of each pixel
 float4 PSMain(PSInput input) : SV_TARGET
 {
+    if (input.IsMouseOver > 0.5)
+    {
+        input.Color =  float4(1, 0, 0, 1);
+    }
+    
     // Return the color passed from the Vertex Shader
     return input.Color;
 }

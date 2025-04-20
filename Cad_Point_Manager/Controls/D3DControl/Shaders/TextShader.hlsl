@@ -62,7 +62,8 @@ float4 PSMain(PSInput input) : SV_TARGET
 {
     if (input.IsMouseOver > 0.5)
     {
-        input.Color.rgb = lerp(input.Color.rgb, float3(0.4, 0.4, 0.7), 0.8);
+        //input.Color.rgb = lerp(input.Color.rgb, float3(0.4, 0.4, 0.7), 0.8);
+        input.Color = float4(1, 0, 0, 1); // Dim the color if mouse is over
     }
     
     // Return the color passed from the Vertex Shader

@@ -45,7 +45,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         public float SpaceWidth { get; set; }
         public float RowXOffset { get; set; } = 0; // This is used to offset the segment within a row for alignment purposes.
         public float GlowOffset { get; set; }
-        public List<TextVertex> GlowVertices { get; set; } = [];
 
         public bool TextFormatCreated => TextFormat != null;
         public bool TextLayoutCreated => TextLayout != null;
@@ -176,26 +175,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
 
             return textVertices.ToArray();
         }
-
-        public void GetGlowVertices()
-        {
-            GlowVertices.Clear();
-
-            foreach (var dir in GlobalHelperProperties._glowOffsetDirections)
-            {
-                for (int i = 0; i < TextVertices.Length; i++)
-                {
-                    var textVertex = TextVertices[i].SetMouseOver(true);
-                    textVertex.Transparency = GlobalHelperProperties._glowTransparency;
-                    textVertex.GlowOffset = GlowOffset;
-                    textVertex.GlowDirection = dir;
-
-                    GlowVertices.Add(textVertex);
-                }
-            }
-
-        }
-
 
         public void ApplyTranslate(Vector3 rowTransform)
         {

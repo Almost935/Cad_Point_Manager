@@ -26,7 +26,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
     public class DrawingMtext3D : DrawingObject3D
     {
         #region Fields
-        private const float _mtextLineSpacingFactor = 0.4f;
         private const int _fontRenderingMinimumSize = 50;
         #endregion
 
@@ -64,37 +63,29 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         public override void MouseEnter()
         {
             this.IsMouseOver = true;
-
-            foreach (var row in MtextBlock.Rows)
-            {
-                foreach (var segment in row.Segments)
-                {
-                    for (int i = 0; i < segment.TextVertices.Length; i++)
-                    {
-                        var vertex = segment.TextVertices[i];
-                        vertex.IsMouseOver = 1.0f;
-                        segment.TextVertices[i] = vertex;
-                    }
-                }
-            }
+            SetMouseOver(true);
         }
         public override void MouseLeave()
         {
             this.IsMouseOver = false;
-
+            SetMouseOver(false);
+        }
+        private void SetMouseOver(bool isMouseOver)
+        {
             foreach (var row in MtextBlock.Rows)
             {
                 foreach (var segment in row.Segments)
                 {
-                    for (int i = 0; i < segment.TextVertices.Length; i++)
+                    Span<TextVertex> vertexSpan = segment.TextVertices.AsSpan();
+
+                    for (int i = 0; i < vertexSpan.Length; i++)
                     {
-                        var vertex = segment.TextVertices[i];
-                        vertex.IsMouseOver = 0.0f;
-                        segment.TextVertices[i] = vertex;
+                        vertexSpan[i].SetMouseOver(isMouseOver);
                     }
                 }
             }
         }
+
         public override double DistanceToPoint(Point p)
         {
             double finalDist = double.MaxValue;
@@ -172,19 +163,20 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             MtextBlock.GetTextBox(MtextBlock.Height);
             SetRotation();
             UpdateBounds();
-            GetGlowVertices();
         }
-        public void GetGlowVertices()
+        public List<TextVertex> GetTextVertices()
         {
+            List<TextVertex > textVertices = [];
             foreach (var row in MtextBlock.Rows)
             {
                 foreach (var segment in row.Segments)
                 {
-                    segment.GetGlowVertices();
+                    textVertices.AddRange(segment.TextVertices);
                 }
             }
-        }
 
+            return textVertices;
+        }
         public void UpdateMtextBlock(Factory1 factory, Factory2 d2dFactory)
         {
             MtextBlock?.Dispose();
