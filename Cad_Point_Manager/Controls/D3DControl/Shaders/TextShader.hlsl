@@ -8,8 +8,14 @@ cbuffer TransformationBuffer : register(b0)
 
 float4 GetSnappedColor(float4 color)
 {
-    float3 snappedColor = lerp(color.rgb, float3(0.4, 0.4, 0.7), color.a);
-    return float4(snappedColor, color.a);
+    // A light blue color to blend towards (adjust to taste)
+    float3 lightBlue = float3(0.4, 0.4, 1.0);
+
+    // Lerp from original RGB to the blueish color
+    float3 resultRgb = lerp(color.rgb, lightBlue, 0.7); // 0.4 means 40% blueish tint
+
+    // Return the new color with original alpha
+    return float4(resultRgb, color.a);
 }
 
 // Input structure for the Vertex Shader
