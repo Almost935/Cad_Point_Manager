@@ -6,6 +6,12 @@ cbuffer TransformationBuffer : register(b0)
     row_major matrix transformationMatrix; // 2D transformation matrix
 };
 
+float4 GetSnappedColor(float4 color)
+{
+    float3 snappedColor = lerp(color.rgb, float3(0.4, 0.4, 0.7), color.a);
+    return float4(snappedColor, color.a);
+}
+
 // Input structure for the Vertex Shader
 struct VSInput
 {
@@ -62,10 +68,8 @@ float4 PSMain(PSInput input) : SV_TARGET
 {
     if (input.IsMouseOver > 0.5)
     {
-        //input.Color.rgb = lerp(input.Color.rgb, float3(0.4, 0.4, 0.7), 0.8);
-        input.Color = float4(1, 0, 0, 1); // Dim the color if mouse is over
+        input.Color = GetSnappedColor(input.Color);
     }
     
-    // Return the color passed from the Vertex Shader
     return input.Color;
 }

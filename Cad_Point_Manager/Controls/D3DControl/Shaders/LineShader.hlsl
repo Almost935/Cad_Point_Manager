@@ -52,11 +52,6 @@ PSInput VSMain(VSInput input)
 // Pixel Shader: Determines the color of each pixel
 float4 PSMain(PSInput input) : SV_TARGET
 {
-    if (input.IsMouseOver > 0.5)
-    {
-        input.Color =  float4(1, 0, 0, 1);
-    }
-    
     // Return the color passed from the Vertex Shader
     return input.Color;
 }

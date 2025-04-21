@@ -850,6 +850,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
             }
             _lineGlowVerticesDirty = vertexBufferDirty;
             _textGlowVerticesDirty = vertexBufferDirty;
+            _lineVerticesDirty = true;
+            _textVerticesDirty = true;
             D3dIsDirty = d3dIsDirty;
         }
         public void CancelHitTesting()
@@ -944,11 +946,14 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 if (obj is DrawingGeometry3D geometry)
                 {
                     geometry.MouseLeave();
-                    for (int i = geometry.StartVertexIndex, count = 0; i <= geometry.EndVertexIndex; i++, count++)
-                    {
-                        var lineVertex = CadManager3D.GetLineVertexRef(i);
-                        lineVertex.SetMouseOver(false);
-                    }
+                    CadManager3D.UpdateDrawingObjectVertices(geometry, false);
+
+                    //geometry.MouseLeave();
+                    //for (int i = geometry.StartVertexIndex, count = 0; i <= geometry.EndVertexIndex; i++, count++)
+                    //{
+                    //    var lineVertex = CadManager3D.GetLineVertexRef(i);
+                    //    lineVertex.SetMouseOver(false);
+                    //}
                 }
                 if (obj is DrawingBlock3D block3D)
                 {
@@ -968,11 +973,14 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 if (obj is DrawingMtext3D drawingMtext)
                 {
                     drawingMtext.MouseLeave();
-                    for (int i = drawingMtext.StartVertexIndex; i <= drawingMtext.EndVertexIndex; i++)
-                    {
-                        var textVertex = CadManager3D.GetTextVertexRef(i);
-                        textVertex.SetMouseOver(false);
-                    }
+                    CadManager3D.UpdateDrawingObjectVertices(drawingMtext, false);
+
+                    //drawingMtext.MouseLeave();
+                    //for (int i = drawingMtext.StartVertexIndex; i <= drawingMtext.EndVertexIndex; i++)
+                    //{
+                    //    var textVertex = CadManager3D.GetTextVertexRef(i);
+                    //    textVertex.SetMouseOver(false);
+                    //}
                 }
             }
         }

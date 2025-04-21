@@ -34,8 +34,8 @@ VSInput VSMain(VSInput input)
 [maxvertexcount(6)]
 void GSMain(line VSInput input[2], inout TriangleStream<GSInput> triStream)
 {
-    if (input[0].IsMouseOver == 0 && input[1].IsMouseOver == 0)
-        return;
+    //if (input[0].IsMouseOver == 0 && input[1].IsMouseOver == 0)
+    //    return;
 
     float halfGlowOffset = glowOffset / 2;
     
