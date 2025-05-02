@@ -111,7 +111,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             using (var geometrySink = pathGeometry.Open())
             {
                 geometrySink.BeginFigure(new RawVector2(Vertices[0].Position.X, Vertices[0].Position.Y), FigureBegin.Hollow);
-                for (int i = 0; i < Vertices.Count / 2; i++)
+                for (int i = 0; i < Vertices.Length / 2; i++)
                 {
                     int index = 2 * i + 1;
                     geometrySink.AddLine(new RawVector2(Vertices[index].Position.X, Vertices[index].Position.Y));
@@ -162,7 +162,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                         }
                     }
                 }
-                Vertices = DrawingSegments.SelectMany(s => s.Vertices).ToList();
+                Vertices = DrawingSegments.SelectMany(s => s.Vertices).ToArray();
             }
 
             else if (entity is Polyline3D polyline3D)
@@ -201,7 +201,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                         }
                     }
                 }
-                Vertices = DrawingSegments.SelectMany(s => s.Vertices).ToList();
+                Vertices = DrawingSegments.SelectMany(s => s.Vertices).ToArray();
             }
             else
             {

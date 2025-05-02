@@ -7,6 +7,7 @@ using SharpDX.Direct2D1;
 using SharpDX.DirectWrite;
 using SharpDX.Mathematics.Interop;
 using System.Diagnostics;
+using System.Windows.Controls;
 using Point = System.Windows.Point;
 
 namespace Cad_Point_Manager.Models.DrawingObjects3D
@@ -14,9 +15,11 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
     public class DrawingText3D : DrawingObject3D
     {
         #region Fields
-        protected const int _fontRenderingMinimumSize = 30;
+        private const float _flatteningTolerance = 0.001f;
+        private const int _fontRenderingMinimumSize = 50;
 
         private protected TextFormat _textFormat;
+        private protected FontFace _fontFace;
         #endregion
 
         #region Properties
@@ -50,6 +53,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             EntityObject = text;
             DxfText = text;
             Layer = layer;
+            IsPartOfBlock = isPartOfBlock;
             DrawingBlock3D = block;
 
             UpdateColor();
@@ -160,14 +164,30 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         {
             throw new NotImplementedException();
         }
+
+        public override void Select()
+        {
+            this.IsSelected = true;
+            SetIsSelected(true);
+        }
+        public override void Deselect()
+        {
+            this.IsSelected = false;
+            SetIsSelected(false);
+        }
+        private void SetIsSelected(bool isSelected)
+        {
+            for (int i = 0; i < TextVertices.Length; i++)
+            {
+                TextVertices[i].SetIsSelected(isSelected);
+            }
+        }
+
         public override double DistanceToPoint(Point p)
         {
             return 1000;
         }
-        public override void UpdateBounds()
-        {
-            throw new NotImplementedException();
-        }
+        public override void UpdateBounds() { }
         public override void DrawToD2dDeviceContext(DeviceContext1 deviceContext, SharpDX.Direct2D1.Factory2 factory, Brush brush, float thickness, StrokeStyle1 strokeStyle)
         {
             //deviceContext.DrawTextLayout(new RawVector2((float)Position.X, -(float)Position.Y), TextLayout, brush);
@@ -234,13 +254,18 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             TextLayout = new(factory, Text, _textFormat, (float)Bounds.Width, (float)Bounds.Height, 96, true);
         }
 
-        public void Tesselate(SharpDX.Direct2D1.Factory2 factory)
+        public void Tesselate(D3dResCache resCache)
         {
+            UpdateFontFace(resCache);
             float fontSizeScaleFactor = _fontRenderingMinimumSize / FontHeight;
 
-            (TransformedGeometry geometry, RawRectangleF bounds) = TextRenderingHelpers.CreateTextGeometry(factory, Text, TextLayout, fontSizeScaleFactor, 10000);
+            (TransformedGeometry geometry, RawRectangleF bounds) = TextRenderingHelpers.CreateTextGeometry(resCache, Text, TextLayout, fontSizeScaleFactor, FontHeight, _fontFace, _flatteningTolerance);
             var vertices = TextRenderingHelpers.TessellateGeometry(geometry);
-
+            Bounds = new System.Windows.Rect(
+                bounds.Left,
+                bounds.Top,
+                bounds.Right - bounds.Left,
+                bounds.Bottom - bounds.Top);
             TextVertices = GetVertices(vertices, 1.00f / fontSizeScaleFactor);
 
             geometry.Dispose();
@@ -258,18 +283,13 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                 var v1 = vertices[i];
                 var v2 = vertices[i + 1];
                 var v3 = vertices[i + 2];
-                Vector2 centroid = (v1 + v2 + v3) / 3;
-
-                Vector2 direction1 = v1 - centroid;
-                Vector2 direction2 = v2 - centroid;
-                Vector2 direction3 = v3 - centroid;
 
                 var scaledVector1 = Vector2.TransformCoordinate(v1, combinedTransform);
-                TextVertex textVertex1 = new(new Vector3(scaledVector1.X, scaledVector1.Y, 0), Color, direction1, 1, 0, 1);
+                TextVertex textVertex1 = new(new Vector3(scaledVector1.X, scaledVector1.Y, 0), Color, isVisible: 1, isMouseOver: 0, isSelected: 0);
                 var scaledVector2 = Vector2.TransformCoordinate(v2, combinedTransform);
-                TextVertex textVertex2 = new(new Vector3(scaledVector2.X, scaledVector2.Y, 0), Color, direction2, 1, 0, 1);
+                TextVertex textVertex2 = new(new Vector3(scaledVector2.X, scaledVector2.Y, 0), Color, isVisible: 1, isMouseOver: 0, isSelected: 0);
                 var scaledVector3 = Vector2.TransformCoordinate(v3, combinedTransform);
-                TextVertex textVertex3 = new(new Vector3(scaledVector3.X, scaledVector3.Y, 0), Color, direction3, 1, 0, 1);
+                TextVertex textVertex3 = new(new Vector3(scaledVector3.X, scaledVector3.Y, 0), Color, isVisible: 1, isMouseOver: 0, isSelected: 0);
 
                 textVertices.AddRange([textVertex1, textVertex2, textVertex3]);
             }
@@ -277,11 +297,11 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             return textVertices.ToArray();
         }
 
-        public void UpdateTextVertices(SharpDX.DirectWrite.Factory1 factory, SharpDX.Direct2D1.Factory2 d2dFactory)
+        public void UpdateTextVertices(D3dResCache resCache)
         {
-            GetTextFormat(factory);
-            GetTextLayout(factory);
-            Tesselate(d2dFactory);
+            GetTextFormat(resCache.WriteFactory);
+            GetTextLayout(resCache.WriteFactory);
+            Tesselate(resCache);
         }
 
         public static float ConvertDxfHeightToFontSize(float height)
@@ -293,6 +313,39 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             //float fontSizeInPoints = heightInInches * 72f;
 
             return height;
+        }
+
+        private void UpdateFontFace(D3dResCache resCache)
+        {
+            FontWeight fontWeight = IsBold ? FontWeight.Bold : FontWeight.Normal;
+            FontStyle fontStyle = IsItalic ? FontStyle.Italic : FontStyle.Normal;
+            _fontFace = resCache.GetFontFace(FontFamilyName, fontWeight, FontStretch.Normal, fontStyle);
+        }
+        #endregion
+
+        #region IDisposable Support
+        private bool disposedValue = false;
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    _textFormat?.Dispose();
+                    _textFormat = null;
+                    TextLayout?.Dispose();
+                    TextLayout = null;
+                    _fontFace?.Dispose();
+                    _fontFace = null;
+                }
+                disposedValue = true;
+            }
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
         }
         #endregion
     }

@@ -1,4 +1,5 @@
 ﻿using Cad_Point_Manager.Common;
+using Cad_Point_Manager.Controls.D3DControl;
 using netDxf.Entities;
 using SharpDX;
 using SharpDX.Direct2D1;
@@ -6,29 +7,37 @@ using SharpDX.DirectWrite;
 using SharpDX.Mathematics.Interop;
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Net;
 
 namespace Cad_Point_Manager.Helpers
 {
     public static class TextRenderingHelpers
     {
         private const float _dictBaseTextSize = 10.00f;
+        public const float _textRenderingScaleFactor = 5.0f;
 
         public const double TextHeightToFontSizeFactor = 1.5;
         public static ConcurrentDictionary<(string fontName, FontWeight fontWeight, FontStyle fontstyle), float> FontSizeFactorDict 
         { get; } = new ConcurrentDictionary<(string fontName, FontWeight fontWeight, FontStyle fontstyle), float>();
+
+        public static (bool verticesCreated, List<Vector2> vertices, RawRectangleF bounds) TesselateTextLayout(D3dResCache resCache, TextLayout textLayout, string text, float textHeight, FontFace fontFace)
+        {
+            float renderingSize = _textRenderingScaleFactor * textHeight;
+            (var geometry, var bounds) = CreateTextGeometry(resCache, text, textLayout, _textRenderingScaleFactor, textHeight, fontFace);
+        }
 
         public static int TextHeightToFontSize(double textHeight)
         {
             return (int)Math.Ceiling(textHeight * TextHeightToFontSizeFactor);
         }
 
-        public static float GetSpaceWidth(SharpDX.DirectWrite.Factory directWriteFactory, string fontFamily, float fontSize)
+        public static float GetSpaceWidth(D3dResCache resCache, string fontFamily, float fontSize)
         {
-            using (var textFormat = new TextFormat(directWriteFactory, fontFamily, fontSize))
+            using (var textFormat = new TextFormat(resCache.WriteFactory, fontFamily, fontSize))
             {
                 // Measure width of "A A" and subtract width of "AA" to get accurate space width.
-                using (var layoutWithSpace = new TextLayout(directWriteFactory, "A A", textFormat, float.MaxValue, float.MaxValue))
-                using (var layoutWithoutSpace = new TextLayout(directWriteFactory, "AA", textFormat, float.MaxValue, float.MaxValue))
+                using (var layoutWithSpace = new TextLayout(resCache.WriteFactory, "A A", textFormat, float.MaxValue, float.MaxValue))
+                using (var layoutWithoutSpace = new TextLayout(resCache.WriteFactory, "AA", textFormat, float.MaxValue, float.MaxValue))
                 {
                     var widthWithSpace = layoutWithSpace.Metrics.Width;
                     var widthWithoutSpace = layoutWithoutSpace.Metrics.Width;
@@ -38,20 +47,12 @@ namespace Cad_Point_Manager.Helpers
             }
         }
 
-        public static (TransformedGeometry geometry, RawRectangleF bounds) CreateTextGeometry(SharpDX.Direct2D1.Factory d2dFactory, string text,
-            TextLayout textLayout, float fontSizeScaleFactor, float textHeight, float flatteningTolerance = 0.001f)
+        public static (TransformedGeometry geometry, RawRectangleF bounds) CreateTextGeometry(D3dResCache resCache, string text,
+            TextLayout textLayout, float fontSizeScaleFactor, float textHeight, FontFace fontFace, float flatteningTolerance = 0.001f)
         {
             using (var dwriteFactory = new SharpDX.DirectWrite.Factory())
             {
-                FontCollection fontCollection = dwriteFactory.GetSystemFontCollection(false);
-                bool exists = fontCollection.FindFamilyName(textLayout.FontFamilyName, out int fontIndex);
-                if (!exists) fontIndex = 0; // Fallback to the first font if not found
-                FontFamily fontFamily = fontCollection.GetFontFamily(fontIndex);
-                
-                Font font = fontFamily.GetFont(0);
-                FontFace fontFace = new(font);
-
-                var pathGeometry = GetTextLayoutGeometry(d2dFactory, textLayout, text, fontFace, flatteningTolerance);
+                var pathGeometry = GetTextLayoutGeometry(resCache.D2dFactory, textLayout, text, fontFace, flatteningTolerance);
 
                 bool fontToTextHeightFactorExists = FontSizeFactorDict.TryGetValue(
                     (textLayout.FontFamilyName, textLayout.FontWeight, textLayout.FontStyle), out float fontToTextHeightFactor);
@@ -59,7 +60,7 @@ namespace Cad_Point_Manager.Helpers
                 {
                     TextFormat textFormatForBounds = new(dwriteFactory, textLayout.FontFamilyName, textLayout.FontWeight, textLayout.FontStyle, _dictBaseTextSize);
                     TextLayout textLayoutForBounds = new(dwriteFactory, "I", textFormatForBounds, float.MaxValue, float.MaxValue);
-                    var boundsPathGeometry = GetTextLayoutGeometry(d2dFactory, textLayoutForBounds, "I", fontFace, flatteningTolerance);
+                    var boundsPathGeometry = GetTextLayoutGeometry(resCache.D2dFactory, textLayoutForBounds, "I", fontFace, flatteningTolerance);
                     var maxHeightBounds = boundsPathGeometry.GetBounds();
                     var actualTextHeight = Math.Abs(maxHeightBounds.Top - maxHeightBounds.Bottom);
 
@@ -71,18 +72,15 @@ namespace Cad_Point_Manager.Helpers
                     textLayoutForBounds.Dispose();
                 }
                 
-                var boundsScaledGeometry = new TransformedGeometry(d2dFactory, pathGeometry,
+                var boundsScaledGeometry = new TransformedGeometry(resCache.D2dFactory, pathGeometry,
                     Matrix3x2.Scaling(fontToTextHeightFactor, fontToTextHeightFactor));
                 
                 var updatedBounds = boundsScaledGeometry.GetBounds();
 
-                var scaledGeometry = new TransformedGeometry(d2dFactory, boundsScaledGeometry,
+                var scaledGeometry = new TransformedGeometry(resCache.D2dFactory, boundsScaledGeometry,
                     Matrix3x2.Scaling(fontSizeScaleFactor, -fontSizeScaleFactor));
 
                 pathGeometry.Dispose();
-                fontFace.Dispose();
-                fontCollection.Dispose();
-                font.Dispose();
 
                 return (scaledGeometry, updatedBounds);
             }
@@ -100,12 +98,13 @@ namespace Cad_Point_Manager.Helpers
                 
                 for (int i = 0; i < text.Length; i++)
                 {
+                    var character = text[i];
                     var glyphGeometry = new PathGeometry(d2dFactory);
                     glyphGeometry.FlatteningTolerance = flatteningTolerance;
 
                     using (var glyphSink = glyphGeometry.Open())
                     {
-                        short[] glyphIndices = fontFace.GetGlyphIndices(new int[] { text[i] });
+                        short[] glyphIndices = fontFace.GetGlyphIndices(new int[] { character });
 
                         fontFace.GetGlyphRunOutline(
                             textLayout.FontSize,

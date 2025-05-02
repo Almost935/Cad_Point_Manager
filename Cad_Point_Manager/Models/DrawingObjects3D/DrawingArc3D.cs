@@ -63,10 +63,11 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         {
             if (entity is Arc arc)
             {
-                Vertices.Clear();
+                Array.Clear(Vertices);
 
                 NumberOfSegments = CalculateSegments(Radius, Sweep);
                 var vertices = arc.ToPolyline2D(NumberOfSegments).Vertexes;
+                List<LineVertex> lineVertices = [];
 
                 for (int i = 0; i < vertices.Count; i++)
                 {
@@ -79,10 +80,11 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                         new Vector3((float)vertices[i + 1].Position.X, (float)vertices[i + 1].Position.Y, 0),
                         Color);
 
-                    Vertices.Add(s);
-                    Vertices.Add(e);
+                    lineVertices.Add(s);
+                    lineVertices.Add(e);
                 }
 
+                Vertices = lineVertices.ToArray();
                 StartVertex = Vertices.First();
                 EndVertex = Vertices.Last();
             }
@@ -137,7 +139,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             using (var geometrySink = pathGeometry.Open())
             {
                 geometrySink.BeginFigure(new RawVector2(Vertices[0].Position.X, Vertices[0].Position.Y), FigureBegin.Hollow);
-                for (int i = 0; i < Vertices.Count / 2; i++)
+                for (int i = 0; i < Vertices.Length / 2; i++)
                 {
                     int index = 2 * i + 1;
                     geometrySink.AddLine(new RawVector2(Vertices[index].Position.X, Vertices[index].Position.Y));

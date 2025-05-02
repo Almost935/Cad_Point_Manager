@@ -6,6 +6,12 @@ cbuffer TransformationBuffer : register(b0)
     row_major matrix transformationMatrix; // 2D transformation matrix
 };
 
+cbuffer TextSettingsBuffer : register(b1)
+{
+    float4 selectedColor;
+    float4 selectedMouseOverColor;
+};
+
 float4 GetSnappedColor(float4 color)
 {
     // A light blue color to blend towards (adjust to taste)
@@ -23,11 +29,9 @@ struct VSInput
 {
     float3 Position : POSITION; // 3D position of the vertex
     float4 Color : COLOR; // RGBA color of the vertex
-    float2 GlowDirection : GLOWDIRECTION;
-    float IsVisible : ISVISIBLE;
-    float IsMouseOver : ISMOUSEOVER;
-    float Transparency : TRANSPARENCY;
-    float GlowOffset : GLOWOFFSET;
+    float IsVisible : ISVISIBLE; // Visibility flag (0 or 1)
+    float IsMouseOver : ISMOUSEOVER; // Indicates if the mouse is over the vertex (0 or 1)
+    float IsSelected : ISSELECTED; // Indicates if the vertex is selected (0 or 1)
 };
 
 // Output structure from the Vertex Shader and input for the Pixel Shader
@@ -35,9 +39,6 @@ struct PSInput
 {
     float4 Position : SV_POSITION; // Transformed position in screen space
     float4 Color : COLOR; // RGBA color passed to the Pixel Shader
-    float2 GlowDirection : GLOWDIRECTION;
-    float IsMouseOver : ISMOUSEOVER;
-    float Transparency : TRANSPARENCY;
 };
 
 // Vertex Shader: Transforms input vertex and passes color through
@@ -47,24 +48,29 @@ PSInput VSMain(VSInput input)
     
     if (input.IsVisible < 0.5) // If not visible, skip the vertex
     {
-        output.Color.a = 0;
-        
-        return output; // Return default values or handle accordingly
+        output.Color = float4(0, 0, 0, 0);
+        return output;
     }
     
-    // Pass the position directly, converting to homogeneous coordinates (w = 1.0)
-    output.Position = mul(float4(input.Position, 1.0), transformationMatrix);
-    
-    if (input.IsMouseOver > 0.5) // If not mouse over, set color alpha to 0
+    if (input.IsMouseOver > 0.5)
     {
-        output.Position.xy += input.GlowOffset * input.GlowDirection * transformationMatrix._11; // Apply glow direction offset
+        input.Color = GetSnappedColor(input.Color);
     }
-
-    input.Color.a = input.Transparency;
+    
+    if (input.IsSelected > 0.5)
+    {
+        if (input.IsMouseOver > 0.5) // If mouse is over the vertex and selected
+        {
+            input.Color = selectedMouseOverColor; // Use mouse over color for selected vertex
+        }
+        else
+        {
+            input.Color = selectedColor; // Use selected color
+        }
+    }
+     
+    output.Position = mul(float4(input.Position, 1.0), transformationMatrix);
     output.Color = input.Color;
-    output.IsMouseOver = input.IsMouseOver;
-    output.GlowDirection = input.GlowDirection;
-    output.Transparency = input.Transparency;
 
     return output;
 }
@@ -72,10 +78,5 @@ PSInput VSMain(VSInput input)
 // Pixel Shader: Determines the color of each pixel
 float4 PSMain(PSInput input) : SV_TARGET
 {
-    if (input.IsMouseOver > 0.5)
-    {
-        input.Color = GetSnappedColor(input.Color);
-    }
-    
     return input.Color;
 }

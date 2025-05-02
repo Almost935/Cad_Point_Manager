@@ -80,7 +80,33 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
 
                     for (int i = 0; i < vertexSpan.Length; i++)
                     {
-                        vertexSpan[i].SetMouseOver(isMouseOver);
+                        vertexSpan[i].SetIsMouseOver(isMouseOver);
+                    }
+                }
+            }
+        }
+
+        public override void Select()
+        {
+            this.IsSelected = true;
+            SetIsSelected(true);
+        }
+        public override void Deselect()
+        {
+            this.IsSelected = false;
+            SetIsSelected(false);
+        }
+        private void SetIsSelected(bool isSelected)
+        {
+            foreach (var row in MtextBlock.Rows)
+            {
+                foreach (var segment in row.Segments)
+                {
+                    Span<TextVertex> vertexSpan = segment.TextVertices.AsSpan();
+
+                    for (int i = 0; i < vertexSpan.Length; i++)
+                    {
+                        vertexSpan[i].SetIsSelected(isSelected);
                     }
                 }
             }
@@ -154,11 +180,11 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             }
         }
 
-        public void UpdateTextVertices(Factory1 factory, Factory2 d2dFactory)
+        public void UpdateTextVertices(D3dResCache resCache)
         {
             if (DxfMtext is null) { return; }
 
-            UpdateMtextBlock(factory, d2dFactory);
+            UpdateMtextBlock(resCache);
             MtextBlock.SetTextPositions();
             MtextBlock.GetTextBox(MtextBlock.Height);
             SetRotation();
@@ -177,7 +203,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
 
             return textVertices;
         }
-        public void UpdateMtextBlock(Factory1 factory, Factory2 d2dFactory)
+        public void UpdateMtextBlock(D3dResCache resCache)
         {
             MtextBlock?.Dispose();
             MtextBlock = new((float)MaxWidth, Position, DxfMtext.AttachmentPoint, Rotation);
@@ -191,9 +217,9 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                 foreach (var text in segmentTexts)
                 {
                     TextSegmentInformation segmentInfo = new(text, Color, FontFamilyName, DxfMtext.Height, IsBold, IsItalic, false, false, false, false, Enums.TextAlignment.Left);
-                    var textSegment = CreateMtextSegment(segmentInfo, factory, d2dFactory);
-                    textSegment.GetTextLayout(factory);
-                    textSegment.Tesselate(d2dFactory);
+                    var textSegment = CreateMtextSegment(segmentInfo, resCache);
+                    textSegment.GetTextLayout(resCache.WriteFactory);
+                    textSegment.Tesselate(resCache);
                     MtextBlock.AddSegment(textSegment);
                 }
 
@@ -372,13 +398,13 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                             var newSegmentInfo = new TextSegmentInformation(segmentText, segmentInfo.Color, segmentInfo.Font, segmentInfo.TextHeight,
                                 segmentInfo.IsBold, segmentInfo.IsItalic, segmentInfo.IsUnderlined, segmentInfo.IsOverstriked, segmentInfo.IsStrikethrough,
                                 isNewLine, segmentInfo.TextAlignment);
-                            var newSegment = CreateMtextSegment(newSegmentInfo, factory, d2dFactory);
+                            var newSegment = CreateMtextSegment(newSegmentInfo, resCache);
                             MtextBlock.AddSegment(newSegment);
                         }
                     }
                     else
                     {
-                        var segment = CreateMtextSegment(segmentInfo, factory, d2dFactory);
+                        var segment = CreateMtextSegment(segmentInfo, resCache);
                         MtextBlock.AddSegment(segment); // Add the segment to the block for vertex generation and other purposes.
                     }
                 }
@@ -402,12 +428,12 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             //    TextVertices[i] = TextVertex.RotateAroundPoint(TextVertices[i], new Vector2(Position.X, Position.Y), (float)(MathHelper.DegToRad * Rotation));
             //}
         }
-        private DrawingMtextSegment3D CreateMtextSegment(TextSegmentInformation segmentInfo, Factory1 factory, Factory2 d2dFactory)
+        private DrawingMtextSegment3D CreateMtextSegment(TextSegmentInformation segmentInfo, D3dResCache resCache)
         {
             var segment = new DrawingMtextSegment3D(this, segmentInfo.Text, segmentInfo.Color, Vector3.Zero, 0, (float)segmentInfo.TextHeight, segmentInfo.Font,
                 segmentInfo.IsItalic, segmentInfo.IsBold, segmentInfo.IsUnderlined, segmentInfo.IsStrikethrough, segmentInfo.IsNewLine, _fontRenderingMinimumSize, 0);
-            segment.GetTextLayout(factory);
-            segment.Tesselate(d2dFactory);
+            segment.GetTextLayout(resCache.WriteFactory);
+            segment.Tesselate(resCache);
 
             return segment;
         }

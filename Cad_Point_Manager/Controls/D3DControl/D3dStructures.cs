@@ -7,7 +7,7 @@ using Matrix = SharpDX.Matrix;
 namespace Cad_Point_Manager.Controls.D3DControl
 {
     [StructLayout(LayoutKind.Sequential)]
-    public struct LineVertex(Vector3 position, Vector4 color, float isVisible = 1.0f, float isMouseOver = 0)
+    public struct LineVertex(Vector3 position, Vector4 color, float isVisible = 1.0f, float isMouseOver = 0, float isSelected = 0)
     {
         public Vector3 Position = position;
         public Vector4 Color = color;
@@ -22,10 +22,27 @@ namespace Cad_Point_Manager.Controls.D3DControl
         /// </summary>
         public float IsMouseOver = isMouseOver;
 
-        public void SetMouseOver(bool isMouseOver)
+        /// <summary>
+        /// float value indicating whether the line is currently selected. 1.0f is true, 0.0f is false.
+        /// </summary>
+        public float IsSelected = isSelected;
+
+        public void SetIsMouseOver(bool isMouseOver)
         {
             IsMouseOver = isMouseOver ? 1 : 0;
         }
+
+        public void SetIsSelected(bool isSelected)
+        {
+            IsSelected = isSelected ? 1 : 0;
+        }
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct LineSettingsBuffer
+    {
+        public Vector4 SelectedColor;
+        public Vector4 SelectedMouseOverColor;
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -33,7 +50,16 @@ namespace Cad_Point_Manager.Controls.D3DControl
     {
         public float GlowOffset;
         public float GlowTransparency;
-        private Vector2 Padding; // Padding to ensure the structure is 16-byte aligned
+        private Vector2 Padding;
+        public Vector4 SelectedColor;
+        public Vector4 SelectedMouseOverColor;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct TextSettingsBuffer
+    {
+        public Vector4 SelectedColor;
+        public Vector4 SelectedMouseOverColor;
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -42,10 +68,13 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public float GlowOffset;
         public float GlowTransparency;
         private Vector2 Padding; // Padding to ensure the structure is 16-byte aligned
+        public Vector4 SelectedColor;
+        public Vector4 SelectedMouseOverColor;
     }
 
+
     [StructLayout(LayoutKind.Sequential)]
-    public struct TextVertex(Vector3 position, Vector4 color, Vector2 glowDirection, float isVisible = 1.0f, float isMouseOver = 0, float transparency = 1, float glowOffset = 0)
+    public struct TextVertex(Vector3 position, Vector4 color, float isVisible = 1.0f, float isMouseOver = 0, float isSelected = 0)
     {
         public Vector3 Position = position;
         public Vector4 Color = color;
@@ -60,27 +89,25 @@ namespace Cad_Point_Manager.Controls.D3DControl
         /// </summary>
         public float IsMouseOver = isMouseOver;
 
-        public Vector2 GlowDirection = glowDirection;
-        public float Transparency = transparency;
-        public float GlowOffset = glowOffset;
+        /// <summary>
+        /// float value indicating whether the text is currently selected. 1.0f is true, 0.0f is false.
+        /// </summary>
+        public float IsSelected = isSelected;
 
         public readonly TextVertex Translate(Vector3 offset)
         {
-            //return new TextVertex(Position + offset, Color, IsVisible);
-
-            return new TextVertex(Position + offset, Color, GlowDirection, IsVisible, IsMouseOver);
+            return new TextVertex(Position + offset, Color, isVisible: IsVisible,
+                isMouseOver: IsMouseOver, isSelected: IsSelected);
         }
         public readonly TextVertex Translate(Vector2 offset)
         {
-            //return new TextVertex(new Vector3(Position.X + offset.X, Position.Y + offset.Y, Position.Z), Color, IsVisible);
-
-            return new TextVertex(new Vector3(Position.X + offset.X, Position.Y + offset.Y, Position.Z), Color, GlowDirection, IsVisible, IsMouseOver);
+            return new TextVertex(new Vector3(Position.X + offset.X, Position.Y + offset.Y, Position.Z), Color, isVisible: IsVisible,
+                isMouseOver: IsMouseOver, isSelected: IsSelected);
         }
         public readonly TextVertex Translate(float x, float y, float z)
         {
-            //return new TextVertex(new Vector3(Position.X + x, Position.Y + y, Position.Z + z), Color, IsVisible);
-
-            return new TextVertex(new Vector3(Position.X + x, Position.Y + y, Position.Z + z), Color, GlowDirection, IsVisible, IsMouseOver);
+            return new TextVertex(new Vector3(Position.X + x, Position.Y + y, Position.Z + z), Color, isVisible: IsVisible,
+                isMouseOver: IsMouseOver, isSelected: IsSelected);
         }
 
         public static TextVertex RotateAroundPoint(TextVertex textVertex, Vector2 basePoint, float radians)
@@ -94,14 +121,19 @@ namespace Cad_Point_Manager.Controls.D3DControl
             float rotatedX = cos * dx - sin * dy + basePoint.X;
             float rotatedY = sin * dx + cos * dy + basePoint.Y;
 
-            return new TextVertex(new Vector3(rotatedX, rotatedY, textVertex.Position.Z), textVertex.Color, textVertex.GlowDirection, textVertex.IsVisible, textVertex.IsMouseOver, textVertex.Transparency, textVertex.GlowOffset);
+            return new TextVertex(new Vector3(rotatedX, rotatedY, textVertex.Position.Z), textVertex.Color, isVisible: textVertex.IsVisible, 
+                isMouseOver: textVertex.IsMouseOver, isSelected: textVertex.IsSelected);
         }
 
-        public void SetMouseOver(bool isMouseOver)
+        public void SetIsMouseOver(bool isMouseOver)
         {
             IsMouseOver = isMouseOver ? 1 : 0;
         }
 
+        public void SetIsSelected(bool isSelected)
+        {
+            IsSelected = isSelected ? 1 : 0;
+        }
 
         public static implicit operator System.Windows.Point(TextVertex v)
         {

@@ -8,14 +8,21 @@ cbuffer TextGlowSettingsBuffer : register(b1)
 {
     float glowOffset;
     float glowTransparency;
-    float glowZoomFactor;
     float padding;
+    float4 selectedColor;
+    float4 selectedMouseOverColor;
 };
 
 float4 GetSnappedColor(float4 color)
 {
-    float3 snappedColor = lerp(color.rgb, float3(0.4, 0.4, 0.7), color.a);
-    return float4(snappedColor, color.a);
+    // A light blue color to blend towards (adjust to taste)
+    float3 lightBlue = float3(0.4, 0.4, 1.0);
+
+    // Lerp from original RGB to the blueish color
+    float3 resultRgb = lerp(color.rgb, lightBlue, 0.7); // 0.4 means 40% blueish tint
+
+    // Return the new color with original alpha
+    return float4(resultRgb, color.a);
 }
 
 struct VSInput
@@ -24,6 +31,7 @@ struct VSInput
     float4 Color : COLOR;
     float IsVisible : ISVISIBLE;
     float IsMouseOver : ISMOUSEOVER;
+    float IsSelected : ISSELECTED;
 };
 
 struct GSInput
@@ -40,28 +48,35 @@ VSInput VSMain(VSInput input)
 [maxvertexcount(3)]
 void GSMain(triangle VSInput input[3], inout TriangleStream<GSInput> triStream)
 {
-    //if (input[0].IsMouseOver == 0 && input[1].IsMouseOver == 0 && input[2].IsMouseOver == 0)
-    //{
-    //    return;
-    //}
-
     float halfGlowOffset = glowOffset / 2;
     float3 center = (input[0].Position + input[1].Position + input[2].Position) / 3.0;
-
+    
+    float4 color;
+    if (input[0].IsSelected > 0.5)
+    {
+        if (input[0].IsMouseOver)
+        {
+            color = float4(selectedMouseOverColor.rgb, glowTransparency);
+        }
+        else
+        {
+            color = float4(selectedColor.rgb, glowTransparency);
+        }
+    }
+    else
+    {
+        color = float4(GetSnappedColor(input[0].Color).rgb, glowTransparency);
+    }
+        
     for (int i = 0; i < 3; i++)
     {
         float3 dir = normalize(input[i].Position - center);
-        float3 offset = dir * halfGlowOffset; // glow expansion
+        float3 offset = dir * halfGlowOffset;
 
         GSInput output;
         output.Position = mul(float4(input[i].Position + offset, 1.0), transformationMatrix);
-        output.Color = float4(input[i].Color.rgb, glowTransparency);
-        
-        if (input[i].IsMouseOver > 0.5) 
-        {
-            output.Color = GetSnappedColor(input[i].Color);
-            output.Color.a = 0;
-        }
+        output.Color = color;
+        //output.Color = float4(input[i].Color.rgb, glowTransparency);
         
         triStream.Append(output);
     }

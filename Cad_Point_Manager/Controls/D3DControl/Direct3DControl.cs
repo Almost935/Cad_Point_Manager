@@ -162,7 +162,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             _deviceContext = _device.ImmediateContext;
             _d3dResCache.DeviceContext = _deviceContext;
-            _d3dResCache.FactoryWrite = new();
+            _d3dResCache.WriteFactory = new();
 
             var baseBlendDesc = new BlendStateDescription();
             baseBlendDesc.RenderTarget[0].IsBlendEnabled = true; // Enable blending

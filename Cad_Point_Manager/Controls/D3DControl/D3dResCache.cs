@@ -1,8 +1,12 @@
-﻿ using System.ComponentModel;
+﻿using System.ComponentModel;
 using SharpDX.Direct3D11;
 using SharpDX.Direct2D1;
+using System.Collections.Concurrent;
+using SharpDX.DirectWrite;
+
 using Device = SharpDX.Direct3D11.Device;
 using DeviceContext = SharpDX.Direct3D11.DeviceContext;
+using Factory2 = SharpDX.Direct2D1.Factory2;
 
 namespace Cad_Point_Manager.Controls.D3DControl
 {
@@ -17,7 +21,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private RenderTargetView _renderTargetView = null;
         private SharpDX.Direct2D1.Device1 _d2DDevice = null;
         private SharpDX.Direct2D1.DeviceContext1 _d2DDeviceContext = null;
-        private SharpDX.Direct2D1.RenderTarget _d2dRenderTarget = null;
+        private RenderTarget _d2dRenderTarget = null;
         private Factory2 _d2DFactory = null;
         private Bitmap1 _d2dTargetBitmap = null;
         private SharpDX.DirectWrite.Factory1 _factoryWrite = null;
@@ -105,18 +109,19 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 OnPropertyChanged(nameof(D2DTargetBitmap));
             }
         }
-        public SharpDX.DirectWrite.Factory1 FactoryWrite
+        public SharpDX.DirectWrite.Factory1 WriteFactory
         {
             get { return _factoryWrite; }
             set
             {
                 _factoryWrite = value;
-                OnPropertyChanged(nameof(FactoryWrite));
+                OnPropertyChanged(nameof(WriteFactory));
             }
         }
 
         public int MaxSize { get; set; }
         public BlendState BaseBlendState { get; set; }
+        public ConcurrentDictionary<(string fontName, FontWeight fontWeight, FontStretch fontStretch, FontStyle fontStyle), FontFace> FontFaceDict = [];
         #endregion
 
         #region Events
@@ -124,6 +129,50 @@ namespace Cad_Point_Manager.Controls.D3DControl
         #endregion
 
         #region Methods
+        public FontFace GetFontFace(string fontName, FontWeight fontWeight, FontStretch fontStretch, FontStyle fontStyle)
+        {
+            if (WriteFactory is null)
+            {
+                throw new InvalidOperationException("WriteFactory is not initialized.");
+            }
+
+            if (FontFaceDict.TryGetValue((fontName, fontWeight, fontStretch, fontStyle), out FontFace fontFace))
+            {
+                return fontFace;
+            }
+            else
+            { 
+                FontCollection fontCollection = WriteFactory.GetSystemFontCollection(false);
+                bool exists = fontCollection.FindFamilyName(fontName, out int fontIndex);
+                if (!exists) fontIndex = 0; // Fallback to the first font if not found
+                FontFamily fontFamily = fontCollection.GetFontFamily(fontIndex);
+
+                Font font = null;
+                for (int i = 0; i < fontFamily.FontCount; i++)
+                {
+                    var potFont = fontFamily.GetFont(i);
+
+                    if (potFont.Weight == fontWeight && potFont.Stretch == fontStretch && potFont.Style == fontStyle)
+                    {
+                        font = potFont;
+                        break;
+                    }
+
+                    potFont.Dispose(); // Clean up if not returned
+                }
+                font ??= fontFamily.GetFont(0); // Fallback to the first font if not found
+
+                FontFace newFontFace = new(font);
+                FontFaceDict[(fontName, fontWeight, fontStretch, fontStyle)] = newFontFace;
+
+                font.Dispose();
+                fontCollection.Dispose();
+                fontFamily.Dispose();
+
+                return newFontFace;
+            }
+        }
+
         public void Dispose()
         {
             Dispose(true);
@@ -145,15 +194,17 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     _d2dRenderTarget?.Dispose();
                     _d2dTargetBitmap?.Dispose();
                     _factoryWrite?.Dispose();
-                    
                     BaseBlendState?.Dispose();
+
+                    foreach (var fontFace in FontFaceDict.Values)
+                    {
+                        fontFace.Dispose();
+                    }
                 }
 
                 disposed = true;
             }
         }
-        
-
         ~D3dResCache()
         {
             Dispose(false);

@@ -120,25 +120,38 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         public override void MouseEnter()
         {
             this.IsMouseOver = true;
-            this.IsVisible = false;
 
             for (int i = 0; i < LineVertices.Count; i++)
             {
-                var vertex = LineVertices[i];
-                vertex.IsVisible = 0.0f;
-                LineVertices[i] = vertex;
+                LineVertices[i].SetIsMouseOver(true);
             }
         }
         public override void MouseLeave()
         {
             this.IsMouseOver = false;
-            this.IsVisible = true;
 
             for (int i = 0; i < LineVertices.Count; i++)
             {
-                var vertex = LineVertices[i];
-                vertex.IsVisible = 1.0f;
-                LineVertices[i] = vertex;
+                LineVertices[i].SetIsMouseOver(false);
+            }
+        }
+
+        public override void Select()
+        {
+            this.IsSelected = true;
+
+            for (int i = 0; i < LineVertices.Count; i++)
+            {
+                LineVertices[i].SetIsSelected(true);
+            }
+        }
+        public override void Deselect()
+        {
+            this.IsSelected = false;
+
+            for (int i = 0; i < LineVertices.Count; i++)
+            {
+                LineVertices[i].SetIsSelected(false);
             }
         }
 
@@ -186,7 +199,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                 }
             }
         }
-        public void UpdateTextVertices(SharpDX.DirectWrite.Factory1 factory, Factory2 d2dFactory)
+        public void UpdateTextVertices(D3dResCache resCache)
         {
             TextVertices.Clear();
 
@@ -194,17 +207,17 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             {
                 if (obj is DrawingBlock3D block)
                 {
-                    block.UpdateTextVertices(factory, d2dFactory);
+                    block.UpdateTextVertices(resCache);
                     TextVertices.AddRange(block.TextVertices);
                 }
                 if (obj is DrawingText3D text)
                 {
-                    text.UpdateTextVertices(factory, d2dFactory);
+                    text.UpdateTextVertices(resCache);
                     TextVertices.AddRange(text.TextVertices);
                 }
                 if (obj is DrawingMtext3D mtext)
                 {
-                    mtext.UpdateTextVertices(factory, d2dFactory);
+                    mtext.UpdateTextVertices(resCache);
 
                     foreach (var row in mtext.MtextBlock.Rows)
                     {

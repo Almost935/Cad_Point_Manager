@@ -1,6 +1,7 @@
 ﻿using Cad_Point_Manager.Controls.D3DControl;
 using Cad_Point_Manager.Helpers;
 using Cad_Point_Manager.Models.DrawingObjects3D;
+using Cad_Point_Manager.Models.PointRendering;
 using netDxf;
 using netDxf.Tables;
 using SharpDX;
@@ -25,15 +26,20 @@ namespace Cad_Point_Manager.Models
         private bool _dxfLoaded = false;
         private bool _lineVerticesDirty = true;
         private bool _textVerticesDirty = true;
+        private bool _dxfPointVerticesDirty = true;
         private bool _drawingObjectTreeDirty = true;
         private bool _dxfNeedsReload = true;
         private Bounds _extents;
         private ObservableCollection<KeyValuePair<string, ObjectLayer3D>> _layers = [];
         private ICollectionView _layersView;
+        private Dictionary<string, PointGroup> _pointGroups = [];
+        private ICollectionView _pointGroupsView;
         private Size2F _viewportSize = Size2F.Empty;
 
         private readonly List<LineVertex> _cachedLineVertices = [];
         private readonly List<TextVertex> _cachedTextVertices = [];
+
+        private DxfPointTextVerticesDict _pointTextVerticesDict;
         #endregion
 
         #region Properties
@@ -62,6 +68,15 @@ namespace Cad_Point_Manager.Models
             {
                 _textVerticesDirty = value;
                 OnPropertyChanged(nameof(TextVerticesDirty));
+            }
+        }
+        public bool DxfPointVerticesDirty
+        {
+            get => _dxfPointVerticesDirty;
+            set
+            {
+                _dxfPointVerticesDirty = value;
+                OnPropertyChanged(nameof(DxfPointVerticesDirty));
             }
         }
         public bool DrawingObjectTreeDirty
@@ -109,6 +124,24 @@ namespace Cad_Point_Manager.Models
                 OnPropertyChanged(nameof(LayersView));
             }
         }
+        public Dictionary<string, PointGroup> PointGroups
+        {
+            get => _pointGroups;
+            set
+            {
+                _pointGroups = value;
+                OnPropertyChanged(nameof(PointGroups));
+            }
+        }
+        public ICollectionView PointGroupsView
+        {
+            get => _pointGroupsView;
+            set
+            {
+                _pointGroupsView = value;
+                OnPropertyChanged(nameof(PointGroupsView));
+            }
+        }
         public Size2F ViewportSize
         {
             get => _viewportSize;
@@ -121,6 +154,7 @@ namespace Cad_Point_Manager.Models
 
         public DxfDocument DxfDocument { get; set; }
         public DrawingObjectTree3D DrawingObjectTree3D { get; set; }
+        public TextVertex[] NumberVertices { get; set; } = [];
         #endregion
 
         #region Events
@@ -141,6 +175,10 @@ namespace Cad_Point_Manager.Models
             
             DxfDocument = dxfDocument;
             Extents = DxfHelpers.GetBoundsFromHeader(DxfDocument);
+            
+            // Testing
+            GetTestDxfPoints();
+            DxfPointVerticesDirty = true;
 
             foreach (var e in DxfDocument.Entities.All)
             {
@@ -219,7 +257,7 @@ namespace Cad_Point_Manager.Models
             }
         }
 
-        public void UpdateDrawingObjectVertices(DrawingObject3D drawingObject, bool isMouseOver)
+        public void UpdateVerticesIsMouseOver(DrawingObject3D drawingObject, bool isMouseOver)
         {
             if (drawingObject is DrawingGeometry3D drawingGeometry) 
             {
@@ -248,6 +286,39 @@ namespace Cad_Point_Manager.Models
                 {
                     ref var vertex = ref GetTextVertexRef(i);
                     vertex.IsMouseOver = isMouseOver ? 1.0f : 0.0f;
+                }
+            }
+        }
+
+        public void UpdateVerticesIsSelected(DrawingObject3D drawingObject, bool isSelected)
+        {
+            if (drawingObject is DrawingGeometry3D drawingGeometry)
+            {
+                for (int i = drawingGeometry.StartVertexIndex; i <= drawingGeometry.EndVertexIndex; i++)
+                {
+                    ref var vertex = ref GetLineVertexRef(i);
+                    vertex.IsSelected = isSelected ? 1.0f : 0.0f;
+                }
+            }
+            if (drawingObject is DrawingMtext3D drawingMtext)
+            {
+                for (int i = drawingMtext.StartVertexIndex; i <= drawingMtext.EndVertexIndex; i++)
+                {
+                    ref var vertex = ref GetTextVertexRef(i);
+                    vertex.IsSelected = isSelected ? 1.0f : 0.0f;
+                }
+            }
+            if (drawingObject is DrawingBlock3D drawingBlock)
+            {
+                for (int i = drawingBlock.StartLineVertexIndex; i <= drawingBlock.EndLineVertexIndex; i++)
+                {
+                    ref var vertex = ref GetLineVertexRef(i);
+                    vertex.IsSelected = isSelected ? 1.0f : 0.0f;
+                }
+                for (int i = drawingBlock.StartTextVertexIndex; i <= drawingBlock.EndTextVertexIndex; i++)
+                {
+                    ref var vertex = ref GetTextVertexRef(i);
+                    vertex.IsSelected = isSelected ? 1.0f : 0.0f;
                 }
             }
         }
@@ -312,14 +383,14 @@ namespace Cad_Point_Manager.Models
 
                         if (obj is DrawingText3D drawingText)
                         {
-                            drawingText.UpdateTextVertices(_d3dResCache.FactoryWrite, _d3dResCache.D2dFactory);
+                            drawingText.UpdateTextVertices(_d3dResCache);
                             drawingText.StartVertexIndex = start;
                             _cachedTextVertices.AddRange(drawingText.TextVertices);
                             drawingText.EndVertexIndex = _cachedTextVertices.Count - 1;
                         }
                         else if (obj is DrawingMtext3D drawingMtext)
                         {
-                            drawingMtext.UpdateTextVertices(_d3dResCache.FactoryWrite, _d3dResCache.D2dFactory);
+                            drawingMtext.UpdateTextVertices(_d3dResCache);
                             drawingMtext.StartVertexIndex = start;
 
                             foreach (var row in drawingMtext.MtextBlock.Rows)
@@ -333,13 +404,14 @@ namespace Cad_Point_Manager.Models
                         }
                         else if (obj is DrawingBlock3D drawingBlock)
                         {
-                            drawingBlock.UpdateTextVertices(_d3dResCache.FactoryWrite, _d3dResCache.D2dFactory);
+                            drawingBlock.UpdateTextVertices(_d3dResCache);
                             drawingBlock.StartTextVertexIndex = start;
                             _cachedTextVertices.AddRange(drawingBlock.TextVertices);
                             drawingBlock.EndTextVertexIndex = _cachedTextVertices.Count - 1;
                         }
                     }
                 }
+                UpdateDxfPointTextVertices(d3DResCache);
 
                 TextVerticesDirty = false;
                 DrawingObjectTreeDirty = true;
@@ -348,56 +420,70 @@ namespace Cad_Point_Manager.Models
             return CollectionsMarshal.AsSpan(_cachedTextVertices);
         }
 
-        //public void UpdateTextVerticesList(D3dResCache d3DResCache)
-        //{
-        //    if (d3DResCache.Device is null) { return; }
+        public void UpdateDxfPointTextVertices(D3dResCache d3DResCache)
+        {
+            _pointTextVerticesDict ??= new(d3DResCache);
 
-        //    _d3dResCache = d3DResCache;
+            if (DxfPointVerticesDirty)
+            {
+                foreach (var pointGroup in PointGroups.Values)
+                {
+                    foreach (var point in pointGroup.Points)
+                    {
+                        point.TextStartIndex = _cachedTextVertices.Count;
+                        point.UpdateTextVertices(_pointTextVerticesDict);
+                        _cachedTextVertices.AddRange(point.TextVertices);
+                        point.TextEndIndex = _cachedTextVertices.Count - 1;
+                    }
+                }
+                DxfPointVerticesDirty = false;
+            }
+        }
+        public void UpdateDxfPointLineVertices(D3dResCache d3DResCache)
+        {
+            //if (DxfPointVerticesDirty)
+            //{
+            //    _cachedPointLineVertices.Clear();
 
-        //    TextVertices.Clear();
+            //    foreach (var pointGroup in PointGroups.Values)
+            //    {
+            //        foreach (var point in pointGroup.Points)
+            //        {
+                        
+            //        }
+            //    }
+            //    DxfPointVerticesDirty = false;
+            //}
+            //return CollectionsMarshal.AsSpan(_cachedPointLineVertices);
+        }
 
-        //    foreach (var keyValuePair in Layers)
-        //    {
-        //        var layer = keyValuePair.Value;
-        //        if (layer.IsVisible)
-        //        {
-        //            foreach (var obj in layer.DrawingObject3Ds)
-        //            {
-        //                if (obj is DrawingText3D drawingText)
-        //                {
-        //                    drawingText.UpdateTextVertices(_d3dResCache.FactoryWrite, _d3dResCache.D2dFactory);
-        //                    drawingText.StartVertexIndex = _cachedTextVertices.Count;
-        //                    _cachedTextVertices.AddRange(drawingText.TextVertices);
-        //                    drawingText.EndVertexIndex = _cachedTextVertices.Count - 1;
-        //                }
-        //                if (obj is DrawingMtext3D drawingMtext)
-        //                {
-        //                    drawingMtext.UpdateTextVertices(_d3dResCache.FactoryWrite, _d3dResCache.D2dFactory);
-        //                    drawingMtext.StartVertexIndex = _cachedTextVertices.Count;
+        public void GetTestDxfPoints()
+        {
+            PointGroups.Clear();
 
-        //                    foreach (var row in drawingMtext.MtextBlock.Rows)
-        //                    {
-        //                        foreach (var segment in row.Segments)
-        //                        {
-        //                            _cachedTextVertices.AddRange(segment.TextVertices);
-        //                        }
-        //                    }
+            float rows = 5;
+            float cols = 10;
+            float yIncrement = Extents.Width / rows;
+            float xIncrement = Extents.Height / cols;
+            int pointNum = 1;
 
-        //                    drawingMtext.EndVertexIndex = _cachedTextVertices.Count - 1;
-        //                }
-        //                if (obj is DrawingBlock3D drawingBlock)
-        //                {
-        //                    drawingBlock.UpdateTextVertices(_d3dResCache.FactoryWrite, _d3dResCache.D2dFactory);
-        //                    drawingBlock.StartTextVertexIndex = _cachedTextVertices.Count;
-        //                    _cachedTextVertices.AddRange(drawingBlock.TextVertices);
-        //                    drawingBlock.EndTextVertexIndex = _cachedTextVertices.Count - 1;
-        //                }
-        //            }
-        //        }
-        //    }
+            for (int i = 0; i < rows; i++)
+            {
+                string pointGroupName = $"TestGroup {i + 1}";
+                PointGroup pointGroup = new(pointGroupName, new SharpDX.Vector4(0.0f, 0.0f, 0.0f, 1.0f), 1.0f, 1.0f);
+                float y = Extents.Bottom + (yIncrement * i);
 
-        //    UpdateDrawingObjectTree();
-        //}
+                for (int j = 0; j < cols; j++)
+                {
+                    float x = Extents.Left + (xIncrement * j);
+                    DxfPoint point = new(pointGroup, pointNum, new SharpDX.Vector3(x, y, 0));
+                    pointGroup.Points.Add(point);
+                    pointNum++;
+                }
+
+                PointGroups.Add(pointGroupName, pointGroup);
+            }
+        }
 
         public ref TextVertex GetTextVertexRef(int index)
         {

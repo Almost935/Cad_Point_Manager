@@ -59,12 +59,12 @@ namespace Cad_Point_Manager.DrawingObjects
         {
             if (entity is Circle circle)
             {
-                Vertices.Clear();
+                Array.Clear(Vertices);
 
-                //NumberOfSegments = CalculateArcSegments(Radius, Sweep);
                 NumberOfSegments = CalculateSegments(Radius, Sweep);
 
                 var vertices = circle.ToPolyline2D(NumberOfSegments).Vertexes;
+                List<LineVertex> lineVertices = [];
 
                 for (int i = 0; i < vertices.Count; i++)
                 {
@@ -76,9 +76,8 @@ namespace Cad_Point_Manager.DrawingObjects
                         LineVertex end = new(
                             new Vector3((float)vertices[0].Position.X, (float)vertices[0].Position.Y, 0),
                             Color);
-
-                        Vertices.Add(start);
-                        Vertices.Add(end);
+                        lineVertices.Add(start);
+                        lineVertices.Add(end);
 
                         break;
                     }
@@ -90,10 +89,11 @@ namespace Cad_Point_Manager.DrawingObjects
                         new Vector3((float)vertices[i + 1].Position.X, (float)vertices[i + 1].Position.Y, 0),
                         Color);
 
-                    Vertices.Add(s);
-                    Vertices.Add(e);
+                    lineVertices.Add(s);
+                    lineVertices.Add(e);
                 }
 
+                Vertices = lineVertices.ToArray();
                 StartVertex = Vertices.First();
                 EndVertex = Vertices.Last();
             }
@@ -140,7 +140,7 @@ namespace Cad_Point_Manager.DrawingObjects
             using (var geometrySink = pathGeometry.Open())
             {
                 geometrySink.BeginFigure(new RawVector2(Vertices[0].Position.X, Vertices[0].Position.Y), FigureBegin.Hollow);
-                for (int i = 0; i < Vertices.Count / 2; i++)
+                for (int i = 0; i < Vertices.Length / 2; i++)
                 {
                     int index = 2 * i + 1;
                     geometrySink.AddLine(new RawVector2(Vertices[index].Position.X, Vertices[index].Position.Y));

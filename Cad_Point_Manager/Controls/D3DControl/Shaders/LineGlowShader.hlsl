@@ -9,8 +9,9 @@ cbuffer LineGlowSettingsBuffer : register(b1)
     float glowOffset;
     float glowTransparency;
     float2 padding;
+    float4 selectedColor;
+    float4 selectedMouseOverColor;
 };
-
 
 struct VSInput
 {
@@ -18,6 +19,7 @@ struct VSInput
     float4 Color : COLOR;
     float IsVisible : ISVISIBLE;
     float IsMouseOver : ISMOUSEOVER;
+    float IsSelected : ISSELECTED;
 };
 
 struct GSInput
@@ -50,7 +52,15 @@ void GSMain(line VSInput input[2], inout TriangleStream<GSInput> triStream)
     float3 p2 = end - offset;
     float3 p3 = start - offset;
 
-    float4 color = float4(input[0].Color.rgb, glowTransparency);
+    float4 color;
+    if (input[0].IsSelected > 0.5)
+    {
+        color = float4(selectedMouseOverColor.rgb, 1);
+    }
+    else
+    {
+        color = float4(input[0].Color.rgb, glowTransparency);
+    }
 
     GSInput out0 = { mul(float4(p0, 1.0), transformationMatrix), color };
     GSInput out1 = { mul(float4(p1, 1.0), transformationMatrix), color };
