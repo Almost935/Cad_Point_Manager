@@ -205,6 +205,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         }
         public void UpdateMtextBlock(D3dResCache resCache)
         {
+            //MtextBlock??= new((float)MaxWidth, Position, DxfMtext.AttachmentPoint, Rotation);
             MtextBlock?.Dispose();
             MtextBlock = new((float)MaxWidth, Position, DxfMtext.AttachmentPoint, Rotation);
 
@@ -222,7 +223,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                     textSegment.Tesselate(resCache);
                     MtextBlock.AddSegment(textSegment);
                 }
-
                 return;
             }
 

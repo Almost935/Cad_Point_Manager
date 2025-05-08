@@ -1,4 +1,5 @@
 ﻿<UserControl x:Class="Cad_Point_Manager.Views.UserControls.LayerViewer"
+             x:Name="root"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -11,6 +12,11 @@
              mc:Ignorable="d"
              d:DesignHeight="400"
              d:DesignWidth="300">
+    
+    <UserControl.Resources>
+        <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" />
+    </UserControl.Resources>
+    
     <Grid x:Name="overallGrid"
           MouseLeave="overallGrid_MouseLeave"
           MouseEnter="overallGrid_MouseEnter">
@@ -18,14 +24,16 @@
             <ColumnDefinition Width="*" />
             <ColumnDefinition Width="Auto" />
         </Grid.ColumnDefinitions>
-        <Border x:Name="mainPanel"
+        <Grid x:Name="mainPanel"
                 HorizontalAlignment="Stretch"
                 Grid.Column="0"
                 RenderTransformOrigin="1, 1">
             <ListView x:Name="layersListView"
                       ItemsSource="{Binding JobFileManager.CadManager3D.LayersView}"
                       Style="{StaticResource LayersListViewStyle}"
-                      FontSize="14" 
+                      Opacity="{Binding ElementName=root, Path=LayerListOpacity}"
+                      IsHitTestVisible="{Binding ElementName=root, Path=LayerListVisible}"
+                      FontSize="14"
                       SelectionMode="Extended"
                       Loaded="layersListView_Loaded"
                       SizeChanged="layersListView_SizeChanged"
@@ -58,35 +66,113 @@
                                               VerticalAlignment="Center"
                                               VerticalContentAlignment="Center"
                                               Checked="CheckBox_Checked"
-                                              Unchecked="CheckBox_Unchecked"/>
+                                              Unchecked="CheckBox_Unchecked" />
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
                     </GridView>
                 </ListView.View>
             </ListView>
-        </Border>
+            <ListView x:Name="pointGroupsListView"
+                      ItemsSource="{Binding JobFileManager.CadManager3D.LayersView}"
+                      Style="{StaticResource LayersListViewStyle}"
+                      Opacity="{Binding ElementName=root, Path=PointGroupListOpacity}"
+                      IsHitTestVisible="{Binding ElementName=root, Path=PointGroupListVisible}"
+                      FontSize="14"
+                      SelectionMode="Extended"
+                      Loaded="layersListView_Loaded"
+                      SizeChanged="layersListView_SizeChanged"
+                      SelectionChanged="layersListView_SelectionChanged"
+                      Background="#BF000000">
+                <ListView.View>
+                    <GridView>
+                        <GridViewColumn Header="Name">
+                            <GridViewColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Path=Value.Name}"
+                                               Foreground="White"
+                                               FontSize="12"
+                                               HorizontalAlignment="Left"
+                                               VerticalAlignment="Center"
+                                               Margin="2 0 0 0">
+                                        <TextBlock.ToolTip>
+                                            <TextBlock Text="{Binding Path=Value.Name}" />
+                                        </TextBlock.ToolTip>
+                        </TextBlock>
+                                </DataTemplate>
+                            </GridViewColumn.CellTemplate>
+                        </GridViewColumn>
+                        <GridViewColumn Header="Visibilty">
+                            <GridViewColumn.CellTemplate>
+                                <DataTemplate>
+                                    <CheckBox IsChecked="{Binding Path=Value.IsVisible, Mode=TwoWay}"
+                                              HorizontalAlignment="Center"
+                                              HorizontalContentAlignment="Center"
+                                              VerticalAlignment="Center"
+                                              VerticalContentAlignment="Center"
+                                              Checked="CheckBox_Checked"
+                                              Unchecked="CheckBox_Unchecked" />
+                                </DataTemplate>
+                            </GridViewColumn.CellTemplate>
+                        </GridViewColumn>
+                    </GridView>
+                </ListView.View>
+            </ListView>
+        </Grid>
 
         <Border x:Name="tab"
-                Background="#FF797979"
                 Grid.Column="1">
             <Grid>
-                <TextBlock Text="Layers"
-                           Foreground="White"
-                           HorizontalAlignment="Center"
-                           VerticalAlignment="Center"
-                           TextAlignment="Center"
-                           RenderTransformOrigin="0.5, 0.5"
-                           ClipToBounds="False"
-                           Margin="0 2 4 2">
-                    <TextBlock.LayoutTransform>
-                        <TransformGroup>
-                            <RotateTransform Angle="90" />
-                            <ScaleTransform ScaleX="-1"
-                                            ScaleY="-1" />
-                        </TransformGroup>
-                    </TextBlock.LayoutTransform>
-                </TextBlock>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+                <Border  x:Name="layersBorder"
+                         Background="#FF797979"
+                         Grid.Row="0"
+                         Margin="0 1 0 1"
+                         MouseEnter="layersBorder_MouseEnter"
+                         MouseLeave="layersBorder_MouseLeave">
+                    <TextBlock Text="Layers"
+                               Foreground="White"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"
+                               TextAlignment="Center"
+                               RenderTransformOrigin="0.5, 0.5"
+                               ClipToBounds="False"
+                               Margin="0 2 4 2">
+                        <TextBlock.LayoutTransform>
+                            <TransformGroup>
+                                <RotateTransform Angle="90" />
+                                <ScaleTransform ScaleX="-1"
+                                                ScaleY="-1" />
+                            </TransformGroup>
+                        </TextBlock.LayoutTransform>
+                    </TextBlock>
+                </Border>
+                <Border x:Name="pointGroupsBorder"
+                        Background="#FF797979"
+                        Grid.Row="1"
+                        Margin="0 1 0 1"
+                        MouseEnter="pointGroupsBorder_MouseEnter"
+                        MouseLeave="pointGroupsBorder_MouseLeave">
+                    <TextBlock Text="Point Groups"
+                               Foreground="White"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"
+                               TextAlignment="Center"
+                               RenderTransformOrigin="0.5, 0.5"
+                               ClipToBounds="False"
+                               Margin="0 2 4 2">
+                        <TextBlock.LayoutTransform>
+                            <TransformGroup>
+                                <RotateTransform Angle="90" />
+                                <ScaleTransform ScaleX="-1"
+                                                ScaleY="-1" />
+                            </TransformGroup>
+                        </TextBlock.LayoutTransform>
+                    </TextBlock>
+                </Border>
             </Grid>
         </Border>
 

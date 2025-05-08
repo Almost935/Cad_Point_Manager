@@ -1,6 +1,7 @@
 ﻿using Cad_Point_Manager.Models;
 using Cad_Point_Manager.Models.DrawingObjects3D;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
@@ -19,6 +20,49 @@ namespace Cad_Point_Manager.Views.UserControls
         private const double _panelHideTime = 200;
 
         private List<ObjectLayer3D> _selectedLayers = [];
+        private bool _layerListVisible = true;
+        private bool _pointGroupListVisible = true;
+        private double _layerListOpacity = 0;
+        private double _pointGroupListOpacity = 0;
+        #endregion
+
+        #region Properties
+        public bool LayerListVisible
+        {
+            get { return _layerListVisible; }
+            set
+            {
+                _layerListVisible = value;
+                OnPropertyChanged(nameof(LayerListVisible));
+            }
+        }
+        public bool PointGroupListVisible
+        {
+            get { return _pointGroupListVisible; }
+            set
+            {
+                _pointGroupListVisible = value;
+                OnPropertyChanged(nameof(PointGroupListVisible));
+            }
+        }
+        public double LayerListOpacity
+        {
+            get { return _layerListOpacity; }
+            set
+            {
+                _layerListOpacity = value;
+                OnPropertyChanged(nameof(LayerListOpacity));
+            }
+        }
+        public double PointGroupListOpacity
+        {
+            get { return _pointGroupListOpacity; }
+            set
+            {
+                _pointGroupListOpacity = value;
+                OnPropertyChanged(nameof(PointGroupListOpacity));
+            }
+        }
         #endregion
 
         #region Dependency Properties
@@ -99,6 +143,9 @@ namespace Cad_Point_Manager.Views.UserControls
 
         private void HideControl()
         {
+            LayerListVisible = false;
+            PointGroupListVisible = false;
+
             // Animate the control sliding into view
             DoubleAnimation slideIn = new DoubleAnimation
             {
@@ -179,6 +226,34 @@ namespace Cad_Point_Manager.Views.UserControls
                 CadManager.LineVerticesDirty = true;
                 CadManager.TextVerticesDirty = true;
             }
+        }
+
+        private void layersBorder_MouseEnter(object sender, MouseEventArgs e)
+        {
+            PointGroupListVisible = false;
+            LayerListVisible = true;
+
+            layersListView.Focus();
+            PointGroupListOpacity = 0;
+            LayerListOpacity = 1;
+        }
+
+        private void layersBorder_MouseLeave(object sender, MouseEventArgs e)
+        {
+        }
+
+        private void pointGroupsBorder_MouseEnter(object sender, MouseEventArgs e)
+        {
+            LayerListVisible = false;
+            PointGroupListVisible = true;
+
+            pointGroupsListView.Focus();
+            LayerListOpacity = 0;
+            PointGroupListOpacity = 1;
+        }
+
+        private void pointGroupsBorder_MouseLeave(object sender, MouseEventArgs e)
+        {
         }
     }
 }

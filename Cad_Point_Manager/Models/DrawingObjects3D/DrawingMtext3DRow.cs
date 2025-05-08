@@ -48,7 +48,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         public void AddSegment(DrawingMtextSegment3D segment)
         {
             Segments.Add(segment);
-            float rowHeight = segment.FontHeight;
+            float rowHeight = segment.TextHeight;
 
             if (rowHeight > Height) { Height = rowHeight; }
         }
@@ -60,7 +60,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                 var segment = Segments[i];
                 //float rowHeight = (float)(segment.FontHeight + segment.FontHeight * _mtextLineSpacingFactor * 
                 //    segment.DrawingMtext3D.DxfMtext.LineSpacingFactor);
-                float rowHeight = segment.FontHeight;
+                float rowHeight = segment.TextHeight;
 
                 if (rowHeight > Height) { Height = rowHeight; }
             }

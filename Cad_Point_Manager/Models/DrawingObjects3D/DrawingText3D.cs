@@ -30,8 +30,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         public int StartVertexIndex { get; set; }
         public int EndVertexIndex { get; set; }
         public float Rotation { get; set; } = 0;
-        public float FontHeight { get; set; }
-        public int FontSize { get; set; }
+        public float TextHeight { get; set; }
         public string FontFamilyName { get; set; }
         public float WidthFactor { get; set; } = 1.0f;
         public bool IsBold { get; set; }
@@ -77,8 +76,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                 AttachmentPoint = GetAttachmentPoint(text.Alignment);
                 Position = GetTextOrigin(AttachmentPoint, new RectangleF((float)Bounds.Left, (float)Bounds.Top, (float)Bounds.Width, (float)Bounds.Height),
                     new Vector3((float)text.Position.X, (float)text.Position.Y, 0));
-                FontHeight = (float)text.Height;
-                FontSize = TextRenderingHelpers.TextHeightToFontSize(text.Height);
+                TextHeight = (float)text.Height;
                 FontFamilyName = text.Style.FontFamilyName;
                 Transform = GetTransform(text.Position);
             }
@@ -246,7 +244,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
 
         public void GetTextFormat(SharpDX.DirectWrite.Factory1 factory)
         {
-            _textFormat = new(factory, FontFamilyName, FontHeight);
+            _textFormat = new(factory, FontFamilyName, TextHeight);
         }
 
         public void GetTextLayout(SharpDX.DirectWrite.Factory1 factory)
@@ -257,26 +255,22 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         public void Tesselate(D3dResCache resCache)
         {
             UpdateFontFace(resCache);
-            float fontSizeScaleFactor = _fontRenderingMinimumSize / FontHeight;
 
-            (TransformedGeometry geometry, RawRectangleF bounds) = TextRenderingHelpers.CreateTextGeometry(resCache, Text, TextLayout, fontSizeScaleFactor, FontHeight, _fontFace, _flatteningTolerance);
-            var vertices = TextRenderingHelpers.TessellateGeometry(geometry);
+            //(TransformedGeometry geometry, RawRectangleF bounds) = TextRenderingHelpers.CreateTextGeometry(resCache, Text, TextLayout, fontSizeScaleFactor, TextHeight, _fontFace, _flatteningTolerance);
+            (List<Vector2> vertices, RawRectangleF bounds) = TextRenderingHelpers.TesselateTextLayout(resCache, TextLayout, Text, TextHeight, _fontFace);
+
             Bounds = new System.Windows.Rect(
                 bounds.Left,
                 bounds.Top,
                 bounds.Right - bounds.Left,
                 bounds.Bottom - bounds.Top);
-            TextVertices = GetVertices(vertices, 1.00f / fontSizeScaleFactor);
-
-            geometry.Dispose();
+            TextVertices = GetVertices(vertices);
         }
 
-        public TextVertex[] GetVertices(List<Vector2> vertices, float scaleFactor = 1)
+        public TextVertex[] GetVertices(List<Vector2> vertices)
         {
             List<TextVertex> textVertices = [];
-            Matrix scaleTransform = Matrix.Scaling(scaleFactor, scaleFactor, 1);
             Matrix translationTransform = Matrix.Translation((float)Transform.OffsetX, (float)Transform.OffsetY, 0);
-            var combinedTransform = Matrix.Multiply(translationTransform, scaleTransform);
 
             for (int i = 0; i < vertices.Count; i += 3)
             {
@@ -284,11 +278,11 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                 var v2 = vertices[i + 1];
                 var v3 = vertices[i + 2];
 
-                var scaledVector1 = Vector2.TransformCoordinate(v1, combinedTransform);
+                var scaledVector1 = Vector2.TransformCoordinate(v1, translationTransform);
                 TextVertex textVertex1 = new(new Vector3(scaledVector1.X, scaledVector1.Y, 0), Color, isVisible: 1, isMouseOver: 0, isSelected: 0);
-                var scaledVector2 = Vector2.TransformCoordinate(v2, combinedTransform);
+                var scaledVector2 = Vector2.TransformCoordinate(v2, translationTransform);
                 TextVertex textVertex2 = new(new Vector3(scaledVector2.X, scaledVector2.Y, 0), Color, isVisible: 1, isMouseOver: 0, isSelected: 0);
-                var scaledVector3 = Vector2.TransformCoordinate(v3, combinedTransform);
+                var scaledVector3 = Vector2.TransformCoordinate(v3, translationTransform);
                 TextVertex textVertex3 = new(new Vector3(scaledVector3.X, scaledVector3.Y, 0), Color, isVisible: 1, isMouseOver: 0, isSelected: 0);
 
                 textVertices.AddRange([textVertex1, textVertex2, textVertex3]);

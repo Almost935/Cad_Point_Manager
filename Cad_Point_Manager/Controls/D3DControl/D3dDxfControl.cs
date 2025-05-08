@@ -83,6 +83,15 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private GeometryShader _textGlowGeometryShader;
         private bool _textGlowVerticesDirty = false;
 
+        // Point text shader related fields
+        private Buffer _pointTextVertexBuffer;
+        private Buffer _pointTextSettingsBuffer;
+        private VertexShader _pointTextVertexShader;
+        private PixelShader _pointTextPixelShader;
+        private InputLayout _pointTextInputLayout;
+        private bool _pointTextShaderLoaded;
+        private bool _pointTextVerticesDirty;
+
         // Panning and Zooming Fields
         private float _panThreshold = 1.0f;
         private bool _isPanning;
@@ -320,6 +329,24 @@ namespace Cad_Point_Manager.Controls.D3DControl
             context.GeometryShader.Set(null);
         }
 
+        public void DrawPointTextWithShader() 
+        {
+            var context = _d3dResCache.DeviceContext;
+
+            if (_textVertexBuffer is null) { return; }
+
+            context.VertexShader.Set(_pointTextVertexShader);
+            context.PixelShader.Set(_pointTextPixelShader);
+            context.InputAssembler.InputLayout = _textInputLayout;
+            context.VertexShader.SetConstantBuffer(0, _transformationBuffer);
+            context.PixelShader.SetConstantBuffer(0, _textSettingsBuffer);
+
+            context.InputAssembler.PrimitiveTopology = PrimitiveTopology.TriangleList;
+            context.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding(_textVertexBuffer, Marshal.SizeOf<TextVertex>(), 0));
+
+            context.Draw(_textVertexCount, 0);
+        }
+
         private void UpdateLineVertices()
         {
             if (_lineVertexBuffer is null || CadManager3D is null) { return; }
@@ -457,6 +484,18 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 StructureByteStride = Utilities.SizeOf<TextVertex>()
             };
             _textGlowVertexBuffer = new Buffer(_d3dResCache.Device, textGlowBufferDesc);
+
+            _pointTextVertexBuffer?.Dispose();
+            var pointTextBufferDesc = new BufferDescription
+            {
+                SizeInBytes = Utilities.SizeOf<TextVertex>() * GlobalHelperProperties._maxTextVertices,
+                BindFlags = BindFlags.VertexBuffer,
+                Usage = ResourceUsage.Dynamic,
+                CpuAccessFlags = CpuAccessFlags.Write,
+                OptionFlags = ResourceOptionFlags.None,
+                StructureByteStride = Utilities.SizeOf<TextVertex>()
+            };
+            _pointTextVertexBuffer = new Buffer(_d3dResCache.Device, pointTextBufferDesc);
         }
 
         private void InitializeLineShader()
@@ -1146,24 +1185,46 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 {
                     if (_attachedWindow != null) { _attachedWindow.KeyUp -= Window_KeyUp; }
 
-                    // Dispose managed resources
-                    _transformationBuffer?.Dispose();
-                    _transformationBuffer = null;
+                    // Dispose text-related resources
+                    _textVertexBuffer?.Dispose();
+                    _textVertexBuffer = null;
+
+                    _textSettingsBuffer?.Dispose();
+                    _textSettingsBuffer = null;
+
+                    _textGlowVertexBuffer?.Dispose();
+                    _textGlowVertexBuffer = null;
+
+                    _textGlowSettingsBuffer?.Dispose();
+                    _textGlowSettingsBuffer = null;
+
+                    _textVertexShader?.Dispose();
+                    _textVertexShader = null;
+
+                    _textPixelShader?.Dispose();
+                    _textPixelShader = null;
+
+                    _textGlowVertexShader?.Dispose();
+                    _textGlowVertexShader = null;
+
+                    _textGlowPixelShader?.Dispose();
+                    _textGlowPixelShader = null;
+
+                    _textInputLayout?.Dispose();
+                    _textInputLayout = null;
+
+                    // Dispose line-related resources
+                    _lineVertexBuffer?.Dispose();
+                    _lineVertexBuffer = null;
 
                     _lineSettingsBuffer?.Dispose();
                     _lineSettingsBuffer = null;
 
-                    _lineGlowSettingsBuffer?.Dispose();
-                    _lineGlowSettingsBuffer = null;
-
-                    _lineVertexBuffer?.Dispose();
-                    _lineVertexBuffer = null;
-
                     _lineGlowVertexBuffer?.Dispose();
                     _lineGlowVertexBuffer = null;
 
-                    _textVertexBuffer?.Dispose();
-                    _textVertexBuffer = null;
+                    _lineGlowSettingsBuffer?.Dispose();
+                    _lineGlowSettingsBuffer = null;
 
                     _lineVertexShader?.Dispose();
                     _lineVertexShader = null;
@@ -1180,23 +1241,31 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     _lineGlowGeometryShader?.Dispose();
                     _lineGlowGeometryShader = null;
 
-                    _textVertexShader?.Dispose();
-                    _textVertexShader = null;
-
-                    _textPixelShader?.Dispose();
-                    _textPixelShader = null;
-
                     _lineInputLayout?.Dispose();
                     _lineInputLayout = null;
 
-                    _textInputLayout?.Dispose();
-                    _textInputLayout = null;
+                    // Dispose point text-related resources
+                    _pointTextVertexBuffer?.Dispose();
+                    _pointTextVertexBuffer = null;
+
+                    _pointTextSettingsBuffer?.Dispose();
+                    _pointTextSettingsBuffer = null;
+
+                    _pointTextVertexShader?.Dispose();
+                    _pointTextVertexShader = null;
+
+                    _pointTextPixelShader?.Dispose();
+                    _pointTextPixelShader = null;
+
+                    _pointTextInputLayout?.Dispose();
+                    _pointTextInputLayout = null;
+
+                    // Dispose transformation buffer
+                    _transformationBuffer?.Dispose();
+                    _transformationBuffer = null;
 
                     _hitTestCancellationTokenSource?.Dispose();
                     _hitTestCancellationTokenSource = null;
-
-                    _d3dResCache?.Dispose();
-                    _d3dResCache = null;
                 }
 
                 disposedValue = true;

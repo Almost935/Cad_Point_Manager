@@ -360,13 +360,10 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                 {
                     foreach (var row in _drawingMtext3DRows)
                     {
-                        row.Dispose(); // Dispose managed resources (DrawingMtext3DRow instances)
+                        row.Dispose();
                     }
                     ClearRows();
                 }
-
-                // Free unmanaged resources (unmanaged objects) and override a finalizer below.
-                // Set large fields to null.
 
                 disposedValue = true;
             }

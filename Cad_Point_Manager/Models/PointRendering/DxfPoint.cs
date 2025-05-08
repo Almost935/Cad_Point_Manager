@@ -16,7 +16,7 @@ namespace Cad_Point_Manager.Models.PointRendering
         #region Properties
         public int PointNumber { get; set; }
         public Vector3 Position { get; set; } = Vector3.Zero;
-        public float TextHeight { get; set; } = 1.0f;
+        public float TextHeight { get; set; } = 5.0f;
         public PointGroup PointGroup { get; set; }
         public TextVertex[] TextVertices { get; set; }
         public LineVertex[] LineVertices { get; set; }

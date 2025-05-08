@@ -30,8 +30,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         public Vector4 Color { get; set; }
         public Vector3 Position { get; set; }
         public float Rotation { get; set; } = 0;
-        public float FontHeight { get; set; }
-        public float FontSize { get; set; }
+        public float TextHeight { get; set; }
         public string FontFamilyName { get; set; }
         public System.Windows.Media.Matrix Transform { get; set; }
         public TextLayout TextLayout { get; set; }
@@ -45,7 +44,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         public bool IsNewLine { get; set; } = false;
         public Enums.TextAlignment TextAlignment { get; set; }
         public float SpaceWidth { get; set; }
-        public float RowXOffset { get; set; } = 0; // This is used to offset the segment within a row for alignment purposes.
+        public float RowXOffset { get; set; } = 0;
         public float GlowOffset { get; set; }
         #endregion
 
@@ -59,8 +58,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             Color = color;
             Position = position;
             Rotation = rotation;
-            FontHeight = fontHeight;
-            FontSize = TextRenderingHelpers.TextHeightToFontSize(fontHeight);
+            TextHeight = fontHeight;
             FontFamilyName = fontFamilyName;
             IsItalic = isItalic;
             IsBold = isBold;
@@ -70,7 +68,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             _fontRenderingMinimumSize = fontRenderingMinimumSize;
             MaxWidth = maxWidth;
             TextAlignment = textAlignment;
-            GlowOffset = FontHeight * GlobalHelperProperties._textHeightToGlowOffsetFactor;
+            GlowOffset = TextHeight * GlobalHelperProperties._textHeightToGlowOffsetFactor;
 
             UpdateTransform();
         }
@@ -85,27 +83,19 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             FontStyle fontStyle;
             if (IsItalic) { fontStyle = FontStyle.Italic; } else { fontStyle = FontStyle.Normal; }
 
-            _textFormat = new(factory, FontFamilyName, fontWeight, fontStyle, FontHeight);
+            _textFormat = new(factory, FontFamilyName, fontWeight, fontStyle, TextHeight);
             TextLayout = new(factory, Text, _textFormat, (float)Bounds.Width, (float)Bounds.Height, 96, true);
 
-            SpaceWidth = FontHeight * GlobalHelperProperties._textHeightToSpaceWidthFactor;
+            SpaceWidth = TextHeight * GlobalHelperProperties._textHeightToSpaceWidthFactor;
         }
 
         public void Tesselate(D3dResCache resCache)
         {
             UpdateFontFace(resCache);
-            float fontSizeScaleFactor = _fontRenderingMinimumSize / FontHeight;
 
-            (TransformedGeometry geometry, RawRectangleF bounds) = TextRenderingHelpers.CreateTextGeometry(resCache, Text, TextLayout,
-                fontSizeScaleFactor, FontHeight, _fontFace, _flatteningTolerance);
-
-            var vertices = TextRenderingHelpers.TessellateGeometry(geometry, _flatteningTolerance);
-
+            (List<Vector2> vertices, RawRectangleF bounds) = TextRenderingHelpers.TesselateTextLayout(resCache, TextLayout, Text, TextHeight, _fontFace);
             UpdateBounds(bounds);
-
-            TextVertices = GetVertices(vertices, 1.00f / fontSizeScaleFactor);
-
-            geometry.Dispose();
+            TextVertices = GetVertices(vertices);
         }
 
         private void UpdateBounds(RawRectangleF textGeometryBounds)
@@ -146,24 +136,19 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             return matrix;
         }
 
-        public TextVertex[] GetVertices(List<Vector2> vertices, float scaleFactor = 1)
+        public TextVertex[] GetVertices(List<Vector2> vertices)
         {
             List<TextVertex> textVertices = [];
-            Matrix scaleTransform = Matrix.Scaling(scaleFactor, scaleFactor, 1);
 
             for (int i = 0; i < vertices.Count; i += 3)
             {
                 var v1 = vertices[i];
                 var v2 = vertices[i + 1];
                 var v3 = vertices[i + 2];
-                Vector2 centroid = (v1 + v2 + v3) / 3;
 
-                var scaledVector1 = Vector2.TransformCoordinate(v1, scaleTransform);
-                TextVertex textVertex1 = new(new Vector3(scaledVector1.X, scaledVector1.Y, 0), Color, isVisible: 1, isMouseOver: 0, isSelected: 0);
-                var scaledVector2 = Vector2.TransformCoordinate(v2, scaleTransform);
-                TextVertex textVertex2 = new(new Vector3(scaledVector2.X, scaledVector2.Y, 0), Color, isVisible: 1, isMouseOver: 0, isSelected: 0);
-                var scaledVector3 = Vector2.TransformCoordinate(v3, scaleTransform);
-                TextVertex textVertex3 = new(new Vector3(scaledVector3.X, scaledVector3.Y, 0), Color, isVisible: 1, isMouseOver: 0, isSelected: 0);
+                TextVertex textVertex1 = new(new Vector3(v1.X, v1.Y, 0), Color, isVisible: 1, isMouseOver: 0, isSelected: 0);
+                TextVertex textVertex2 = new(new Vector3(v2.X, v2.Y, 0), Color, isVisible: 1, isMouseOver: 0, isSelected: 0);
+                TextVertex textVertex3 = new(new Vector3(v3.X, v3.Y, 0), Color, isVisible: 1, isMouseOver: 0, isSelected: 0);
 
                 textVertices.AddRange([textVertex1, textVertex2, textVertex3]);
             }
@@ -206,8 +191,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                     _textFormat = null;
                     TextLayout?.Dispose();
                     TextLayout = null;
-                    _fontFace?.Dispose();
-                    _fontFace = null;
                 }
                 disposedValue = true;
             }

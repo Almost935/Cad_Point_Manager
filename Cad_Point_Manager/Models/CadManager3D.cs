@@ -172,10 +172,10 @@ namespace Cad_Point_Manager.Models
         public void LoadDxf(DxfDocument dxfDocument)
         {
             ClearDxf();
-            
+
             DxfDocument = dxfDocument;
             Extents = DxfHelpers.GetBoundsFromHeader(DxfDocument);
-            
+
             // Testing
             GetTestDxfPoints();
             DxfPointVerticesDirty = true;
@@ -259,7 +259,7 @@ namespace Cad_Point_Manager.Models
 
         public void UpdateVerticesIsMouseOver(DrawingObject3D drawingObject, bool isMouseOver)
         {
-            if (drawingObject is DrawingGeometry3D drawingGeometry) 
+            if (drawingObject is DrawingGeometry3D drawingGeometry)
             {
                 for (int i = drawingGeometry.StartVertexIndex; i <= drawingGeometry.EndVertexIndex; i++)
                 {
@@ -364,7 +364,7 @@ namespace Cad_Point_Manager.Models
         {
             if (TextVerticesDirty)
             {
-                if (d3DResCache.Device is null) 
+                if (d3DResCache.Device is null)
                 {
                     return CollectionsMarshal.AsSpan(_cachedTextVertices);
                 }
@@ -428,6 +428,7 @@ namespace Cad_Point_Manager.Models
             {
                 foreach (var pointGroup in PointGroups.Values)
                 {
+                    if (pointGroup is null) return;
                     foreach (var point in pointGroup.Points)
                     {
                         point.TextStartIndex = _cachedTextVertices.Count;
@@ -449,7 +450,7 @@ namespace Cad_Point_Manager.Models
             //    {
             //        foreach (var point in pointGroup.Points)
             //        {
-                        
+
             //        }
             //    }
             //    DxfPointVerticesDirty = false;
@@ -462,7 +463,7 @@ namespace Cad_Point_Manager.Models
             PointGroups.Clear();
 
             float rows = 5;
-            float cols = 10;
+            float cols = 15;
             float yIncrement = Extents.Width / rows;
             float xIncrement = Extents.Height / cols;
             int pointNum = 1;
@@ -478,6 +479,7 @@ namespace Cad_Point_Manager.Models
                     float x = Extents.Left + (xIncrement * j);
                     DxfPoint point = new(pointGroup, pointNum, new SharpDX.Vector3(x, y, 0));
                     pointGroup.Points.Add(point);
+
                     pointNum++;
                 }
 

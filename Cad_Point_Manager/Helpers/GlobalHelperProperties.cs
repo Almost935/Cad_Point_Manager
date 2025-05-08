@@ -17,7 +17,7 @@ namespace Cad_Point_Manager.Helpers
         public const int _maxLineVertices = 10000000;
         public const int _maxTextVertices = 10000000;
         public const float _textHeightToFontSizeFactor = 1.5f;
-        public const float _textHeightToSpaceWidthFactor = 0.6f;
+        public const float _textHeightToSpaceWidthFactor = 0.5f;
 
         public static readonly List<Vector2> _glowOffsetDirections =
         [
