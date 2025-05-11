@@ -15,11 +15,25 @@
     
     <UserControl.Resources>
         <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" />
+        <SolidColorBrush x:Key="propertiesFontBrush"
+                         Color="Black" />
+        <Style x:Key="tabBorderStyle"
+               TargetType="Border">
+            <Setter Property="Background"
+                    Value="{StaticResource TabColor}" />
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver"
+                         Value="True">
+                    <Setter Property="Background"
+                            Value="{StaticResource TabMouseOverColor}" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
     </UserControl.Resources>
     
     <Grid x:Name="overallGrid"
-          MouseLeave="overallGrid_MouseLeave"
-          MouseEnter="overallGrid_MouseEnter">
+          MouseLeave="OverallGrid_MouseLeave"
+          MouseEnter="OverallGrid_MouseEnter">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*" />
             <ColumnDefinition Width="Auto" />
@@ -35,17 +49,16 @@
                       IsHitTestVisible="{Binding ElementName=root, Path=LayerListVisible}"
                       FontSize="14"
                       SelectionMode="Extended"
-                      Loaded="layersListView_Loaded"
-                      SizeChanged="layersListView_SizeChanged"
-                      SelectionChanged="layersListView_SelectionChanged"
-                      Background="#BF000000">
+                      Loaded="LayersListView_Loaded"
+                      SelectionChanged="LayersListView_SelectionChanged"
+                      Background="{StaticResource PopoutMenuBackgroundColor}">
                 <ListView.View>
                     <GridView>
                         <GridViewColumn Header="Name">
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
                                     <TextBlock Text="{Binding Path=Value.Name}"
-                                               Foreground="White"
+                                               Foreground="{DynamicResource propertiesFontBrush}"
                                                FontSize="12"
                                                HorizontalAlignment="Left"
                                                VerticalAlignment="Center"
@@ -65,8 +78,8 @@
                                               HorizontalContentAlignment="Center"
                                               VerticalAlignment="Center"
                                               VerticalContentAlignment="Center"
-                                              Checked="CheckBox_Checked"
-                                              Unchecked="CheckBox_Unchecked" />
+                                              Checked="LayerCheckBox_Checked"
+                                              Unchecked="LayerCheckBox_Unchecked" />
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
@@ -74,23 +87,22 @@
                 </ListView.View>
             </ListView>
             <ListView x:Name="pointGroupsListView"
-                      ItemsSource="{Binding JobFileManager.CadManager3D.LayersView}"
+                      ItemsSource="{Binding JobFileManager.CadManager3D.PointGroupsView}"
                       Style="{StaticResource LayersListViewStyle}"
                       Opacity="{Binding ElementName=root, Path=PointGroupListOpacity}"
                       IsHitTestVisible="{Binding ElementName=root, Path=PointGroupListVisible}"
                       FontSize="14"
                       SelectionMode="Extended"
-                      Loaded="layersListView_Loaded"
-                      SizeChanged="layersListView_SizeChanged"
-                      SelectionChanged="layersListView_SelectionChanged"
-                      Background="#BF000000">
+                      Loaded="LayersListView_Loaded"
+                      SelectionChanged="PointGroupsListView_SelectionChanged"
+                      Background="{StaticResource PopoutMenuBackgroundColor}">
                 <ListView.View>
                     <GridView>
                         <GridViewColumn Header="Name">
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
                                     <TextBlock Text="{Binding Path=Value.Name}"
-                                               Foreground="White"
+                                               Foreground="{DynamicResource propertiesFontBrush}"
                                                FontSize="12"
                                                HorizontalAlignment="Left"
                                                VerticalAlignment="Center"
@@ -110,8 +122,8 @@
                                               HorizontalContentAlignment="Center"
                                               VerticalAlignment="Center"
                                               VerticalContentAlignment="Center"
-                                              Checked="CheckBox_Checked"
-                                              Unchecked="CheckBox_Unchecked" />
+                                              Unchecked="PointGroupsCheckBox_Unchecked"
+                                              Checked="PointGroupsCheckBox_Checked" />
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
@@ -128,19 +140,18 @@
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
                 <Border  x:Name="layersBorder"
-                         Background="#FF797979"
+                         Style="{StaticResource tabBorderStyle}"
                          Grid.Row="0"
                          Margin="0 1 0 1"
-                         MouseEnter="layersBorder_MouseEnter"
-                         MouseLeave="layersBorder_MouseLeave">
+                         MouseEnter="LayersBorder_MouseEnter">
                     <TextBlock Text="Layers"
-                               Foreground="White"
+                               Foreground="{StaticResource TabFontColor}"
                                HorizontalAlignment="Center"
                                VerticalAlignment="Center"
                                TextAlignment="Center"
                                RenderTransformOrigin="0.5, 0.5"
                                ClipToBounds="False"
-                               Margin="0 2 4 2">
+                               Margin="0 2 6 2">
                         <TextBlock.LayoutTransform>
                             <TransformGroup>
                                 <RotateTransform Angle="90" />
@@ -151,19 +162,18 @@
                     </TextBlock>
                 </Border>
                 <Border x:Name="pointGroupsBorder"
-                        Background="#FF797979"
+                        Style="{StaticResource tabBorderStyle}"
                         Grid.Row="1"
                         Margin="0 1 0 1"
-                        MouseEnter="pointGroupsBorder_MouseEnter"
-                        MouseLeave="pointGroupsBorder_MouseLeave">
+                        MouseEnter="PointGroupsBorder_MouseEnter">
                     <TextBlock Text="Point Groups"
-                               Foreground="White"
+                               Foreground="{StaticResource TabFontColor}"
                                HorizontalAlignment="Center"
                                VerticalAlignment="Center"
                                TextAlignment="Center"
                                RenderTransformOrigin="0.5, 0.5"
                                ClipToBounds="False"
-                               Margin="0 2 4 2">
+                               Margin="0 2 6 2">
                         <TextBlock.LayoutTransform>
                             <TransformGroup>
                                 <RotateTransform Angle="90" />

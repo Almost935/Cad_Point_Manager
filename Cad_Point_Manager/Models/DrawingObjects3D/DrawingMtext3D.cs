@@ -1,20 +1,13 @@
 ﻿using Cad_Point_Manager.Common;
 using Cad_Point_Manager.Controls.D3DControl;
-using Cad_Point_Manager.DrawingObjects;
 using Cad_Point_Manager.Helpers;
 using netDxf;
 using netDxf.Entities;
-using SharpDX;
 using SharpDX.Direct2D1;
-using SkiaSharp;
-using System.Diagnostics;
-using System.Drawing;
-using System.Net;
 using System.Text.RegularExpressions;
 using System.Windows;
 
 using Brush = SharpDX.Direct2D1.Brush;
-using Factory1 = SharpDX.DirectWrite.Factory1;
 using FontStyle = netDxf.Tables.FontStyle;
 using Point = System.Windows.Point;
 using Vector2 = SharpDX.Vector2;

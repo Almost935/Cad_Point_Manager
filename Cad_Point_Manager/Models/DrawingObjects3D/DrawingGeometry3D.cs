@@ -1,6 +1,4 @@
 ﻿using Cad_Point_Manager.Controls.D3DControl;
-using SharpDX.Direct2D1;
-using System.Windows.Controls;
 
 namespace Cad_Point_Manager.Models.DrawingObjects3D
 {

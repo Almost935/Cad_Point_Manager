@@ -1,5 +1,4 @@
-﻿using Cad_Point_Manager.Controls.D3DControl;
-using Cad_Point_Manager.Helpers;
+﻿using Cad_Point_Manager.Helpers;
 using netDxf.Entities;
 using SharpDX.Direct2D1;
 using SharpDX.Mathematics.Interop;

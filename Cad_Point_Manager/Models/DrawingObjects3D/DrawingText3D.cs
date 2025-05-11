@@ -6,8 +6,6 @@ using SharpDX;
 using SharpDX.Direct2D1;
 using SharpDX.DirectWrite;
 using SharpDX.Mathematics.Interop;
-using System.Diagnostics;
-using System.Windows.Controls;
 using Point = System.Windows.Point;
 
 namespace Cad_Point_Manager.Models.DrawingObjects3D

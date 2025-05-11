@@ -1,5 +1,4 @@
-﻿using Cad_Point_Manager.Helpers;
-using SharpDX;
+﻿using SharpDX;
 using System.Runtime.InteropServices;
 using System.Windows;
 using Matrix = SharpDX.Matrix;

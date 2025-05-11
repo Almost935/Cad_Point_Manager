@@ -4,4 +4,15 @@
                      Color="#282D33" />
     <SolidColorBrush x:Key="WidgetBrush"
                      Color="#FF3A4149" />
+    
+    <!--Tab Brushes-->
+    <SolidColorBrush x:Key="TabColor"
+                     Color="#FFC5C5C5" />
+    <SolidColorBrush x:Key="TabMouseOverColor"
+                     Color="#FF929292" />
+    <SolidColorBrush x:Key="TabFontColor"
+                     Color="Black" />
+    <SolidColorBrush x:Key="PopoutMenuBackgroundColor"
+                     Color="#7F505050" />
+    
 </ResourceDictionary>

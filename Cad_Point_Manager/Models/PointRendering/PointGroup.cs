@@ -1,21 +1,105 @@
 ﻿using SharpDX;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.ComponentModel;
 
 namespace Cad_Point_Manager.Models.PointRendering
 {
-    public class PointGroup
+    public class PointGroup : INotifyPropertyChanged
     {
+        #region Fields
+        private string _name;
+        private Vector4 _color = new Vector4(0, 0, 0, 1);
+        private bool _isVisible = true;
+        private float _pointScale = 1.00f;
+        private float _textHeight;
+        private float _baseTextHeight = 1.00f;
+        private DxfPoint[] _points = [];
+        #endregion
+
         #region Properties
-        public string Name { get; set; } = string.Empty;
-        public Vector4 Color { get; set; } = new Vector4(0, 0, 0, 1);
-        public float PointScale { get; set; } = 1.0f;
-        public float TextHeight { get; set; }
-        public float BaseTextHeight { get; set; } = 1.0f;
-        public List<DxfPoint> Points { get; set; } = [];
+        public string Name
+        {
+            get => _name;
+            set
+            {
+                if (_name != value)
+                {
+                    _name = value;
+                    OnPropertyChanged(nameof(Name));
+                }
+            }
+        }
+        public Vector4 Color
+        {
+            get => _color;
+            set
+            {
+                if (_color != value)
+                {
+                    _color = value;
+                    OnPropertyChanged(nameof(Color));
+                }
+            }
+        }
+        public bool IsVisible
+        {
+            get => _isVisible;
+            set
+            {
+                if (_isVisible != value)
+                {
+                    _isVisible = value;
+                    OnPropertyChanged(nameof(IsVisible));
+                }
+            }
+        }
+        public float PointScale
+        {
+            get => _pointScale; 
+            set
+            {
+                if (_pointScale != value)
+                {
+                    _pointScale = value;
+                    OnPropertyChanged(nameof(PointScale));
+                }
+            }
+        }
+        public float TextHeight
+        {
+            get => _textHeight; 
+            set
+            {
+                if (_textHeight != value)
+                {
+                    _textHeight = value;
+                    OnPropertyChanged(nameof(TextHeight));
+                }
+            }
+        }
+        public float BaseTextHeight
+        {
+            get => _baseTextHeight; 
+            set
+            {
+                if (_baseTextHeight != value)
+                {
+                    _baseTextHeight = value;
+                    OnPropertyChanged(nameof(BaseTextHeight));
+                }
+            }
+        }
+        public DxfPoint[] Points
+        {
+            get => _points;
+            set
+            {
+                if (_points != value)
+                {
+                    _points = value;
+                    OnPropertyChanged(nameof(Points));
+                }
+            }
+        }
         #endregion
 
         #region Methods
@@ -30,7 +114,16 @@ namespace Cad_Point_Manager.Models.PointRendering
 
         public void UpdatePointsScale(float newTextHeight)
         {
-           
+
+        }
+        #endregion
+
+        #region INotifyPropertyChanged
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        protected void OnPropertyChanged(string propertyName)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
         #endregion
     }

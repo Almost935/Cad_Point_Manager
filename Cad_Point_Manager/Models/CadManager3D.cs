@@ -7,11 +7,9 @@ using netDxf.Tables;
 using SharpDX;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Data;
 
 using Point = System.Windows.Point;
@@ -32,8 +30,8 @@ namespace Cad_Point_Manager.Models
         private Bounds _extents;
         private ObservableCollection<KeyValuePair<string, ObjectLayer3D>> _layers = [];
         private ICollectionView _layersView;
-        private Dictionary<string, PointGroup> _pointGroups = [];
         private ICollectionView _pointGroupsView;
+        private Dictionary<string, PointGroup> _pointGroups = [];
         private Size2F _viewportSize = Size2F.Empty;
 
         private readonly List<LineVertex> _cachedLineVertices = [];
@@ -160,7 +158,7 @@ namespace Cad_Point_Manager.Models
         #region Events
         public event PropertyChangedEventHandler PropertyChanged;
 
-        public event Action ZoomToExtentsRequested; // This event is used to reset the camera in the 3D view
+        public event Action ZoomToExtentsRequested;
         #endregion
 
         #region Methods
@@ -191,6 +189,7 @@ namespace Cad_Point_Manager.Models
                 }
             }
             UpdateLayerView();
+            UpdatePointGroupsView();
 
             DxfLoaded = true;
             LineVerticesDirty = true;
@@ -204,6 +203,12 @@ namespace Cad_Point_Manager.Models
             LayersView = CollectionViewSource.GetDefaultView(Layers);
             LayersView.SortDescriptions.Clear();
             LayersView.SortDescriptions.Add(new SortDescription("Key", ListSortDirection.Ascending));
+        }
+        public void UpdatePointGroupsView()
+        {
+            PointGroupsView = CollectionViewSource.GetDefaultView(PointGroups);
+            PointGroupsView.SortDescriptions.Clear();
+            PointGroupsView.SortDescriptions.Add(new SortDescription("Key", ListSortDirection.Ascending));
         }
 
         public List<(double distance, DrawingObject3D obj)> GetNearestDrawingObjects(Point p, float tolerance)
@@ -362,7 +367,7 @@ namespace Cad_Point_Manager.Models
 
         public ReadOnlySpan<TextVertex> UpdateTextVerticesList(D3dResCache d3DResCache)
         {
-            if (TextVerticesDirty)
+            if (TextVerticesDirty || DxfPointVerticesDirty)
             {
                 if (d3DResCache.Device is null)
                 {
@@ -414,6 +419,7 @@ namespace Cad_Point_Manager.Models
                 UpdateDxfPointTextVertices(d3DResCache);
 
                 TextVerticesDirty = false;
+                DxfPointVerticesDirty = false;
                 DrawingObjectTreeDirty = true;
             }
 
@@ -423,21 +429,18 @@ namespace Cad_Point_Manager.Models
         public void UpdateDxfPointTextVertices(D3dResCache d3DResCache)
         {
             _pointTextVerticesDict ??= new(d3DResCache);
-
-            if (DxfPointVerticesDirty)
+            foreach (var pointGroup in PointGroups.Values)
             {
-                foreach (var pointGroup in PointGroups.Values)
+                if (pointGroup is null) return;
+                if (!pointGroup.IsVisible) { continue; }
+
+                foreach (var point in pointGroup.Points)
                 {
-                    if (pointGroup is null) return;
-                    foreach (var point in pointGroup.Points)
-                    {
-                        point.TextStartIndex = _cachedTextVertices.Count;
-                        point.UpdateTextVertices(_pointTextVerticesDict);
-                        _cachedTextVertices.AddRange(point.TextVertices);
-                        point.TextEndIndex = _cachedTextVertices.Count - 1;
-                    }
+                    point.TextStartIndex = _cachedTextVertices.Count;
+                    point.UpdateTextVertices(_pointTextVerticesDict);
+                    _cachedTextVertices.AddRange(point.TextVertices);
+                    point.TextEndIndex = _cachedTextVertices.Count - 1;
                 }
-                DxfPointVerticesDirty = false;
             }
         }
         public void UpdateDxfPointLineVertices(D3dResCache d3DResCache)
@@ -462,6 +465,7 @@ namespace Cad_Point_Manager.Models
         {
             PointGroups.Clear();
 
+            List<DxfPoint> points = [];
             float rows = 5;
             float cols = 15;
             float yIncrement = Extents.Width / rows;
@@ -470,6 +474,8 @@ namespace Cad_Point_Manager.Models
 
             for (int i = 0; i < rows; i++)
             {
+                points.Clear();
+
                 string pointGroupName = $"TestGroup {i + 1}";
                 PointGroup pointGroup = new(pointGroupName, new SharpDX.Vector4(0.0f, 0.0f, 0.0f, 1.0f), 1.0f, 1.0f);
                 float y = Extents.Bottom + (yIncrement * i);
@@ -478,11 +484,10 @@ namespace Cad_Point_Manager.Models
                 {
                     float x = Extents.Left + (xIncrement * j);
                     DxfPoint point = new(pointGroup, pointNum, new SharpDX.Vector3(x, y, 0));
-                    pointGroup.Points.Add(point);
-
+                    points.Add(point);
                     pointNum++;
                 }
-
+                pointGroup.Points = points.ToArray();
                 PointGroups.Add(pointGroupName, pointGroup);
             }
         }

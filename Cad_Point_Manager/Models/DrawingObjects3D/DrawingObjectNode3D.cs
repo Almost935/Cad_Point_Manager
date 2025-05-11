@@ -1,5 +1,4 @@
 ﻿using Cad_Point_Manager.Helpers;
-using System.Diagnostics;
 using System.Windows;
 
 namespace Cad_Point_Manager.Models.DrawingObjects3D

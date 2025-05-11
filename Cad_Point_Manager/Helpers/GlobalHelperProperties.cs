@@ -1,7 +1,4 @@
-﻿
-
-using Cad_Point_Manager.Controls.D3DControl;
-using SharpDX;
+﻿using SharpDX;
 
 namespace Cad_Point_Manager.Helpers
 {

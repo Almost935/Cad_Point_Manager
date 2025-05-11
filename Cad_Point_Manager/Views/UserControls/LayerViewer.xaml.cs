@@ -1,13 +1,14 @@
 ﻿using Cad_Point_Manager.Models;
 using Cad_Point_Manager.Models.DrawingObjects3D;
+using Cad_Point_Manager.Models.PointRendering;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
+using System.Windows.Threading;
 
 namespace Cad_Point_Manager.Views.UserControls
 {
@@ -19,11 +20,16 @@ namespace Cad_Point_Manager.Views.UserControls
         #region Fields
         private const double _panelHideTime = 200;
 
-        private List<ObjectLayer3D> _selectedLayers = [];
+        private readonly List<ObjectLayer3D> _selectedLayers = [];
+        private readonly List<PointGroup> _selectedPointGroups = [];
         private bool _layerListVisible = true;
         private bool _pointGroupListVisible = true;
         private double _layerListOpacity = 0;
         private double _pointGroupListOpacity = 0;
+
+        private readonly DispatcherTimer _hideTimer = new DispatcherTimer();
+        private bool _isMouseOverPanel = false;
+        private ScaleTransform _mainPanelTransform = new ScaleTransform();
         #endregion
 
         #region Properties
@@ -104,6 +110,19 @@ namespace Cad_Point_Manager.Views.UserControls
             typeof(ICollectionView),
             typeof(LayerViewer),
             new PropertyMetadata(null));
+
+        public ICollectionView PointGroupCollectionView
+        {
+            get { return (ICollectionView)GetValue(PointGroupCollectionViewProperty); }
+            set { SetValue(PointGroupCollectionViewProperty, value); }
+        }
+
+        public static readonly DependencyProperty PointGroupCollectionViewProperty =
+        DependencyProperty.Register(
+            nameof(PointGroupCollectionView),
+            typeof(ICollectionView),
+            typeof(LayerViewer),
+            new PropertyMetadata(null));
         #endregion
 
         #region Events
@@ -113,32 +132,46 @@ namespace Cad_Point_Manager.Views.UserControls
         public LayerViewer()
         {
             InitializeComponent();
+            
+            mainPanel.RenderTransform = _mainPanelTransform;
 
             HideControl();
+
+            _hideTimer.Interval = TimeSpan.FromSeconds(1);
+            _hideTimer.Tick += HideTimer_Tick;
         }
 
-        private void overallGrid_MouseLeave(object sender, MouseEventArgs e)
+        private void HideTimer_Tick(object sender, EventArgs e)
         {
-            HideControl();
+            _hideTimer.Stop();
+            if (!_isMouseOverPanel)
+            {
+                HideControl();
+            }
         }
 
-        private void overallGrid_MouseEnter(object sender, MouseEventArgs e)
+        private void OverallGrid_MouseLeave(object sender, MouseEventArgs e)
         {
+            _isMouseOverPanel = false;
+            _hideTimer.Start();
+        }
+
+        private void OverallGrid_MouseEnter(object sender, MouseEventArgs e)
+        {
+            _isMouseOverPanel = true;
+            _hideTimer.Stop();
             ShowControl();
         }
 
         private void ShowControl()
         {
-            // Animate the control sliding into view
             DoubleAnimation slideIn = new DoubleAnimation
             {
-                From = 0, // Start at the width of the tab
-                To = 1, // Fully visible
-                Duration = TimeSpan.FromMilliseconds(_panelHideTime)
+                To = 1,
+                Duration = TimeSpan.FromMilliseconds(_panelHideTime),
+                FillBehavior = FillBehavior.HoldEnd
             };
-            ScaleTransform transform = new ScaleTransform();
-            mainPanel.RenderTransform = transform;
-            transform.BeginAnimation(ScaleTransform.ScaleXProperty, slideIn);
+            _mainPanelTransform.BeginAnimation(ScaleTransform.ScaleXProperty, slideIn);
         }
 
         private void HideControl()
@@ -146,16 +179,13 @@ namespace Cad_Point_Manager.Views.UserControls
             LayerListVisible = false;
             PointGroupListVisible = false;
 
-            // Animate the control sliding into view
-            DoubleAnimation slideIn = new DoubleAnimation
+            DoubleAnimation slideOut = new DoubleAnimation
             {
-                From = 1, // Start at the width of the tab
-                To = 0, // Fully visible
-                Duration = TimeSpan.FromMilliseconds(_panelHideTime)
+                To = 0,
+                Duration = TimeSpan.FromMilliseconds(_panelHideTime),
+                FillBehavior = FillBehavior.HoldEnd
             };
-            ScaleTransform transform = new ScaleTransform();
-            mainPanel.RenderTransform = transform;
-            transform.BeginAnimation(ScaleTransform.ScaleXProperty, slideIn);
+            _mainPanelTransform.BeginAnimation(ScaleTransform.ScaleXProperty, slideOut);
         }
 
 
@@ -164,7 +194,7 @@ namespace Cad_Point_Manager.Views.UserControls
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
-        private void layersListView_Loaded(object sender, RoutedEventArgs e)
+        private void LayersListView_Loaded(object sender, RoutedEventArgs e)
         {
             ListView listview = sender as ListView;
 
@@ -180,12 +210,7 @@ namespace Cad_Point_Manager.Views.UserControls
             }
         }
 
-        private void layersListView_SizeChanged(object sender, SizeChangedEventArgs e)
-        {
-
-        }
-
-        private void layersListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void LayersListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             _selectedLayers.Clear();
             var selectedItems = (sender as ListView).SelectedItems;
@@ -202,7 +227,7 @@ namespace Cad_Point_Manager.Views.UserControls
             }
         }
 
-        private void CheckBox_Checked(object sender, RoutedEventArgs e)
+        private void LayerCheckBox_Checked(object sender, RoutedEventArgs e)
         {
             foreach (var layer in _selectedLayers)
             {
@@ -215,7 +240,7 @@ namespace Cad_Point_Manager.Views.UserControls
             }
         }
 
-        private void CheckBox_Unchecked(object sender, RoutedEventArgs e)
+        private void LayerCheckBox_Unchecked(object sender, RoutedEventArgs e)
         {
             foreach (var layer in _selectedLayers)
             {
@@ -227,8 +252,7 @@ namespace Cad_Point_Manager.Views.UserControls
                 CadManager.TextVerticesDirty = true;
             }
         }
-
-        private void layersBorder_MouseEnter(object sender, MouseEventArgs e)
+        private void LayersBorder_MouseEnter(object sender, MouseEventArgs e)
         {
             PointGroupListVisible = false;
             LayerListVisible = true;
@@ -238,11 +262,8 @@ namespace Cad_Point_Manager.Views.UserControls
             LayerListOpacity = 1;
         }
 
-        private void layersBorder_MouseLeave(object sender, MouseEventArgs e)
-        {
-        }
 
-        private void pointGroupsBorder_MouseEnter(object sender, MouseEventArgs e)
+        private void PointGroupsBorder_MouseEnter(object sender, MouseEventArgs e)
         {
             LayerListVisible = false;
             PointGroupListVisible = true;
@@ -252,8 +273,43 @@ namespace Cad_Point_Manager.Views.UserControls
             PointGroupListOpacity = 1;
         }
 
-        private void pointGroupsBorder_MouseLeave(object sender, MouseEventArgs e)
+        private void PointGroupsListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
+            _selectedPointGroups.Clear();
+            var selectedItems = (sender as ListView).SelectedItems;
+
+            foreach (var selectedItem in selectedItems)
+            {
+                if (selectedItem is KeyValuePair<string, PointGroup> pointGroup)
+                {
+                    if (pointGroup.Value is not null)
+                    {
+                        _selectedPointGroups.Add(pointGroup.Value);
+                    }
+                }
+            }
+        }
+        private void PointGroupsCheckBox_Checked(object sender, RoutedEventArgs e)
+        {
+            foreach (var pg in _selectedPointGroups)
+            {
+                pg.IsVisible = true;
+            }
+            if (CadManager is not null)
+            {
+                CadManager.DxfPointVerticesDirty = true;
+            }
+        }
+        private void PointGroupsCheckBox_Unchecked(object sender, RoutedEventArgs e)
+        {
+            foreach (var pg in _selectedPointGroups)
+            {
+                pg.IsVisible = false;
+            }
+            if (CadManager is not null)
+            {
+                CadManager.DxfPointVerticesDirty = true;
+            }
         }
     }
 }

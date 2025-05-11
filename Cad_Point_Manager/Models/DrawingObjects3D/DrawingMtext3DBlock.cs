@@ -1,16 +1,7 @@
 ﻿using Cad_Point_Manager.Common;
-using Cad_Point_Manager.Controls.D3DControl;
 using netDxf.Entities;
 using SharpDX;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Controls;
-using System.Windows;
 using Point = System.Windows.Point;
-using System.Diagnostics;
 using Cad_Point_Manager.Helpers;
 
 namespace Cad_Point_Manager.Models.DrawingObjects3D

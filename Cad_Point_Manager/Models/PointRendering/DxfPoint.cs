@@ -1,10 +1,5 @@
 ﻿using Cad_Point_Manager.Controls.D3DControl;
 using SharpDX;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Cad_Point_Manager.Models.PointRendering
 {
@@ -42,7 +37,7 @@ namespace Cad_Point_Manager.Models.PointRendering
             TextVertices ??= Array.Empty<TextVertex>();
             Array.Clear(TextVertices);
 
-            TextVertices = textDict.GetIntTextVertices(PointNumber, TextHeight, new Vector2(Position.X, Position.Y));
+            TextVertices = textDict.GetIntTextVertices(PointNumber, TextHeight, new Vector2(Position.X, Position.Y), PointGroup.Color);
         }
 
         public void UpdatePointScale()

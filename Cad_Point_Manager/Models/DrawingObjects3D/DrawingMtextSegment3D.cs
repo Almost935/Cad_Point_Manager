@@ -2,10 +2,8 @@
 using Cad_Point_Manager.Controls.D3DControl;
 using Cad_Point_Manager.Helpers;
 using SharpDX;
-using SharpDX.Direct2D1;
 using SharpDX.DirectWrite;
 using SharpDX.Mathematics.Interop;
-using System.Diagnostics;
 using System.Windows;
 
 using FontStretch = SharpDX.DirectWrite.FontStretch;

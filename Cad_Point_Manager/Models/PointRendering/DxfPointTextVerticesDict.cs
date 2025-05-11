@@ -25,7 +25,7 @@ namespace Cad_Point_Manager.Models.PointRendering
             _fontFace = _resCache.GetFontFace(_fontName, FontWeight.Normal, FontStretch.Normal, FontStyle.Normal);
         }
 
-        public TextVertex[] GetIntTextVertices(int integer, float textHeight, Vector2 basePoint)
+        public TextVertex[] GetIntTextVertices(int integer, float textHeight, Vector2 basePoint, Vector4 color)
         {
             // Testing 
             int breakPointMin = 15;
@@ -47,9 +47,10 @@ namespace Cad_Point_Manager.Models.PointRendering
                     Vector2 offset = new(basePoint.X + xOffset, basePoint.Y);
                     for (int j = 0; j < tup.vertices.Count; j++)
                     {
-                        TextVertex originalVertex = tup.vertices[j];
-                        TextVertex translatedVertex = originalVertex.Translate(offset);
-                        translated.Add(translatedVertex);
+                        //TextVertex originalVertex = tup.vertices[j];
+                        //TextVertex translatedVertex = originalVertex.Translate(offset);
+                        //translated.Add(translatedVertex);
+                        translated.Add(tup.vertices[j].Translate(offset));
                     }
                     verticesList.AddRange(translated);
                     xOffset += tup.width;

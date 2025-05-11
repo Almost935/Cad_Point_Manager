@@ -3,13 +3,11 @@ using Cad_Point_Manager.Models;
 using Cad_Point_Manager.Models.DrawingObjects3D;
 using SharpDX;
 using SharpDX.D3DCompiler;
-using SharpDX.Direct2D1;
 using SharpDX.Direct3D;
 using SharpDX.Direct3D11;
 using SharpDX.DXGI;
 using SharpDX.Mathematics.Interop;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -17,15 +15,12 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
-
-using Brush = SharpDX.Direct2D1.Brush;
 using Buffer = SharpDX.Direct3D11.Buffer;
 using InputElement = SharpDX.Direct3D11.InputElement;
 using MapFlags = SharpDX.Direct3D11.MapFlags;
 using Matrix = SharpDX.Matrix;
 using Point = System.Windows.Point;
 using RectangleGeometry = System.Windows.Media.RectangleGeometry;
-using SolidColorBrush = SharpDX.Direct2D1.SolidColorBrush;
 
 namespace Cad_Point_Manager.Controls.D3DControl
 {
@@ -73,6 +68,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private InputLayout _textInputLayout;
         private bool _textShaderLoaded;
         private bool _textVerticesDirty;
+        private bool _dxfPointTextVerticesDirty;
 
         // Text glow shader related fields
         private Buffer _textGlowVertexBuffer;
@@ -82,15 +78,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private PixelShader _textGlowPixelShader;
         private GeometryShader _textGlowGeometryShader;
         private bool _textGlowVerticesDirty = false;
-
-        // Point text shader related fields
-        private Buffer _pointTextVertexBuffer;
-        private Buffer _pointTextSettingsBuffer;
-        private VertexShader _pointTextVertexShader;
-        private PixelShader _pointTextPixelShader;
-        private InputLayout _pointTextInputLayout;
-        private bool _pointTextShaderLoaded;
-        private bool _pointTextVerticesDirty;
 
         // Panning and Zooming Fields
         private float _panThreshold = 1.0f;
@@ -208,7 +195,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             if (_lineGlowVerticesDirty) { UpdateLineGlowVertices(); }
             if (_lineVerticesDirty) { UpdateLineVertices(); }
-            if (_textVerticesDirty) { UpdateTextVertices(); }
+            if (_textVerticesDirty || _dxfPointTextVerticesDirty) { UpdateTextVertices(); }
             if (_textGlowVerticesDirty) { UpdateTextGlowVertices(); }
             if (DrawingObjectTreeDirty) { LoadDrawingObjectTree(); }
 
@@ -327,24 +314,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             // Reset geometry shader to null after draw
             context.GeometryShader.Set(null);
-        }
-
-        public void DrawPointTextWithShader() 
-        {
-            var context = _d3dResCache.DeviceContext;
-
-            if (_textVertexBuffer is null) { return; }
-
-            context.VertexShader.Set(_pointTextVertexShader);
-            context.PixelShader.Set(_pointTextPixelShader);
-            context.InputAssembler.InputLayout = _textInputLayout;
-            context.VertexShader.SetConstantBuffer(0, _transformationBuffer);
-            context.PixelShader.SetConstantBuffer(0, _textSettingsBuffer);
-
-            context.InputAssembler.PrimitiveTopology = PrimitiveTopology.TriangleList;
-            context.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding(_textVertexBuffer, Marshal.SizeOf<TextVertex>(), 0));
-
-            context.Draw(_textVertexCount, 0);
         }
 
         private void UpdateLineVertices()
@@ -484,18 +453,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 StructureByteStride = Utilities.SizeOf<TextVertex>()
             };
             _textGlowVertexBuffer = new Buffer(_d3dResCache.Device, textGlowBufferDesc);
-
-            _pointTextVertexBuffer?.Dispose();
-            var pointTextBufferDesc = new BufferDescription
-            {
-                SizeInBytes = Utilities.SizeOf<TextVertex>() * GlobalHelperProperties._maxTextVertices,
-                BindFlags = BindFlags.VertexBuffer,
-                Usage = ResourceUsage.Dynamic,
-                CpuAccessFlags = CpuAccessFlags.Write,
-                OptionFlags = ResourceOptionFlags.None,
-                StructureByteStride = Utilities.SizeOf<TextVertex>()
-            };
-            _pointTextVertexBuffer = new Buffer(_d3dResCache.Device, pointTextBufferDesc);
         }
 
         private void InitializeLineShader()
@@ -1160,6 +1117,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             DxfNeedsReload = CadManager3D.DxfNeedsReload;
             _lineVerticesDirty = CadManager3D.LineVerticesDirty;
             _textVerticesDirty = CadManager3D.TextVerticesDirty;
+            _dxfPointTextVerticesDirty = CadManager3D.DxfPointVerticesDirty;
             DrawingObjectTreeDirty = CadManager3D.DrawingObjectTreeDirty;
 
             if (e.PropertyName == nameof(CadManager3D.DxfLoaded) && !CadManager3D.DxfLoaded)
@@ -1243,22 +1201,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
                     _lineInputLayout?.Dispose();
                     _lineInputLayout = null;
-
-                    // Dispose point text-related resources
-                    _pointTextVertexBuffer?.Dispose();
-                    _pointTextVertexBuffer = null;
-
-                    _pointTextSettingsBuffer?.Dispose();
-                    _pointTextSettingsBuffer = null;
-
-                    _pointTextVertexShader?.Dispose();
-                    _pointTextVertexShader = null;
-
-                    _pointTextPixelShader?.Dispose();
-                    _pointTextPixelShader = null;
-
-                    _pointTextInputLayout?.Dispose();
-                    _pointTextInputLayout = null;
 
                     // Dispose transformation buffer
                     _transformationBuffer?.Dispose();

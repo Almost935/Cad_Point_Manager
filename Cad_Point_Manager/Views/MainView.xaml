@@ -138,7 +138,8 @@
                             ClipToBounds="False"
                             Height="{Binding ElementName=dxfBorder, Path=Height}"
                             CadManager="{Binding JobFileManager.CadManager3D}"
-                            LayerCollectionView="{Binding JobFileManager.CadManager3D.LayersView}"/>
+                            LayerCollectionView="{Binding JobFileManager.CadManager3D.LayersView}"
+                            PointGroupCollectionView="{Binding JobFileManager.CadManager3D.PointGroupsView}"/>
         </Grid>
 
         <Grid x:Name="dxfGrid"

@@ -107,12 +107,17 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         private void OnRendering(object sender, EventArgs e)
         {
-            if (!_renderTimer.IsRunning)
+            if (!_renderTimer.IsRunning || !_d3DSurface.IsFrontBufferAvailable)
             {
                 return;
             }
+
+            _d3DSurface.Lock();
             PrepareAndCallRender();
             _d3DSurface.InvalidateD3DImage();
+            _d3DSurface.Unlock();
+
+            _device.ImmediateContext.Flush();
 
             _lastRenderTime = _renderTimer.ElapsedMilliseconds;
         }
@@ -214,7 +219,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         private void CreateAndBindTargets()
         {
-            if (_d3DSurface == null)
+            if (_d3DSurface == null || !_d3DSurface.IsFrontBufferAvailable)
             {
                 return;
             }
@@ -254,7 +259,10 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             _deviceContext.OutputMerger.SetRenderTargets(_renderTargetView);
             _d3dResCache.Texture2D = _texture2D;
+            
+            _d3DSurface.Lock();
             _d3DSurface.SetRenderTarget(_texture2D);
+            _d3DSurface.Unlock();
 
             _device.ImmediateContext.Rasterizer.SetViewport(0, 0, width, height, 0.0f, 1.0f);
 
@@ -325,7 +333,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             CalcFps();
 
-            _device.ImmediateContext.Flush();
+            //_device.ImmediateContext.Flush();
         }
 
         private void CalcFps()
