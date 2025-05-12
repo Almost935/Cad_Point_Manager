@@ -133,7 +133,7 @@ namespace Cad_Point_Manager.Controls
             }
         }
 
-        public List<DrawingObject> HighlightedObjects { get; set; } = new();
+        public List<DrawingObject> HighlightedObjects { get; set; } = [];
         public Matrix ExtentsMatrix { get; set; } = new();
         public Rect InitialView { get; set; }
         #endregion
@@ -196,8 +196,6 @@ namespace Cad_Point_Manager.Controls
         {
             if (CadManager is not null && CadManager.DxfLoaded)
             {
-                Stopwatch stopwatch = Stopwatch.StartNew();
-
                 _dxfLoaded = true;
                 Extents = CadManager.Extents;
                 ExtentsMatrix = GetInitialMatrix();
@@ -212,9 +210,6 @@ namespace Cad_Point_Manager.Controls
                 _drawingObjectTree = new(CadManager, Extents, 4);
 
                 _offscreenBitmapIsDirty = true;
-
-                stopwatch.Stop();
-                Debug.WriteLine($"LoadDxfResources Elapsed Time: {stopwatch.ElapsedMilliseconds} ms");
             }
         }
         public Matrix GetInitialMatrix()
@@ -271,8 +266,6 @@ namespace Cad_Point_Manager.Controls
 
             if (CadManager is not null)
             {
-                Stopwatch stopwatch = Stopwatch.StartNew();
-
                 if (!_resourcesLoaded)
                 {
                     GetResources(d2DDeviceContext);
@@ -316,9 +309,6 @@ namespace Cad_Point_Manager.Controls
 
                     _deviceContextIsDirty = false;
                 }
-
-                //stopwatch.Stop();
-                //Debug.WriteLineIf(stopwatch.ElapsedMilliseconds > 0, $"Render Elapsed Time: {stopwatch.ElapsedMilliseconds} ms");
             }
         }
         private void SetClip()
@@ -354,8 +344,6 @@ namespace Cad_Point_Manager.Controls
                     return;
                 }
 
-                //Stopwatch stopwatch = Stopwatch.StartNew();
-
                 _offscreenRenderTarget.BeginDraw();
                 _offscreenRenderTarget.Clear(new RawColor4(1, 1, 1, 0));
 
@@ -386,16 +374,11 @@ namespace Cad_Point_Manager.Controls
 
                 // Verify that the bitmap was updated correctly
                 if (_currentOffscreenBitmap.ZoomStep == _currentZoomStep) { _offscreenBitmapIsDirty = false; }
-
-                //stopwatch.Stop();
-                //Debug.WriteLine($"UpdateOffscreenRenderTarget Elapsed Time: {stopwatch.ElapsedMilliseconds} ms");
             }
         }
 
         private void RenderOffscreenBitmap(DeviceContext1 deviceContext)
         {
-            //Stopwatch stopwatch = Stopwatch.StartNew();
-
             Matrix matrix = _currentOffscreenBitmapTransform;
             matrix.Translate(-_offscreenBitmapCenteringOffset.x, -_offscreenBitmapCenteringOffset.y); // Translation is to center the bitmap in the render target
             RawMatrix3x2 rawMatrix = new((float)matrix.M11, (float)matrix.M12, (float)matrix.M21, (float)matrix.M22, (float)matrix.OffsetX, (float)matrix.OffsetY);
@@ -405,20 +388,12 @@ namespace Cad_Point_Manager.Controls
             RawRectangleF sourceRect = new(0 + sourceRectOffset.X, 0 + sourceRectOffset.Y, _currentOffscreenBitmap.Bitmap.Size.Width + sourceRectOffset.X, _currentOffscreenBitmap.Bitmap.Size.Height + sourceRectOffset.Y);
 
             deviceContext.DrawBitmap(_currentOffscreenBitmap.Bitmap, 1.0f, BitmapInterpolationMode.Linear, sourceRect);
-
-            //stopwatch.Stop();
-            //Debug.WriteLine($"RenderOffscreenBitmap Elapsed Time: {stopwatch.ElapsedMilliseconds} ms");
         }
         private void RenderInteractiveObjects(DeviceContext1 deviceContext)
         {
-            Stopwatch stopwatch = Stopwatch.StartNew();
-
             deviceContext.Transform = new((float)_overallMatrix.M11, (float)_overallMatrix.M12, (float)_overallMatrix.M21, (float)_overallMatrix.M22, (float)_overallMatrix.OffsetX, (float)_overallMatrix.OffsetY);
             RenderSnappedObjects(deviceContext);
             RenderHighlightedObjects(deviceContext);
-
-            stopwatch.Stop();
-            //Debug.WriteLine($"DrawInteractiveObjects Elapsed Time: {stopwatch.ElapsedMilliseconds} ms");
         }
         private void RenderSnappedObjects(DeviceContext1 deviceContext)
         {

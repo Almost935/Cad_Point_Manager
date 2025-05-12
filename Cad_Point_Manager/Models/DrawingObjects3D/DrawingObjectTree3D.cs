@@ -1,10 +1,4 @@
-﻿using Cad_Point_Manager.Models.DrawingObjects;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
+﻿using System.Windows;
 
 namespace Cad_Point_Manager.Models.DrawingObjects3D
 {
@@ -26,7 +20,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         /// <summary>
         /// Consists of all the 0 level nodes in the tree.
         /// </summary>
-        public List<DrawingObjectNode3D> BaseLevelNodes { get; set; } = new();
+        public List<DrawingObjectNode3D> BaseLevelNodes { get; set; } = [];
         #endregion
 
         #region Constructors
@@ -52,9 +46,9 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         }
         private void GetDrawingObjects()
         {
-            foreach (var layer in _cadManager.Layers.Values)
+            foreach (var keyValue in _cadManager.Layers)
             {
-                DrawingObjects.AddRange(layer.DrawingObject3Ds);
+                DrawingObjects.AddRange(keyValue.Value.DrawingObject3Ds);
             }
         }
         public List<DrawingObjectNode3D> GetIntersectingNodes(Rect view)
@@ -65,6 +59,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
 
             return quadTreeNodes;
         }
+
         public List<DrawingObjectNode3D> GetIntersectingNodes(Point p)
         {
             List<DrawingObjectNode3D> quadTreeNodes = [];

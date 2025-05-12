@@ -8,6 +8,41 @@ namespace Cad_Point_Manager.Helpers
 {
     public static class MathHelpers
     {
+        /// <summary>
+        /// Calculates the transform required to scale up and center a bounding box of objects to the bounding box of a viewport.
+        /// </summary>
+        /// <param name="boundingBox">A RawRectangleF object that corresponds to the bounds of the objects.</param>
+        /// <param name="targetBox">The bounds of the viewport that the objects need to be shown in.</param>
+        /// <returns></returns>
+        public static Matrix3x2 GetFitTransform(RawRectangleF boundingBox, RawRectangleF targetBox)
+        {
+            // Compute the width and height of the bounding box
+            float objectWidth = boundingBox.Right - boundingBox.Left;
+            float objectHeight = boundingBox.Bottom - boundingBox.Top;
+
+            // Compute the width and height of the target box
+            float targetWidth = targetBox.Right - targetBox.Left;
+            float targetHeight = targetBox.Bottom - targetBox.Top;
+
+            // Compute scale factors for both axes
+            float scaleX = targetWidth / objectWidth;
+            float scaleY = targetHeight / objectHeight;
+
+            // Use the smaller scale to maintain aspect ratio
+            float scale = Math.Min(scaleX, scaleY);
+
+            // Compute the new scaled width and height
+            float scaledWidth = objectWidth * scale;
+            float scaledHeight = objectHeight * scale;
+
+            // Compute the translation needed to center the objects
+            float offsetX = targetBox.Left + (targetWidth - scaledWidth) / 2 - (boundingBox.Left * scale);
+            float offsetY = targetBox.Top + (targetHeight - scaledHeight) / 2 - (boundingBox.Top * scale);
+
+            // Create the transformation matrix
+            return Matrix3x2.Scaling(scale) * Matrix3x2.Translation(offsetX, offsetY);
+        }
+
         public static bool IsGeometryInRect(RawRectangleF viewport, Geometry geometry, float strokeThickness)
         {
             // Attempt to get the bounds of the geometry
@@ -112,23 +147,15 @@ namespace Cad_Point_Manager.Helpers
         /// <param name="y2">Y-coordinate of the second endpoint of the line.</param>
         /// <param name="tolerance">Allowed tolerance for floating-point comparison.</param>
         /// <returns>True if the point is on the line; otherwise, false.</returns>
-        public static bool IsPointOnLine(double px, double py, double x1, double y1, double x2, double y2, double tolerance = 0.01)
+        public static bool IsPointOnLine(Point p, Point s, Point e, double tolerance = 0.01)
         {
-            // Calculate the cross-product to check if the point is collinear with the line
-            double crossProduct = (py - y1) * (x2 - x1) - (px - x1) * (y2 - y1);
-            if (Math.Abs(crossProduct) > tolerance)
-                return false;
+            double SE = PointToPointDistance(s, e);
+            double SP = PointToPointDistance(s, p);
+            double EP = PointToPointDistance(e, p);
 
-            // Check if the point lies within the bounds of the line segment
-            double dotProduct = (px - x1) * (x2 - x1) + (py - y1) * (y2 - y1);
-            if (dotProduct < 0)
-                return false;
-
-            double squaredLength = Math.Pow(x2 - x1, 2) + Math.Pow(y2 - y1, 2);
-            if (dotProduct > squaredLength)
-                return false;
-
-            return true;
+            if (SP + EP - SE < tolerance) { return true; }
+            if (SP <= tolerance || EP <= tolerance) { return true; }
+            return false;
         }
 
         /// <summary>
@@ -194,6 +221,89 @@ namespace Cad_Point_Manager.Helpers
                 // Arc crosses 360 boundary
                 return angle >= startAngle || angle <= endAngle;
             }
+        }
+
+
+        public static double PointToPointDistance(Point p1, Point p2)
+        {
+            return Math.Sqrt(
+                Math.Pow((p2.X - p1.X), 2) + Math.Pow((p2.Y - p1.Y), 2));
+        }
+
+        public static double PointToLineDistance(Point p, Point lineStart, Point lineEnd)
+        {
+            Point p2 = GetClosestPointOnLine(lineStart, lineEnd, p);
+
+            return PointToPointDistance(p, p2);
+        }
+        public static Point GetClosestPointOnLine(Point start, Point end, Point p)
+        {
+            double length = (start - end).LengthSquared;
+            if (length == 0.0)
+            {
+                return start;
+            }
+            Vector v = end - start;
+            double param = (p - start) * v / length;
+            return (param < 0.0) ? start : (param > 1.0) ? end : (start + param * v);
+        }
+
+        public static double PointToRectDistance(Rect rect, Point point)
+        {
+            // Clamp point to rect bounds
+            double clampedX = Math.Max(rect.Left, Math.Min(point.X, rect.Right));
+            double clampedY = Math.Max(rect.Top, Math.Min(point.Y, rect.Bottom));
+
+            // If the point is inside the rect, distance is 0
+            if (rect.Contains(point))
+                return 0;
+
+            // Compute Euclidean distance from the point to the closest point on the rect
+            double dx = point.X - clampedX;
+            double dy = point.Y - clampedY;
+
+            return Math.Sqrt(dx * dx + dy * dy);
+        }
+
+
+        // Tessellation Methods
+        public static bool IsPointInTriangle(Vector2 p, Vector2 a, Vector2 b, Vector2 c)
+        {
+            var v0 = c - a;
+            var v1 = b - a;
+            var v2 = p - a;
+
+            float dot00 = Vector2.Dot(v0, v0);
+            float dot01 = Vector2.Dot(v0, v1);
+            float dot02 = Vector2.Dot(v0, v2);
+            float dot11 = Vector2.Dot(v1, v1);
+            float dot12 = Vector2.Dot(v1, v2);
+
+            float denom = dot00 * dot11 - dot01 * dot01;
+            if (Math.Abs(denom) < float.Epsilon) return false; // Degenerate triangle
+
+            float invDenom = 1f / denom;
+            float u = (dot11 * dot02 - dot01 * dot12) * invDenom;
+            float v = (dot00 * dot12 - dot01 * dot02) * invDenom;
+
+            return (u >= 0) && (v >= 0) && (u + v <= 1);
+        }
+        public static float DistanceToTriangle(Vector2 p, Vector2 a, Vector2 b, Vector2 c)
+        {
+            float d1 = DistanceToSegment(p, a, b);
+            float d2 = DistanceToSegment(p, b, c);
+            float d3 = DistanceToSegment(p, c, a);
+
+            return MathF.Min(d1, MathF.Min(d2, d3));
+        }
+        public static float DistanceToSegment(Vector2 p, Vector2 a, Vector2 b)
+        {
+            Vector2 ab = b - a;
+            Vector2 ap = p - a;
+            float t = Vector2.Dot(ap, ab) / Vector2.Dot(ab, ab);
+            t = Math.Clamp(t, 0, 1);
+            Vector2 closest = a + t * ab;
+            return Vector2.Distance(p, closest);
         }
     }
 }

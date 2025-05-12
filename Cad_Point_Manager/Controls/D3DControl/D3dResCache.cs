@@ -1,10 +1,12 @@
 ﻿using System.ComponentModel;
 using SharpDX.Direct3D11;
 using SharpDX.Direct2D1;
+using System.Collections.Concurrent;
+using SharpDX.DirectWrite;
 
-using Factory1 = SharpDX.Direct2D1.Factory1;
 using Device = SharpDX.Direct3D11.Device;
 using DeviceContext = SharpDX.Direct3D11.DeviceContext;
+using Factory2 = SharpDX.Direct2D1.Factory2;
 
 namespace Cad_Point_Manager.Controls.D3DControl
 {
@@ -17,11 +19,12 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private DeviceContext _deviceContext = null;
         private Texture2D _texture2D = null;
         private RenderTargetView _renderTargetView = null;
-        private SharpDX.Direct2D1.Device _d2DDevice = null;
-        private SharpDX.Direct2D1.DeviceContext _d2DDeviceContext = null;
-        private Factory1 _d2DFactory = null;
-        private SharpDX.Direct2D1.Bitmap1 _d2dTargetBitmap = null;
-        private BitmapRenderTarget _bitmapRenderTarget = null;
+        private SharpDX.Direct2D1.Device1 _d2DDevice = null;
+        private SharpDX.Direct2D1.DeviceContext1 _d2DDeviceContext = null;
+        private RenderTarget _d2dRenderTarget = null;
+        private Factory2 _d2DFactory = null;
+        private Bitmap1 _d2dTargetBitmap = null;
+        private SharpDX.DirectWrite.Factory1 _factoryWrite = null;
         #endregion
 
         #region Properties
@@ -61,7 +64,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 OnPropertyChanged(nameof(RenderTargetView));
             }
         }
-        public SharpDX.Direct2D1.Device D2DDevice
+        public SharpDX.Direct2D1.Device1 D2DDevice
         {
             get { return _d2DDevice; }
             set
@@ -70,7 +73,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 OnPropertyChanged(nameof(D2DDevice));
             }
         }
-        public SharpDX.Direct2D1.DeviceContext D2DDeviceContext
+        public SharpDX.Direct2D1.DeviceContext1 D2DDeviceContext
         {
             get { return _d2DDeviceContext; }
             set
@@ -79,16 +82,25 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 OnPropertyChanged(nameof(D2DDeviceContext));
             }
         }
-        public Factory1 D2DFactory
+        public RenderTarget D2DRenderTarget
+        {
+            get { return _d2dRenderTarget; }
+            set
+            {
+                _d2dRenderTarget = value;
+                OnPropertyChanged(nameof(D2DRenderTarget));
+            }
+        }
+        public Factory2 D2dFactory
         {
             get { return _d2DFactory; }
             set
             {
                 _d2DFactory = value;
-                OnPropertyChanged(nameof(D2DFactory));
+                OnPropertyChanged(nameof(D2dFactory));
             }
         }
-        public SharpDX.Direct2D1.Bitmap1 D2DTargetBitmap
+        public Bitmap1 D2DTargetBitmap
         {
             get { return _d2dTargetBitmap; }
             set
@@ -97,15 +109,19 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 OnPropertyChanged(nameof(D2DTargetBitmap));
             }
         }
-        public BitmapRenderTarget BitmapRenderTarget
+        public SharpDX.DirectWrite.Factory1 WriteFactory
         {
-            get { return _bitmapRenderTarget; }
+            get { return _factoryWrite; }
             set
             {
-                _bitmapRenderTarget = value;
-                OnPropertyChanged(nameof(BitmapRenderTarget));
+                _factoryWrite = value;
+                OnPropertyChanged(nameof(WriteFactory));
             }
         }
+
+        public int MaxSize { get; set; }
+        public BlendState BaseBlendState { get; set; }
+        public ConcurrentDictionary<(string fontName, FontWeight fontWeight, FontStretch fontStretch, FontStyle fontStyle), FontFace> FontFaceDict = [];
         #endregion
 
         #region Events
@@ -113,6 +129,50 @@ namespace Cad_Point_Manager.Controls.D3DControl
         #endregion
 
         #region Methods
+        public FontFace GetFontFace(string fontName, FontWeight fontWeight, FontStretch fontStretch, FontStyle fontStyle)
+        {
+            if (WriteFactory is null)
+            {
+                throw new InvalidOperationException("WriteFactory is not initialized.");
+            }
+
+            if (FontFaceDict.TryGetValue((fontName, fontWeight, fontStretch, fontStyle), out FontFace fontFace))
+            {
+                return fontFace;
+            }
+            else
+            { 
+                FontCollection fontCollection = WriteFactory.GetSystemFontCollection(false);
+                bool exists = fontCollection.FindFamilyName(fontName, out int fontIndex);
+                if (!exists) fontIndex = 0; // Fallback to the first font if not found
+                FontFamily fontFamily = fontCollection.GetFontFamily(fontIndex);
+
+                Font font = null;
+                for (int i = 0; i < fontFamily.FontCount; i++)
+                {
+                    var potFont = fontFamily.GetFont(i);
+
+                    if (potFont.Weight == fontWeight && potFont.Stretch == fontStretch && potFont.Style == fontStyle)
+                    {
+                        font = potFont;
+                        break;
+                    }
+
+                    potFont.Dispose(); // Clean up if not returned
+                }
+                font ??= fontFamily.GetFont(0); // Fallback to the first font if not found
+
+                FontFace newFontFace = new(font);
+                FontFaceDict[(fontName, fontWeight, fontStretch, fontStyle)] = newFontFace;
+
+                font.Dispose();
+                fontCollection.Dispose();
+                fontFamily.Dispose();
+
+                return newFontFace;
+            }
+        }
+
         public void Dispose()
         {
             Dispose(true);
@@ -131,14 +191,20 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     _d2DDevice?.Dispose();
                     _d2DDeviceContext?.Dispose();
                     _d2DFactory?.Dispose();
+                    _d2dRenderTarget?.Dispose();
                     _d2dTargetBitmap?.Dispose();
+                    _factoryWrite?.Dispose();
+                    BaseBlendState?.Dispose();
+
+                    foreach (var fontFace in FontFaceDict.Values)
+                    {
+                        fontFace.Dispose();
+                    }
                 }
 
                 disposed = true;
             }
         }
-        
-
         ~D3dResCache()
         {
             Dispose(false);

@@ -1,26 +1,15 @@
-﻿using Cad_Point_Manager.Controls.D3DControl;
-using Cad_Point_Manager.Helpers;
-using netDxf;
+﻿using Cad_Point_Manager.Helpers;
 using netDxf.Entities;
-using SharpDX;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using SharpDX.Direct2D1;
+using SharpDX.Mathematics.Interop;
 using System.Windows;
-using Vector2 = SharpDX.Vector2;
 using Vector3 = SharpDX.Vector3;
-using Vector4 = SharpDX.Vector4;
 
 namespace Cad_Point_Manager.Models.DrawingObjects3D
 {
-    public class DrawingPolyline3D : DrawingObject3D
+    public class DrawingPolyline3D : DrawingGeometry3D
     {
         #region Properties
-        public Vertex StartVertex { get; set; }
-        public Vertex EndVertex { get; set; }
         public float Length { get; set; }
         public bool IsClosed { get; set; }
         public List<DrawingSegment3D> DrawingSegments { get; set; } = [];
@@ -28,7 +17,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         #endregion
 
         #region Constructors
-        private DrawingPolyline3D() { Type = DrawingObject3dType.DrawingLine3D; }
+        private DrawingPolyline3D() { Type = DrawingObject3dType.DrawingPolyline3D; }
 
         public DrawingPolyline3D(Polyline2D polyline2D, ObjectLayer3D layer, bool isPartOfBlock = false, DrawingBlock3D block = null)
         {
@@ -76,6 +65,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                 IsClosed = polyline3d.IsClosed;
 
                 UpdateVertices(polyline3d);
+                UpdateBounds();
 
                 Length = 0;
                 foreach (var segment in DrawingSegments)
@@ -99,17 +89,38 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             }
         }
 
-        public override bool HitTest(System.Windows.Point point, float tolerance)
+        public override double DistanceToPoint(System.Windows.Point point)
         {
-            foreach (var segment in DrawingSegments)
+            double distance = double.MaxValue;
+
+            Parallel.ForEach(DrawingSegments, segment =>
             {
-                if (segment.HitTest(point, tolerance))
+                var d = segment.DistanceToPoint(point);
+                if (d < distance)
                 {
-                    return true;
+                    distance = d;
                 }
+            });
+
+            return distance;
+        }
+
+        public override void DrawToD2dDeviceContext(DeviceContext1 deviceContext, Factory2 factory, Brush brush, float thickness, StrokeStyle1 strokeStyle)
+        {
+            PathGeometry pathGeometry = new(factory);
+            using (var geometrySink = pathGeometry.Open())
+            {
+                geometrySink.BeginFigure(new RawVector2(Vertices[0].Position.X, Vertices[0].Position.Y), FigureBegin.Hollow);
+                for (int i = 0; i < Vertices.Length / 2; i++)
+                {
+                    int index = 2 * i + 1;
+                    geometrySink.AddLine(new RawVector2(Vertices[index].Position.X, Vertices[index].Position.Y));
+                }
+                geometrySink.EndFigure(FigureEnd.Open);
+                geometrySink.Close();
             }
 
-            return false;
+            deviceContext.DrawGeometry(pathGeometry, brush, thickness, strokeStyle);
         }
 
 
@@ -119,43 +130,85 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             {
                 var start = polyline2D.Vertexes.First();
                 var end = polyline2D.Vertexes.Last();
-                StartVertex = new(new Vector3((float)start.Position.X, (float)start.Position.Y, 0), Color, IsHighlighted ? 1.0f : 0, IsMouseOver ? 1.0f : 0);
-                EndVertex = new(new Vector3((float)end.Position.X, (float)end.Position.Y, 0), Color, IsHighlighted ? 1.0f : 0, IsMouseOver ? 1.0f : 0);
+                StartVertex = new(new Vector3((float)start.Position.X, (float)start.Position.Y, 0), Color);
+                EndVertex = new(new Vector3((float)end.Position.X, (float)end.Position.Y, 0), Color);
 
                 var entities = polyline2D.Explode();
-                foreach (var e in entities)
-                {
-                    var obj = DxfHelpers.GetDrawingSegment3D(e, Layer);
-                    if (obj is not null) 
-                    { 
-                        DrawingSegments.Add(obj); 
-                        Vertices.AddRange(obj.Vertices);
-                    }
-                }
-            }
-            else if (entity is Polyline3D polyline3D)
-            {
-                var start = polyline3D.Vertexes.First();
-                var end = polyline3D.Vertexes.Last();
-                StartVertex = new(new Vector3((float)start.X, (float)start.Y, (float)start.Z), Color, IsHighlighted ? 1.0f : 0, IsMouseOver ? 1.0f : 0);
-                EndVertex = new(new Vector3((float)end.X, (float)end.Y, (float)end.Z), Color, IsHighlighted ? 1.0f : 0, IsMouseOver ? 1.0f : 0);
+                var vertices = polyline2D.Vertexes;
 
-                var entities = polyline3D.Explode();
                 foreach (var e in entities)
                 {
                     var obj = DxfHelpers.GetDrawingSegment3D(e, Layer);
                     if (obj is not null)
                     {
                         DrawingSegments.Add(obj);
-                        Vertices.AddRange(obj.Vertices);
                     }
                 }
+
+                // Loop through vertices to verify that drawing arcs are correctly aligned. Autocad always draws arcs counter-clockwise
+                // so need to find the correct start and end vertices
+                for (int i = 0; i < vertices.Count - 1; i++)
+                {
+                    var segment = DrawingSegments[i];
+                    if (segment is DrawingArc3D arc)
+                    {
+                        var startArcVertex = arc.Vertices.First().Position;
+                        Vector3 dxfStartVertex = new((float)vertices[i].Position.X, (float)vertices[i].Position.Y, 0);
+                        var d = Vector3.Distance(startArcVertex, dxfStartVertex);
+
+                        if (d > 0)
+                        {
+                            arc.Vertices.Reverse();
+                        }
+                    }
+                }
+                Vertices = DrawingSegments.SelectMany(s => s.Vertices).ToArray();
+            }
+
+            else if (entity is Polyline3D polyline3D)
+            {
+                var start = polyline3D.Vertexes.First();
+                var end = polyline3D.Vertexes.Last();
+                StartVertex = new(new Vector3((float)start.X, (float)start.Y, 0), Color);
+                EndVertex = new(new Vector3((float)end.X, (float)end.Y, 0), Color);
+
+                var entities = polyline3D.Explode();
+                var vertices = polyline3D.Vertexes;
+
+                foreach (var e in entities)
+                {
+                    var obj = DxfHelpers.GetDrawingSegment3D(e, Layer);
+                    if (obj is not null)
+                    {
+                        DrawingSegments.Add(obj);
+                    }
+                }
+
+                // Loop through vertices to verify that drawing arcs are correctly aligned. Autocad always draws arcs counter-clockwise
+                // so need to find the correct start and end vertices
+                for (int i = 0; i < vertices.Count - 1; i++)
+                {
+                    var segment = DrawingSegments[i];
+                    if (segment is DrawingArc3D arc)
+                    {
+                        var startArcVertex = arc.Vertices.First().Position;
+                        Vector3 dxfStartVertex = new((float)vertices[i].X, (float)vertices[i].Y, 0);
+                        var d = Vector3.Distance(startArcVertex, dxfStartVertex);
+
+                        if (d > 0)
+                        {
+                            arc.Vertices.Reverse();
+                        }
+                    }
+                }
+                Vertices = DrawingSegments.SelectMany(s => s.Vertices).ToArray();
             }
             else
             {
                 throw new ArgumentException("entity must be of type Polyline2D or Polyline3D");
             }
-            #endregion
         }
+        #endregion
+
     }
 }

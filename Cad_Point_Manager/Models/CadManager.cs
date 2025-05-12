@@ -95,8 +95,6 @@ namespace Cad_Point_Manager.Models
         #region Methods
         public void LoadDxfDocument(DxfDocument dxfDocument)
         {
-            Stopwatch stopwatch = Stopwatch.StartNew();
-
             ClearDxfDocument();
             DxfLoaded = false;
 
@@ -114,14 +112,9 @@ namespace Cad_Point_Manager.Models
             }
             DxfLoaded = true;
             DxfDirty = true;
-
-            stopwatch.Stop();
-            Debug.WriteLine($"LoadDxfDocument: {stopwatch.ElapsedMilliseconds} ms");
         }
         public void LoadDxfDocument(CadManagerData cadManagerData)
         {
-            Stopwatch stopwatch = Stopwatch.StartNew();
-
             ClearDxfDocument();
             DxfLoaded = false;
 
@@ -134,9 +127,6 @@ namespace Cad_Point_Manager.Models
 
             DxfLoaded = true;
             DxfDirty = true;
-
-            stopwatch.Stop();
-            Debug.WriteLine($"LoadDxfDocument: {stopwatch.ElapsedMilliseconds} ms");
         }
 
         public void ClearDxfDocument()
@@ -180,13 +170,6 @@ namespace Cad_Point_Manager.Models
             {
                 layer.InitializeResources(resCache);
             }
-
-            //foreach (var layer in Layers.Values)
-            //{
-            //    stopwatch.Restart();
-
-            //    layer.InitializeGeometries();
-            //}
 
             Parallel.ForEach(Layers.Values, layer =>
             {

@@ -165,7 +165,7 @@ namespace Cad_Point_Manager.DrawingObjects
         }
         public void GetTextLayout()
         {
-            RawMatrix3x2 transform = new((float)Transform.M11, (float)Transform.M12, (float)Transform.M21, (float)Transform.M22, (float)Transform.OffsetX, (float)Transform.OffsetY);
+            RawMatrix3x2 transform = new((float)Transform.M11, (float)Transform.M12, (float)Transform.M21, (float)Transform.M22, (float)Transform.OffsetX+100, (float)Transform.OffsetY);
             _textLayout = new(_factoryWrite, Text, _textFormat, (float)Bounds.Width, (float)Bounds.Height, 96, transform, true);
         }
         public override bool Hittest(RawVector2 p, float thickness)
@@ -200,8 +200,7 @@ namespace Cad_Point_Manager.DrawingObjects
         /// <returns></returns>
         public Point GetTextOrigin(Enums.TextAttachmentPoint attachmentPoint, Rect rect, Point position)
         {
-            Point adjustedPos = new();
-
+            Point adjustedPos;
             switch (attachmentPoint)
             {
                 case Enums.TextAttachmentPoint.TopLeft:

@@ -1,11 +1,4 @@
 ﻿using Cad_Point_Manager.Helpers;
-using Cad_Point_Manager.Models.DrawingObjects;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 
 namespace Cad_Point_Manager.Models.DrawingObjects3D
@@ -82,10 +75,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         {
             DrawingObjectNode3D node = null;
 
-            //Debug.WriteLine($"\np: {p}");
-            //Debug.WriteLine($"Extents: {Extents.Left} {Extents.Right} {Extents.Bottom} {Extents.Top}");
-            //Debug.WriteLine($"Extents Width Height: {Extents.Width} {Extents.Height}");
-
             if (Extents.Contains(p))
             {
                 if (Level == 0)
@@ -103,6 +92,63 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             }
             return node;
         }
+
+        /// <summary>
+        /// Gets the closest object to the point p within the tolerance.
+        /// </summary>
+        /// <param name="p">The point n from which the closest objects are found.</param>
+        /// <param name="tolerance">The minimum distance from the point to the object</param>
+        /// <returns></returns>
+        public (double distance, DrawingObject3D obj) HitTestNode(Point p, float tolerance = 2)
+        {
+            DrawingObject3D drawingObject3D = null;
+            double distance = double.MaxValue;
+
+            foreach (var obj in DrawingObjects)
+            {
+                if (obj.IsVisible && obj.Layer.IsVisible)
+                {
+                    var inflatedBounds = Rect.Inflate(obj.Bounds, tolerance, tolerance);
+
+                    if (inflatedBounds.Contains(p))
+                    {
+                        double d = obj.DistanceToPoint(p);
+
+                        if (d < distance)
+                        {
+                            distance = d;
+                            drawingObject3D = obj;
+                        }
+                    }
+                }
+            }
+            return (distance, drawingObject3D);
+        }
+
+        /// <summary>
+        /// Retunrs a list of objects sorted by distance from the point p.
+        /// </summary>
+        /// <param name="p">The point from which the distance to the objects is determined</param>
+        /// <param name="hitTestRange">The bounds that define the minimum distance from the point that the object can lie.</param>
+        /// <returns></returns>
+        public List<(double distance, DrawingObject3D obj)> HitTestNode(Point p, Rect hitTestRange)
+        {
+            List<(double distance, DrawingObject3D obj)> hits = [];
+
+            foreach (var obj in DrawingObjects)
+            {
+                if (obj.IsVisible && obj.Layer.IsVisible)
+                {
+                    if (obj.BoundsInRect(hitTestRange))
+                    {
+                        double d = obj.DistanceToPoint(p);
+                        hits.Add((d, obj));
+                    }
+                }
+            }
+            return hits;
+        }
+
         private void Subdivide()
         {
             if (Level > 0)
@@ -129,19 +175,23 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
 
                 foreach (var drawingObject in DrawingObjects)
                 {
-                    if (drawingObject.Bounds.IntersectsWith(extents1))
+                    if (drawingObject.Bounds.IsEmpty) { continue; }
+
+                    var bounds = Rect.Inflate(drawingObject.Bounds, 0.5, 0.5);
+
+                    if (bounds.IntersectsWith(extents1))
                     {
                         objects1.Add(drawingObject);
                     }
-                    if (drawingObject.Bounds.IntersectsWith(extents2))
+                    if (bounds.IntersectsWith(extents2))
                     {
                         objects2.Add(drawingObject);
                     }
-                    if (drawingObject.Bounds.IntersectsWith(extents3))
+                    if (bounds.IntersectsWith(extents3))
                     {
                         objects3.Add(drawingObject);
                     }
-                    if (drawingObject.Bounds.IntersectsWith(extents4))
+                    if (bounds.IntersectsWith(extents4))
                     {
                         objects4.Add(drawingObject);
                     }

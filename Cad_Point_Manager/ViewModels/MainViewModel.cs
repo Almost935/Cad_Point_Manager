@@ -15,7 +15,7 @@ namespace Cad_Point_Manager.ViewModels
         private string _dxfFilePath;
         private string _dxfFileName;
         private DxfDocument _dxfDocument;
-        private Matrix _transformMatrix = Matrix.Identity;
+        private Size2F _viewportSize = Size2F.Empty;
         #endregion
 
         #region Properties
@@ -64,13 +64,13 @@ namespace Cad_Point_Manager.ViewModels
                 OnPropertyChanged(nameof(DxfDocument));
             }
         }
-        public Matrix TransformMatrix
+        public Size2F ViewportSize
         {
-            get { return _transformMatrix; }
+            get { return _viewportSize; }
             set
             {
-                _transformMatrix = value;
-                OnPropertyChanged(nameof(TransformMatrix));
+                _viewportSize = value;
+                OnPropertyChanged(nameof(ViewportSize));
             }
         }
         #endregion
@@ -84,6 +84,9 @@ namespace Cad_Point_Manager.ViewModels
 
         public ICommand MouseMoveCommand { get; set; }
         public ICommand MouseClickCommand { get; set; }
+
+        // View Commands
+        public ICommand ZoomToExtentsCommand { get; set; }
         #endregion
 
         #region Constructors
@@ -97,6 +100,8 @@ namespace Cad_Point_Manager.ViewModels
 
             MouseMoveCommand = new RelayCommand<MouseEventArgs>(OnMouseMove);
             MouseClickCommand = new RelayCommand<MouseButtonEventArgs>(OnMouseClick);
+
+            ZoomToExtentsCommand = new RelayCommand<RoutedEventArgs>(ZoomToExtents);
         }
         #endregion
 
@@ -135,7 +140,7 @@ namespace Cad_Point_Manager.ViewModels
             dlg.InitialDirectory = @"C:\Users\fcraw\source\repos\Cad_Point_Manager\Cad_Point_Manager\Resources\DXF";
 
             Nullable<bool> result = dlg.ShowDialog();
-
+            
             if (result == true)
             {
                 DxfFilePath = dlg.FileName;
@@ -143,7 +148,7 @@ namespace Cad_Point_Manager.ViewModels
 
                 DxfDocument = DxfDocument.Load(DxfFilePath);
                 if (DxfDocument is not null)
-                {
+                { 
                     DxfFileName = DxfDocument.Name;
                     JobFileManager.LoadDxf(DxfDocument);
                 }
@@ -156,6 +161,11 @@ namespace Cad_Point_Manager.ViewModels
         public void SaveJobAs(RoutedEventArgs e)
         {
 
+        }
+
+        public void ZoomToExtents(RoutedEventArgs e)
+        {
+            JobFileManager.CadManager3D?.ZoomToExtents();
         }
         #endregion
 

@@ -1,6 +1,6 @@
-﻿using Cad_Point_Manager.Controls.D3DControl;
-using netDxf.Entities;
+﻿using netDxf.Entities;
 using SharpDX;
+using SharpDX.Direct2D1;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows;
@@ -10,35 +10,18 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
 {
     public abstract class DrawingObject3D : INotifyPropertyChanged
     {
-        #region Fields
-        private List<Vertex> _vertices = [];
-        #endregion
-
         #region Properties
-        public List<Vertex> Vertices
-        {
-            get => _vertices;
-            set
-            {
-                _vertices = value;
-                OnPropertyChanged(nameof(Vertices));
-            }
-        }
-
         public DrawingObject3dType Type { get; set; }
         public ObjectLayer3D Layer { get; set; }
         public EntityObject EntityObject { get; set; }
         public Vector4 Color { get; set; }
-        public Vector4 SelectedColor { get; set; }
         public Rect Bounds { get; set; } = Rect.Empty;
         public DrawingObject3dColorType DrawingObject3DColorType { get; set; }
         public bool IsPartOfBlock { get; set; } = false;
         public DrawingBlock3D DrawingBlock3D { get; set; }
         public bool IsSelected { get; set; } = false;
-        public bool IsHighlighted { get; set; } = false;
         public bool IsMouseOver { get; set; } = false;
-        public int StartVertexIndex { get; set; }
-        public int EndVertexIndex { get; set; }
+        public bool IsVisible { get; set; } = true;
         #endregion
 
         #region Events
@@ -48,7 +31,12 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         #region Methods
         public abstract void UpdateData(EntityObject entity);
         public abstract void UpdateBounds();
-        public abstract bool HitTest(Point point, float tolerance);
+        public abstract double DistanceToPoint(Point p);
+        public abstract void MouseEnter();
+        public abstract void MouseLeave();
+        public abstract void Select();
+        public abstract void Deselect();
+        public abstract void DrawToD2dDeviceContext(DeviceContext1 deviceContext, Factory2 factory, Brush brush, float thickness, StrokeStyle1 strokeStyle);
 
         public void UpdateColor()
         {
@@ -73,8 +61,15 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             {
                 Color = new(0, 0, 0, 1);
             }
+        }
 
-            SelectedColor = new(Color.X, Color.Y, Color.Z, 0.25f);
+        public bool BoundsInRect(Rect rect)
+        {
+            if (Bounds.IsEmpty || rect.IsEmpty) { return false; }
+
+            if (Bounds.IntersectsWith(rect) || Bounds.Contains(rect) || rect.Contains(Bounds)) { return true; }
+
+            return false;
         }
 
         protected void OnPropertyChanged([CallerMemberName] string propertyName = null)

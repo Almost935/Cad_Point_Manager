@@ -1,5 +1,4 @@
 ﻿using SharpDX.Mathematics.Interop;
-using System.Text.Json.Serialization;
 
 namespace Cad_Point_Manager.Models.SerializableObjects
 {

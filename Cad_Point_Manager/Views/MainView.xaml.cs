@@ -1,5 +1,4 @@
 ﻿using Cad_Point_Manager.ViewModels;
-using System.Diagnostics;
 using System.Windows.Controls;
 
 namespace Cad_Point_Manager.Views
@@ -10,7 +9,7 @@ namespace Cad_Point_Manager.Views
     public partial class MainView : Page
     {
         public MainView(MainViewModel mainViewModel)
-        {
+        {    
             this.DataContext = mainViewModel;
 
             InitializeComponent();

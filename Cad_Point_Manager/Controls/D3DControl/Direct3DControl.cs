@@ -79,7 +79,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             base.Stretch = System.Windows.Media.Stretch.Fill;
         }
 
-        public abstract void Render3D();
+        public abstract void Render();
 
         // - event handler ---------------------------------------------------------------
 
@@ -107,12 +107,17 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         private void OnRendering(object sender, EventArgs e)
         {
-            if (!_renderTimer.IsRunning)
+            if (!_renderTimer.IsRunning || !_d3DSurface.IsFrontBufferAvailable)
             {
                 return;
             }
+
+            _d3DSurface.Lock();
             PrepareAndCallRender();
             _d3DSurface.InvalidateD3DImage();
+            _d3DSurface.Unlock();
+
+            _device.ImmediateContext.Flush();
 
             _lastRenderTime = _renderTimer.ElapsedMilliseconds;
         }
@@ -147,11 +152,12 @@ namespace Cad_Point_Manager.Controls.D3DControl
         {
             _device = new SharpDX.Direct3D11.Device(DriverType.Hardware, DeviceCreationFlags.BgraSupport);
             _d3dResCache.Device = _device;
+            _d3dResCache.MaxSize = GetMaxSize(_device.FeatureLevel);
 
             var rasterizerStateDescription = new RasterizerStateDescription
             {
                 FillMode = FillMode.Solid,
-                CullMode = CullMode.Back,
+                CullMode = CullMode.None,
                 IsFrontCounterClockwise = false,
                 IsMultisampleEnabled = false
             };
@@ -161,6 +167,35 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             _deviceContext = _device.ImmediateContext;
             _d3dResCache.DeviceContext = _deviceContext;
+            _d3dResCache.WriteFactory = new();
+
+            var baseBlendDesc = new BlendStateDescription();
+            baseBlendDesc.RenderTarget[0].IsBlendEnabled = true; // Enable blending
+            baseBlendDesc.RenderTarget[0].SourceBlend = BlendOption.SourceAlpha;
+            baseBlendDesc.RenderTarget[0].DestinationBlend = BlendOption.InverseSourceAlpha;
+            baseBlendDesc.RenderTarget[0].BlendOperation = BlendOperation.Add;
+            baseBlendDesc.RenderTarget[0].SourceAlphaBlend = BlendOption.One;
+            baseBlendDesc.RenderTarget[0].DestinationAlphaBlend = BlendOption.Zero;
+            baseBlendDesc.RenderTarget[0].AlphaBlendOperation = BlendOperation.Add;
+            baseBlendDesc.RenderTarget[0].RenderTargetWriteMask = ColorWriteMaskFlags.All;
+            var baseBlendState = new BlendState(_device, baseBlendDesc);
+            _d3dResCache.BaseBlendState = baseBlendState;
+
+            //var glowBlendDesc = new BlendStateDescription();
+            //glowBlendDesc.RenderTarget[0].IsBlendEnabled = true; // Enable blending
+            //glowBlendDesc.RenderTarget[0].SourceBlend = BlendOption.SourceAlpha;
+            //glowBlendDesc.RenderTarget[0].DestinationBlend = BlendOption.InverseSourceAlpha;
+            //glowBlendDesc.RenderTarget[0].BlendOperation = BlendOperation.Add;
+            //glowBlendDesc.RenderTarget[0].SourceAlphaBlend = BlendOption.Zero;
+            //glowBlendDesc.RenderTarget[0].DestinationAlphaBlend = BlendOption.Zero;
+            //glowBlendDesc.RenderTarget[0].AlphaBlendOperation = BlendOperation.Add;
+            //glowBlendDesc.RenderTarget[0].RenderTargetWriteMask = ColorWriteMaskFlags.Red |
+            //                                          ColorWriteMaskFlags.Green |
+            //                                          ColorWriteMaskFlags.Blue;
+            //var glowBlendState = new BlendState(_device, glowBlendDesc);
+            //_d3dResCache.GlowBlendState = glowBlendState;
+
+            _deviceContext.OutputMerger.SetBlendState(_d3dResCache.BaseBlendState);
 
             _d3DSurface = new Dx11ImageSource();
             _d3DSurface.IsFrontBufferAvailableChanged += OnIsFrontBufferAvailableChanged;
@@ -184,7 +219,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         private void CreateAndBindTargets()
         {
-            if (_d3DSurface == null)
+            if (_d3DSurface == null || !_d3DSurface.IsFrontBufferAvailable)
             {
                 return;
             }
@@ -213,12 +248,21 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             _texture2D = new Texture2D(_device, renderDesc);
 
-            _renderTargetView = new RenderTargetView(_device, _texture2D);
+            RenderTargetViewDescription rtvDesc = new RenderTargetViewDescription
+            {
+                Dimension = RenderTargetViewDimension.Texture2D,
+                Format = renderDesc.Format,
+                Texture2D = { MipSlice = 0 }
+            };
+            _renderTargetView = new RenderTargetView(_device, _texture2D, rtvDesc);
             _d3dResCache.RenderTargetView = _renderTargetView;
 
             _deviceContext.OutputMerger.SetRenderTargets(_renderTargetView);
             _d3dResCache.Texture2D = _texture2D;
+            
+            _d3DSurface.Lock();
             _d3DSurface.SetRenderTarget(_texture2D);
+            _d3DSurface.Unlock();
 
             _device.ImmediateContext.Rasterizer.SetViewport(0, 0, width, height, 0.0f, 1.0f);
 
@@ -228,23 +272,26 @@ namespace Cad_Point_Manager.Controls.D3DControl
         {
             using (var dxgiDevice = _device.QueryInterface<SharpDX.DXGI.Device>())
             {
-                var d2dFactory = new SharpDX.Direct2D1.Factory1();
-                _d3dResCache.D2DDevice = new SharpDX.Direct2D1.Device(d2dFactory, dxgiDevice);
-                _d3dResCache.D2DDeviceContext = new SharpDX.Direct2D1.DeviceContext(_d3dResCache.D2DDevice, SharpDX.Direct2D1.DeviceContextOptions.None);
+                _d3dResCache.D2dFactory = new SharpDX.Direct2D1.Factory2();
+                _d3dResCache.D2DDevice = new(_d3dResCache.D2dFactory, dxgiDevice);
+                _d3dResCache.D2DDeviceContext = new(_d3dResCache.D2DDevice, SharpDX.Direct2D1.DeviceContextOptions.EnableMultithreadedOptimizations);
             }
 
-            var bitmapProperties = new SharpDX.Direct2D1.BitmapProperties1(
-                new SharpDX.Direct2D1.PixelFormat(SharpDX.DXGI.Format.B8G8R8A8_UNorm, SharpDX.Direct2D1.AlphaMode.Premultiplied),
-                dpiX: 96, dpiY: 96,
-                bitmapOptions: SharpDX.Direct2D1.BitmapOptions.Target | SharpDX.Direct2D1.BitmapOptions.CannotDraw);
+            //var bitmapProperties = new SharpDX.Direct2D1.BitmapProperties1(
+            //    new SharpDX.Direct2D1.PixelFormat(Format.B8G8R8A8_UNorm, SharpDX.Direct2D1.AlphaMode.Premultiplied),
+            //    dpiX: 96, dpiY: 96,
+            //    bitmapOptions: SharpDX.Direct2D1.BitmapOptions.Target | SharpDX.Direct2D1.BitmapOptions.CannotDraw);
 
-            using (var surface = _texture2D.QueryInterface<SharpDX.DXGI.Surface>())
-            {
-                _d3dResCache.D2DTargetBitmap = new SharpDX.Direct2D1.Bitmap1(_d3dResCache.D2DDeviceContext, surface, bitmapProperties);
-            }
+            //using (var surface = _texture2D.QueryInterface<Surface>())
+            //{
+            //    _d3dResCache.D2DTargetBitmap = new SharpDX.Direct2D1.Bitmap1(_d3dResCache.D2DDeviceContext, surface, bitmapProperties);
 
-            _d3dResCache.D2DDeviceContext.Target = _d3dResCache.D2DTargetBitmap;
-            _d3dResCache.D2DDeviceContext.TextAntialiasMode = SharpDX.Direct2D1.TextAntialiasMode.Grayscale;
+            //    var rtp = new SharpDX.Direct2D1.RenderTargetProperties(new SharpDX.Direct2D1.PixelFormat(SharpDX.DXGI.Format.Unknown, SharpDX.Direct2D1.AlphaMode.Premultiplied));
+            //    _d3dResCache.D2DRenderTarget = new(_d3dResCache.D2dFactory, surface, rtp);
+            //}
+
+            //_d3dResCache.D2DDeviceContext.Target = _d3dResCache.D2DTargetBitmap;
+            //_d3dResCache.D2DDeviceContext.TextAntialiasMode = SharpDX.Direct2D1.TextAntialiasMode.Grayscale;
         }
 
         private void StartRendering()
@@ -278,11 +325,15 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 return;
             }
 
-            Render3D();
+            //_d3dResCache.D2DDeviceContext.BeginDraw();
+
+            Render();
+
+            //_d3dResCache.D2DDeviceContext.EndDraw();
 
             CalcFps();
 
-            _device.ImmediateContext.Flush();
+            //_device.ImmediateContext.Flush();
         }
 
         private void CalcFps()
@@ -301,6 +352,23 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
                 _frameCount = 0;
                 _lastFrameTime = _renderTimer.ElapsedMilliseconds;
+            }
+        }
+
+        private static int GetMaxSize(FeatureLevel featureLevel)
+        {
+            switch (featureLevel)
+            {
+                case FeatureLevel.Level_10_0:
+                case FeatureLevel.Level_10_1:
+                    return 8192;
+                case FeatureLevel.Level_11_0:
+                case FeatureLevel.Level_11_1:
+                case FeatureLevel.Level_12_0:
+                case FeatureLevel.Level_12_1:
+                    return 16384;
+                default:
+                    throw new NotSupportedException("Unsupported feature level");
             }
         }
     }

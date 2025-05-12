@@ -1,19 +1,9 @@
 ﻿using Cad_Point_Manager.Controls.D3DControl;
 using Cad_Point_Manager.Helpers;
-using Cad_Point_Manager.Models.DrawingObjects;
-using netDxf;
 using netDxf.Entities;
-using SharpDX;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using SharpDX.Direct2D1;
 using System.Windows;
-using Vector2 = SharpDX.Vector2;
 using Vector3 = SharpDX.Vector3;
-using Vector4 = SharpDX.Vector4;
 
 namespace Cad_Point_Manager.Models.DrawingObjects3D
 {
@@ -21,10 +11,12 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
     {
         #region Fields
         private List<DrawingObject3D> _drawingObjects = [];
+        private List<LineVertex> _geometryVertices = [];
+        private List<TextVertex> _textVertices = [];
         #endregion
 
         #region Properties
-        public Insert Insert { get; set; }
+        public Insert DxfInsert { get; set; }
         public List<DrawingObject3D> DrawingObjects
         {
             get => _drawingObjects;
@@ -34,9 +26,34 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                 OnPropertyChanged(nameof(DrawingObjects));
             }
         }
+        public List<LineVertex> LineVertices
+        {
+            get => _geometryVertices;
+            set
+            {
+                _geometryVertices = value;
+                OnPropertyChanged(nameof(LineVertices));
+            }
+        }
+        public List<TextVertex> TextVertices
+        {
+            get => _textVertices;
+            set
+            {
+                _textVertices = value;
+                OnPropertyChanged(nameof(TextVertices));
+            }
+        }
 
         public Vector3 InsertionPoint { get; set; }
+        public int StartLineVertexIndex { get; set; }
+        public int EndLineVertexIndex { get; set; }
+        public int StartTextVertexIndex { get; set; }
+        public int EndTextVertexIndex { get; set; }
+
         public int NumberOfDrawingObjects => DrawingObjects.Count;
+
+        public bool TextVerticesCreated = false;
         #endregion
 
         #region Constructors
@@ -45,7 +62,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         public DrawingBlock3D(Insert insert, ObjectLayer3D layer, bool isPartOfBlock = false, DrawingBlock3D block = null)
         {
             Type = DrawingObject3dType.DrawingBlock3D;
-            Insert = insert;
+            DxfInsert = insert;
 
             EntityObject = insert;
             Layer = layer;
@@ -83,16 +100,67 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             }
         }
 
-        public override bool HitTest(System.Windows.Point point, float tolerance)
+        public override double DistanceToPoint(System.Windows.Point point)
+        {
+            double distance = double.MaxValue;
+
+            Parallel.ForEach(DrawingObjects, obj =>
+            {
+                var d = obj.DistanceToPoint(point);
+                if (d < distance)
+                {
+                    distance = d;
+                }
+            });
+
+            return distance;
+        }
+
+
+        public override void MouseEnter()
+        {
+            this.IsMouseOver = true;
+
+            for (int i = 0; i < LineVertices.Count; i++)
+            {
+                LineVertices[i].SetIsMouseOver(true);
+            }
+        }
+        public override void MouseLeave()
+        {
+            this.IsMouseOver = false;
+
+            for (int i = 0; i < LineVertices.Count; i++)
+            {
+                LineVertices[i].SetIsMouseOver(false);
+            }
+        }
+
+        public override void Select()
+        {
+            this.IsSelected = true;
+
+            for (int i = 0; i < LineVertices.Count; i++)
+            {
+                LineVertices[i].SetIsSelected(true);
+            }
+        }
+        public override void Deselect()
+        {
+            this.IsSelected = false;
+
+            for (int i = 0; i < LineVertices.Count; i++)
+            {
+                LineVertices[i].SetIsSelected(false);
+            }
+        }
+
+        public override void DrawToD2dDeviceContext(DeviceContext1 deviceContext, Factory2 factory, Brush brush, float thickness, StrokeStyle1 strokeStyle)
         {
             foreach (var obj in DrawingObjects)
             {
-                if (obj.HitTest(point, tolerance))
-                {
-                    return true;
-                }
+                obj.DrawToD2dDeviceContext(deviceContext, factory, brush, thickness, strokeStyle);
             }
-            return false;
         }
 
 
@@ -107,7 +175,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                     var obj = DxfHelpers.GetDrawingObject3D(e, Layer);
                     if (obj is not null) { DrawingObjects.Add(obj); }
                 }
-                UpdateVertices();
+                UpdateGeometryVertices();
             }
             else
             {
@@ -115,13 +183,50 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             }
         }
 
-        private void UpdateVertices()
+        private void UpdateGeometryVertices()
         {
-            Vertices.Clear();
+            LineVertices.Clear();
 
             foreach (var obj in DrawingObjects)
             {
-                Vertices.AddRange(obj.Vertices);    
+                if (obj is DrawingBlock3D block)
+                {
+                    LineVertices.AddRange(block.LineVertices);
+                }
+                if (obj is DrawingGeometry3D geometry)
+                {
+                    LineVertices.AddRange(geometry.Vertices);
+                }
+            }
+        }
+        public void UpdateTextVertices(D3dResCache resCache)
+        {
+            TextVertices.Clear();
+
+            foreach (var obj in DrawingObjects)
+            {
+                if (obj is DrawingBlock3D block)
+                {
+                    block.UpdateTextVertices(resCache);
+                    TextVertices.AddRange(block.TextVertices);
+                }
+                if (obj is DrawingText3D text)
+                {
+                    text.UpdateTextVertices(resCache);
+                    TextVertices.AddRange(text.TextVertices);
+                }
+                if (obj is DrawingMtext3D mtext)
+                {
+                    mtext.UpdateTextVertices(resCache);
+
+                    foreach (var row in mtext.MtextBlock.Rows)
+                    {
+                        foreach (var segment in row.Segments)
+                        {
+                            TextVertices.AddRange(segment.TextVertices);
+                        }
+                    }
+                }
             }
         }
         #endregion

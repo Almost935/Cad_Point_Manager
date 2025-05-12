@@ -5,12 +5,16 @@
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
       xmlns:local="clr-namespace:Cad_Point_Manager.Views"
       xmlns:controls="clr-namespace:Cad_Point_Manager.Controls"
+      xmlns:converters="clr-namespace:Cad_Point_Manager.Converters"
+      xmlns:uc="clr-namespace:Cad_Point_Manager.Views.UserControls"
       xmlns:d3D="clr-namespace:Cad_Point_Manager.Controls.D3DControl"
       xmlns:ui="http://schemas.modernwpf.com/2019"
       xmlns:fa="http://schemas.fontawesome.io/icons/"
       xmlns:viewModels="clr-namespace:Cad_Point_Manager.ViewModels"
+      xmlns:sys="clr-namespace:System;assembly=mscorlib"
+      d:DataContext="{d:DesignInstance Type=viewModels:MainViewModel}"
       mc:Ignorable="d"
-      Title="MainView" 
+      Title="MainView"
       Background="{StaticResource MainBackgroundBrush}">
 
     <!--<Page.DataContext>
@@ -22,6 +26,8 @@
             <Setter Property="VerticalAlignment"
                     Value="Center" />
         </Style>
+
+        <converters:LeftRightMarginConverter x:Key="LeftRightMarginConverter" />
     </Page.Resources>
 
     <Grid>
@@ -31,7 +37,6 @@
             <RowDefinition Height="15*" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
-
 
         <Grid x:Name="menuGrid"
               Grid.Row="0">
@@ -112,6 +117,7 @@
                             </MenuItem.Icon>
                         </MenuItem>
                         <MenuItem Header="Zoom To Extents"
+                                  Command="{Binding ZoomToExtentsCommand}"
                                   Style="{StaticResource MenuItemStyle1}">
                             <MenuItem.Icon>
                                 <fa:FontAwesome Icon="SquareOutline" />
@@ -122,19 +128,48 @@
             </Border>
         </Grid>
 
+        <Grid Grid.Row="2"
+              ClipToBounds="False"
+              Panel.ZIndex="1">
+            <uc:LayerViewer x:Name="layerView"
+                            Panel.ZIndex="1"
+                            Width="300"
+                            HorizontalAlignment="Right"
+                            ClipToBounds="False"
+                            Height="{Binding ElementName=dxfBorder, Path=Height}"
+                            CadManager="{Binding JobFileManager.CadManager3D}"
+                            LayerCollectionView="{Binding JobFileManager.CadManager3D.LayersView}"
+                            PointGroupCollectionView="{Binding JobFileManager.CadManager3D.PointGroupsView}"/>
+        </Grid>
+
         <Grid x:Name="dxfGrid"
               Grid.Row="2">
-            <Border x:Name="dxfBorder"
-                    BorderBrush="Black"
-                    Background="White"
-                    BorderThickness="1"
-                    Margin="20 10 20 20"
-                    CornerRadius="20"
-                    ClipToBounds="True">
+            <Border x:Name="dxfBorder">
+                <Border.Margin>
+                    <MultiBinding Converter="{StaticResource LeftRightMarginConverter}">
+                        <!-- Bind Left and Right margins to the SourceControl's value -->
+                        <Binding ElementName="SourceControl"
+                                 Path="Value" />
+                        <Binding ElementName="SourceControl"
+                                 Path="Value" />
+                        <!-- Set Top margin directly -->
+                        <Binding>
+                            <Binding.Source>
+                                <sys:Double>20</sys:Double>
+                            </Binding.Source>
+                        </Binding>
+                        <!-- Set Bottom margin directly -->
+                        <Binding>
+                            <Binding.Source>
+                                <sys:Double>10</sys:Double>
+                            </Binding.Source>
+                        </Binding>
+                    </MultiBinding>
+                </Border.Margin>
 
-                <d3D:D3dDxfControl x:Name="d3dDxfControl" 
+                <d3D:D3dDxfControl x:Name="d3dDxfControl"
                                    Cursor="Cross"
-                                   CadManager3D="{Binding JobFileManager.CadManager3D}"/>
+                                   CadManager3D="{Binding JobFileManager.CadManager3D}" />
             </Border>
         </Grid>
 
@@ -142,7 +177,7 @@
             <TextBlock Margin="20,0,0,0"
                        Foreground="White"
                        Text="{Binding ElementName=d3dDxfControl, Path=DxfCoordsString}">
-               
+
             </TextBlock>
         </WrapPanel>
     </Grid>

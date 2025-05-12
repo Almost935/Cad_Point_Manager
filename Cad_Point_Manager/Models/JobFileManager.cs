@@ -55,15 +55,15 @@ namespace Cad_Point_Manager.Models
                 OnPropertyChanged();
             }
         }
-        public CadManager CadManager
-        {
-            get { return _cadManager; }
-            set
-            {
-                _cadManager = value;
-                OnPropertyChanged();
-            }
-        }
+        //public CadManager CadManager
+        //{
+        //    get { return _cadManager; }
+        //    set
+        //    {
+        //        _cadManager = value;
+        //        OnPropertyChanged();
+        //    }
+        //}
         public CadManager3D CadManager3D
         {
             get { return _cadManager3D; }
@@ -82,9 +82,8 @@ namespace Cad_Point_Manager.Models
                 OnPropertyChanged();
             }
         }
-
         public bool JobPathSet { get; set; } = false;
-        public bool DxfLoaded { get { return CadManager is not null; } }
+        public bool DxfLoaded { get { return CadManager3D is not null; } }
         #endregion
 
         #region Constructors
@@ -94,7 +93,6 @@ namespace Cad_Point_Manager.Models
         #region Methods
         public void NewJobFile()
         {
-            CadManager.ClearDxfDocument();
             CadManager3D.ClearDxf();
 
             JobName = string.Empty;
@@ -201,15 +199,12 @@ namespace Cad_Point_Manager.Models
             DxfFilePath = jobFileData.DxfFilePath;
             Extents = jobFileData.Extents;
 
-            CadManager.LoadDxfDocument(jobFileData.CadManagerData);
-
             return true;
         }
         public void LoadDxf(DxfDocument dxfDoc)
         {
             if (dxfDoc is not null)
             {
-                CadManager.LoadDxfDocument(dxfDoc);
                 CadManager3D.LoadDxf(dxfDoc);
             }
         }
@@ -232,7 +227,6 @@ namespace Cad_Point_Manager.Models
             JobFilePath = jobFile.JobFilePath;
             DxfFilePath = jobFile.DxfFilePath;
             Extents = jobFile.Extents;
-            CadManagerData = new CadManagerData(jobFile.CadManager);
         }
     }
 }

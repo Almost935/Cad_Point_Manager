@@ -1,6 +1,6 @@
 ﻿using SharpDX.Direct3D9;
-using System.Diagnostics;
 using System.Windows.Interop;
+using System.Windows.Threading;
 
 namespace Cad_Point_Manager.Controls.D3DControl
 {
@@ -42,10 +42,10 @@ namespace Cad_Point_Manager.Controls.D3DControl
             if (renderTarget != null)
             {
                 base.Lock();
-                if (RenderWait != 0)
-                {
-                    Thread.Sleep(RenderWait);
-                }
+                //if (RenderWait != 0)
+                //{
+                //    Thread.Sleep(RenderWait);
+                //}
                 base.AddDirtyRect(new System.Windows.Int32Rect(0, 0, base.PixelWidth, base.PixelHeight));
                 base.Unlock();
             }
@@ -55,11 +55,17 @@ namespace Cad_Point_Manager.Controls.D3DControl
         {
             if (renderTarget != null)
             {
-                renderTarget = null;
+                Disposer.SafeDispose(ref renderTarget);
+                //base.Lock();
+                //base.SetBackBuffer(D3DResourceType.IDirect3DSurface9, IntPtr.Zero);
+                //base.Unlock();
 
-                base.Lock();
-                base.SetBackBuffer(D3DResourceType.IDirect3DSurface9, IntPtr.Zero);
-                base.Unlock();
+                base.Dispatcher.Invoke(() =>
+                {
+                    base.Lock();
+                    base.SetBackBuffer(D3DResourceType.IDirect3DSurface9, IntPtr.Zero);
+                    base.Unlock();
+                }, DispatcherPriority.Send);
             }
 
             if (target == null)
