@@ -19,6 +19,7 @@
   <ItemGroup>
     <Compile Remove="Controls\D3DControl\D3D11ImageSource.cs" />
     <Compile Remove="Controls\D3DControl\D3dControl.cs" />
+    <Compile Remove="Converters\ColorToBrushConverter.cs" />
     <Compile Remove="Helpers\DxfHelper.cs" />
     <Compile Remove="Models\DrawingObjects3D\DrawingSText3D.cs" />
     <Compile Remove="Models\Enums.cs" />
@@ -33,6 +34,8 @@
     <PackageReference Include="Extended.Wpf.Toolkit" Version="4.7.25104.5739" />
     <PackageReference Include="FontAwesome.WPF" Version="4.7.0.9" />
     <PackageReference Include="FreeTypeSharp" Version="3.0.0" />
+    <PackageReference Include="Microsoft.Windows.Compatibility" Version="9.0.4" />
+    <PackageReference Include="Microsoft.Xaml.Behaviors.Wpf" Version="1.1.135" />
     <PackageReference Include="ModernWpfUI" Version="0.9.6" />
     <PackageReference Include="netDxf" Version="2023.11.10" />
     <PackageReference Include="SharpDX" Version="4.2.0" />

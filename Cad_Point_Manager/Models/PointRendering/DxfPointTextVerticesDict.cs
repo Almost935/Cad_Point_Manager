@@ -16,7 +16,7 @@ namespace Cad_Point_Manager.Models.PointRendering
         private readonly D3dResCache _resCache;
         private TextFormat _textFormat;
         private FontFace _fontFace;
-        private Vector4 _defaultColor = new Vector4(0.0f, 0.0f, 0.0f, 1.0f);
+        private Vector4 _defaultColor = new(0.0f, 0.0f, 0.0f, 1.0f);
 
         public DxfPointTextVerticesDict(D3dResCache resCache)
         {
@@ -27,11 +27,6 @@ namespace Cad_Point_Manager.Models.PointRendering
 
         public TextVertex[] GetIntTextVertices(int integer, float textHeight, Vector2 basePoint, Vector4 color)
         {
-            // Testing 
-            int breakPointMin = 15;
-            int breakPointMax = 100;
-            // End Testing
-
             List<TextVertex> verticesList = [];
             string text = integer.ToString();
             float xOffset = 0;
@@ -43,14 +38,17 @@ namespace Cad_Point_Manager.Models.PointRendering
 
                 if (_numbersDict.TryGetValue(num, out (List<TextVertex> vertices, float width) tup))
                 {
+                    bool colorChangeFlag = color != _defaultColor;
                     List<TextVertex> translated = new(tup.vertices.Count);
                     Vector2 offset = new(basePoint.X + xOffset, basePoint.Y);
                     for (int j = 0; j < tup.vertices.Count; j++)
                     {
-                        //TextVertex originalVertex = tup.vertices[j];
-                        //TextVertex translatedVertex = originalVertex.Translate(offset);
-                        //translated.Add(translatedVertex);
-                        translated.Add(tup.vertices[j].Translate(offset));
+                        var vertex = tup.vertices[j];
+                        if (colorChangeFlag)
+                        {
+                            vertex = new TextVertex(vertex.Position, color);
+                        }
+                        translated.Add(vertex.Translate(offset));
                     }
                     verticesList.AddRange(translated);
                     xOffset += tup.width;

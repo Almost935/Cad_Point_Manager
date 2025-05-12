@@ -1,6 +1,7 @@
 ﻿using Cad_Point_Manager.Models;
 using Cad_Point_Manager.Models.DrawingObjects3D;
 using Cad_Point_Manager.Models.PointRendering;
+using SharpDX;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows;
@@ -27,9 +28,10 @@ namespace Cad_Point_Manager.Views.UserControls
         private double _layerListOpacity = 0;
         private double _pointGroupListOpacity = 0;
 
-        private readonly DispatcherTimer _hideTimer = new DispatcherTimer();
+        private readonly DispatcherTimer _hideTimer = new();
         private bool _isMouseOverPanel = false;
-        private ScaleTransform _mainPanelTransform = new ScaleTransform();
+        private ScaleTransform _mainPanelTransform = new();
+        private bool _isColorPickerOpen;
         #endregion
 
         #region Properties
@@ -144,7 +146,7 @@ namespace Cad_Point_Manager.Views.UserControls
         private void HideTimer_Tick(object sender, EventArgs e)
         {
             _hideTimer.Stop();
-            if (!_isMouseOverPanel)
+            if (!_isMouseOverPanel && !_isColorPickerOpen)
             {
                 HideControl();
             }
@@ -155,7 +157,6 @@ namespace Cad_Point_Manager.Views.UserControls
             _isMouseOverPanel = false;
             _hideTimer.Start();
         }
-
         private void OverallGrid_MouseEnter(object sender, MouseEventArgs e)
         {
             _isMouseOverPanel = true;
@@ -173,7 +174,6 @@ namespace Cad_Point_Manager.Views.UserControls
             };
             _mainPanelTransform.BeginAnimation(ScaleTransform.ScaleXProperty, slideIn);
         }
-
         private void HideControl()
         {
             LayerListVisible = false;
@@ -186,12 +186,6 @@ namespace Cad_Point_Manager.Views.UserControls
                 FillBehavior = FillBehavior.HoldEnd
             };
             _mainPanelTransform.BeginAnimation(ScaleTransform.ScaleXProperty, slideOut);
-        }
-
-
-        protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
         private void LayersListView_Loaded(object sender, RoutedEventArgs e)
@@ -209,7 +203,6 @@ namespace Cad_Point_Manager.Views.UserControls
                 layerListGridView.Columns[1].Width = layerListColumnWidth * 0.6;
             }
         }
-
         private void LayersListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             _selectedLayers.Clear();
@@ -226,7 +219,6 @@ namespace Cad_Point_Manager.Views.UserControls
                 }
             }
         }
-
         private void LayerCheckBox_Checked(object sender, RoutedEventArgs e)
         {
             foreach (var layer in _selectedLayers)
@@ -239,7 +231,6 @@ namespace Cad_Point_Manager.Views.UserControls
                 CadManager.TextVerticesDirty = true;
             }
         }
-
         private void LayerCheckBox_Unchecked(object sender, RoutedEventArgs e)
         {
             foreach (var layer in _selectedLayers)
@@ -262,7 +253,6 @@ namespace Cad_Point_Manager.Views.UserControls
             LayerListOpacity = 1;
         }
 
-
         private void PointGroupsBorder_MouseEnter(object sender, MouseEventArgs e)
         {
             LayerListVisible = false;
@@ -272,7 +262,6 @@ namespace Cad_Point_Manager.Views.UserControls
             LayerListOpacity = 0;
             PointGroupListOpacity = 1;
         }
-
         private void PointGroupsListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             _selectedPointGroups.Clear();
@@ -310,6 +299,59 @@ namespace Cad_Point_Manager.Views.UserControls
             {
                 CadManager.DxfPointVerticesDirty = true;
             }
+        }
+        private void PointGroupsListView_Loaded(object sender, RoutedEventArgs e)
+        {
+            ListView listview = sender as ListView;
+
+            // Set column widths on each gridview
+            GridView pointGroupGridView = listview.View as GridView;
+            double pointGroupLTotalWidth = listview.ActualWidth;
+            double pointGroupColumnWidth = pointGroupLTotalWidth / pointGroupGridView.Columns.Count;
+            if (pointGroupColumnWidth > 0)
+            {
+                pointGroupGridView.Columns[0].Width = pointGroupColumnWidth * 1.6;
+                pointGroupGridView.Columns[1].Width = pointGroupColumnWidth * 0.7;
+                pointGroupGridView.Columns[1].Width = pointGroupColumnWidth * 0.7;
+            }
+        }
+
+        private void ColorToggle_Loaded(object sender, RoutedEventArgs e)
+        {
+            if (sender is ColorToggle colorToggle)
+            {
+                colorToggle.IsPopupOpenChanged += ColorToggle_IsPopupOpenChanged;
+                colorToggle.IsColorChanged += ColorToggle_IsColorChanged;
+            }
+        }
+        private void ColorToggle_IsPopupOpenChanged(object sender, bool isOpen)
+        {
+            UpdateIsColorPickerOpen();
+        }
+        private void ColorToggle_IsColorChanged(object sender, Vector4 newColor)
+        {
+            CadManager.DxfPointVerticesDirty = true;
+        }
+        private void UpdateIsColorPickerOpen()
+        {
+            _isColorPickerOpen = false;
+            foreach (var pg in PointGroupCollectionView)
+            {
+                if (pg is PointGroup pointGroup)
+                {
+                    if (pointGroup.ColorToggleOpen)
+                    {
+                        _isColorPickerOpen = true;
+                        return;
+                    }
+                }
+            }
+        }
+
+
+        protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
     }
 }

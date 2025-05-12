@@ -8,13 +8,13 @@
              xmlns:controls="clr-namespace:Cad_Point_Manager.Controls"
              xmlns:converters="clr-namespace:Cad_Point_Manager.Converters"
              xmlns:viewModels="clr-namespace:Cad_Point_Manager.ViewModels"
-             d:DataContext="{d:DesignInstance Type=viewModels:MainViewModel}"
              mc:Ignorable="d"
              d:DesignHeight="400"
              d:DesignWidth="300">
     
     <UserControl.Resources>
         <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" />
+        <converters:KeyValueToValueConverter x:Key="KeyValueToValueConverter" />
         <SolidColorBrush x:Key="propertiesFontBrush"
                          Color="Black" />
         <Style x:Key="tabBorderStyle"
@@ -93,31 +93,43 @@
                       IsHitTestVisible="{Binding ElementName=root, Path=PointGroupListVisible}"
                       FontSize="14"
                       SelectionMode="Extended"
-                      Loaded="LayersListView_Loaded"
                       SelectionChanged="PointGroupsListView_SelectionChanged"
-                      Background="{StaticResource PopoutMenuBackgroundColor}">
+                      Background="{StaticResource PopoutMenuBackgroundColor}"
+                      Loaded="PointGroupsListView_Loaded">
                 <ListView.View>
                     <GridView>
                         <GridViewColumn Header="Name">
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
-                                    <TextBlock Text="{Binding Path=Value.Name}"
+                                    <TextBlock Text="{Binding Path=Name}"
                                                Foreground="{DynamicResource propertiesFontBrush}"
                                                FontSize="12"
                                                HorizontalAlignment="Left"
                                                VerticalAlignment="Center"
                                                Margin="2 0 0 0">
                                         <TextBlock.ToolTip>
-                                            <TextBlock Text="{Binding Path=Value.Name}" />
+                                            <TextBlock Text="{Binding Path=Name}" />
                                         </TextBlock.ToolTip>
                         </TextBlock>
+                                </DataTemplate>
+                            </GridViewColumn.CellTemplate>
+                        </GridViewColumn>
+                        <GridViewColumn Header="Color">
+                             <GridViewColumn.CellTemplate>
+                                <DataTemplate>
+                                    <local:ColorToggle SelectedColor="{Binding Path=Color, Mode=TwoWay}"
+                                                       IsPopupOpen="{Binding ColorToggleOpen, Mode=TwoWay}"
+                                                       ToggleButtonWidth="10"
+                                                       ToggleButtonHeight="10"
+                                                       ToggleButtonMargin="1"
+                                                       Loaded="ColorToggle_Loaded"/>
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
                         <GridViewColumn Header="Visibilty">
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
-                                    <CheckBox IsChecked="{Binding Path=Value.IsVisible, Mode=TwoWay}"
+                                    <CheckBox IsChecked="{Binding Path=IsVisible, Mode=TwoWay}"
                                               HorizontalAlignment="Center"
                                               HorizontalContentAlignment="Center"
                                               VerticalAlignment="Center"

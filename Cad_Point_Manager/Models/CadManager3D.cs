@@ -30,8 +30,8 @@ namespace Cad_Point_Manager.Models
         private Bounds _extents;
         private ObservableCollection<KeyValuePair<string, ObjectLayer3D>> _layers = [];
         private ICollectionView _layersView;
+        private ObservableCollection<KeyValuePair<string, PointGroup>> _pointGroups = [];
         private ICollectionView _pointGroupsView;
-        private Dictionary<string, PointGroup> _pointGroups = [];
         private Size2F _viewportSize = Size2F.Empty;
 
         private readonly List<LineVertex> _cachedLineVertices = [];
@@ -122,7 +122,7 @@ namespace Cad_Point_Manager.Models
                 OnPropertyChanged(nameof(LayersView));
             }
         }
-        public Dictionary<string, PointGroup> PointGroups
+        public ObservableCollection<KeyValuePair<string, PointGroup>> PointGroups
         {
             get => _pointGroups;
             set
@@ -206,9 +206,9 @@ namespace Cad_Point_Manager.Models
         }
         public void UpdatePointGroupsView()
         {
-            PointGroupsView = CollectionViewSource.GetDefaultView(PointGroups);
+            PointGroupsView = CollectionViewSource.GetDefaultView(PointGroups.Select(kvp => kvp.Value).ToList());
             PointGroupsView.SortDescriptions.Clear();
-            PointGroupsView.SortDescriptions.Add(new SortDescription("Key", ListSortDirection.Ascending));
+            PointGroupsView.SortDescriptions.Add(new SortDescription("Name", ListSortDirection.Ascending));
         }
 
         public List<(double distance, DrawingObject3D obj)> GetNearestDrawingObjects(Point p, float tolerance)
@@ -429,8 +429,11 @@ namespace Cad_Point_Manager.Models
         public void UpdateDxfPointTextVertices(D3dResCache d3DResCache)
         {
             _pointTextVerticesDict ??= new(d3DResCache);
-            foreach (var pointGroup in PointGroups.Values)
+
+            foreach (var keyValuePair in PointGroups)
             {
+                var pointGroup = keyValuePair.Value;
+
                 if (pointGroup is null) return;
                 if (!pointGroup.IsVisible) { continue; }
 
@@ -488,7 +491,7 @@ namespace Cad_Point_Manager.Models
                     pointNum++;
                 }
                 pointGroup.Points = points.ToArray();
-                PointGroups.Add(pointGroupName, pointGroup);
+                PointGroups.Add(new KeyValuePair<string, PointGroup>(pointGroupName, pointGroup));
             }
         }
 

@@ -1,5 +1,6 @@
 ﻿using SharpDX;
 using System.ComponentModel;
+using System.Runtime.InteropServices;
 
 namespace Cad_Point_Manager.Models.PointRendering
 {
@@ -7,12 +8,13 @@ namespace Cad_Point_Manager.Models.PointRendering
     {
         #region Fields
         private string _name;
-        private Vector4 _color = new Vector4(0, 0, 0, 1);
+        private Vector4 _color = new(0, 0, 0, 1);
         private bool _isVisible = true;
         private float _pointScale = 1.00f;
         private float _textHeight;
         private float _baseTextHeight = 1.00f;
         private DxfPoint[] _points = [];
+        private bool _colorToggleOpen = false;
         #endregion
 
         #region Properties
@@ -54,7 +56,7 @@ namespace Cad_Point_Manager.Models.PointRendering
         }
         public float PointScale
         {
-            get => _pointScale; 
+            get => _pointScale;
             set
             {
                 if (_pointScale != value)
@@ -66,7 +68,7 @@ namespace Cad_Point_Manager.Models.PointRendering
         }
         public float TextHeight
         {
-            get => _textHeight; 
+            get => _textHeight;
             set
             {
                 if (_textHeight != value)
@@ -78,7 +80,7 @@ namespace Cad_Point_Manager.Models.PointRendering
         }
         public float BaseTextHeight
         {
-            get => _baseTextHeight; 
+            get => _baseTextHeight;
             set
             {
                 if (_baseTextHeight != value)
@@ -97,6 +99,18 @@ namespace Cad_Point_Manager.Models.PointRendering
                 {
                     _points = value;
                     OnPropertyChanged(nameof(Points));
+                }
+            }
+        }
+        public bool ColorToggleOpen
+        {
+            get => _colorToggleOpen;
+            set
+            {
+                if (_colorToggleOpen != value)
+                {
+                    _colorToggleOpen = value;
+                    OnPropertyChanged(nameof(ColorToggleOpen));
                 }
             }
         }

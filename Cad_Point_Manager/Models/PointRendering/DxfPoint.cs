@@ -40,6 +40,19 @@ namespace Cad_Point_Manager.Models.PointRendering
             TextVertices = textDict.GetIntTextVertices(PointNumber, TextHeight, new Vector2(Position.X, Position.Y), PointGroup.Color);
         }
 
+        public void UpdateTextColor(Vector4 color)
+        {
+            if (TextVertices != null)
+            {
+                Span<TextVertex> vertexSpan = TextVertices; // Convert array to span
+                for (int i = 0; i < vertexSpan.Length; i++)
+                {
+                    // Modify the color directly on the span element
+                    vertexSpan[i].Color = color;
+                }
+            }
+        }   
+
         public void UpdatePointScale()
         {
             TextHeight = PointGroup.BaseTextHeight * PointGroup.PointScale;
