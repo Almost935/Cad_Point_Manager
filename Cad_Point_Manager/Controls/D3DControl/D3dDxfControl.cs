@@ -710,18 +710,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
                 if (e.MiddleButton == MouseButtonState.Pressed)
                 {
-                    if (_isShiftPressed)
-                    {
-
-                    }
-                    else
-                    {
-                        _camera.Pan(currentMousePos, _prevMousePos);
-                        ConstantBuffersDirty = true;
-                    }
+                    _camera.Pan(currentMousePos, _prevMousePos);
+                    ConstantBuffersDirty = true;
 
                     D3dIsDirty = true;
-                    e.Handled = true;
+                    //e.Handled = true;
                 }
                 _prevMousePos = currentMousePos;
             }
@@ -743,7 +736,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             ConstantBuffersDirty = true;
             D3dIsDirty = true;
-            e.Handled = true;
+            //e.Handled = true;
         }
         protected override void OnMouseLeave(MouseEventArgs e)
         {

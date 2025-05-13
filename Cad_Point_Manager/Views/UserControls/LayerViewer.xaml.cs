@@ -251,7 +251,7 @@ namespace Cad_Point_Manager.Views.UserControls
             PointGroupListVisible = false;
             LayerListVisible = true;
 
-            layersListView.Focus();
+            //layersListView.Focus();
             PointGroupListOpacity = 0;
             LayerListOpacity = 1;
         }
@@ -261,7 +261,7 @@ namespace Cad_Point_Manager.Views.UserControls
             LayerListVisible = false;
             PointGroupListVisible = true;
 
-            pointGroupsListView.Focus();
+            //pointGroupsListView.Focus();
             LayerListOpacity = 0;
             PointGroupListOpacity = 1;
         }
@@ -342,15 +342,11 @@ namespace Cad_Point_Manager.Views.UserControls
 
         private void UpdateIsColorPickerOpen()
         {
-            //Debug.WriteLine($"UpdateIsColorPickerOpen()");
-
             _isColorPickerOpen = false;
             foreach (var pg in PointGroupCollectionView)
             {
                 if (pg is PointGroup pointGroup)
                 {
-                    //Debug.WriteLine($"pointGroup: {pointGroup} pointGroup.ColorToggleOpen: {pointGroup.ColorToggleOpen}");
-
                     if (pointGroup.ColorToggleOpen)
                     {
                         _isColorPickerOpen = true;
@@ -369,27 +365,24 @@ namespace Cad_Point_Manager.Views.UserControls
         }
         private void ColorPicker_ColorChanged(object sender, RoutedEventArgs e)
         {
-            //if (sender is PortableColorPicker colorPicker)
-            //{ 
-            //    var color = colorPicker.SelectedColor;
-
-            //    Debug.WriteLine($"color: {color.R} {color.G} {color.B} {color.A}");
-
-            //    Vector4 newColor = new(color.R / 255f, color.G / 255f, color.B / 255f, color.A / 255f);
-
-            //    foreach (var pg in _selectedPointGroups)
-            //    {
-            //        pg.Color = newColor;
-            //    }
-
-                CadManager.DxfPointVerticesDirty = true;
-            //}
+            //CadManager.DxfPointVerticesDirty = true;
         }
-
         private void ColorPicker_IsPopupOpenChanged(object? sender, bool e)
         {
-            UpdateIsColorPickerOpen();
+            if (sender is PortableColorPicker colorPicker)
+            {
+                UpdateIsColorPickerOpen();
+
+                if (!colorPicker.IsPopupOpen)
+                {
+                    var binding = colorPicker.GetBindingExpression(PortableColorPicker.SelectedColorProperty);
+                    binding?.UpdateSource();
+                    CadManager.DxfPointVerticesDirty = true;
+                }
+            }
         }
+
+
 
         protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {

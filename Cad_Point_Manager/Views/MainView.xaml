@@ -12,14 +12,11 @@
       xmlns:fa="http://schemas.fontawesome.io/icons/"
       xmlns:viewModels="clr-namespace:Cad_Point_Manager.ViewModels"
       xmlns:sys="clr-namespace:System;assembly=mscorlib"
+      xmlns:colorpicker="clr-namespace:ColorPicker;assembly=ColorPicker"
       d:DataContext="{d:DesignInstance Type=viewModels:MainViewModel}"
       mc:Ignorable="d"
       Title="MainView"
       Background="{StaticResource MainBackgroundBrush}">
-
-    <!--<Page.DataContext>
-        <viewModels:MainViewModel />
-    </Page.DataContext>-->
 
     <Page.Resources>
         <Style TargetType="fa:FontAwesome">
@@ -40,7 +37,6 @@
 
         <Grid x:Name="menuGrid"
               Grid.Row="0">
-
             <Border Grid.Row="0"
                     BorderBrush="#7FFFFFFF"
                     BorderThickness="0.25"

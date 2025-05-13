@@ -96,6 +96,7 @@
                       IsHitTestVisible="{Binding ElementName=root, Path=PointGroupListVisible}"
                       FontSize="14"
                       SelectionMode="Extended"
+                      Focusable="True"
                       SelectionChanged="PointGroupsListView_SelectionChanged"
                       Background="{StaticResource PopoutMenuBackgroundColor}"
                       Loaded="PointGroupsListView_Loaded">
@@ -127,14 +128,15 @@
                                                        ToggleButtonMargin="1"
                                                        Loaded="ColorToggle_Loaded"/>-->
                                     <colorpicker:PortableColorPicker Style="{StaticResource DefaultColorPickerStyle}" 
-                                                                     SelectedColor="{Binding Color, Converter={StaticResource Vector4ToColorConverter}, Mode=TwoWay}"
+                                                                     SelectedColor="{Binding Color, Converter={StaticResource Vector4ToColorConverter}, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
                                                                      ToggleButtonWidth="20"
                                                                      ToggleButtonHeight="15"
                                                                      ToggleButtonMargin="0 2 0 2"
-                                                                     IsPopupOpen="{Binding Path=ColorToggleOpen, Mode=TwoWay}"
+                                                                     IsPopupOpen="{Binding Path=ColorToggleOpen, Mode=OneWayToSource}"
                                                                      ColorChanged="ColorPicker_ColorChanged" 
                                                                      IsPopupOpenChanged="ColorPicker_IsPopupOpenChanged"
-                                                                     Loaded="ColorPicker_Loaded" />
+                                                                     Loaded="ColorPicker_Loaded"
+                                                                     Focusable="True" />
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
