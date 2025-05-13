@@ -52,4 +52,13 @@
     <Folder Include="Services\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Reference Include="ColorPicker">
+      <HintPath>..\..\ColorPicker\src\ColorPicker\obj\Debug\net8.0-windows\ColorPicker.dll</HintPath>
+    </Reference>
+    <Reference Include="ColorPicker.Models">
+      <HintPath>..\..\ColorPicker\src\ColorPicker.Models\bin\Debug\net8.0\ColorPicker.Models.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
 </Project>

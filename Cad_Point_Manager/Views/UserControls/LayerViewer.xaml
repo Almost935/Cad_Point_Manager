@@ -8,6 +8,7 @@
              xmlns:controls="clr-namespace:Cad_Point_Manager.Controls"
              xmlns:converters="clr-namespace:Cad_Point_Manager.Converters"
              xmlns:viewModels="clr-namespace:Cad_Point_Manager.ViewModels"
+             xmlns:colorpicker="clr-namespace:ColorPicker;assembly=ColorPicker"
              mc:Ignorable="d"
              d:DesignHeight="400"
              d:DesignWidth="300">
@@ -15,8 +16,10 @@
     <UserControl.Resources>
         <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" />
         <converters:KeyValueToValueConverter x:Key="KeyValueToValueConverter" />
+        <converters:Vector4ToColorConverter x:Key="Vector4ToColorConverter" />
         <SolidColorBrush x:Key="propertiesFontBrush"
                          Color="Black" />
+        
         <Style x:Key="tabBorderStyle"
                TargetType="Border">
             <Setter Property="Background"
@@ -117,12 +120,21 @@
                         <GridViewColumn Header="Color">
                              <GridViewColumn.CellTemplate>
                                 <DataTemplate>
-                                    <local:ColorToggle SelectedColor="{Binding Path=Color, Mode=TwoWay}"
+                                    <!--<local:ColorToggle SelectedColor="{Binding Path=Color, Mode=TwoWay}"
                                                        IsPopupOpen="{Binding ColorToggleOpen, Mode=TwoWay}"
                                                        ToggleButtonWidth="10"
                                                        ToggleButtonHeight="10"
                                                        ToggleButtonMargin="1"
-                                                       Loaded="ColorToggle_Loaded"/>
+                                                       Loaded="ColorToggle_Loaded"/>-->
+                                    <colorpicker:PortableColorPicker Style="{StaticResource DefaultColorPickerStyle}" 
+                                                                     SelectedColor="{Binding Color, Converter={StaticResource Vector4ToColorConverter}, Mode=TwoWay}"
+                                                                     ToggleButtonWidth="20"
+                                                                     ToggleButtonHeight="15"
+                                                                     ToggleButtonMargin="0 2 0 2"
+                                                                     IsPopupOpen="{Binding Path=ColorToggleOpen, Mode=TwoWay}"
+                                                                     ColorChanged="ColorPicker_ColorChanged" 
+                                                                     IsPopupOpenChanged="ColorPicker_IsPopupOpenChanged"
+                                                                     Loaded="ColorPicker_Loaded" />
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>

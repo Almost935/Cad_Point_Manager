@@ -130,6 +130,11 @@ namespace Cad_Point_Manager.Models.PointRendering
         {
 
         }
+
+        public override string ToString()
+        {
+            return Name;
+        }
         #endregion
 
         #region INotifyPropertyChanged

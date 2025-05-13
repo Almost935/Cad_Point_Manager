@@ -1,8 +1,11 @@
 ﻿using Cad_Point_Manager.Models;
 using Cad_Point_Manager.Models.DrawingObjects3D;
 using Cad_Point_Manager.Models.PointRendering;
+using ColorPicker;
 using SharpDX;
 using System.ComponentModel;
+using System.Diagnostics;
+using System.Drawing;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
@@ -134,7 +137,7 @@ namespace Cad_Point_Manager.Views.UserControls
         public LayerViewer()
         {
             InitializeComponent();
-            
+
             mainPanel.RenderTransform = _mainPanelTransform;
 
             HideControl();
@@ -316,6 +319,8 @@ namespace Cad_Point_Manager.Views.UserControls
             }
         }
 
+
+
         private void ColorToggle_Loaded(object sender, RoutedEventArgs e)
         {
             if (sender is ColorToggle colorToggle)
@@ -332,13 +337,20 @@ namespace Cad_Point_Manager.Views.UserControls
         {
             CadManager.DxfPointVerticesDirty = true;
         }
+
+
+
         private void UpdateIsColorPickerOpen()
         {
+            //Debug.WriteLine($"UpdateIsColorPickerOpen()");
+
             _isColorPickerOpen = false;
             foreach (var pg in PointGroupCollectionView)
             {
                 if (pg is PointGroup pointGroup)
                 {
+                    //Debug.WriteLine($"pointGroup: {pointGroup} pointGroup.ColorToggleOpen: {pointGroup.ColorToggleOpen}");
+
                     if (pointGroup.ColorToggleOpen)
                     {
                         _isColorPickerOpen = true;
@@ -347,7 +359,37 @@ namespace Cad_Point_Manager.Views.UserControls
                 }
             }
         }
+        private void ColorPicker_Loaded(object sender, RoutedEventArgs e)
+        {
+            if (sender is PortableColorPicker colorPicker)
+            {
+                //colorPicker.IsPopupOpenChanged += ColorPicker_IsPopupOpenChanged;
+                //colorPicker.ColorChanged += ColorPicker_ColorChanged;
+            }
+        }
+        private void ColorPicker_ColorChanged(object sender, RoutedEventArgs e)
+        {
+            //if (sender is PortableColorPicker colorPicker)
+            //{ 
+            //    var color = colorPicker.SelectedColor;
 
+            //    Debug.WriteLine($"color: {color.R} {color.G} {color.B} {color.A}");
+
+            //    Vector4 newColor = new(color.R / 255f, color.G / 255f, color.B / 255f, color.A / 255f);
+
+            //    foreach (var pg in _selectedPointGroups)
+            //    {
+            //        pg.Color = newColor;
+            //    }
+
+                CadManager.DxfPointVerticesDirty = true;
+            //}
+        }
+
+        private void ColorPicker_IsPopupOpenChanged(object? sender, bool e)
+        {
+            UpdateIsColorPickerOpen();
+        }
 
         protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
