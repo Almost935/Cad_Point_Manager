@@ -12,17 +12,6 @@ cbuffer CircleSettingsBuffer : register(b1)
     float Padding; // for 16-byte alignment
 };
 
-struct DebugOutput
-{
-    float4 pos;
-    float4 color;
-    float2 offset;
-    float2 pixelSize;
-};
-
-RWStructuredBuffer<DebugOutput> DebugBuffer : register(u1);
-globallycoherent RWByteAddressBuffer DebugCounter : register(u2);
-
 
 
 struct VS_INPUT
@@ -156,19 +145,6 @@ float4 PSMain(GS_OUTPUT input) : SV_TARGET
 
     //float alpha = input.color.a * (1.0f - smoothstep(0.95f, 1.0f, dist));
     //return float4(input.color.rgb, alpha);
-    
-    DebugOutput debug;
-    uint index;
-    DebugCounter.InterlockedAdd(0, 4, index);
-    index /= 4;
-
-    DebugOutput d;
-    d.pos = input.color;
-    //d.offset = input.offset;
-    d.offset = input.offset;
-    d.pixelSize = 2.0f / ViewportSize;
-    d.color = input.color; 
-    DebugBuffer[index] = d;
     
     return float4(1, 0, 0, 1);
 

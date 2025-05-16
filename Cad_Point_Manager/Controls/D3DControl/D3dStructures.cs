@@ -103,15 +103,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct DebugOutputBuffer
-    {
-        public Vector4 Pos;
-        public Vector4 Color;
-        public Vector2 Offset;
-        public Vector2 PixelSize;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
     public struct TextVertex(Vector3 position, Vector4 color, float isVisible = 1.0f, float isMouseOver = 0, float isSelected = 0)
     {
         public Vector3 Position = position;

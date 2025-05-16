@@ -93,12 +93,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private bool _dxfPointCircleVerticesDirty = false;
         private float _circleRadius;
 
-        // Debug buffer related fields
-        private Buffer _debugBuffer;
-        private UnorderedAccessView _counterUav;
-        private UnorderedAccessView _debugUav;
-        private Buffer _counterBuffer;
-
         // Panning and Zooming Fields
         private float _panThreshold = 1.0f;
         private bool _isPanning;
@@ -381,14 +375,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             context.InputAssembler.PrimitiveTopology = PrimitiveTopology.PointList;
             context.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding(_circleVertexBuffer, Marshal.SizeOf<CircleVertex>(), 0));
 
-            context.ClearUnorderedAccessView(_counterUav, new RawInt4(0, 0, 0, 0));
-
-            context.OutputMerger.SetUnorderedAccessViews(
-                1,
-                new[] { _debugUav, _counterUav },
-                new[] { 0, 0 } // initial count for each UAV (used for append/consume, 0 = no counter)
-                );
-
             // Draw call
             context.Draw(_circleVertexCount, 0);
 
@@ -397,40 +383,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             //stopwatch.Stop();
             //Debug.WriteLine($"DrawCirclesWithShader Time: {stopwatch.ElapsedMilliseconds} ms");
-        }
-        private void WriteCircleDebugBuffer()
-        {
-            var device = _d3dResCache.Device;
-            var context = _d3dResCache.DeviceContext;
-            int maxElements = 2048;
-            int debugStride = Marshal.SizeOf<DebugOutputBuffer>();
-
-            var staging = new Buffer(device, new BufferDescription
-            {
-                SizeInBytes = debugStride * maxElements,
-                Usage = ResourceUsage.Staging,
-                BindFlags = BindFlags.None,
-                CpuAccessFlags = CpuAccessFlags.Read,
-                OptionFlags = ResourceOptionFlags.None,
-                StructureByteStride = debugStride
-            });
-
-            context.CopyResource(_debugBuffer, staging);
-
-            var dataBox = context.MapSubresource(staging, 0, MapMode.Read, MapFlags.None);
-            var result = new DebugOutputBuffer[maxElements];
-            Utilities.Read(dataBox.DataPointer, result, 0, maxElements);
-            context.UnmapSubresource(staging, 0);
-
-            // Print values
-            Debug.WriteLine($"\n\n");
-            foreach (var r in result)
-            {
-                Debug.WriteLine($"gsPosOutput: {r.Pos}, \nColor: {r.Color}, \nOffset: {r.Offset} r.PixelSize: {r.PixelSize}\n");
-            }
-            Debug.WriteLine($"\n\n");
-
-            staging.Dispose();
         }
 
         // Test Method
@@ -605,7 +557,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             if (_circleVertexCount > 0)
             {
-
                 CircleShaderCheck(vertexSpan);
             }
 
@@ -738,46 +689,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             _circleShadersLoaded = true;
         }
-
-        private void InitializeDebugBuffers()
-        {
-            var device = _d3dResCache.Device;
-            int maxElements = 2048;
-            int stride = Marshal.SizeOf<DebugOutputBuffer>();
-
-            _debugBuffer = new Buffer(device, new BufferDescription
-            {
-                SizeInBytes = stride * maxElements,
-                Usage = ResourceUsage.Default,
-                BindFlags = BindFlags.UnorderedAccess | BindFlags.ShaderResource,
-                CpuAccessFlags = CpuAccessFlags.None,
-                OptionFlags = ResourceOptionFlags.BufferStructured,
-                StructureByteStride = stride
-            });
-
-            _debugUav = new UnorderedAccessView(device, _debugBuffer);
-
-            _counterBuffer = new Buffer(device, new BufferDescription
-            {
-                SizeInBytes = 4,
-                Usage = ResourceUsage.Default,
-                BindFlags = BindFlags.UnorderedAccess,
-                CpuAccessFlags = CpuAccessFlags.None,
-                OptionFlags = ResourceOptionFlags.BufferAllowRawViews
-            });
-
-            _counterUav = new UnorderedAccessView(device, _counterBuffer, new UnorderedAccessViewDescription
-            {
-                Format = Format.R32_Typeless,
-                Dimension = UnorderedAccessViewDimension.Buffer,
-                Buffer = new UnorderedAccessViewDescription.BufferResource
-                {
-                    FirstElement = 0,
-                    ElementCount = 1,
-                    Flags = UnorderedAccessViewBufferFlags.Raw
-                }
-            });
-        }
         private void InitializeBuffers()
         {
             _lineVertexBuffer?.Dispose();
@@ -839,8 +750,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 StructureByteStride = Utilities.SizeOf<CircleVertex>()
             };
             _circleVertexBuffer = new Buffer(_d3dResCache.Device, circleBufferDesc);
-
-            InitializeDebugBuffers();
         }
         private void InitializeConstantBuffers()
         {
@@ -1511,18 +1420,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
                     _lineInputLayout?.Dispose();
                     _lineInputLayout = null;
-
-                    _debugBuffer?.Dispose();
-                    _debugBuffer = null;
-
-                    _debugUav?.Dispose();
-                    _debugUav = null;
-
-                    _counterBuffer?.Dispose();
-                    _counterBuffer = null;
-
-                    _counterUav?.Dispose();
-                    _counterUav = null;
 
                     _circleVertexBuffer?.Dispose();
                     _circleVertexBuffer = null;
