@@ -43,16 +43,6 @@ PSInput VSMain(VSInput input)
     if (input.IsSelected > 0.5)
     {
         input.Color = selectedColor;
-
-        
-        //if (input.IsMouseOver > 0.5)
-        //{
-        //    input.Color = selectedMouseOverColor; 
-        //}
-        //else
-        //{
-        //    input.Color = selectedColor; 
-        //}
     }
     
     output.Position = mul(float4(input.Position, 1.0), transformationMatrix);

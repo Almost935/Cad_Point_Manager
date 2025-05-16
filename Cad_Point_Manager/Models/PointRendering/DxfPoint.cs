@@ -6,15 +6,17 @@ namespace Cad_Point_Manager.Models.PointRendering
     public class DxfPoint
     {
         #region Fields
+        private const float DefaultLineLength = 5.0f;
         #endregion
 
         #region Properties
         public int PointNumber { get; set; }
         public Vector3 Position { get; set; } = Vector3.Zero;
-        public float TextHeight { get; set; } = 5.0f;
+        public float TextHeight { get; set; }
+        public float LineLength { get; set; } 
         public PointGroup PointGroup { get; set; }
         public TextVertex[] TextVertices { get; set; }
-        public LineVertex[] LineVertices { get; set; }
+        public LineVertex[] LineVertices { get; set; } 
         public int TextStartIndex { get; set; }
         public int TextEndIndex { get; set; }
         public int LineStartIndex { get; set; }
@@ -22,12 +24,13 @@ namespace Cad_Point_Manager.Models.PointRendering
         #endregion
 
         #region Constructors
-        public DxfPoint(PointGroup pointGroup, int pointNum, Vector3 position)
+        public DxfPoint(PointGroup pointGroup, int pointNum, Vector3 position, float textSize)
         {
             PointGroup = pointGroup;
             UpdatePointScale();
             PointNumber = pointNum;
             Position = position;
+            TextHeight = textSize;
         }
         #endregion
 
@@ -55,7 +58,7 @@ namespace Cad_Point_Manager.Models.PointRendering
 
         public void UpdatePointScale()
         {
-            TextHeight = PointGroup.BaseTextHeight * PointGroup.PointScale;
+            TextHeight = PointGroup.BaseSizeFactor * PointGroup.PointScale;
         }
         #endregion
     }

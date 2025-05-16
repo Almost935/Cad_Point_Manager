@@ -1,10 +1,41 @@
 ﻿using SharpDX;
+using SharpDX.DirectWrite;
 using System.Runtime.InteropServices;
 using System.Windows;
+using System.Windows.Documents;
 using Matrix = SharpDX.Matrix;
 
 namespace Cad_Point_Manager.Controls.D3DControl
 {
+    [StructLayout(LayoutKind.Sequential)]
+    public struct CircleVertex(Vector3 position, Vector4 color, float isVisible = 1.0f, float isMouseOver = 0, float isSelected = 0)
+    {
+        public Vector3 Position = position;
+        public Vector4 Color = color;
+        
+        /// <summary>
+        /// float value indicating whether the vertex is visible or not. 1.0f is visible, 0.0f is not visible.
+        /// </summary>
+        public float IsVisible = isVisible;
+
+        /// <summary>
+        /// float value indicating whether the mouse is currently over the text object. 1.0f is true, 0.0f is false.
+        /// </summary>
+        public float IsMouseOver = isMouseOver;
+
+        /// <summary>
+        /// float value indicating whether the line is currently selected. 1.0f is true, 0.0f is false.
+        /// </summary>
+        public float IsSelected = isSelected;
+    }
+    [StructLayout(LayoutKind.Sequential)]
+    public struct CircleSettingsBuffer
+    {
+        public float RadiusPixels;
+        public Vector2 ViewportSize;
+        public float Padding;
+    }
+
     [StructLayout(LayoutKind.Sequential)]
     public struct LineVertex(Vector3 position, Vector4 color, float isVisible = 1.0f, float isMouseOver = 0, float isSelected = 0)
     {
@@ -71,6 +102,14 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public Vector4 SelectedMouseOverColor;
     }
 
+    [StructLayout(LayoutKind.Sequential)]
+    public struct DebugOutputBuffer
+    {
+        public Vector4 Pos;
+        public Vector4 Color;
+        public Vector2 Offset;
+        public Vector2 PixelSize;
+    }
 
     [StructLayout(LayoutKind.Sequential)]
     public struct TextVertex(Vector3 position, Vector4 color, float isVisible = 1.0f, float isMouseOver = 0, float isSelected = 0)

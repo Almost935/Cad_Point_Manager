@@ -127,7 +127,7 @@
         <Grid Grid.Row="2"
               ClipToBounds="False"
               Panel.ZIndex="1">
-            <uc:LayerViewer x:Name="layerView"
+            <uc:RightHandPopout x:Name="layerView"
                             Panel.ZIndex="1"
                             Width="300"
                             HorizontalAlignment="Right"

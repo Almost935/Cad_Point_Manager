@@ -12,7 +12,7 @@ namespace Cad_Point_Manager.Models.PointRendering
         private bool _isVisible = true;
         private float _pointScale = 1.00f;
         private float _textHeight;
-        private float _baseTextHeight = 1.00f;
+        private float _baseSizeFactor = 1.00f;
         private DxfPoint[] _points = [];
         private bool _colorToggleOpen = false;
         #endregion
@@ -78,15 +78,15 @@ namespace Cad_Point_Manager.Models.PointRendering
                 }
             }
         }
-        public float BaseTextHeight
+        public float BaseSizeFactor
         {
-            get => _baseTextHeight;
+            get => _baseSizeFactor;
             set
             {
-                if (_baseTextHeight != value)
+                if (_baseSizeFactor != value)
                 {
-                    _baseTextHeight = value;
-                    OnPropertyChanged(nameof(BaseTextHeight));
+                    _baseSizeFactor = value;
+                    OnPropertyChanged(nameof(BaseSizeFactor));
                 }
             }
         }
@@ -117,13 +117,13 @@ namespace Cad_Point_Manager.Models.PointRendering
         #endregion
 
         #region Methods
-        public PointGroup(string name, Vector4 color, float pointScale, float baseTextHeight)
+        public PointGroup(string name, Vector4 color, float pointScale, float baseSizeFactor)
         {
             Name = name;
             Color = color;
             PointScale = pointScale;
-            BaseTextHeight = baseTextHeight;
-            TextHeight = baseTextHeight * pointScale;
+            BaseSizeFactor = baseSizeFactor;
+            TextHeight = baseSizeFactor * pointScale;
         }
 
         public void UpdatePointsScale(float newTextHeight)

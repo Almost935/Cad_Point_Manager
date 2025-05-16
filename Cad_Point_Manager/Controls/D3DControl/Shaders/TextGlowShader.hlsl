@@ -76,7 +76,6 @@ void GSMain(triangle VSInput input[3], inout TriangleStream<GSInput> triStream)
         GSInput output;
         output.Position = mul(float4(input[i].Position + offset, 1.0), transformationMatrix);
         output.Color = color;
-        //output.Color = float4(input[i].Color.rgb, glowTransparency);
         
         triStream.Append(output);
     }

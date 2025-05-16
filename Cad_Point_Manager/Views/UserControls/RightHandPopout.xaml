@@ -1,4 +1,4 @@
-﻿<UserControl x:Class="Cad_Point_Manager.Views.UserControls.LayerViewer"
+﻿<UserControl x:Class="Cad_Point_Manager.Views.UserControls.RightHandPopout"
              x:Name="root"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -133,9 +133,7 @@
                                                                      ToggleButtonHeight="15"
                                                                      ToggleButtonMargin="0 2 0 2"
                                                                      IsPopupOpen="{Binding Path=ColorToggleOpen, Mode=OneWayToSource}"
-                                                                     ColorChanged="ColorPicker_ColorChanged" 
                                                                      IsPopupOpenChanged="ColorPicker_IsPopupOpenChanged"
-                                                                     Loaded="ColorPicker_Loaded"
                                                                      Focusable="True" />
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>

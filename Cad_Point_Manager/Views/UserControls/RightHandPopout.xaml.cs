@@ -17,9 +17,9 @@ using System.Windows.Threading;
 namespace Cad_Point_Manager.Views.UserControls
 {
     /// <summary>
-    /// Interaction logic for LayerViewer.xaml
+    /// Interaction logic for RightHandPopout.xaml
     /// </summary>
-    public partial class LayerViewer : UserControl, INotifyPropertyChanged
+    public partial class RightHandPopout : UserControl, INotifyPropertyChanged
     {
         #region Fields
         private const double _panelHideTime = 200;
@@ -87,7 +87,7 @@ namespace Cad_Point_Manager.Views.UserControls
         DependencyProperty.Register(
             nameof(TabWidth),
             typeof(double),
-            typeof(LayerViewer),
+            typeof(RightHandPopout),
             new PropertyMetadata(20.0));
 
         public CadManager3D CadManager
@@ -100,7 +100,7 @@ namespace Cad_Point_Manager.Views.UserControls
         DependencyProperty.Register(
             nameof(CadManager),
             typeof(CadManager3D),
-            typeof(LayerViewer),
+            typeof(RightHandPopout),
             new PropertyMetadata(null));
 
         public ICollectionView LayerCollectionView
@@ -113,7 +113,7 @@ namespace Cad_Point_Manager.Views.UserControls
         DependencyProperty.Register(
             nameof(LayerCollectionView),
             typeof(ICollectionView),
-            typeof(LayerViewer),
+            typeof(RightHandPopout),
             new PropertyMetadata(null));
 
         public ICollectionView PointGroupCollectionView
@@ -126,7 +126,7 @@ namespace Cad_Point_Manager.Views.UserControls
         DependencyProperty.Register(
             nameof(PointGroupCollectionView),
             typeof(ICollectionView),
-            typeof(LayerViewer),
+            typeof(RightHandPopout),
             new PropertyMetadata(null));
         #endregion
 
@@ -134,7 +134,7 @@ namespace Cad_Point_Manager.Views.UserControls
         public event PropertyChangedEventHandler PropertyChanged;
         #endregion
 
-        public LayerViewer()
+        public RightHandPopout()
         {
             InitializeComponent();
 
@@ -289,7 +289,7 @@ namespace Cad_Point_Manager.Views.UserControls
             }
             if (CadManager is not null)
             {
-                CadManager.DxfPointVerticesDirty = true;
+                CadManager.DxfPointTextVerticesDirty = true;
             }
         }
         private void PointGroupsCheckBox_Unchecked(object sender, RoutedEventArgs e)
@@ -300,7 +300,7 @@ namespace Cad_Point_Manager.Views.UserControls
             }
             if (CadManager is not null)
             {
-                CadManager.DxfPointVerticesDirty = true;
+                CadManager.DxfPointTextVerticesDirty = true;
             }
         }
         private void PointGroupsListView_Loaded(object sender, RoutedEventArgs e)
@@ -321,22 +321,24 @@ namespace Cad_Point_Manager.Views.UserControls
 
 
 
-        private void ColorToggle_Loaded(object sender, RoutedEventArgs e)
-        {
-            if (sender is ColorToggle colorToggle)
-            {
-                colorToggle.IsPopupOpenChanged += ColorToggle_IsPopupOpenChanged;
-                colorToggle.IsColorChanged += ColorToggle_IsColorChanged;
-            }
-        }
-        private void ColorToggle_IsPopupOpenChanged(object sender, bool isOpen)
-        {
-            UpdateIsColorPickerOpen();
-        }
-        private void ColorToggle_IsColorChanged(object sender, Vector4 newColor)
-        {
-            CadManager.DxfPointVerticesDirty = true;
-        }
+        //private void ColorToggle_Loaded(object sender, RoutedEventArgs e)
+        //{
+        //    if (sender is ColorToggle colorToggle)
+        //    {
+        //        colorToggle.IsPopupOpenChanged += ColorToggle_IsPopupOpenChanged;
+        //        colorToggle.IsColorChanged += ColorToggle_IsColorChanged;
+        //    }
+        //}
+
+        //private void ColorToggle_IsPopupOpenChanged(object sender, bool isOpen)
+        //{
+        //    UpdateIsColorPickerOpen();
+        //}
+
+        //private void ColorToggle_IsColorChanged(object sender, Vector4 newColor)
+        //{
+        //    CadManager.DxfPointVerticesDirty = true;
+        //}
 
 
 
@@ -355,18 +357,6 @@ namespace Cad_Point_Manager.Views.UserControls
                 }
             }
         }
-        private void ColorPicker_Loaded(object sender, RoutedEventArgs e)
-        {
-            if (sender is PortableColorPicker colorPicker)
-            {
-                //colorPicker.IsPopupOpenChanged += ColorPicker_IsPopupOpenChanged;
-                //colorPicker.ColorChanged += ColorPicker_ColorChanged;
-            }
-        }
-        private void ColorPicker_ColorChanged(object sender, RoutedEventArgs e)
-        {
-            //CadManager.DxfPointVerticesDirty = true;
-        }
         private void ColorPicker_IsPopupOpenChanged(object? sender, bool e)
         {
             if (sender is PortableColorPicker colorPicker)
@@ -377,7 +367,7 @@ namespace Cad_Point_Manager.Views.UserControls
                 {
                     var binding = colorPicker.GetBindingExpression(PortableColorPicker.SelectedColorProperty);
                     binding?.UpdateSource();
-                    CadManager.DxfPointVerticesDirty = true;
+                    CadManager.DxfPointTextVerticesDirty = true;
                 }
             }
         }
