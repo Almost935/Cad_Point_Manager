@@ -181,21 +181,15 @@ namespace Cad_Point_Manager.Controls.D3DControl
             var baseBlendState = new BlendState(_device, baseBlendDesc);
             _d3dResCache.BaseBlendState = baseBlendState;
 
-            //var glowBlendDesc = new BlendStateDescription();
-            //glowBlendDesc.RenderTarget[0].IsBlendEnabled = true; // Enable blending
-            //glowBlendDesc.RenderTarget[0].SourceBlend = BlendOption.SourceAlpha;
-            //glowBlendDesc.RenderTarget[0].DestinationBlend = BlendOption.InverseSourceAlpha;
-            //glowBlendDesc.RenderTarget[0].BlendOperation = BlendOperation.Add;
-            //glowBlendDesc.RenderTarget[0].SourceAlphaBlend = BlendOption.Zero;
-            //glowBlendDesc.RenderTarget[0].DestinationAlphaBlend = BlendOption.Zero;
-            //glowBlendDesc.RenderTarget[0].AlphaBlendOperation = BlendOperation.Add;
-            //glowBlendDesc.RenderTarget[0].RenderTargetWriteMask = ColorWriteMaskFlags.Red |
-            //                                          ColorWriteMaskFlags.Green |
-            //                                          ColorWriteMaskFlags.Blue;
-            //var glowBlendState = new BlendState(_device, glowBlendDesc);
-            //_d3dResCache.GlowBlendState = glowBlendState;
-
             _deviceContext.OutputMerger.SetBlendState(_d3dResCache.BaseBlendState);
+
+            var dsDesc = new DepthStencilStateDescription
+            {
+                IsDepthEnabled = false,
+                DepthWriteMask = DepthWriteMask.Zero,
+                DepthComparison = Comparison.Always
+            };
+            _deviceContext.OutputMerger.DepthStencilState = new DepthStencilState(_device, dsDesc);
 
             _d3DSurface = new Dx11ImageSource();
             _d3DSurface.IsFrontBufferAvailableChanged += OnIsFrontBufferAvailableChanged;

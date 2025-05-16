@@ -93,6 +93,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private bool _dxfPointCircleVerticesDirty = false;
         private float _circleRadius;
 
+        // Debugging fields
+        private CircleVertex _testVertex;
+
         // Panning and Zooming Fields
         private float _panThreshold = 1.0f;
         private bool _isPanning;
@@ -369,7 +372,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             context.GeometryShader.Set(_circleGeometryShader);
             context.PixelShader.Set(_circlePixelShader);
             context.InputAssembler.InputLayout = _circleInputLayout;
-            context.VertexShader.SetConstantBuffer(0, _transformationBuffer);
+            //context.VertexShader.SetConstantBuffer(0, _transformationBuffer);
             context.GeometryShader.SetConstantBuffer(0, _transformationBuffer);
             context.GeometryShader.SetConstantBuffer(1, _circleSettingsBuffer);
             context.InputAssembler.PrimitiveTopology = PrimitiveTopology.PointList;
@@ -383,68 +386,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             //stopwatch.Stop();
             //Debug.WriteLine($"DrawCirclesWithShader Time: {stopwatch.ElapsedMilliseconds} ms");
-        }
-
-        // Test Method
-        private void CircleShaderCheck(ReadOnlySpan<CircleVertex> circleVertices)
-        {
-            foreach (var vertex in circleVertices)
-            {
-                var transformationMatrix = _camera.ViewProjectionMatrix;
-                var radiusPixels = _circleRadius;
-
-                // VSMain                
-                Vector4 vsWorld = new(vertex.Position.X, vertex.Position.Y, vertex.Position.Z, 1.0f);
-                Vector4 vsWorldPos = Vector4.Transform(vsWorld, transformationMatrix);
-                Vector3 vsCenterWorld = vertex.Position;
-                Vector4 vsColor = vertex.Color;
-                float vsIsVisible = vertex.IsVisible;
-                float vsIsMouseOver = vertex.IsMouseOver;
-                float vsIsSelected = vertex.IsSelected;
-
-                // GSMain
-                Vector4 gsCenterClip = vsWorldPos;
-                Vector2 gsPixelSize = new(2.0f / Viewport.Width, 2.0f / Viewport.Height);
-                Vector2 gsOffset = radiusPixels * gsPixelSize;
-                Vector2[] offsets =
-                {
-                    new(-gsOffset.X, gsOffset.Y),
-                    new(gsOffset.X, gsOffset.Y),
-                    new(-gsOffset.X, -gsOffset.Y),
-                    new(gsOffset.X, -gsOffset.Y)
-                };
-                int[] order = { 0, 1, 2, 3 };
-
-                Vector4[] vertices = new Vector4[4];
-                for (int i = 0; i < order.Length; i++)
-                {
-                    Vector2 offs = offsets[order[i]];
-                    Vector4 gsPos = new(gsCenterClip.X + offs.X, gsCenterClip.Y + offs.Y, gsCenterClip.Z, gsCenterClip.W);
-                    Vector2 gsOffset2 = offs / gsOffset;
-                    Vector4 gsColor = vsColor;
-                    float gsIsVisible = vsIsVisible;
-                    float gsIsMouseOver = vsIsMouseOver;
-                    float gsIsSelected = vsIsSelected;
-
-                    vertices[i] = gsPos;
-
-                    Vector4 updatedPos = new(offs.X, offs.Y, 0.0f, 1.0f);
-
-                    // PSMain
-                    //float dist = gsOffset2.LengthSquared
-                }
-            }
-        }
-        private void LineShaderCheck(ReadOnlySpan<LineVertex> lineVertices)
-        {
-            var transformationMatrix = _camera.ViewProjectionMatrix;
-
-            foreach (var vertex in lineVertices)
-            {
-                // VSMain
-                Vector4 vsPos = Vector4.Transform(new Vector4(vertex.Position, 1), transformationMatrix);
-                Vector4 vsColor = vertex.Color;
-            }
         }
 
         private void UpdateLineVertices()
@@ -464,8 +405,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             }
             context.UnmapSubresource(_lineVertexBuffer, 0);
             _lineVertexCount = vertexSpan.Length;
-
-            LineShaderCheck(vertexSpan);
 
             _lineVerticesDirty = false;
             D3dIsDirty = true;
@@ -557,7 +496,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             if (_circleVertexCount > 0)
             {
-                CircleShaderCheck(vertexSpan);
+                _testVertex = vertexSpan[0];
             }
 
             _dxfPointCircleVerticesDirty = false;
@@ -858,7 +797,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _d3dResCache.DeviceContext.UpdateSubresource(ref textGlowSettings, _textGlowSettingsBuffer);
 
             var pixelsMax = Math.Max(SystemParameters.PrimaryScreenWidth, SystemParameters.PrimaryScreenHeight);
-            _circleRadius = (int)Math.Ceiling(pixelsMax / 100);
+            _circleRadius = (int)Math.Ceiling(pixelsMax / 200);
             var circleSettingsBuffer = new CircleSettingsBuffer
             {
                 RadiusPixels = _circleRadius,

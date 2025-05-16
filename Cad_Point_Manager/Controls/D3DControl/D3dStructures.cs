@@ -27,6 +27,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         /// float value indicating whether the line is currently selected. 1.0f is true, 0.0f is false.
         /// </summary>
         public float IsSelected = isSelected;
+
     }
     [StructLayout(LayoutKind.Sequential)]
     public struct CircleSettingsBuffer

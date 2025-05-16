@@ -447,7 +447,7 @@ namespace Cad_Point_Manager.Models
                         }
                     }
                 }
-                //UpdateDxfTextPointVertices(d3DResCache);
+                UpdateDxfTextPointVertices(d3DResCache);
 
                 TextVerticesDirty = false;
                 DxfPointTextVerticesDirty = false;
@@ -463,7 +463,6 @@ namespace Cad_Point_Manager.Models
             {
                 _cachedCircleVertices.Clear();
 
-                int count = 0;
                 foreach (var keyValuePair in PointGroups)
                 {
                     var pointGroup = keyValuePair.Value;
@@ -474,8 +473,6 @@ namespace Cad_Point_Manager.Models
                     {
                         CircleVertex circleVertex = new(point.Position, pointGroup.Color, 1, 0, 0);
                         _cachedCircleVertices.Add(circleVertex);
-                        count++;
-                        if (count >= 5) { break; }
                     }
                 }
                 DxfPointCircleVerticesDirty = false;
