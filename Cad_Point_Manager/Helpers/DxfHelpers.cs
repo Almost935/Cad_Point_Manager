@@ -2,9 +2,7 @@
 using netDxf.Entities;
 using netDxf.Header;
 using SharpDX.Direct2D1;
-using Cad_Point_Manager.Models.DrawingObjects;
 using System.Windows;
-using Cad_Point_Manager.Controls.D2DControl;
 using Vector3 = netDxf.Vector3;
 using Cad_Point_Manager.DrawingObjects;
 using Cad_Point_Manager.Models;
@@ -46,87 +44,6 @@ namespace Cad_Point_Manager.Helpers
 
             return Bounds.Empty;
         }
-
-        public static CadManager GetLayers(DxfDocument dxfDocument)
-        {
-            CadManager layerManager = new();
-
-            foreach (var dxfLayer in dxfDocument.Layers)
-            {
-                layerManager.GetLayer(dxfLayer);
-            }
-
-            return layerManager;
-        }
-
-        // DrawingObject 2D getters
-        public static int LoadEntityObject(EntityObject e, CadManager layerManager)
-        {
-            ObjectLayer layer = layerManager.GetLayer(e.Layer);
-            DrawingObject drawingObject = e switch
-            {
-                Line line => new DrawingLine(line, layer),
-                Arc arc => new DrawingArc(arc, layer),
-                Polyline2D polyline2D => new DrawingPolyline2D(polyline2D, layer),
-                Polyline3D polyline3D => new DrawingPolyline3DOld(polyline3D, layer),
-                Circle circle => new DrawingCircle(circle, layer),
-                Insert block => new DrawingBlock(block, layer),
-                netDxf.Entities.Ellipse ellipse => new DrawingEllipse(ellipse, layer),
-                MText mtext => new DrawingMtext(mtext, layer),
-                _ => null
-            };
-
-            if (drawingObject != null)
-            {
-                layer.DrawingObjects.Add(drawingObject);
-                return drawingObject.EntityCount;
-            }
-
-            return 0;
-        }
-
-        public static int LoadDrawingObjects(DxfDocument dxfDocument, CadManager layerManager, Factory1 factory,
-            DeviceContext1 deviceContext, ResourceCache resCache)
-        {
-            int count = dxfDocument.Entities.All.Sum(e => LoadEntityObject(e, layerManager));
-
-            foreach (var layer in layerManager.Layers.Values)
-            {
-                foreach (var obj in layer.DrawingObjects)
-                {
-                    obj.UpdateGeometry();
-                }
-            }
-
-            return count;
-        }
-
-        public static DrawingObject GetDrawingObject(EntityObject entity, ObjectLayer layer, DrawingBlock block = null)
-        {
-            return entity switch
-            {
-                Line line => new DrawingLine(line, layer, block),
-                Arc arc => new DrawingArc(arc, layer, block),
-                Polyline2D polyline2D => new DrawingPolyline2D(polyline2D, layer, block),
-                Polyline3D polyline3D => new DrawingPolyline3DOld(polyline3D, layer, block),
-                Circle circle => new DrawingCircle(circle, layer, block),
-                netDxf.Entities.Ellipse ellipse => new DrawingEllipse(ellipse, layer, block),
-                Insert insert => new DrawingBlock(insert, layer, block),
-                MText mtext => new DrawingMtext(mtext, layer, block),
-                _ => null
-            };
-        }
-
-        public static DrawingSegment GetDrawingSegment(EntityObject entity, ObjectLayer layer, DrawingBlock block = null)
-        {
-            return entity switch
-            {
-                Line line => new DrawingLine(line, layer, block),
-                Arc arc => new DrawingArc(arc, layer, block),
-                _ => null
-            };
-        }
-
 
         // DrawingObject3D getters
         public static DrawingObject3D GetDrawingObject3D(EntityObject e, ObjectLayer3D layer)

@@ -183,14 +183,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             _deviceContext.OutputMerger.SetBlendState(_d3dResCache.BaseBlendState);
 
-            var dsDesc = new DepthStencilStateDescription
-            {
-                IsDepthEnabled = false,
-                DepthWriteMask = DepthWriteMask.Zero,
-                DepthComparison = Comparison.Always
-            };
-            _deviceContext.OutputMerger.DepthStencilState = new DepthStencilState(_device, dsDesc);
-
             _d3DSurface = new Dx11ImageSource();
             _d3DSurface.IsFrontBufferAvailableChanged += OnIsFrontBufferAvailableChanged;
 

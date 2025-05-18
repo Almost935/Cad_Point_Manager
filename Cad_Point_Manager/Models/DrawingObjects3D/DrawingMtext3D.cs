@@ -1,5 +1,6 @@
 ﻿using Cad_Point_Manager.Common;
 using Cad_Point_Manager.Controls.D3DControl;
+using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Helpers;
 using netDxf;
 using netDxf.Entities;
@@ -105,32 +106,53 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             }
         }
 
+
         public override double DistanceToPoint(Point p)
         {
-            double finalDist = double.MaxValue;
-            var vertices = MtextBlock.Rows.SelectMany(row => row.Segments.SelectMany(segment => segment.TextVertices)).ToList();
+            var vertices = MtextBlock.Rows
+                .SelectMany(row => row.Segments
+                .SelectMany(segment => segment.TextVertices)).ToList();
 
-            if (PointInTextGeometry(new Vector2((float)p.X, (float)p.Y), vertices))
+            if (vertices.Count < 3) return double.MaxValue;
+
+            Vector2 testPoint = new((float)p.X, (float)p.Y);
+            double minDistance = double.MaxValue;
+            bool pointInside = false;
+            object locker = new();
+
+            Parallel.For(0, vertices.Count / 3, (i, state) =>
             {
-                return 0;
-            }
-            else
-            {
-                for (int i = 0; i < vertices.Count; i += 3)
+                if (pointInside) return;
+
+                Vector2 v0 = vertices[i * 3 + 0].Position.ToVector2();
+                Vector2 v1 = vertices[i * 3 + 1].Position.ToVector2();
+                Vector2 v2 = vertices[i * 3 + 2].Position.ToVector2();
+
+                if (MathHelpers.IsPointInTriangle(testPoint, v0, v1, v2))
                 {
-                    var v1 = vertices[i];
-                    var v2 = vertices[i + 1];
-                    var v3 = vertices[i + 2];
+                    lock (locker)
+                    {
+                        pointInside = true;
+                        minDistance = 0.0;
+                    }
 
-                    var dist = MathHelpers.DistanceToTriangle(new Vector2((float)p.X, (float)p.Y), new Vector2(v1.Position.X, v1.Position.Y),
-                        new Vector2(v2.Position.X, v2.Position.Y), new Vector2(v3.Position.X, v3.Position.Y));
-
-                    if (dist < finalDist) { finalDist = dist; }
+                    state.Stop();
                 }
-            }
+                else
+                {
+                    double dist = MathHelpers.DistanceToTriangle(testPoint, v0, v1, v2);
 
-            return finalDist;
+                    lock (locker)
+                    {
+                        if (dist < minDistance)
+                            minDistance = dist;
+                    }
+                }
+            });
+
+            return minDistance;
         }
+
         public override void DrawToD2dDeviceContext(DeviceContext1 deviceContext, Factory2 factory, Brush brush, float thickness, StrokeStyle1 strokeStyle)
         {
             //deviceContext.DrawTextLayout(new RawVector2((float)Position.X, -(float)Position.Y), TextLayout, brush);
@@ -185,7 +207,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         }
         public List<TextVertex> GetTextVertices()
         {
-            List<TextVertex > textVertices = [];
+            List<TextVertex> textVertices = [];
             foreach (var row in MtextBlock.Rows)
             {
                 foreach (var segment in row.Segments)
@@ -429,51 +451,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             segment.Tesselate(resCache);
 
             return segment;
-        }
-        #endregion
-
-        #region Static Methods
-        public static bool PointInTextGeometry(Vector2 point, List<TextVertex> textVertices)
-        {
-            int triangleCount = textVertices.Count / 3;
-            bool hit = false;
-            object lockObj = new();
-
-            Parallel.For(0, triangleCount, (i, state) =>
-            {
-                // Exit early if already hit
-                if (hit)
-                {
-                    state.Stop();
-                    return;
-                }
-
-                var v0 = (Vector2)textVertices[i * 3].Position;
-                var v1 = (Vector2)textVertices[i * 3 + 1].Position;
-                var v2 = (Vector2)textVertices[i * 3 + 2].Position;
-
-                if (MathHelpers.IsPointInTriangle(point, v0, v1, v2))
-                {
-                    lock (lockObj) // ensure no race condition on write
-                    {
-                        hit = true;
-                        state.Stop(); // stop the rest
-                    }
-                }
-            });
-
-            return hit;
-
-
-            //for (int i = 0; i < textVertices.Count; i += 3)
-            //{
-            //    var v0 = new Vector2(textVertices[i].Position.X, textVertices[i].Position.Y);
-            //    var v1 = new Vector2(textVertices[i + 1].Position.X, textVertices[i + 1].Position.Y);
-            //    var v2 = new Vector2(textVertices[i + 2].Position.X, textVertices[i + 2].Position.Y);
-
-            //    if (MathHelpers.IsPointInTriangle(point, v0, v1, v2)) { return true; }
-            //}
-            //return false;
         }
         #endregion
     }

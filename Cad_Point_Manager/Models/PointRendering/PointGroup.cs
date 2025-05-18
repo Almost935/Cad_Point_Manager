@@ -1,4 +1,5 @@
-﻿using SharpDX;
+﻿using Cad_Point_Manager.Controls.D3DControl;
+using SharpDX;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
 
@@ -10,8 +11,8 @@ namespace Cad_Point_Manager.Models.PointRendering
         private string _name;
         private Vector4 _color = new(0, 0, 0, 1);
         private bool _isVisible = true;
-        private float _pointScale = 1.00f;
         private float _textHeight;
+        private float _pointMarkerSize;
         private float _baseSizeFactor = 1.00f;
         private DxfPoint[] _points = [];
         private bool _colorToggleOpen = false;
@@ -54,18 +55,6 @@ namespace Cad_Point_Manager.Models.PointRendering
                 }
             }
         }
-        public float PointScale
-        {
-            get => _pointScale;
-            set
-            {
-                if (_pointScale != value)
-                {
-                    _pointScale = value;
-                    OnPropertyChanged(nameof(PointScale));
-                }
-            }
-        }
         public float TextHeight
         {
             get => _textHeight;
@@ -78,15 +67,14 @@ namespace Cad_Point_Manager.Models.PointRendering
                 }
             }
         }
-        public float BaseSizeFactor
-        {
-            get => _baseSizeFactor;
+        public float PointMarkerSize {             
+            get => _pointMarkerSize;
             set
             {
-                if (_baseSizeFactor != value)
+                if (_pointMarkerSize != value)
                 {
-                    _baseSizeFactor = value;
-                    OnPropertyChanged(nameof(BaseSizeFactor));
+                    _pointMarkerSize = value;
+                    OnPropertyChanged(nameof(PointMarkerSize));
                 }
             }
         }
@@ -117,18 +105,12 @@ namespace Cad_Point_Manager.Models.PointRendering
         #endregion
 
         #region Methods
-        public PointGroup(string name, Vector4 color, float pointScale, float baseSizeFactor)
+        public PointGroup(string name, Vector4 color, float textHeight, float markerSize)
         {
             Name = name;
             Color = color;
-            PointScale = pointScale;
-            BaseSizeFactor = baseSizeFactor;
-            TextHeight = baseSizeFactor * pointScale;
-        }
-
-        public void UpdatePointsScale(float newTextHeight)
-        {
-
+            TextHeight = textHeight;
+            PointMarkerSize = markerSize;
         }
 
         public override string ToString()

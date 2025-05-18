@@ -10,19 +10,31 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Controls\D2DControl\**" />
+    <Compile Remove="Models\DrawingObjects\**" />
     <Compile Remove="Resources\Shaders\**" />
+    <EmbeddedResource Remove="Controls\D2DControl\**" />
+    <EmbeddedResource Remove="Models\DrawingObjects\**" />
     <EmbeddedResource Remove="Resources\Shaders\**" />
+    <None Remove="Controls\D2DControl\**" />
+    <None Remove="Models\DrawingObjects\**" />
     <None Remove="Resources\Shaders\**" />
+    <Page Remove="Controls\D2DControl\**" />
+    <Page Remove="Models\DrawingObjects\**" />
     <Page Remove="Resources\Shaders\**" />
   </ItemGroup>
 
   <ItemGroup>
     <Compile Remove="Controls\D3DControl\D3D11ImageSource.cs" />
     <Compile Remove="Controls\D3DControl\D3dControl.cs" />
+    <Compile Remove="Controls\Direct2DDxfControl.cs" />
     <Compile Remove="Converters\ColorToBrushConverter.cs" />
     <Compile Remove="Helpers\DxfHelper.cs" />
+    <Compile Remove="Models\CadManager.cs" />
     <Compile Remove="Models\DrawingObjects3D\DrawingSText3D.cs" />
     <Compile Remove="Models\Enums.cs" />
+    <Compile Remove="Models\OffscreenBitmap.cs" />
+    <Compile Remove="Models\OffscreenBitmapManager.cs" />
     <Compile Remove="Services\DxfService.cs" />
   </ItemGroup>
 

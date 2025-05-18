@@ -8,14 +8,13 @@ using Point = System.Windows.Point;
 
 namespace Cad_Point_Manager.Models.DrawingObjects3D
 {
-    public abstract class DrawingObject3D : INotifyPropertyChanged
+    public abstract class DrawingObject3D : HitTestableObject, INotifyPropertyChanged
     {
         #region Properties
         public DrawingObject3dType Type { get; set; }
         public ObjectLayer3D Layer { get; set; }
         public EntityObject EntityObject { get; set; }
         public Vector4 Color { get; set; }
-        public Rect Bounds { get; set; } = Rect.Empty;
         public DrawingObject3dColorType DrawingObject3DColorType { get; set; }
         public bool IsPartOfBlock { get; set; } = false;
         public DrawingBlock3D DrawingBlock3D { get; set; }
@@ -30,8 +29,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
 
         #region Methods
         public abstract void UpdateData(EntityObject entity);
-        public abstract void UpdateBounds();
-        public abstract double DistanceToPoint(Point p);
         public abstract void MouseEnter();
         public abstract void MouseLeave();
         public abstract void Select();
@@ -63,14 +60,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             }
         }
 
-        public bool BoundsInRect(Rect rect)
-        {
-            if (Bounds.IsEmpty || rect.IsEmpty) { return false; }
-
-            if (Bounds.IntersectsWith(rect) || Bounds.Contains(rect) || rect.Contains(Bounds)) { return true; }
-
-            return false;
-        }
 
         protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {

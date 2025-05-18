@@ -30,13 +30,15 @@ namespace Cad_Point_Manager.Models
         private bool _dxfPointCircleVerticesDirty = true;
         private bool _drawingObjectTreeDirty = true;
         private bool _dxfNeedsReload = true;
-        private Bounds _extents;
+        private Bounds _extents = Bounds.Empty;
         private ObservableCollection<KeyValuePair<string, ObjectLayer3D>> _layers = [];
         private ICollectionView _layersView;
         private ObservableCollection<KeyValuePair<string, PointGroup>> _pointGroups = [];
         private ICollectionView _pointGroupsView;
         private Size2F _viewportSize = Size2F.Empty;
-        private float _pointSizeFactor = 1.0f;
+        
+        private float _pointBaseTextHeight = 1.0f;
+        private float _pointBaseMarkerSize = 0.025f;
 
         private readonly List<LineVertex> _cachedLineVertices = [];
         private readonly List<TextVertex> _cachedTextVertices = [];
@@ -216,13 +218,21 @@ namespace Cad_Point_Manager.Models
         }
         public void GetPointScale()
         {
+            if (Extents.IsEmpty)
+            {
+                _pointBaseTextHeight = 1;
+                _pointBaseMarkerSize = 0.025f;
+                return;
+            }
             if (Extents.Width > Extents.Height)
             {
-                _pointSizeFactor = Extents.Width * _pointSizeToExtentsFactor;
+                _pointBaseTextHeight = Extents.Width * _pointSizeToExtentsFactor;
+                _pointBaseMarkerSize = _pointBaseTextHeight * 0.025f;
             }
             else
             {
-                _pointSizeFactor = Extents.Height * _pointSizeToExtentsFactor;
+                _pointBaseTextHeight = Extents.Height * _pointSizeToExtentsFactor;
+                _pointBaseMarkerSize = _pointBaseTextHeight * 0.025f;
             }
         }
 
@@ -469,10 +479,10 @@ namespace Cad_Point_Manager.Models
 
                     if (!pointGroup.IsVisible || pointGroup is null) { continue; }
 
-                    foreach (var point in pointGroup.Points)
+                    foreach (DxfPoint point in pointGroup.Points)
                     {
-                        CircleVertex circleVertex = new(point.Position, pointGroup.Color, 1, 0, 0);
-                        _cachedCircleVertices.Add(circleVertex);
+                        point.UpdateMarkerVertices();
+                        _cachedCircleVertices.AddRange(point.MarkerVertices);
                     }
                 }
                 DxfPointCircleVerticesDirty = false;
@@ -516,13 +526,13 @@ namespace Cad_Point_Manager.Models
                 points.Clear();
 
                 string pointGroupName = $"TestGroup {i + 1}";
-                PointGroup pointGroup = new(pointGroupName, new SharpDX.Vector4(0.0f, 0.0f, 0.0f, 1.0f), 1.0f, _pointSizeFactor);
+                PointGroup pointGroup = new(pointGroupName, new SharpDX.Vector4(1.0f, 0.0f, 0.0f, 1.0f), _pointBaseTextHeight, _pointBaseMarkerSize);
                 float y = Extents.Bottom + (yIncrement * i);
 
                 for (int j = 0; j < cols; j++)
                 {
                     float x = Extents.Left + (xIncrement * j);
-                    DxfPoint point = new(pointGroup, pointNum, new SharpDX.Vector3(x, y, 0), pointGroup.TextHeight);
+                    DxfPoint point = new(pointGroup, pointNum, new SharpDX.Vector3(x, y, 0), pointGroup.TextHeight, pointGroup.PointMarkerSize);
                     points.Add(point);
                     pointNum++;
                 }

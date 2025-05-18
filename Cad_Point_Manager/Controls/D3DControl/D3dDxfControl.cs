@@ -5,6 +5,7 @@ using SharpDX;
 using SharpDX.D3DCompiler;
 using SharpDX.Direct3D;
 using SharpDX.Direct3D11;
+using SharpDX.DirectWrite;
 using SharpDX.DXGI;
 using SharpDX.Mathematics.Interop;
 using System;
@@ -15,6 +16,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using Buffer = SharpDX.Direct3D11.Buffer;
@@ -83,7 +85,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         // Circle rendering shader related fields
         private Buffer _circleVertexBuffer;
-        private Buffer _circleSettingsBuffer;
         private InputLayout _circleInputLayout;
         private VertexShader _circleVertexShader;
         private PixelShader _circlePixelShader;
@@ -91,7 +92,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private int _circleVertexCount;
         private bool _circleShadersLoaded = false;
         private bool _dxfPointCircleVerticesDirty = false;
-        private float _circleRadius;
 
         // Debugging fields
         private CircleVertex _testVertex;
@@ -372,9 +372,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
             context.GeometryShader.Set(_circleGeometryShader);
             context.PixelShader.Set(_circlePixelShader);
             context.InputAssembler.InputLayout = _circleInputLayout;
-            //context.VertexShader.SetConstantBuffer(0, _transformationBuffer);
+            context.VertexShader.SetConstantBuffer(0, _transformationBuffer);
             context.GeometryShader.SetConstantBuffer(0, _transformationBuffer);
-            context.GeometryShader.SetConstantBuffer(1, _circleSettingsBuffer);
             context.InputAssembler.PrimitiveTopology = PrimitiveTopology.PointList;
             context.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding(_circleVertexBuffer, Marshal.SizeOf<CircleVertex>(), 0));
 
@@ -386,6 +385,36 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             //stopwatch.Stop();
             //Debug.WriteLine($"DrawCirclesWithShader Time: {stopwatch.ElapsedMilliseconds} ms");
+        }
+
+        private void TestCircleShader()
+        {
+            // GSMain
+            var transformationMatrix = _camera.ViewProjectionMatrix;
+            Vector4 center4d = Vector4.Transform(new Vector4(_testVertex.Position, 1), transformationMatrix);
+            Vector2 center = new Vector2(center4d.X, center4d.Y);
+            float radiusX = _testVertex.Radius * transformationMatrix.M11;
+            float radiusY = _testVertex.Radius * transformationMatrix.M22;
+
+            float left = center.X - radiusX;
+            float right = center.X + radiusX;
+            float top = center.Y + radiusY;
+            float bottom = center.Y - radiusY;
+
+            Vector2 topLeft = new Vector2(left, top);
+            Vector2 bottomLeft = new Vector2(left, bottom);
+            Vector2 topRight = new Vector2(right, top);
+            Vector2 bottomRight = new Vector2(right, bottom);
+
+            // PSMain
+            //float2 dist = length(input.position.xy - input.center);
+            //if (dist.x > input.radiusX || dist.y > input.radiusY)
+            //{
+            //    discard;
+            //}
+
+            Vector2 testDist = topLeft - center;
+
         }
 
         private void UpdateLineVertices()
@@ -497,6 +526,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             if (_circleVertexCount > 0)
             {
                 _testVertex = vertexSpan[0];
+                TestCircleShader();
             }
 
             _dxfPointCircleVerticesDirty = false;
@@ -621,9 +651,10 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 {
                     new InputElement("POSITION", 0, Format.R32G32B32_Float, 0, 0),
                     new InputElement("COLOR", 0, Format.R32G32B32A32_Float, 12, 0),
-                    new InputElement("ISVISIBLE", 0, Format.R32_Float, 28, 0),
-                    new InputElement("ISMOUSEOVER", 0, Format.R32_Float, 32, 0),
-                    new InputElement("ISSELECTED", 0, Format.R32_Float, 36, 0),
+                    new InputElement("RADIUS", 0, Format.R32_Float, 28, 0),
+                    new InputElement("ISVISIBLE", 0, Format.R32_Float, 32, 0),
+                    new InputElement("ISMOUSEOVER", 0, Format.R32_Float, 36, 0),
+                    new InputElement("ISSELECTED", 0, Format.R32_Float, 40, 0),
                  });
 
             _circleShadersLoaded = true;
@@ -742,16 +773,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             };
             _textGlowSettingsBuffer = new Buffer(_d3dResCache.Device, textGlowBufferDesc);
 
-            var circlesBufferDesc = new BufferDescription
-            {
-                Usage = ResourceUsage.Default,
-                SizeInBytes = Utilities.SizeOf<CircleSettingsBuffer>(),
-                BindFlags = BindFlags.ConstantBuffer,
-                CpuAccessFlags = CpuAccessFlags.None,
-                OptionFlags = ResourceOptionFlags.None
-            };
-            _circleSettingsBuffer = new Buffer(_d3dResCache.Device, circlesBufferDesc);
-
             ConstantBuffersInitialized = true;
             ConstantBuffersDirty = true;
         }
@@ -795,15 +816,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 SelectedMouseOverColor = GlobalHelperProperties._selectedMouseOverGlowColor
             };
             _d3dResCache.DeviceContext.UpdateSubresource(ref textGlowSettings, _textGlowSettingsBuffer);
-
-            var pixelsMax = Math.Max(SystemParameters.PrimaryScreenWidth, SystemParameters.PrimaryScreenHeight);
-            _circleRadius = (int)Math.Ceiling(pixelsMax / 200);
-            var circleSettingsBuffer = new CircleSettingsBuffer
-            {
-                RadiusPixels = _circleRadius,
-                ViewportSize = new Vector2(Viewport.Width, Viewport.Height),
-            };
-            _d3dResCache.DeviceContext.UpdateSubresource(ref circleSettingsBuffer, _circleSettingsBuffer);
 
             ConstantBuffersDirty = false;
         }
@@ -876,9 +888,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 {
                     _camera.Pan(currentMousePos, _prevMousePos);
                     ConstantBuffersDirty = true;
-
                     D3dIsDirty = true;
-                    //e.Handled = true;
+                    e.Handled = true;
                 }
                 _prevMousePos = currentMousePos;
             }
@@ -1362,9 +1373,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
                     _circleVertexBuffer?.Dispose();
                     _circleVertexBuffer = null;
-
-                    _circleSettingsBuffer?.Dispose();
-                    _circleSettingsBuffer = null;
 
                     _circleVertexShader?.Dispose();
                     _circleVertexShader = null;

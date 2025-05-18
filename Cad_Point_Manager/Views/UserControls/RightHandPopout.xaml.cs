@@ -270,14 +270,11 @@ namespace Cad_Point_Manager.Views.UserControls
             _selectedPointGroups.Clear();
             var selectedItems = (sender as ListView).SelectedItems;
 
-            foreach (var selectedItem in selectedItems)
+            foreach (PointGroup pointGroup in selectedItems)
             {
-                if (selectedItem is KeyValuePair<string, PointGroup> pointGroup)
+                if (pointGroup is not null)
                 {
-                    if (pointGroup.Value is not null)
-                    {
-                        _selectedPointGroups.Add(pointGroup.Value);
-                    }
+                    _selectedPointGroups.Add(pointGroup);
                 }
             }
         }
@@ -290,6 +287,7 @@ namespace Cad_Point_Manager.Views.UserControls
             if (CadManager is not null)
             {
                 CadManager.DxfPointTextVerticesDirty = true;
+                CadManager.DxfPointCircleVerticesDirty = true;
             }
         }
         private void PointGroupsCheckBox_Unchecked(object sender, RoutedEventArgs e)
@@ -301,6 +299,7 @@ namespace Cad_Point_Manager.Views.UserControls
             if (CadManager is not null)
             {
                 CadManager.DxfPointTextVerticesDirty = true;
+                CadManager.DxfPointCircleVerticesDirty = true;
             }
         }
         private void PointGroupsListView_Loaded(object sender, RoutedEventArgs e)
@@ -318,29 +317,6 @@ namespace Cad_Point_Manager.Views.UserControls
                 pointGroupGridView.Columns[1].Width = pointGroupColumnWidth * 0.7;
             }
         }
-
-
-
-        //private void ColorToggle_Loaded(object sender, RoutedEventArgs e)
-        //{
-        //    if (sender is ColorToggle colorToggle)
-        //    {
-        //        colorToggle.IsPopupOpenChanged += ColorToggle_IsPopupOpenChanged;
-        //        colorToggle.IsColorChanged += ColorToggle_IsColorChanged;
-        //    }
-        //}
-
-        //private void ColorToggle_IsPopupOpenChanged(object sender, bool isOpen)
-        //{
-        //    UpdateIsColorPickerOpen();
-        //}
-
-        //private void ColorToggle_IsColorChanged(object sender, Vector4 newColor)
-        //{
-        //    CadManager.DxfPointVerticesDirty = true;
-        //}
-
-
 
         private void UpdateIsColorPickerOpen()
         {
@@ -371,8 +347,6 @@ namespace Cad_Point_Manager.Views.UserControls
                 }
             }
         }
-
-
 
         protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {

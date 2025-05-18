@@ -8,11 +8,12 @@ using Matrix = SharpDX.Matrix;
 namespace Cad_Point_Manager.Controls.D3DControl
 {
     [StructLayout(LayoutKind.Sequential)]
-    public struct CircleVertex(Vector3 position, Vector4 color, float isVisible = 1.0f, float isMouseOver = 0, float isSelected = 0)
+    public struct CircleVertex(Vector3 position, Vector4 color, float radius, float isVisible = 1.0f, float isMouseOver = 0, float isSelected = 0)
     {
         public Vector3 Position = position;
         public Vector4 Color = color;
-        
+        public float Radius = radius;
+
         /// <summary>
         /// float value indicating whether the vertex is visible or not. 1.0f is visible, 0.0f is not visible.
         /// </summary>
@@ -28,13 +29,15 @@ namespace Cad_Point_Manager.Controls.D3DControl
         /// </summary>
         public float IsSelected = isSelected;
 
-    }
-    [StructLayout(LayoutKind.Sequential)]
-    public struct CircleSettingsBuffer
-    {
-        public float RadiusPixels;
-        public Vector2 ViewportSize;
-        public float Padding;
+        public void SetIsMouseOver(bool isMouseOver)
+        {
+            IsMouseOver = isMouseOver ? 1 : 0;
+        }
+
+        public void SetIsSelected(bool isSelected)
+        {
+            IsSelected = isSelected ? 1 : 0;
+        }
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -194,6 +197,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public readonly Vector2 BottomRight => new(Right, Bottom);
         public readonly float MaxDimension => Math.Max(Width, Height);
         public readonly float MinimumDimension => Math.Min(Width, Height);
+        public readonly bool IsEmpty => Left == 0 && Right == 0 && Top == 0 && Bottom == 0;
 
         public Bounds(float left, float right, float bottom, float top)
         {

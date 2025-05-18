@@ -13,7 +13,6 @@ namespace Cad_Point_Manager.Models
         private string _jobFilePath;
         private string _dxfFilePath;
         private DxfDocument _dxfDoc;
-        private CadManager _cadManager = new();
         private CadManager3D _cadManager3D = new();
         private Rect _extents = new();
         #endregion
@@ -55,15 +54,6 @@ namespace Cad_Point_Manager.Models
                 OnPropertyChanged();
             }
         }
-        //public CadManager CadManager
-        //{
-        //    get { return _cadManager; }
-        //    set
-        //    {
-        //        _cadManager = value;
-        //        OnPropertyChanged();
-        //    }
-        //}
         public CadManager3D CadManager3D
         {
             get { return _cadManager3D; }
@@ -217,8 +207,6 @@ namespace Cad_Point_Manager.Models
         public string JobFilePath { get; set; }
         public string DxfFilePath { get; set; }
         public Rect Extents { get; set; }
-        public CadManagerData CadManagerData { get; set; }
-
         public JobFileData() { }
 
         public JobFileData(JobFileManager jobFile)
