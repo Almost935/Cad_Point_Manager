@@ -43,7 +43,8 @@ namespace Cad_Point_Manager.Models
 
         private readonly List<LineVertex> _cachedLineVertices = [];
         private readonly List<TextVertex> _cachedTextVertices = [];
-        private readonly List<CircleVertex> _cachedCircleVertices = [];
+        private readonly List<TextVertex> _cachedPointTextVertices = [];
+        private readonly List<CircleVertex> _cachedPointMarkerVertices = [];
 
         private DxfPointTextVerticesDict _pointTextVerticesDict;
         #endregion
@@ -76,31 +77,31 @@ namespace Cad_Point_Manager.Models
                 OnPropertyChanged(nameof(TextVerticesDirty));
             }
         }
-        public bool DxfPointTextVerticesDirty
+        public bool PointTextVerticesDirty
         {
             get => _dxfPointTextVerticesDirty;
             set
             {
                 _dxfPointTextVerticesDirty = value;
-                OnPropertyChanged(nameof(DxfPointTextVerticesDirty));
+                OnPropertyChanged(nameof(PointTextVerticesDirty));
             }
         }
-        public bool DxfPointCircleVerticesDirty
+        public bool PointCircleVerticesDirty
         {
             get => _dxfPointCircleVerticesDirty;
             set
             {
                 _dxfPointCircleVerticesDirty = value;
-                OnPropertyChanged(nameof(DxfPointCircleVerticesDirty));
+                OnPropertyChanged(nameof(PointCircleVerticesDirty));
             }
         }
-        public bool DrawingObjectTreeDirty
+        public bool HitTestableObjectTreeDirty
         {
             get => _drawingObjectTreeDirty;
             set
             {
                 _drawingObjectTreeDirty = value;
-                OnPropertyChanged(nameof(DrawingObjectTreeDirty));
+                OnPropertyChanged(nameof(HitTestableObjectTreeDirty));
             }
         }
         public bool DxfNeedsReload
@@ -194,8 +195,8 @@ namespace Cad_Point_Manager.Models
 
             // Testing
             GetTestDxfPoints();
-            DxfPointTextVerticesDirty = true;
-            DxfPointCircleVerticesDirty = true;
+            //PointTextVerticesDirty = true;
+            //PointCircleVerticesDirty = true;
 
             foreach (var e in DxfDocument.Entities.All)
             {
@@ -213,8 +214,9 @@ namespace Cad_Point_Manager.Models
             DxfLoaded = true;
             LineVerticesDirty = true;
             TextVerticesDirty = true;
-            DxfPointCircleVerticesDirty = true;
-            DrawingObjectTreeDirty = true;
+            PointTextVerticesDirty = true;
+            PointCircleVerticesDirty = true;
+            HitTestableObjectTreeDirty = true;
             DxfNeedsReload = true;
         }
         public void GetPointScale()
@@ -276,17 +278,19 @@ namespace Cad_Point_Manager.Models
             Layers.Clear();
             _cachedLineVertices.Clear();
             _cachedTextVertices.Clear();
-            _cachedCircleVertices.Clear();
 
             DxfLoaded = false;
             LineVerticesDirty = true;
             TextVerticesDirty = true;
-            DxfPointTextVerticesDirty = true;
-            DxfPointCircleVerticesDirty = true;
         }
         public void ClearDxfPoints()
         {
             PointGroups.Clear();
+            _cachedPointTextVertices.Clear();
+            _cachedPointMarkerVertices.Clear();
+
+            PointTextVerticesDirty = true;
+            PointCircleVerticesDirty = true;
         }
 
         public void ZoomToExtents()
@@ -437,7 +441,7 @@ namespace Cad_Point_Manager.Models
                 }
 
                 LineVerticesDirty = false;
-                DrawingObjectTreeDirty = true;
+                HitTestableObjectTreeDirty = true;
             }
 
             return CollectionsMarshal.AsSpan(_cachedLineVertices);
@@ -445,14 +449,13 @@ namespace Cad_Point_Manager.Models
 
         public ReadOnlySpan<TextVertex> UpdateTextVerticesList(D3dResCache d3DResCache)
         {
-            if (TextVerticesDirty || DxfPointTextVerticesDirty)
+            if (TextVerticesDirty)
             {
                 if (d3DResCache.Device is null)
                 {
                     return CollectionsMarshal.AsSpan(_cachedTextVertices);
                 }
 
-                _d3dResCache = d3DResCache;
                 _cachedTextVertices.Clear();
 
                 foreach (var kvp in Layers)
@@ -466,14 +469,14 @@ namespace Cad_Point_Manager.Models
 
                         if (obj is DrawingSText3D drawingText)
                         {
-                            drawingText.UpdateTextVertices(_d3dResCache);
+                            drawingText.UpdateTextVertices(d3DResCache);
                             drawingText.StartVertexIndex = start;
                             _cachedTextVertices.AddRange(drawingText.TextVertices);
                             drawingText.EndVertexIndex = _cachedTextVertices.Count - 1;
                         }
                         else if (obj is DrawingMtext3D drawingMtext)
                         {
-                            drawingMtext.UpdateTextVertices(_d3dResCache);
+                            drawingMtext.UpdateTextVertices(d3DResCache);
                             drawingMtext.StartVertexIndex = start;
 
                             foreach (var row in drawingMtext.MtextBlock.Rows)
@@ -487,48 +490,59 @@ namespace Cad_Point_Manager.Models
                         }
                         else if (obj is DrawingBlock3D drawingBlock)
                         {
-                            drawingBlock.UpdateTextVertices(_d3dResCache);
+                            drawingBlock.UpdateTextVertices(d3DResCache);
                             drawingBlock.StartTextVertexIndex = start;
                             _cachedTextVertices.AddRange(drawingBlock.TextVertices);
                             drawingBlock.EndTextVertexIndex = _cachedTextVertices.Count - 1;
                         }
                     }
                 }
-                UpdateDxfTextPointVertices(d3DResCache);
 
                 TextVerticesDirty = false;
-                DxfPointTextVerticesDirty = false;
-                DrawingObjectTreeDirty = true;
+                HitTestableObjectTreeDirty = true;
             }
 
             return CollectionsMarshal.AsSpan(_cachedTextVertices);
         }
 
-        public void UpdateDxfTextPointVertices(D3dResCache d3DResCache)
+        public ReadOnlySpan<TextVertex> UpdatePointTextVertices(D3dResCache d3DResCache)
         {
-            _pointTextVerticesDict ??= new(d3DResCache);
-
-            foreach (var keyValuePair in PointGroups)
+            if (PointTextVerticesDirty)
             {
-                var pointGroup = keyValuePair.Value;
-
-                if (!pointGroup.IsVisible || pointGroup is null) { continue; }
-
-                foreach (var point in pointGroup.Points)
+                if (d3DResCache.Device is null)
                 {
-                    point.TextStartIndex = _cachedTextVertices.Count;
-                    point.UpdateTextVertices(_pointTextVerticesDict);
-                    _cachedTextVertices.AddRange(point.TextVertices);
-                    point.TextEndIndex = _cachedTextVertices.Count - 1;
+                    return CollectionsMarshal.AsSpan(_cachedPointTextVertices);
                 }
+
+                _pointTextVerticesDict ??= new(d3DResCache);
+
+                foreach (var keyValuePair in PointGroups)
+                {
+                    var pointGroup = keyValuePair.Value;
+
+                    if (!pointGroup.IsVisible || pointGroup is null) { continue; }
+
+                    foreach (var point in pointGroup.Points)
+                    {
+                        point.TextStartIndex = _cachedPointTextVertices.Count;
+                        point.UpdateTextVertices(_pointTextVerticesDict);
+                        _cachedPointTextVertices.AddRange(point.TextVertices);
+                        point.TextEndIndex = _cachedPointTextVertices.Count - 1;
+                    }
+                }
+
+                PointTextVerticesDirty = false;
+                HitTestableObjectTreeDirty = true;
             }
+
+            return CollectionsMarshal.AsSpan(_cachedPointTextVertices);
         }
 
         public ReadOnlySpan<CircleVertex> UpdateCircleVerticesList()
         {
-            if (DxfPointCircleVerticesDirty)
+            if (PointCircleVerticesDirty)
             {
-                _cachedCircleVertices.Clear();
+                _cachedPointMarkerVertices.Clear();
 
                 foreach (var keyValuePair in PointGroups)
                 {
@@ -539,14 +553,14 @@ namespace Cad_Point_Manager.Models
                     foreach (DxfPoint point in pointGroup.Points)
                     {
                         point.UpdateMarkerVertices();
-                        point.MarkerStartIndex = _cachedCircleVertices.Count;
-                        _cachedCircleVertices.AddRange(point.MarkerVertices);
-                        point.MarkerEndIndex = _cachedCircleVertices.Count - 1;
+                        point.MarkerStartIndex = _cachedPointMarkerVertices.Count;
+                        _cachedPointMarkerVertices.AddRange(point.MarkerVertices);
+                        point.MarkerEndIndex = _cachedPointMarkerVertices.Count - 1;
                     }
                 }
-                DxfPointCircleVerticesDirty = false;
+                PointCircleVerticesDirty = false;
             }
-            return CollectionsMarshal.AsSpan(_cachedCircleVertices);
+            return CollectionsMarshal.AsSpan(_cachedPointMarkerVertices);
         }
 
         public void GetTestDxfPoints()
@@ -590,6 +604,16 @@ namespace Cad_Point_Manager.Models
 
             return ref span[index];
         }
+        public ref TextVertex GetPointTextVertexRef(int index)
+        {
+            Span<TextVertex> span = CollectionsMarshal.AsSpan(_cachedPointTextVertices);
+            if ((uint)index >= (uint)span.Length)
+            {
+                throw new ArgumentOutOfRangeException(nameof(index), "Index is out of range.");
+            }
+
+            return ref span[index];
+        }
 
         public ref LineVertex GetLineVertexRef(int index)
         {
@@ -603,7 +627,7 @@ namespace Cad_Point_Manager.Models
         }
         public ref CircleVertex GetCircleVertexRef(int index)
         {
-            Span<CircleVertex> span = CollectionsMarshal.AsSpan(_cachedCircleVertices);
+            Span<CircleVertex> span = CollectionsMarshal.AsSpan(_cachedPointMarkerVertices);
             if ((uint)index >= (uint)span.Length)
             {
                 throw new ArgumentOutOfRangeException(nameof(index), "Index is out of range.");
@@ -615,7 +639,7 @@ namespace Cad_Point_Manager.Models
         public void UpdateHitTestableObjectTree()
         {
             HitTestableObjectTree = new(this, Extents.ToRect(), 5);
-            DrawingObjectTreeDirty = false;
+            HitTestableObjectTreeDirty = false;
         }
         #endregion
     }

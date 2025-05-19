@@ -286,8 +286,8 @@ namespace Cad_Point_Manager.Views.UserControls
             }
             if (CadManager is not null)
             {
-                CadManager.DxfPointTextVerticesDirty = true;
-                CadManager.DxfPointCircleVerticesDirty = true;
+                CadManager.PointTextVerticesDirty = true;
+                CadManager.PointCircleVerticesDirty = true;
             }
         }
         private void PointGroupsCheckBox_Unchecked(object sender, RoutedEventArgs e)
@@ -298,8 +298,8 @@ namespace Cad_Point_Manager.Views.UserControls
             }
             if (CadManager is not null)
             {
-                CadManager.DxfPointTextVerticesDirty = true;
-                CadManager.DxfPointCircleVerticesDirty = true;
+                CadManager.PointTextVerticesDirty = true;
+                CadManager.PointCircleVerticesDirty = true;
             }
         }
         private void PointGroupsListView_Loaded(object sender, RoutedEventArgs e)
@@ -343,7 +343,7 @@ namespace Cad_Point_Manager.Views.UserControls
                 {
                     var binding = colorPicker.GetBindingExpression(PortableColorPicker.SelectedColorProperty);
                     binding?.UpdateSource();
-                    CadManager.DxfPointTextVerticesDirty = true;
+                    CadManager.PointTextVerticesDirty = true;
                 }
             }
         }
