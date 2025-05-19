@@ -17,18 +17,6 @@ namespace Cad_Point_Manager.Helpers
         public const float _textHeightToFontSizeFactor = 1.5f;
         public const float _textHeightToSpaceWidthFactor = 0.5f;
 
-        public static readonly List<Vector2> _glowOffsetDirections =
-        [
-            new Vector2(-1, 0), 
-            new Vector2(0, 1),
-            new Vector2(1, 0),
-            new Vector2(0, -1),
-            new Vector2((float)Math.Sqrt(2), (float)Math.Sqrt(2)),
-            new Vector2((float)Math.Sqrt(2), -(float)Math.Sqrt(2)),
-            new Vector2(-(float)Math.Sqrt(2), (float)Math.Sqrt(2)),
-            new Vector2(-(float)Math.Sqrt(2), -(float)Math.Sqrt(2)),
-        ];
-
         public static readonly Vector4 _selectedObjectColor = new(0.07f, 0.85f, 0, 1);
         public static readonly Vector4 _selectedMouseOverObjectColor = new(185.0f / 255.0f, 1.0f, 179.0f / 255.0f, 1);
         public static readonly Vector4 _selectedMouseOverGlowColor = new(170.0f / 255.0f, 252.0f / 255.0f, 235.0f / 255.0f, 1);

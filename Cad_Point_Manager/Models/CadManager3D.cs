@@ -1,6 +1,7 @@
 ﻿using Cad_Point_Manager.Controls.D3DControl;
 using Cad_Point_Manager.Helpers;
 using Cad_Point_Manager.Models.DrawingObjects3D;
+using Cad_Point_Manager.Models.HitTesting;
 using Cad_Point_Manager.Models.PointRendering;
 using netDxf;
 using netDxf.Tables;
@@ -38,7 +39,7 @@ namespace Cad_Point_Manager.Models
         private Size2F _viewportSize = Size2F.Empty;
         
         private float _pointBaseTextHeight = 1.0f;
-        private float _pointBaseMarkerSize = 0.025f;
+        private float _pointBaseMarkerSize = 0.05f;
 
         private readonly List<LineVertex> _cachedLineVertices = [];
         private readonly List<TextVertex> _cachedTextVertices = [];
@@ -167,7 +168,7 @@ namespace Cad_Point_Manager.Models
         }
 
         public DxfDocument DxfDocument { get; set; }
-        public DrawingObjectTree3D DrawingObjectTree3D { get; set; }
+        public HitTestableObjectTree HitTestableObjectTree { get; set; }
         public TextVertex[] NumberVertices { get; set; } = [];
         #endregion
 
@@ -221,18 +222,18 @@ namespace Cad_Point_Manager.Models
             if (Extents.IsEmpty)
             {
                 _pointBaseTextHeight = 1;
-                _pointBaseMarkerSize = 0.025f;
+                _pointBaseMarkerSize = 0.05f;
                 return;
             }
             if (Extents.Width > Extents.Height)
             {
                 _pointBaseTextHeight = Extents.Width * _pointSizeToExtentsFactor;
-                _pointBaseMarkerSize = _pointBaseTextHeight * 0.025f;
+                _pointBaseMarkerSize = _pointBaseTextHeight * 0.05f;
             }
             else
             {
                 _pointBaseTextHeight = Extents.Height * _pointSizeToExtentsFactor;
-                _pointBaseMarkerSize = _pointBaseTextHeight * 0.025f;
+                _pointBaseMarkerSize = _pointBaseTextHeight * 0.05f;
             }
         }
 
@@ -249,14 +250,14 @@ namespace Cad_Point_Manager.Models
             PointGroupsView.SortDescriptions.Add(new SortDescription("Name", ListSortDirection.Ascending));
         }
 
-        public List<(double distance, DrawingObject3D obj)> GetNearestDrawingObjects(Point p, float tolerance)
+        public List<(double distance, HitTestableObject hitTestableObject)> GetNearestHitTestableObjects(Point p, float tolerance)
         {
-            List<(double distance, DrawingObject3D obj)> hits = [];
+            List<(double distance, HitTestableObject hitTestableObject)> hits = [];
 
-            if (DrawingObjectTree3D is null) { return hits; }
+            if (HitTestableObjectTree is null) { return hits; }
 
             Rect rect = new(p.X - tolerance, p.Y - tolerance, tolerance * 2, tolerance * 2);
-            var nodes = DrawingObjectTree3D.GetIntersectingNodes(rect);
+            var nodes = HitTestableObjectTree.GetIntersectingNodes(rect);
 
             foreach (var node in nodes)
             {
@@ -283,6 +284,10 @@ namespace Cad_Point_Manager.Models
             DxfPointTextVerticesDirty = true;
             DxfPointCircleVerticesDirty = true;
         }
+        public void ClearDxfPoints()
+        {
+            PointGroups.Clear();
+        }
 
         public void ZoomToExtents()
         {
@@ -303,68 +308,100 @@ namespace Cad_Point_Manager.Models
             }
         }
 
-        public void UpdateVerticesIsMouseOver(DrawingObject3D drawingObject, bool isMouseOver)
+        public void UpdateVerticesIsMouseOver(HitTestableObject hitTestableObject, bool isMouseOver)
         {
-            if (drawingObject is DrawingGeometry3D drawingGeometry)
+            if (hitTestableObject is DrawingObject3D drawingObject)
             {
-                for (int i = drawingGeometry.StartVertexIndex; i <= drawingGeometry.EndVertexIndex; i++)
+                if (drawingObject is DrawingGeometry3D drawingGeometry)
                 {
-                    ref var vertex = ref GetLineVertexRef(i);
-                    vertex.IsMouseOver = isMouseOver ? 1.0f : 0.0f;
+                    for (int i = drawingGeometry.StartVertexIndex; i <= drawingGeometry.EndVertexIndex; i++)
+                    {
+                        ref var vertex = ref GetLineVertexRef(i);
+                        vertex.IsMouseOver = isMouseOver ? 1.0f : 0.0f;
+                    }
+                }
+                if (drawingObject is DrawingMtext3D drawingMtext)
+                {
+                    for (int i = drawingMtext.StartVertexIndex; i <= drawingMtext.EndVertexIndex; i++)
+                    {
+                        ref var vertex = ref GetTextVertexRef(i);
+                        vertex.IsMouseOver = isMouseOver ? 1.0f : 0.0f;
+                    }
+                }
+                if (drawingObject is DrawingBlock3D drawingBlock)
+                {
+                    for (int i = drawingBlock.StartLineVertexIndex; i <= drawingBlock.EndLineVertexIndex; i++)
+                    {
+                        ref var vertex = ref GetLineVertexRef(i);
+                        vertex.IsMouseOver = isMouseOver ? 1.0f : 0.0f;
+                    }
+                    for (int i = drawingBlock.StartTextVertexIndex; i <= drawingBlock.EndTextVertexIndex; i++)
+                    {
+                        ref var vertex = ref GetTextVertexRef(i);
+                        vertex.IsMouseOver = isMouseOver ? 1.0f : 0.0f;
+                    }
                 }
             }
-            if (drawingObject is DrawingMtext3D drawingMtext)
+            if (hitTestableObject is DxfPoint dxfPoint)
             {
-                for (int i = drawingMtext.StartVertexIndex; i <= drawingMtext.EndVertexIndex; i++)
+                for (int i = dxfPoint.TextStartIndex; i <= dxfPoint.TextEndIndex; i++)
                 {
                     ref var vertex = ref GetTextVertexRef(i);
                     vertex.IsMouseOver = isMouseOver ? 1.0f : 0.0f;
                 }
-            }
-            if (drawingObject is DrawingBlock3D drawingBlock)
-            {
-                for (int i = drawingBlock.StartLineVertexIndex; i <= drawingBlock.EndLineVertexIndex; i++)
+                for (int i = dxfPoint.MarkerStartIndex; i <= dxfPoint.MarkerEndIndex; i++)
                 {
-                    ref var vertex = ref GetLineVertexRef(i);
-                    vertex.IsMouseOver = isMouseOver ? 1.0f : 0.0f;
-                }
-                for (int i = drawingBlock.StartTextVertexIndex; i <= drawingBlock.EndTextVertexIndex; i++)
-                {
-                    ref var vertex = ref GetTextVertexRef(i);
+                    ref var vertex = ref GetCircleVertexRef(i);
                     vertex.IsMouseOver = isMouseOver ? 1.0f : 0.0f;
                 }
             }
         }
 
-        public void UpdateVerticesIsSelected(DrawingObject3D drawingObject, bool isSelected)
+        public void UpdateVerticesIsSelected(HitTestableObject hitTestableObject, bool isSelected)
         {
-            if (drawingObject is DrawingGeometry3D drawingGeometry)
+            if (hitTestableObject is DrawingObject3D drawingObject)
             {
-                for (int i = drawingGeometry.StartVertexIndex; i <= drawingGeometry.EndVertexIndex; i++)
+                if (drawingObject is DrawingGeometry3D drawingGeometry)
                 {
-                    ref var vertex = ref GetLineVertexRef(i);
-                    vertex.IsSelected = isSelected ? 1.0f : 0.0f;
+                    for (int i = drawingGeometry.StartVertexIndex; i <= drawingGeometry.EndVertexIndex; i++)
+                    {
+                        ref var vertex = ref GetLineVertexRef(i);
+                        vertex.IsSelected = isSelected ? 1.0f : 0.0f;
+                    }
+                }
+                if (drawingObject is DrawingMtext3D drawingMtext)
+                {
+                    for (int i = drawingMtext.StartVertexIndex; i <= drawingMtext.EndVertexIndex; i++)
+                    {
+                        ref var vertex = ref GetTextVertexRef(i);
+                        vertex.IsSelected = isSelected ? 1.0f : 0.0f;
+                    }
+                }
+                if (drawingObject is DrawingBlock3D drawingBlock)
+                {
+                    for (int i = drawingBlock.StartLineVertexIndex; i <= drawingBlock.EndLineVertexIndex; i++)
+                    {
+                        ref var vertex = ref GetLineVertexRef(i);
+                        vertex.IsSelected = isSelected ? 1.0f : 0.0f;
+                    }
+                    for (int i = drawingBlock.StartTextVertexIndex; i <= drawingBlock.EndTextVertexIndex; i++)
+                    {
+                        ref var vertex = ref GetTextVertexRef(i);
+                        vertex.IsSelected = isSelected ? 1.0f : 0.0f;
+                    }
                 }
             }
-            if (drawingObject is DrawingMtext3D drawingMtext)
+            if (hitTestableObject is DxfPoint dxfPoint)
             {
-                for (int i = drawingMtext.StartVertexIndex; i <= drawingMtext.EndVertexIndex; i++)
+                for (int i = dxfPoint.TextStartIndex; i <= dxfPoint.TextEndIndex; i++)
                 {
                     ref var vertex = ref GetTextVertexRef(i);
-                    vertex.IsSelected = isSelected ? 1.0f : 0.0f;
+                    vertex.IsMouseOver = isSelected ? 1.0f : 0.0f;
                 }
-            }
-            if (drawingObject is DrawingBlock3D drawingBlock)
-            {
-                for (int i = drawingBlock.StartLineVertexIndex; i <= drawingBlock.EndLineVertexIndex; i++)
+                for (int i = dxfPoint.MarkerStartIndex; i <= dxfPoint.MarkerEndIndex; i++)
                 {
-                    ref var vertex = ref GetLineVertexRef(i);
-                    vertex.IsSelected = isSelected ? 1.0f : 0.0f;
-                }
-                for (int i = drawingBlock.StartTextVertexIndex; i <= drawingBlock.EndTextVertexIndex; i++)
-                {
-                    ref var vertex = ref GetTextVertexRef(i);
-                    vertex.IsSelected = isSelected ? 1.0f : 0.0f;
+                    ref var vertex = ref GetCircleVertexRef(i);
+                    vertex.IsMouseOver = isSelected ? 1.0f : 0.0f;
                 }
             }
         }
@@ -427,7 +464,7 @@ namespace Cad_Point_Manager.Models
                     {
                         int start = _cachedTextVertices.Count;
 
-                        if (obj is DrawingText3D drawingText)
+                        if (obj is DrawingSText3D drawingText)
                         {
                             drawingText.UpdateTextVertices(_d3dResCache);
                             drawingText.StartVertexIndex = start;
@@ -467,29 +504,6 @@ namespace Cad_Point_Manager.Models
             return CollectionsMarshal.AsSpan(_cachedTextVertices);
         }
 
-        public ReadOnlySpan<CircleVertex> UpdateCircleVerticesList()
-        {
-            if (DxfPointCircleVerticesDirty)
-            {
-                _cachedCircleVertices.Clear();
-
-                foreach (var keyValuePair in PointGroups)
-                {
-                    var pointGroup = keyValuePair.Value;
-
-                    if (!pointGroup.IsVisible || pointGroup is null) { continue; }
-
-                    foreach (DxfPoint point in pointGroup.Points)
-                    {
-                        point.UpdateMarkerVertices();
-                        _cachedCircleVertices.AddRange(point.MarkerVertices);
-                    }
-                }
-                DxfPointCircleVerticesDirty = false;
-            }
-            return CollectionsMarshal.AsSpan(_cachedCircleVertices);
-        }
-
         public void UpdateDxfTextPointVertices(D3dResCache d3DResCache)
         {
             _pointTextVerticesDict ??= new(d3DResCache);
@@ -508,6 +522,31 @@ namespace Cad_Point_Manager.Models
                     point.TextEndIndex = _cachedTextVertices.Count - 1;
                 }
             }
+        }
+
+        public ReadOnlySpan<CircleVertex> UpdateCircleVerticesList()
+        {
+            if (DxfPointCircleVerticesDirty)
+            {
+                _cachedCircleVertices.Clear();
+
+                foreach (var keyValuePair in PointGroups)
+                {
+                    var pointGroup = keyValuePair.Value;
+
+                    if (!pointGroup.IsVisible || pointGroup is null) { continue; }
+
+                    foreach (DxfPoint point in pointGroup.Points)
+                    {
+                        point.UpdateMarkerVertices();
+                        point.MarkerStartIndex = _cachedCircleVertices.Count;
+                        _cachedCircleVertices.AddRange(point.MarkerVertices);
+                        point.MarkerEndIndex = _cachedCircleVertices.Count - 1;
+                    }
+                }
+                DxfPointCircleVerticesDirty = false;
+            }
+            return CollectionsMarshal.AsSpan(_cachedCircleVertices);
         }
 
         public void GetTestDxfPoints()
@@ -562,10 +601,20 @@ namespace Cad_Point_Manager.Models
 
             return ref span[index];
         }
-
-        public void UpdateDrawingObjectTree()
+        public ref CircleVertex GetCircleVertexRef(int index)
         {
-            DrawingObjectTree3D = new(this, Extents.ToRect(), 5);
+            Span<CircleVertex> span = CollectionsMarshal.AsSpan(_cachedCircleVertices);
+            if ((uint)index >= (uint)span.Length)
+            {
+                throw new ArgumentOutOfRangeException(nameof(index), "Index is out of range.");
+            }
+
+            return ref span[index];
+        }
+
+        public void UpdateHitTestableObjectTree()
+        {
+            HitTestableObjectTree = new(this, Extents.ToRect(), 5);
             DrawingObjectTreeDirty = false;
         }
         #endregion

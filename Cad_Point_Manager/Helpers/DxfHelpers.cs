@@ -57,7 +57,7 @@ namespace Cad_Point_Manager.Helpers
                 Circle circle => new DrawingCircle3D(circle, layer),
                 Insert block => new DrawingBlock3D(block, layer),
                 MText mtext => new DrawingMtext3D(mtext, layer),
-                Text text => new DrawingText3D(text, layer),
+                Text text => new DrawingSText3D(text, layer),
                 _ => null,
             };
         }

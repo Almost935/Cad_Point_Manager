@@ -18,8 +18,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         public DrawingObject3dColorType DrawingObject3DColorType { get; set; }
         public bool IsPartOfBlock { get; set; } = false;
         public DrawingBlock3D DrawingBlock3D { get; set; }
-        public bool IsSelected { get; set; } = false;
-        public bool IsMouseOver { get; set; } = false;
         public bool IsVisible { get; set; } = true;
         #endregion
 
@@ -29,10 +27,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
 
         #region Methods
         public abstract void UpdateData(EntityObject entity);
-        public abstract void MouseEnter();
-        public abstract void MouseLeave();
-        public abstract void Select();
-        public abstract void Deselect();
         public abstract void DrawToD2dDeviceContext(DeviceContext1 deviceContext, Factory2 factory, Brush brush, float thickness, StrokeStyle1 strokeStyle);
 
         public void UpdateColor()

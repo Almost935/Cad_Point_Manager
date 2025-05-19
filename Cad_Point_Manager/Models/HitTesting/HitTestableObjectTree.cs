@@ -1,8 +1,9 @@
 ﻿using System.Windows;
+using Cad_Point_Manager.Models.DrawingObjects3D;
 
-namespace Cad_Point_Manager.Models.DrawingObjects3D
+namespace Cad_Point_Manager.Models.HitTesting
 {
-    public class DrawingObjectTree3D
+    public class HitTestableObjectTree
     {
         #region Fields
         private const float _viewInflationFactor = 1.1f;
@@ -11,20 +12,20 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         #endregion
 
         #region Properties
-        public List<DrawingObject3D> DrawingObjects { get; set; } = [];
+        public List<HitTestableObject> HitTestableObjects { get; set; } = [];
         public Rect Extents { get; set; }
         public int Levels { get; set; }
-        public DrawingObjectNode3D Root { get; set; }
-        public List<DrawingObjectNode3D> CurrentlyVisibleNodes { get; set; } = [];
+        public HitTestableObjectNode Root { get; set; }
+        public List<HitTestableObjectNode> CurrentlyVisibleNodes { get; set; } = [];
 
         /// <summary>
         /// Consists of all the 0 level nodes in the tree.
         /// </summary>
-        public List<DrawingObjectNode3D> BaseLevelNodes { get; set; } = [];
+        public List<HitTestableObjectNode> BaseLevelNodes { get; set; } = [];
         #endregion
 
         #region Constructors
-        public DrawingObjectTree3D(CadManager3D cadManager, Rect extents, int levels)
+        public HitTestableObjectTree(CadManager3D cadManager, Rect extents, int levels)
         {
             _cadManager = cadManager;
             Extents = extents;
@@ -42,33 +43,37 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         }
         private void GetRoot()
         {
-            Root = new(DrawingObjects, Levels, Extents, this);
+            Root = new(HitTestableObjects, Levels, Extents, this);
         }
         private void GetDrawingObjects()
         {
             foreach (var keyValue in _cadManager.Layers)
             {
-                DrawingObjects.AddRange(keyValue.Value.DrawingObject3Ds);
+                HitTestableObjects.AddRange(keyValue.Value.DrawingObject3Ds);
+            }
+            foreach (var keyValue in _cadManager.PointGroups)
+            {
+                HitTestableObjects.AddRange(keyValue.Value.Points);
             }
         }
-        public List<DrawingObjectNode3D> GetIntersectingNodes(Rect view)
+        public List<HitTestableObjectNode> GetIntersectingNodes(Rect view)
         {
-            List<DrawingObjectNode3D> quadTreeNodes = [];
+            List<HitTestableObjectNode> quadTreeNodes = [];
 
             quadTreeNodes.AddRange(Root.GetIntersectingQuadTreeNodes(view));
 
             return quadTreeNodes;
         }
 
-        public List<DrawingObjectNode3D> GetIntersectingNodes(Point p)
+        public List<HitTestableObjectNode> GetIntersectingNodes(Point p)
         {
-            List<DrawingObjectNode3D> quadTreeNodes = [];
+            List<HitTestableObjectNode> quadTreeNodes = [];
 
             quadTreeNodes.AddRange(Root.GetNodesAtPoint(p));
 
             return quadTreeNodes;
         }
-        public DrawingObjectNode3D GetIntersectingNode(Point p)
+        public HitTestableObjectNode GetIntersectingNode(Point p)
         {
             return Root.GetNodeAtPoint(p);
         }

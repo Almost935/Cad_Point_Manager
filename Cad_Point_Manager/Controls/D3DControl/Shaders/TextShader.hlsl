@@ -14,13 +14,9 @@ cbuffer TextSettingsBuffer : register(b1)
 
 float4 GetSnappedColor(float4 color)
 {
-    // A light blue color to blend towards (adjust to taste)
     float3 lightBlue = float3(0.4, 0.4, 1.0);
+    float3 resultRgb = lerp(color.rgb, lightBlue, 0.7); 
 
-    // Lerp from original RGB to the blueish color
-    float3 resultRgb = lerp(color.rgb, lightBlue, 0.7); // 0.4 means 40% blueish tint
-
-    // Return the new color with original alpha
     return float4(resultRgb, color.a);
 }
 

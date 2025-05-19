@@ -210,7 +210,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                     block.UpdateTextVertices(resCache);
                     TextVertices.AddRange(block.TextVertices);
                 }
-                if (obj is DrawingText3D text)
+                if (obj is DrawingSText3D text)
                 {
                     text.UpdateTextVertices(resCache);
                     TextVertices.AddRange(text.TextVertices);

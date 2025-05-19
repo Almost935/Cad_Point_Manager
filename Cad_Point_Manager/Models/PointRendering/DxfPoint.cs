@@ -26,10 +26,8 @@ namespace Cad_Point_Manager.Models.PointRendering
         public CircleVertex[] MarkerVertices { get; set; } = new CircleVertex[1];
         public int TextStartIndex { get; set; }
         public int TextEndIndex { get; set; }
-        public int LineStartIndex { get; set; }
-        public int LineEndIndex { get; set; }
-        public bool IsMouseOver { get; set; } = false;
-        public bool IsSelected { get; set; } = false;
+        public int MarkerStartIndex { get; set; }
+        public int MarkerEndIndex { get; set; }
         #endregion
 
         #region Constructors
@@ -118,7 +116,7 @@ namespace Cad_Point_Manager.Models.PointRendering
             Bounds.Union(circleBounds);
         }
 
-        public void MouseEnter()
+        public override void MouseEnter()
         {
             this.IsMouseOver = true;
 
@@ -134,7 +132,7 @@ namespace Cad_Point_Manager.Models.PointRendering
                 markerSpan[i].SetIsMouseOver(true);
             }
         }
-        public void MouseLeave()
+        public override void MouseLeave()
         {
             this.IsMouseOver = false;
 
@@ -151,7 +149,7 @@ namespace Cad_Point_Manager.Models.PointRendering
             }
         }
 
-        public void Select()
+        public override void Select()
         {
             this.IsSelected = true;
 
@@ -161,7 +159,7 @@ namespace Cad_Point_Manager.Models.PointRendering
                 textSpan[i].SetIsSelected(true);
             }
         }
-        public void Deselect()
+        public override void Deselect()
         {
             this.IsSelected = false;
 
@@ -178,6 +176,8 @@ namespace Cad_Point_Manager.Models.PointRendering
             Array.Clear(TextVertices);
 
             TextVertices = textDict.GetIntTextVertices(PointNumber, TextHeight, new Vector2(Position.X, Position.Y), PointGroup.Color);
+
+            UpdateBounds();
         }
         public void UpdateMarkerVertices()
         {

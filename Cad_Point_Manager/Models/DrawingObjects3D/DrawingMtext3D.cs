@@ -17,7 +17,7 @@ using Vector4 = SharpDX.Vector4;
 
 namespace Cad_Point_Manager.Models.DrawingObjects3D
 {
-    public class DrawingMtext3D : DrawingObject3D
+    public class DrawingMtext3D : DrawingText3D
     {
         #region Fields
         private const int _fontRenderingMinimumSize = 50;
@@ -25,11 +25,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
 
         #region Properties
         public MText DxfMtext { get; set; }
-        public string Text { get; set; }
-        public double MaxWidth { get; set; }
-        public Vector3 Position { get; set; }
-        public int StartVertexIndex { get; set; }
-        public int EndVertexIndex { get; set; }
         public float Rotation { get; set; } = 0;
         public float FontHeight { get; set; }
         public string FontFamilyName { get; set; }
@@ -163,7 +158,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             {
                 DxfMtext = mText;
                 Text = mText.Value;
-                MaxWidth = mText.RectangleWidth;
+                MaxWidth = (float)mText.RectangleWidth;
                 Position = new((float)mText.Position.X, (float)mText.Position.Y, 0);
                 Rotation = (float)mText.Rotation;
                 UpdateBounds();

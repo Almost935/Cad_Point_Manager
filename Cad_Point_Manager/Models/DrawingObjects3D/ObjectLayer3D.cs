@@ -16,7 +16,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         public Vector4 Color { get; set; }
         public Layer DxfLayer { get; set; }
         public List<DrawingObject3D> DrawingObject3Ds { get; set; } = [];
-        public List<DrawingText3D> DrawingText3Ds { get; set; } = [];
+        public List<DrawingSText3D> DrawingText3Ds { get; set; } = [];
 
         public bool IsVisible
         {
@@ -53,13 +53,13 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             {
                 foreach (var obj in block.DrawingObjects)
                 {
-                    if (obj is DrawingText3D drawingText)
+                    if (obj is DrawingSText3D drawingText)
                     {
                         DrawingText3Ds.Add(drawingText);
                     }
                 }
             }
-            if (drawingObject3D is DrawingText3D text)
+            if (drawingObject3D is DrawingSText3D text)
             {
                 DrawingText3Ds.Add(text);
             }

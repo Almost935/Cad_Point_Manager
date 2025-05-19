@@ -11,11 +11,17 @@ namespace Cad_Point_Manager.Models
     {
         #region Properties
         public Rect Bounds { get; set; } = Rect.Empty;
+        public bool IsSelected { get; set; } = false;
+        public bool IsMouseOver { get; set; } = false;
         #endregion
 
         #region Methods
         public abstract double DistanceToPoint(Point p);
         public abstract void UpdateBounds();
+        public abstract void MouseEnter();
+        public abstract void MouseLeave();
+        public abstract void Select();
+        public abstract void Deselect();
 
         public bool BoundsInRect(Rect rect)
         {

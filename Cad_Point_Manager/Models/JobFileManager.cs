@@ -84,6 +84,7 @@ namespace Cad_Point_Manager.Models
         public void NewJobFile()
         {
             CadManager3D.ClearDxf();
+            CadManager3D.ClearDxfPoints();
 
             JobName = string.Empty;
             JobFilePath = string.Empty;

@@ -174,6 +174,22 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
     }
 
+    [StructLayout(LayoutKind.Sequential)]
+    public struct CircleGlowSettingsBuffer
+    {
+        public float GlowOffset;
+        public float GlowTransparency;
+        private Vector2 Padding;
+        public Vector4 SelectedColor;
+        public Vector4 SelectedMouseOverColor;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct CircleSettingsBuffer
+    {
+        public Vector4 SelectedColor;
+        public Vector4 SelectedMouseOverColor;
+    }
 
     [StructLayout(LayoutKind.Sequential)]
     public struct TransformationBuffer
