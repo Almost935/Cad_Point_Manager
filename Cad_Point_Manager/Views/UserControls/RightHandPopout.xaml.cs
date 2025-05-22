@@ -231,7 +231,7 @@ namespace Cad_Point_Manager.Views.UserControls
             if (CadManager is not null)
             {
                 CadManager.LineVerticesDirty = true;
-                CadManager.TextVerticesDirty = true;
+                CadManager.TriangleVerticesDirty = true;
             }
         }
         private void LayerCheckBox_Unchecked(object sender, RoutedEventArgs e)
@@ -243,7 +243,7 @@ namespace Cad_Point_Manager.Views.UserControls
             if (CadManager is not null)
             {
                 CadManager.LineVerticesDirty = true;
-                CadManager.TextVerticesDirty = true;
+                CadManager.TriangleVerticesDirty = true;
             }
         }
         private void LayersBorder_MouseEnter(object sender, MouseEventArgs e)
@@ -286,7 +286,7 @@ namespace Cad_Point_Manager.Views.UserControls
             }
             if (CadManager is not null)
             {
-                CadManager.PointTextVerticesDirty = true;
+                CadManager.TriangleVerticesDirty = true;
                 CadManager.PointCircleVerticesDirty = true;
             }
         }
@@ -298,7 +298,7 @@ namespace Cad_Point_Manager.Views.UserControls
             }
             if (CadManager is not null)
             {
-                CadManager.PointTextVerticesDirty = true;
+                CadManager.TriangleVerticesDirty = true;
                 CadManager.PointCircleVerticesDirty = true;
             }
         }
@@ -343,7 +343,7 @@ namespace Cad_Point_Manager.Views.UserControls
                 {
                     var binding = colorPicker.GetBindingExpression(PortableColorPicker.SelectedColorProperty);
                     binding?.UpdateSource();
-                    CadManager.PointTextVerticesDirty = true;
+                    CadManager.TriangleVerticesDirty = true;
                 }
             }
         }

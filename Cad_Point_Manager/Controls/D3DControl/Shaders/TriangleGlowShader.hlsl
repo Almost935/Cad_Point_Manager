@@ -1,10 +1,10 @@
-﻿// TextGlowShader.hlsl
+﻿// TriangleGlowShader.hlsl
 
 cbuffer TransformationBuffer : register(b0)
 {
     row_major matrix transformationMatrix;
 };
-cbuffer TextGlowSettingsBuffer : register(b1)
+cbuffer TriangleGlowSettingsBuffer : register(b1)
 {
     float glowOffset;
     float glowTransparency;
@@ -25,9 +25,9 @@ struct VSInput
 {
     float3 Position : POSITION;
     float4 Color : COLOR;
-    float IsVisible : ISVISIBLE;
-    float IsMouseOver : ISMOUSEOVER;
-    float IsSelected : ISSELECTED;
+    float IsVisible : TEXCOORD0;
+    float IsMouseOver : TEXCOORD1;
+    float IsSelected : TEXCOORD2;
 };
 
 struct GSInput

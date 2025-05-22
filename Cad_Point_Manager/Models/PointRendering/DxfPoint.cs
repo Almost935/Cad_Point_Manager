@@ -1,6 +1,7 @@
 ﻿using Cad_Point_Manager.Controls.D3DControl;
 using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Helpers;
+using Cad_Point_Manager.Models.HitTesting;
 using SharpDX;
 using System.Runtime.InteropServices;
 using System.Windows;
@@ -22,7 +23,7 @@ namespace Cad_Point_Manager.Models.PointRendering
         public float TextHeight { get; set; }
         public float MarkerSize { get; set; }
         public PointGroup PointGroup { get; set; }
-        public TextVertex[] TextVertices { get; set; } = [];
+        public TriangleVertex[] TriangleVertices { get; set; } = [];
         public CircleVertex[] MarkerVertices { get; set; } = new CircleVertex[1];
         public int TextStartIndex { get; set; }
         public int TextEndIndex { get; set; }
@@ -46,20 +47,20 @@ namespace Cad_Point_Manager.Models.PointRendering
         {
             if (MathHelpers.PointToPointDistance(p, Position.ToPoint()) < MarkerSize) { return 0.0; }  
             
-            if (TextVertices.Length < 3) { return double.MaxValue; };
+            if (TriangleVertices.Length < 3) { return double.MaxValue; };
 
             Vector2 testPoint = new((float)p.X, (float)p.Y);
             double minDistance = double.MaxValue;
             bool pointInside = false;
             object locker = new();
 
-            Parallel.For(0, TextVertices.Length / 3, (i, state) =>
+            Parallel.For(0, TriangleVertices.Length / 3, (i, state) =>
             {
                 if (pointInside) return;
 
-                Vector2 v0 = TextVertices[i * 3 + 0].Position.ToVector2();
-                Vector2 v1 = TextVertices[i * 3 + 1].Position.ToVector2();
-                Vector2 v2 = TextVertices[i * 3 + 2].Position.ToVector2();
+                Vector2 v0 = TriangleVertices[i * 3 + 0].Position.ToVector2();
+                Vector2 v1 = TriangleVertices[i * 3 + 1].Position.ToVector2();
+                Vector2 v2 = TriangleVertices[i * 3 + 2].Position.ToVector2();
 
                 if (MathHelpers.IsPointInTriangle(testPoint, v0, v1, v2))
                 {
@@ -87,13 +88,13 @@ namespace Cad_Point_Manager.Models.PointRendering
         }
         public override void UpdateBounds()
         {
-            if (TextVertices.Length == 0)
+            if (TriangleVertices.Length == 0)
             {
                 Bounds = Rect.Empty;
                 return;
             }
 
-            Span<TextVertex> span = TextVertices.AsSpan();
+            Span<TriangleVertex> span = TriangleVertices.AsSpan();
 
             double minX = double.MaxValue;
             double minY = double.MaxValue;
@@ -120,7 +121,7 @@ namespace Cad_Point_Manager.Models.PointRendering
         {
             this.IsMouseOver = true;
 
-            Span<TextVertex> textSpan = TextVertices;
+            Span<TriangleVertex> textSpan = TriangleVertices;
             for (int i = 0; i < textSpan.Length; i++)
             {
                 textSpan[i].SetIsMouseOver(true);
@@ -136,7 +137,7 @@ namespace Cad_Point_Manager.Models.PointRendering
         {
             this.IsMouseOver = false;
 
-            Span<TextVertex> textSpan = TextVertices;
+            Span<TriangleVertex> textSpan = TriangleVertices;
             for (int i = 0; i < textSpan.Length; i++)
             {
                 textSpan[i].SetIsMouseOver(false);
@@ -153,7 +154,7 @@ namespace Cad_Point_Manager.Models.PointRendering
         {
             this.IsSelected = true;
 
-            Span<TextVertex> textSpan = TextVertices;
+            Span<TriangleVertex> textSpan = TriangleVertices;
             for (int i = 0; i < textSpan.Length; i++)
             {
                 textSpan[i].SetIsSelected(true);
@@ -163,19 +164,19 @@ namespace Cad_Point_Manager.Models.PointRendering
         {
             this.IsSelected = false;
 
-            Span<TextVertex> textSpan = TextVertices;
+            Span<TriangleVertex> textSpan = TriangleVertices;
             for (int i = 0; i < textSpan.Length; i++)
             {
                 textSpan[i].SetIsSelected(false);
             }
         }
 
-        public void UpdateTextVertices(DxfPointTextVerticesDict textDict)
+        public void UpdateTriangleVertices(DxfPointTextVerticesDict textDict)
         {
-            TextVertices ??= Array.Empty<TextVertex>();
-            Array.Clear(TextVertices);
+            TriangleVertices ??= Array.Empty<TriangleVertex>();
+            Array.Clear(TriangleVertices);
 
-            TextVertices = textDict.GetIntTextVertices(PointNumber, TextHeight, new Vector2(Position.X, Position.Y), PointGroup.Color);
+            TriangleVertices = textDict.GetIntTextVertices(PointNumber, TextHeight, new Vector2(Position.X, Position.Y), PointGroup.Color);
 
             UpdateBounds();
         }

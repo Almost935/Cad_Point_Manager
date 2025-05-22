@@ -1,4 +1,5 @@
-﻿using netDxf.Entities;
+﻿using Cad_Point_Manager.Models.HitTesting;
+using netDxf.Entities;
 using SharpDX;
 using SharpDX.Direct2D1;
 using System.ComponentModel;

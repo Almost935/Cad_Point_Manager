@@ -12,7 +12,7 @@ namespace Cad_Point_Manager.Models.PointRendering
         private const string _fontName = "Arial";
         private const float _flatteningTolerance = 0.001f;
 
-        private readonly Dictionary<int, (List<TextVertex> vertices, float width)> _numbersDict = [];
+        private readonly Dictionary<int, (List<TriangleVertex> vertices, float width)> _numbersDict = [];
         private readonly D3dResCache _resCache;
         private TextFormat _textFormat;
         private FontFace _fontFace;
@@ -25,9 +25,9 @@ namespace Cad_Point_Manager.Models.PointRendering
             _fontFace = _resCache.GetFontFace(_fontName, FontWeight.Normal, FontStretch.Normal, FontStyle.Normal);
         }
 
-        public TextVertex[] GetIntTextVertices(int integer, float textHeight, Vector2 basePoint, Vector4 color)
+        public TriangleVertex[] GetIntTextVertices(int integer, float textHeight, Vector2 basePoint, Vector4 color)
         {
-            List<TextVertex> verticesList = [];
+            List<TriangleVertex> verticesList = [];
             string text = integer.ToString();
             float xOffset = 0;
 
@@ -36,17 +36,17 @@ namespace Cad_Point_Manager.Models.PointRendering
                 char c = text[i];
                 int num = Int32.Parse(c.ToString());
 
-                if (_numbersDict.TryGetValue(num, out (List<TextVertex> vertices, float width) tup))
+                if (_numbersDict.TryGetValue(num, out (List<TriangleVertex> vertices, float width) tup))
                 {
                     bool colorChangeFlag = color != _defaultColor;
-                    List<TextVertex> translated = new(tup.vertices.Count);
+                    List<TriangleVertex> translated = new(tup.vertices.Count);
                     Vector2 offset = new(basePoint.X + xOffset, basePoint.Y);
                     for (int j = 0; j < tup.vertices.Count; j++)
                     {
                         var vertex = tup.vertices[j];
                         if (colorChangeFlag)
                         {
-                            vertex = new TextVertex(vertex.Position, color);
+                            vertex = new TriangleVertex(vertex.Position, color, isVisible: 1, isMouseOver: 0, isSelected: 0);
                         }
                         translated.Add(vertex.Translate(offset));
                     }
@@ -57,8 +57,8 @@ namespace Cad_Point_Manager.Models.PointRendering
                 {
                     TextLayout textLayout = new(_resCache.WriteFactory, c.ToString(), _textFormat, 0.0f, 0.0f);
                     (List<Vector2> coordinates, RawRectangleF bounds) = TextRenderingHelpers.TesselateTextLayout(_resCache, textLayout, c.ToString(), textHeight, _fontFace);
-                    List<TextVertex> newVerticesList = [];
-                    List<TextVertex> dictVerticesList = [];
+                    List<TriangleVertex> newVerticesList = [];
+                    List<TriangleVertex> dictVerticesList = [];
 
                     Vector2 offset = new(basePoint.X + xOffset, basePoint.Y);
                     
@@ -69,9 +69,8 @@ namespace Cad_Point_Manager.Models.PointRendering
                         Matrix matrix = Matrix.Translation(offset.X, offset.Y, 0);
                         Vector3 dictVector = new(coordinate.X, coordinate.Y, 0.0f);
                         Vector3 vector = Vector3.TransformCoordinate(dictVector, matrix);
-                        //Vector3 translatedVector = new(vector.X, vector.Y, vector.Z);
-                        TextVertex vertex = new(vector, _defaultColor);
-                        TextVertex dictVertex = new(dictVector, _defaultColor);
+                        TriangleVertex vertex = new(vector, _defaultColor);
+                        TriangleVertex dictVertex = new(dictVector, _defaultColor);
                         newVerticesList.Add(vertex);
                         dictVerticesList.Add(dictVertex);
                     }

@@ -21,6 +21,8 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         #endregion
 
         #region Properties
+        public override List<TriangleVertex> TriangleVertices { get; set; } = [];
+
         public Text DxfText { get; set; }
         public float Rotation { get; set; } = 0;
         public float TextHeight { get; set; }
@@ -31,11 +33,9 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         public System.Windows.Media.Matrix Transform { get; set; }
         public Enums.TextAttachmentPoint AttachmentPoint { get; set; }
         public TextLayout TextLayout { get; set; }
-        public TextVertex[] TextVertices { get; set; } = [];
 
         public bool TextFormatCreated => _textFormat != null;
         public bool TextLayoutCreated => TextLayout != null;
-        public bool TextVerticesCreated => TextVertices.Length > 0;
         #endregion
 
         #region Constructor
@@ -147,6 +147,12 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         #endregion
 
         #region Methods
+        public override void UpdateTextVertices(D3dResCache resCache)
+        {
+            GetTextFormat(resCache.WriteFactory);
+            GetTextLayout(resCache.WriteFactory);
+            Tesselate(resCache);
+        }
         public override void MouseEnter()
         {
             throw new NotImplementedException();
@@ -168,9 +174,9 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         }
         private void SetIsSelected(bool isSelected)
         {
-            for (int i = 0; i < TextVertices.Length; i++)
+            for (int i = 0; i < TriangleVertices.Count; i++)
             {
-                TextVertices[i].SetIsSelected(isSelected);
+                TriangleVertices[i].SetIsSelected(isSelected);
             }
         }
 
@@ -257,12 +263,12 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                 bounds.Top,
                 bounds.Right - bounds.Left,
                 bounds.Bottom - bounds.Top);
-            TextVertices = GetVertices(vertices);
+            TriangleVertices = GetVertices(vertices);
         }
 
-        public TextVertex[] GetVertices(List<Vector2> vertices)
+        public List<TriangleVertex> GetVertices(List<Vector2> vertices)
         {
-            List<TextVertex> textVertices = [];
+            List<TriangleVertex> textVertices = [];
             Matrix translationTransform = Matrix.Translation((float)Transform.OffsetX, (float)Transform.OffsetY, 0);
 
             for (int i = 0; i < vertices.Count; i += 3)
@@ -272,23 +278,16 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                 var v3 = vertices[i + 2];
 
                 var scaledVector1 = Vector2.TransformCoordinate(v1, translationTransform);
-                TextVertex textVertex1 = new(new Vector3(scaledVector1.X, scaledVector1.Y, 0), Color, isVisible: 1, isMouseOver: 0, isSelected: 0);
+                TriangleVertex textVertex1 = new(new Vector3(scaledVector1.X, scaledVector1.Y, 0), Color, isVisible: 1, isMouseOver: 0, isSelected: 0);
                 var scaledVector2 = Vector2.TransformCoordinate(v2, translationTransform);
-                TextVertex textVertex2 = new(new Vector3(scaledVector2.X, scaledVector2.Y, 0), Color, isVisible: 1, isMouseOver: 0, isSelected: 0);
+                TriangleVertex textVertex2 = new(new Vector3(scaledVector2.X, scaledVector2.Y, 0), Color, isVisible: 1, isMouseOver: 0, isSelected: 0);
                 var scaledVector3 = Vector2.TransformCoordinate(v3, translationTransform);
-                TextVertex textVertex3 = new(new Vector3(scaledVector3.X, scaledVector3.Y, 0), Color, isVisible: 1, isMouseOver: 0, isSelected: 0);
+                TriangleVertex textVertex3 = new(new Vector3(scaledVector3.X, scaledVector3.Y, 0), Color, isVisible: 1, isMouseOver: 0, isSelected: 0);
 
                 textVertices.AddRange([textVertex1, textVertex2, textVertex3]);
             }
 
-            return textVertices.ToArray();
-        }
-
-        public void UpdateTextVertices(D3dResCache resCache)
-        {
-            GetTextFormat(resCache.WriteFactory);
-            GetTextLayout(resCache.WriteFactory);
-            Tesselate(resCache);
+            return textVertices;
         }
 
         public static float ConvertDxfHeightToFontSize(float height)

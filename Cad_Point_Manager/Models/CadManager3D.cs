@@ -26,8 +26,7 @@ namespace Cad_Point_Manager.Models
 
         private bool _dxfLoaded = false;
         private bool _lineVerticesDirty = true;
-        private bool _textVerticesDirty = true;
-        private bool _dxfPointTextVerticesDirty = true;
+        private bool _triangleVerticesDirty = true;
         private bool _dxfPointCircleVerticesDirty = true;
         private bool _drawingObjectTreeDirty = true;
         private bool _dxfNeedsReload = true;
@@ -37,14 +36,13 @@ namespace Cad_Point_Manager.Models
         private ObservableCollection<KeyValuePair<string, PointGroup>> _pointGroups = [];
         private ICollectionView _pointGroupsView;
         private Size2F _viewportSize = Size2F.Empty;
-        
+
         private float _pointBaseTextHeight = 1.0f;
         private float _pointBaseMarkerSize = 0.05f;
 
         private readonly List<LineVertex> _cachedLineVertices = [];
-        private readonly List<TextVertex> _cachedTextVertices = [];
-        private readonly List<TextVertex> _cachedPointTextVertices = [];
-        private readonly List<CircleVertex> _cachedPointMarkerVertices = [];
+        private readonly List<TriangleVertex> _cachedTriangleVertices = [];
+        private readonly List<CircleVertex> _cachedCircleVertices = [];
 
         private DxfPointTextVerticesDict _pointTextVerticesDict;
         #endregion
@@ -68,22 +66,13 @@ namespace Cad_Point_Manager.Models
                 OnPropertyChanged(nameof(LineVerticesDirty));
             }
         }
-        public bool TextVerticesDirty
+        public bool TriangleVerticesDirty
         {
-            get => _textVerticesDirty;
+            get => _triangleVerticesDirty;
             set
             {
-                _textVerticesDirty = value;
-                OnPropertyChanged(nameof(TextVerticesDirty));
-            }
-        }
-        public bool PointTextVerticesDirty
-        {
-            get => _dxfPointTextVerticesDirty;
-            set
-            {
-                _dxfPointTextVerticesDirty = value;
-                OnPropertyChanged(nameof(PointTextVerticesDirty));
+                _triangleVerticesDirty = value;
+                OnPropertyChanged(nameof(TriangleVerticesDirty));
             }
         }
         public bool PointCircleVerticesDirty
@@ -195,8 +184,6 @@ namespace Cad_Point_Manager.Models
 
             // Testing
             GetTestDxfPoints();
-            //PointTextVerticesDirty = true;
-            //PointCircleVerticesDirty = true;
 
             foreach (var e in DxfDocument.Entities.All)
             {
@@ -213,8 +200,7 @@ namespace Cad_Point_Manager.Models
 
             DxfLoaded = true;
             LineVerticesDirty = true;
-            TextVerticesDirty = true;
-            PointTextVerticesDirty = true;
+            TriangleVerticesDirty = true;
             PointCircleVerticesDirty = true;
             HitTestableObjectTreeDirty = true;
             DxfNeedsReload = true;
@@ -276,20 +262,19 @@ namespace Cad_Point_Manager.Models
             DxfDocument = null;
 
             Layers.Clear();
-            _cachedLineVertices.Clear();
-            _cachedTextVertices.Clear();
+            _cachedTriangleVertices.Clear();
 
             DxfLoaded = false;
             LineVerticesDirty = true;
-            TextVerticesDirty = true;
+            TriangleVerticesDirty = true;
         }
         public void ClearDxfPoints()
         {
             PointGroups.Clear();
-            _cachedPointTextVertices.Clear();
-            _cachedPointMarkerVertices.Clear();
+            _cachedTriangleVertices.Clear();
+            _cachedCircleVertices.Clear();
 
-            PointTextVerticesDirty = true;
+            TriangleVerticesDirty = true;
             PointCircleVerticesDirty = true;
         }
 
@@ -324,11 +309,11 @@ namespace Cad_Point_Manager.Models
                         vertex.IsMouseOver = isMouseOver ? 1.0f : 0.0f;
                     }
                 }
-                if (drawingObject is DrawingMtext3D drawingMtext)
+                if (drawingObject is DrawingText3D drawingText)
                 {
-                    for (int i = drawingMtext.StartVertexIndex; i <= drawingMtext.EndVertexIndex; i++)
+                    for (int i = drawingText.StartVertexIndex; i <= drawingText.EndVertexIndex; i++)
                     {
-                        ref var vertex = ref GetTextVertexRef(i);
+                        ref var vertex = ref GetTriangleVertexRef(i);
                         vertex.IsMouseOver = isMouseOver ? 1.0f : 0.0f;
                     }
                 }
@@ -339,9 +324,9 @@ namespace Cad_Point_Manager.Models
                         ref var vertex = ref GetLineVertexRef(i);
                         vertex.IsMouseOver = isMouseOver ? 1.0f : 0.0f;
                     }
-                    for (int i = drawingBlock.StartTextVertexIndex; i <= drawingBlock.EndTextVertexIndex; i++)
+                    for (int i = drawingBlock.StartTriangleVertexIndex; i <= drawingBlock.EndTriangleVertexIndex; i++)
                     {
-                        ref var vertex = ref GetTextVertexRef(i);
+                        ref var vertex = ref GetTriangleVertexRef(i);
                         vertex.IsMouseOver = isMouseOver ? 1.0f : 0.0f;
                     }
                 }
@@ -350,7 +335,7 @@ namespace Cad_Point_Manager.Models
             {
                 for (int i = dxfPoint.TextStartIndex; i <= dxfPoint.TextEndIndex; i++)
                 {
-                    ref var vertex = ref GetTextVertexRef(i);
+                    ref var vertex = ref GetTriangleVertexRef(i);
                     vertex.IsMouseOver = isMouseOver ? 1.0f : 0.0f;
                 }
                 for (int i = dxfPoint.MarkerStartIndex; i <= dxfPoint.MarkerEndIndex; i++)
@@ -373,11 +358,11 @@ namespace Cad_Point_Manager.Models
                         vertex.IsSelected = isSelected ? 1.0f : 0.0f;
                     }
                 }
-                if (drawingObject is DrawingMtext3D drawingMtext)
+                if (drawingObject is DrawingText3D drawingText)
                 {
-                    for (int i = drawingMtext.StartVertexIndex; i <= drawingMtext.EndVertexIndex; i++)
+                    for (int i = drawingText.StartVertexIndex; i <= drawingText.EndVertexIndex; i++)
                     {
-                        ref var vertex = ref GetTextVertexRef(i);
+                        ref var vertex = ref GetTriangleVertexRef(i);
                         vertex.IsSelected = isSelected ? 1.0f : 0.0f;
                     }
                 }
@@ -388,9 +373,9 @@ namespace Cad_Point_Manager.Models
                         ref var vertex = ref GetLineVertexRef(i);
                         vertex.IsSelected = isSelected ? 1.0f : 0.0f;
                     }
-                    for (int i = drawingBlock.StartTextVertexIndex; i <= drawingBlock.EndTextVertexIndex; i++)
+                    for (int i = drawingBlock.StartTriangleVertexIndex; i <= drawingBlock.EndTriangleVertexIndex; i++)
                     {
-                        ref var vertex = ref GetTextVertexRef(i);
+                        ref var vertex = ref GetTriangleVertexRef(i);
                         vertex.IsSelected = isSelected ? 1.0f : 0.0f;
                     }
                 }
@@ -399,7 +384,7 @@ namespace Cad_Point_Manager.Models
             {
                 for (int i = dxfPoint.TextStartIndex; i <= dxfPoint.TextEndIndex; i++)
                 {
-                    ref var vertex = ref GetTextVertexRef(i);
+                    ref var vertex = ref GetTriangleVertexRef(i);
                     vertex.IsMouseOver = isSelected ? 1.0f : 0.0f;
                 }
                 for (int i = dxfPoint.MarkerStartIndex; i <= dxfPoint.MarkerEndIndex; i++)
@@ -447,16 +432,11 @@ namespace Cad_Point_Manager.Models
             return CollectionsMarshal.AsSpan(_cachedLineVertices);
         }
 
-        public ReadOnlySpan<TextVertex> UpdateTextVerticesList(D3dResCache d3DResCache)
+        public ReadOnlySpan<TriangleVertex> UpdateTriangleVerticesList(D3dResCache d3DResCache)
         {
-            if (TextVerticesDirty)
+            if (TriangleVerticesDirty)
             {
-                if (d3DResCache.Device is null)
-                {
-                    return CollectionsMarshal.AsSpan(_cachedTextVertices);
-                }
-
-                _cachedTextVertices.Clear();
+                _cachedTriangleVertices.Clear();
 
                 foreach (var kvp in Layers)
                 {
@@ -465,53 +445,21 @@ namespace Cad_Point_Manager.Models
 
                     foreach (var obj in layer.DrawingObject3Ds)
                     {
-                        int start = _cachedTextVertices.Count;
-
-                        if (obj is DrawingSText3D drawingText)
+                        if (obj is DrawingText3D drawingText)
                         {
                             drawingText.UpdateTextVertices(d3DResCache);
-                            drawingText.StartVertexIndex = start;
-                            _cachedTextVertices.AddRange(drawingText.TextVertices);
-                            drawingText.EndVertexIndex = _cachedTextVertices.Count - 1;
-                        }
-                        else if (obj is DrawingMtext3D drawingMtext)
-                        {
-                            drawingMtext.UpdateTextVertices(d3DResCache);
-                            drawingMtext.StartVertexIndex = start;
-
-                            foreach (var row in drawingMtext.MtextBlock.Rows)
-                            {
-                                foreach (var segment in row.Segments)
-                                {
-                                    _cachedTextVertices.AddRange(segment.TextVertices);
-                                }
-                            }
-                            drawingMtext.EndVertexIndex = _cachedTextVertices.Count - 1;
+                            drawingText.StartVertexIndex = _cachedTriangleVertices.Count;   
+                            _cachedTriangleVertices.AddRange(drawingText.TriangleVertices);
+                            drawingText.EndVertexIndex = _cachedTriangleVertices.Count - 1;
                         }
                         else if (obj is DrawingBlock3D drawingBlock)
                         {
-                            drawingBlock.UpdateTextVertices(d3DResCache);
-                            drawingBlock.StartTextVertexIndex = start;
-                            _cachedTextVertices.AddRange(drawingBlock.TextVertices);
-                            drawingBlock.EndTextVertexIndex = _cachedTextVertices.Count - 1;
+                            drawingBlock.UpdateTriangleVertices(d3DResCache);
+                            drawingBlock.StartTriangleVertexIndex = _cachedTriangleVertices.Count;
+                            _cachedTriangleVertices.AddRange(drawingBlock.TriangleVertices);
+                            drawingBlock.EndTriangleVertexIndex = _cachedTriangleVertices.Count - 1;
                         }
                     }
-                }
-
-                TextVerticesDirty = false;
-                HitTestableObjectTreeDirty = true;
-            }
-
-            return CollectionsMarshal.AsSpan(_cachedTextVertices);
-        }
-
-        public ReadOnlySpan<TextVertex> UpdatePointTextVertices(D3dResCache d3DResCache)
-        {
-            if (PointTextVerticesDirty)
-            {
-                if (d3DResCache.Device is null)
-                {
-                    return CollectionsMarshal.AsSpan(_cachedPointTextVertices);
                 }
 
                 _pointTextVerticesDict ??= new(d3DResCache);
@@ -524,25 +472,25 @@ namespace Cad_Point_Manager.Models
 
                     foreach (var point in pointGroup.Points)
                     {
-                        point.TextStartIndex = _cachedPointTextVertices.Count;
-                        point.UpdateTextVertices(_pointTextVerticesDict);
-                        _cachedPointTextVertices.AddRange(point.TextVertices);
-                        point.TextEndIndex = _cachedPointTextVertices.Count - 1;
+                        point.TextStartIndex = _cachedTriangleVertices.Count;
+                        point.UpdateTriangleVertices(_pointTextVerticesDict);
+                        _cachedTriangleVertices.AddRange(point.TriangleVertices);
+                        point.TextEndIndex = _cachedTriangleVertices.Count - 1;
                     }
                 }
 
-                PointTextVerticesDirty = false;
+                TriangleVerticesDirty = false;
                 HitTestableObjectTreeDirty = true;
             }
 
-            return CollectionsMarshal.AsSpan(_cachedPointTextVertices);
+            return CollectionsMarshal.AsSpan(_cachedTriangleVertices);
         }
 
         public ReadOnlySpan<CircleVertex> UpdateCircleVerticesList()
         {
             if (PointCircleVerticesDirty)
             {
-                _cachedPointMarkerVertices.Clear();
+                _cachedCircleVertices.Clear();
 
                 foreach (var keyValuePair in PointGroups)
                 {
@@ -553,14 +501,14 @@ namespace Cad_Point_Manager.Models
                     foreach (DxfPoint point in pointGroup.Points)
                     {
                         point.UpdateMarkerVertices();
-                        point.MarkerStartIndex = _cachedPointMarkerVertices.Count;
-                        _cachedPointMarkerVertices.AddRange(point.MarkerVertices);
-                        point.MarkerEndIndex = _cachedPointMarkerVertices.Count - 1;
+                        point.MarkerStartIndex = _cachedCircleVertices.Count;
+                        _cachedCircleVertices.AddRange(point.MarkerVertices);
+                        point.MarkerEndIndex = _cachedCircleVertices.Count - 1;
                     }
                 }
                 PointCircleVerticesDirty = false;
             }
-            return CollectionsMarshal.AsSpan(_cachedPointMarkerVertices);
+            return CollectionsMarshal.AsSpan(_cachedCircleVertices);
         }
 
         public void GetTestDxfPoints()
@@ -594,30 +542,29 @@ namespace Cad_Point_Manager.Models
             }
         }
 
-        public ref TextVertex GetTextVertexRef(int index)
-        {
-            Span<TextVertex> span = CollectionsMarshal.AsSpan(_cachedTextVertices);
-            if ((uint)index >= (uint)span.Length)
-            {
-                throw new ArgumentOutOfRangeException(nameof(index), "Index is out of range.");
-            }
-
-            return ref span[index];
-        }
-        public ref TextVertex GetPointTextVertexRef(int index)
-        {
-            Span<TextVertex> span = CollectionsMarshal.AsSpan(_cachedPointTextVertices);
-            if ((uint)index >= (uint)span.Length)
-            {
-                throw new ArgumentOutOfRangeException(nameof(index), "Index is out of range.");
-            }
-
-            return ref span[index];
-        }
-
         public ref LineVertex GetLineVertexRef(int index)
         {
+            if (_cachedLineVertices.Count == 0)
+            {
+                throw new InvalidOperationException("Line vertices list is empty.");
+            }
+
             Span<LineVertex> span = CollectionsMarshal.AsSpan(_cachedLineVertices);
+            if ((uint)index >= (uint)span.Length)
+            {
+                throw new ArgumentOutOfRangeException(nameof(index), "Index is out of range.");
+            }
+
+            return ref span[index];
+        }
+        public ref TriangleVertex GetTriangleVertexRef(int index)
+        {
+            if (_cachedTriangleVertices.Count == 0)
+            {
+                   throw new InvalidOperationException("Triangle vertices list is empty.");
+            }
+
+            Span<TriangleVertex> span = CollectionsMarshal.AsSpan(_cachedTriangleVertices);
             if ((uint)index >= (uint)span.Length)
             {
                 throw new ArgumentOutOfRangeException(nameof(index), "Index is out of range.");
@@ -627,7 +574,12 @@ namespace Cad_Point_Manager.Models
         }
         public ref CircleVertex GetCircleVertexRef(int index)
         {
-            Span<CircleVertex> span = CollectionsMarshal.AsSpan(_cachedPointMarkerVertices);
+            if (_cachedCircleVertices.Count == 0)
+            {
+                throw new InvalidOperationException("Circle vertices list is empty.");
+            }
+
+            Span<CircleVertex> span = CollectionsMarshal.AsSpan(_cachedCircleVertices);
             if ((uint)index >= (uint)span.Length)
             {
                 throw new ArgumentOutOfRangeException(nameof(index), "Index is out of range.");

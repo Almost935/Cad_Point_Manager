@@ -12,7 +12,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         #region Fields
         private List<DrawingObject3D> _drawingObjects = [];
         private List<LineVertex> _geometryVertices = [];
-        private List<TextVertex> _textVertices = [];
+        private List<TriangleVertex> _triangleVertices = [];
         #endregion
 
         #region Properties
@@ -35,25 +35,23 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                 OnPropertyChanged(nameof(LineVertices));
             }
         }
-        public List<TextVertex> TextVertices
+        public List<TriangleVertex> TriangleVertices
         {
-            get => _textVertices;
+            get => _triangleVertices;
             set
             {
-                _textVertices = value;
-                OnPropertyChanged(nameof(TextVertices));
+                _triangleVertices = value;
+                OnPropertyChanged(nameof(TriangleVertices));
             }
         }
 
         public Vector3 InsertionPoint { get; set; }
         public int StartLineVertexIndex { get; set; }
         public int EndLineVertexIndex { get; set; }
-        public int StartTextVertexIndex { get; set; }
-        public int EndTextVertexIndex { get; set; }
+        public int StartTriangleVertexIndex { get; set; }
+        public int EndTriangleVertexIndex { get; set; }
 
         public int NumberOfDrawingObjects => DrawingObjects.Count;
-
-        public bool TextVerticesCreated = false;
         #endregion
 
         #region Constructors
@@ -199,33 +197,21 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                 }
             }
         }
-        public void UpdateTextVertices(D3dResCache resCache)
+        public void UpdateTriangleVertices(D3dResCache resCache)
         {
-            TextVertices.Clear();
+            TriangleVertices.Clear();
 
             foreach (var obj in DrawingObjects)
             {
                 if (obj is DrawingBlock3D block)
                 {
-                    block.UpdateTextVertices(resCache);
-                    TextVertices.AddRange(block.TextVertices);
+                    block.UpdateTriangleVertices(resCache);
+                    TriangleVertices.AddRange(block.TriangleVertices);
                 }
-                if (obj is DrawingSText3D text)
+                if (obj is DrawingText3D drawingText)
                 {
-                    text.UpdateTextVertices(resCache);
-                    TextVertices.AddRange(text.TextVertices);
-                }
-                if (obj is DrawingMtext3D mtext)
-                {
-                    mtext.UpdateTextVertices(resCache);
-
-                    foreach (var row in mtext.MtextBlock.Rows)
-                    {
-                        foreach (var segment in row.Segments)
-                        {
-                            TextVertices.AddRange(segment.TextVertices);
-                        }
-                    }
+                    drawingText.UpdateTextVertices(resCache);
+                    TriangleVertices.AddRange(drawingText.TriangleVertices);
                 }
             }
         }

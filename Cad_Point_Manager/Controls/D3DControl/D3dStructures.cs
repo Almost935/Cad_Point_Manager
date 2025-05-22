@@ -8,6 +8,84 @@ using Matrix = SharpDX.Matrix;
 namespace Cad_Point_Manager.Controls.D3DControl
 {
     [StructLayout(LayoutKind.Sequential)]
+    public struct TriangleVertex(Vector3 position, Vector4 color, float isVisible = 1.0f, float isMouseOver = 0, float isSelected = 0)
+    {
+        public Vector3 Position = position;
+        public Vector4 Color = color;
+
+        /// <summary>
+        /// float value indicating whether the vertex is visible or not. 1.0f is visible, 0.0f is not visible.
+        /// </summary>
+        public float IsVisible = isVisible;
+
+        /// <summary>
+        /// float value indicating whether the mouse is currently over the text object. 1.0f is true, 0.0f is false.
+        /// </summary>
+        public float IsMouseOver = isMouseOver;
+
+        /// <summary>
+        /// float value indicating whether the text is currently selected. 1.0f is true, 0.0f is false.
+        /// </summary>
+        public float IsSelected = isSelected;
+
+        public readonly TriangleVertex Translate(Vector3 offset)
+        {
+            return new TriangleVertex(Position + offset, Color, isVisible: IsVisible,
+                isMouseOver: IsMouseOver, isSelected: IsSelected);
+        }
+        public readonly TriangleVertex Translate(Vector2 offset)
+        {
+            return new TriangleVertex(new Vector3(Position.X + offset.X, Position.Y + offset.Y, Position.Z), Color, isVisible: IsVisible,
+                isMouseOver: IsMouseOver, isSelected: IsSelected);
+        }
+        public readonly TriangleVertex Translate(float x, float y, float z)
+        {
+            return new TriangleVertex(new Vector3(Position.X + x, Position.Y + y, Position.Z + z), Color, isVisible: IsVisible,
+                isMouseOver: IsMouseOver, isSelected: IsSelected);
+        }
+
+        public static TriangleVertex RotateAroundPoint(TriangleVertex triangleVertex, Vector2 basePoint, float radians)
+        {
+            float cos = MathF.Cos(radians);
+            float sin = MathF.Sin(radians);
+
+            float dx = triangleVertex.Position.X - basePoint.X;
+            float dy = triangleVertex.Position.Y - basePoint.Y;
+
+            float rotatedX = cos * dx - sin * dy + basePoint.X;
+            float rotatedY = sin * dx + cos * dy + basePoint.Y;
+
+            return new TriangleVertex(new Vector3(rotatedX, rotatedY, triangleVertex.Position.Z), triangleVertex.Color, isVisible: triangleVertex.IsVisible,
+                isMouseOver: triangleVertex.IsMouseOver, isSelected: triangleVertex.IsSelected);
+        }
+
+        public void SetIsMouseOver(bool isMouseOver)
+        {
+            IsMouseOver = isMouseOver ? 1 : 0;
+        }
+
+        public void SetIsSelected(bool isSelected)
+        {
+            IsSelected = isSelected ? 1 : 0;
+        }
+
+        public static implicit operator System.Windows.Point(TriangleVertex v)
+        {
+            return new System.Windows.Point(v.Position.X, v.Position.Y);
+        }
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct TriangleSettingsBuffer
+    {
+        public Vector4 SelectedColor;
+        public Vector4 SelectedMouseOverColor;
+        private Vector2 Padding;
+        public float GlowOffset;
+        public float GlowTransparency;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
     public struct CircleVertex(Vector3 position, Vector4 color, float radius, float isVisible = 1.0f, float isMouseOver = 0, float isSelected = 0)
     {
         public Vector3 Position = position;
@@ -97,7 +175,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct TextGlowSettingsBuffer
+    public struct TriangleGlowSettingsBuffer
     {
         public float GlowOffset;
         public float GlowTransparency;

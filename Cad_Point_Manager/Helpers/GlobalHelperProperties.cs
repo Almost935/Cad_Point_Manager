@@ -6,14 +6,14 @@ namespace Cad_Point_Manager.Helpers
     {
         public const float _zoomFactor = 1.3f;
 
-        public const float _lineGlowTransparency = 0.5f;
-        public const float _lineGlowPixelWidth = 5;
+        public const float _mouseOverGlowTransparency = 0.5f;
+        public const float _mouseOverGlowPixelWidth = 5;
 
 
         public const float _textHeightToGlowOffsetFactor = 0.05f;
-        public const int _maxLineVertices = 10000000;
-        public const int _maxTextVertices = 10000000;
-        public const int _maxCircleVertices = 10000000;
+        public const int _initialLineVertices = 5000;
+        public const int _initialTriangleVertices = 20000;
+        public const int _maxCircleVertices = 1000;
         public const float _textHeightToFontSizeFactor = 1.5f;
         public const float _textHeightToSpaceWidthFactor = 0.5f;
 

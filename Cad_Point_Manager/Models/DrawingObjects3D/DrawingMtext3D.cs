@@ -21,9 +21,17 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
     {
         #region Fields
         private const int _fontRenderingMinimumSize = 50;
+
+        private List<TriangleVertex> _triangleVertices;
         #endregion
 
         #region Properties
+        public override List<TriangleVertex> TriangleVertices
+        {
+            get => MtextBlock.Rows.SelectMany(r => r.Segments).SelectMany(s => s.TriangleVertices).ToList();
+            set => _triangleVertices = value;
+        }
+
         public MText DxfMtext { get; set; }
         public float Rotation { get; set; } = 0;
         public float FontHeight { get; set; }
@@ -59,22 +67,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             this.IsMouseOver = false;
             SetMouseOver(false);
         }
-        private void SetMouseOver(bool isMouseOver)
-        {
-            foreach (var row in MtextBlock.Rows)
-            {
-                foreach (var segment in row.Segments)
-                {
-                    Span<TextVertex> vertexSpan = segment.TextVertices.AsSpan();
-
-                    for (int i = 0; i < vertexSpan.Length; i++)
-                    {
-                        vertexSpan[i].SetIsMouseOver(isMouseOver);
-                    }
-                }
-            }
-        }
-
         public override void Select()
         {
             this.IsSelected = true;
@@ -85,28 +77,11 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             this.IsSelected = false;
             SetIsSelected(false);
         }
-        private void SetIsSelected(bool isSelected)
-        {
-            foreach (var row in MtextBlock.Rows)
-            {
-                foreach (var segment in row.Segments)
-                {
-                    Span<TextVertex> vertexSpan = segment.TextVertices.AsSpan();
-
-                    for (int i = 0; i < vertexSpan.Length; i++)
-                    {
-                        vertexSpan[i].SetIsSelected(isSelected);
-                    }
-                }
-            }
-        }
-
-
         public override double DistanceToPoint(Point p)
         {
             var vertices = MtextBlock.Rows
                 .SelectMany(row => row.Segments
-                .SelectMany(segment => segment.TextVertices)).ToList();
+                .SelectMany(segment => segment.TriangleVertices)).ToList();
 
             if (vertices.Count < 3) return double.MaxValue;
 
@@ -147,7 +122,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
 
             return minDistance;
         }
-
         public override void DrawToD2dDeviceContext(DeviceContext1 deviceContext, Factory2 factory, Brush brush, float thickness, StrokeStyle1 strokeStyle)
         {
             //deviceContext.DrawTextLayout(new RawVector2((float)Position.X, -(float)Position.Y), TextLayout, brush);
@@ -172,7 +146,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                 throw new ArgumentException("EntityObject must be of type MText or Text");
             }
         }
-
         public override void UpdateBounds()
         {
             if (MtextBlock is null) { return; } // No text to update bounds for.
@@ -182,15 +155,14 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             {
                 foreach (var segment in row.Segments)
                 {
-                    for (int i = 0; i < segment.TextVertices.Length; i++)
+                    for (int i = 0; i < segment.TriangleVertices.Length; i++)
                     {
-                        Bounds = Rect.Union(Bounds, (Point)segment.TextVertices[i]);
+                        Bounds = Rect.Union(Bounds, (Point)segment.TriangleVertices[i]);
                     }
                 }
             }
         }
-
-        public void UpdateTextVertices(D3dResCache resCache)
+        public override void UpdateTextVertices(D3dResCache resCache)
         {
             if (DxfMtext is null) { return; }
 
@@ -200,19 +172,8 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             SetRotation();
             UpdateBounds();
         }
-        public List<TextVertex> GetTextVertices()
-        {
-            List<TextVertex> textVertices = [];
-            foreach (var row in MtextBlock.Rows)
-            {
-                foreach (var segment in row.Segments)
-                {
-                    textVertices.AddRange(segment.TextVertices);
-                }
-            }
 
-            return textVertices;
-        }
+
         public void UpdateMtextBlock(D3dResCache resCache)
         {
             //MtextBlock??= new((float)MaxWidth, Position, DxfMtext.AttachmentPoint, Rotation);
@@ -420,23 +381,21 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                 }
             }
         }
+
+
         private void SetRotation()
         {
             foreach (var row in MtextBlock.Rows)
             {
                 foreach (var segment in row.Segments)
                 {
-                    for (int i = 0; i < segment.TextVertices.Length; i++)
+                    for (int i = 0; i < segment.TriangleVertices.Length; i++)
                     {
-                        segment.TextVertices[i] = TextVertex.RotateAroundPoint(segment.TextVertices[i], new Vector2(Position.X, Position.Y), (float)(MathHelper.DegToRad * Rotation));
+                        segment.TriangleVertices[i] = TriangleVertex.RotateAroundPoint(segment.TriangleVertices[i],
+                            new Vector2(Position.X, Position.Y), (float)(MathHelper.DegToRad * Rotation));
                     }
                 }
             }
-
-            //for (int i = 0; i < TextVertices.Count(); i++)
-            //{
-            //    TextVertices[i] = TextVertex.RotateAroundPoint(TextVertices[i], new Vector2(Position.X, Position.Y), (float)(MathHelper.DegToRad * Rotation));
-            //}
         }
         private DrawingMtextSegment3D CreateMtextSegment(TextSegmentInformation segmentInfo, D3dResCache resCache)
         {
@@ -446,6 +405,36 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             segment.Tesselate(resCache);
 
             return segment;
+        }
+        private void SetIsSelected(bool isSelected)
+        {
+            foreach (var row in MtextBlock.Rows)
+            {
+                foreach (var segment in row.Segments)
+                {
+                    Span<TriangleVertex> vertexSpan = segment.TriangleVertices.AsSpan();
+
+                    for (int i = 0; i < vertexSpan.Length; i++)
+                    {
+                        vertexSpan[i].SetIsSelected(isSelected);
+                    }
+                }
+            }
+        }
+        private void SetMouseOver(bool isMouseOver)
+        {
+            foreach (var row in MtextBlock.Rows)
+            {
+                foreach (var segment in row.Segments)
+                {
+                    Span<TriangleVertex> vertexSpan = segment.TriangleVertices.AsSpan();
+
+                    for (int i = 0; i < vertexSpan.Length; i++)
+                    {
+                        vertexSpan[i].SetIsMouseOver(isMouseOver);
+                    }
+                }
+            }
         }
         #endregion
     }

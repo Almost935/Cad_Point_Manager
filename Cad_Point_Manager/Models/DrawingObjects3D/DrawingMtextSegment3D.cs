@@ -32,7 +32,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         public string FontFamilyName { get; set; }
         public System.Windows.Media.Matrix Transform { get; set; }
         public TextLayout TextLayout { get; set; }
-        public TextVertex[] TextVertices { get; set; } = [];
+        public TriangleVertex[] TriangleVertices { get; set; } = [];
         public float MaxWidth { get; set; }
         public Rect Bounds { get; set; }
         public bool IsItalic { get; set; } = false;
@@ -93,7 +93,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
 
             (List<Vector2> vertices, RawRectangleF bounds) = TextRenderingHelpers.TesselateTextLayout(resCache, TextLayout, Text, TextHeight, _fontFace);
             UpdateBounds(bounds);
-            TextVertices = GetVertices(vertices);
+            TriangleVertices = GetVertices(vertices);
         }
 
         private void UpdateBounds(RawRectangleF textGeometryBounds)
@@ -134,9 +134,9 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             return matrix;
         }
 
-        public TextVertex[] GetVertices(List<Vector2> vertices)
+        public TriangleVertex[] GetVertices(List<Vector2> vertices)
         {
-            List<TextVertex> textVertices = [];
+            List<TriangleVertex> triangleVertices = [];
 
             for (int i = 0; i < vertices.Count; i += 3)
             {
@@ -144,14 +144,14 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                 var v2 = vertices[i + 1];
                 var v3 = vertices[i + 2];
 
-                TextVertex textVertex1 = new(new Vector3(v1.X, v1.Y, 0), Color, isVisible: 1, isMouseOver: 0, isSelected: 0);
-                TextVertex textVertex2 = new(new Vector3(v2.X, v2.Y, 0), Color, isVisible: 1, isMouseOver: 0, isSelected: 0);
-                TextVertex textVertex3 = new(new Vector3(v3.X, v3.Y, 0), Color, isVisible: 1, isMouseOver: 0, isSelected: 0);
+                TriangleVertex textVertex1 = new(new Vector3(v1.X, v1.Y, 0), Color, isVisible: 1, isMouseOver: 0, isSelected: 0);
+                TriangleVertex textVertex2 = new(new Vector3(v2.X, v2.Y, 0), Color, isVisible: 1, isMouseOver: 0, isSelected: 0);
+                TriangleVertex textVertex3 = new(new Vector3(v3.X, v3.Y, 0), Color, isVisible: 1, isMouseOver: 0, isSelected: 0);
 
-                textVertices.AddRange([textVertex1, textVertex2, textVertex3]);
+                triangleVertices.AddRange([textVertex1, textVertex2, textVertex3]);
             }
 
-            return textVertices.ToArray();
+            return triangleVertices.ToArray();
         }
 
         public void ApplyTranslate(Vector3 rowTransform)
@@ -162,9 +162,9 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         private void Translate(Vector3 offset)
         {
             Position += offset;
-            for (int i = 0; i < TextVertices.Length; i++)
+            for (int i = 0; i < TriangleVertices.Length; i++)
             {
-                TextVertices[i] = TextVertices[i].Translate(offset);
+                TriangleVertices[i] = TriangleVertices[i].Translate(offset);
             }
         }
 
