@@ -11,9 +11,13 @@ namespace Cad_Point_Manager.Helpers
 
 
         public const float _textHeightToGlowOffsetFactor = 0.05f;
-        public const int _maxLineVertices = 10000000;
-        public const int _maxTextVertices = 10000000;
-        public const int _maxCircleVertices = 10000000;
+        public const int _initialLineVertices = 5000;
+        public const int _initialTextVertices = 5000;
+        public const int _initialCircleVertices = 1000;
+        public const int _initialLineGlowVertices = 1000;
+        public const int _initialTextGlowVertices = 2000;
+        public const int _initialCircleGlowVertices = 200;
+
         public const float _textHeightToFontSizeFactor = 1.5f;
         public const float _textHeightToSpaceWidthFactor = 0.5f;
 
