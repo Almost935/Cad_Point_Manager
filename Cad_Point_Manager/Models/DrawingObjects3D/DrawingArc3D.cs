@@ -84,8 +84,8 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                 }
 
                 Vertices = lineVertices.ToArray();
-                StartVertex = Vertices.First();
-                EndVertex = Vertices.Last();
+                Start = Vertices.First().Position;
+                End = Vertices.Last().Position;
             }
             else
             {
@@ -161,8 +161,8 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             float midY = RadiusPoint.Y + (float)(Radius * Math.Sin(midAngleRadians));
 
             // Interpolate the Z coordinate along the arc
-            float startZ = StartVertex.Position.Z;
-            float endZ = EndVertex.Position.Z;
+            float startZ = Start.Z;
+            float endZ = End.Z;
             float midZ = startZ + ((endZ - startZ) * (midAngle - StartAngle) / Sweep);
 
             MidPoint = new(midX, midY, midZ);

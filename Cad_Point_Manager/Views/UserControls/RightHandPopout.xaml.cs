@@ -1,4 +1,5 @@
-﻿using Cad_Point_Manager.Models;
+﻿
+using Cad_Point_Manager.Models;
 using Cad_Point_Manager.Models.DrawingObjects3D;
 using Cad_Point_Manager.Models.PointRendering;
 using ColorPicker;
@@ -344,6 +345,7 @@ namespace Cad_Point_Manager.Views.UserControls
                     var binding = colorPicker.GetBindingExpression(PortableColorPicker.SelectedColorProperty);
                     binding?.UpdateSource();
                     CadManager.PointTextVerticesDirty = true;
+                    CadManager.PointCircleVerticesDirty = true;
                 }
             }
         }

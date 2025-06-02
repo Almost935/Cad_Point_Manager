@@ -130,8 +130,8 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             {
                 var start = polyline2D.Vertexes.First();
                 var end = polyline2D.Vertexes.Last();
-                StartVertex = new(new Vector3((float)start.Position.X, (float)start.Position.Y, 0), Color);
-                EndVertex = new(new Vector3((float)end.Position.X, (float)end.Position.Y, 0), Color);
+                Start = new Vector3((float)start.Position.X, (float)start.Position.Y, 0);
+                End = new Vector3((float)end.Position.X, (float)end.Position.Y, 0);
 
                 var entities = polyline2D.Explode();
                 var vertices = polyline2D.Vertexes;
@@ -145,8 +145,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                     }
                 }
 
-                // Loop through vertices to verify that drawing arcs are correctly aligned. Autocad always draws arcs counter-clockwise
-                // so need to find the correct start and end vertices
                 for (int i = 0; i < vertices.Count - 1; i++)
                 {
                     var segment = DrawingSegments[i];
@@ -169,8 +167,8 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             {
                 var start = polyline3D.Vertexes.First();
                 var end = polyline3D.Vertexes.Last();
-                StartVertex = new(new Vector3((float)start.X, (float)start.Y, 0), Color);
-                EndVertex = new(new Vector3((float)end.X, (float)end.Y, 0), Color);
+                Start = new Vector3((float)start.X, (float)start.Y, 0);
+                End = new Vector3((float)end.X, (float)end.Y, 0);
 
                 var entities = polyline3D.Explode();
                 var vertices = polyline3D.Vertexes;

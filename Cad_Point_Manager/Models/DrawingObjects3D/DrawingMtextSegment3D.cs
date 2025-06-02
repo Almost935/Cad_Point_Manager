@@ -73,7 +73,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         #endregion
 
         #region Methods
-        public void GetTextLayout(SharpDX.DirectWrite.Factory1 factory)
+        public void GetTextLayout(Factory1 factory)
         {
             FontWeight fontWeight;
             if (IsBold) { fontWeight = FontWeight.Bold; } else { fontWeight = FontWeight.Normal; }
@@ -82,7 +82,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             if (IsItalic) { fontStyle = FontStyle.Italic; } else { fontStyle = FontStyle.Normal; }
 
             _textFormat = new(factory, FontFamilyName, fontWeight, fontStyle, TextHeight);
-            TextLayout = new(factory, Text, _textFormat, (float)Bounds.Width, (float)Bounds.Height, 96, true);
+            TextLayout = new(factory, Text, _textFormat, float.MaxValue, float.MaxValue, 96, true);
 
             SpaceWidth = TextHeight * GlobalHelperProperties._textHeightToSpaceWidthFactor;
         }
@@ -91,7 +91,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         {
             UpdateFontFace(resCache);
 
-            (List<Vector2> vertices, RawRectangleF bounds) = TextRenderingHelpers.TesselateTextLayout(resCache, TextLayout, Text, TextHeight, _fontFace);
+            (List<Vector2> vertices, RawRectangleF bounds) = TextRenderingHelpers.TesselateTextLayout(resCache, TextLayout, Text, _fontFace);
             UpdateBounds(bounds);
             TextVertices = GetVertices(vertices);
         }

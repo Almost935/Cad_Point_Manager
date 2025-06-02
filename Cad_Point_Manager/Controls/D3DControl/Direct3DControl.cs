@@ -16,7 +16,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private SharpDX.Direct3D11.Device _device;
         private DeviceContext _deviceContext;
         private Texture2D _texture2D;
+        private Texture2D _offscreenTexture;
         private RenderTargetView _renderTargetView;
+        private RenderTargetView _offscreenRenderTargetView;
         private Dx11ImageSource _d3DSurface;
 
         private readonly Stopwatch _renderTimer = new();
@@ -234,6 +236,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             _texture2D = new Texture2D(_device, renderDesc);
 
+            _offscreenTexture = new Texture2D(_device, renderDesc);
+            _d3dResCache.OffscreenTexture = _offscreenTexture;
+
             RenderTargetViewDescription rtvDesc = new RenderTargetViewDescription
             {
                 Dimension = RenderTargetViewDimension.Texture2D,
@@ -242,6 +247,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
             };
             _renderTargetView = new RenderTargetView(_device, _texture2D, rtvDesc);
             _d3dResCache.RenderTargetView = _renderTargetView;
+
+            _offscreenRenderTargetView = new(_device, _offscreenTexture, rtvDesc);
+            _d3dResCache.OffscreenRenderTargetView = _offscreenRenderTargetView;
 
             _deviceContext.OutputMerger.SetRenderTargets(_renderTargetView);
             _d3dResCache.Texture2D = _texture2D;

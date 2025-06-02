@@ -8,6 +8,37 @@ using Matrix = SharpDX.Matrix;
 namespace Cad_Point_Manager.Controls.D3DControl
 {
     [StructLayout(LayoutKind.Sequential)]
+    public struct SigPointVertex(Vector3 position, float isVisible = 1.0f, float isSelected = 0)
+    {
+        public Vector3 Position = position;
+
+        /// <summary>
+        /// float value indicating whether the vertex is visible or not. 1.0f is visible, 0.0f is not visible.
+        /// </summary>
+        public float IsVisible = isVisible;
+
+        /// <summary>
+        /// float value indicating whether the line is currently selected. 1.0f is true, 0.0f is false.
+        /// </summary>
+        public float IsSelected = isSelected;
+
+        public void SetIsSelected(bool isSelected)
+        {
+            IsSelected = isSelected ? 1 : 0;
+        }
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct SigPointSettingsBuffer
+    {
+        public Vector4 BaseColor;
+        public Vector4 SelectedColor;
+        public float Radius;
+        public Vector2 ViewportSize;
+        public float Padding;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
     public struct CircleVertex(Vector3 position, Vector4 color, float radius, float isVisible = 1.0f, float isMouseOver = 0, float isSelected = 0)
     {
         public Vector3 Position = position;
@@ -109,8 +140,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
     [StructLayout(LayoutKind.Sequential)]
     public struct TextVertex(Vector3 position, Vector4 color, float isVisible = 1.0f, float isMouseOver = 0, float isSelected = 0)
     {
-        public Vector3 Position = position;
-        public Vector4 Color = color;
+        public Vector3 Position { get; set; } = position;
+        public Vector4 Color { get; set; } = color;
 
         /// <summary>
         /// float value indicating whether the vertex is visible or not. 1.0f is visible, 0.0f is not visible.
@@ -120,12 +151,12 @@ namespace Cad_Point_Manager.Controls.D3DControl
         /// <summary>
         /// float value indicating whether the mouse is currently over the text object. 1.0f is true, 0.0f is false.
         /// </summary>
-        public float IsMouseOver = isMouseOver;
+        public float IsMouseOver { get; set; } = isMouseOver;
 
         /// <summary>
         /// float value indicating whether the text is currently selected. 1.0f is true, 0.0f is false.
         /// </summary>
-        public float IsSelected = isSelected;
+        public float IsSelected { get; set; } = isSelected;
 
         public readonly TextVertex Translate(Vector3 offset)
         {
@@ -141,6 +172,16 @@ namespace Cad_Point_Manager.Controls.D3DControl
         {
             return new TextVertex(new Vector3(Position.X + x, Position.Y + y, Position.Z + z), Color, isVisible: IsVisible,
                 isMouseOver: IsMouseOver, isSelected: IsSelected);
+        }
+
+        //public readonly TextVertex Transform(Matrix transform)
+        //{
+        //    return new TextVertex(Vector3.TransformCoordinate(Position, transform), Color, isVisible: IsVisible,
+        //        isMouseOver: IsMouseOver, isSelected: IsSelected);  
+        //}
+        public void Transform(Matrix transform)
+        {
+            Position = Vector3.TransformCoordinate(Position, transform);
         }
 
         public static TextVertex RotateAroundPoint(TextVertex textVertex, Vector2 basePoint, float radians)

@@ -6,7 +6,7 @@ using SharpDX.Direct2D1;
 using SharpDX.Mathematics.Interop;
 using System.Windows;
 
-namespace Cad_Point_Manager.DrawingObjects
+namespace Cad_Point_Manager.Models.DrawingObjects3D
 {
     public class DrawingCircle3D : DrawingCurve3D
     {
@@ -15,7 +15,6 @@ namespace Cad_Point_Manager.DrawingObjects
         #endregion
 
         #region Properties
-        public RawVector2 Center { get; set; }
         public float Circumference { get; set; }
         #endregion
 
@@ -93,8 +92,8 @@ namespace Cad_Point_Manager.DrawingObjects
                 }
 
                 Vertices = lineVertices.ToArray();
-                StartVertex = Vertices.First();
-                EndVertex = Vertices.Last();
+                Start = Vertices.First().Position;
+                End = Vertices.Last().Position;
             }
             else
             {

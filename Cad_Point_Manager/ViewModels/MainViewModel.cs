@@ -1,13 +1,18 @@
 ﻿using Cad_Point_Manager.Commands;
+using Cad_Point_Manager.Common;
 using Cad_Point_Manager.Models;
 using netDxf;
 using SharpDX;
+using System.ComponentModel;
+using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using System.Windows;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 
 namespace Cad_Point_Manager.ViewModels
 {
-    public class MainViewModel : BaseViewModel
+    public class MainViewModel : INotifyPropertyChanged
     {
         #region Fields
         private JobFileManager _jobFileManager = new();
@@ -81,12 +86,8 @@ namespace Cad_Point_Manager.ViewModels
         public ICommand AttachDxfFileCommand { get; set; }
         public ICommand SaveJobCommand { get; set; }
         public ICommand SaveAsJobCommand { get; set; }
-
-        public ICommand MouseMoveCommand { get; set; }
-        public ICommand MouseClickCommand { get; set; }
-
-        // View Commands
         public ICommand ZoomToExtentsCommand { get; set; }
+        public ICommand SnapToggleCommand => new RelayCommand<object>(OnSnapTogglePressed);
         #endregion
 
         #region Constructors
@@ -97,9 +98,6 @@ namespace Cad_Point_Manager.ViewModels
             AttachDxfFileCommand = new RelayCommand<RoutedEventArgs>(AttachDxfFile);
             SaveJobCommand = new RelayCommand<RoutedEventArgs>(SaveJob);
             SaveAsJobCommand = new RelayCommand<RoutedEventArgs>(SaveJobAs);
-
-            MouseMoveCommand = new RelayCommand<MouseEventArgs>(OnMouseMove);
-            MouseClickCommand = new RelayCommand<MouseButtonEventArgs>(OnMouseClick);
 
             ZoomToExtentsCommand = new RelayCommand<RoutedEventArgs>(ZoomToExtents);
         }
@@ -167,16 +165,36 @@ namespace Cad_Point_Manager.ViewModels
         {
             JobFileManager.CadManager3D?.ZoomToExtents();
         }
+
+        private void OnSnapTogglePressed(object param)
+        {
+            if (param is ToggleButton toggle)
+            {
+                string name = toggle.Name;
+                bool? isChecked = toggle.IsChecked;
+
+                switch (name)
+                {
+                    case "Points":
+                        JobFileManager.CadManager3D.SnapSelectionMode = Enums.SelectionMode.Points;
+                        break;
+                    case "Lines":
+                        JobFileManager.CadManager3D.SnapSelectionMode = Enums.SelectionMode.Lines;
+                        break;
+                    case "All":
+                        JobFileManager.CadManager3D.SnapSelectionMode = Enums.SelectionMode.All;
+                        break;
+                }
+            }
+        }
         #endregion
 
-        #region Private Methods
-        private void OnMouseMove(MouseEventArgs e)
+        #region INotifyPropertyChanged
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
-            // Handle mouse move event
-        }
-        private void OnMouseClick(MouseButtonEventArgs e)
-        {
-            // Handle mouse click event
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
         #endregion
     }

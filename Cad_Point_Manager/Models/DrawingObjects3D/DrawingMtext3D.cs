@@ -16,14 +16,22 @@ using Vector3 = SharpDX.Vector3;
 using Vector4 = SharpDX.Vector4;
 
 namespace Cad_Point_Manager.Models.DrawingObjects3D
-{
+{ 
     public class DrawingMtext3D : DrawingText3D
     {
         #region Fields
         private const int _fontRenderingMinimumSize = 50;
+
+        private List<TextVertex> _textVertices;
         #endregion
 
         #region Properties
+        public override List<TextVertex> TextVertices
+        {
+            get => MtextBlock.Rows.SelectMany(r => r.Segments).SelectMany(s => s.TextVertices).ToList();
+            set => _textVertices = value;
+        }
+
         public MText DxfMtext { get; set; }
         public float Rotation { get; set; } = 0;
         public float FontHeight { get; set; }
@@ -49,6 +57,16 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         #endregion
 
         #region Methods
+        public override void UpdateTextVertices(D3dResCache resCache)
+        {
+            if (DxfMtext is null) { return; }
+
+            UpdateMtextBlock(resCache);
+            MtextBlock.SetTextPositions();
+            MtextBlock.GetTextBox(MtextBlock.Height);
+            SetRotation();
+            UpdateBounds();
+        }
         public override void MouseEnter()
         {
             this.IsMouseOver = true;
@@ -190,16 +208,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             }
         }
 
-        public void UpdateTextVertices(D3dResCache resCache)
-        {
-            if (DxfMtext is null) { return; }
-
-            UpdateMtextBlock(resCache);
-            MtextBlock.SetTextPositions();
-            MtextBlock.GetTextBox(MtextBlock.Height);
-            SetRotation();
-            UpdateBounds();
-        }
         public List<TextVertex> GetTextVertices()
         {
             List<TextVertex> textVertices = [];

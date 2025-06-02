@@ -8,7 +8,7 @@ namespace Cad_Point_Manager.Models.PointRendering
 {
     public class DxfPointTextVerticesDict
     {
-        private const float _dictBaseTextSize = 3.00f;
+        private const float _dictBaseTextSize = 10.00f;
         private const string _fontName = "Arial";
         private const float _flatteningTolerance = 0.001f;
 
@@ -41,22 +41,28 @@ namespace Cad_Point_Manager.Models.PointRendering
                     bool colorChangeFlag = color != _defaultColor;
                     List<TextVertex> translated = new(tup.vertices.Count);
                     Vector2 offset = new(basePoint.X + xOffset, basePoint.Y);
+                    float heightFactor = textHeight / _dictBaseTextSize;
+                    Matrix matrix = Matrix.Scaling(heightFactor, heightFactor, 1.0f) * Matrix.Translation(offset.X, offset.Y, 0);
+
                     for (int j = 0; j < tup.vertices.Count; j++)
                     {
-                        var vertex = tup.vertices[j];
+                        TextVertex vertex = tup.vertices[j];
+                        vertex.Transform(matrix);
+
                         if (colorChangeFlag)
                         {
-                            vertex = new TextVertex(vertex.Position, color);
+                            vertex.Color = color;
                         }
-                        translated.Add(vertex.Translate(offset));
+
+                        translated.Add(vertex);
                     }
                     verticesList.AddRange(translated);
-                    xOffset += tup.width;
+                    xOffset += (tup.width * heightFactor);
                 }
                 else
                 {
                     TextLayout textLayout = new(_resCache.WriteFactory, c.ToString(), _textFormat, 0.0f, 0.0f);
-                    (List<Vector2> coordinates, RawRectangleF bounds) = TextRenderingHelpers.TesselateTextLayout(_resCache, textLayout, c.ToString(), textHeight, _fontFace);
+                    (List<Vector2> coordinates, RawRectangleF bounds) = TextRenderingHelpers.TesselateTextLayout(_resCache, textLayout, c.ToString(), _fontFace);
                     List<TextVertex> newVerticesList = [];
                     List<TextVertex> dictVerticesList = [];
 

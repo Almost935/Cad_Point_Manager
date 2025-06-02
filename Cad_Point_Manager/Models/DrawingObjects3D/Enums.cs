@@ -7,8 +7,9 @@
         DrawingCircle3D,
         DrawingPolyline3D,
         DrawingBlock3D,
-        DrawingText3D,
-        DrawingMtext3D
+        DrawingSText3D,
+        DrawingMtext3D,
+        DrawingSpline3D
     }
 
     public enum DrawingObject3dColorType

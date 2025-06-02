@@ -12,8 +12,7 @@ namespace Cad_Point_Manager.Models.PointRendering
     public class DxfPoint : HitTestableObject
     {
         #region Fields
-        private float _markerToTextOffset;
-        private Vector3 _pointNumberPosition = Vector3.Zero;
+        private float _markerToTextOffset = 0.25f;
         #endregion
 
         #region Properties
@@ -175,7 +174,7 @@ namespace Cad_Point_Manager.Models.PointRendering
             TextVertices ??= Array.Empty<TextVertex>();
             Array.Clear(TextVertices);
 
-            TextVertices = textDict.GetIntTextVertices(PointNumber, TextHeight, new Vector2(Position.X, Position.Y), PointGroup.Color);
+            TextVertices = textDict.GetIntTextVertices(PointNumber, TextHeight, new Vector2(Position.X + _markerToTextOffset, Position.Y), PointGroup.Color);
 
             UpdateBounds();
         }

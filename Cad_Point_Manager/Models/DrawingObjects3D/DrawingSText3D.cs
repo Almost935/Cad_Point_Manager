@@ -21,6 +21,8 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         #endregion
 
         #region Properties
+        public override List<TextVertex> TextVertices { get; set; } = [];
+
         public Text DxfText { get; set; }
         public float Rotation { get; set; } = 0;
         public float TextHeight { get; set; }
@@ -31,11 +33,9 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         public System.Windows.Media.Matrix Transform { get; set; }
         public Enums.TextAttachmentPoint AttachmentPoint { get; set; }
         public TextLayout TextLayout { get; set; }
-        public TextVertex[] TextVertices { get; set; } = [];
 
         public bool TextFormatCreated => _textFormat != null;
         public bool TextLayoutCreated => TextLayout != null;
-        public bool TextVerticesCreated => TextVertices.Length > 0;
         #endregion
 
         #region Constructor
@@ -147,6 +147,12 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         #endregion
 
         #region Methods
+        public override void UpdateTextVertices(D3dResCache resCache)
+        {
+            GetTextFormat(resCache.WriteFactory);
+            GetTextLayout(resCache.WriteFactory);
+            Tesselate(resCache);
+        }
         public override void MouseEnter()
         {
             throw new NotImplementedException();
@@ -168,7 +174,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         }
         private void SetIsSelected(bool isSelected)
         {
-            for (int i = 0; i < TextVertices.Length; i++)
+            for (int i = 0; i < TextVertices.Count; i++)
             {
                 TextVertices[i].SetIsSelected(isSelected);
             }
@@ -250,7 +256,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             UpdateFontFace(resCache);
 
             //(TransformedGeometry geometry, RawRectangleF bounds) = TextRenderingHelpers.CreateTextGeometry(resCache, Text, TextLayout, fontSizeScaleFactor, TextHeight, _fontFace, _flatteningTolerance);
-            (List<Vector2> vertices, RawRectangleF bounds) = TextRenderingHelpers.TesselateTextLayout(resCache, TextLayout, Text, TextHeight, _fontFace);
+            (List<Vector2> vertices, RawRectangleF bounds) = TextRenderingHelpers.TesselateTextLayout(resCache, TextLayout, Text, _fontFace);
 
             Bounds = new System.Windows.Rect(
                 bounds.Left,
@@ -260,7 +266,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             TextVertices = GetVertices(vertices);
         }
 
-        public TextVertex[] GetVertices(List<Vector2> vertices)
+        public List<TextVertex> GetVertices(List<Vector2> vertices)
         {
             List<TextVertex> textVertices = [];
             Matrix translationTransform = Matrix.Translation((float)Transform.OffsetX, (float)Transform.OffsetY, 0);
@@ -281,14 +287,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                 textVertices.AddRange([textVertex1, textVertex2, textVertex3]);
             }
 
-            return textVertices.ToArray();
-        }
-
-        public void UpdateTextVertices(D3dResCache resCache)
-        {
-            GetTextFormat(resCache.WriteFactory);
-            GetTextLayout(resCache.WriteFactory);
-            Tesselate(resCache);
+            return textVertices;
         }
 
         public static float ConvertDxfHeightToFontSize(float height)

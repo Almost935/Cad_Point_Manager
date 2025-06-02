@@ -24,6 +24,9 @@ namespace Cad_Point_Manager.Helpers
         public static readonly Vector4 _selectedObjectColor = new(0.07f, 0.85f, 0, 1);
         public static readonly Vector4 _selectedMouseOverObjectColor = new(185.0f / 255.0f, 1.0f, 179.0f / 255.0f, 1);
         public static readonly Vector4 _selectedMouseOverGlowColor = new(170.0f / 255.0f, 252.0f / 255.0f, 235.0f / 255.0f, 1);
+        
+        public static readonly Vector4 _sigPointColor = new(50.0f / 255.0f, 200.0f / 255.0f, 255.0f / 255.0f, 1);
+        public static readonly float _sigPointRadiusInPixels = 5.0f;
 
         public static readonly float _dxfPointToExtentsBaseFactor = 0.05f;
     }

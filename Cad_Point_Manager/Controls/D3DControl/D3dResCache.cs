@@ -18,7 +18,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private Device _device = null;
         private DeviceContext _deviceContext = null;
         private Texture2D _texture2D = null;
+        private Texture2D _offscreenTexture = null;
         private RenderTargetView _renderTargetView = null;
+        private RenderTargetView _offscreenRenderTargetView = null;
         private SharpDX.Direct2D1.Device1 _d2DDevice = null;
         private SharpDX.Direct2D1.DeviceContext1 _d2DDeviceContext = null;
         private RenderTarget _d2dRenderTarget = null;
@@ -55,6 +57,15 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 OnPropertyChanged(nameof(Texture2D));
             }
         }
+        public Texture2D OffscreenTexture
+        {
+            get { return _offscreenTexture; }
+            set
+            {
+                _offscreenTexture = value;
+                OnPropertyChanged(nameof(OffscreenTexture));
+            }
+        }
         public RenderTargetView RenderTargetView
         {
             get { return _renderTargetView; }
@@ -64,6 +75,16 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 OnPropertyChanged(nameof(RenderTargetView));
             }
         }
+        public RenderTargetView OffscreenRenderTargetView
+        {
+            get { return _offscreenRenderTargetView; }
+            set
+            {
+                _offscreenRenderTargetView = value;
+                OnPropertyChanged(nameof(OffscreenRenderTargetView));
+            }
+        }
+
         public SharpDX.Direct2D1.Device1 D2DDevice
         {
             get { return _d2DDevice; }
@@ -187,7 +208,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     _device?.Dispose();
                     _deviceContext?.Dispose();
                     _texture2D?.Dispose();
+                    _offscreenTexture?.Dispose();
                     _renderTargetView?.Dispose();
+                    _offscreenRenderTargetView.Dispose();
                     _d2DDevice?.Dispose();
                     _d2DDeviceContext?.Dispose();
                     _d2DFactory?.Dispose();

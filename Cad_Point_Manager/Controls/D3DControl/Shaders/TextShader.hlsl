@@ -74,5 +74,8 @@ PSInput VSMain(VSInput input)
 // Pixel Shader: Determines the color of each pixel
 float4 PSMain(PSInput input) : SV_TARGET
 {
-    return input.Color;
+    // Simulate edge fade by softening alpha
+    float edgeFade = smoothstep(0.0, 0.1, input.Color.a); // adjust thresholds
+    return float4(input.Color.rgb, input.Color.a * edgeFade);
 }
+

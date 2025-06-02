@@ -14,16 +14,22 @@ namespace Cad_Point_Manager.Helpers
         private const float _dictBaseTextSize = 10.00f;
         private const float _flatteningTolerance = 0.001f;
         private const float _textHeightToFontSizeFactor = 1.5f;
+        private const float _tesselationFactor = 5.0f;
 
         public static ConcurrentDictionary<(string fontName, FontWeight fontWeight, FontStyle fontstyle), float> FontSizeFactorDict
         { get; } = new ConcurrentDictionary<(string fontName, FontWeight fontWeight, FontStyle fontstyle), float>();
 
-        public static (List<Vector2> vertices, RawRectangleF bounds) TesselateTextLayout(D3dResCache resCache, TextLayout textLayout, string text, float textHeight, FontFace fontFace)
+        public static (List<Vector2> vertices, RawRectangleF bounds) TesselateTextLayout(D3dResCache resCache, TextLayout textLayout, 
+            string text, FontFace fontFace)
         {
-            var fontSizeFactor = GetFontSizeFactor(resCache, textLayout, fontFace);
+            var fontSizeFactor = GetFontSizeFactor(resCache, textLayout, fontFace); // Multiply by a factor to smoothen curves
             var geometry = TextLayoutToGeometry(resCache, textLayout, text, fontFace, fontSizeFactor);
             var bounds = geometry.GetBounds();
-            var vertices = TessellateGeometry(geometry, _flatteningTolerance, 0);
+            
+            var matrix = Matrix3x2.Scaling(_tesselationFactor, _tesselationFactor);
+            TransformedGeometry transformedGeometry = new(resCache.D2dFactory, geometry, matrix);
+
+            var vertices = TessellateGeometry(transformedGeometry, _flatteningTolerance, 1 / _tesselationFactor);
             geometry.Dispose();
 
             return (vertices, bounds);
@@ -45,7 +51,8 @@ namespace Cad_Point_Manager.Helpers
             }
         }
 
-        private static PathGeometry TextLayoutToGeometry(D3dResCache resCache, TextLayout textLayout, string text, FontFace fontFace, float scaleFactor)
+        private static PathGeometry TextLayoutToGeometry(D3dResCache resCache, TextLayout textLayout, string text, FontFace fontFace, 
+            float scaleFactor)
         {
             PathGeometry pathGeometry = new(resCache.D2dFactory)
             {
@@ -60,7 +67,7 @@ namespace Cad_Point_Manager.Helpers
             {
                 char character = text[i];
                 using PathGeometry glyphGeometry = new(resCache.D2dFactory);
-                glyphGeometry.FlatteningTolerance = _flatteningTolerance;
+ 
                 using var glyphSink = glyphGeometry.Open();
                 short[] glyphIndices = fontFace.GetGlyphIndices(new int[] { character });
                 fontFace.GetGlyphRunOutline(
@@ -78,9 +85,9 @@ namespace Cad_Point_Manager.Helpers
 
                 using TransformedGeometry transformedGlyph = new(resCache.D2dFactory, glyphGeometry, combinedMatrix);
                 transformedGlyph.FlatteningTolerance = _flatteningTolerance;
-                transformedGlyph.Outline(_flatteningTolerance, sink);
+                transformedGlyph.Simplify(GeometrySimplificationOption.Lines, Matrix3x2.Identity, _flatteningTolerance, sink);
 
-                charOffset += clusterMetrics[i].Width * _textHeightToFontSizeFactor;
+                charOffset += (clusterMetrics[i].Width * scaleFactor);
             }
             sink.Close();
 
@@ -195,7 +202,7 @@ namespace Cad_Point_Manager.Helpers
         //    return pathGeometry;
         //}
 
-        public static List<Vector2> TessellateGeometry(Geometry geometry, float flatteningTolerance = 0.001f, float rotation = 0)
+        public static List<Vector2> TessellateGeometry(Geometry geometry, float flatteningTolerance = 0.001f, float tesselationFactor = 1)
         {
             var vertices = new List<Vector2>();
 
@@ -203,6 +210,13 @@ namespace Cad_Point_Manager.Helpers
             {
                 geometry.Tessellate(flatteningTolerance, sink);
                 vertices.AddRange(sink.Vertices);
+            }
+
+            var scale = Matrix.Scaling(tesselationFactor, tesselationFactor, 1);
+            for (int i = 0; i < vertices.Count; i++)
+            {
+                var vertex = vertices[i];
+                vertices[i] = Vector2.TransformCoordinate(vertex, scale);
             }
 
             return vertices;

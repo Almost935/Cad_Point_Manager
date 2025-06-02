@@ -4,7 +4,6 @@ using netDxf.Header;
 using SharpDX.Direct2D1;
 using System.Windows;
 using Vector3 = netDxf.Vector3;
-using Cad_Point_Manager.DrawingObjects;
 using Cad_Point_Manager.Models;
 using Cad_Point_Manager.Controls.D3DControl;
 using Cad_Point_Manager.Models.DrawingObjects3D;

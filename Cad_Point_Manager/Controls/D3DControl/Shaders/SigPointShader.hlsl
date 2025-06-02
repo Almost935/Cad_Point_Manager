@@ -6,10 +6,12 @@ cbuffer TransformationBuffer : register(b0)
     row_major matrix transformationMatrix; // 2D transformation matrix
 };
 
-cbuffer CircleSettingsBuffer : register(b1)
+cbuffer SigPointSettingsBuffer : register(b1)
 {
+    float4 baseColor;
     float4 selectedColor;
-    float4 selectedMouseOverColor;
+    float radius;
+    float2 viewportSize;
 };
 
 float4 GetSnappedColor(float4 color)
@@ -23,10 +25,7 @@ float4 GetSnappedColor(float4 color)
 struct VS_INPUT
 {
     float3 position : POSITION;
-    float4 color : COLOR;
-    float radius : RADIUS;
     float isVisible : ISVISIBLE;
-    float isMouseOver : ISMOUSEOVER;
     float isSelected : ISSELECTED;
 };
 
@@ -34,20 +33,18 @@ struct GS_OUTPUT
 {
     float4 position : SV_POSITION;
     float4 color : COLOR;
-    float2 offset : TEXCOORD0; 
+    float2 offset : TEXCOORD0;
     float isVisible : TEXCOORD1;
-    float isMouseOver : TEXCOORD2;
-    float isSelected : TEXCOORD3;
+    float isSelected : TEXCOORD2;
 };
 
-void EmitCorner(VS_INPUT input, float4 position, float2 offset, inout TriangleStream<GS_OUTPUT> output)
+void EmitCorner(VS_INPUT input, float4 position, float4 color, float2 offset, inout TriangleStream<GS_OUTPUT> output)
 {
     GS_OUTPUT o;
     o.position = position;
+    o.color = color;
     o.offset = offset;
-    o.color = input.color;
     o.isVisible = input.isVisible;
-    o.isMouseOver = input.isMouseOver;
     o.isSelected = input.isSelected;
     output.Append(o);
 }
@@ -70,31 +67,23 @@ void GSMain(point VS_INPUT input[1], inout TriangleStream<GS_OUTPUT> output)
     {
         return;
     }
-    if (input[0].isMouseOver > 0.5)
-    {
-        input[0].color = GetSnappedColor(input[0].color);
-    }
+    
+    float4 color = baseColor;
     
     if (input[0].isSelected > 0.5)
     {
-        if (input[0].isMouseOver > 0.5)
-        {
-            input[0].color = selectedMouseOverColor;
-        }
-        else
-        {
-            input[0].color = selectedColor;
-        }
+        color = selectedColor;
     }
 
     float4 center = mul(float4(input[0].position, 1), transformationMatrix);
-    float radiusX = input[0].radius * transformationMatrix._11;
-    float radiusY = input[0].radius * transformationMatrix._22;
-
-    EmitCorner(input[0], float4(center.x - radiusX, center.y + radiusY, 0, 1), float2(-1, 1), output); // TL
-    EmitCorner(input[0], float4(center.x - radiusX, center.y - radiusY, 0, 1), float2(-1, -1), output); // BL
-    EmitCorner(input[0], float4(center.x + radiusX, center.y + radiusY, 0, 1), float2(1, 1), output); // TR
-    EmitCorner(input[0], float4(center.x + radiusX, center.y - radiusY, 0, 1), float2(1, -1), output); // BR
+    float2 pixelRadiusClip = float2(radius / viewportSize.x, radius / viewportSize.y) * 2.0f;
+    float radiusX = pixelRadiusClip.x;
+    float radiusY = pixelRadiusClip.y;
+    
+    EmitCorner(input[0], float4(center.x - radiusX, center.y + radiusY, 0, 1), color, float2(-1, 1) , output); // TL
+    EmitCorner(input[0], float4(center.x - radiusX, center.y - radiusY, 0, 1), color, float2(-1, -1), output); // BL
+    EmitCorner(input[0], float4(center.x + radiusX, center.y + radiusY, 0, 1), color, float2(1, 1), output); // TR
+    EmitCorner(input[0], float4(center.x + radiusX, center.y - radiusY, 0, 1), color, float2(1, -1), output); // BR
 }
 
 // =======================

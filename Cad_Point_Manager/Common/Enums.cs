@@ -11,6 +11,13 @@
             DashDotDot
         }
 
+        public enum SelectionMode
+        {
+            Points,
+            Lines,
+            All
+        }
+
         public enum DrawingObjectType
         {
             Line,

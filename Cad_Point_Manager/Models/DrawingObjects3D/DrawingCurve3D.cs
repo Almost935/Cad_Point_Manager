@@ -20,7 +20,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
 
         public static int CalculateArcSegments(double radius, double angleInDegrees, double smoothnessFactor = 10)
         {
-            // Convert the angle from degrees to radians
             double angleInRadians = angleInDegrees * Math.PI / 180.0;
 
             double segments = (angleInRadians / radius) * smoothnessFactor;

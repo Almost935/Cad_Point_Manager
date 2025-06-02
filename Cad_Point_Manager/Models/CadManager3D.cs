@@ -1,4 +1,6 @@
-﻿using Cad_Point_Manager.Controls.D3DControl;
+﻿using Cad_Point_Manager.Common;
+using Cad_Point_Manager.Controls.D3DControl;
+using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Helpers;
 using Cad_Point_Manager.Models.DrawingObjects3D;
 using Cad_Point_Manager.Models.HitTesting;
@@ -14,13 +16,14 @@ using System.Windows;
 using System.Windows.Data;
 
 using Point = System.Windows.Point;
+using Vector2 = SharpDX.Vector2;
 
 namespace Cad_Point_Manager.Models
 {
     public class CadManager3D : INotifyPropertyChanged
     {
         #region Fields
-        private const float _pointSizeToExtentsFactor = 0.01f;
+        private const float _pointSizeToExtentsFactor = 0.005f;
 
         private D3dResCache _d3dResCache;
 
@@ -37,9 +40,9 @@ namespace Cad_Point_Manager.Models
         private ObservableCollection<KeyValuePair<string, PointGroup>> _pointGroups = [];
         private ICollectionView _pointGroupsView;
         private Size2F _viewportSize = Size2F.Empty;
-        
-        private float _pointBaseTextHeight = 1.0f;
-        private float _pointBaseMarkerSize = 0.05f;
+
+        private float _pointBaseTextHeight;
+        private float _pointBaseMarkerSize;
 
         private readonly List<LineVertex> _cachedLineVertices = [];
         private readonly List<TextVertex> _cachedTextVertices = [];
@@ -171,6 +174,7 @@ namespace Cad_Point_Manager.Models
         public DxfDocument DxfDocument { get; set; }
         public HitTestableObjectTree HitTestableObjectTree { get; set; }
         public TextVertex[] NumberVertices { get; set; } = [];
+        public Enums.SelectionMode SnapSelectionMode { get; set; } = Enums.SelectionMode.All;
         #endregion
 
         #region Events
@@ -224,7 +228,6 @@ namespace Cad_Point_Manager.Models
             if (Extents.IsEmpty)
             {
                 _pointBaseTextHeight = 1;
-                _pointBaseMarkerSize = 0.05f;
                 return;
             }
             if (Extents.Width > Extents.Height)
@@ -261,10 +264,33 @@ namespace Cad_Point_Manager.Models
             Rect rect = new(p.X - tolerance, p.Y - tolerance, tolerance * 2, tolerance * 2);
             var nodes = HitTestableObjectTree.GetIntersectingNodes(rect);
 
-            foreach (var node in nodes)
+            if (SnapSelectionMode == Enums.SelectionMode.Points)
             {
-                hits.AddRange(node.HitTestNode(p, rect));
+                List<(double distance, Vector2 coords)> significantPoints = [];
+                foreach (var node in nodes)
+                {
+                    significantPoints.AddRange(node.GetSignificantPoints(p, rect, Enums.SelectionMode.Points));
+                }
+                foreach (var (distance, coords) in significantPoints)
+                {
+                    hits.Add((distance, new HitTestablePoint(coords.ToVector3())));
+                }
             }
+            else if (SnapSelectionMode == Enums.SelectionMode.Lines)
+            {
+                foreach (var node in nodes)
+                {
+                    hits.AddRange(node.HitTestNode(p, rect, Enums.SelectionMode.Lines));
+                }
+            }
+            else
+            {
+                foreach (var node in nodes)
+                {
+                    hits.AddRange(node.HitTestNode(p, rect, Enums.SelectionMode.All));
+                }
+            }
+
 
             hits.Sort((x, y) => x.distance.CompareTo(y.distance));
 
@@ -324,9 +350,9 @@ namespace Cad_Point_Manager.Models
                         vertex.IsMouseOver = isMouseOver ? 1.0f : 0.0f;
                     }
                 }
-                if (drawingObject is DrawingMtext3D drawingMtext)
+                if (drawingObject is DrawingText3D drawingText)
                 {
-                    for (int i = drawingMtext.StartVertexIndex; i <= drawingMtext.EndVertexIndex; i++)
+                    for (int i = drawingText.StartVertexIndex; i <= drawingText.EndVertexIndex; i++)
                     {
                         ref var vertex = ref GetTextVertexRef(i);
                         vertex.IsMouseOver = isMouseOver ? 1.0f : 0.0f;
@@ -350,7 +376,7 @@ namespace Cad_Point_Manager.Models
             {
                 for (int i = dxfPoint.TextStartIndex; i <= dxfPoint.TextEndIndex; i++)
                 {
-                    ref var vertex = ref GetTextVertexRef(i);
+                    ref var vertex = ref GetPointTextVertexRef(i);
                     vertex.IsMouseOver = isMouseOver ? 1.0f : 0.0f;
                 }
                 for (int i = dxfPoint.MarkerStartIndex; i <= dxfPoint.MarkerEndIndex; i++)
@@ -373,9 +399,9 @@ namespace Cad_Point_Manager.Models
                         vertex.IsSelected = isSelected ? 1.0f : 0.0f;
                     }
                 }
-                if (drawingObject is DrawingMtext3D drawingMtext)
+                if (drawingObject is DrawingText3D drawingText)
                 {
-                    for (int i = drawingMtext.StartVertexIndex; i <= drawingMtext.EndVertexIndex; i++)
+                    for (int i = drawingText.StartVertexIndex; i <= drawingText.EndVertexIndex; i++)
                     {
                         ref var vertex = ref GetTextVertexRef(i);
                         vertex.IsSelected = isSelected ? 1.0f : 0.0f;
@@ -399,7 +425,7 @@ namespace Cad_Point_Manager.Models
             {
                 for (int i = dxfPoint.TextStartIndex; i <= dxfPoint.TextEndIndex; i++)
                 {
-                    ref var vertex = ref GetTextVertexRef(i);
+                    ref var vertex = ref GetPointTextVertexRef(i);
                     vertex.IsMouseOver = isSelected ? 1.0f : 0.0f;
                 }
                 for (int i = dxfPoint.MarkerStartIndex; i <= dxfPoint.MarkerEndIndex; i++)
@@ -467,28 +493,14 @@ namespace Cad_Point_Manager.Models
                     {
                         int start = _cachedTextVertices.Count;
 
-                        if (obj is DrawingSText3D drawingText)
+                        if (obj is DrawingText3D text3D)
                         {
-                            drawingText.UpdateTextVertices(d3DResCache);
-                            drawingText.StartVertexIndex = start;
-                            _cachedTextVertices.AddRange(drawingText.TextVertices);
-                            drawingText.EndVertexIndex = _cachedTextVertices.Count - 1;
+                            text3D.UpdateTextVertices(d3DResCache);
+                            text3D.StartVertexIndex = start;
+                            _cachedTextVertices.AddRange(text3D.TextVertices);
+                            text3D.EndVertexIndex = _cachedTextVertices.Count - 1;
                         }
-                        else if (obj is DrawingMtext3D drawingMtext)
-                        {
-                            drawingMtext.UpdateTextVertices(d3DResCache);
-                            drawingMtext.StartVertexIndex = start;
-
-                            foreach (var row in drawingMtext.MtextBlock.Rows)
-                            {
-                                foreach (var segment in row.Segments)
-                                {
-                                    _cachedTextVertices.AddRange(segment.TextVertices);
-                                }
-                            }
-                            drawingMtext.EndVertexIndex = _cachedTextVertices.Count - 1;
-                        }
-                        else if (obj is DrawingBlock3D drawingBlock)
+                        if (obj is DrawingBlock3D drawingBlock)
                         {
                             drawingBlock.UpdateTextVertices(d3DResCache);
                             drawingBlock.StartTextVertexIndex = start;
@@ -497,7 +509,6 @@ namespace Cad_Point_Manager.Models
                         }
                     }
                 }
-
                 TextVerticesDirty = false;
                 HitTestableObjectTreeDirty = true;
             }
@@ -509,6 +520,8 @@ namespace Cad_Point_Manager.Models
         {
             if (PointTextVerticesDirty)
             {
+                _cachedPointTextVertices.Clear();
+
                 if (d3DResCache.Device is null)
                 {
                     return CollectionsMarshal.AsSpan(_cachedPointTextVertices);

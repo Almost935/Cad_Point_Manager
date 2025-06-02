@@ -16,7 +16,9 @@
       d:DataContext="{d:DesignInstance Type=viewModels:MainViewModel}"
       mc:Ignorable="d"
       Title="MainView"
-      Background="{StaticResource MainBackgroundBrush}">
+      Background="{StaticResource MainBackgroundBrush}"
+      d:Width="{x:Static SystemParameters.PrimaryScreenWidth}"
+      d:Height="{x:Static SystemParameters.PrimaryScreenHeight}">
 
     <Page.Resources>
         <Style TargetType="fa:FontAwesome">
@@ -25,6 +27,8 @@
         </Style>
 
         <converters:LeftRightMarginConverter x:Key="LeftRightMarginConverter" />
+
+        <Thickness x:Key="ToggleButtonMargin">0,5,0,5</Thickness>
     </Page.Resources>
 
     <Grid>
@@ -32,7 +36,7 @@
             <RowDefinition Height="0.5*" />
             <RowDefinition Height="*" />
             <RowDefinition Height="15*" />
-            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
         <Grid x:Name="menuGrid"
@@ -128,14 +132,14 @@
               ClipToBounds="False"
               Panel.ZIndex="1">
             <uc:RightHandPopout x:Name="layerView"
-                            Panel.ZIndex="1"
-                            Width="300"
-                            HorizontalAlignment="Right"
-                            ClipToBounds="False"
-                            Height="{Binding ElementName=dxfBorder, Path=Height}"
-                            CadManager="{Binding JobFileManager.CadManager3D}"
-                            LayerCollectionView="{Binding JobFileManager.CadManager3D.LayersView}"
-                            PointGroupCollectionView="{Binding JobFileManager.CadManager3D.PointGroupsView}"/>
+                                Panel.ZIndex="1"
+                                Width="300"
+                                HorizontalAlignment="Right"
+                                ClipToBounds="False"
+                                Height="{Binding ElementName=dxfBorder, Path=Height}"
+                                CadManager="{Binding JobFileManager.CadManager3D}"
+                                LayerCollectionView="{Binding JobFileManager.CadManager3D.LayersView}"
+                                PointGroupCollectionView="{Binding JobFileManager.CadManager3D.PointGroupsView}" />
         </Grid>
 
         <Grid x:Name="dxfGrid"
@@ -148,13 +152,11 @@
                                  Path="Value" />
                         <Binding ElementName="SourceControl"
                                  Path="Value" />
-                        <!-- Set Top margin directly -->
                         <Binding>
                             <Binding.Source>
                                 <sys:Double>20</sys:Double>
                             </Binding.Source>
                         </Binding>
-                        <!-- Set Bottom margin directly -->
                         <Binding>
                             <Binding.Source>
                                 <sys:Double>10</sys:Double>
@@ -169,12 +171,57 @@
             </Border>
         </Grid>
 
-        <WrapPanel Grid.Row="3">
+        <Grid Grid.Row="3">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="2*" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
             <TextBlock Margin="20,0,0,0"
                        Foreground="White"
-                       Text="{Binding ElementName=d3dDxfControl, Path=DxfCoordsString}">
-
-            </TextBlock>
-        </WrapPanel>
+                       VerticalAlignment="Center"
+                       Text="{Binding ElementName=d3dDxfControl, Path=DxfCoordsString}" />
+            <WrapPanel Grid.Column="1"
+                       Margin="20 0 0 0"
+                       HorizontalAlignment="Center">
+                <RadioButton x:Name="All" 
+                             GroupName="SnapToggles"
+                             Style="{StaticResource DarkGreyRadioButtonStyle}"
+                             Width="40"
+                             Height="40"
+                             Margin="{StaticResource ToggleButtonMargin}"
+                             Command="{Binding SnapToggleCommand}"
+                             CommandParameter="{Binding RelativeSource={RelativeSource Self}}"
+                             IsChecked="True">
+                    <RadioButton.Content>
+                        <ContentControl Template="{StaticResource EverythingIcon}" />
+                    </RadioButton.Content>
+                </RadioButton>
+                <RadioButton x:Name="Lines"
+                             GroupName="SnapToggles"
+                             Style="{StaticResource DarkGreyRadioButtonStyle}"
+                             Width="40"
+                             Height="40"
+                             Margin="{StaticResource ToggleButtonMargin}"
+                             Command="{Binding SnapToggleCommand}"
+                             CommandParameter="{Binding RelativeSource={RelativeSource Self}}">
+                    <RadioButton.Content>
+                        <ContentControl Template="{StaticResource LineIcon}" />
+                    </RadioButton.Content>
+                </RadioButton>
+                <RadioButton x:Name="Points"
+                             GroupName="SnapToggles"
+                             Style="{StaticResource DarkGreyRadioButtonStyle}"
+                             Width="40"
+                             Height="40"
+                             Margin="{StaticResource ToggleButtonMargin}"
+                             Command="{Binding SnapToggleCommand}"
+                             CommandParameter="{Binding RelativeSource={RelativeSource Self}}">
+                    <RadioButton.Content>
+                        <ContentControl Template="{StaticResource PointsIcon}" />
+                    </RadioButton.Content>
+                </RadioButton>
+            </WrapPanel>
+        </Grid>
     </Grid>
 </Page>
