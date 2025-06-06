@@ -11,7 +11,6 @@ namespace Cad_Point_Manager.Helpers
         public static List<Vector2> GetSignificantPointsList(List<DrawingSegment3D> segments)
         {
             Stopwatch stopwatch = Stopwatch.StartNew();
-
             var allPoints = new ConcurrentBag<Vector2>();
 
             Parallel.ForEach(Enumerable.Range(0, segments.Count), () => new List<Vector2>(),
@@ -19,63 +18,40 @@ namespace Cad_Point_Manager.Helpers
                 {
                     var segment1 = segments[i];
 
-                    if (segment1 is DrawingLine3D line)
+                    switch (segment1)
                     {
-                        localList.AddRange(new[] { line.Start.ToVector2(), line.End.ToVector2(), line.MidPoint.ToVector2() });
-
-                        for (int j = 0; j < segments.Count; j++)
-                        {
-                            if (j == i) continue;
-
-                            var segment2 = segments[j];
-                            if (GeometryHelpers.IntersectGeometries(segment1, segment2, out var intersectionPoints))
-                                localList.AddRange(intersectionPoints);
-                        }
+                        case DrawingLine3D line:
+                            localList.AddRange(new[] { line.Start.ToVector2(), line.End.ToVector2(), line.MidPoint.ToVector2() });
+                            break;
+                        case DrawingArc3D arc:
+                            localList.AddRange(new[] { arc.RadiusPoint.ToVector2(), arc.Start.ToVector2(), arc.End.ToVector2(), arc.MidPoint.ToVector2() });
+                            break;
+                        case DrawingCircle3D circle:
+                            localList.Add(circle.RadiusPoint.ToVector2());
+                            break;
                     }
-                    else if (segment1 is DrawingArc3D arc)
+
+                    for (int j = i + 1; j < segments.Count; j++)
                     {
-                        localList.AddRange(new[] { arc.RadiusPoint.ToVector2(), arc.Start.ToVector2(), arc.End.ToVector2(), arc.MidPoint.ToVector2() });
-
-                        for (int j = 0; j < segments.Count; j++)
+                        var segment2 = segments[j];
+                        var intersectionsExists = GeometryHelpers.IntersectGeometries(segment1, segment2, out var intersectionPoints);
+                        if (intersectionsExists)
                         {
-                            if (j == i) continue;
-
-                            var segment2 = segments[j];
-                            if (GeometryHelpers.IntersectGeometries(segment1, segment2, out var intersectionPoints))
-                                localList.AddRange(intersectionPoints);
-                        }
-                    }
-                    else if (segment1 is DrawingCircle3D circle)
-                    {
-                        localList.Add(circle.RadiusPoint.ToVector2());
-
-                        for (int j = 0; j < segments.Count; j++)
-                        {
-                            if (j == i) continue;
-
-                            var segment2 = segments[j];
-                            if (GeometryHelpers.IntersectGeometries(segment1, segment2, out var intersectionPoints))
-                                localList.AddRange(intersectionPoints);
+                            localList.AddRange(intersectionPoints);
                         }
                     }
 
                     return localList;
                 },
-                localList =>
-                {
-                    foreach (var pt in localList)
-                        allPoints.Add(pt);
-                });
+                localList => { foreach (var pt in localList) allPoints.Add(pt); });
 
             stopwatch.Stop();
-
             if (stopwatch.ElapsedMilliseconds > 0)
-            {
                 Debug.WriteLine($"GetSignificantPointsList took {stopwatch.ElapsedMilliseconds} ms");
-            }
 
-            return allPoints.Distinct().ToList();
+            return allPoints.Distinct(new Vector2EqualityComparer(1e-5f)).ToList();
         }
+
 
         public static Vector2 GetNearestPiontOnGeometry(DrawingGeometry3D geometry, Vector2 point)
         {
@@ -222,27 +198,32 @@ namespace Cad_Point_Manager.Helpers
         {
             intersection = default;
 
-            float A1 = line1.End.Y - line1.Start.Y;
-            float B1 = line1.Start.X - line1.End.X;
-            float C1 = A1 * line1.Start.X + B1 * line1.Start.Y;
+            Vector2 p1 = line1.Start.ToVector2();
+            Vector2 p2 = line1.End.ToVector2();
+            Vector2 p3 = line2.Start.ToVector2();
+            Vector2 p4 = line2.End.ToVector2();
 
-            float A2 = line2.End.Y - line2.Start.Y;
-            float B2 = line2.Start.X - line2.End.X;
-            float C2 = A2 * line2.Start.X + B2 * line2.Start.Y;
+            float A1 = p2.Y - p1.Y;
+            float B1 = p1.X - p2.X;
+            float C1 = A1 * p1.X + B1 * p1.Y;
+
+            float A2 = p4.Y - p3.Y;
+            float B2 = p3.X - p4.X;
+            float C2 = A2 * p3.X + B2 * p3.Y;
 
             float det = A1 * B2 - A2 * B1;
-            if (Math.Abs(det) < 1e-6f) { return false; }
+            if (Math.Abs(det) < 1e-6f) { return false; } // Lines are parallel or coincident
 
             intersection = new Vector2(
                 (B2 * C1 - B1 * C2) / det,
                 (A1 * C2 - A2 * C1) / det
             );
 
-            // Check if the intersection point is on both segments
-            if (!IsPointOnSegment((Vector2)line1.Start, (Vector2)line1.End, intersection) || !IsPointOnSegment((Vector2)line2.Start, (Vector2)line2.End, intersection))
-            { return false; }
+            // Check that intersection lies on both segments (not just the lines)
+            bool pointOnSegment1 = IsPointOnSegment(p1, p2, intersection);
+            bool pointOnSegment2 = IsPointOnSegment(p3, p4, intersection);
 
-            return true;
+            return pointOnSegment1 && pointOnSegment2;
         }
 
         public static bool TryIntersectLineCircle(DrawingLine3D line, DrawingCircle3D circle, out List<Vector2> intersections)
@@ -432,16 +413,22 @@ namespace Cad_Point_Manager.Helpers
 
             return true;
         }
-
-        private static bool IsPointOnSegment(Vector2 a, Vector2 b, Vector2 p)
+        private static bool IsPointOnSegment(Vector2 a, Vector2 b, Vector2 p, float epsilon = 1e-2f)
         {
-            float minX = Math.Min(a.X, b.X), maxX = Math.Max(a.X, b.X);
-            float minY = Math.Min(a.Y, b.Y), maxY = Math.Max(a.Y, b.Y);
+            Vector2 ab = b - a;
+            Vector2 ap = p - a;
 
-            return p.X >= minX - 1e-5f && p.X <= maxX + 1e-5f &&
-                   p.Y >= minY - 1e-5f && p.Y <= maxY + 1e-5f;
+            // 1. Collinearity check via cross product
+            float cross = ab.X * ap.Y - ab.Y * ap.X;
+            if (Math.Abs(cross) > epsilon) { return false; }
+
+            // 2. Bounds check via dot product
+            float dot = Vector2.Dot(ap, ab);
+            if (dot < -epsilon) { return false; } // Before 'a'
+            if (dot > Vector2.Dot(ab, ab) + epsilon) { return false; } // Beyond 'b'
+
+            return true;
         }
-
         private static float DegreeToRadian(float degrees) => degrees * MathF.PI / 180f;
 
         private static bool IsAngleBetween(float angle, float start, float end)

@@ -8,20 +8,24 @@ using Matrix = SharpDX.Matrix;
 namespace Cad_Point_Manager.Controls.D3DControl
 {
     [StructLayout(LayoutKind.Sequential)]
-    public struct SigPointVertex(Vector3 position, float isVisible = 1.0f, float isSelected = 0)
+    public struct SigPointVertex(Vector3 position, float isMouseOver = 0, float isSelected = 0)
     {
         public Vector3 Position = position;
 
         /// <summary>
-        /// float value indicating whether the vertex is visible or not. 1.0f is visible, 0.0f is not visible.
+        /// float value indicating whether the mouse is currently over the sig point. 1.0f is true, 0.0f is false.
         /// </summary>
-        public float IsVisible = isVisible;
+        public float IsMouseOver = isMouseOver;
 
         /// <summary>
-        /// float value indicating whether the line is currently selected. 1.0f is true, 0.0f is false.
+        /// float value indicating whether the sig point is currently selected. 1.0f is true, 0.0f is false.
         /// </summary>
         public float IsSelected = isSelected;
 
+        public void SetIsMouseOver(bool isMouseOver)
+        {
+            IsMouseOver = isMouseOver ? 1 : 0;
+        }
         public void SetIsSelected(bool isSelected)
         {
             IsSelected = isSelected ? 1 : 0;
@@ -33,6 +37,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
     {
         public Vector4 BaseColor;
         public Vector4 SelectedColor;
+        public Vector4 SelectedMouseOverColor;
         public float Radius;
         public Vector2 ViewportSize;
         public float Padding;
@@ -173,12 +178,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             return new TextVertex(new Vector3(Position.X + x, Position.Y + y, Position.Z + z), Color, isVisible: IsVisible,
                 isMouseOver: IsMouseOver, isSelected: IsSelected);
         }
-
-        //public readonly TextVertex Transform(Matrix transform)
-        //{
-        //    return new TextVertex(Vector3.TransformCoordinate(Position, transform), Color, isVisible: IsVisible,
-        //        isMouseOver: IsMouseOver, isSelected: IsSelected);  
-        //}
         public void Transform(Matrix transform)
         {
             Position = Vector3.TransformCoordinate(Position, transform);

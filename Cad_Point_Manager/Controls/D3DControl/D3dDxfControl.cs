@@ -123,7 +123,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
         // Signficant points shader related fields
         private ResizableBuffer<SigPointVertex> _sigPointVertexBuffer;
         private Buffer _sigPointSettingsBuffer;
-        private List<SigPointVertex> _sigPointVertices = [];
+        private SigPointVertex[] _combinedSigPointVertices = [];
+        //private List<SigPointVertex> _snappedSigPointVertices = []; // Removing these in favor of two separate fields to just hold all snapped or selected sig points
+        //private List<SigPointVertex> _selectedSigPointVertices = [];
         private InputLayout _sigPointInputLayout;
         private VertexShader _sigPointVertexShader;
         private PixelShader _sigPointPixelShader;
@@ -152,6 +154,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private List<(double distance, HitTestableObject hitTestableObject)> _nearestHitTestableObjects = [];
         private HitTestableObject _snappedHitTestableObject;
         private List<HitTestableObject> _selectedHitTestableObjects = [];
+        private List<HitTestablePoint> _selectedPoints = [];
         #endregion
 
         #region Properties 
@@ -488,7 +491,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             var context = _d3dResCache.DeviceContext;
 
-            if (_sigPointVertexBuffer == null || _sigPointVertices.Count == 0) { return; }
+            if (_sigPointVertexBuffer == null || _combinedSigPointVertices.Length == 0) { return; }
 
             // Set shaders
             context.VertexShader.Set(_sigPointVertexShader);
@@ -502,8 +505,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             context.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding(
                 _sigPointVertexBuffer.Buffer, _sigPointVertexBuffer.Stride, 0));
 
-            context.Draw(_sigPointVertices.Count, 0);
-
+            context.Draw(_combinedSigPointVertices.Length, 0);
             context.GeometryShader.Set(null);
 
             //stopwatch.Stop();
@@ -636,10 +638,23 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
         private void UpdateSigPointVertices()
         {
-            if (_sigPointVertexBuffer is null || _sigPointVertices.Count == 0) { return; }
+            _combinedSigPointVertices = _selectedSigPointVertices.Concat(_snappedSigPointVertices).ToArray();
+
+            if (_sigPointVertexBuffer is null || _combinedSigPointVertices.Length == 0) { return; }
+
+            Debug.WriteLine($"\n_snappedSigPointVertices: _snappedSigPointVertices.Count: {_snappedSigPointVertices.Count}");
+            foreach (var sigPointVertex in _snappedSigPointVertices)
+            {
+                Debug.WriteLine($"IsSelected: {sigPointVertex.IsSelected}");
+            }
+            Debug.WriteLine($"_selectedSigPointVertices: _selectedSigPointVertices.Count: {_selectedSigPointVertices.Count}");
+            foreach (var sigPointVertex in _selectedSigPointVertices)
+            {
+                Debug.WriteLine($"IsSelected: {sigPointVertex.IsSelected}");
+            }
 
             var context = _d3dResCache.DeviceContext;
-            _sigPointVertexBuffer.Update(context, _sigPointVertices.ToArray());
+            _sigPointVertexBuffer.Update(context, _combinedSigPointVertices);
 
             _sigPointVerticesDirty = false;
             D3dIsDirty = true;
@@ -870,7 +885,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 new[]
                 {
                     new InputElement("POSITION", 0, Format.R32G32B32_Float, 0, 0),
-                    new InputElement("ISVISIBLE", 0, Format.R32_Float, 12, 0),
+                    new InputElement("ISMOUSEOVER", 0, Format.R32G32B32A32_Float, 12, 0),
                     new InputElement("ISSELECTED", 0, Format.R32_Float, 16, 0),
                  });
 
@@ -1069,6 +1084,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             {
                 BaseColor = GlobalHelperProperties._sigPointColor,
                 SelectedColor = GlobalHelperProperties._selectedObjectColor,
+                SelectedMouseOverColor = GlobalHelperProperties._selectedMouseOverObjectColor,
                 Radius = GlobalHelperProperties._sigPointRadiusInPixels,
                 ViewportSize = new Vector2(Viewport.Width, Viewport.Height),
             };
@@ -1201,6 +1217,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
                     if (_snappedHitTestableObject is DrawingGeometry3D) { _lineVerticesDirty = true; _lineGlowVerticesDirty = true; }
                     else if (_snappedHitTestableObject is DrawingMtext3D) { _textVerticesDirty = true; }
+                    else if (_snappedHitTestableObject is HitTestablePoint point) { _sigPointVerticesDirty = true; }
                     else { _lineVerticesDirty = true; _textVerticesDirty = true; }
 
                     D3dIsDirty = true;
@@ -1211,6 +1228,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
                     if (_snappedHitTestableObject is DrawingGeometry3D) { _lineVerticesDirty = true; _lineGlowVerticesDirty = true; }
                     else if (_snappedHitTestableObject is DrawingMtext3D) { _textVerticesDirty = true; }
+                    else if (_snappedHitTestableObject is HitTestablePoint point) { _sigPointVerticesDirty = true; }
                     else { _lineVerticesDirty = true; _textVerticesDirty = true; }
 
                     D3dIsDirty = true;
@@ -1403,11 +1421,10 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     _textGlowVertices.AddRange(dxfPoint.TextVertices);
                     _circleGlowVertices.AddRange(dxfPoint.MarkerVertices);
                 }
-
                 if (hitTestableObject is HitTestablePoint point)
                 {
                     point.MouseEnter();
-                    _sigPointVertices.Add(point.SigPointVertex);
+                    _snappedSigPointVertices.Add(point.SigPointVertex);
                 }
             }
         }
@@ -1438,6 +1455,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     dxfPoint.MouseEnter();
                     CadManager3D.UpdateVerticesIsMouseOver(dxfPoint, false);
                 }
+                if (hitTestableObject is HitTestablePoint point)
+                {
+                    point.MouseLeave();
+                    _snappedSigPointVertices.Remove(point.SigPointVertex);
+                }
             }
         }
         private void ResetSnappedObjects()
@@ -1450,7 +1472,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _lineGlowVertices.Clear();
             _textGlowVertices.Clear();
             _circleGlowVertices.Clear();
-            _sigPointVertices.Clear();
+            _snappedSigPointVertices.Clear();
         }
 
         private void SelectObject(HitTestableObject hitTestableObject)
@@ -1484,7 +1506,12 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 }
                 if (hitTestableObject is DxfPoint dxfPoint)
                 {
-
+                    
+                }
+                if (hitTestableObject is HitTestablePoint point)
+                {
+                    point.Select();
+                    _selectedSigPointVertices.Add(point.SigPointVertex);
                 }
             }
         }
@@ -1512,16 +1539,15 @@ namespace Cad_Point_Manager.Controls.D3DControl
                         CadManager3D.UpdateVerticesIsSelected(drawingMtext, false);
                         _selectedHitTestableObjects.Remove(drawingMtext);
                     }
-
-                    //Span<LineVertex> lineGlowList = _lineGlowVertices.AsSpan();
-                    //for (int i = 0; i < lineGlowList.Length; i++)
-                    //{
-                    //    lineGlowList[i].SetIsSelected(false);
-                    //}
                 }
                 if (hitTestableObject is DxfPoint dxfPoint)
                 {
 
+                }
+                if (hitTestableObject is HitTestablePoint point)
+                {
+                    point.Deselect();
+                    _selectedSigPointVertices.Remove(point.SigPointVertex);
                 }
             }
         }
@@ -1532,7 +1558,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
             {
                 DeselectObject(obj);
             }
-            _snappedHitTestableObject = null;
+            _selectedHitTestableObjects.Clear();
+
+            _selectedSigPointVertices.Clear();
 
             _lineVerticesDirty = _lineGlowVerticesDirty = _textVerticesDirty = D3dIsDirty = true;
         }

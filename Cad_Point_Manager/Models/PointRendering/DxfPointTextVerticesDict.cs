@@ -30,19 +30,20 @@ namespace Cad_Point_Manager.Models.PointRendering
             List<TextVertex> verticesList = [];
             string text = integer.ToString();
             float xOffset = 0;
+            bool colorChangeFlag = color != _defaultColor;
 
             for (int i = 0; i < text.Length; i++)
             {
                 char c = text[i];
                 int num = Int32.Parse(c.ToString());
 
+                Vector2 offset = new(basePoint.X + xOffset, basePoint.Y);
+                float heightFactor = textHeight / _dictBaseTextSize;
+                Matrix matrix = Matrix.Scaling(heightFactor, heightFactor, 1.0f) * Matrix.Translation(offset.X, offset.Y, 0);
+
                 if (_numbersDict.TryGetValue(num, out (List<TextVertex> vertices, float width) tup))
                 {
-                    bool colorChangeFlag = color != _defaultColor;
                     List<TextVertex> translated = new(tup.vertices.Count);
-                    Vector2 offset = new(basePoint.X + xOffset, basePoint.Y);
-                    float heightFactor = textHeight / _dictBaseTextSize;
-                    Matrix matrix = Matrix.Scaling(heightFactor, heightFactor, 1.0f) * Matrix.Translation(offset.X, offset.Y, 0);
 
                     for (int j = 0; j < tup.vertices.Count; j++)
                     {
@@ -53,7 +54,6 @@ namespace Cad_Point_Manager.Models.PointRendering
                         {
                             vertex.Color = color;
                         }
-
                         translated.Add(vertex);
                     }
                     verticesList.AddRange(translated);
@@ -65,24 +65,22 @@ namespace Cad_Point_Manager.Models.PointRendering
                     (List<Vector2> coordinates, RawRectangleF bounds) = TextRenderingHelpers.TesselateTextLayout(_resCache, textLayout, c.ToString(), _fontFace);
                     List<TextVertex> newVerticesList = [];
                     List<TextVertex> dictVerticesList = [];
-
-                    Vector2 offset = new(basePoint.X + xOffset, basePoint.Y);
                     
                     var spaceWidth = textLayout.Metrics.Width;
 
                     foreach (var coordinate in coordinates)
                     {
-                        Matrix matrix = Matrix.Translation(offset.X, offset.Y, 0);
                         Vector3 dictVector = new(coordinate.X, coordinate.Y, 0.0f);
                         Vector3 vector = Vector3.TransformCoordinate(dictVector, matrix);
-                        //Vector3 translatedVector = new(vector.X, vector.Y, vector.Z);
-                        TextVertex vertex = new(vector, _defaultColor);
+                        TextVertex vertex = new(vector, color);
                         TextVertex dictVertex = new(dictVector, _defaultColor);
                         newVerticesList.Add(vertex);
                         dictVerticesList.Add(dictVertex);
                     }
-                    verticesList.AddRange(newVerticesList);
                     _numbersDict.Add(num, (dictVerticesList, (bounds.Right - bounds.Left) + (spaceWidth * GlobalHelperProperties._textHeightToSpaceWidthFactor)));
+
+                    verticesList.AddRange(newVerticesList);
+
                     xOffset += bounds.Right - bounds.Left;
                     textLayout.Dispose();
                 }

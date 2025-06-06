@@ -57,6 +57,7 @@ namespace Cad_Point_Manager.Helpers
                 Insert block => new DrawingBlock3D(block, layer),
                 MText mtext => new DrawingMtext3D(mtext, layer),
                 Text text => new DrawingSText3D(text, layer),
+                Spline spline => new DrawingSpline3D(spline, layer),
                 _ => null,
             };
         }

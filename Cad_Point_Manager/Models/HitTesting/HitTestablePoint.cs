@@ -16,18 +16,27 @@ namespace Cad_Point_Manager.Models.HitTesting
     {
         #region Fields
         private const float _boundsSize = 1.0f;
+
+        private SigPointVertex _sigPointVertex;
         #endregion
 
         #region Properties
         public Vector3 Position;
-        public SigPointVertex SigPointVertex { get; set; }
+        public SigPointVertex SigPointVertex
+        {
+            get { return _sigPointVertex; }
+            set
+            {
+                _sigPointVertex = value;
+            }
+        }
         #endregion
 
         #region Constructors
         public HitTestablePoint(Vector3 position)
         {
             Position = position;
-            SigPointVertex = new(Position);
+            _sigPointVertex = new(Position, 0, 0);
         }
         #endregion
 
@@ -35,18 +44,22 @@ namespace Cad_Point_Manager.Models.HitTesting
         public override void MouseEnter()
         {
             this.IsMouseOver = true;
+            _sigPointVertex.SetIsMouseOver(true);
         }
         public override void MouseLeave()
         {
             this.IsMouseOver = false;
+            _sigPointVertex.SetIsMouseOver(false);
         }
         public override void Select()
         {
-            throw new NotImplementedException();
+            this.IsSelected = true;
+            _sigPointVertex.SetIsSelected(true);
         }
         public override void Deselect()
         {
-            throw new NotImplementedException();
+            this.IsSelected = false;
+            _sigPointVertex.SetIsSelected(false);
         }
         public override void UpdateBounds()
         {

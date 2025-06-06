@@ -10,22 +10,15 @@ cbuffer SigPointSettingsBuffer : register(b1)
 {
     float4 baseColor;
     float4 selectedColor;
+    float4 selectedMouseOverColor;
     float radius;
     float2 viewportSize;
 };
 
-float4 GetSnappedColor(float4 color)
-{
-    float3 lightBlue = float3(0.4, 0.4, 1.0);
-    float3 resultRgb = lerp(color.rgb, lightBlue, 0.7); 
-
-    return float4(resultRgb, color.a);
-}
-
 struct VS_INPUT
 {
     float3 position : POSITION;
-    float isVisible : ISVISIBLE;
+    float isMouseOver : ISMOUSEOVER; // 0.0f or 1.0f
     float isSelected : ISSELECTED;
 };
 
@@ -34,7 +27,7 @@ struct GS_OUTPUT
     float4 position : SV_POSITION;
     float4 color : COLOR;
     float2 offset : TEXCOORD0;
-    float isVisible : TEXCOORD1;
+    float isMouseOver : TEXCOORD1;
     float isSelected : TEXCOORD2;
 };
 
@@ -44,7 +37,7 @@ void EmitCorner(VS_INPUT input, float4 position, float4 color, float2 offset, in
     o.position = position;
     o.color = color;
     o.offset = offset;
-    o.isVisible = input.isVisible;
+    o.isMouseOver = input.isMouseOver;
     o.isSelected = input.isSelected;
     output.Append(o);
 }
@@ -63,16 +56,17 @@ VS_INPUT VSMain(VS_INPUT input)
 [maxvertexcount(4)]
 void GSMain(point VS_INPUT input[1], inout TriangleStream<GS_OUTPUT> output)
 {
-    if (input[0].isVisible < 0.5f)
-    {
-        return;
-    }
-    
     float4 color = baseColor;
-    
     if (input[0].isSelected > 0.5)
     {
-        color = selectedColor;
+        if (input[0].isMouseOver > 0.5f)
+        {
+            color = selectedMouseOverColor;
+        }
+        else
+        {
+            color = selectedColor;
+        }
     }
 
     float4 center = mul(float4(input[0].position, 1), transformationMatrix);

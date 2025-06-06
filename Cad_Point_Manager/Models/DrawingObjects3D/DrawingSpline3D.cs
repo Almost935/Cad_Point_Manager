@@ -2,6 +2,7 @@
 using Cad_Point_Manager.Helpers;
 using netDxf.Entities;
 using SharpDX;
+using SharpDX.Direct2D1;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -11,10 +12,10 @@ using System.Threading.Tasks;
 
 namespace Cad_Point_Manager.Models.DrawingObjects3D
 {
-    public class DrawingSpline3D : DrawingSegment3D
+    public class DrawingSpline3D : DrawingGeometry3D
     {
         #region Fields
-        private int _polylineApproximationPrecision = 32;
+        private int _polylineApproximationPrecision = 1000;
         #endregion
 
         #region Properties
@@ -25,6 +26,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         public DrawingSpline3D(Spline spline, ObjectLayer3D layer, bool isPartOfBlock = false, DrawingBlock3D block = null)
         {
             Type = DrawingObject3dType.DrawingSpline3D;
+            EntityObject = spline;
             Layer = layer;
             IsPartOfBlock = isPartOfBlock;
             DrawingBlock3D = block;
@@ -40,13 +42,33 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             if (entity is Spline spline)
             {
                 var polyline = spline.ToPolyline2D(_polylineApproximationPrecision);
-                DrawingPolyline3D = new(polyline, Layer, isPartOfBlock: IsPartOfBlock, block: DrawingBlock3D);
+                PolylineApproximation = new(polyline, Layer, isPartOfBlock: IsPartOfBlock, block: DrawingBlock3D);
+                PolylineApproximation.UpdateVertices((Polyline2D)polyline);
+                Vertices = PolylineApproximation.Vertices;
+
+                UpdateBounds();
             }
             else
             {
                 throw new ArgumentException("entity must be of type Spline");
             }
         }
-    #endregion
-}
+
+        public override void UpdateBounds()
+        {
+            PolylineApproximation.UpdateBounds();
+            Bounds = PolylineApproximation.Bounds;
+        }
+
+        public override double DistanceToPoint(System.Windows.Point p)
+        {
+            return PolylineApproximation.DistanceToPoint(p);
+        }
+
+        public override void DrawToD2dDeviceContext(DeviceContext1 deviceContext, Factory2 factory, Brush brush, float thickness, StrokeStyle1 strokeStyle)
+        {
+            PolylineApproximation.DrawToD2dDeviceContext(deviceContext, factory, brush, thickness, strokeStyle);
+        }
+        #endregion
+    }
 }

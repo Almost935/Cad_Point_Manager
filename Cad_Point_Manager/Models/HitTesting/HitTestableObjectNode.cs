@@ -8,6 +8,7 @@ using SharpDX;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Speech.Recognition;
 using System.Windows;
 
 using Point = System.Windows.Point;
@@ -191,8 +192,6 @@ namespace Cad_Point_Manager.Models.HitTesting
                 }
 
                 //Debug.WriteLine($"\nHitTestNode: {segments.Count} drawing geometries found in range {hitTestRange}");
-
-                List<Vector2> significantPoints = GeometryHelpers.GetSignificantPointsList(segments).Take(5).ToList();
             }
             else if (selectionMode == Enums.SelectionMode.Lines)
             {
@@ -246,7 +245,7 @@ namespace Cad_Point_Manager.Models.HitTesting
         public List<(double distance, Vector2 coordinate)> GetSignificantPoints(Point p, Rect hitTestRange, Enums.SelectionMode selectionMode = Enums.SelectionMode.All)
         {
             Vector2 pos = new((float)p.X, (float)p.Y);
-            ConcurrentBag<DrawingSegment3D> segments = new();
+            ConcurrentBag<DrawingSegment3D> segments = [];
 
             Parallel.ForEach(HitTestableObjects, hitTestableObject =>
             {
@@ -263,6 +262,16 @@ namespace Cad_Point_Manager.Models.HitTesting
                             if (plineSegment.BoundsInRect(hitTestRange))
                             {
                                 segments.Add(plineSegment);
+                            }
+                        }
+                    }
+                    else if (geometry is DrawingSpline3D spline)
+                    {
+                        foreach (var splineSegment in spline.PolylineApproximation.DrawingSegments)
+                        {
+                            if (splineSegment.BoundsInRect(hitTestRange))
+                            {
+                                segments.Add(splineSegment);
                             }
                         }
                     }
@@ -289,8 +298,7 @@ namespace Cad_Point_Manager.Models.HitTesting
                 }
             });
 
-            // Process hits
-            var coords = GeometryHelpers.GetSignificantPointsList(segments.ToList());
+             var coords = GeometryHelpers.GetSignificantPointsList(segments.ToList());
 
             List<(double distance, Vector2 coordinate)> hits = [];
             foreach (var item in coords)
@@ -298,8 +306,9 @@ namespace Cad_Point_Manager.Models.HitTesting
                 float d = Vector2.Distance(item, pos);
                 hits.Add((d, item));
             }
-
             hits.Sort((a, b) => a.distance.CompareTo(b.distance));
+            var fiveHits = hits.Take(5).ToList();                                
+
             return hits.Take(5).ToList();
         }
 
