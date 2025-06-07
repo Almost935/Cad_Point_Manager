@@ -74,5 +74,24 @@ namespace Cad_Point_Manager.Models.HitTesting
             return MathHelpers.PointToPointDistance(p, Position.ToPoint());
         }
         #endregion
+
+        #region Static Methods
+        public static bool EqualsWithTolerance(HitTestablePoint p1, HitTestablePoint p2, float tolerance)
+        {
+            return Math.Abs(p1.Position.X - p2.Position.X) <= tolerance &&
+                   Math.Abs(p1.Position.Y - p2.Position.Y) <= tolerance &&
+                   Math.Abs(p1.Position.Z - p2.Position.Z) <= tolerance;
+        }
+
+        public static bool EqualsWithTolerance2D(HitTestablePoint p1, HitTestablePoint p2, float tolerance)
+        {
+            return Math.Abs(p1.Position.X - p2.Position.X) <= tolerance &&
+                  Math.Abs(p1.Position.Y - p2.Position.Y) <= tolerance;
+        }
+        public static float GetDistance2D(HitTestablePoint p1, HitTestablePoint p2)
+        {
+            return Vector2.Distance(p1.Position.ToVector2(), p2.Position.ToVector2());
+        }
+        #endregion
     }
 }

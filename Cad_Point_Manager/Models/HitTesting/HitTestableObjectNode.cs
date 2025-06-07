@@ -161,40 +161,11 @@ namespace Cad_Point_Manager.Models.HitTesting
         /// <param name="p">The point from which the distance to the objects is determined</param>
         /// <param name="hitTestRange">The bounds that define the minimum distance from the point that the object can lie.</param>
         /// <returns></returns>
-        public List<(double distance, HitTestableObject hitTestableObject)> HitTestNode(Point p, Rect hitTestRange, Enums.SelectionMode selectionMode = Enums.SelectionMode.All)
+        public List<(double distance, HitTestableObject hitTestableObject)> GetHitTestableObjects(Point p, Rect hitTestRange, Enums.SelectionMode selectionMode = Enums.SelectionMode.All)
         {
-            List<(double distance, HitTestableObject hitTestableObject)> hits = [];
-
-            if (selectionMode == Enums.SelectionMode.Points)
+            if (selectionMode == Enums.SelectionMode.Lines)
             {
-                Vector2 pos = new((float)p.X, (float)p.Y);
-
-                List<DrawingSegment3D> segments = [];
-                foreach (var geometry in HitTestableObjects.OfType<DrawingGeometry3D>())
-                {
-                    if (geometry.Layer.IsVisible)
-                    {
-                        if (geometry is DrawingSegment3D segment && segment.BoundsInRect(hitTestRange))
-                        {
-                            segments.Add(segment);
-                        }
-                        else if (geometry is DrawingPolyline3D polyline)
-                        {
-                            foreach (var plineSegment in polyline.DrawingSegments)
-                            {
-                                if (plineSegment.BoundsInRect(hitTestRange))
-                                {
-                                    segments.Add(plineSegment);
-                                }
-                            }
-                        }
-                    }
-                }
-
-                //Debug.WriteLine($"\nHitTestNode: {segments.Count} drawing geometries found in range {hitTestRange}");
-            }
-            else if (selectionMode == Enums.SelectionMode.Lines)
-            {
+                List<(double distance, DrawingGeometry3D geometry)> geometries = [];
                 foreach (var hitTestableObject in HitTestableObjects)
                 {
                     if (hitTestableObject is DrawingGeometry3D drawingGeometry3D)
@@ -204,14 +175,17 @@ namespace Cad_Point_Manager.Models.HitTesting
                             if (drawingGeometry3D.BoundsInRect(hitTestRange))
                             {
                                 double d = drawingGeometry3D.DistanceToPoint(p);
-                                hits.Add((d, drawingGeometry3D));
+                                geometries.Add((d, drawingGeometry3D));
                             }
                         }
                     }
                 }
+                return geometries;
             }
             else
             {
+                List<(double distance, HitTestableObject hitTestableObject)> hits = [];
+
                 foreach (var hitTestableObject in HitTestableObjects)
                 {
                     if (hitTestableObject is DrawingObject3D drawingObject)

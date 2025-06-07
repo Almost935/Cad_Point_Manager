@@ -10,7 +10,6 @@ namespace Cad_Point_Manager.Helpers
     {
         public static List<Vector2> GetSignificantPointsList(List<DrawingSegment3D> segments)
         {
-            Stopwatch stopwatch = Stopwatch.StartNew();
             var allPoints = new ConcurrentBag<Vector2>();
 
             Parallel.ForEach(Enumerable.Range(0, segments.Count), () => new List<Vector2>(),
@@ -44,10 +43,6 @@ namespace Cad_Point_Manager.Helpers
                     return localList;
                 },
                 localList => { foreach (var pt in localList) allPoints.Add(pt); });
-
-            stopwatch.Stop();
-            if (stopwatch.ElapsedMilliseconds > 0)
-                Debug.WriteLine($"GetSignificantPointsList took {stopwatch.ElapsedMilliseconds} ms");
 
             return allPoints.Distinct(new Vector2EqualityComparer(1e-5f)).ToList();
         }

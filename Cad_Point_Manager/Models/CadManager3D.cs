@@ -17,6 +17,7 @@ using System.Windows.Data;
 
 using Point = System.Windows.Point;
 using Vector2 = SharpDX.Vector2;
+using Vector3 = SharpDX.Vector3;
 
 namespace Cad_Point_Manager.Models
 {
@@ -199,8 +200,6 @@ namespace Cad_Point_Manager.Models
 
             // Testing
             GetTestDxfPoints();
-            //PointTextVerticesDirty = true;
-            //PointCircleVerticesDirty = true;
 
             foreach (var e in DxfDocument.Entities.All)
             {
@@ -255,6 +254,48 @@ namespace Cad_Point_Manager.Models
             PointGroupsView.SortDescriptions.Add(new SortDescription("Name", ListSortDirection.Ascending));
         }
 
+        public List<(double distance, HitTestablePoint point)> GetNearestHitTestablePoints(Point p, float tolerance)
+        {
+            List<(double distance, HitTestablePoint point)> hits = [];
+
+            if (HitTestableObjectTree is null) { return hits; }
+
+            Rect rect = new(p.X - tolerance, p.Y - tolerance, tolerance * 2, tolerance * 2);
+            var nodes = HitTestableObjectTree.GetIntersectingNodes(rect);
+
+            List<(double distance, Vector2 coords)> significantPoints = [];
+            foreach (var node in nodes)
+            {
+                significantPoints.AddRange(node.GetSignificantPoints(p, rect, Enums.SelectionMode.Points));
+            }
+            foreach (var (distance, coords) in significantPoints)
+            {
+                hits.Add((distance, new HitTestablePoint(coords.ToVector3())));
+            }
+
+            return hits;
+        }
+        public List<(double distance, DrawingGeometry3D geometries)> GetNearestHitTestableGeometries(Point p, float tolerance)
+        {
+            List<(double distance, DrawingGeometry3D geometries)> hits = [];
+
+            if (HitTestableObjectTree is null) { return hits; }
+
+            Rect rect = new(p.X - tolerance, p.Y - tolerance, tolerance * 2, tolerance * 2);
+            var nodes = HitTestableObjectTree.GetIntersectingNodes(rect);
+
+            List<(double distance, Vector2 coords)> significantPoints = [];
+            foreach (var node in nodes)
+            {
+                significantPoints.AddRange(node.GetSignificantPoints(p, rect, Enums.SelectionMode.Points));
+            }
+            foreach (var (distance, coords) in significantPoints)
+            {
+                hits.Add((distance, new HitTestablePoint(coords.ToVector3())));
+            }
+
+            return hits;
+        }
         public List<(double distance, HitTestableObject hitTestableObject)> GetNearestHitTestableObjects(Point p, float tolerance)
         {
             List<(double distance, HitTestableObject hitTestableObject)> hits = [];
@@ -264,30 +305,18 @@ namespace Cad_Point_Manager.Models
             Rect rect = new(p.X - tolerance, p.Y - tolerance, tolerance * 2, tolerance * 2);
             var nodes = HitTestableObjectTree.GetIntersectingNodes(rect);
 
-            if (SnapSelectionMode == Enums.SelectionMode.Points)
-            {
-                List<(double distance, Vector2 coords)> significantPoints = [];
-                foreach (var node in nodes)
-                {
-                    significantPoints.AddRange(node.GetSignificantPoints(p, rect, Enums.SelectionMode.Points));
-                }
-                foreach (var (distance, coords) in significantPoints)
-                {
-                    hits.Add((distance, new HitTestablePoint(coords.ToVector3())));
-                }
-            }
-            else if (SnapSelectionMode == Enums.SelectionMode.Lines)
+            if (SnapSelectionMode == Enums.SelectionMode.Lines)
             {
                 foreach (var node in nodes)
                 {
-                    hits.AddRange(node.HitTestNode(p, rect, Enums.SelectionMode.Lines));
+                    hits.AddRange(node.GetHitTestableObjects(p, rect, Enums.SelectionMode.Lines));
                 }
             }
             else
             {
                 foreach (var node in nodes)
                 {
-                    hits.AddRange(node.HitTestNode(p, rect, Enums.SelectionMode.All));
+                    hits.AddRange(node.GetHitTestableObjects(p, rect, Enums.SelectionMode.All));
                 }
             }
 

@@ -9,7 +9,6 @@ namespace Cad_Point_Manager.Helpers
         public const float _lineGlowTransparency = 0.5f;
         public const float _lineGlowPixelWidth = 5;
 
-
         public const float _textHeightToGlowOffsetFactor = 0.05f;
         public const int _initialLineVertices = 5000;
         public const int _initialTextVertices = 5000;
@@ -22,8 +21,7 @@ namespace Cad_Point_Manager.Helpers
         public const float _textHeightToSpaceWidthFactor = 0.5f;
 
         public static readonly Vector4 _selectedObjectColor = new(16.0f / 255.0f, 191.0f / 255.0f, 0, 1);
-        //public static readonly Vector4 _selectedMouseOverObjectColor = new(127.0f / 255.0f, 1.0f, 116.0f / 255.0f, 1);
-        public static readonly Vector4 _selectedMouseOverObjectColor = new(255.0f / 255.0f, 0.0f, 0.0f / 255.0f, 1);
+        public static readonly Vector4 _selectedMouseOverObjectColor = new(127.0f / 255.0f, 1.0f, 116.0f / 255.0f, 1);
         public static readonly Vector4 _selectedMouseOverGlowColor = new(170.0f / 255.0f, 252.0f / 255.0f, 235.0f / 255.0f, 1);
         
         public static readonly Vector4 _sigPointColor = new(50.0f / 255.0f, 200.0f / 255.0f, 255.0f / 255.0f, 1);

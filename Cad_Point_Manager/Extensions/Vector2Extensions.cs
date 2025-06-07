@@ -15,5 +15,11 @@ namespace Cad_Point_Manager.Extensions
         {
             return new Vector3(v.X, v.Y, elevation);
         }
+
+        public static bool EqualsWithTolerance(this Vector2 v1, Vector2 v2, float tolerance)
+        {
+            return Math.Abs(v1.X - v2.X) <= tolerance &&
+                   Math.Abs(v1.Y - v2.Y) <= tolerance;
+        }
     }
 }

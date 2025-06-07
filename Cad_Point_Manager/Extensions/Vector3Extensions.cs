@@ -18,5 +18,22 @@ namespace Cad_Point_Manager.Extensions
         {
             return new System.Windows.Point(v.X, v.Y);
         }
+
+        public static bool EqualsWithTolerance(this Vector3 v1, Vector3 v2, float tolerance)
+        {
+            return Math.Abs(v1.X - v2.X) <= tolerance &&
+                   Math.Abs(v1.Y - v2.Y) <= tolerance &&
+                   Math.Abs(v1.Z - v2.Z) <= tolerance;
+        }
+
+        public static bool EqualsWithTolerance2D(this Vector3 v1, Vector3 v2, float tolerance)
+        {
+            return Math.Abs(v1.X - v2.X) <= tolerance &&
+                   Math.Abs(v1.Y - v2.Y) <= tolerance;
+        }
+        public static float GetDistance2D(this Vector3 v1, Vector3 v2)
+        {
+            return Vector2.Distance(v1.ToVector2(), v2.ToVector2());
+        }
     }
 }

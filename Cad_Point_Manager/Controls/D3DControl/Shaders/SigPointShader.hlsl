@@ -57,16 +57,20 @@ VS_INPUT VSMain(VS_INPUT input)
 void GSMain(point VS_INPUT input[1], inout TriangleStream<GS_OUTPUT> output)
 {
     float4 color = baseColor;
-    if (input[0].isSelected > 0.5)
+    if (input[0].isMouseOver > 0.5f)
     {
-        if (input[0].isMouseOver > 0.5f)
+        if (input[0].isSelected > 0.5f)
         {
             color = selectedMouseOverColor;
         }
-        else
-        {
-            color = selectedColor;
-        }
+    }
+    else if (input[0].isSelected > 0.5f)
+    {
+        color = selectedColor;
+    }
+    else
+    {
+        return;
     }
 
     float4 center = mul(float4(input[0].position, 1), transformationMatrix);
@@ -74,7 +78,7 @@ void GSMain(point VS_INPUT input[1], inout TriangleStream<GS_OUTPUT> output)
     float radiusX = pixelRadiusClip.x;
     float radiusY = pixelRadiusClip.y;
     
-    EmitCorner(input[0], float4(center.x - radiusX, center.y + radiusY, 0, 1), color, float2(-1, 1) , output); // TL
+    EmitCorner(input[0], float4(center.x - radiusX, center.y + radiusY, 0, 1), color, float2(-1, 1), output); // TL
     EmitCorner(input[0], float4(center.x - radiusX, center.y - radiusY, 0, 1), color, float2(-1, -1), output); // BL
     EmitCorner(input[0], float4(center.x + radiusX, center.y + radiusY, 0, 1), color, float2(1, 1), output); // TR
     EmitCorner(input[0], float4(center.x + radiusX, center.y - radiusY, 0, 1), color, float2(1, -1), output); // BR
