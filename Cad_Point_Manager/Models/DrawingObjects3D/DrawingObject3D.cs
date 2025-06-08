@@ -1,4 +1,5 @@
-﻿using netDxf.Entities;
+﻿using Cad_Point_Manager.Models.HitTesting;
+using netDxf.Entities;
 using SharpDX;
 using SharpDX.Direct2D1;
 using System.ComponentModel;
@@ -25,6 +26,11 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         #endregion
 
         #region Methods
+        public override string ToString()
+        {
+            return Type.ToString();
+        }
+
         public abstract void UpdateData(EntityObject entity);
         public abstract void DrawToD2dDeviceContext(DeviceContext1 deviceContext, Factory2 factory, Brush brush, float thickness, StrokeStyle1 strokeStyle);
 

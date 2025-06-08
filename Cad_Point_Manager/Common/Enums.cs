@@ -14,7 +14,7 @@
         public enum SelectionMode
         {
             Points,
-            Lines,
+            Geometries,
             All
         }
 

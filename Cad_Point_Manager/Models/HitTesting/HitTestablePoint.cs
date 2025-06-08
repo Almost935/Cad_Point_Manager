@@ -22,6 +22,7 @@ namespace Cad_Point_Manager.Models.HitTesting
 
         #region Properties
         public Vector3 Position;
+
         public SigPointVertex SigPointVertex
         {
             get { return _sigPointVertex; }
@@ -30,6 +31,8 @@ namespace Cad_Point_Manager.Models.HitTesting
                 _sigPointVertex = value;
             }
         }
+
+        public int Index { get; set; }
         #endregion
 
         #region Constructors
@@ -42,7 +45,7 @@ namespace Cad_Point_Manager.Models.HitTesting
 
         #region Methods
         public override void MouseEnter()
-        {
+        { 
             this.IsMouseOver = true;
             _sigPointVertex.SetIsMouseOver(true);
         }

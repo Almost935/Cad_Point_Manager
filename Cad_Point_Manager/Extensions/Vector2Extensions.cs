@@ -1,5 +1,5 @@
 ﻿using SharpDX;
-
+using System.Windows;
 using Point = System.Windows.Point;
 
 namespace Cad_Point_Manager.Extensions
@@ -14,6 +14,11 @@ namespace Cad_Point_Manager.Extensions
         public static Vector3 ToVector3(this Vector2 v, float elevation = 0.0f)
         {
             return new Vector3(v.X, v.Y, elevation);
+        }
+
+        public static Vector ToVector(this Vector2 v)
+        {
+            return new Vector(v.X, v.Y);
         }
 
         public static bool EqualsWithTolerance(this Vector2 v1, Vector2 v2, float tolerance)

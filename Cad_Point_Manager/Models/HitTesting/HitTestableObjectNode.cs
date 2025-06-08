@@ -161,62 +161,58 @@ namespace Cad_Point_Manager.Models.HitTesting
         /// <param name="p">The point from which the distance to the objects is determined</param>
         /// <param name="hitTestRange">The bounds that define the minimum distance from the point that the object can lie.</param>
         /// <returns></returns>
-        public List<(double distance, HitTestableObject hitTestableObject)> GetHitTestableObjects(Point p, Rect hitTestRange, Enums.SelectionMode selectionMode = Enums.SelectionMode.All)
+        public List<(double distance, HitTestableObject hitTestableObject)> HitTestAll(Point p, Rect hitTestRange)
         {
-            if (selectionMode == Enums.SelectionMode.Lines)
+            List<(double distance, HitTestableObject hitTestableObject)> hits = [];
+
+            foreach (var hitTestableObject in HitTestableObjects)
             {
-                List<(double distance, DrawingGeometry3D geometry)> geometries = [];
-                foreach (var hitTestableObject in HitTestableObjects)
+                if (hitTestableObject is DrawingObject3D drawingObject)
                 {
-                    if (hitTestableObject is DrawingGeometry3D drawingGeometry3D)
+                    if (drawingObject.Layer.IsVisible)
                     {
-                        if (drawingGeometry3D.Layer.IsVisible)
+                        if (drawingObject.BoundsInRect(hitTestRange))
                         {
-                            if (drawingGeometry3D.BoundsInRect(hitTestRange))
-                            {
-                                double d = drawingGeometry3D.DistanceToPoint(p);
-                                geometries.Add((d, drawingGeometry3D));
-                            }
+                            double d = drawingObject.DistanceToPoint(p);
+                            hits.Add((d, drawingObject));
                         }
                     }
                 }
-                return geometries;
-            }
-            else
-            {
-                List<(double distance, HitTestableObject hitTestableObject)> hits = [];
-
-                foreach (var hitTestableObject in HitTestableObjects)
+                if (hitTestableObject is DxfPoint dxfPoint)
                 {
-                    if (hitTestableObject is DrawingObject3D drawingObject)
+                    if (dxfPoint.PointGroup.IsVisible)
                     {
-                        if (drawingObject.Layer.IsVisible)
+                        if (dxfPoint.BoundsInRect(hitTestRange))
                         {
-                            if (drawingObject.BoundsInRect(hitTestRange))
-                            {
-                                double d = drawingObject.DistanceToPoint(p);
-                                hits.Add((d, drawingObject));
-                            }
-                        }
-                    }
-                    if (hitTestableObject is DxfPoint dxfPoint)
-                    {
-                        if (dxfPoint.PointGroup.IsVisible)
-                        {
-                            if (dxfPoint.BoundsInRect(hitTestRange))
-                            {
-                                double d = dxfPoint.DistanceToPoint(p);
-                                hits.Add((d, dxfPoint));
-                            }
+                            double d = dxfPoint.DistanceToPoint(p);
+                            hits.Add((d, dxfPoint));
                         }
                     }
                 }
             }
-
             return hits;
         }
+        public List<(double distance, DrawingGeometry3D geometry)> HitTestGeometries(Point p, Rect hitTestRange)
+        {
+            List<(double distance, DrawingGeometry3D geometry)> geometries = [];
 
-        public List<(double distance, Vector2 coordinate)> GetSignificantPoints(Point p, Rect hitTestRange, Enums.SelectionMode selectionMode = Enums.SelectionMode.All)
+            foreach (var hitTestableObject in HitTestableObjects)
+            {
+                if (hitTestableObject is DrawingGeometry3D drawingGeometry3D)
+                {
+                    if (drawingGeometry3D.Layer.IsVisible)
+                    {
+                        if (drawingGeometry3D.BoundsInRect(hitTestRange))
+                        {
+                            double d = drawingGeometry3D.DistanceToPoint(p);
+                            geometries.Add((d, drawingGeometry3D));
+                        }
+                    }
+                }
+            }
+            return geometries;
+        }
+        public List<(double distance, Vector2 coordinate)> HitTestSignificantPoints(Point p, Rect hitTestRange)
         {
             Vector2 pos = new((float)p.X, (float)p.Y);
             ConcurrentBag<DrawingSegment3D> segments = [];
@@ -272,7 +268,7 @@ namespace Cad_Point_Manager.Models.HitTesting
                 }
             });
 
-             var coords = GeometryHelpers.GetSignificantPointsList(segments.ToList());
+            var coords = GeometryHelpers.GetSignificantPointsList(segments.ToList());
 
             List<(double distance, Vector2 coordinate)> hits = [];
             foreach (var item in coords)
@@ -281,12 +277,9 @@ namespace Cad_Point_Manager.Models.HitTesting
                 hits.Add((d, item));
             }
             hits.Sort((a, b) => a.distance.CompareTo(b.distance));
-            var fiveHits = hits.Take(5).ToList();                                
 
-            return hits.Take(5).ToList();
+            return hits.ToList();
         }
-
-
         private void Subdivide()
         {
             if (Level > 0)

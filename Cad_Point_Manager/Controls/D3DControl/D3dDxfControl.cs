@@ -17,6 +17,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.DirectoryServices.ActiveDirectory;
 using System.IO;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Transactions;
@@ -150,10 +151,18 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private float _hittestStrokeThickness;
         private Point _lastHitTestCoords;
         private CancellationTokenSource _hitTestCancellationTokenSource;
+        private int _currentSnapHitTestIndex = 0; // Represents the current placement in snapped list. Changes on tab press.
+        private int _lastSnapHitTestIndex = 0;
+        private const int _maxSelectableObjects = 5;
+        private List<(double distance, HitTestablePoint hitTestablePoint)> _nearestHitTestablePoints = [];
+        private HitTestablePoint _snappedHitTestablePoint = null;
+        private List<HitTestablePoint> _selectedHitTestablePoints = [];
+        private List<(double distance, DrawingGeometry3D geometry)> _nearestHitTestableGeometries = [];
+        private HitTestableObject _snappedHitTestableGeometry = null;
+        private List<HitTestableObject> _selectedHitTestableGeometries = [];
         private List<(double distance, HitTestableObject hitTestableObject)> _nearestHitTestableObjects = [];
         private HitTestableObject _snappedHitTestableObject = null;
         private List<HitTestableObject> _selectedHitTestableObjects = [];
-        private List<HitTestablePoint> _activeSigPoints = [];
         #endregion
 
         #region Properties 
@@ -511,36 +520,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             //Debug.WriteLine($"DrawCirclesWithShader Time: {stopwatch.ElapsedMilliseconds} ms");
         }
 
-        private void TestCircleShader()
-        {
-            // GSMain
-            var transformationMatrix = _camera.ViewProjectionMatrix;
-            Vector4 center4d = Vector4.Transform(new Vector4(_testVertex.Position, 1), transformationMatrix);
-            Vector2 center = new Vector2(center4d.X, center4d.Y);
-            float radiusX = _testVertex.Radius * transformationMatrix.M11;
-            float radiusY = _testVertex.Radius * transformationMatrix.M22;
-
-            float left = center.X - radiusX;
-            float right = center.X + radiusX;
-            float top = center.Y + radiusY;
-            float bottom = center.Y - radiusY;
-
-            Vector2 topLeft = new Vector2(left, top);
-            Vector2 bottomLeft = new Vector2(left, bottom);
-            Vector2 topRight = new Vector2(right, top);
-            Vector2 bottomRight = new Vector2(right, bottom);
-
-            // PSMain
-            //float2 dist = length(input.position.xy - input.center);
-            //if (dist.x > input.radiusX || dist.y > input.radiusY)
-            //{
-            //    discard;
-            //}
-
-            Vector2 testDist = topLeft - center;
-
-        }
-
         private void UpdateLineVertices()
         {
             if (_lineVertexBuffer is null || CadManager3D is null) { return; }
@@ -555,7 +534,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
         private void UpdateLineGlowVertices()
         {
-            if (_lineGlowVertexBuffer == null || _lineGlowVertices == null || _lineGlowVertices.Count == 0)
+            if (_lineGlowVertexBuffer == null)
             {
                 _lineGlowVerticesDirty = false;
                 return;
@@ -585,7 +564,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
         private void UpdateTextGlowVertices()
         {
-            if (_textGlowVertexBuffer == null || _textGlowVertices.Count == 0)
+            if (_textGlowVertexBuffer == null)
             {
                 _textGlowVerticesDirty = false;
                 return;
@@ -627,7 +606,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
         private void UpdateCircleGlowVertices()
         {
-            if (_circleGlowVertexBuffer is null || _circleGlowVertices.Count == 0) { return; }
+            if (_circleGlowVertexBuffer is null) { return; }
 
             var context = _d3dResCache.DeviceContext;
             _circleGlowVertexBuffer.Update(context, _circleGlowVertices.ToArray());
@@ -638,25 +617,20 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private void UpdateSigPointVertices()
         {
             _sigPointVertices.Clear();
-            _sigPointVertices.AddRange(_activeSigPoints.Select(point => point.SigPointVertex));
+            _sigPointVertices.AddRange(_selectedHitTestablePoints.Select(point => point.SigPointVertex));
 
-            if (_sigPointVertexBuffer is null || _sigPointVertices.Count == 0) { return; }
+            if (_snappedHitTestablePoint is not null)
+            {
+                _sigPointVertices.Add(_snappedHitTestablePoint.SigPointVertex);
+            }
+
+            if (_sigPointVertexBuffer is null) { return; }
 
             var context = _d3dResCache.DeviceContext;
             _sigPointVertexBuffer.Update(context, _sigPointVertices.ToArray());
 
             _sigPointVerticesDirty = false;
             D3dIsDirty = true;
-
-            //Debug.WriteLine($"\n_sigPointVertices.Count: {_sigPointVertices.Count}");
-            //foreach (var vertex in _sigPointVertices)
-            //{
-            //    Debug.WriteLine($"vertex.IsMouseOver: {vertex.IsMouseOver} vertex.IsSelected: {vertex.IsSelected}");
-            //}
-            //foreach (var point in _activeSigPoints)
-            //{
-            //    Debug.WriteLine($"point.IsMouseOver: {point.IsMouseOver} point.IsSelected: {point.IsSelected}");
-            //}
         }
 
         private void InitializeLineShader()
@@ -1090,6 +1064,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _d3dResCache.DeviceContext.UpdateSubresource(ref sigPointsSettings, _sigPointSettingsBuffer);
 
             ConstantBuffersDirty = false;
+            D3dIsDirty = true;
         }
 
         private void GetInitialMatrix()
@@ -1128,11 +1103,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             if (e.MiddleButton == MouseButtonState.Pressed)
             {
                 _isPanning = true;
-
-                ResetSnappedObjects();
-
-                _lineGlowVerticesDirty = true;
-                D3dIsDirty = true;
             }
         }
         protected override void OnMouseUp(MouseButtonEventArgs e)
@@ -1160,7 +1130,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 {
                     _camera.Pan(currentMousePos, _prevMousePos);
                     ConstantBuffersDirty = true;
-                    D3dIsDirty = true;
                     e.Handled = true;
                 }
                 _prevMousePos = currentMousePos;
@@ -1182,8 +1151,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _hittestStrokeThickness = 7.0f / (_camera.InitialViewMatrix.M11 * _camera.CurrentZoom);
 
             ConstantBuffersDirty = true;
-            D3dIsDirty = true;
-            //e.Handled = true;
+            e.Handled = true;
         }
         protected override void OnMouseLeave(MouseEventArgs e)
         {
@@ -1194,9 +1162,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _isPanning = false;
 
             ResetSnappedObjects();
-
-            _lineGlowVerticesDirty = true;
-            D3dIsDirty = true;
         }
         protected override void OnMouseEnter(MouseEventArgs e)
         {
@@ -1208,46 +1173,58 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
         protected override void OnMouseLeftButtonUp(MouseButtonEventArgs e)
         {
-            if (_snappedHitTestableObject is not null)
+            switch (CadManager3D.SnapSelectionMode)
             {
-                //if (_snappedHitTestableObject is HitTestablePoint p &&
-                //    TryGetSignificantPoint(p, out HitTestablePoint existingPoint))
-                //{
-                //    _snappedHitTestableObject = existingPoint;
-                //}
-                //if (_snappedHitTestableObject is HitTestablePoint p)
-                //{
-                //    _snappedHitTestableObject = GetSignificantPoint(p);
-                //}
-
-                if (_snappedHitTestableObject.IsSelected)
-                {
-                    DeselectObject(_snappedHitTestableObject);
-
-                    if (_snappedHitTestableObject is DrawingGeometry3D) { _lineVerticesDirty = true; _lineGlowVerticesDirty = true; }
-                    else if (_snappedHitTestableObject is DrawingMtext3D) { _textVerticesDirty = true; }
-                    else if (_snappedHitTestableObject is HitTestablePoint point)
+                case Common.Enums.SelectionMode.Points:
+                    if (_snappedHitTestablePoint is not null)
                     {
-                        _sigPointVerticesDirty = true;
+                        if (_snappedHitTestablePoint.IsSelected)
+                        {
+                            DeselectObject(_snappedHitTestablePoint);
+                            SetVerticesDirty(_snappedHitTestablePoint);
+                        }
+                        else
+                        {
+                            SelectObject(_snappedHitTestablePoint);
+                            SetVerticesDirty(_snappedHitTestablePoint);
+                        }
                     }
-                    else { _lineVerticesDirty = true; _textVerticesDirty = true; }
+                    break;
 
-                    D3dIsDirty = true;
-                }
-                else
-                {
-                    SelectObject(_snappedHitTestableObject);
-
-                    if (_snappedHitTestableObject is DrawingGeometry3D) { _lineVerticesDirty = true; _lineGlowVerticesDirty = true; }
-                    else if (_snappedHitTestableObject is DrawingMtext3D) { _textVerticesDirty = true; }
-                    else if (_snappedHitTestableObject is HitTestablePoint point)
+                case Common.Enums.SelectionMode.Geometries:
+                    if (_snappedHitTestableGeometry is not null)
                     {
-                        _sigPointVerticesDirty = true;
+                        if (_snappedHitTestableGeometry.IsSelected)
+                        {
+                            DeselectObject(_snappedHitTestableGeometry);
+                            SetVerticesDirty(_snappedHitTestableGeometry);
+                        }
+                        else
+                        {
+                            SelectObject(_snappedHitTestableGeometry);
+                            SetVerticesDirty(_snappedHitTestableGeometry);
+                        }
                     }
-                    else { _lineVerticesDirty = true; _textVerticesDirty = true; }
+                    break;
 
-                    D3dIsDirty = true;
-                }
+                case Common.Enums.SelectionMode.All:
+                    if (_snappedHitTestableObject is not null)
+                    {
+                        if (_snappedHitTestableObject.IsSelected)
+                        {
+                            DeselectObject(_snappedHitTestableObject);
+                            SetVerticesDirty(_snappedHitTestableObject);
+                        }
+                        else
+                        {
+                            SelectObject(_snappedHitTestableObject);
+                            SetVerticesDirty(_snappedHitTestableObject);
+                        }
+                    }
+                    break;
+
+                default:
+                    break;
             }
         }
         private void Window_KeyUp(object sender, KeyEventArgs e)
@@ -1255,6 +1232,10 @@ namespace Cad_Point_Manager.Controls.D3DControl
             if (e.Key == Key.Escape)
             {
                 ResetSelectedObjects();
+            }
+            if (e.Key == Key.Tab)
+            {
+                _currentSnapHitTestIndex += 1;
             }
         }
         protected override void OnRenderSizeChanged(SizeChangedInfo sizeInfo)
@@ -1283,8 +1264,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             ResetSnappedObjects();
 
             ConstantBuffersDirty = true;
-            _lineGlowVerticesDirty = true;
-            D3dIsDirty = true;
         }
 
         public async Task RunHitTestingAsync()
@@ -1296,10 +1275,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 switch (CadManager3D.SnapSelectionMode)
                 {
                     case Common.Enums.SelectionMode.Points:
-                        
+                        RunPointsHitTest(_hitTestCancellationTokenSource.Token);
                         break;
 
-                    case Common.Enums.SelectionMode.Lines:
+                    case Common.Enums.SelectionMode.Geometries:
+                        RunGeometriesHitTest(_hitTestCancellationTokenSource.Token);
                         break;
 
                     default:
@@ -1327,63 +1307,145 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             _lastHitTestCoords = new(DxfCoords.X, DxfCoords.Y);
 
-            bool d3dIsDirty = false;
+            bool sigPointVerticesDirty = false;
+
             Rect rect = new(_lastHitTestCoords.X - _hittestStrokeThickness, _lastHitTestCoords.Y - _hittestStrokeThickness,
                 _hittestStrokeThickness * 2, _hittestStrokeThickness * 2);
-            var snappedCopy = _snappedHitTestableObject;
-            var oldSnappedObject = _snappedHitTestableObject;
+            var snappedHitTestablePointCopy = _snappedHitTestablePoint;
 
-            if (snappedCopy is not null)
+            if (snappedHitTestablePointCopy is not null)
             {
-                if (snappedCopy.DistanceToPoint(_lastHitTestCoords) > _hittestStrokeThickness)
+                var testDistance = snappedHitTestablePointCopy.DistanceToPoint(_lastHitTestCoords);
+
+                if (snappedHitTestablePointCopy.DistanceToPoint(_lastHitTestCoords) > _hittestStrokeThickness ||
+                    _currentSnapHitTestIndex != _lastSnapHitTestIndex)
                 {
                     ResetSnappedObjects();
-                    _nearestHitTestableObjects = CadManager3D.GetNearestHitTestableObjects(_lastHitTestCoords, _hittestStrokeThickness);
 
-                    if (_nearestHitTestableObjects.Count > 0)
+                    sigPointVerticesDirty = true;
+
+                    _nearestHitTestablePoints = CadManager3D.HitTestSignficantPoints(_lastHitTestCoords, _hittestStrokeThickness).Take(_maxSelectableObjects).ToList();
+                    if (_nearestHitTestablePoints.Count > 0)
                     {
-                        var (distance, obj) = _nearestHitTestableObjects.First();
+                        bool exists = HitTestingHelpers.TryGetNextHitTestablePoint(_currentSnapHitTestIndex, _nearestHitTestablePoints, out var tup);
+                        if (!exists) { _currentSnapHitTestIndex = 0; }
+                        exists = HitTestingHelpers.TryGetNextHitTestablePoint(_currentSnapHitTestIndex, _nearestHitTestablePoints, out tup);
 
-                        if (distance <= _hittestStrokeThickness)
+                        if (exists)
                         {
-                            if (_snappedHitTestableObject is HitTestablePoint p)
-                            {
-                                _snappedHitTestableObject = GetSignificantPoint(p);
-                            }
+                            var (distance, point) = tup;
 
-                            _snappedHitTestableObject = obj;
-                            SnapObject(_snappedHitTestableObject);
+                            if (distance <= _hittestStrokeThickness)
+                            {
+                                _snappedHitTestablePoint = GetSignificantPoint(point);
+                                SnapObject(_snappedHitTestablePoint);
+                                _lastSnapHitTestIndex = _currentSnapHitTestIndex;
+                            }
                         }
                     }
-                    d3dIsDirty = true;
                 }
                 else { return; }
             }
             else
             {
-                _nearestHitTestableObjects = CadManager3D.GetNearestHitTestableObjects(_lastHitTestCoords, _hittestStrokeThickness);
+                _nearestHitTestablePoints = CadManager3D.HitTestSignficantPoints(_lastHitTestCoords, _hittestStrokeThickness).Take(_maxSelectableObjects).ToList();
+                if (_nearestHitTestablePoints.Count < 1) { return; }
 
-                if (_nearestHitTestableObjects.Count > 0)
+                bool exists = HitTestingHelpers.TryGetNextHitTestablePoint(_currentSnapHitTestIndex, _nearestHitTestablePoints, out var tup);
+                if (!exists) { _currentSnapHitTestIndex = 0; }
+                exists = HitTestingHelpers.TryGetNextHitTestablePoint(_currentSnapHitTestIndex, _nearestHitTestablePoints, out tup);
+
+                if (exists)
                 {
-                    var (distance, obj) = _nearestHitTestableObjects.First();
+                    var (distance, point) = tup;
 
                     if (distance <= _hittestStrokeThickness)
                     {
-                        if (_snappedHitTestableObject is HitTestablePoint p)
-                        {
-                            _snappedHitTestableObject = GetSignificantPoint(p);
-                        }
+                        _snappedHitTestablePoint = GetSignificantPoint(point);
+                        SnapObject(_snappedHitTestablePoint);
+                        _lastSnapHitTestIndex = _currentSnapHitTestIndex;
 
-                        _snappedHitTestableObject = obj;
-                        SnapObject(_snappedHitTestableObject);
-
-                        d3dIsDirty = true;
+                        sigPointVerticesDirty = true;
                     }
                 }
             }
-            SetVerticesDirty(_snappedHitTestableObject);
-            SetVerticesDirty(oldSnappedObject);
-            D3dIsDirty = d3dIsDirty;
+
+            _sigPointVerticesDirty = sigPointVerticesDirty;
+        }
+        private void RunGeometriesHitTest(CancellationToken token)
+        {
+            // Check for cancellation
+            if (token.IsCancellationRequested)
+            {
+                token.ThrowIfCancellationRequested();
+            }
+
+            if (!Dispatcher.CheckAccess())
+            {
+                Dispatcher.Invoke(() => RunObjectHitTest(token));
+                return;
+            }
+
+            if (!CadManager3D.DxfLoaded) { return; }
+
+            _lastHitTestCoords = new(DxfCoords.X, DxfCoords.Y);
+
+            Rect rect = new(_lastHitTestCoords.X - _hittestStrokeThickness, _lastHitTestCoords.Y - _hittestStrokeThickness,
+                _hittestStrokeThickness * 2, _hittestStrokeThickness * 2);
+            var snappedGeometryCopy = _snappedHitTestableGeometry;
+            var oldSnappedGeometry = _snappedHitTestableGeometry;
+
+            if (snappedGeometryCopy is not null)
+            {
+                if (snappedGeometryCopy.DistanceToPoint(_lastHitTestCoords) > _hittestStrokeThickness &&
+                    _lastSnapHitTestIndex != _currentSnapHitTestIndex)
+                {
+                    ResetSnappedObjects();
+
+                    _nearestHitTestableGeometries = CadManager3D.HitTestGeometries(_lastHitTestCoords, _hittestStrokeThickness).Take(_maxSelectableObjects).ToList();
+                    if (_nearestHitTestableGeometries.Count < 1) { return; }
+
+                    bool exists = HitTestingHelpers.TryGetNextDrawingGeometry(_currentSnapHitTestIndex, _nearestHitTestableGeometries, out var tup);
+                    if (!exists) { _currentSnapHitTestIndex = 0; }
+                    exists = HitTestingHelpers.TryGetNextDrawingGeometry(_currentSnapHitTestIndex, _nearestHitTestableGeometries, out tup);
+
+                    if (exists)
+                    {
+                        var (distance, geometry) = tup;
+
+                        if (distance <= _hittestStrokeThickness)
+                        {
+                            _snappedHitTestableGeometry = geometry;
+                            SnapObject(_snappedHitTestableGeometry);
+                            _lastSnapHitTestIndex = _currentSnapHitTestIndex;
+                        }
+                    }
+                }
+                else { return; }
+            }
+            else
+            {
+                _nearestHitTestableGeometries = CadManager3D.HitTestGeometries(_lastHitTestCoords, _hittestStrokeThickness).Take(_maxSelectableObjects).ToList();
+                if (_nearestHitTestableGeometries.Count < 1) { return; }
+
+                bool exists = HitTestingHelpers.TryGetNextDrawingGeometry(_currentSnapHitTestIndex, _nearestHitTestableGeometries, out var tup);
+                if (!exists) { _currentSnapHitTestIndex = 0; }
+                exists = HitTestingHelpers.TryGetNextDrawingGeometry(_currentSnapHitTestIndex, _nearestHitTestableGeometries, out tup);
+
+                if (exists)
+                {
+                    var (distance, geometry) = tup;
+
+                    if (distance <= _hittestStrokeThickness)
+                    {
+                        _snappedHitTestableGeometry = geometry;
+                        SnapObject(_snappedHitTestableGeometry);
+                        _lastSnapHitTestIndex = _currentSnapHitTestIndex;
+                    }
+                }
+            }
+            SetVerticesDirty(_snappedHitTestableGeometry);
+            SetVerticesDirty(oldSnappedGeometry);
         }
         private void RunObjectHitTest(CancellationToken token)
         {
@@ -1403,7 +1465,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             _lastHitTestCoords = new(DxfCoords.X, DxfCoords.Y);
 
-            bool d3dIsDirty = false;
             Rect rect = new(_lastHitTestCoords.X - _hittestStrokeThickness, _lastHitTestCoords.Y - _hittestStrokeThickness,
                 _hittestStrokeThickness * 2, _hittestStrokeThickness * 2);
             var snappedCopy = _snappedHitTestableObject;
@@ -1414,52 +1475,49 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 if (snappedCopy.DistanceToPoint(_lastHitTestCoords) > _hittestStrokeThickness)
                 {
                     ResetSnappedObjects();
-                    _nearestHitTestableObjects = CadManager3D.GetNearestHitTestableObjects(_lastHitTestCoords, _hittestStrokeThickness);
 
-                    if (_nearestHitTestableObjects.Count > 0)
+                    _nearestHitTestableObjects = CadManager3D.HitTestAll(_lastHitTestCoords, _hittestStrokeThickness).Take(_maxSelectableObjects).ToList();
+                    if (_nearestHitTestableObjects.Count < 1) { return; }
+
+                    bool exists = HitTestingHelpers.TryGetNextHitTestableObject(_currentSnapHitTestIndex, _nearestHitTestableObjects, out var tup);
+                    if (!exists) { _currentSnapHitTestIndex = 0; }
+                    exists = HitTestingHelpers.TryGetNextHitTestableObject(_currentSnapHitTestIndex, _nearestHitTestableObjects, out tup);
+
+                    if (exists)
                     {
-                        var (distance, obj) = _nearestHitTestableObjects.First();
+                        var (distance, obj) = tup;
 
                         if (distance <= _hittestStrokeThickness)
                         {
-                            if (_snappedHitTestableObject is HitTestablePoint p)
-                            {
-                                _snappedHitTestableObject = GetSignificantPoint(p);
-                            }
-
                             _snappedHitTestableObject = obj;
                             SnapObject(_snappedHitTestableObject);
                         }
                     }
-                    d3dIsDirty = true;
                 }
                 else { return; }
             }
             else
             {
-                _nearestHitTestableObjects = CadManager3D.GetNearestHitTestableObjects(_lastHitTestCoords, _hittestStrokeThickness);
+                _nearestHitTestableObjects = CadManager3D.HitTestAll(_lastHitTestCoords, _hittestStrokeThickness).Take(_maxSelectableObjects).ToList();
+                if (_nearestHitTestableObjects.Count < 1) { return; }
 
-                if (_nearestHitTestableObjects.Count > 0)
+                bool exists = HitTestingHelpers.TryGetNextHitTestableObject(_currentSnapHitTestIndex, _nearestHitTestableObjects, out var tup);
+                if (!exists) { _currentSnapHitTestIndex = 0; }
+                exists = HitTestingHelpers.TryGetNextHitTestableObject(_currentSnapHitTestIndex, _nearestHitTestableObjects, out tup);
+
+                if (exists)
                 {
-                    var (distance, obj) = _nearestHitTestableObjects.First();
+                    var (distance, obj) = tup;
 
                     if (distance <= _hittestStrokeThickness)
                     {
-                        if (_snappedHitTestableObject is HitTestablePoint p)
-                        {
-                            _snappedHitTestableObject = GetSignificantPoint(p);
-                        }
-
                         _snappedHitTestableObject = obj;
                         SnapObject(_snappedHitTestableObject);
-
-                        d3dIsDirty = true;
                     }
                 }
             }
             SetVerticesDirty(_snappedHitTestableObject);
             SetVerticesDirty(oldSnappedObject);
-            D3dIsDirty = d3dIsDirty;
         }
         public void CancelHitTesting()
         {
@@ -1525,16 +1583,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 if (hitTestableObject is HitTestablePoint point)
                 {
                     point.MouseEnter();
-
-                    //if (!TryGetSignificantPoint(point, out var existingPoint))
-                    //{
-                    //    _activeSigPoints.Add(point);
-                    //    point.MouseEnter();
-                    //}
-                    //else
-                    //{
-                    //    existingPoint.MouseEnter();
-                    //}
                 }
             }
         }
@@ -1568,19 +1616,21 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 if (hitTestableObject is HitTestablePoint point)
                 {
                     point.MouseLeave();
-                    if (!point.IsSelected) { _activeSigPoints.Remove(point); }
-
-                    //if (TryGetSignificantPoint(point, out var existingPoint))
-                    //{
-                    //    existingPoint.MouseLeave();
-
-                    //    if (!existingPoint.IsSelected) { _activeSigPoints.Remove(existingPoint); }
-                    //}
                 }
             }
         }
         private void ResetSnappedObjects()
         {
+            if (_snappedHitTestablePoint is not null)
+            {
+                UnsnapObject(_snappedHitTestablePoint);
+                _snappedHitTestablePoint = null;
+            }
+            if (_snappedHitTestableGeometry is not null)
+            {
+                UnsnapObject(_snappedHitTestableGeometry);
+                _snappedHitTestableGeometry = null;
+            }
             if (_snappedHitTestableObject is not null)
             {
                 UnsnapObject(_snappedHitTestableObject);
@@ -1622,27 +1672,12 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 }
                 if (hitTestableObject is DxfPoint dxfPoint)
                 {
-
+                    dxfPoint.Select();
                 }
                 if (hitTestableObject is HitTestablePoint point)
                 {
-                    //var pointExists = TryGetSignificantPoint(point, out var existingPoint);
                     point.Select();
-                    //Debug.WriteLine($"\npointExists: {pointExists}");
-
-                    //if (!pointExists)
-                    //{
-                    //    _activeSigPoints.Add(point);
-                    //    point.Select();
-
-                    //    //Debug.WriteLine($"point.Position: : {point.Position}");
-                    //}
-                    //else
-                    //{
-                    //    existingPoint.Select();
-
-                    //    //Debug.WriteLine($"existingPoint.Position: : {existingPoint.Position}");
-                    //}
+                    _selectedHitTestablePoints.Add(point);
                 }
             }
         }
@@ -1673,19 +1708,12 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 }
                 if (hitTestableObject is DxfPoint dxfPoint)
                 {
-
+                    dxfPoint.Deselect();
                 }
                 if (hitTestableObject is HitTestablePoint point)
                 {
+                    _selectedHitTestablePoints.Remove(point);
                     point.Deselect();
-                    //var pointExists = TryGetSignificantPoint(point, out var existingPoint);
-
-                    //if (pointExists)
-                    //{
-                    //    existingPoint.Deselect();
-
-                    //    if (!existingPoint.IsMouseOver) { _activeSigPoints.Remove(existingPoint); }
-                    //}
                 }
             }
         }
@@ -1698,40 +1726,23 @@ namespace Cad_Point_Manager.Controls.D3DControl
             }
             _selectedHitTestableObjects.Clear();
 
-            var sigPointsCopy = _activeSigPoints.ToList();
+            var sigPointsCopy = _selectedHitTestablePoints.ToList();
             foreach (var obj in sigPointsCopy)
             {
                 DeselectObject(obj);
             }
-            _activeSigPoints.Clear();
+            _selectedHitTestablePoints.Clear();
 
-            _lineVerticesDirty = _lineGlowVerticesDirty = _textVerticesDirty = _sigPointVerticesDirty = D3dIsDirty = true;
+            _lineVerticesDirty = _lineGlowVerticesDirty = _textVerticesDirty = _sigPointVerticesDirty = true;
         }
 
-        private bool TryGetSignificantPoint(HitTestablePoint testPoint, out HitTestablePoint existingPoint)
-        {
-            foreach (var point in _activeSigPoints)
-            {
-                bool isEqual = HitTestablePoint.EqualsWithTolerance2D(point, testPoint, 0.0001f);
-                if (isEqual)
-                {
-                    existingPoint = point;
-                    return true;
-                }
-            }
-            
-            existingPoint = null;
-            return false;
-        }
         private HitTestablePoint GetSignificantPoint(HitTestablePoint point)
         {
-            foreach (var activePoint in _activeSigPoints)
+            foreach (var activePoint in _selectedHitTestablePoints)
             {
                 bool isEqual = HitTestablePoint.EqualsWithTolerance2D(point, activePoint, 0.0001f);
                 if (isEqual) { return activePoint; }
             }
-
-            _activeSigPoints.Add(point);
             return point;
         }
 
@@ -1774,12 +1785,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         {
             _camera.ResetView(Matrix.Identity);
             ResetSnappedObjects();
-            _lineVerticesDirty = true;
-            _textVerticesDirty = true;
-            _lineGlowVerticesDirty = true;
-            _pointTextVerticesDirty = true;
-            _circleVerticesDirty = true;
-            D3dIsDirty = true;
+            _lineVerticesDirty = _textVerticesDirty = _lineGlowVerticesDirty = _pointTextVerticesDirty = _circleVerticesDirty = true;
         }
 
         private static void OnCadManager3DChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -1828,6 +1834,12 @@ namespace Cad_Point_Manager.Controls.D3DControl
             if (e.PropertyName == nameof(CadManager3D.DxfLoaded) && !CadManager3D.DxfLoaded)
             {
                 ClearDxf();
+            }
+            if (e.PropertyName == nameof(CadManager3D.SnapSelectionMode))
+            {
+                ResetSelectedObjects();
+                ResetSnappedObjects();
+                _currentSnapHitTestIndex = 0;
             }
         }
 

@@ -3,6 +3,8 @@ using Cad_Point_Manager.Models.DrawingObjects3D;
 using SharpDX;
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Windows;
+using Point = System.Windows.Point;
 
 namespace Cad_Point_Manager.Helpers
 {
@@ -11,6 +13,7 @@ namespace Cad_Point_Manager.Helpers
         public static List<Vector2> GetSignificantPointsList(List<DrawingSegment3D> segments)
         {
             var allPoints = new ConcurrentBag<Vector2>();
+            Debug.WriteLine($"\n");
 
             Parallel.ForEach(Enumerable.Range(0, segments.Count), () => new List<Vector2>(),
                 (i, state, localList) =>
@@ -34,8 +37,19 @@ namespace Cad_Point_Manager.Helpers
                     {
                         var segment2 = segments[j];
                         var intersectionsExists = GeometryHelpers.IntersectGeometries(segment1, segment2, out var intersectionPoints);
+
+                        Debug.WriteLine($"segment1.GetType(): {segment1.GetType()} segment2.GetType(): {segment2.GetType()}");
+                        Debug.WriteLine($"segment1.Start: {segment1.Start} segment1.End: {segment1.End}");
+                        Debug.WriteLine($"segment2.Start: {segment2.Start} segment2.End: {segment2.End}");
+                        Debug.WriteLine($"intersectionsExists: {intersectionsExists}");
+
                         if (intersectionsExists)
                         {
+                            foreach (var intersection in intersectionPoints)
+                            {
+                                Debug.WriteLine($"intersection: {intersection}");
+                            }
+
                             localList.AddRange(intersectionPoints);
                         }
                     }
@@ -217,6 +231,9 @@ namespace Cad_Point_Manager.Helpers
             // Check that intersection lies on both segments (not just the lines)
             bool pointOnSegment1 = IsPointOnSegment(p1, p2, intersection);
             bool pointOnSegment2 = IsPointOnSegment(p3, p4, intersection);
+
+            bool testPointOnSegment1 = IsPointOnSegment(p1.ToVector(), p2.ToVector(), intersection.ToVector());
+            bool testPointOnSegment2 = IsPointOnSegment(p3.ToVector(), p4.ToVector(), intersection.ToVector());
 
             return pointOnSegment1 && pointOnSegment2;
         }
@@ -408,7 +425,7 @@ namespace Cad_Point_Manager.Helpers
 
             return true;
         }
-        private static bool IsPointOnSegment(Vector2 a, Vector2 b, Vector2 p, float epsilon = 1e-2f)
+        private static bool IsPointOnSegment(Vector2 a, Vector2 b, Vector2 p, float epsilon = 0.01f)
         {
             Vector2 ab = b - a;
             Vector2 ap = p - a;
@@ -424,6 +441,23 @@ namespace Cad_Point_Manager.Helpers
 
             return true;
         }
+        private static bool IsPointOnSegment(Vector a, Vector b, Vector p, double epsilon = 0.0001)
+        { 
+            Vector ab = b - a;
+            Vector ap = p - a;
+
+            // 1. Collinearity check via cross product
+            double cross = ab.X * ap.Y - ab.Y * ap.X;
+            if (Math.Abs(cross) > epsilon) { return false; }
+            
+            // 2. Bounds check via dot product
+            double dot = Vector.Multiply(ap, ab);
+            if (dot < -epsilon) { return false; } // Before 'a'
+            if (dot > Vector.Multiply(ab, ab) + epsilon) { return false; } // Beyond 'b'
+
+            return true;
+        }
+
         private static float DegreeToRadian(float degrees) => degrees * MathF.PI / 180f;
 
         private static bool IsAngleBetween(float angle, float start, float end)

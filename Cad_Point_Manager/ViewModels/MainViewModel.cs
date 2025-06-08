@@ -179,7 +179,7 @@ namespace Cad_Point_Manager.ViewModels
                         JobFileManager.CadManager3D.SnapSelectionMode = Enums.SelectionMode.Points;
                         break;
                     case "Lines":
-                        JobFileManager.CadManager3D.SnapSelectionMode = Enums.SelectionMode.Lines;
+                        JobFileManager.CadManager3D.SnapSelectionMode = Enums.SelectionMode.Geometries;
                         break;
                     case "All":
                         JobFileManager.CadManager3D.SnapSelectionMode = Enums.SelectionMode.All;

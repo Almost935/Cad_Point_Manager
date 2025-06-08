@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 
-namespace Cad_Point_Manager.Models
+namespace Cad_Point_Manager.Models.HitTesting
 {
     public abstract class HitTestableObject
     {
