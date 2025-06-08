@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
 
 namespace Cad_Point_Manager.Extensions
 {
@@ -17,6 +18,11 @@ namespace Cad_Point_Manager.Extensions
         public static System.Windows.Point ToPoint(this Vector3 v)
         {
             return new System.Windows.Point(v.X, v.Y);
+        }
+
+        public static Vector ToVector(this Vector3 v)
+        {
+            return new Vector(v.X, v.Y);
         }
 
         public static bool EqualsWithTolerance(this Vector3 v1, Vector3 v2, float tolerance)

@@ -273,8 +273,9 @@ namespace Cad_Point_Manager.Models.HitTesting
             List<(double distance, Vector2 coordinate)> hits = [];
             foreach (var item in coords)
             {
-                float d = Vector2.Distance(item, pos);
-                hits.Add((d, item));
+                var vector2Item = item.ToVector2();
+                float d = Vector2.Distance(vector2Item, pos);
+                hits.Add((d, vector2Item));
             }
             hits.Sort((a, b) => a.distance.CompareTo(b.distance));
 
