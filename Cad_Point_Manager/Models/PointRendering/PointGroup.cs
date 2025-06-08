@@ -1,5 +1,6 @@
 ﻿using Cad_Point_Manager.Controls.D3DControl;
 using SharpDX;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
 
@@ -14,7 +15,7 @@ namespace Cad_Point_Manager.Models.PointRendering
         private float _textHeight;
         private float _pointMarkerSize;
         private float _baseSizeFactor = 1.00f;
-        private DxfPoint[] _points = [];
+        private ObservableCollection<DxfPoint> _points = [];
         private bool _colorToggleOpen = false;
         #endregion
 
@@ -78,7 +79,7 @@ namespace Cad_Point_Manager.Models.PointRendering
                 }
             }
         }
-        public DxfPoint[] Points
+        public ObservableCollection<DxfPoint> Points
         {
             get => _points;
             set
@@ -104,13 +105,20 @@ namespace Cad_Point_Manager.Models.PointRendering
         }
         #endregion
 
-        #region Methods
+        #region Constructors
         public PointGroup(string name, Vector4 color, float textHeight, float markerSize)
         {
             Name = name;
             Color = color;
             TextHeight = textHeight;
             PointMarkerSize = markerSize;
+        }
+        #endregion
+
+        #region Methods
+        public void AddPoint(int pointNum, Vector3 position)
+        {
+            Points.Add(new(this, pointNum, position, TextHeight, PointMarkerSize));
         }
 
         public override string ToString()

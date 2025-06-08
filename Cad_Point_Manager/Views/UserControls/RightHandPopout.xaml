@@ -121,12 +121,6 @@
                         <GridViewColumn Header="Color">
                              <GridViewColumn.CellTemplate>
                                 <DataTemplate>
-                                    <!--<local:ColorToggle SelectedColor="{Binding Path=Color, Mode=TwoWay}"
-                                                       IsPopupOpen="{Binding ColorToggleOpen, Mode=TwoWay}"
-                                                       ToggleButtonWidth="10"
-                                                       ToggleButtonHeight="10"
-                                                       ToggleButtonMargin="1"
-                                                       Loaded="ColorToggle_Loaded"/>-->
                                     <colorpicker:PortableColorPicker Style="{StaticResource DefaultColorPickerStyle}" 
                                                                      SelectedColor="{Binding Color, Converter={StaticResource Vector4ToColorConverter}, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
                                                                      ToggleButtonWidth="20"
@@ -148,6 +142,15 @@
                                               VerticalContentAlignment="Center"
                                               Unchecked="PointGroupsCheckBox_Unchecked"
                                               Checked="PointGroupsCheckBox_Checked" />
+                                </DataTemplate>
+                            </GridViewColumn.CellTemplate>
+                        </GridViewColumn>
+                        <GridViewColumn>
+                            <GridViewColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Expander>
+                                        
+                                    </Expander>
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>

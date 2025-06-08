@@ -38,8 +38,9 @@ namespace Cad_Point_Manager.Models
         private Bounds _extents = Bounds.Empty;
         private ObservableCollection<KeyValuePair<string, ObjectLayer3D>> _layers = [];
         private ICollectionView _layersView;
-        private ObservableCollection<KeyValuePair<string, PointGroup>> _pointGroups = [];
+        //private ObservableCollection<KeyValuePair<string, PointGroup>> _pointGroups = [];
         private ICollectionView _pointGroupsView;
+        private CogoPointManager _cogoPointManager = new();
         private Size2F _viewportSize = Size2F.Empty;
         private Enums.SelectionMode _snapSelectionMode = Enums.SelectionMode.All;
 
@@ -145,15 +146,15 @@ namespace Cad_Point_Manager.Models
                 OnPropertyChanged(nameof(LayersView));
             }
         }
-        public ObservableCollection<KeyValuePair<string, PointGroup>> PointGroups
-        {
-            get => _pointGroups;
-            set
-            {
-                _pointGroups = value;
-                OnPropertyChanged(nameof(PointGroups));
-            }
-        }
+        //public ObservableCollection<KeyValuePair<string, PointGroup>> PointGroups
+        //{
+        //    get => _pointGroups;
+        //    set
+        //    {
+        //        _pointGroups = value;
+        //        OnPropertyChanged(nameof(PointGroups));
+        //    }
+        //}
         public ICollectionView PointGroupsView
         {
             get => _pointGroupsView;
@@ -161,6 +162,15 @@ namespace Cad_Point_Manager.Models
             {
                 _pointGroupsView = value;
                 OnPropertyChanged(nameof(PointGroupsView));
+            }
+        }
+        public CogoPointManager CogoPointManager
+        {
+            get => _cogoPointManager;
+            set
+            {
+                _cogoPointManager = value;
+                OnPropertyChanged(nameof(CogoPointManager));
             }
         }
         public Size2F ViewportSize
@@ -258,7 +268,7 @@ namespace Cad_Point_Manager.Models
         }
         public void UpdatePointGroupsView()
         {
-            PointGroupsView = CollectionViewSource.GetDefaultView(PointGroups.Select(kvp => kvp.Value).ToList());
+            PointGroupsView = CollectionViewSource.GetDefaultView(CogoPointManager.PointGroups.Select(kvp => kvp.Value).ToList());
             PointGroupsView.SortDescriptions.Clear();
             PointGroupsView.SortDescriptions.Add(new SortDescription("Name", ListSortDirection.Ascending));
         }
@@ -333,7 +343,7 @@ namespace Cad_Point_Manager.Models
         }
         public void ClearDxfPoints()
         {
-            PointGroups.Clear();
+            CogoPointManager.Reset();
             _cachedPointTextVertices.Clear();
             _cachedPointMarkerVertices.Clear();
 
@@ -551,7 +561,7 @@ namespace Cad_Point_Manager.Models
 
                 _pointTextVerticesDict ??= new(d3DResCache);
 
-                foreach (var keyValuePair in PointGroups)
+                foreach (var keyValuePair in CogoPointManager.PointGroups)
                 {
                     var pointGroup = keyValuePair.Value;
 
@@ -579,7 +589,7 @@ namespace Cad_Point_Manager.Models
             {
                 _cachedPointMarkerVertices.Clear();
 
-                foreach (var keyValuePair in PointGroups)
+                foreach (var keyValuePair in CogoPointManager.PointGroups)
                 {
                     var pointGroup = keyValuePair.Value;
 
@@ -600,9 +610,8 @@ namespace Cad_Point_Manager.Models
 
         public void GetTestDxfPoints()
         {
-            PointGroups.Clear();
+            CogoPointManager.PointGroups.Clear();
 
-            List<DxfPoint> points = [];
             float rows = 5;
             float cols = 15;
             float yIncrement = Extents.Width / rows;
@@ -611,21 +620,23 @@ namespace Cad_Point_Manager.Models
 
             for (int i = 0; i < rows; i++)
             {
-                points.Clear();
-
                 string pointGroupName = $"TestGroup {i + 1}";
-                PointGroup pointGroup = new(pointGroupName, new SharpDX.Vector4(1.0f, 0.0f, 0.0f, 1.0f), _pointBaseTextHeight, _pointBaseMarkerSize);
-                float y = Extents.Bottom + (yIncrement * i);
-
-                for (int j = 0; j < cols; j++)
+                bool created = CogoPointManager.TryCreatePointGroup(pointGroupName, new SharpDX.Vector4(1.0f, 0.0f, 0.0f, 1.0f), 
+                    _pointBaseTextHeight, _pointBaseMarkerSize, out var pointGroup);
+                if (created)
                 {
-                    float x = Extents.Left + (xIncrement * j);
-                    DxfPoint point = new(pointGroup, pointNum, new SharpDX.Vector3(x, y, 0), pointGroup.TextHeight, pointGroup.PointMarkerSize);
-                    points.Add(point);
-                    pointNum++;
+                    var groupActivated = CogoPointManager.TrySetActivePointGroup(pointGroupName);
+                    if (!groupActivated) { continue; }
+
+                    float y = Extents.Bottom + (yIncrement * i);
+
+                    for (int j = 0; j < cols; j++)
+                    {
+                        float x = Extents.Left + (xIncrement * j);
+                        var pointCreated = CogoPointManager.TryAddPointToActiveGroup(pointNum, new Vector3(x, y, 0));
+                        if (pointCreated) { pointNum++; continue; }
+                    }
                 }
-                pointGroup.Points = points.ToArray();
-                PointGroups.Add(new KeyValuePair<string, PointGroup>(pointGroupName, pointGroup));
             }
         }
 

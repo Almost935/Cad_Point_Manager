@@ -51,7 +51,7 @@ namespace Cad_Point_Manager.Models.HitTesting
             {
                 HitTestableObjects.AddRange(keyValue.Value.DrawingObject3Ds);
             }
-            foreach (var keyValue in _cadManager.PointGroups)
+            foreach (var keyValue in _cadManager.CogoPointManager.PointGroups)
             {
                 HitTestableObjects.AddRange(keyValue.Value.Points);
             }
