@@ -117,7 +117,7 @@ namespace Cad_Point_Manager.Models.PointRendering
         }
 
         public override void MouseEnter()
-        {
+        { 
             this.IsMouseOver = true;
 
             Span<TextVertex> textSpan = TextVertices;

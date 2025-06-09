@@ -313,9 +313,10 @@ namespace Cad_Point_Manager.Views.UserControls
             double pointGroupColumnWidth = pointGroupLTotalWidth / pointGroupGridView.Columns.Count;
             if (pointGroupColumnWidth > 0)
             {
-                pointGroupGridView.Columns[0].Width = pointGroupColumnWidth * 1.6;
-                pointGroupGridView.Columns[1].Width = pointGroupColumnWidth * 0.7;
-                pointGroupGridView.Columns[1].Width = pointGroupColumnWidth * 0.7;
+                pointGroupGridView.Columns[0].Width = pointGroupColumnWidth * 1;
+                pointGroupGridView.Columns[1].Width = pointGroupColumnWidth * 1;
+                pointGroupGridView.Columns[2].Width = pointGroupColumnWidth * 1;
+                pointGroupGridView.Columns[3].Width = pointGroupColumnWidth * 1;
             }
         }
 

@@ -146,7 +146,8 @@
                 Value="{DynamicResource HeaderTextBrush}" />
         <Setter Property="IsHitTestVisible"
                 Value="False" />
-
+        <Setter Property="FontSize"
+                Value="11" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="GridViewColumnHeader">

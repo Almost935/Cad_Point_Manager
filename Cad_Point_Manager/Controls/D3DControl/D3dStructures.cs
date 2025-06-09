@@ -31,7 +31,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             IsSelected = isSelected ? 1 : 0;
         }
     }
-
     [StructLayout(LayoutKind.Sequential)]
     public struct SigPointSettingsBuffer
     {
@@ -75,6 +74,21 @@ namespace Cad_Point_Manager.Controls.D3DControl
             IsSelected = isSelected ? 1 : 0;
         }
     }
+    [StructLayout(LayoutKind.Sequential)]
+    public struct CircleSettingsBuffer
+    {
+        public Vector4 SelectedColor;
+        public Vector4 SelectedMouseOverColor;
+    }
+    [StructLayout(LayoutKind.Sequential)]
+    public struct CircleGlowSettingsBuffer
+    {
+        public float GlowOffset;
+        public float GlowTransparency;
+        private Vector2 Padding;
+        public Vector4 SelectedColor;
+        public Vector4 SelectedMouseOverColor;
+    }
 
     [StructLayout(LayoutKind.Sequential)]
     public struct LineVertex(Vector3 position, Vector4 color, float isVisible = 1.0f, float isMouseOver = 0, float isSelected = 0)
@@ -107,37 +121,18 @@ namespace Cad_Point_Manager.Controls.D3DControl
             IsSelected = isSelected ? 1 : 0;
         }
     }
-
     [StructLayout(LayoutKind.Sequential)]
     public struct LineSettingsBuffer
     {
         public Vector4 SelectedColor;
         public Vector4 SelectedMouseOverColor;
     }
-
     [StructLayout(LayoutKind.Sequential)]
     public struct LineGlowSettingsBuffer
     {
         public float GlowOffset;
         public float GlowTransparency;
         private Vector2 Padding;
-        public Vector4 SelectedColor;
-        public Vector4 SelectedMouseOverColor;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    public struct TextSettingsBuffer
-    {
-        public Vector4 SelectedColor;
-        public Vector4 SelectedMouseOverColor;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    public struct TextGlowSettingsBuffer
-    {
-        public float GlowOffset;
-        public float GlowTransparency;
-        private Vector2 Padding; // Padding to ensure the structure is 16-byte aligned
         public Vector4 SelectedColor;
         public Vector4 SelectedMouseOverColor;
     }
@@ -213,20 +208,18 @@ namespace Cad_Point_Manager.Controls.D3DControl
             return new System.Windows.Point(v.Position.X, v.Position.Y);
         }
     }
-
     [StructLayout(LayoutKind.Sequential)]
-    public struct CircleGlowSettingsBuffer
+    public struct TextSettingsBuffer
     {
-        public float GlowOffset;
-        public float GlowTransparency;
-        private Vector2 Padding;
         public Vector4 SelectedColor;
         public Vector4 SelectedMouseOverColor;
     }
-
     [StructLayout(LayoutKind.Sequential)]
-    public struct CircleSettingsBuffer
+    public struct TextGlowSettingsBuffer
     {
+        public float GlowOffset;
+        public float GlowTransparency;
+        private Vector2 Padding; // Padding to ensure the structure is 16-byte aligned
         public Vector4 SelectedColor;
         public Vector4 SelectedMouseOverColor;
     }

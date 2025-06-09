@@ -12,14 +12,14 @@
              mc:Ignorable="d"
              d:DesignHeight="400"
              d:DesignWidth="300">
-    
+
     <UserControl.Resources>
         <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" />
         <converters:KeyValueToValueConverter x:Key="KeyValueToValueConverter" />
         <converters:Vector4ToColorConverter x:Key="Vector4ToColorConverter" />
         <SolidColorBrush x:Key="propertiesFontBrush"
                          Color="Black" />
-        
+
         <Style x:Key="tabBorderStyle"
                TargetType="Border">
             <Setter Property="Background"
@@ -33,7 +33,7 @@
             </Style.Triggers>
         </Style>
     </UserControl.Resources>
-    
+
     <Grid x:Name="overallGrid"
           MouseLeave="OverallGrid_MouseLeave"
           MouseEnter="OverallGrid_MouseEnter">
@@ -42,9 +42,9 @@
             <ColumnDefinition Width="Auto" />
         </Grid.ColumnDefinitions>
         <Grid x:Name="mainPanel"
-                HorizontalAlignment="Stretch"
-                Grid.Column="0"
-                RenderTransformOrigin="1, 1">
+              HorizontalAlignment="Stretch"
+              Grid.Column="0"
+              RenderTransformOrigin="1, 1">
             <ListView x:Name="layersListView"
                       ItemsSource="{Binding JobFileManager.CadManager3D.LayersView}"
                       Style="{StaticResource LayersListViewStyle}"
@@ -114,14 +114,14 @@
                                         <TextBlock.ToolTip>
                                             <TextBlock Text="{Binding Path=Name}" />
                                         </TextBlock.ToolTip>
-                        </TextBlock>
+                                    </TextBlock>
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
                         <GridViewColumn Header="Color">
-                             <GridViewColumn.CellTemplate>
+                            <GridViewColumn.CellTemplate>
                                 <DataTemplate>
-                                    <colorpicker:PortableColorPicker Style="{StaticResource DefaultColorPickerStyle}" 
+                                    <colorpicker:PortableColorPicker Style="{StaticResource DefaultColorPickerStyle}"
                                                                      SelectedColor="{Binding Color, Converter={StaticResource Vector4ToColorConverter}, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
                                                                      ToggleButtonWidth="20"
                                                                      ToggleButtonHeight="15"
@@ -145,12 +145,18 @@
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
-                        <GridViewColumn>
+                        <GridViewColumn Header="Point Count">
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
-                                    <Expander>
-                                        
-                                    </Expander>
+                                    <TextBlock Text="{Binding Path=Points.Count}"
+                                               Foreground="{DynamicResource propertiesFontBrush}"
+                                               FontSize="12"
+                                               HorizontalAlignment="Left"
+                                               VerticalAlignment="Center">
+                                        <TextBlock.ToolTip>
+                                            <TextBlock Text="{Binding Path=Points.Count}" />
+                                        </TextBlock.ToolTip>
+                                    </TextBlock>
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
