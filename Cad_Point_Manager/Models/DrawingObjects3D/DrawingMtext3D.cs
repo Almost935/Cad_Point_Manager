@@ -39,7 +39,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         public bool IsBold { get; set; }
         public bool IsItalic { get; set; }
         public Enums.TextAttachmentPoint AttachmentPoint { get; set; }
-        public DrawingMtext3DBlock MtextBlock { get; set; }
+        public DrawingMtext3DBlock MtextBlock { get; set; } 
         public Vector3 TextAttachmentOffset { get; set; } = Vector3.Zero;
         #endregion
 
@@ -119,9 +119,10 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             }
         }
 
-
         public override double DistanceToPoint(Point p)
         {
+            if (MtextBlock is null || MtextBlock.Rows.Count == 0) { return double.MaxValue; }
+
             var vertices = MtextBlock.Rows
                 .SelectMany(row => row.Segments
                 .SelectMany(segment => segment.TextVertices)).ToList();
@@ -265,8 +266,9 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             string alignRightPattern = @"\\pxqr;";
             string alignJustifyPattern = @"\\pxqj;";
             string alignDistributedPattern = @"\\pxqd;";
+            string paragraphIndentPattern = @"\\pi([\d.]+);";
 
-            string pattern = $@"((\\[LOkoK])|{aciColorPattern}|{trueTypeColorPattern}|{fontPattern}|{italicPattern}|{boldPattern}|{heightPattern}|{lineBreakPattern}|{underlineStartPattern}|{underlineEndPattern}|{overstrikeStartPattern}|{overstrikeEndPattern}|{strikethroughStartPattern}|{strikethroughEndPattern}|{alignLeftPattern}|{alignCenterPattern}|{alignRightPattern}|{alignJustifyPattern}|{alignDistributedPattern}|[^{{}}\\]+)";
+            string pattern = $@"((\\[LOkoK])|{aciColorPattern}|{trueTypeColorPattern}|{fontPattern}|{italicPattern}|{boldPattern}|{heightPattern}|{lineBreakPattern}|{paragraphIndentPattern}|{underlineStartPattern}|{underlineEndPattern}|{overstrikeStartPattern}|{overstrikeEndPattern}|{strikethroughStartPattern}|{strikethroughEndPattern}|{alignLeftPattern}|{alignCenterPattern}|{alignRightPattern}|{alignJustifyPattern}|{alignDistributedPattern}|[^{{}}\\]+)";
 
             Enums.TextAlignment baseAlignment;
             if (AttachmentPoint == Enums.TextAttachmentPoint.TopRight || AttachmentPoint == Enums.TextAttachmentPoint.MiddleRight || AttachmentPoint == Enums.TextAttachmentPoint.BottomRight) { baseAlignment = Enums.TextAlignment.Right; }
@@ -340,6 +342,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                     {
                         currentSegment.IsNewLine = true;
                     }
+                    else if (Regex.IsMatch(value, paragraphIndentPattern)) { }
                     else if (Regex.IsMatch(value, underlineStartPattern))
                     {
                         currentSegment.IsUnderlined = true;
@@ -409,9 +412,9 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                         for (int i = 0; i < segmentTexts.Length; i++)
                         {
                             var segmentText = segmentTexts[i];
-
                             bool isNewLine = segmentInfo.IsNewLine;
-                            if (i != 0) { isNewLine = false; } // Only the very first segment can be a new line.    
+
+                            if (i != 0) { isNewLine = false; }   
 
                             var newSegmentInfo = new TextSegmentInformation(segmentText, segmentInfo.Color, segmentInfo.Font, segmentInfo.TextHeight,
                                 segmentInfo.IsBold, segmentInfo.IsItalic, segmentInfo.IsUnderlined, segmentInfo.IsOverstriked, segmentInfo.IsStrikethrough,
@@ -423,7 +426,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                     else
                     {
                         var segment = CreateMtextSegment(segmentInfo, resCache);
-                        MtextBlock.AddSegment(segment); // Add the segment to the block for vertex generation and other purposes.
+                        MtextBlock.AddSegment(segment); 
                     }
                 }
             }
@@ -448,8 +451,8 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         }
         private DrawingMtextSegment3D CreateMtextSegment(TextSegmentInformation segmentInfo, D3dResCache resCache)
         {
-            var segment = new DrawingMtextSegment3D(this, segmentInfo.Text, segmentInfo.Color, Vector3.Zero, 0, (float)segmentInfo.TextHeight, segmentInfo.Font,
-                segmentInfo.IsItalic, segmentInfo.IsBold, segmentInfo.IsUnderlined, segmentInfo.IsStrikethrough, segmentInfo.IsNewLine, _fontRenderingMinimumSize, 0);
+            DrawingMtextSegment3D segment = new(this, segmentInfo.Text, segmentInfo.Color, Vector3.Zero, 0, (float)segmentInfo.TextHeight, segmentInfo.Font,
+                segmentInfo.IsItalic, segmentInfo.IsBold, segmentInfo.IsUnderlined, segmentInfo.IsStrikethrough, segmentInfo.IsNewLine, _fontRenderingMinimumSize, 0, segmentInfo.TextAlignment);
             segment.GetTextLayout(resCache.WriteFactory);
             segment.Tesselate(resCache);
 

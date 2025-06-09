@@ -59,7 +59,8 @@ void GSMain(line VSInput input[2], inout TriangleStream<GSInput> triStream)
     }
     else
     {
-        color = float4(input[0].Color.rgb, glowTransparency);
+        color = float4(0, 0, 0, glowTransparency);
+        //color = float4(input[0].Color.rgb, glowTransparency);
     }
 
     GSInput out0 = { mul(float4(p0, 1.0), transformationMatrix), color };

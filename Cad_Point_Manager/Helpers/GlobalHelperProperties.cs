@@ -6,7 +6,8 @@ namespace Cad_Point_Manager.Helpers
     {
         public const float _zoomFactor = 1.3f;
 
-        public const float _lineGlowTransparency = 0.5f;
+        public const float _lineGlowTransparency = 0.4f;
+        public static readonly Vector4 _lineGlowColor = new(0, 0, 0, _lineGlowTransparency);
         public const float _lineGlowPixelWidth = 5;
 
         public const float _textHeightToGlowOffsetFactor = 0.05f;

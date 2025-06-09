@@ -38,7 +38,6 @@ namespace Cad_Point_Manager.Models
         private Bounds _extents = Bounds.Empty;
         private ObservableCollection<KeyValuePair<string, ObjectLayer3D>> _layers = [];
         private ICollectionView _layersView;
-        //private ObservableCollection<KeyValuePair<string, PointGroup>> _pointGroups = [];
         private ICollectionView _pointGroupsView;
         private CogoPointManager _cogoPointManager = new();
         private Size2F _viewportSize = Size2F.Empty;
@@ -146,15 +145,6 @@ namespace Cad_Point_Manager.Models
                 OnPropertyChanged(nameof(LayersView));
             }
         }
-        //public ObservableCollection<KeyValuePair<string, PointGroup>> PointGroups
-        //{
-        //    get => _pointGroups;
-        //    set
-        //    {
-        //        _pointGroups = value;
-        //        OnPropertyChanged(nameof(PointGroups));
-        //    }
-        //}
         public ICollectionView PointGroupsView
         {
             get => _pointGroupsView;
@@ -291,7 +281,7 @@ namespace Cad_Point_Manager.Models
             {
                 hits.Add((distance, new HitTestablePoint(coords.ToVector3())));
             }
-
+            hits.Sort((x, y) => x.distance.CompareTo(y.distance));
             return hits;
         }
         public List<(double distance, DrawingGeometry3D geometries)> HitTestGeometries(Point p, float tolerance)
@@ -307,7 +297,7 @@ namespace Cad_Point_Manager.Models
             {
                 geometries.AddRange(node.HitTestGeometries(p, rect));
             }
-
+            geometries.Sort((x, y) => x.distance.CompareTo(y.distance));
             return geometries;
         }
         public List<(double distance, HitTestableObject hitTestableObject)> HitTestAll(Point p, float tolerance)
@@ -323,9 +313,7 @@ namespace Cad_Point_Manager.Models
             {
                 hits.AddRange(node.HitTestAll(p, rect));
             }
-
             hits.Sort((x, y) => x.distance.CompareTo(y.distance));
-
             return hits;
         }
 
@@ -378,6 +366,7 @@ namespace Cad_Point_Manager.Models
                 {
                     for (int i = drawingGeometry.StartVertexIndex; i <= drawingGeometry.EndVertexIndex; i++)
                     {
+                        if (_cachedLineVertices is null || _cachedLineVertices.Count == 0) { continue; }
                         ref var vertex = ref GetLineVertexRef(i);
                         vertex.IsMouseOver = isMouseOver ? 1.0f : 0.0f;
                     }
@@ -386,6 +375,7 @@ namespace Cad_Point_Manager.Models
                 {
                     for (int i = drawingText.StartVertexIndex; i <= drawingText.EndVertexIndex; i++)
                     {
+                        if (_cachedTextVertices is null || _cachedTextVertices.Count == 0) { continue; }
                         ref var vertex = ref GetTextVertexRef(i);
                         vertex.IsMouseOver = isMouseOver ? 1.0f : 0.0f;
                     }
@@ -394,11 +384,13 @@ namespace Cad_Point_Manager.Models
                 {
                     for (int i = drawingBlock.StartLineVertexIndex; i <= drawingBlock.EndLineVertexIndex; i++)
                     {
+                        if (_cachedLineVertices is null || _cachedLineVertices.Count == 0) { continue; }
                         ref var vertex = ref GetLineVertexRef(i);
                         vertex.IsMouseOver = isMouseOver ? 1.0f : 0.0f;
                     }
                     for (int i = drawingBlock.StartTextVertexIndex; i <= drawingBlock.EndTextVertexIndex; i++)
                     {
+                        if (_cachedTextVertices is null || _cachedTextVertices.Count == 0) { continue; }
                         ref var vertex = ref GetTextVertexRef(i);
                         vertex.IsMouseOver = isMouseOver ? 1.0f : 0.0f;
                     }
@@ -408,11 +400,13 @@ namespace Cad_Point_Manager.Models
             {
                 for (int i = dxfPoint.TextStartIndex; i <= dxfPoint.TextEndIndex; i++)
                 {
+                    if (_cachedPointTextVertices is null || _cachedPointTextVertices.Count == 0) { continue; }
                     ref var vertex = ref GetPointTextVertexRef(i);
                     vertex.IsMouseOver = isMouseOver ? 1.0f : 0.0f;
                 }
                 for (int i = dxfPoint.MarkerStartIndex; i <= dxfPoint.MarkerEndIndex; i++)
                 {
+                    if (_cachedPointMarkerVertices is null || _cachedPointMarkerVertices.Count == 0) { continue; }
                     ref var vertex = ref GetCircleVertexRef(i);
                     vertex.IsMouseOver = isMouseOver ? 1.0f : 0.0f;
                 }
@@ -427,6 +421,7 @@ namespace Cad_Point_Manager.Models
                 {
                     for (int i = drawingGeometry.StartVertexIndex; i <= drawingGeometry.EndVertexIndex; i++)
                     {
+                        if (_cachedLineVertices is null || _cachedLineVertices.Count == 0) { continue; }
                         ref var vertex = ref GetLineVertexRef(i);
                         vertex.IsSelected = isSelected ? 1.0f : 0.0f;
                     }
@@ -435,6 +430,7 @@ namespace Cad_Point_Manager.Models
                 {
                     for (int i = drawingText.StartVertexIndex; i <= drawingText.EndVertexIndex; i++)
                     {
+                        if (_cachedTextVertices is null || _cachedTextVertices.Count == 0) { continue; }
                         ref var vertex = ref GetTextVertexRef(i);
                         vertex.IsSelected = isSelected ? 1.0f : 0.0f;
                     }
@@ -443,11 +439,13 @@ namespace Cad_Point_Manager.Models
                 {
                     for (int i = drawingBlock.StartLineVertexIndex; i <= drawingBlock.EndLineVertexIndex; i++)
                     {
+                        if (_cachedLineVertices is null || _cachedLineVertices.Count == 0) { continue; }
                         ref var vertex = ref GetLineVertexRef(i);
                         vertex.IsSelected = isSelected ? 1.0f : 0.0f;
                     }
                     for (int i = drawingBlock.StartTextVertexIndex; i <= drawingBlock.EndTextVertexIndex; i++)
                     {
+                        if (_cachedTextVertices is null || _cachedTextVertices.Count == 0) { continue; }
                         ref var vertex = ref GetTextVertexRef(i);
                         vertex.IsSelected = isSelected ? 1.0f : 0.0f;
                     }
@@ -457,11 +455,13 @@ namespace Cad_Point_Manager.Models
             {
                 for (int i = dxfPoint.TextStartIndex; i <= dxfPoint.TextEndIndex; i++)
                 {
+                    if (_cachedPointTextVertices is null || _cachedPointTextVertices.Count == 0) { continue; }
                     ref var vertex = ref GetPointTextVertexRef(i);
                     vertex.IsMouseOver = isSelected ? 1.0f : 0.0f;
                 }
                 for (int i = dxfPoint.MarkerStartIndex; i <= dxfPoint.MarkerEndIndex; i++)
                 {
+                    if (_cachedPointMarkerVertices is null || _cachedPointMarkerVertices.Count == 0) { continue; }
                     ref var vertex = ref GetCircleVertexRef(i);
                     vertex.IsMouseOver = isSelected ? 1.0f : 0.0f;
                 }
@@ -501,7 +501,6 @@ namespace Cad_Point_Manager.Models
                 LineVerticesDirty = false;
                 HitTestableObjectTreeDirty = true;
             }
-
             return CollectionsMarshal.AsSpan(_cachedLineVertices);
         }
 
@@ -513,7 +512,6 @@ namespace Cad_Point_Manager.Models
                 {
                     return CollectionsMarshal.AsSpan(_cachedTextVertices);
                 }
-
                 _cachedTextVertices.Clear();
 
                 foreach (var kvp in Layers)
@@ -647,7 +645,6 @@ namespace Cad_Point_Manager.Models
             {
                 throw new ArgumentOutOfRangeException(nameof(index), "Index is out of range.");
             }
-
             return ref span[index];
         }
         public ref TextVertex GetPointTextVertexRef(int index)
@@ -657,10 +654,8 @@ namespace Cad_Point_Manager.Models
             {
                 throw new ArgumentOutOfRangeException(nameof(index), "Index is out of range.");
             }
-
             return ref span[index];
         }
-
         public ref LineVertex GetLineVertexRef(int index)
         {
             Span<LineVertex> span = CollectionsMarshal.AsSpan(_cachedLineVertices);
@@ -668,7 +663,6 @@ namespace Cad_Point_Manager.Models
             {
                 throw new ArgumentOutOfRangeException(nameof(index), "Index is out of range.");
             }
-
             return ref span[index];
         }
         public ref CircleVertex GetCircleVertexRef(int index)
