@@ -94,7 +94,6 @@
                       Style="{StaticResource LayersListViewStyle}"
                       Opacity="{Binding ElementName=root, Path=PointGroupListOpacity}"
                       IsHitTestVisible="{Binding ElementName=root, Path=PointGroupListVisible}"
-                      FontSize="14"
                       SelectionMode="Extended"
                       Focusable="True"
                       SelectionChanged="PointGroupsListView_SelectionChanged"

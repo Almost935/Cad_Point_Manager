@@ -1,12 +1,16 @@
-﻿using Cad_Point_Manager.Controls.D3DControl;
+﻿using Cad_Point_Manager.Common;
+using Cad_Point_Manager.Controls.D3DControl;
 using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Helpers;
 using Cad_Point_Manager.Models.HitTesting;
 using SharpDX;
+using System.ComponentModel.DataAnnotations;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 using System.Windows.Media.TextFormatting;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Cad_Point_Manager.Models.PointRendering
 {
@@ -14,14 +18,131 @@ namespace Cad_Point_Manager.Models.PointRendering
     {
         #region Fields
         private float _markerToTextOffset = 0.25f;
+
+        private int _pointNumber;
+        private Vector3 _position = Vector3.Zero;
+        private float _elevation = 0.0f;
+        private float _textHeight;
+        private float _markerSize;
+        private PointGroup _pointGroup;
+        private string _description;
+        private CogoPointManager _cogoPointManager;
         #endregion
 
         #region Properties
-        public int PointNumber { get; set; }
-        public Vector3 Position { get; set; } = Vector3.Zero;
-        public float TextHeight { get; set; }
-        public float MarkerSize { get; set; }
-        public PointGroup PointGroup { get; set; }
+        [Required(ErrorMessage = "Point name is required.")]
+        [RegularExpression(@"^[1-9]\d*$", ErrorMessage = "Point number must be a positive integer.")]
+        public int PointNumber
+        {
+            get { return _pointNumber; }
+            set
+            {
+                if (_pointNumber != value)
+                {
+                    if (ValidatePointName(value))
+                    {
+                        _pointNumber = value;
+                        OnPropertyChanged(nameof(PointNumber));
+                    }
+                }
+                else
+                {
+                    ClearErrors(nameof(PointNumber));
+                }
+            }
+        }
+
+        public Vector3 Position
+        {
+            get { return _position; }
+            set
+            {
+                if (_position != value)
+                {
+                    _position = value;
+                    OnPropertyChanged(nameof(Position));
+                    OnPropertyChanged(nameof(Easting));
+                    OnPropertyChanged(nameof(Northing));
+                }
+            }
+        }
+        public float Elevation
+        {
+            get { return _elevation; }
+            set
+            {
+                if (_elevation != value)
+                {
+                    _elevation = value;
+                    OnPropertyChanged(nameof(Elevation));
+                }
+            }
+        }
+        public float TextHeight
+        {
+            get { return _textHeight; }
+            set
+            {
+                if (_textHeight != value)
+                {
+                    _textHeight = value;
+                    OnPropertyChanged(nameof(TextHeight));
+                }
+            }
+        }
+        public float MarkerSize
+        {
+            get { return _markerSize; }
+            set
+            {
+                if (_markerSize != value)
+                {
+                    _markerSize = value;
+                    OnPropertyChanged(nameof(MarkerSize));
+                }
+            }
+        }
+        public PointGroup PointGroup
+        {
+            get { return _pointGroup; }
+            set
+            {
+                if (_pointGroup != value)
+                {
+                    _pointGroup = value;
+                    OnPropertyChanged(nameof(PointGroup));
+                }
+            }
+        }
+        public string Description
+        {
+            get { return _description; }
+            set
+            {
+                if (_description != value)
+                {
+                    _description = value;
+                    OnPropertyChanged(nameof(Description));
+                }
+            }
+        }
+        public CogoPointManager CogoPointManager
+        {
+            get { return _cogoPointManager; }
+            set
+            {
+                if (_cogoPointManager != value)
+                {
+                    _cogoPointManager = value;
+                    OnPropertyChanged(nameof(CogoPointManager));
+                }
+            }
+        }
+
+        public float Easting => Position.X;
+        public float Northing => Position.Y;
+        public bool HasPointNumberError => HasErrorsFor(nameof(PointNumber));
+
         public TextVertex[] TextVertices { get; set; } = [];
         public CircleVertex[] MarkerVertices { get; set; } = new CircleVertex[1];
         public int TextStartIndex { get; set; }
@@ -31,21 +152,25 @@ namespace Cad_Point_Manager.Models.PointRendering
         #endregion
 
         #region Constructors
-        public DxfPoint(PointGroup pointGroup, int pointNum, Vector3 position, float textHeight, float markerSize)
+        public DxfPoint(PointGroup pointGroup, int pointNum, Vector3 position, float textHeight, float markerSize, CogoPointManager cogoPointManager, float elevation = 0,
+            string description = "")
         {
             PointGroup = pointGroup;
             PointNumber = pointNum;
             Position = position;
             TextHeight = textHeight;
             MarkerSize = markerSize;
+            CogoPointManager = cogoPointManager;
+            Elevation = elevation;
+            Description = description;
         }
         #endregion
 
         #region Methods
         public override double DistanceToPoint(System.Windows.Point p)
         {
-            if (MathHelpers.PointToPointDistance(p, Position.ToPoint()) < MarkerSize) { return 0.0; }  
-            
+            if (MathHelpers.PointToPointDistance(p, Position.ToPoint()) < MarkerSize) { return 0.0; }
+
             if (TextVertices.Length < 3) { return double.MaxValue; };
 
             Vector2 testPoint = new((float)p.X, (float)p.Y);
@@ -117,7 +242,7 @@ namespace Cad_Point_Manager.Models.PointRendering
         }
 
         public override void MouseEnter()
-        { 
+        {
             this.IsMouseOver = true;
 
             Span<TextVertex> textSpan = TextVertices;
@@ -183,6 +308,21 @@ namespace Cad_Point_Manager.Models.PointRendering
         {
             MarkerVertices[0] = new(Position, PointGroup.Color, MarkerSize, PointGroup.IsVisible ? 1 : 0,
                 IsMouseOver ? 1 : 0, IsSelected ? 1 : 0);
+        }
+        #endregion
+
+        #region Validation
+        public bool ValidatePointName(int value)
+        {
+            ClearErrors(nameof(PointNumber));
+            ValidateProperty(value, nameof(PointNumber));
+
+            if (CogoPointManager?.UsedPointNumbers.Contains(value) == true)
+            {
+                AddError(nameof(PointNumber), $"Point number {value} is already in use.");
+            }
+
+            return !HasErrorsFor(nameof(PointNumber));
         }
         #endregion
     }

@@ -17,6 +17,7 @@ namespace Cad_Point_Manager.Models.PointRendering
         private float _baseSizeFactor = 1.00f;
         private ObservableCollection<DxfPoint> _points = [];
         private bool _colorToggleOpen = false;
+        private CogoPointManager _cogoPointManager;
         #endregion
 
         #region Properties
@@ -103,22 +104,35 @@ namespace Cad_Point_Manager.Models.PointRendering
                 }
             }
         }
+        public CogoPointManager CogoPointManager
+        {
+            get => _cogoPointManager;
+            set
+            {
+                if (_cogoPointManager != value)
+                {
+                    _cogoPointManager = value;
+                    OnPropertyChanged(nameof(CogoPointManager));
+                }
+            }
+        }
         #endregion
 
         #region Constructors
-        public PointGroup(string name, Vector4 color, float textHeight, float markerSize)
+        public PointGroup(string name, Vector4 color, float textHeight, float markerSize, CogoPointManager cogoPointManager)
         {
             Name = name;
             Color = color;
             TextHeight = textHeight;
             PointMarkerSize = markerSize;
+            CogoPointManager = cogoPointManager;
         }
         #endregion
 
         #region Methods
-        public void AddPoint(int pointNum, Vector3 position)
+        public void AddPoint(int pointNum, Vector3 position, float elevation = 0, string description = "")
         {
-            Points.Add(new(this, pointNum, position, TextHeight, PointMarkerSize));
+            Points.Add(new(this, pointNum, position, TextHeight, PointMarkerSize, CogoPointManager, elevation, description));
         }
 
         public override string ToString()

@@ -3,20 +3,26 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:Cad_Point_Manager"
              xmlns:ui="http://schemas.modernwpf.com/2019"
+             xmlns:System="clr-namespace:System;assembly=mscorlib"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
         <ResourceDictionary>
+            <System:Double x:Key="ListViewFontSize">11</System:Double>
+            <System:Double x:Key="ListViewHeaderFontSize">13</System:Double>
+            <System:Double x:Key="ToolTipFontSize">11</System:Double>
+            
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="pack://application:,,,/ColorPicker;component/Styles/DefaultColorPickerStyle.xaml" />
 
                 <ui:ThemeResources />
-
                 <ResourceDictionary Source="Resources/Brushes.xaml" />
                 <ResourceDictionary Source="Resources/Colors.xaml" />
                 <ResourceDictionary Source="Styles/MenuStyles.xaml" />
                 <ResourceDictionary Source="Styles/ListViewStyle.xaml" />
                 <ResourceDictionary Source="Styles/BorderWidgetsRadioButton.xaml" />
                 <ResourceDictionary Source="Styles/Icons.xaml" />
+                <ResourceDictionary Source="Styles/EditableTextBox.xaml" />
+                <ResourceDictionary Source="Styles/ValidationTemplate.xaml" />
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Application.Resources>

@@ -9,7 +9,7 @@ using Point = System.Windows.Point;
 
 namespace Cad_Point_Manager.Models.DrawingObjects3D
 {
-    public abstract class DrawingObject3D : HitTestableObject, INotifyPropertyChanged
+    public abstract class DrawingObject3D : HitTestableObject
     {
         #region Properties
         public DrawingObject3dType Type { get; set; }
@@ -19,10 +19,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         public DrawingObject3dColorType DrawingObject3DColorType { get; set; }
         public bool IsPartOfBlock { get; set; } = false;
         public DrawingBlock3D DrawingBlock3D { get; set; }
-        #endregion
-
-        #region Events
-        public event PropertyChangedEventHandler PropertyChanged;
         #endregion
 
         #region Methods
@@ -57,12 +53,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             {
                 Color = new(0, 0, 0, 1);
             }
-        }
-
-
-        protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
         #endregion
     }

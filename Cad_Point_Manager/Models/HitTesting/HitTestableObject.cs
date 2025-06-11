@@ -1,13 +1,16 @@
-﻿using System;
+﻿using Cad_Point_Manager.Common;
+using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 
 namespace Cad_Point_Manager.Models.HitTesting
 {
-    public abstract class HitTestableObject
+    public abstract class HitTestableObject : ValidationBase, INotifyPropertyChanged
     {
         #region Properties
         public Rect Bounds { get; set; } = Rect.Empty;
@@ -31,7 +34,14 @@ namespace Cad_Point_Manager.Models.HitTesting
 
             return false;
         }
+        #endregion
 
+        #region INotifyPropertyChanged Implementation
+        public event PropertyChangedEventHandler PropertyChanged;
+        protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
         #endregion
     }
 }

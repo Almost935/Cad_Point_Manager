@@ -131,7 +131,7 @@
         <Grid Grid.Row="2"
               ClipToBounds="False"
               Panel.ZIndex="1">
-            <uc:RightHandPopout x:Name="layerView"
+            <uc:RightHandPopout x:Name="RightSidePopout"
                                 Panel.ZIndex="1"
                                 Width="300"
                                 HorizontalAlignment="Right"
@@ -140,6 +140,14 @@
                                 CadManager="{Binding JobFileManager.CadManager3D}"
                                 LayerCollectionView="{Binding JobFileManager.CadManager3D.LayersView}"
                                 PointGroupCollectionView="{Binding JobFileManager.CadManager3D.PointGroupsView}" />
+            <uc:LeftHandPopout x:Name="LeftSidePopout"
+                               Panel.ZIndex="1"
+                               Width="400"
+                               HorizontalAlignment="Left"
+                               ClipToBounds="False"
+                               Height="{Binding ElementName=dxfBorder, Path=Height}"
+                               CadManager="{Binding JobFileManager.CadManager3D}"
+                               PointsCollectionView="{Binding JobFileManager.CadManager3D.PointsView}" />
         </Grid>
 
         <Grid x:Name="dxfGrid"
@@ -184,7 +192,7 @@
             <WrapPanel Grid.Column="1"
                        Margin="20 0 0 0"
                        HorizontalAlignment="Center">
-                <RadioButton x:Name="All" 
+                <RadioButton x:Name="All"
                              GroupName="SnapToggles"
                              Style="{StaticResource DarkGreyRadioButtonStyle}"
                              Width="40"

@@ -36,6 +36,8 @@ namespace Cad_Point_Manager.Models
                 }
             }
         }
+
+        public List<int> UsedPointNumbers => PointGroups.SelectMany(pg => pg.Value.Points).Select(p => p.PointNumber).ToList();
         #endregion
 
         #region Methods
@@ -43,7 +45,6 @@ namespace Cad_Point_Manager.Models
         {
             return PointGroups.SelectMany(pg => pg.Value.Points).Any(p => p.PointNumber == num);
         }
-
 
         public bool TrySetActivePointGroup(string groupName)
         {
@@ -66,14 +67,14 @@ namespace Cad_Point_Manager.Models
             return false;
         }
 
-        public bool TryAddPointToActiveGroup(int pointNum, Vector3 position)
+        public bool TryAddPointToActiveGroup(int pointNum, Vector3 position, float elevation = 0, string description = "")
         {
             if (ActivePointGroup == null || PointNumberExists(pointNum))
             {
                 return false;
             }
 
-            ActivePointGroup.AddPoint(pointNum, position);
+            ActivePointGroup.AddPoint(pointNum, position, elevation, description);
             return true;
         }
 
@@ -90,7 +91,7 @@ namespace Cad_Point_Manager.Models
                 return false;
             }
 
-            pointGroup = new(groupName, color, textHeight, markerSize);
+            pointGroup = new(groupName, color, textHeight, markerSize, this);
             PointGroups.Add(new KeyValuePair<string, PointGroup>(groupName, pointGroup));
             return true;
         }
