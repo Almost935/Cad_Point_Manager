@@ -1,0 +1,27 @@
+﻿<UserControl x:Class="Cad_Point_Manager.Testing.TestUserControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="clr-namespace:Cad_Point_Manager.Testing"
+             mc:Ignorable="d"
+             d:DesignHeight="200"
+             d:DesignWidth="200"
+             Background="#FF969696">
+    <Grid>
+        <Expander Style="{StaticResource ListViewExpanderStyle}">
+            <Expander.Header>
+                <TextBlock Text="Expander Header" />
+            </Expander.Header>
+            <Expander.Content>
+                <StackPanel>
+                    <TextBlock Text="This is the content of the expander." />
+                    <Button Content="Click Me"
+                            Width="100"
+                            Height="30"
+                            Margin="5" />
+                </StackPanel>
+            </Expander.Content>
+        </Expander>
+    </Grid>
+</UserControl>

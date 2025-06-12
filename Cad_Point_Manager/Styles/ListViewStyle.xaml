@@ -4,6 +4,8 @@
     <Color x:Key="HeaderTextColor">White</Color>
     <SolidColorBrush x:Key="HeaderTextBrush"
                      Color="{DynamicResource HeaderTextColor}" />
+    <SolidColorBrush x:Key="HeaderBackgroundBrush"
+                     Color="#FF747781" />
 
     <Color x:Key="ControlLightColor">#F1F1F1</Color>
     <SolidColorBrush x:Key="ControlLightBrush"
@@ -17,14 +19,10 @@
     <Color x:Key="BorderMediumColor">#FF888888</Color>
     <Color x:Key="BorderDarkColor">#FF444444</Color>
 
-    <SolidColorBrush x:Key="asdf"
-                     Color="#BF808080" />
     <Color x:Key="SelectedBackgroundColor">#BF5F5F5F</Color>
     <Color x:Key="MouseOverBackgroundColor">#BF808080</Color>
-    
-    <Color x:Key="DisabledBorderLightColor">#FFAAAAAA</Color>
-    
 
+    <Color x:Key="DisabledBorderLightColor">#FFAAAAAA</Color>
 
 
     <Style x:Key="LayersListViewScrollviewer"
@@ -170,20 +168,20 @@
                             </VisualStateGroup>
                         </VisualStateManager.VisualStateGroups>
                         <Border x:Name="HeaderBorder"
-                                BorderThickness="0,1,0,1"
-                                Padding="6,0,6,0"
-                                BorderBrush="{DynamicResource ControlMediumBrush}"
-                                Background="{DynamicResource ControlMediumBrush}">
+                                Margin="0"
+                                Background="{DynamicResource HeaderBackgroundBrush}">
 
-                            <ContentPresenter x:Name="HeaderContent"
+                            <ContentPresenter x:Name="HeaderContent" 
                                               RecognizesAccessKey="True"
-                                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
-                                              HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                              VerticalAlignment="Center"
+                                              HorizontalAlignment="Left"
+                                              Margin="10 0 0 0"
                                               SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
                         </Border>
                         <Thumb x:Name="PART_HeaderGripper"
                                HorizontalAlignment="Right"
                                Margin="0,0,-9,0"
+                               Background="{DynamicResource HeaderBackgroundBrush}"
                                Style="{StaticResource LayersListViewHeaderGripper}" />
                     </Grid>
                 </ControlTemplate>
@@ -228,8 +226,9 @@
                 <ControlTemplate TargetType="ListViewItem">
                     <Border x:Name="Border"
                             SnapsToDevicePixels="true"
+                            BorderThickness="0"
                             Background="Transparent">
-                        <GridViewRowPresenter VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
+                        <GridViewRowPresenter VerticalAlignment="Center" />
                     </Border>
                     <ControlTemplate.Triggers>
                         <MultiTrigger>
@@ -316,6 +315,7 @@
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
+
     </Style>
 
 </ResourceDictionary>

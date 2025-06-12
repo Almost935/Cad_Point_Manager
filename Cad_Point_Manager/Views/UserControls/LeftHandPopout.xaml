@@ -17,19 +17,20 @@
     <UserControl.Resources>
         <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" />
         <converters:KeyValueToValueConverter x:Key="KeyValueToValueConverter" />
-        <validation:IntegerValidationRule x:Key="PointNumberValidationRule" />
+        <validation:PointNumberValidationRule x:Key="PointNumberValidationRule" />
+        <validation:DoubleValidationRule x:Key="DoubleValidationRule" />
         <SolidColorBrush x:Key="propertiesFontBrush"
                          Color="Black" />
 
         <Style x:Key="tabBorderStyle"
                TargetType="Border">
             <Setter Property="Background"
-                    Value="{StaticResource TabColor}" />
+                    Value="{StaticResource TabBrush}" />
             <Style.Triggers>
                 <Trigger Property="IsMouseOver"
                          Value="True">
                     <Setter Property="Background"
-                            Value="{StaticResource TabMouseOverColor}" />
+                            Value="{StaticResource TabMouseOverBrush}" />
                 </Trigger>
             </Style.Triggers>
         </Style>
@@ -55,13 +56,13 @@
                          Margin="0 1 0 1"
                          MouseEnter="PointsBorder_MouseEnter">
                     <TextBlock Text="Points"
-                               Foreground="{StaticResource TabFontColor}"
+                               Style="{StaticResource TabFontStyle}"
                                HorizontalAlignment="Center"
                                VerticalAlignment="Center"
                                TextAlignment="Center"
                                RenderTransformOrigin="0.5, 0.5"
                                ClipToBounds="False"
-                               Margin="0 2 6 2">
+                               Margin="3 0 3 0">
                         <TextBlock.LayoutTransform>
                             <TransformGroup>
                                 <RotateTransform Angle="90" />
@@ -86,7 +87,7 @@
                       SelectionMode="Extended"
                       Loaded="PointsListView_Loaded"
                       SelectionChanged="PointsListView_SelectionChanged"
-                      Background="{StaticResource PopoutMenuBackgroundColor}">
+                      Background="{StaticResource PopoutMenuBackgroundBrush}">
                 <ListView.View>
                     <GridView>
                         <GridViewColumn>
@@ -96,8 +97,12 @@
                             </GridViewColumn.Header>
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
-                                    <Border PreviewMouseLeftButtonDown="Border_MouseLeftButtonDown"
-                                            Focusable="False">
+                                    <Border x:Name="PointNameBorder"
+                                            PreviewMouseLeftButtonDown="PointNameBorder_PreviewMouseLeftButtonDown"
+                                            Focusable="False"
+                                            BorderBrush="Transparent"
+                                            BorderThickness="1"
+                                            Background="Transparent">
                                         <TextBox x:Name="PointNumberTextbox"
                                                  FontSize="{StaticResource ListViewFontSize}"
                                                  Style="{StaticResource EditableTextBox}"
@@ -118,16 +123,10 @@
                                                          ValidatesOnExceptions="True"
                                                          ValidatesOnNotifyDataErrors="True">
                                                     <Binding.ValidationRules>
-                                                        <validation:IntegerValidationRule />
+                                                        <validation:PointNumberValidationRule />
                                                     </Binding.ValidationRules>
                                                 </Binding>
                                             </TextBox.Text>
-                                            <!--<TextBox.ToolTip>
-                                                <ToolTip>
-                                                    <TextBlock Text="{Binding PointNumber}"
-                                                               FontSize="{StaticResource ToolTipFontSize}" />
-                                                </ToolTip>
-                                            </TextBox.ToolTip>-->
                                         </TextBox>
                                     </Border>
                                 </DataTemplate>
@@ -141,15 +140,38 @@
                             </GridViewColumn.Header>
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
-                                    <TextBlock Text="{Binding Northing,StringFormat=N3}"
-                                               FontSize="{StaticResource ListViewFontSize}">
-                                        <TextBlock.ToolTip>
-                                            <ToolTip>
-                                                <TextBlock Text="{Binding Northing,StringFormat=N3}"
-                                                           FontSize="{StaticResource ToolTipFontSize}" />
-                                            </ToolTip>
-                                        </TextBlock.ToolTip>
-                                    </TextBlock>
+                                    <Border x:Name="PointNorthingBorder"
+                                            PreviewMouseLeftButtonDown="PointNorthingBorder_PreviewMouseLeftButtonDown"
+                                            Focusable="False"
+                                            BorderBrush="Transparent"
+                                            BorderThickness="1"
+                                            Background="Transparent">
+                                        <TextBox x:Name="PointNorthingTextbox"
+                                                 FontSize="{StaticResource ListViewFontSize}"
+                                                 Style="{StaticResource EditableTextBox}"
+                                                 HorizontalAlignment="Stretch"
+                                                 VerticalAlignment="Stretch"
+                                                 IsReadOnly="True"
+                                                 LostFocus="PointNorthingTextbox_LostFocus"
+                                                 PreviewKeyDown="PointNumberTextbox_PreviewKeyDown"
+                                                 ToolTipService.ShowOnDisabled="True"
+                                                 ToolTipService.InitialShowDelay="100"
+                                                 ToolTipService.BetweenShowDelay="100">
+                                            <TextBox.Text>
+                                                <Binding Path="Northing"
+                                                         UpdateSourceTrigger="Explicit"
+                                                         Mode="TwoWay"
+                                                         ValidatesOnDataErrors="True"
+                                                         NotifyOnValidationError="True"
+                                                         ValidatesOnExceptions="True"
+                                                         ValidatesOnNotifyDataErrors="True">
+                                                    <Binding.ValidationRules>
+                                                        <validation:DoubleValidationRule />
+                                                    </Binding.ValidationRules>
+                                                </Binding>
+                                            </TextBox.Text>
+                                        </TextBox>
+                                    </Border>
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
@@ -161,16 +183,38 @@
                             </GridViewColumn.Header>
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
-                                    <TextBlock Text="{Binding Easting, StringFormat=N3}"
-                                               FontSize="{StaticResource ListViewFontSize}"
-                                               TextTrimming="CharacterEllipsis">
-                                        <TextBlock.ToolTip>
-                                            <ToolTip>
-                                                <TextBlock Text="{Binding Easting, StringFormat=N3}"
-                                                           FontSize="{StaticResource ToolTipFontSize}" />
-                                            </ToolTip>
-                                        </TextBlock.ToolTip>
-                                    </TextBlock>
+                                    <Border x:Name="PointNorthingBorder"
+                                            PreviewMouseLeftButtonDown="PointNorthingBorder_PreviewMouseLeftButtonDown"
+                                            Focusable="False"
+                                            BorderBrush="Transparent"
+                                            BorderThickness="1"
+                                            Background="Transparent">
+                                        <TextBox x:Name="PointNorthingTextbox"
+                                                 FontSize="{StaticResource ListViewFontSize}"
+                                                 Style="{StaticResource EditableTextBox}"
+                                                 HorizontalAlignment="Stretch"
+                                                 VerticalAlignment="Stretch"
+                                                 IsReadOnly="True"
+                                                 LostFocus="PointNorthingTextbox_LostFocus"
+                                                 PreviewKeyDown="PointNumberTextbox_PreviewKeyDown"
+                                                 ToolTipService.ShowOnDisabled="True"
+                                                 ToolTipService.InitialShowDelay="100"
+                                                 ToolTipService.BetweenShowDelay="100">
+                                            <TextBox.Text>
+                                                <Binding Path="Northing"
+                                                         UpdateSourceTrigger="Explicit"
+                                                         Mode="TwoWay"
+                                                         ValidatesOnDataErrors="True"
+                                                         NotifyOnValidationError="True"
+                                                         ValidatesOnExceptions="True"
+                                                         ValidatesOnNotifyDataErrors="True">
+                                                    <Binding.ValidationRules>
+                                                        <validation:DoubleValidationRule />
+                                                    </Binding.ValidationRules>
+                                                </Binding>
+                                            </TextBox.Text>
+                                        </TextBox>
+                                    </Border>
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
@@ -225,16 +269,20 @@
                             <Style TargetType="{x:Type GroupItem}">
                                 <Setter Property="Template">
                                     <Setter.Value>
-                                        <ControlTemplate>
-                                            <Expander IsExpanded="false">
+                                        <ControlTemplate TargetType="GroupItem">
+                                            <Expander IsExpanded="False"
+                                                      Style="{StaticResource ListViewExpanderStyle}"
+                                                      Margin="0 1 0 1">
                                                 <Expander.Header>
-                                                    <StackPanel Orientation="Horizontal">
-                                                        <TextBlock Text="{Binding Name}"
-                                                                   VerticalAlignment="Bottom"
-                                                                   FontSize="{StaticResource ListViewHeaderFontSize}" />
-                                                    </StackPanel>
+                                                    <TextBlock Text="{Binding Name}"
+                                                               FontSize="{StaticResource ListViewHeaderFontSize}"
+                                                               VerticalAlignment="Center"
+                                                               Margin="0"
+                                                               Padding="0" />
                                                 </Expander.Header>
-                                                <ItemsPresenter />
+                                                <ItemsPresenter SnapsToDevicePixels="True"
+                                                                UseLayoutRounding="True"
+                                                                Margin="0" />
                                             </Expander>
                                         </ControlTemplate>
                                     </Setter.Value>
@@ -243,6 +291,8 @@
                         </GroupStyle.ContainerStyle>
                     </GroupStyle>
                 </ListView.GroupStyle>
+
+
             </ListView>
         </Grid>
 

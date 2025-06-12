@@ -24,7 +24,6 @@
                         <Border.BorderBrush>
                             <SolidColorBrush Color="Black" />
                         </Border.BorderBrush>
-
                         <ScrollViewer Margin="0"
                                       x:Name="PART_ContentHost" />
                     </Border>

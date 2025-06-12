@@ -23,12 +23,12 @@
         <Style x:Key="tabBorderStyle"
                TargetType="Border">
             <Setter Property="Background"
-                    Value="{StaticResource TabColor}" />
+                    Value="{StaticResource TabBrush}" />
             <Style.Triggers>
                 <Trigger Property="IsMouseOver"
                          Value="True">
                     <Setter Property="Background"
-                            Value="{StaticResource TabMouseOverColor}" />
+                            Value="{StaticResource TabMouseOverBrush}" />
                 </Trigger>
             </Style.Triggers>
         </Style>
@@ -54,7 +54,7 @@
                       SelectionMode="Extended"
                       Loaded="LayersListView_Loaded"
                       SelectionChanged="LayersListView_SelectionChanged"
-                      Background="{StaticResource PopoutMenuBackgroundColor}">
+                      Background="{StaticResource PopoutMenuBackgroundBrush}">
                 <ListView.View>
                     <GridView>
                         <GridViewColumn Header="Name">
@@ -97,7 +97,7 @@
                       SelectionMode="Extended"
                       Focusable="True"
                       SelectionChanged="PointGroupsListView_SelectionChanged"
-                      Background="{StaticResource PopoutMenuBackgroundColor}"
+                      Background="{StaticResource PopoutMenuBackgroundBrush}"
                       Loaded="PointGroupsListView_Loaded">
                 <ListView.View>
                     <GridView>
@@ -177,13 +177,13 @@
                          Margin="0 1 0 1"
                          MouseEnter="LayersBorder_MouseEnter">
                     <TextBlock Text="Layers"
-                               Foreground="{StaticResource TabFontColor}"
+                               Style="{StaticResource TabFontStyle}"
                                HorizontalAlignment="Center"
                                VerticalAlignment="Center"
                                TextAlignment="Center"
                                RenderTransformOrigin="0.5, 0.5"
                                ClipToBounds="False"
-                               Margin="0 2 6 2">
+                               Margin="3 0 3 0">
                         <TextBlock.LayoutTransform>
                             <TransformGroup>
                                 <RotateTransform Angle="90" />
@@ -199,13 +199,13 @@
                         Margin="0 1 0 1"
                         MouseEnter="PointGroupsBorder_MouseEnter">
                     <TextBlock Text="Point Groups"
-                               Foreground="{StaticResource TabFontColor}"
+                               Style="{StaticResource TabFontStyle}"
                                HorizontalAlignment="Center"
                                VerticalAlignment="Center"
                                TextAlignment="Center"
                                RenderTransformOrigin="0.5, 0.5"
                                ClipToBounds="False"
-                               Margin="0 2 6 2">
+                               Margin="3 0 3 0">
                         <TextBlock.LayoutTransform>
                             <TransformGroup>
                                 <RotateTransform Angle="90" />

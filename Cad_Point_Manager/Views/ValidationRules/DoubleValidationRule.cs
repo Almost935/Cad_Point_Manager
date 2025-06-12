@@ -8,22 +8,22 @@ using System.Windows.Controls;
 
 namespace Cad_Point_Manager.Views.ValidationRules
 {
-    public class IntegerValidationRule : ValidationRule
+    public class DoubleValidationRule : ValidationRule
     {
-        public IntegerValidationRule() { }
+        public DoubleValidationRule() { }
 
         public override ValidationResult Validate(object value, CultureInfo cultureInfo)
         {
-            int pointNum = 0;
+            double d = 0;
 
             try
             {
                 if (((string)value).Length > 0)
-                    pointNum = Int32.Parse((String)value);
+                    d = double.Parse((String)value);
             }
             catch (Exception)
             {
-                return new ValidationResult(false, $"Point number must be a positive integer");
+                return new ValidationResult(false, $"Invalid input.");
             }
 
             return ValidationResult.ValidResult;

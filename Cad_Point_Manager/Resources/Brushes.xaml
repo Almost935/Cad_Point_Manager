@@ -1,18 +1,25 @@
 ﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    
+    <Color x:Key="MainBackgroundColor">#FF12161A</Color>
     <SolidColorBrush x:Key="MainBackgroundBrush"
-                     Color="#282D33" />
+                     Color="{StaticResource MainBackgroundColor}" />
+    <Color x:Key="WidgetColor">#FF32373C</Color>
     <SolidColorBrush x:Key="WidgetBrush"
-                     Color="#FF3A4149" />
+                     Color="{StaticResource WidgetColor}" />
     
     <!--Tab Brushes-->
-    <SolidColorBrush x:Key="TabColor"
-                     Color="#FFC5C5C5" />
-    <SolidColorBrush x:Key="TabMouseOverColor"
-                     Color="#FF929292" />
-    <SolidColorBrush x:Key="TabFontColor"
-                     Color="Black" />
-    <SolidColorBrush x:Key="PopoutMenuBackgroundColor"
-                     Color="#7F505050" />
-    
+    <Color x:Key="TabColor">#FF747781</Color>
+    <SolidColorBrush x:Key="TabBrush"
+                     Color="{StaticResource TabColor}" />
+    <Color x:Key="TabMouseOverColor">#FF5D5D5D</Color>
+    <SolidColorBrush x:Key="TabMouseOverBrush"
+                     Color="{StaticResource TabMouseOverColor}" />
+    <Color x:Key="TabFontColor">#FFFFFFFF</Color>
+    <SolidColorBrush x:Key="TabFontBrush"
+                     Color="{StaticResource TabFontColor}" />
+    <Color x:Key="PopoutMenuBackgroundColor">#CCDCDCDC</Color>
+    <SolidColorBrush x:Key="PopoutMenuBackgroundBrush"
+                     Color="{StaticResource PopoutMenuBackgroundColor}" />
+
 </ResourceDictionary>

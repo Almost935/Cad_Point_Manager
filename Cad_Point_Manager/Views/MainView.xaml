@@ -45,8 +45,7 @@
                     BorderBrush="#7FFFFFFF"
                     BorderThickness="0.25"
                     Background="{StaticResource WidgetBrush}">
-                <Menu Margin="0 0 0 0"
-                      Style="{StaticResource MenuStyle1}">
+                <Menu Style="{StaticResource MenuStyle1}">
                     <MenuItem Header="File"
                               Style="{StaticResource MenuItemStyle1}">
                         <MenuItem Header="New"

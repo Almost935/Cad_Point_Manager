@@ -33,6 +33,9 @@ namespace Cad_Point_Manager.Views.UserControls
         private readonly DispatcherTimer _hideTimer = new();
         private bool _isMouseOverPanel = false;
         private ScaleTransform _mainPanelTransform = new();
+
+        // DxfPoint editing fields
+        private int _previousPointNumber = 0;
         #endregion
 
         #region Properties
@@ -201,12 +204,14 @@ namespace Cad_Point_Manager.Views.UserControls
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
-        private void Border_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        // Point Number Editing
+        private void PointNameBorder_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             if (e.ClickCount > 1)
             {
-                if (sender is Border border && border.Child is TextBox textbox)
+                if (sender is Border border && border.Child is TextBox textbox && textbox.DataContext is DxfPoint point)
                 {
+                    _previousPointNumber = point.PointNumber;
                     e.Handled = true;
                     textbox.IsReadOnly = false;
                     textbox.Focus();
@@ -218,7 +223,6 @@ namespace Cad_Point_Manager.Views.UserControls
                 }
             }
         }
-
         private void PointNumberTextbox_LostFocus(object sender, RoutedEventArgs e)
         {
             TextBox textBox = sender as TextBox;
@@ -246,14 +250,9 @@ namespace Cad_Point_Manager.Views.UserControls
                     point.ClearErrors(nameof(point.PointNumber));
                     var binding = textBox.GetBindingExpression(TextBox.TextProperty);
                     binding?.ValidateWithoutUpdate();
-                    //binding?.UpdateSource();
-
                     var textBoxHasError = Validation.GetHasError(textBox);
 
-                    if (textBoxHasError)
-                    {
-                        return;
-                    }
+                    if (textBoxHasError) { return; }
                     else
                     {
                         binding?.UpdateSource();
@@ -269,10 +268,25 @@ namespace Cad_Point_Manager.Views.UserControls
                     }
                 }
             }
-                if (e.Key == Key.Escape)
+            if (e.Key == Key.Escape)
             {
-
+                if (sender is TextBox textBox && textBox.DataContext is DxfPoint point)
+                {
+                    e.Handled = true;
+                    point.PointNumber = _previousPointNumber;
+                    var binding = textBox.GetBindingExpression(TextBox.TextProperty);
+                    binding?.UpdateTarget();
+                    textBox.IsReadOnly = true;
+                }
             }
+        }
+        private void PointNorthingBorder_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+
+        }
+        private void PointNorthingTextbox_LostFocus(object sender, RoutedEventArgs e)
+        {
+
         }
     }
 }

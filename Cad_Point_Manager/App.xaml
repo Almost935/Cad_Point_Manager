@@ -7,22 +7,20 @@
              StartupUri="MainWindow.xaml">
     <Application.Resources>
         <ResourceDictionary>
-            <System:Double x:Key="ListViewFontSize">11</System:Double>
-            <System:Double x:Key="ListViewHeaderFontSize">13</System:Double>
-            <System:Double x:Key="ToolTipFontSize">11</System:Double>
-            
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="pack://application:,,,/ColorPicker;component/Styles/DefaultColorPickerStyle.xaml" />
 
                 <ui:ThemeResources />
                 <ResourceDictionary Source="Resources/Brushes.xaml" />
-                <ResourceDictionary Source="Resources/Colors.xaml" />
+                <ResourceDictionary Source="Resources/FontStyles.xaml" />
+                <ResourceDictionary Source="Resources/AssortedResources.xaml" />
                 <ResourceDictionary Source="Styles/MenuStyles.xaml" />
                 <ResourceDictionary Source="Styles/ListViewStyle.xaml" />
                 <ResourceDictionary Source="Styles/BorderWidgetsRadioButton.xaml" />
                 <ResourceDictionary Source="Styles/Icons.xaml" />
                 <ResourceDictionary Source="Styles/EditableTextBox.xaml" />
                 <ResourceDictionary Source="Styles/ValidationTemplate.xaml" />
+                <ResourceDictionary Source="Styles/ListViewExpanderStyle.xaml" />
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Application.Resources>

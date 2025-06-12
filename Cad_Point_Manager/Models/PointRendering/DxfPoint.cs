@@ -20,7 +20,8 @@ namespace Cad_Point_Manager.Models.PointRendering
         private float _markerToTextOffset = 0.25f;
 
         private int _pointNumber;
-        private Vector3 _position = Vector3.Zero;
+        private double _northing;
+        private double _easting;
         private float _elevation = 0.0f;
         private float _textHeight;
         private float _markerSize;
@@ -37,35 +38,36 @@ namespace Cad_Point_Manager.Models.PointRendering
             get { return _pointNumber; }
             set
             {
-                if (_pointNumber != value)
-                {
-                    if (ValidatePointName(value))
-                    {
-                        _pointNumber = value;
-                        OnPropertyChanged(nameof(PointNumber));
-                    }
-                }
-                else
-                {
-                    ClearErrors(nameof(PointNumber));
-                }
+                _pointNumber = value;
+                OnPropertyChanged(nameof(PointNumber));
+                ValidatePointName(value);
             }
         }
-
-        public Vector3 Position
+        public double Northing
         {
-            get { return _position; }
+            get { return _northing; }
             set
             {
-                if (_position != value)
+                if (_northing != value)
                 {
-                    _position = value;
-                    OnPropertyChanged(nameof(Position));
-                    OnPropertyChanged(nameof(Easting));
+                    _northing = value;
                     OnPropertyChanged(nameof(Northing));
                 }
             }
         }
+        public double Easting
+        {
+            get { return _easting; }
+            set
+            {
+                if (_easting != value)
+                {
+                    _easting = value;
+                    OnPropertyChanged(nameof(Easting));
+                }
+            }
+        }
+
         public float Elevation
         {
             get { return _elevation; }
@@ -139,8 +141,7 @@ namespace Cad_Point_Manager.Models.PointRendering
             }
         }
 
-        public float Easting => Position.X;
-        public float Northing => Position.Y;
+        public Vector3 RenderPosition => new Vector3((float)Northing, (float)Easting, 0);
         public bool HasPointNumberError => HasErrorsFor(nameof(PointNumber));
 
         public TextVertex[] TextVertices { get; set; } = [];
@@ -157,7 +158,8 @@ namespace Cad_Point_Manager.Models.PointRendering
         {
             PointGroup = pointGroup;
             PointNumber = pointNum;
-            Position = position;
+            Northing = position.X;
+            Easting = position.Y;
             TextHeight = textHeight;
             MarkerSize = markerSize;
             CogoPointManager = cogoPointManager;
@@ -169,7 +171,7 @@ namespace Cad_Point_Manager.Models.PointRendering
         #region Methods
         public override double DistanceToPoint(System.Windows.Point p)
         {
-            if (MathHelpers.PointToPointDistance(p, Position.ToPoint()) < MarkerSize) { return 0.0; }
+            if (MathHelpers.PointToPointDistance(p, RenderPosition.ToPoint()) < MarkerSize) { return 0.0; }
 
             if (TextVertices.Length < 3) { return double.MaxValue; };
 
@@ -236,8 +238,8 @@ namespace Cad_Point_Manager.Models.PointRendering
 
             Bounds = new Rect(new System.Windows.Point(minX, minY), new System.Windows.Point(maxX, maxY));
 
-            Rect circleBounds = new Rect(new System.Windows.Point(Position.X - MarkerSize, Position.Y - MarkerSize),
-                new System.Windows.Point(Position.X + MarkerSize, Position.Y + MarkerSize));
+            Rect circleBounds = new Rect(new System.Windows.Point(RenderPosition.X - MarkerSize, RenderPosition.Y - MarkerSize),
+                new System.Windows.Point(RenderPosition.X + MarkerSize, RenderPosition.Y + MarkerSize));
             Bounds.Union(circleBounds);
         }
 
@@ -300,13 +302,13 @@ namespace Cad_Point_Manager.Models.PointRendering
             TextVertices ??= Array.Empty<TextVertex>();
             Array.Clear(TextVertices);
 
-            TextVertices = textDict.GetIntTextVertices(PointNumber, TextHeight, new Vector2(Position.X + _markerToTextOffset, Position.Y), PointGroup.Color);
+            TextVertices = textDict.GetIntTextVertices(PointNumber, TextHeight, new Vector2(RenderPosition.X + _markerToTextOffset, RenderPosition.Y), PointGroup.Color);
 
             UpdateBounds();
         }
         public void UpdateMarkerVertices()
         {
-            MarkerVertices[0] = new(Position, PointGroup.Color, MarkerSize, PointGroup.IsVisible ? 1 : 0,
+            MarkerVertices[0] = new(RenderPosition, PointGroup.Color, MarkerSize, PointGroup.IsVisible ? 1 : 0,
                 IsMouseOver ? 1 : 0, IsSelected ? 1 : 0);
         }
         #endregion
@@ -317,10 +319,15 @@ namespace Cad_Point_Manager.Models.PointRendering
             ClearErrors(nameof(PointNumber));
             ValidateProperty(value, nameof(PointNumber));
 
-            if (CogoPointManager?.UsedPointNumbers.Contains(value) == true)
+            if (CogoPointManager?.UsedPointNumbers.Count(x => x == value) > 1)
             {
                 AddError(nameof(PointNumber), $"Point number {value} is already in use.");
             }
+
+            //if (CogoPointManager?.UsedPointNumbers.Contains(value) == true)
+            //{
+            //    AddError(nameof(PointNumber), $"Point number {value} is already in use.");
+            //}
 
             return !HasErrorsFor(nameof(PointNumber));
         }
