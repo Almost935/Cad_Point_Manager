@@ -13,6 +13,7 @@
       xmlns:viewModels="clr-namespace:Cad_Point_Manager.ViewModels"
       xmlns:sys="clr-namespace:System;assembly=mscorlib"
       xmlns:colorpicker="clr-namespace:ColorPicker;assembly=ColorPicker"
+      xmlns:pointRendering="clr-namespace:Cad_Point_Manager.Models.PointRendering"
       d:DataContext="{d:DesignInstance Type=viewModels:MainViewModel}"
       mc:Ignorable="d"
       Title="MainView"
@@ -27,6 +28,9 @@
         </Style>
 
         <converters:LeftRightMarginConverter x:Key="LeftRightMarginConverter" />
+        <converters:Matrix3x2ToWindowsMatrixConverter x:Key="Matrix3x2ToWindowsMatrixConverter" />
+        <converters:CenterOffsetConverter x:Key="CenterOffsetConverter" />
+        <converters:CogoPointBaseToggleCenterConverter x:Key="CogoPointBaseToggleCenterConverter" />
 
         <Thickness x:Key="ToggleButtonMargin">0,5,0,5</Thickness>
     </Page.Resources>
@@ -149,12 +153,10 @@
                                PointsCollectionView="{Binding JobFileManager.CadManager3D.PointsView}" />
         </Grid>
 
-        <Grid x:Name="dxfGrid"
-              Grid.Row="2">
-            <Border x:Name="dxfBorder">
-                <Border.Margin>
+        <Grid Grid.Row="2">
+            <Grid x:Name="dxfGrid">
+                <Grid.Margin>
                     <MultiBinding Converter="{StaticResource LeftRightMarginConverter}">
-                        <!-- Bind Left and Right margins to the SourceControl's value -->
                         <Binding ElementName="SourceControl"
                                  Path="Value" />
                         <Binding ElementName="SourceControl"
@@ -170,12 +172,71 @@
                             </Binding.Source>
                         </Binding>
                     </MultiBinding>
-                </Border.Margin>
+                </Grid.Margin>
 
                 <d3D:D3dDxfControl x:Name="d3dDxfControl"
                                    Cursor="Cross"
-                                   CadManager3D="{Binding JobFileManager.CadManager3D}" />
-            </Border>
+                                   CadManager3D="{Binding JobFileManager.CadManager3D}"
+                                   Camera="{Binding Camera, Mode=TwoWay}"
+                                   SelectedPoints="{Binding SelectedPoints}"
+                                   Panel.ZIndex="2" />
+
+                <Canvas x:Name="BackgroundCanvas">
+                    <ItemsControl x:Name="SelectedPointButtonsItemsControl"
+                                  ItemsSource="{Binding SelectedPoints}"
+                                  Background="Transparent">
+                        <ItemsControl.RenderTransform>
+                            <TransformGroup>
+                                <ScaleTransform ScaleY="-1" />
+                                <!--<TranslateTransform Y="{Binding ElementName=BackgroundCanvas, Path=ActualHeight}" />-->
+                            </TransformGroup>
+                        </ItemsControl.RenderTransform>
+                        <ItemsControl.Resources>
+                            <sys:Double x:Key="HalfWidth">25</sys:Double>
+                            <sys:Double x:Key="HalfHeight">25</sys:Double>
+                        </ItemsControl.Resources>
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <Canvas />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+
+                        <!--<ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <uc:CogoPointUserControl />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>-->
+                        
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="{x:Type pointRendering:CogoPoint}">
+                                <ToggleButton Content="Move"
+                                              Width="50"
+                                              Height="50"
+                                              IsHitTestVisible="True">
+                                    <Canvas.Left>
+                                        <MultiBinding Converter="{StaticResource CogoPointBaseToggleCenterConverter}"
+                                                      ConverterParameter="X">
+                                            <Binding Path="PointPosition" />
+                                            <Binding Path="DataContext.Camera.D2dMatrix"
+                                                     RelativeSource="{RelativeSource AncestorType=Page}" />
+                                            <Binding Source="{StaticResource HalfWidth}" />
+                                        </MultiBinding>
+                                    </Canvas.Left>
+                                    <Canvas.Top>
+                                        <MultiBinding Converter="{StaticResource CogoPointBaseToggleCenterConverter}"
+                                                      ConverterParameter="Y">
+                                            <Binding Path="PointPosition" />
+                                            <Binding Path="DataContext.Camera.D2dMatrix"
+                                                     RelativeSource="{RelativeSource AncestorType=Page}" />
+                                            <Binding Source="{StaticResource HalfHeight}" />
+                                        </MultiBinding>
+                                    </Canvas.Top>
+                                </ToggleButton>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </Canvas>
+            </Grid>
         </Grid>
 
         <Grid Grid.Row="3">
@@ -226,6 +287,18 @@
                              CommandParameter="{Binding RelativeSource={RelativeSource Self}}">
                     <RadioButton.Content>
                         <ContentControl Template="{StaticResource PointsIcon}" />
+                    </RadioButton.Content>
+                </RadioButton>
+                <RadioButton x:Name="CogoPoints"
+                             GroupName="SnapToggles"
+                             Style="{StaticResource DarkGreyRadioButtonStyle}"
+                             Width="40"
+                             Height="40"
+                             Margin="{StaticResource ToggleButtonMargin}"
+                             Command="{Binding SnapToggleCommand}"
+                             CommandParameter="{Binding RelativeSource={RelativeSource Self}}">
+                    <RadioButton.Content>
+                        <ContentControl Template="{StaticResource CogoPointsIcon}" />
                     </RadioButton.Content>
                 </RadioButton>
             </WrapPanel>

@@ -133,7 +133,7 @@ namespace Cad_Point_Manager.Models.HitTesting
                         }
                     }
                 }
-                if (obj is DxfPoint dxfPoint)
+                if (obj is CogoPoint dxfPoint)
                 {
                     if (dxfPoint.PointGroup.IsVisible)
                     {
@@ -178,7 +178,7 @@ namespace Cad_Point_Manager.Models.HitTesting
                         }
                     }
                 }
-                if (hitTestableObject is DxfPoint dxfPoint)
+                if (hitTestableObject is CogoPoint dxfPoint)
                 {
                     if (dxfPoint.PointGroup.IsVisible)
                     {
@@ -211,6 +211,26 @@ namespace Cad_Point_Manager.Models.HitTesting
                 }
             }
             return geometries;
+        }
+        public List<(double distance, CogoPoint point)> HitTestCogoPoints(Point p, Rect hitTestRange)
+        {
+            List<(double distance, CogoPoint point)> cogoPoints = [];
+
+            foreach (var hitTestableObject in HitTestableObjects)
+            {
+                if (hitTestableObject is CogoPoint point)
+                {
+                    if (point.PointGroup.IsVisible)
+                    {
+                        if (point.BoundsInRect(hitTestRange))
+                        {
+                            double d = point.DistanceToPoint(p);
+                            cogoPoints.Add((d, point));
+                        }
+                    }
+                }
+            }
+            return cogoPoints;
         }
         public List<(double distance, Vector2 coordinate)> HitTestSignificantPoints(Point p, Rect hitTestRange)
         {

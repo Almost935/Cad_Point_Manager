@@ -1,8 +1,11 @@
 ﻿using Cad_Point_Manager.Commands;
 using Cad_Point_Manager.Common;
+using Cad_Point_Manager.Controls.D3DControl;
 using Cad_Point_Manager.Models;
+using Cad_Point_Manager.Models.PointRendering;
 using netDxf;
 using SharpDX;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
@@ -21,6 +24,9 @@ namespace Cad_Point_Manager.ViewModels
         private string _dxfFileName;
         private DxfDocument _dxfDocument;
         private Size2F _viewportSize = Size2F.Empty;
+        private Camera _camera;
+        private ObservableCollection<CogoPoint> _selectedPoints = [];
+        //private System.Windows.Media.Matrix _toggleButtonMatrix = new();
         #endregion
 
         #region Properties
@@ -78,6 +84,24 @@ namespace Cad_Point_Manager.ViewModels
                 OnPropertyChanged(nameof(ViewportSize));
             }
         }
+        public Camera Camera
+        {
+            get { return _camera; }
+            set
+            {
+                _camera = value;
+                OnPropertyChanged(nameof(Camera));
+            }
+        }
+        public ObservableCollection<CogoPoint> SelectedPoints
+        {
+            get { return _selectedPoints; }
+            set
+            {
+                _selectedPoints = value;
+                OnPropertyChanged(nameof(SelectedPoints));
+            }
+        }
         #endregion
 
         #region Commands
@@ -93,6 +117,8 @@ namespace Cad_Point_Manager.ViewModels
         #region Constructors
         public MainViewModel()
         {
+            SelectedPoints.CollectionChanged += SelectedPoints_CollectionChanged;
+
             NewJobCommand = new RelayCommand<RoutedEventArgs>(NewJob);
             LoadJobCommand = new RelayCommand<RoutedEventArgs>(LoadJob);
             AttachDxfFileCommand = new RelayCommand<RoutedEventArgs>(AttachDxfFile);
@@ -100,6 +126,29 @@ namespace Cad_Point_Manager.ViewModels
             SaveAsJobCommand = new RelayCommand<RoutedEventArgs>(SaveJobAs);
 
             ZoomToExtentsCommand = new RelayCommand<RoutedEventArgs>(ZoomToExtents);
+        }
+
+        private void SelectedPoints_CollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+        {
+            if (e.Action == System.Collections.Specialized.NotifyCollectionChangedAction.Add)
+            {
+                foreach (CogoPoint point in e.NewItems)
+                {
+                    System.Windows.Point windowP = new(point.Easting, point.Northing);
+                    Debug.WriteLine($"\nCamera.D2dMatrix: {Camera.D2dMatrix}");
+                }
+            }
+            else if (e.Action == System.Collections.Specialized.NotifyCollectionChangedAction.Remove)
+            {
+                foreach (CogoPoint point in e.OldItems)
+                {
+                    Debug.WriteLine($"\nCamera.D2dMatrix: {Camera.D2dMatrix}");
+                }
+            }
+            else if (e.Action == System.Collections.Specialized.NotifyCollectionChangedAction.Reset)
+            {
+                Debug.WriteLine($"\nCamera.D2dMatrix: {Camera.D2dMatrix}");
+            }
         }
         #endregion
 
@@ -138,7 +187,7 @@ namespace Cad_Point_Manager.ViewModels
             dlg.InitialDirectory = @"C:\Users\fcraw\source\repos\Cad_Point_Manager\Cad_Point_Manager\Resources\DXF";
 
             Nullable<bool> result = dlg.ShowDialog();
-            
+
             if (result == true)
             {
                 DxfFilePath = dlg.FileName;
@@ -146,7 +195,7 @@ namespace Cad_Point_Manager.ViewModels
 
                 DxfDocument = DxfDocument.Load(DxfFilePath);
                 if (DxfDocument is not null)
-                { 
+                {
                     DxfFileName = DxfDocument.Name;
                     JobFileManager.LoadDxf(DxfDocument);
                 }
@@ -180,6 +229,9 @@ namespace Cad_Point_Manager.ViewModels
                         break;
                     case "Lines":
                         JobFileManager.CadManager3D.SnapSelectionMode = Enums.SelectionMode.Geometries;
+                        break;
+                    case "CogoPoints":
+                        JobFileManager.CadManager3D.SnapSelectionMode = Enums.SelectionMode.CogoPoints;
                         break;
                     case "All":
                         JobFileManager.CadManager3D.SnapSelectionMode = Enums.SelectionMode.All;

@@ -4,24 +4,26 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:local="clr-namespace:Cad_Point_Manager.Testing"
-             mc:Ignorable="d"
-             d:DesignHeight="200"
-             d:DesignWidth="200"
-             Background="#FF969696">
-    <Grid>
-        <Expander Style="{StaticResource ListViewExpanderStyle}">
-            <Expander.Header>
-                <TextBlock Text="Expander Header" />
-            </Expander.Header>
-            <Expander.Content>
-                <StackPanel>
-                    <TextBlock Text="This is the content of the expander." />
-                    <Button Content="Click Me"
-                            Width="100"
-                            Height="30"
-                            Margin="5" />
-                </StackPanel>
-            </Expander.Content>
-        </Expander>
+             xmlns:system="clr-namespace:System;assembly=mscorlib"
+             mc:Ignorable="d">
+    <Grid x:Name="overallGrid" 
+          Width="400"
+          Height="200">
+        <Canvas ClipToBounds="True"
+                Background="White">
+            <Canvas>
+                <Line Stroke="Red"
+                      StrokeThickness="3"
+                      X1="0"
+                      Y1="0"
+                      X2="400"
+                      Y2="100" />
+                <Canvas.RenderTransform>
+                    <TransformGroup>
+                        <MatrixTransform Matrix="1,0,0,-1,0,200" />
+                    </TransformGroup>
+                </Canvas.RenderTransform>
+            </Canvas>
+        </Canvas>
     </Grid>
 </UserControl>

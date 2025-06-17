@@ -1,6 +1,26 @@
 ﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
+    <ControlTemplate x:Key="CogoPointsIcon">
+        <Canvas Width="32"
+                Height="32">
+            <Ellipse Width="20"
+                     Height="20"
+                     Stroke="White"
+                     Canvas.Left="6"
+                     Canvas.Top="6" />
+            <Line X1="4"
+                  Y1="4"
+                  X2="28"
+                  Y2="28"
+                  Stroke="White" />
+            <Line X1="28"
+                  Y1="4"
+                  X2="4"
+                  Y2="28"
+                  Stroke="White" />
+        </Canvas>
+    </ControlTemplate>
 
     <ControlTemplate x:Key="EverythingIcon">
         <Canvas Width="32"

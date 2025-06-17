@@ -40,7 +40,7 @@ namespace Cad_Point_Manager.Models
         private ICollectionView _layersView;
         private ICollectionView _pointGroupsView;
         private ICollectionView _pointsView;
-        private CogoPointManager _cogoPointManager = new();
+        private CogoPointManager _cogoPointManager;
         private Size2F _viewportSize = Size2F.Empty;
         private Enums.SelectionMode _snapSelectionMode = Enums.SelectionMode.All;
 
@@ -52,7 +52,7 @@ namespace Cad_Point_Manager.Models
         private readonly List<TextVertex> _cachedPointTextVertices = [];
         private readonly List<CircleVertex> _cachedPointMarkerVertices = [];
 
-        private DxfPointTextVerticesDict _pointTextVerticesDict;
+        private CogoPointTextVerticesDict _pointTextVerticesDict;
         #endregion
 
         #region Properties
@@ -203,6 +203,27 @@ namespace Cad_Point_Manager.Models
         public event Action ZoomToExtentsRequested;
         #endregion
 
+        #region Constructor
+        public CadManager3D()
+        {
+            CogoPointManager = new(this);
+            CogoPointManager.PropertyChanged += CogoPointManager_PropertyChanged;
+        }
+
+        private void CogoPointManager_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(CogoPointManager.PointsDirty))
+            {
+                if (CogoPointManager.PointsDirty)
+                {
+                    PointTextVerticesDirty = true;
+                    PointCircleVerticesDirty = true;
+                    CogoPointManager.PointsDirty = false;
+                }
+            }
+        }
+        #endregion
+
         #region Methods
         protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
@@ -312,6 +333,22 @@ namespace Cad_Point_Manager.Models
             geometries.Sort((x, y) => x.distance.CompareTo(y.distance));
             return geometries;
         }
+        public List<(double distance, CogoPoint points)> HitTestCogoPoints(Point p, float tolerance)
+        {
+            List<(double distance, CogoPoint points)> hits = [];
+
+            if (HitTestableObjectTree is null) { return hits; }
+
+            Rect rect = new(p.X - tolerance, p.Y - tolerance, tolerance * 2, tolerance * 2);
+            var nodes = HitTestableObjectTree.GetIntersectingNodes(rect);
+
+            foreach (var node in nodes)
+            {
+                hits.AddRange(node.HitTestCogoPoints(p, rect));
+            }
+            hits.Sort((x, y) => x.distance.CompareTo(y.distance));
+            return hits;
+        }
         public List<(double distance, HitTestableObject hitTestableObject)> HitTestAll(Point p, float tolerance)
         {
             List<(double distance, HitTestableObject hitTestableObject)> hits = [];
@@ -408,7 +445,7 @@ namespace Cad_Point_Manager.Models
                     }
                 }
             }
-            if (hitTestableObject is DxfPoint dxfPoint)
+            if (hitTestableObject is CogoPoint dxfPoint)
             {
                 for (int i = dxfPoint.TextStartIndex; i <= dxfPoint.TextEndIndex; i++)
                 {
@@ -463,19 +500,19 @@ namespace Cad_Point_Manager.Models
                     }
                 }
             }
-            if (hitTestableObject is DxfPoint dxfPoint)
+            if (hitTestableObject is CogoPoint dxfPoint)
             {
                 for (int i = dxfPoint.TextStartIndex; i <= dxfPoint.TextEndIndex; i++)
                 {
                     if (_cachedPointTextVertices is null || _cachedPointTextVertices.Count == 0) { continue; }
                     ref var vertex = ref GetPointTextVertexRef(i);
-                    vertex.IsMouseOver = isSelected ? 1.0f : 0.0f;
+                    vertex.IsSelected = isSelected ? 1.0f : 0.0f;
                 }
                 for (int i = dxfPoint.MarkerStartIndex; i <= dxfPoint.MarkerEndIndex; i++)
                 {
                     if (_cachedPointMarkerVertices is null || _cachedPointMarkerVertices.Count == 0) { continue; }
                     ref var vertex = ref GetCircleVertexRef(i);
-                    vertex.IsMouseOver = isSelected ? 1.0f : 0.0f;
+                    vertex.IsSelected = isSelected ? 1.0f : 0.0f;     
                 }
             }
         }
@@ -605,7 +642,7 @@ namespace Cad_Point_Manager.Models
 
                     if (!pointGroup.IsVisible || pointGroup is null) { continue; }
 
-                    foreach (DxfPoint point in pointGroup.Points)
+                    foreach (CogoPoint point in pointGroup.Points)
                     {
                         point.UpdateMarkerVertices();
                         point.MarkerStartIndex = _cachedPointMarkerVertices.Count;

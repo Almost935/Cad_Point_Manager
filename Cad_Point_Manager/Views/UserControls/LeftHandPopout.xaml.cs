@@ -26,7 +26,7 @@ namespace Cad_Point_Manager.Views.UserControls
         #region Fields
         private const double _panelHideTime = 200;
 
-        private readonly List<DxfPoint> _selectedPoints = [];
+        private readonly List<CogoPoint> _selectedPoints = [];
         private bool _pointsListVisible = true;
         private double _pointsListOpacity = 0;
 
@@ -35,7 +35,12 @@ namespace Cad_Point_Manager.Views.UserControls
         private ScaleTransform _mainPanelTransform = new();
 
         // DxfPoint editing fields
-        private int _previousPointNumber = 0;
+        private int _previousPointNumber;
+        private double _previousPointNorthing;
+        private double _previousPointEasting;
+        private double _previousPointElevation;
+        private string _previousPointDescription;
+        private bool _pointBeingEdited = false;
         #endregion
 
         #region Properties
@@ -158,6 +163,7 @@ namespace Cad_Point_Manager.Views.UserControls
                 FillBehavior = FillBehavior.HoldEnd
             };
             _mainPanelTransform.BeginAnimation(ScaleTransform.ScaleXProperty, slideOut);
+
         }
 
         private void PointsListView_Loaded(object sender, RoutedEventArgs e)
@@ -184,7 +190,7 @@ namespace Cad_Point_Manager.Views.UserControls
 
             foreach (var selectedItem in selectedItems)
             {
-                if (selectedItem is KeyValuePair<string, DxfPoint> selectedPoint)
+                if (selectedItem is KeyValuePair<string, CogoPoint> selectedPoint)
                 {
                     if (selectedPoint.Value is not null)
                     {
@@ -205,12 +211,13 @@ namespace Cad_Point_Manager.Views.UserControls
         }
 
         // Point Number Editing
-        private void PointNameBorder_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        private void PointNumberBorder_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             if (e.ClickCount > 1)
             {
-                if (sender is Border border && border.Child is TextBox textbox && textbox.DataContext is DxfPoint point)
+                if (sender is Border border && border.Child is TextBox textbox && textbox.DataContext is CogoPoint point)
                 {
+                    _pointBeingEdited = true;
                     _previousPointNumber = point.PointNumber;
                     e.Handled = true;
                     textbox.IsReadOnly = false;
@@ -226,24 +233,26 @@ namespace Cad_Point_Manager.Views.UserControls
         private void PointNumberTextbox_LostFocus(object sender, RoutedEventArgs e)
         {
             TextBox textBox = sender as TextBox;
-            if (textBox != null)
-            {
-                //var binding = textBox.GetBindingExpression(TextBox.TextProperty);
-                //binding?.UpdateTarget();
-                textBox.IsReadOnly = true;
 
-                //textBox.IsReadOnly = true;
-                //if (Validation.GetHasError(textBox))
-                //{
-                //    binding?.UpdateTarget();
-                //}
+            if (textBox != null && textBox.DataContext is CogoPoint point)
+            {
+                e.Handled = true;
+
+                if (_pointBeingEdited)
+                {
+                    point.PointNumber = _previousPointNumber;
+                    var binding = textBox.GetBindingExpression(TextBox.TextProperty);
+                    binding?.UpdateTarget();
+                    _pointBeingEdited = false;
+                }
+                textBox.IsReadOnly = true;
             }
         }
         private void PointNumberTextbox_PreviewKeyDown(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.Enter)
             {
-                if (sender is TextBox textBox && textBox.DataContext is DxfPoint point)
+                if (sender is TextBox textBox && textBox.DataContext is CogoPoint point)
                 {
                     e.Handled = true;
 
@@ -252,17 +261,26 @@ namespace Cad_Point_Manager.Views.UserControls
                     binding?.ValidateWithoutUpdate();
                     var textBoxHasError = Validation.GetHasError(textBox);
 
-                    if (textBoxHasError) { return; }
+                    if (textBoxHasError)
+                    {
+                        textBox.SelectAll();
+                        return;
+                    }
                     else
                     {
                         binding?.UpdateSource();
                         var pointNumberHasError = point.HasPointNumberError;
 
-                        if (pointNumberHasError) { return; }
+                        if (pointNumberHasError)
+                        {
+                            textBox.SelectAll();
+                            return;
+                        }
                         else
                         {
                             binding?.UpdateTarget();
                             textBox.IsReadOnly = true;
+                            _pointBeingEdited = false;
                             return;
                         }
                     }
@@ -270,23 +288,332 @@ namespace Cad_Point_Manager.Views.UserControls
             }
             if (e.Key == Key.Escape)
             {
-                if (sender is TextBox textBox && textBox.DataContext is DxfPoint point)
+                if (sender is TextBox textBox && textBox.DataContext is CogoPoint point)
                 {
                     e.Handled = true;
                     point.PointNumber = _previousPointNumber;
                     var binding = textBox.GetBindingExpression(TextBox.TextProperty);
                     binding?.UpdateTarget();
                     textBox.IsReadOnly = true;
+                    _pointBeingEdited = false;
                 }
             }
         }
+
+        // Point Northing Editing
         private void PointNorthingBorder_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
+            if (e.ClickCount > 1)
+            {
+                if (sender is Border border && border.Child is TextBox textbox && textbox.DataContext is CogoPoint point)
+                {
+                    _pointBeingEdited = true;
+                    _previousPointNorthing = point.Northing;
+                    e.Handled = true;
+                    textbox.IsReadOnly = false;
+                    textbox.Focus();
 
+                    textbox.Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        textbox.SelectAll();
+                    }), DispatcherPriority.Input);
+                }
+            }
         }
         private void PointNorthingTextbox_LostFocus(object sender, RoutedEventArgs e)
         {
+            TextBox textBox = sender as TextBox;
 
+            if (textBox != null && textBox.DataContext is CogoPoint point)
+            {
+                e.Handled = true;
+
+                if (_pointBeingEdited)
+                {
+                    point.Northing = _previousPointNorthing;
+                    var binding = textBox.GetBindingExpression(TextBox.TextProperty);
+                    binding?.UpdateTarget();
+                    _pointBeingEdited = false;
+                }
+                textBox.IsReadOnly = true;
+            }
+        }
+        private void PointNorthingTextbox_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter)
+            {
+                if (sender is TextBox textBox && textBox.DataContext is CogoPoint point)
+                {
+                    e.Handled = true;
+
+                    point.ClearErrors(nameof(point.Northing));
+                    var binding = textBox.GetBindingExpression(TextBox.TextProperty);
+                    binding?.ValidateWithoutUpdate();
+                    var textBoxHasError = Validation.GetHasError(textBox);
+
+                    if (textBoxHasError)
+                    {
+                        textBox.SelectAll();
+                        return;
+                    }
+                    else
+                    {
+                        binding?.UpdateSource();
+                        textBox.IsReadOnly = true;
+                        _pointBeingEdited = false;
+                        return;
+                    }
+                }
+            }
+            if (e.Key == Key.Escape)
+            {
+                if (sender is TextBox textBox && textBox.DataContext is CogoPoint point)
+                {
+                    e.Handled = true;
+                    point.Northing = _previousPointNorthing;
+                    var binding = textBox.GetBindingExpression(TextBox.TextProperty);
+                    binding?.UpdateTarget();
+                    textBox.IsReadOnly = true;
+                    _pointBeingEdited = false;
+                }
+            }
+        }
+
+        // Point Easting Editing
+        private void PointEastingBorder_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (e.ClickCount > 1)
+            {
+                if (sender is Border border && border.Child is TextBox textbox && textbox.DataContext is CogoPoint point)
+                {
+                    _pointBeingEdited = true;
+                    _previousPointEasting = point.Easting;
+                    e.Handled = true;
+                    textbox.IsReadOnly = false;
+                    textbox.Focus();
+
+                    textbox.Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        textbox.SelectAll();
+                    }), DispatcherPriority.Input);
+                }
+            }
+        }
+        private void PointEastingTextbox_LostFocus(object sender, RoutedEventArgs e)
+        {
+            TextBox textBox = sender as TextBox;
+
+            if (textBox != null && textBox.DataContext is CogoPoint point)
+            {
+                e.Handled = true;
+
+                if (_pointBeingEdited)
+                {
+                    point.Easting = _previousPointEasting;
+                    var binding = textBox.GetBindingExpression(TextBox.TextProperty);
+                    binding?.UpdateTarget();
+                    _pointBeingEdited = false;
+                }
+                textBox.IsReadOnly = true;
+            }
+        }
+        private void PointEastingTextbox_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter)
+            {
+                if (sender is TextBox textBox && textBox.DataContext is CogoPoint point)
+                {
+                    e.Handled = true;
+
+                    point.ClearErrors(nameof(point.Easting));
+                    var binding = textBox.GetBindingExpression(TextBox.TextProperty);
+                    binding?.ValidateWithoutUpdate();
+                    var textBoxHasError = Validation.GetHasError(textBox);
+
+                    if (textBoxHasError)
+                    {
+                        textBox.SelectAll();
+                        return;
+                    }
+                    else
+                    {
+                        binding?.UpdateSource();
+                        textBox.IsReadOnly = true;
+                        _pointBeingEdited = false;
+                        return;
+                    }
+                }
+            }
+            if (e.Key == Key.Escape)
+            {
+                if (sender is TextBox textBox && textBox.DataContext is CogoPoint point)
+                {
+                    e.Handled = true;
+                    point.Easting = _previousPointEasting;
+                    var binding = textBox.GetBindingExpression(TextBox.TextProperty);
+                    binding?.UpdateTarget();
+                    textBox.IsReadOnly = true;
+                    _pointBeingEdited = false;
+                }
+            }
+        }
+
+        // Point Elevation Editing
+        private void PointElevationBorder_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (e.ClickCount > 1)
+            {
+                if (sender is Border border && border.Child is TextBox textbox && textbox.DataContext is CogoPoint point)
+                {
+                    _pointBeingEdited = true;
+                    _previousPointElevation = point.Elevation;
+                    e.Handled = true;
+                    textbox.IsReadOnly = false;
+                    textbox.Focus();
+
+                    textbox.Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        textbox.SelectAll();
+                    }), DispatcherPriority.Input);
+                }
+            }
+        }
+        private void PointElevationTextbox_LostFocus(object sender, RoutedEventArgs e)
+        {
+            TextBox textBox = sender as TextBox;
+
+            if (textBox != null && textBox.DataContext is CogoPoint point)
+            {
+                e.Handled = true;
+
+                if (_pointBeingEdited)
+                {
+                    point.Elevation = _previousPointElevation;
+                    var binding = textBox.GetBindingExpression(TextBox.TextProperty);
+                    binding?.UpdateTarget();
+                    _pointBeingEdited = false;
+                }
+                textBox.IsReadOnly = true;
+            }
+        }
+        private void PointElevationTextbox_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter)
+            {
+                if (sender is TextBox textBox && textBox.DataContext is CogoPoint point)
+                {
+                    e.Handled = true;
+
+                    point.ClearErrors(nameof(point.Elevation));
+                    var binding = textBox.GetBindingExpression(TextBox.TextProperty);
+                    binding?.ValidateWithoutUpdate();
+                    var textBoxHasError = Validation.GetHasError(textBox);
+
+                    if (textBoxHasError)
+                    {
+                        textBox.SelectAll();
+                        return;
+                    }
+                    else
+                    {
+                        binding?.UpdateSource();
+                        textBox.IsReadOnly = true;
+                        _pointBeingEdited = false;
+                        return;
+                    }
+                }
+            }
+            if (e.Key == Key.Escape)
+            {
+                if (sender is TextBox textBox && textBox.DataContext is CogoPoint point)
+                {
+                    e.Handled = true;
+                    point.Elevation  = _previousPointElevation;
+                    var binding = textBox.GetBindingExpression(TextBox.TextProperty);
+                    binding?.UpdateTarget();
+                    textBox.IsReadOnly = true;
+                    _pointBeingEdited = false;
+                }
+            }
+        }
+
+        // Point Description Editing
+        private void PointDescriptionBorder_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (e.ClickCount > 1)
+            {
+                if (sender is Border border && border.Child is TextBox textbox && textbox.DataContext is CogoPoint point)
+                {
+                    _pointBeingEdited = true;
+                    _previousPointDescription = point.Description;
+                    e.Handled = true;
+                    textbox.IsReadOnly = false;
+                    textbox.Focus();
+
+                    textbox.Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        textbox.SelectAll();
+                    }), DispatcherPriority.Input);
+                }
+            }
+        }
+        private void PointDescriptionTextbox_LostFocus(object sender, RoutedEventArgs e)
+        {
+            TextBox textBox = sender as TextBox;
+
+            if (textBox != null && textBox.DataContext is CogoPoint point)
+            {
+                e.Handled = true;
+
+                if (_pointBeingEdited)
+                {
+                    point.Description = _previousPointDescription;
+                    var binding = textBox.GetBindingExpression(TextBox.TextProperty);
+                    binding?.UpdateTarget();
+                    _pointBeingEdited = false;
+                }
+                textBox.IsReadOnly = true;
+            }
+        }
+        private void PointDescriptionTextbox_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter)
+            {
+                if (sender is TextBox textBox && textBox.DataContext is CogoPoint point)
+                {
+                    e.Handled = true;
+
+                    point.ClearErrors(nameof(point.Description));
+                    var binding = textBox.GetBindingExpression(TextBox.TextProperty);
+                    binding?.ValidateWithoutUpdate();
+                    var textBoxHasError = Validation.GetHasError(textBox);
+
+                    if (textBoxHasError)
+                    {
+                        textBox.SelectAll();
+                        return;
+                    }
+                    else
+                    {
+                        binding?.UpdateSource();
+                        textBox.IsReadOnly = true;
+                        _pointBeingEdited = false;
+                        return;
+                    }
+                }
+            }
+            if (e.Key == Key.Escape)
+            {
+                if (sender is TextBox textBox && textBox.DataContext is CogoPoint point)
+                {
+                    e.Handled = true;
+                    point.Description = _previousPointDescription;
+                    var binding = textBox.GetBindingExpression(TextBox.TextProperty);
+                    binding?.UpdateTarget();
+                    textBox.IsReadOnly = true;
+                    _pointBeingEdited = false;
+                }
+            }
         }
     }
 }

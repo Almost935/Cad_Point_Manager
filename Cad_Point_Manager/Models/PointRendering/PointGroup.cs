@@ -15,9 +15,10 @@ namespace Cad_Point_Manager.Models.PointRendering
         private float _textHeight;
         private float _pointMarkerSize;
         private float _baseSizeFactor = 1.00f;
-        private ObservableCollection<DxfPoint> _points = [];
+        private ObservableCollection<CogoPoint> _points = [];
         private bool _colorToggleOpen = false;
         private CogoPointManager _cogoPointManager;
+        private double _pointScale = 1;
         #endregion
 
         #region Properties
@@ -80,7 +81,7 @@ namespace Cad_Point_Manager.Models.PointRendering
                 }
             }
         }
-        public ObservableCollection<DxfPoint> Points
+        public ObservableCollection<CogoPoint> Points
         {
             get => _points;
             set
@@ -113,6 +114,30 @@ namespace Cad_Point_Manager.Models.PointRendering
                 {
                     _cogoPointManager = value;
                     OnPropertyChanged(nameof(CogoPointManager));
+                }
+            }
+        }
+        public float BaseSizeFactor
+        {
+            get => _baseSizeFactor;
+            set
+            {
+                if (_baseSizeFactor != value)
+                {
+                    _baseSizeFactor = value;
+                    OnPropertyChanged(nameof(BaseSizeFactor));
+                }
+            }
+        }
+        public double PointScale
+        {
+            get => _pointScale;
+            set
+            {
+                if (_pointScale != value)
+                {
+                    _pointScale = value;
+                    OnPropertyChanged(nameof(PointScale));
                 }
             }
         }

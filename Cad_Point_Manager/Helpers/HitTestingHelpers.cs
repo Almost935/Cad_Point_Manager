@@ -1,5 +1,6 @@
 ﻿using Cad_Point_Manager.Models.DrawingObjects3D;
 using Cad_Point_Manager.Models.HitTesting;
+using Cad_Point_Manager.Models.PointRendering;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -33,6 +34,21 @@ namespace Cad_Point_Manager.Helpers
             geometryTup = geometryTups[currentIndex];
 
             if (geometryTup.geometry is null)
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        public static bool TryGetNextCogoPoint(int currentIndex, List<(double distance, CogoPoint point)> cogoPointsTups, out (double distance, CogoPoint point) cogoPointsTup)
+        {
+            cogoPointsTup = default;
+            if (currentIndex > cogoPointsTups.Count) { return false; }
+
+            cogoPointsTup = cogoPointsTups[currentIndex];
+
+            if (cogoPointsTup.point is null)
             {
                 return false;
             }

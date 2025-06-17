@@ -3,6 +3,7 @@ using Cad_Point_Manager.Controls.D3DControl;
 using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Helpers;
 using Cad_Point_Manager.Models.HitTesting;
+using Cad_Point_Manager.Views.UserControls;
 using SharpDX;
 using System.ComponentModel.DataAnnotations;
 using System.Runtime.InteropServices;
@@ -10,11 +11,12 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.TextFormatting;
+using System.Xml.Linq;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Cad_Point_Manager.Models.PointRendering
 {
-    public class DxfPoint : HitTestableObject
+    public class CogoPoint : HitTestableObject
     {
         #region Fields
         private float _markerToTextOffset = 0.25f;
@@ -22,12 +24,13 @@ namespace Cad_Point_Manager.Models.PointRendering
         private int _pointNumber;
         private double _northing;
         private double _easting;
-        private float _elevation = 0.0f;
+        private double _elevation = 0.0f;
         private float _textHeight;
         private float _markerSize;
         private PointGroup _pointGroup;
         private string _description;
         private CogoPointManager _cogoPointManager;
+        private CogoPointUserControl _cogoPointUserControl;
         #endregion
 
         #region Properties
@@ -48,11 +51,8 @@ namespace Cad_Point_Manager.Models.PointRendering
             get { return _northing; }
             set
             {
-                if (_northing != value)
-                {
-                    _northing = value;
-                    OnPropertyChanged(nameof(Northing));
-                }
+                _northing = value;
+                OnPropertyChanged(nameof(Northing));
             }
         }
         public double Easting
@@ -67,8 +67,7 @@ namespace Cad_Point_Manager.Models.PointRendering
                 }
             }
         }
-
-        public float Elevation
+        public double Elevation
         {
             get { return _elevation; }
             set
@@ -77,6 +76,18 @@ namespace Cad_Point_Manager.Models.PointRendering
                 {
                     _elevation = value;
                     OnPropertyChanged(nameof(Elevation));
+                }
+            }
+        }
+        public string Description
+        {
+            get { return _description; }
+            set
+            {
+                if (_description != value)
+                {
+                    _description = value;
+                    OnPropertyChanged(nameof(Description));
                 }
             }
         }
@@ -116,18 +127,6 @@ namespace Cad_Point_Manager.Models.PointRendering
                 }
             }
         }
-        public string Description
-        {
-            get { return _description; }
-            set
-            {
-                if (_description != value)
-                {
-                    _description = value;
-                    OnPropertyChanged(nameof(Description));
-                }
-            }
-        }
         public CogoPointManager CogoPointManager
         {
             get { return _cogoPointManager; }
@@ -140,8 +139,21 @@ namespace Cad_Point_Manager.Models.PointRendering
                 }
             }
         }
+        public CogoPointUserControl CogoPointUserControl
+        {
+            get { return _cogoPointUserControl; }
+            set
+            {
+                if (_cogoPointUserControl != value)
+                {
+                    _cogoPointUserControl = value;
+                    OnPropertyChanged(nameof(CogoPointUserControl));
+                }
+            }
+        }
 
-        public Vector3 RenderPosition => new Vector3((float)Northing, (float)Easting, 0);
+        public Vector3 RenderPosition => new((float)Easting, (float)Northing, 0);
+        public System.Windows.Point PointPosition => new(Easting, Northing); 
         public bool HasPointNumberError => HasErrorsFor(nameof(PointNumber));
 
         public TextVertex[] TextVertices { get; set; } = [];
@@ -153,18 +165,19 @@ namespace Cad_Point_Manager.Models.PointRendering
         #endregion
 
         #region Constructors
-        public DxfPoint(PointGroup pointGroup, int pointNum, Vector3 position, float textHeight, float markerSize, CogoPointManager cogoPointManager, float elevation = 0,
+        public CogoPoint(PointGroup pointGroup, int pointNum, Vector3 position, float textHeight, float markerSize, CogoPointManager cogoPointManager, float elevation = 0,
             string description = "")
         {
+            CogoPointManager = cogoPointManager;
             PointGroup = pointGroup;
             PointNumber = pointNum;
-            Northing = position.X;
-            Easting = position.Y;
+            Northing = position.Y;
+            Easting = position.X;
             TextHeight = textHeight;
             MarkerSize = markerSize;
-            CogoPointManager = cogoPointManager;
             Elevation = elevation;
             Description = description;
+            CogoPointUserControl = new CogoPointUserControl(this);
         }
         #endregion
 
@@ -285,6 +298,12 @@ namespace Cad_Point_Manager.Models.PointRendering
             {
                 textSpan[i].SetIsSelected(true);
             }
+
+            Span<CircleVertex> markerSpan = MarkerVertices;
+            for (int i = 0; i < markerSpan.Length; i++)
+            {
+                markerSpan[i].SetIsSelected(true);
+            }
         }
         public override void Deselect()
         {
@@ -295,9 +314,15 @@ namespace Cad_Point_Manager.Models.PointRendering
             {
                 textSpan[i].SetIsSelected(false);
             }
+
+            Span<CircleVertex> markerSpan = MarkerVertices;
+            for (int i = 0; i < markerSpan.Length; i++)
+            {
+                markerSpan[i].SetIsSelected(false);
+            }
         }
 
-        public void UpdateTextVertices(DxfPointTextVerticesDict textDict)
+        public void UpdateTextVertices(CogoPointTextVerticesDict textDict)
         {
             TextVertices ??= Array.Empty<TextVertex>();
             Array.Clear(TextVertices);
@@ -311,6 +336,18 @@ namespace Cad_Point_Manager.Models.PointRendering
             MarkerVertices[0] = new(RenderPosition, PointGroup.Color, MarkerSize, PointGroup.IsVisible ? 1 : 0,
                 IsMouseOver ? 1 : 0, IsSelected ? 1 : 0);
         }
+
+        protected override void OnPropertyChanged(string propertyName)
+        {
+            base.OnPropertyChanged(propertyName);
+
+            if (propertyName == nameof(PointNumber) || propertyName == nameof(Northing) || propertyName == nameof(Easting) ||
+                propertyName == nameof(Elevation) || propertyName == nameof(Description) || propertyName == nameof(TextHeight) ||
+                propertyName == nameof(MarkerSize) || propertyName == nameof(PointGroup))
+            {
+                _cogoPointManager.SetCadManagerPointVerticesDirty();
+            }
+        }
         #endregion
 
         #region Validation
@@ -323,11 +360,6 @@ namespace Cad_Point_Manager.Models.PointRendering
             {
                 AddError(nameof(PointNumber), $"Point number {value} is already in use.");
             }
-
-            //if (CogoPointManager?.UsedPointNumbers.Contains(value) == true)
-            //{
-            //    AddError(nameof(PointNumber), $"Point number {value} is already in use.");
-            //}
 
             return !HasErrorsFor(nameof(PointNumber));
         }

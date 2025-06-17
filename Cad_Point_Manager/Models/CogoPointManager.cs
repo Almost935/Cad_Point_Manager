@@ -12,6 +12,8 @@ namespace Cad_Point_Manager.Models
 
         private ObservableCollection<KeyValuePair<string, PointGroup>> _pointGroups = [];
         private PointGroup _activePointGroup;
+        private bool _pointsDirty = false;
+        private CadManager3D _cadManager;
         #endregion
 
         #region Properties
@@ -36,8 +38,39 @@ namespace Cad_Point_Manager.Models
                 }
             }
         }
+        public bool PointsDirty
+        {
+            get => _pointsDirty;
+            set
+            {
+                if (_pointsDirty != value)
+                {
+                    _pointsDirty = value;
+                    OnPropertyChanged(nameof(PointsDirty));
+                }
+            }
+        }
+        public CadManager3D CadManager
+        {
+            get => _cadManager;
+            set
+            {
+                if (_cadManager != value)
+                {
+                    _cadManager = value;
+                    OnPropertyChanged(nameof(CadManager));
+                }
+            }
+        }
 
         public List<int> UsedPointNumbers => PointGroups.SelectMany(pg => pg.Value.Points).Select(p => p.PointNumber).ToList();
+        #endregion
+
+        #region Constructor
+        public CogoPointManager(CadManager3D cadManager)
+        {
+            _cadManager = cadManager;
+        }
         #endregion
 
         #region Methods
@@ -112,6 +145,18 @@ namespace Cad_Point_Manager.Models
         public void Reset()
         {
             PointGroups.Clear();
+        }
+
+        public void SetCadManagerPointVerticesDirty()
+        {
+            if (!CadManager.PointTextVerticesDirty) 
+            {
+                CadManager.PointTextVerticesDirty = true;
+            }
+            if (!CadManager.PointCircleVerticesDirty)
+            {
+                CadManager.PointCircleVerticesDirty = true;
+            }
         }
         #endregion
 

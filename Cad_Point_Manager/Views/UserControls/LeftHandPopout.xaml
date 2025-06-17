@@ -12,7 +12,7 @@
              xmlns:validation="clr-namespace:Cad_Point_Manager.Views.ValidationRules"
              mc:Ignorable="d"
              d:DesignHeight="400"
-             d:DesignWidth="300">
+             d:DesignWidth="400">
 
     <UserControl.Resources>
         <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" />
@@ -97,8 +97,8 @@
                             </GridViewColumn.Header>
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
-                                    <Border x:Name="PointNameBorder"
-                                            PreviewMouseLeftButtonDown="PointNameBorder_PreviewMouseLeftButtonDown"
+                                    <Border x:Name="PointNumberBorder"
+                                            PreviewMouseLeftButtonDown="PointNumberBorder_PreviewMouseLeftButtonDown"
                                             Focusable="False"
                                             BorderBrush="Transparent"
                                             BorderThickness="1"
@@ -111,9 +111,7 @@
                                                  IsReadOnly="True"
                                                  LostFocus="PointNumberTextbox_LostFocus"
                                                  PreviewKeyDown="PointNumberTextbox_PreviewKeyDown"
-                                                 ToolTipService.ShowOnDisabled="True"
-                                                 ToolTipService.InitialShowDelay="100"
-                                                 ToolTipService.BetweenShowDelay="100">
+                                                 ToolTipService.ShowOnDisabled="True">
                                             <TextBox.Text>
                                                 <Binding Path="PointNumber"
                                                          UpdateSourceTrigger="Explicit"
@@ -153,12 +151,11 @@
                                                  VerticalAlignment="Stretch"
                                                  IsReadOnly="True"
                                                  LostFocus="PointNorthingTextbox_LostFocus"
-                                                 PreviewKeyDown="PointNumberTextbox_PreviewKeyDown"
-                                                 ToolTipService.ShowOnDisabled="True"
-                                                 ToolTipService.InitialShowDelay="100"
-                                                 ToolTipService.BetweenShowDelay="100">
+                                                 PreviewKeyDown="PointNorthingTextbox_PreviewKeyDown"
+                                                 ToolTipService.ShowOnDisabled="True">
                                             <TextBox.Text>
                                                 <Binding Path="Northing"
+                                                         StringFormat="N3"
                                                          UpdateSourceTrigger="Explicit"
                                                          Mode="TwoWay"
                                                          ValidatesOnDataErrors="True"
@@ -183,25 +180,26 @@
                             </GridViewColumn.Header>
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
-                                    <Border x:Name="PointNorthingBorder"
-                                            PreviewMouseLeftButtonDown="PointNorthingBorder_PreviewMouseLeftButtonDown"
+                                    <Border x:Name="PointEastingBorder"
+                                            PreviewMouseLeftButtonDown="PointEastingBorder_PreviewMouseLeftButtonDown"
                                             Focusable="False"
                                             BorderBrush="Transparent"
                                             BorderThickness="1"
                                             Background="Transparent">
-                                        <TextBox x:Name="PointNorthingTextbox"
+                                        <TextBox x:Name="PointEastingTextbox"
                                                  FontSize="{StaticResource ListViewFontSize}"
                                                  Style="{StaticResource EditableTextBox}"
                                                  HorizontalAlignment="Stretch"
                                                  VerticalAlignment="Stretch"
                                                  IsReadOnly="True"
-                                                 LostFocus="PointNorthingTextbox_LostFocus"
-                                                 PreviewKeyDown="PointNumberTextbox_PreviewKeyDown"
+                                                 LostFocus="PointEastingTextbox_LostFocus"
+                                                 PreviewKeyDown="PointEastingTextbox_PreviewKeyDown"
                                                  ToolTipService.ShowOnDisabled="True"
                                                  ToolTipService.InitialShowDelay="100"
                                                  ToolTipService.BetweenShowDelay="100">
                                             <TextBox.Text>
-                                                <Binding Path="Northing"
+                                                <Binding Path="Easting"
+                                                         StringFormat="N3"
                                                          UpdateSourceTrigger="Explicit"
                                                          Mode="TwoWay"
                                                          ValidatesOnDataErrors="True"
@@ -226,16 +224,39 @@
                             </GridViewColumn.Header>
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
-                                    <TextBlock Text="{Binding Elevation, StringFormat=N3}"
-                                               FontSize="{StaticResource ListViewFontSize}"
-                                               TextTrimming="CharacterEllipsis">
-                                        <TextBlock.ToolTip>
-                                            <ToolTip>
-                                                <TextBlock Text="{Binding Elevation, StringFormat=N3}"
-                                                           FontSize="{StaticResource ToolTipFontSize}" />
-                                            </ToolTip>
-                                        </TextBlock.ToolTip>
-                                    </TextBlock>
+                                    <Border x:Name="PointElevationBorder"
+                                            PreviewMouseLeftButtonDown="PointElevationBorder_PreviewMouseLeftButtonDown"
+                                            Focusable="False"
+                                            BorderBrush="Transparent"
+                                            BorderThickness="1"
+                                            Background="Transparent">
+                                        <TextBox x:Name="PointElevationTextbox"
+                                                 FontSize="{StaticResource ListViewFontSize}"
+                                                 Style="{StaticResource EditableTextBox}"
+                                                 HorizontalAlignment="Stretch"
+                                                 VerticalAlignment="Stretch"
+                                                 IsReadOnly="True"
+                                                 LostFocus="PointElevationTextbox_LostFocus"
+                                                 PreviewKeyDown="PointElevationTextbox_PreviewKeyDown"
+                                                 ToolTipService.ShowOnDisabled="True"
+                                                 ToolTipService.InitialShowDelay="100"
+                                                 ToolTipService.BetweenShowDelay="100">
+                                            <TextBox.Text>
+                                                <Binding Path="Elevation"
+                                                         StringFormat="N3"
+                                                         UpdateSourceTrigger="Explicit"
+                                                         Mode="TwoWay"
+                                                         ValidatesOnDataErrors="True"
+                                                         NotifyOnValidationError="True"
+                                                         ValidatesOnExceptions="True"
+                                                         ValidatesOnNotifyDataErrors="True">
+                                                    <Binding.ValidationRules>
+                                                        <validation:DoubleValidationRule />
+                                                    </Binding.ValidationRules>
+                                                </Binding>
+                                            </TextBox.Text>
+                                        </TextBox>
+                                    </Border>
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
@@ -247,16 +268,26 @@
                             </GridViewColumn.Header>
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
-                                    <TextBlock Text="{Binding Description}"
-                                               FontSize="{StaticResource ListViewFontSize}"
-                                               TextTrimming="CharacterEllipsis">
-                                        <TextBlock.ToolTip>
-                                            <ToolTip>
-                                                <TextBlock Text="{Binding Description}"
-                                                           FontSize="{StaticResource ToolTipFontSize}" />
-                                            </ToolTip>
-                                        </TextBlock.ToolTip>
-                                    </TextBlock>
+                                    <Border x:Name="PointDescriptionBorder"
+                                            PreviewMouseLeftButtonDown="PointDescriptionBorder_PreviewMouseLeftButtonDown"
+                                            Focusable="False"
+                                            BorderBrush="Transparent"
+                                            BorderThickness="1"
+                                            Background="Transparent">
+                                        <TextBox x:Name="PointDescriptionTextbox"
+                                                 Text="{Binding Description}"
+                                                 FontSize="{StaticResource ListViewFontSize}"
+                                                 Style="{StaticResource EditableTextBox}"
+                                                 HorizontalAlignment="Stretch"
+                                                 VerticalAlignment="Stretch"
+                                                 IsReadOnly="True"
+                                                 LostFocus="PointDescriptionTextbox_LostFocus"
+                                                 PreviewKeyDown="PointDescriptionTextbox_PreviewKeyDown"
+                                                 ToolTipService.ShowOnDisabled="True"
+                                                 ToolTipService.InitialShowDelay="100"
+                                                 ToolTipService.BetweenShowDelay="100">
+                                        </TextBox>
+                                    </Border>
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>

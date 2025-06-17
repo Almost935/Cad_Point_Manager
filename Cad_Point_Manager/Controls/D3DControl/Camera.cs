@@ -1,24 +1,40 @@
 ﻿using SharpDX;
 using SharpDX.Mathematics.Interop;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 
 namespace Cad_Point_Manager.Controls.D3DControl
 {
-    public class Camera
+    public class Camera : INotifyPropertyChanged
     {
         #region Fields
         private readonly float _zoomFactor;
 
         private Matrix _scaledInitialViewMatrix = Matrix.Identity;
         private Matrix _scaledViewMatrix = Matrix.Identity;
+
+        private Matrix3x2 _d2dMatrix = Matrix3x2.Identity;
         #endregion
 
         #region Properties
+        public Matrix3x2 D2dMatrix
+        {
+            get => _d2dMatrix;
+            set
+            {
+                if (_d2dMatrix != value)
+                {
+                    _d2dMatrix = value;
+                    OnPropertyChanged(nameof(D2dMatrix));
+                }
+            }
+        }
+
         public Matrix InitialViewMatrix { get; private set; } = Matrix.Identity;
         public Matrix ViewMatrix { get; private set; } = Matrix.Identity;
         public Matrix ProjectionMatrix { get; private set; } = Matrix.Identity;
         public Matrix ViewProjectionMatrix { get; private set; } = Matrix.Identity;
         public Matrix InverseViewProjectionMatrix { get; private set; } = Matrix.Identity;
-
         public ViewportF Viewport { get; set; }
         public Vector2 Translate { get; set; } = Vector2.Zero;
         public int CurrentZoomStep { get; set; } = 0;
@@ -93,6 +109,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         {
             ViewProjectionMatrix = ProjectionMatrix * _scaledViewMatrix * _scaledInitialViewMatrix;
             InverseViewProjectionMatrix = Matrix.Invert(ViewProjectionMatrix);
+            D2dMatrix = Get2DTransformationMatrix();
         }
         public void ResetToDefaults()
         {
@@ -167,21 +184,16 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
 
 
-        public RawMatrix3x2 Get2DTransformationMatrix()
+        public Matrix3x2 Get2DTransformationMatrix()
         {
             var zoom = CurrentZoom;
             var scaleX = zoom * InitialViewMatrix.M11;
             var scaleY = zoom * InitialViewMatrix.M22;
             var translateX = (ViewMatrix.M41 + InitialViewMatrix.M41) * scaleX;
             var translateY = (ViewMatrix.M42 + InitialViewMatrix.M42) * scaleY;
+            var matrix = new Matrix3x2(scaleX, 0, 0, scaleY, translateX, translateY);
 
-            //var zoom = CurrentZoom;
-            //var scaleX = zoom * InitialViewMatrix.M11;
-            //var scaleY = zoom * InitialViewMatrix.M22;
-            //var translateX = InverseViewProjectionMatrix.M41 * scaleX;
-            //var translateY = InverseViewProjectionMatrix.M42 * scaleY;
-
-            return new RawMatrix3x2(scaleX, 0, 0, scaleY, translateX, translateY);
+            return matrix;
         }
 
         public Vector2 ScreenToWorld(Vector2 screenSpace)
@@ -237,6 +249,14 @@ namespace Cad_Point_Manager.Controls.D3DControl
             return worldUnitsPerPixel;
         }
 
+        #endregion
+
+        #region INotifyPropertyChanged Implementation
+        public event PropertyChangedEventHandler PropertyChanged;
+        protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
         #endregion
     }
 }

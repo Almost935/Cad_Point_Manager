@@ -15,7 +15,8 @@
         {
             Points,
             Geometries,
-            All
+            All,
+            CogoPoints
         }
 
         public enum DrawingObjectType

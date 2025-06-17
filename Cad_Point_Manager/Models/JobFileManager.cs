@@ -1,4 +1,5 @@
-﻿using netDxf;
+﻿using Cad_Point_Manager.Controls.D3DControl;
+using netDxf;
 using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -69,9 +70,10 @@ namespace Cad_Point_Manager.Models
             set
             {
                 _extents = value;
-                OnPropertyChanged();
+                OnPropertyChanged(nameof(Extents));
             }
         }
+
         public bool JobPathSet { get; set; } = false;
         public bool DxfLoaded { get { return CadManager3D is not null; } }
         #endregion

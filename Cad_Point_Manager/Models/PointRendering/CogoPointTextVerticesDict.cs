@@ -6,7 +6,7 @@ using SharpDX.Mathematics.Interop;
 
 namespace Cad_Point_Manager.Models.PointRendering
 {
-    public class DxfPointTextVerticesDict
+    public class CogoPointTextVerticesDict
     {
         private const float _dictBaseTextSize = 10.00f;
         private const string _fontName = "Arial";
@@ -18,7 +18,7 @@ namespace Cad_Point_Manager.Models.PointRendering
         private FontFace _fontFace;
         private Vector4 _defaultColor = new(0.0f, 0.0f, 0.0f, 1.0f);
 
-        public DxfPointTextVerticesDict(D3dResCache resCache)
+        public CogoPointTextVerticesDict(D3dResCache resCache)
         {
             _resCache = resCache;
             _textFormat = new TextFormat(_resCache.WriteFactory, _fontName, FontWeight.Normal, FontStyle.Normal, FontStretch.Normal, _dictBaseTextSize);
