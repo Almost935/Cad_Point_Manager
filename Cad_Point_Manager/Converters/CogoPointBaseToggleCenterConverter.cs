@@ -34,11 +34,8 @@ namespace Cad_Point_Manager.Converters
                 return DependencyProperty.UnsetValue;
             }
 
-            //Matrix matrix = new(matrix3x2.M11, matrix3x2.M12, matrix3x2.M21, matrix3x2.M22, matrix3x2.M31 + (viewPortWidth / 2), matrix3x2.M32 + (viewPortHeight / 2));
             Matrix matrix = new(matrix3x2.M11, matrix3x2.M12, matrix3x2.M21, matrix3x2.M22, matrix3x2.M31, matrix3x2.M32);
             var translatedPoint = matrix.Transform(dxfPoint);
-
-            Debug.WriteLine($"\ntranslatedPoint: {translatedPoint}");
 
             return axis == "X" ? translatedPoint.X : translatedPoint.Y;
         }

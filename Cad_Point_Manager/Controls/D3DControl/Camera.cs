@@ -37,7 +37,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public Matrix ProjectionMatrix { get; private set; } = Matrix.Identity;
         public Matrix ViewProjectionMatrix { get; private set; } = Matrix.Identity;
         public Matrix InverseViewProjectionMatrix { get; private set; } = Matrix.Identity;
-        public float BaseScaleFactor { get; set; } = 1.0f;
         public ViewportF Viewport { get; set; }
         public Vector2 Translate { get; set; } = Vector2.Zero;
         public int CurrentZoomStep { get; set; } = 0;
@@ -54,16 +53,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _zoomFactor = zoomFactor;
             Extents = bounds;
 
-            GetBaseScaleFactor();
             ResetToDefaults();
         }
         #endregion
 
         #region Methods
-        public void GetBaseScaleFactor()
-        {
-            BaseScaleFactor = Math.Min(Viewport.Width / Extents.Width, Viewport.Height / Extents.Height);
-        }
         public void UpdateViewportSize(ViewportF viewport)
         {
             Viewport = viewport;
@@ -75,8 +69,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public void UpdateProjection()
         {
             Vector2 basePoint = new(Extents.Center.X, Extents.Center.Y);
-            ProjectionMatrix = Matrix.OrthoOffCenterLH(basePoint.X - Viewport.Width / 2, basePoint.X + Viewport.Width / 2, basePoint.Y - Viewport.Height / 2, basePoint.Y + Viewport.Height / 2, 0.1f, 1000f);
-
+            
+            float scaledViewWidth = Viewport.Width / InitialViewMatrix.M11;
+            float scaledViewHeight = Viewport.Height / InitialViewMatrix.M11;
+            ProjectionMatrix = Matrix.OrthoOffCenterLH(basePoint.X - scaledViewWidth / 2, basePoint.X + scaledViewWidth / 2, basePoint.Y - scaledViewHeight / 2, basePoint.Y + scaledViewHeight / 2, 0.1f, 1000f);
+            
             //ProjectionMatrix = Matrix.OrthoLH(Viewport.Width, Viewport.Height, 0.1f, 1000f);
             //ProjectionMatrix = Matrix.OrthoOffCenterLH(0, Viewport.Width, 0, Viewport.Height, 0.1f, 1000f);
             //ProjectionMatrix = Matrix.OrthoOffCenterLH(Extents.Center.X - (Viewport.Width / 6), Extents.Center.X + (Viewport.Width / 6),
@@ -87,9 +84,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
         {
             ZeroViews();
 
+            Extents = newExtents;
+            InitialViewMatrix = newInitialView;
+
             UpdateProjection();
 
-            Extents = newExtents;
             //InitialViewMatrix = newInitialView;
             //_scaledInitialViewMatrix = InitialViewMatrix;
 
@@ -121,7 +120,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
         private void UpdateViewProjection()
         {
-            ViewProjectionMatrix = ProjectionMatrix * _scaledViewMatrix * _scaledInitialViewMatrix;
+            ViewProjectionMatrix = ProjectionMatrix * _scaledViewMatrix;
             InverseViewProjectionMatrix = Matrix.Invert(ViewProjectionMatrix);
             D2dMatrix = Get2DTransformationMatrix();
         }
@@ -131,7 +130,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             CurrentRotation.SetX(0);
             CurrentRotation.SetY(0);
             CurrentRotation.SetZ(0);
-            IsIn3DView = false;
 
             UpdateProjection();
             UpdateView();
@@ -200,12 +198,22 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         public Matrix3x2 Get2DTransformationMatrix()
         {
-            var zoom = CurrentZoom;
-            var scaleX = zoom * InitialViewMatrix.M11;
-            var scaleY = zoom * InitialViewMatrix.M22;
-            var translateX = (ViewMatrix.M41 + InitialViewMatrix.M41) * scaleX;
-            var translateY = (ViewMatrix.M42 + InitialViewMatrix.M42) * scaleY;
-            var matrix = new Matrix3x2(scaleX, 0, 0, scaleY, translateX, translateY);
+            //var zoom = CurrentZoom;
+            //var scaleX = zoom * InitialViewMatrix.M11;
+            //var scaleY = zoom * InitialViewMatrix.M22;
+            //var translateX = (ViewMatrix.M41 + InitialViewMatrix.M41) * scaleX;
+            //var translateY = (ViewMatrix.M42 + InitialViewMatrix.M42) * scaleY;
+            //var matrix = new Matrix3x2(scaleX, 0, 0, scaleY, translateX, translateY);
+
+            var halfW = Viewport.Width / 2f;
+            var halfH = Viewport.Height / 2f;
+            var ndcToPixel = Matrix.Scaling(halfW, -halfH, 1) * Matrix.Translation(halfW, halfH, 0);
+            Matrix final = ViewProjectionMatrix * ndcToPixel;
+            Matrix3x2 matrix = new(
+                final.M11, final.M12,
+                final.M21, final.M22,
+                final.M41, final.M42
+            );
 
             return matrix;
         }

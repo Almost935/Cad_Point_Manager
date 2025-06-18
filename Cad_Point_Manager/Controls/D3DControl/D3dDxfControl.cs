@@ -1108,9 +1108,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 float scale = Math.Min(Viewport.Width / CadManager3D.Extents.Width, Viewport.Height / CadManager3D.Extents.Height);
 
                 //_dxfInitialMatrix = Matrix.Scaling(scale, scale, 1) * Matrix.Translation(-centerX, -centerY, 0);
-                //_dxfInitialMatrix = Matrix.Scaling(scale, scale, 1) * Matrix.Translation(-CadManager3D.Extents.Left, -CadManager3D.Extents.Bottom, 0);
+                _dxfInitialMatrix = Matrix.Scaling(scale, scale, 1) * Matrix.Translation(-CadManager3D.Extents.Left, -CadManager3D.Extents.Bottom, 0);
                 //_dxfInitialMatrix = Matrix.Identity;
-                _dxfInitialMatrix = Matrix.Scaling(scale, scale, 1);
 
                 if (Camera is not null)
                 { 

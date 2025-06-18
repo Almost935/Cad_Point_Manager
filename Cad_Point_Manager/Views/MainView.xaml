@@ -191,12 +191,6 @@
                                   Background="{x:Null}"
                                   Width="{Binding ElementName=BackgroundCanvas, Path=ActualWidth}"
                                   Height="{Binding ElementName=BackgroundCanvas, Path=ActualHeight}">
-                        <ItemsControl.RenderTransform>
-                            <TransformGroup>
-                                <ScaleTransform ScaleY="-1" />
-                                <TranslateTransform Y="{Binding ElementName=BackgroundCanvas, Path=ActualHeight}" />
-                            </TransformGroup>
-                        </ItemsControl.RenderTransform>
                         <ItemsControl.Resources>
                             <sys:Double x:Key="HalfWidth">25</sys:Double>
                             <sys:Double x:Key="HalfHeight">25</sys:Double>
@@ -216,7 +210,6 @@
                                                   IsHitTestVisible="True">
                                         <ToggleButton.RenderTransform>
                                             <TransformGroup>
-                                                <ScaleTransform ScaleY="-1" />
                                                 <TranslateTransform>
                                                     <TranslateTransform.X>
                                                         <MultiBinding Converter="{StaticResource CogoPointBaseToggleCenterConverter}"
