@@ -14,6 +14,7 @@
       xmlns:sys="clr-namespace:System;assembly=mscorlib"
       xmlns:colorpicker="clr-namespace:ColorPicker;assembly=ColorPicker"
       xmlns:pointRendering="clr-namespace:Cad_Point_Manager.Models.PointRendering"
+      xmlns:models="clr-namespace:Cad_Point_Manager.Models"
       d:DataContext="{d:DesignInstance Type=viewModels:MainViewModel}"
       mc:Ignorable="d"
       Title="MainView"
@@ -154,7 +155,9 @@
         </Grid>
 
         <Grid Grid.Row="2">
-            <Grid x:Name="dxfGrid">
+            <Grid x:Name="dxfGrid"
+                  SizeChanged="dxfGrid_SizeChanged"
+                  ClipToBounds="True">
                 <Grid.Margin>
                     <MultiBinding Converter="{StaticResource LeftRightMarginConverter}">
                         <Binding ElementName="SourceControl"
@@ -178,17 +181,20 @@
                                    Cursor="Cross"
                                    CadManager3D="{Binding JobFileManager.CadManager3D}"
                                    Camera="{Binding Camera, Mode=TwoWay}"
-                                   SelectedPoints="{Binding SelectedPoints}"
-                                   Panel.ZIndex="2" />
+                                   SelectedPoints="{Binding SelectedPoints}" 
+                                   Width="{Binding ElementName=dxfGrid, Path=ActualWidth}"
+                                   Height="{Binding ElementName=dxfGrid, Path=ActualHeight}"/>
 
                 <Canvas x:Name="BackgroundCanvas">
                     <ItemsControl x:Name="SelectedPointButtonsItemsControl"
                                   ItemsSource="{Binding SelectedPoints}"
-                                  Background="Transparent">
+                                  Background="{x:Null}"
+                                  Width="{Binding ElementName=BackgroundCanvas, Path=ActualWidth}"
+                                  Height="{Binding ElementName=BackgroundCanvas, Path=ActualHeight}">
                         <ItemsControl.RenderTransform>
                             <TransformGroup>
                                 <ScaleTransform ScaleY="-1" />
-                                <!--<TranslateTransform Y="{Binding ElementName=BackgroundCanvas, Path=ActualHeight}" />-->
+                                <TranslateTransform Y="{Binding ElementName=BackgroundCanvas, Path=ActualHeight}" />
                             </TransformGroup>
                         </ItemsControl.RenderTransform>
                         <ItemsControl.Resources>
@@ -197,41 +203,52 @@
                         </ItemsControl.Resources>
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>
-                                <Canvas />
+                                <Canvas Background="{x:Null}"/>
                             </ItemsPanelTemplate>
                         </ItemsControl.ItemsPanel>
-
-                        <!--<ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <uc:CogoPointUserControl />
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>-->
-                        
                         <ItemsControl.ItemTemplate>
                             <DataTemplate DataType="{x:Type pointRendering:CogoPoint}">
-                                <ToggleButton Content="Move"
-                                              Width="50"
-                                              Height="50"
-                                              IsHitTestVisible="True">
-                                    <Canvas.Left>
-                                        <MultiBinding Converter="{StaticResource CogoPointBaseToggleCenterConverter}"
-                                                      ConverterParameter="X">
-                                            <Binding Path="PointPosition" />
-                                            <Binding Path="DataContext.Camera.D2dMatrix"
-                                                     RelativeSource="{RelativeSource AncestorType=Page}" />
-                                            <Binding Source="{StaticResource HalfWidth}" />
-                                        </MultiBinding>
-                                    </Canvas.Left>
-                                    <Canvas.Top>
-                                        <MultiBinding Converter="{StaticResource CogoPointBaseToggleCenterConverter}"
-                                                      ConverterParameter="Y">
-                                            <Binding Path="PointPosition" />
-                                            <Binding Path="DataContext.Camera.D2dMatrix"
-                                                     RelativeSource="{RelativeSource AncestorType=Page}" />
-                                            <Binding Source="{StaticResource HalfHeight}" />
-                                        </MultiBinding>
-                                    </Canvas.Top>
-                                </ToggleButton>
+                                <ContentControl IsHitTestVisible="True">
+                                    <ToggleButton Content="Move"
+                                                  Width="20"
+                                                  Height="20"
+                                                  Background="Red"
+                                                  IsHitTestVisible="True">
+                                        <ToggleButton.RenderTransform>
+                                            <TransformGroup>
+                                                <ScaleTransform ScaleY="-1" />
+                                                <TranslateTransform>
+                                                    <TranslateTransform.X>
+                                                        <MultiBinding Converter="{StaticResource CogoPointBaseToggleCenterConverter}"
+                                                                      ConverterParameter="X">
+                                                            <Binding Path="PointPosition" />
+                                                            <Binding Path="DataContext.Camera.D2dMatrix"
+                                                                     RelativeSource="{RelativeSource AncestorType=Page}" />
+                                                            <Binding ElementName="SelectedPointButtonsItemsControl" 
+                                                                     Path="ActualWidth"/>
+                                                            <Binding ElementName="SelectedPointButtonsItemsControl"
+                                                                     Path="ActualHeight" />
+                                                            <Binding Source="{StaticResource HalfWidth}" />
+                                                        </MultiBinding>
+                                                    </TranslateTransform.X>
+                                                    <TranslateTransform.Y>
+                                                        <MultiBinding Converter="{StaticResource CogoPointBaseToggleCenterConverter}"
+                                                                      ConverterParameter="Y">
+                                                            <Binding Path="PointPosition" />
+                                                            <Binding Path="DataContext.Camera.D2dMatrix"
+                                                                     RelativeSource="{RelativeSource AncestorType=Page}" />
+                                                            <Binding ElementName="SelectedPointButtonsItemsControl"
+                                                                     Path="ActualWidth" />
+                                                            <Binding ElementName="SelectedPointButtonsItemsControl"
+                                                                     Path="ActualHeight" />
+                                                            <Binding Source="{StaticResource HalfHeight}" />
+                                                        </MultiBinding>
+                                                    </TranslateTransform.Y>
+                                                </TranslateTransform>
+                                            </TransformGroup>
+                                        </ToggleButton.RenderTransform>
+                                    </ToggleButton>
+                                </ContentControl>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>

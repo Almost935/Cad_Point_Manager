@@ -10,6 +10,7 @@ using netDxf.Tables;
 using SharpDX;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Windows;
@@ -236,6 +237,7 @@ namespace Cad_Point_Manager.Models
 
             DxfDocument = dxfDocument;
             Extents = DxfHelpers.GetBoundsFromHeader(DxfDocument);
+            
             GetPointScale();
 
             // Testing

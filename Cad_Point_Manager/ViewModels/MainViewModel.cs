@@ -23,10 +23,9 @@ namespace Cad_Point_Manager.ViewModels
         private string _dxfFilePath;
         private string _dxfFileName;
         private DxfDocument _dxfDocument;
-        private Size2F _viewportSize = Size2F.Empty;
+        private Size _viewportSize = Size.Empty;
         private Camera _camera;
-        private ObservableCollection<CogoPoint> _selectedPoints = [];
-        //private System.Windows.Media.Matrix _toggleButtonMatrix = new();
+        private ObservableCollection<CogoPoint> _selectedPoints;
         #endregion
 
         #region Properties
@@ -75,7 +74,7 @@ namespace Cad_Point_Manager.ViewModels
                 OnPropertyChanged(nameof(DxfDocument));
             }
         }
-        public Size2F ViewportSize
+        public Size ViewportSize
         {
             get { return _viewportSize; }
             set
@@ -95,10 +94,17 @@ namespace Cad_Point_Manager.ViewModels
         }
         public ObservableCollection<CogoPoint> SelectedPoints
         {
-            get { return _selectedPoints; }
+            get => _selectedPoints;
             set
             {
+                if (_selectedPoints != null)
+                    _selectedPoints.CollectionChanged -= SelectedPoints_CollectionChanged;
+
                 _selectedPoints = value;
+
+                if (_selectedPoints != null)
+                    _selectedPoints.CollectionChanged += SelectedPoints_CollectionChanged;
+
                 OnPropertyChanged(nameof(SelectedPoints));
             }
         }
@@ -117,7 +123,7 @@ namespace Cad_Point_Manager.ViewModels
         #region Constructors
         public MainViewModel()
         {
-            SelectedPoints.CollectionChanged += SelectedPoints_CollectionChanged;
+            SelectedPoints = new ObservableCollection<CogoPoint>();
 
             NewJobCommand = new RelayCommand<RoutedEventArgs>(NewJob);
             LoadJobCommand = new RelayCommand<RoutedEventArgs>(LoadJob);
@@ -130,24 +136,25 @@ namespace Cad_Point_Manager.ViewModels
 
         private void SelectedPoints_CollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
         {
+            Debug.WriteLine($"\n");
+            
             if (e.Action == System.Collections.Specialized.NotifyCollectionChangedAction.Add)
             {
                 foreach (CogoPoint point in e.NewItems)
                 {
-                    System.Windows.Point windowP = new(point.Easting, point.Northing);
-                    Debug.WriteLine($"\nCamera.D2dMatrix: {Camera.D2dMatrix}");
+                    Debug.WriteLine($"\ncogoPoint.CogoPointUserControl.Position: {point.CogoPointUserControl.Position}");
                 }
             }
-            else if (e.Action == System.Collections.Specialized.NotifyCollectionChangedAction.Remove)
+            if (e.Action == System.Collections.Specialized.NotifyCollectionChangedAction.Remove)
             {
                 foreach (CogoPoint point in e.OldItems)
                 {
-                    Debug.WriteLine($"\nCamera.D2dMatrix: {Camera.D2dMatrix}");
+                    //Debug.WriteLine($"\nCamera.D2dMatrix: {Camera.D2dMatrix}");
                 }
             }
-            else if (e.Action == System.Collections.Specialized.NotifyCollectionChangedAction.Reset)
+            if (e.Action == System.Collections.Specialized.NotifyCollectionChangedAction.Reset)
             {
-                Debug.WriteLine($"\nCamera.D2dMatrix: {Camera.D2dMatrix}");
+                //Debug.WriteLine($"\nCamera.D2dMatrix: {Camera.D2dMatrix}");
             }
         }
         #endregion

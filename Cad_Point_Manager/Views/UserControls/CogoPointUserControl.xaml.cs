@@ -27,17 +27,27 @@ namespace Cad_Point_Manager.Views.UserControls
     public partial class CogoPointUserControl : UserControl, INotifyPropertyChanged
     {
         #region Fields
-        private Point _textInfoPosition = new Point(0, 0);
+        private Point _canvasPosition = new Point(0, 0);
+        private Point _canvasTextInfoPosition = new Point(0, 0);
         #endregion
 
         #region Properties
-        public Point TextInfoPosition
+        public Point CanvasPosition
         {
-            get => _textInfoPosition;
+            get => _canvasPosition;
             set
             {
-                _textInfoPosition = value;
-                OnPropertyChanged(nameof(TextInfoPosition));
+                _canvasPosition = value;
+                OnPropertyChanged(nameof(CanvasPosition));
+            }
+        }
+        public Point CanvasTextInfoPosition
+        {
+            get => _canvasTextInfoPosition;
+            set
+            {
+                _canvasTextInfoPosition = value;
+                OnPropertyChanged(nameof(CanvasTextInfoPosition));
             }
         }
         #endregion
@@ -142,13 +152,17 @@ namespace Cad_Point_Manager.Views.UserControls
         #endregion
 
         #region Methods
+        public void GetCanvasPosition(Size viewportSize)
+        {
+            
+        }
         public void InitializeTextinfoPosition(Point initialPosition)
         {
-            TextInfoPosition = initialPosition;
+            CanvasTextInfoPosition = initialPosition;
         }
         public void UpdateTextInfoPosition(Point newPosition)
         {
-            TextInfoPosition = newPosition;
+            CanvasTextInfoPosition = newPosition;
         }
         #endregion
 

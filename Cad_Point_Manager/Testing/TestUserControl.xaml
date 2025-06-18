@@ -6,24 +6,23 @@
              xmlns:local="clr-namespace:Cad_Point_Manager.Testing"
              xmlns:system="clr-namespace:System;assembly=mscorlib"
              mc:Ignorable="d">
-    <Grid x:Name="overallGrid" 
-          Width="400"
-          Height="200">
-        <Canvas ClipToBounds="True"
-                Background="White">
-            <Canvas>
-                <Line Stroke="Red"
-                      StrokeThickness="3"
-                      X1="0"
-                      Y1="0"
-                      X2="400"
-                      Y2="100" />
-                <Canvas.RenderTransform>
-                    <TransformGroup>
-                        <MatrixTransform Matrix="1,0,0,-1,0,200" />
-                    </TransformGroup>
-                </Canvas.RenderTransform>
-            </Canvas>
+    <Grid x:Name="overallGrid"
+          Width="1536"
+          Height="675.27"
+          Background="White">
+        <Canvas Width="1536"
+                Height="675.27">
+            <Canvas.RenderTransform>
+                <TransformGroup>
+                    <MatrixTransform Matrix="2.334 0 0 2.334 -1844.908 -11518.158" />
+                </TransformGroup>
+            </Canvas.RenderTransform>
+            <Line Stroke="Red"
+                  StrokeThickness="3"
+                  X1="911.5"
+                  Y1="5100"
+                  X2="1300"
+                  Y2="5100" />
         </Canvas>
     </Grid>
 </UserControl>

@@ -1,6 +1,8 @@
-﻿using SharpDX;
+﻿using Cad_Point_Manager.Models;
+using SharpDX;
 using SharpDX.Mathematics.Interop;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
 namespace Cad_Point_Manager.Controls.D3DControl
@@ -35,25 +37,33 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public Matrix ProjectionMatrix { get; private set; } = Matrix.Identity;
         public Matrix ViewProjectionMatrix { get; private set; } = Matrix.Identity;
         public Matrix InverseViewProjectionMatrix { get; private set; } = Matrix.Identity;
+        public float BaseScaleFactor { get; set; } = 1.0f;
         public ViewportF Viewport { get; set; }
         public Vector2 Translate { get; set; } = Vector2.Zero;
         public int CurrentZoomStep { get; set; } = 0;
         public float CurrentZoom => (float)Math.Pow(_zoomFactor, CurrentZoomStep);
         public Rotation CurrentRotation { get; set; } = Rotation.NoRotation;
         public bool IsIn3DView { get; set; } = false;
+        public Bounds Extents { get; set; } = Bounds.Empty;
         #endregion
 
         #region Constructors
-        public Camera(ViewportF viewport, float zoomFactor)
+        public Camera(ViewportF viewport, float zoomFactor, Bounds bounds)
         {
             Viewport = viewport;
             _zoomFactor = zoomFactor;
+            Extents = bounds;
 
+            GetBaseScaleFactor();
             ResetToDefaults();
         }
         #endregion
 
         #region Methods
+        public void GetBaseScaleFactor()
+        {
+            BaseScaleFactor = Math.Min(Viewport.Width / Extents.Width, Viewport.Height / Extents.Height);
+        }
         public void UpdateViewportSize(ViewportF viewport)
         {
             Viewport = viewport;
@@ -64,27 +74,31 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         public void UpdateProjection()
         {
-            ProjectionMatrix = Matrix.OrthoLH(Viewport.Width, Viewport.Height, 0.1f, 1000f);
+            Vector2 basePoint = new(Extents.Center.X, Extents.Center.Y);
+            ProjectionMatrix = Matrix.OrthoOffCenterLH(basePoint.X - Viewport.Width / 2, basePoint.X + Viewport.Width / 2, basePoint.Y - Viewport.Height / 2, basePoint.Y + Viewport.Height / 2, 0.1f, 1000f);
+
+            //ProjectionMatrix = Matrix.OrthoLH(Viewport.Width, Viewport.Height, 0.1f, 1000f);
+            //ProjectionMatrix = Matrix.OrthoOffCenterLH(0, Viewport.Width, 0, Viewport.Height, 0.1f, 1000f);
+            //ProjectionMatrix = Matrix.OrthoOffCenterLH(Extents.Center.X - (Viewport.Width / 6), Extents.Center.X + (Viewport.Width / 6),
+            //    Extents.Center.Y - (Viewport.Height / 6), Extents.Center.Y + (Viewport.Height / 6), 0.1f, 1000f);
         }
 
-        public void ResetView(Matrix newInitialView)
+        public void ResetView(Matrix newInitialView, Bounds newExtents)
         {
             ZeroViews();
 
             UpdateProjection();
 
-            InitialViewMatrix = newInitialView;
-            _scaledInitialViewMatrix = InitialViewMatrix;
+            Extents = newExtents;
+            //InitialViewMatrix = newInitialView;
+            //_scaledInitialViewMatrix = InitialViewMatrix;
 
-            // Extract scale factors from ProjectionMatrix
-            float scaleX = ProjectionMatrix.M11 * newInitialView.M11;
-            float scaleY = ProjectionMatrix.M22 * newInitialView.M22;
+            //float scaleX = ProjectionMatrix.M11 * newInitialView.M11;
+            //float scaleY = ProjectionMatrix.M22 * newInitialView.M22;
 
-            // Adjust M41 and M42 in the InitialViewMatrix
-            _scaledInitialViewMatrix.M41 *= scaleX;
-            _scaledInitialViewMatrix.M42 *= scaleY;
+            //_scaledInitialViewMatrix.M41 *= scaleX;
+            //_scaledInitialViewMatrix.M42 *= scaleY;
 
-            // Update dependent matrices
             UpdateViewProjection();
         }
         public void ZeroViews()

@@ -30,23 +30,24 @@
                  Height="2"
                  Width="2">
             <Canvas.Left>
-                <MultiBinding Converter="{StaticResource CenterOffsetConverter}" FallbackValue="-1">
-                    <Binding Path="Position" />
+                <MultiBinding Converter="{StaticResource CenterOffsetConverter}"
+                              FallbackValue="-1">
+                    <Binding Path="CanvasPosition" />
                     <Binding ElementName="PointMarker"
-                             Path="Width"/>
+                             Path="Width" />
                 </MultiBinding>
             </Canvas.Left>
             <Canvas.Top>
                 <MultiBinding Converter="{StaticResource CenterOffsetConverter}"
                               FallbackValue="-1">
-                    <Binding Path="Position" />
+                    <Binding Path="CanvasPosition" />
                     <Binding ElementName="PointMarker"
                              Path="Height" />
                 </MultiBinding>
             </Canvas.Top>
         </Ellipse>
-        <StackPanel Canvas.Left="{Binding TextInfoPosition.X}"
-                    Canvas.Top="{Binding TextInfoPosition.Y}"
+        <StackPanel Canvas.Left="{Binding CanvasTextInfoPosition.X}"
+                    Canvas.Top="{Binding CanvasTextInfoPosition.Y}"
                     Margin="4 -33 0 0">
             <TextBlock Text="{Binding PointNumber, FallbackValue=1}"
                        Foreground="{Binding PointGroup.Color, Converter={StaticResource Vector4ToBrushConverter}, FallbackValue=Red}"

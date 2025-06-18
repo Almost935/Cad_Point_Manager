@@ -254,6 +254,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         {
             _attachedWindow = Application.Current.MainWindow;
             if (_attachedWindow != null) { _attachedWindow.KeyUp += Window_KeyUp; }
+            
             SelectedPoints = new ObservableCollection<CogoPoint>();
         }
         #endregion
@@ -266,12 +267,12 @@ namespace Cad_Point_Manager.Controls.D3DControl
             if (Camera is null)
             {
                 GetInitialMatrix();
-                Camera = new(Viewport, GlobalHelperProperties._zoomFactor);
+                Camera = new(Viewport, GlobalHelperProperties._zoomFactor, CadManager3D.Extents);
             }
             if (DxfNeedsReload)
             {
                 GetInitialMatrix();
-                Camera.ResetView(_dxfInitialMatrix);
+                Camera.ResetView(_dxfInitialMatrix, CadManager3D.Extents);
                 ConstantBuffersDirty = true;
                 DxfNeedsReload = false;
                 CadManager3D.DxfNeedsReload = false;
@@ -1106,11 +1107,14 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
                 float scale = Math.Min(Viewport.Width / CadManager3D.Extents.Width, Viewport.Height / CadManager3D.Extents.Height);
 
-                _dxfInitialMatrix = Matrix.Scaling(scale, scale, 1) * Matrix.Translation(-centerX, -centerY, 0);
+                //_dxfInitialMatrix = Matrix.Scaling(scale, scale, 1) * Matrix.Translation(-centerX, -centerY, 0);
+                //_dxfInitialMatrix = Matrix.Scaling(scale, scale, 1) * Matrix.Translation(-CadManager3D.Extents.Left, -CadManager3D.Extents.Bottom, 0);
+                //_dxfInitialMatrix = Matrix.Identity;
+                _dxfInitialMatrix = Matrix.Scaling(scale, scale, 1);
 
                 if (Camera is not null)
-                {
-                    Camera.ResetView(_dxfInitialMatrix);
+                { 
+                    Camera.ResetView(_dxfInitialMatrix, CadManager3D.Extents);
                     _hittestStrokeThickness = 7.0f / (Camera.InitialViewMatrix.M11 * Camera.CurrentZoom);
 
                     ConstantBuffersDirty = true;
@@ -1325,7 +1329,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         {
             if (Camera is null) { return; }
 
-            Camera.ResetView(_dxfInitialMatrix);
+            Camera.ResetView(_dxfInitialMatrix, CadManager3D.Extents);
             ResetSnappedObjects();
 
             ConstantBuffersDirty = true;
@@ -1967,7 +1971,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         private void ClearDxf()
         {
-            Camera.ResetView(Matrix.Identity);
+            Camera.ResetView(Matrix.Identity, CadManager3D.Extents);
             ResetSnappedObjects();
             _lineVerticesDirty = _textVerticesDirty = _lineGlowVerticesDirty = _pointTextVerticesDirty = _circleVerticesDirty = true;
         }

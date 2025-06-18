@@ -10,6 +10,9 @@ using System.Windows.Media;
 using SharpDX;
 using Cad_Point_Manager.Extensions;
 using Point = System.Windows.Point;
+using System.Diagnostics;
+using Cad_Point_Manager.ViewModels;
+using Matrix = System.Windows.Media.Matrix;
 
 namespace Cad_Point_Manager.Converters
 {
@@ -23,15 +26,21 @@ namespace Cad_Point_Manager.Converters
         {
             if (values.Length < 2 ||
              values[0] is not Point dxfPoint ||
-             values[1] is not Matrix3x2 matrix ||
+             values[1] is not Matrix3x2 matrix3x2 ||
+             values[2] is not double viewPortWidth ||
+             values[3] is not double viewPortHeight ||
              parameter is not string axis)
             {
                 return DependencyProperty.UnsetValue;
             }
 
-            var transformed = matrix.ToWindowsMatrix().Transform(dxfPoint);
+            //Matrix matrix = new(matrix3x2.M11, matrix3x2.M12, matrix3x2.M21, matrix3x2.M22, matrix3x2.M31 + (viewPortWidth / 2), matrix3x2.M32 + (viewPortHeight / 2));
+            Matrix matrix = new(matrix3x2.M11, matrix3x2.M12, matrix3x2.M21, matrix3x2.M22, matrix3x2.M31, matrix3x2.M32);
+            var translatedPoint = matrix.Transform(dxfPoint);
 
-            return axis == "X" ? transformed.X : transformed.Y;
+            Debug.WriteLine($"\ntranslatedPoint: {translatedPoint}");
+
+            return axis == "X" ? translatedPoint.X : translatedPoint.Y;
         }
 
         public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)

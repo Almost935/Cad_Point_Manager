@@ -261,7 +261,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         public readonly override string ToString()
         {
-            return $"Left: {Left}, Right: {Right}, Bottom: {Bottom}, Top: {Top})";
+            return $"Left: {Left}, Right: {Right}, Bottom: {Bottom}, Top: {Top}, Width: {Width}, Height: {Height})";
         }
 
         public Rect ToRect()
