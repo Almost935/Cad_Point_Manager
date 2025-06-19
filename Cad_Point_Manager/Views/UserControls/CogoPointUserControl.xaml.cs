@@ -1,4 +1,6 @@
-﻿using Cad_Point_Manager.Models.PointRendering;
+﻿using Cad_Point_Manager.Controls.D3DControl;
+using Cad_Point_Manager.Models;
+using Cad_Point_Manager.Models.PointRendering;
 using netDxf.Header;
 using SharpDX;
 using System;
@@ -26,36 +28,28 @@ namespace Cad_Point_Manager.Views.UserControls
     /// </summary>
     public partial class CogoPointUserControl : UserControl, INotifyPropertyChanged
     {
-        #region Fields
-        private Point _canvasPosition = new Point(0, 0);
-        private Point _canvasTextInfoPosition = new Point(0, 0);
-        #endregion
-
-        #region Properties
+        #region Dependency Properties
+        public static readonly DependencyProperty CanvasPositionProperty =
+            DependencyProperty.Register(nameof(CanvasPosition), typeof(Point), typeof(CogoPointUserControl),
+                new PropertyMetadata(new Point(0,0), OnPointPositionChanged));
         public Point CanvasPosition
         {
-            get => _canvasPosition;
-            set
-            {
-                _canvasPosition = value;
-                OnPropertyChanged(nameof(CanvasPosition));
-            }
+            get => (Point)GetValue(CanvasPositionProperty);
+            set => SetValue(CanvasPositionProperty, value);
         }
+
+        public static readonly DependencyProperty CanvasTextInfoPositionProperty =
+            DependencyProperty.Register(nameof(CanvasTextInfoPosition), typeof(Point), typeof(CogoPointUserControl),
+                new PropertyMetadata(new Point(0, 0)));
         public Point CanvasTextInfoPosition
         {
-            get => _canvasTextInfoPosition;
-            set
-            {
-                _canvasTextInfoPosition = value;
-                OnPropertyChanged(nameof(CanvasTextInfoPosition));
-            }
+            get => (Point)GetValue(CanvasTextInfoPositionProperty);
+            set => SetValue(CanvasTextInfoPositionProperty, value);
         }
-        #endregion
 
-        #region Dependency Properties
         public static readonly DependencyProperty PointGroupProperty =
             DependencyProperty.Register(nameof(PointGroup), typeof(PointGroup), typeof(CogoPointUserControl),
-                new PropertyMetadata(null)); 
+                new PropertyMetadata(null));
         public PointGroup PointGroup
         {
             get => (PointGroup)GetValue(PointGroupProperty);
@@ -69,15 +63,6 @@ namespace Cad_Point_Manager.Views.UserControls
         {
             get => (double)GetValue(PointScaleProperty);
             set => SetValue(PointScaleProperty, value);
-        }
-
-        public static readonly DependencyProperty PositionProperty =
-            DependencyProperty.Register(nameof(Position), typeof(Point), typeof(CogoPointUserControl),
-                new PropertyMetadata(new Point(0,0)));
-        public Point Position
-        {
-            get => (Point)GetValue(PositionProperty);
-            set => SetValue(PositionProperty, value);
         }
 
         public static readonly DependencyProperty PointNumberProperty =
@@ -137,22 +122,21 @@ namespace Cad_Point_Manager.Views.UserControls
 
         #region Constructors
         public CogoPointUserControl() { }
-        public CogoPointUserControl(CogoPoint cogoPoint)
-        {
-            PointGroup = cogoPoint.PointGroup;
-            Position = cogoPoint.PointPosition;
-            PointNumber = cogoPoint.PointNumber;
-            Elevation = cogoPoint.Elevation;
-            Description = cogoPoint.Description;
-            PointScale = cogoPoint.PointGroup.PointScale;
-            InitializeTextinfoPosition(Position);
+        //public CogoPointUserControl(CogoPoint cogoPoint)
+        //{
+        //    PointGroup = cogoPoint.PointGroup;
+        //    Position = cogoPoint.PointPosition;
+        //    PointNumber = cogoPoint.PointNumber;
+        //    Elevation = cogoPoint.Elevation;
+        //    Description = cogoPoint.Description;
+        //    PointScale = cogoPoint.PointGroup.PointScale;
 
-            InitializeComponent();
-        }
+        //    InitializeComponent();
+        //}
         #endregion
 
         #region Methods
-        public void GetCanvasPosition(Size viewportSize)
+        private static void OnPointPositionChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             
         }

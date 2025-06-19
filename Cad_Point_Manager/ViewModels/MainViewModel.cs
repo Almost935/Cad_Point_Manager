@@ -140,10 +140,7 @@ namespace Cad_Point_Manager.ViewModels
             
             if (e.Action == System.Collections.Specialized.NotifyCollectionChangedAction.Add)
             {
-                foreach (CogoPoint point in e.NewItems)
-                {
-                    Debug.WriteLine($"\ncogoPoint.CogoPointUserControl.Position: {point.CogoPointUserControl.Position}");
-                }
+               
             }
             if (e.Action == System.Collections.Specialized.NotifyCollectionChangedAction.Remove)
             {

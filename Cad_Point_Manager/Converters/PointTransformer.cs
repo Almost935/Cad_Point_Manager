@@ -16,7 +16,7 @@ using Matrix = System.Windows.Media.Matrix;
 
 namespace Cad_Point_Manager.Converters
 {
-    public class CogoPointBaseToggleCenterConverter : IMultiValueConverter
+    public class PointTransformer : IMultiValueConverter
     {
         /// <summary>
         /// Converts a coordinate by transforming it with the matrix parameter and then subtracting the second parameter.
@@ -26,16 +26,14 @@ namespace Cad_Point_Manager.Converters
         {
             if (values.Length < 2 ||
              values[0] is not Point dxfPoint ||
-             values[1] is not Matrix3x2 matrix3x2 ||
-             parameter is not string axis)
+             values[1] is not Matrix matrix)
             {
                 return DependencyProperty.UnsetValue;
             }
 
-            Matrix matrix = new(matrix3x2.M11, matrix3x2.M12, matrix3x2.M21, matrix3x2.M22, matrix3x2.M31, matrix3x2.M32);
             var translatedPoint = matrix.Transform(dxfPoint);
 
-            return axis == "X" ? translatedPoint.X : translatedPoint.Y;
+            return translatedPoint;
         }
 
         public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)

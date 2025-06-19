@@ -15,21 +15,23 @@
 
         <sys:Double x:Key="StandardLineHeight">12</sys:Double>
     </UserControl.Resources>
-    <Canvas RenderTransformOrigin="0, 1"
-            Width="10"
-            Height="10"
-            Canvas.Left="0"
-            Canvas.Top="0"
-            Background="#310047FF">
-        <Canvas.RenderTransform>
+    <Grid>
+        <Canvas RenderTransformOrigin="0, 1"
+                >
+            <!--<Canvas.RenderTransform>
             <ScaleTransform ScaleX="{Binding PointScale, FallbackValue=1}"
                             ScaleY="{Binding PointScale, FallbackValue=1}" />
-        </Canvas.RenderTransform>
-        <Ellipse x:Name="PointMarker"
-                 Fill="{Binding PointGroup.Color, Converter={StaticResource Vector4ToBrushConverter}, FallbackValue=Red}"
-                 Height="2"
-                 Width="2">
-            <Canvas.Left>
+        </Canvas.RenderTransform>-->
+            <Ellipse x:Name="PointMarker"
+                     Fill="{Binding PointGroup.Color, Converter={StaticResource Vector4ToBrushConverter}, FallbackValue=Red}"
+                     Height="100"
+                     Width="100"
+                     Margin="-1 -1 0 0">
+                <!--<Ellipse.RenderTransform>
+                    <TranslateTransform X="{Binding CanvasPosition.X}"
+                                        Y="{Binding CanvasPosition.Y}" />
+                </Ellipse.RenderTransform>-->
+                <!--<Canvas.Left>
                 <MultiBinding Converter="{StaticResource CenterOffsetConverter}"
                               FallbackValue="-1">
                     <Binding Path="CanvasPosition" />
@@ -44,29 +46,29 @@
                     <Binding ElementName="PointMarker"
                              Path="Height" />
                 </MultiBinding>
-            </Canvas.Top>
-        </Ellipse>
-        <StackPanel Canvas.Left="{Binding CanvasTextInfoPosition.X}"
-                    Canvas.Top="{Binding CanvasTextInfoPosition.Y}"
-                    Margin="4 -33 0 0">
-            <TextBlock Text="{Binding PointNumber, FallbackValue=1}"
-                       Foreground="{Binding PointGroup.Color, Converter={StaticResource Vector4ToBrushConverter}, FallbackValue=Red}"
-                       Visibility="{Binding PointNumberIsVisible, Converter={StaticResource BoolToVisibilityConverter}}"
-                       LineStackingStrategy="BlockLineHeight"
-                       LineHeight="{StaticResource StandardLineHeight}"
-                       FontSize="12" />
-            <TextBlock Text="{Binding Elevation, FallbackValue=0.000}"
-                       Foreground="{Binding PointGroup.Color, Converter={StaticResource Vector4ToBrushConverter}, FallbackValue=Red}"
-                       Visibility="{Binding ElevationIsVisible, Converter={StaticResource BoolToVisibilityConverter}}"
-                       LineStackingStrategy="BlockLineHeight"
-                       LineHeight="{StaticResource StandardLineHeight}"
-                       FontSize="12" />
-            <TextBlock Text="{Binding Description, FallbackValue=Points}"
-                       Foreground="{Binding PointGroup.Color, Converter={StaticResource Vector4ToBrushConverter}, FallbackValue=Red}"
-                       Visibility="{Binding DescriptionIsVisible, Converter={StaticResource BoolToVisibilityConverter}}"
-                       LineStackingStrategy="BlockLineHeight"
-                       LineHeight="{StaticResource StandardLineHeight}"
-                       FontSize="12" />
-        </StackPanel>
-    </Canvas>
+            </Canvas.Top>-->
+            </Ellipse>
+            <StackPanel Margin="4 -33 0 0">
+                <StackPanel.RenderTransform>
+                    <TranslateTransform X="{Binding CanvasTextInfoPosition.X}"
+                                        Y="{Binding CanvasTextInfoPosition.Y}" />
+                </StackPanel.RenderTransform>
+                <TextBlock Text="{Binding PointNumber, FallbackValue=1}"
+                           Foreground="{Binding PointGroup.Color, Converter={StaticResource Vector4ToBrushConverter}, FallbackValue=Red}"
+                           LineStackingStrategy="BlockLineHeight"
+                           LineHeight="{StaticResource StandardLineHeight}"
+                           FontSize="12" />
+                <TextBlock Text="{Binding Elevation, FallbackValue=0.000}"
+                           Foreground="{Binding PointGroup.Color, Converter={StaticResource Vector4ToBrushConverter}, FallbackValue=Red}"
+                           LineStackingStrategy="BlockLineHeight"
+                           LineHeight="{StaticResource StandardLineHeight}"
+                           FontSize="12" />
+                <TextBlock Text="{Binding Description, FallbackValue=Points}"
+                           Foreground="{Binding PointGroup.Color, Converter={StaticResource Vector4ToBrushConverter}, FallbackValue=Red}"
+                           LineStackingStrategy="BlockLineHeight"
+                           LineHeight="{StaticResource StandardLineHeight}"
+                           FontSize="12" />
+            </StackPanel>
+        </Canvas>
+    </Grid>
 </UserControl>

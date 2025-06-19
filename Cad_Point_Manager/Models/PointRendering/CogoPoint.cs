@@ -13,6 +13,7 @@ using System.Windows.Media;
 using System.Windows.Media.TextFormatting;
 using System.Xml.Linq;
 using static System.Runtime.InteropServices.JavaScript.JSType;
+using Point = System.Windows.Point;
 
 namespace Cad_Point_Manager.Models.PointRendering
 {
@@ -30,7 +31,8 @@ namespace Cad_Point_Manager.Models.PointRendering
         private PointGroup _pointGroup;
         private string _description;
         private CogoPointManager _cogoPointManager;
-        private CogoPointUserControl _cogoPointUserControl;
+        private Point _textInfoLocation;
+        private double _pointScale;
         #endregion
 
         #region Properties
@@ -139,21 +141,33 @@ namespace Cad_Point_Manager.Models.PointRendering
                 }
             }
         }
-        public CogoPointUserControl CogoPointUserControl
+        public Point TextInfoLocation
         {
-            get { return _cogoPointUserControl; }
+            get => _textInfoLocation;
             set
             {
-                if (_cogoPointUserControl != value)
+                if (value != _textInfoLocation)
                 {
-                    _cogoPointUserControl = value;
-                    OnPropertyChanged(nameof(CogoPointUserControl));
+                    _textInfoLocation = value;
+                    OnPropertyChanged(nameof(TextInfoLocation));
+                }
+            }
+        }
+        public double PointScale
+        {
+            get => _pointScale;
+            set
+            {
+                if (_pointScale != value)
+                {
+                    _pointScale = value;
+                    OnPropertyChanged(nameof(PointScale));
                 }
             }
         }
 
         public Vector3 RenderPosition => new((float)Easting, (float)Northing, 0);
-        public System.Windows.Point PointPosition => new(Easting, Northing); 
+        public Point PointPosition => new(Easting, Northing); 
         public bool HasPointNumberError => HasErrorsFor(nameof(PointNumber));
 
         public TextVertex[] TextVertices { get; set; } = [];
@@ -177,7 +191,7 @@ namespace Cad_Point_Manager.Models.PointRendering
             MarkerSize = markerSize;
             Elevation = elevation;
             Description = description;
-            CogoPointUserControl = new CogoPointUserControl(this);
+            TextInfoLocation = new(Easting + textHeight * 0.2, Northing);
         }
         #endregion
 
