@@ -1,7 +1,9 @@
-﻿using Cad_Point_Manager.Models.PointRendering;
+﻿using Cad_Point_Manager.Controls.D3DControl;
+using Cad_Point_Manager.Models.PointRendering;
 using SharpDX;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Windows;
 
 namespace Cad_Point_Manager.Models
 {
@@ -14,6 +16,7 @@ namespace Cad_Point_Manager.Models
         private PointGroup _activePointGroup;
         private bool _pointsDirty = false;
         private CadManager3D _cadManager;
+        private ObservableCollection<CogoPoint> _cogoPoints = [];
         #endregion
 
         #region Properties
@@ -59,6 +62,18 @@ namespace Cad_Point_Manager.Models
                 {
                     _cadManager = value;
                     OnPropertyChanged(nameof(CadManager));
+                }
+            }
+        }
+        public ObservableCollection<CogoPoint> CogoPoints
+        {
+            get => _cogoPoints;
+            set
+            {
+                if (_cogoPoints != value)
+                {
+                    _cogoPoints = value;
+                    OnPropertyChanged(nameof(CogoPoints));
                 }
             }
         }
@@ -108,6 +123,7 @@ namespace Cad_Point_Manager.Models
             }
 
             ActivePointGroup.AddPoint(pointNum, position, elevation, description);
+            UpdateCogoPointsList();
             return true;
         }
 
@@ -156,6 +172,18 @@ namespace Cad_Point_Manager.Models
             if (!CadManager.PointCircleVerticesDirty)
             {
                 CadManager.PointCircleVerticesDirty = true;
+            }
+        }
+
+        private void UpdateCogoPointsList()
+        {
+            CogoPoints.Clear();
+            foreach (var pointGroup in PointGroups) 
+            {
+                foreach (var point in pointGroup.Value.Points) 
+                {
+                    CogoPoints.Add(point);
+                }
             }
         }
         #endregion

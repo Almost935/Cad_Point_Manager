@@ -25,7 +25,7 @@ namespace Cad_Point_Manager.ViewModels
         private DxfDocument _dxfDocument;
         private Size _viewportSize = Size.Empty;
         private Camera _camera;
-        private ObservableCollection<CogoPoint> _selectedPoints;
+        private ObservableCollection<CogoPoint> _cogoPoints;
         #endregion
 
         #region Properties
@@ -92,20 +92,20 @@ namespace Cad_Point_Manager.ViewModels
                 OnPropertyChanged(nameof(Camera));
             }
         }
-        public ObservableCollection<CogoPoint> SelectedPoints
+        public ObservableCollection<CogoPoint> CogoPoints
         {
-            get => _selectedPoints;
+            get => _cogoPoints;
             set
             {
-                if (_selectedPoints != null)
-                    _selectedPoints.CollectionChanged -= SelectedPoints_CollectionChanged;
+                if (_cogoPoints != null)
+                    _cogoPoints.CollectionChanged -= SelectedPoints_CollectionChanged;
 
-                _selectedPoints = value;
+                _cogoPoints = value;
 
-                if (_selectedPoints != null)
-                    _selectedPoints.CollectionChanged += SelectedPoints_CollectionChanged;
+                if (_cogoPoints != null)
+                    _cogoPoints.CollectionChanged += SelectedPoints_CollectionChanged;
 
-                OnPropertyChanged(nameof(SelectedPoints));
+                OnPropertyChanged(nameof(CogoPoints));
             }
         }
         #endregion
@@ -123,7 +123,7 @@ namespace Cad_Point_Manager.ViewModels
         #region Constructors
         public MainViewModel()
         {
-            SelectedPoints = new ObservableCollection<CogoPoint>();
+            CogoPoints = new ObservableCollection<CogoPoint>();
 
             NewJobCommand = new RelayCommand<RoutedEventArgs>(NewJob);
             LoadJobCommand = new RelayCommand<RoutedEventArgs>(LoadJob);

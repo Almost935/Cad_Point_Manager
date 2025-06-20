@@ -33,6 +33,7 @@
         <converters:CenterOffsetConverter x:Key="CenterOffsetConverter" />
         <converters:CogoPointBaseToggleCenterConverter x:Key="CogoPointBaseToggleCenterConverter" />
         <converters:PointTransformer x:Key="PointTransformer" />
+        <converters:Vector4ToBrushConverter x:Key="Vector4ToBrushConverter" />
 
         <Thickness x:Key="ToggleButtonMargin">0,5,0,5</Thickness>
     </Page.Resources>
@@ -182,9 +183,10 @@
                                    Cursor="Cross"
                                    CadManager3D="{Binding JobFileManager.CadManager3D}"
                                    Camera="{Binding Camera, Mode=TwoWay}"
-                                   SelectedPoints="{Binding SelectedPoints}"
+                                   CogoPoints="{Binding CogoPoints}"
                                    Width="{Binding ElementName=dxfGrid, Path=ActualWidth}"
-                                   Height="{Binding ElementName=dxfGrid, Path=ActualHeight}" />
+                                   Height="{Binding ElementName=dxfGrid, Path=ActualHeight}" 
+                                   />
 
                 <Canvas x:Name="BackgroundCanvas">
                     <uc:CogoPointUserControl Width="100"
@@ -194,9 +196,9 @@
                                              PointNumber="100"
                                              Elevation="123.45"
                                              Description="Test Desc"
-                                             PointScale="1"/>
+                                             PointScale="1" />
                     <ItemsControl x:Name="SelectedPointButtonsItemsControl"
-                                  ItemsSource="{Binding SelectedPoints}"
+                                  ItemsSource="{Binding CogoPoints}"
                                   Background="{x:Null}"
                                   Width="{Binding ElementName=BackgroundCanvas, Path=ActualWidth}"
                                   Height="{Binding ElementName=BackgroundCanvas, Path=ActualHeight}"
@@ -204,6 +206,10 @@
                         <ItemsControl.Resources>
                             <sys:Double x:Key="HalfWidth">25</sys:Double>
                             <sys:Double x:Key="HalfHeight">25</sys:Double>
+                            <sys:Double x:Key="EllipseSize">5</sys:Double>
+                            <sys:Double x:Key="StandardLineHeight">12</sys:Double>
+                            <Thickness x:Key="EllipseOffset">-2.5 -2.5 0 0</Thickness>
+                            <Thickness x:Key="TextOffset">4 -33 0 0</Thickness>
                         </ItemsControl.Resources>
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>
@@ -212,80 +218,49 @@
                         </ItemsControl.ItemsPanel>
                         <ItemsControl.ItemTemplate>
                             <DataTemplate DataType="{x:Type pointRendering:CogoPoint}">
-                                <uc:CogoPointUserControl PointGroup="{Binding PointGroup}"
-                                                         PointScale="{Binding PointScale}"
-                                                         PointNumber="{Binding PointNumber}"
-                                                         Elevation="{Binding Elevation}"
-                                                         Description="{Binding Description}"
-                                                         Background="Black"
-                                                         Width="100"
-                                                         Height="100">
-                                    <uc:CogoPointUserControl.RenderTransform>
-                                        <TranslateTransform X="200"
-                                                            Y="200" />
-                                    </uc:CogoPointUserControl.RenderTransform>
-
-                                    <!--<Canvas.Left>
-                                        <MultiBinding Converter="{StaticResource CogoPointBaseToggleCenterConverter}"
-                                                      ConverterParameter="X">
-                                            <Binding Path="PointPosition" />
-                                            <Binding Path="DataContext.Camera.D2dMatrix"
-                                                     RelativeSource="{RelativeSource AncestorType=Page}" />
-                                        </MultiBinding>
-                                    </Canvas.Left>
-                                    <Canvas.Top>
-                                        <MultiBinding Converter="{StaticResource CogoPointBaseToggleCenterConverter}"
-                                                      ConverterParameter="Y">
-                                            <Binding Path="PointPosition" />
-                                            <Binding Path="DataContext.Camera.D2dMatrix"
-                                                     RelativeSource="{RelativeSource AncestorType=Page}" />
-                                        </MultiBinding>
-                                    </Canvas.Top>-->
-                                    <!--<uc:CogoPointUserControl.CanvasPosition>
-                                        <MultiBinding Converter="{StaticResource PointTransformer}">
-                                            <Binding Path="PointPosition" />
-                                            <Binding Path="DataContext.Camera.D2dMatrix"
-                                                     RelativeSource="{RelativeSource AncestorType=Page}" 
-                                                     Converter="{StaticResource Matrix3x2ToWindowsMatrixConverter}"/>
-                                        </MultiBinding>
-                                    </uc:CogoPointUserControl.CanvasPosition>
-                                    <uc:CogoPointUserControl.CanvasTextInfoPosition>
-                                        <MultiBinding Converter="{StaticResource PointTransformer}">
-                                            <Binding Path="TextInfoLocation" />
-                                            <Binding Path="DataContext.Camera.D2dMatrix"
-                                                     RelativeSource="{RelativeSource AncestorType=Page}"
-                                                     Converter="{StaticResource Matrix3x2ToWindowsMatrixConverter}" />
-                                        </MultiBinding>
-                                    </uc:CogoPointUserControl.CanvasTextInfoPosition>-->
-                                </uc:CogoPointUserControl>
-                                <!--<ToggleButton Content="Move"
-                                              Width="20"
-                                              Height="20"
-                                              Background="Red"
-                                              IsHitTestVisible="True">
-                                    <ToggleButton.RenderTransform>
-                                        <TransformGroup>
-                                            <TranslateTransform>
-                                                <TranslateTransform.X>
-                                                    <MultiBinding Converter="{StaticResource CogoPointBaseToggleCenterConverter}"
-                                                                  ConverterParameter="X">
-                                                        <Binding Path="PointPosition" />
-                                                        <Binding Path="DataContext.Camera.D2dMatrix"
-                                                                 RelativeSource="{RelativeSource AncestorType=Page}" />
-                                                    </MultiBinding>
-                                                </TranslateTransform.X>
-                                                <TranslateTransform.Y>
-                                                    <MultiBinding Converter="{StaticResource CogoPointBaseToggleCenterConverter}"
-                                                                  ConverterParameter="Y">
-                                                        <Binding Path="PointPosition" />
-                                                        <Binding Path="DataContext.Camera.D2dMatrix"
-                                                                 RelativeSource="{RelativeSource AncestorType=Page}" />
-                                                    </MultiBinding>
-                                                </TranslateTransform.Y>
-                                            </TranslateTransform>
-                                        </TransformGroup>
-                                    </ToggleButton.RenderTransform>
-                                </ToggleButton>-->
+                                <Canvas Background="{x:Null}">
+                                    <Canvas.RenderTransform>
+                                        <TranslateTransform>
+                                            <TranslateTransform.X>
+                                                <MultiBinding Converter="{StaticResource CogoPointBaseToggleCenterConverter}"
+                                                              ConverterParameter="X">
+                                                    <Binding Path="PointPosition" />
+                                                    <Binding Path="DataContext.Camera.D2dMatrix"
+                                                             RelativeSource="{RelativeSource AncestorType=Page}" />
+                                                </MultiBinding>
+                                            </TranslateTransform.X>
+                                            <TranslateTransform.Y>
+                                                <MultiBinding Converter="{StaticResource CogoPointBaseToggleCenterConverter}"
+                                                              ConverterParameter="Y">
+                                                    <Binding Path="PointPosition" />
+                                                    <Binding Path="DataContext.Camera.D2dMatrix"
+                                                             RelativeSource="{RelativeSource AncestorType=Page}" />
+                                                </MultiBinding>
+                                            </TranslateTransform.Y>
+                                        </TranslateTransform>
+                                    </Canvas.RenderTransform>
+                                    <Ellipse Fill="{Binding PointGroup.Color, Converter={StaticResource Vector4ToBrushConverter}, FallbackValue=Red}"
+                                             Height="{StaticResource EllipseSize}"
+                                             Width="{StaticResource EllipseSize}"
+                                             Margin="{StaticResource EllipseOffset}" />
+                                    <StackPanel Margin="{StaticResource TextOffset}">
+                                        <TextBlock Text="{Binding PointNumber, FallbackValue=1}"
+                                                   Foreground="{Binding PointGroup.Color, Converter={StaticResource Vector4ToBrushConverter}, FallbackValue=Red}"
+                                                   LineStackingStrategy="BlockLineHeight"
+                                                   LineHeight="{StaticResource StandardLineHeight}"
+                                                   FontSize="12" />
+                                        <TextBlock Text="{Binding Elevation, StringFormat=N3, FallbackValue=0.000}"
+                                                   Foreground="{Binding PointGroup.Color, Converter={StaticResource Vector4ToBrushConverter}, FallbackValue=Red}"
+                                                   LineStackingStrategy="BlockLineHeight"
+                                                   LineHeight="{StaticResource StandardLineHeight}"
+                                                   FontSize="12" />
+                                        <TextBlock Text="{Binding Description, FallbackValue=Points}"
+                                                   Foreground="{Binding PointGroup.Color, Converter={StaticResource Vector4ToBrushConverter}, FallbackValue=Red}"
+                                                   LineStackingStrategy="BlockLineHeight"
+                                                   LineHeight="{StaticResource StandardLineHeight}"
+                                                   FontSize="12" />
+                                    </StackPanel>
+                                </Canvas>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>

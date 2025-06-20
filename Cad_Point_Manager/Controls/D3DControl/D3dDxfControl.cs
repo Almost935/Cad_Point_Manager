@@ -1,5 +1,4 @@
 ﻿using Cad_Point_Manager.Controls.D3DControl.Buffers;
-using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Helpers;
 using Cad_Point_Manager.Models;
 using Cad_Point_Manager.Models.DrawingObjects3D;
@@ -7,31 +6,23 @@ using Cad_Point_Manager.Models.HitTesting;
 using Cad_Point_Manager.Models.PointRendering;
 using SharpDX;
 using SharpDX.D3DCompiler;
-using SharpDX.Direct2D1;
 using SharpDX.Direct3D;
 using SharpDX.Direct3D11;
-using SharpDX.DirectWrite;
 using SharpDX.DXGI;
 using SharpDX.Mathematics.Interop;
-using System;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.DirectoryServices.ActiveDirectory;
 using System.IO;
-using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
-using System.Transactions;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 
 using Buffer = SharpDX.Direct3D11.Buffer;
 using InputElement = SharpDX.Direct3D11.InputElement;
-using MapFlags = SharpDX.Direct3D11.MapFlags;
 using Matrix = SharpDX.Matrix;
 using Point = System.Windows.Point;
 using RectangleGeometry = System.Windows.Media.RectangleGeometry;
@@ -228,12 +219,24 @@ namespace Cad_Point_Manager.Controls.D3DControl
             typeof(D3dDxfControl),
             new PropertyMetadata(null));
 
+        public static readonly DependencyProperty CogoPointsProperty =
+            DependencyProperty.Register(
+                nameof(CogoPoints),
+                typeof(ObservableCollection<CogoPoint>),
+                typeof(D3dDxfControl),
+                new FrameworkPropertyMetadata(new ObservableCollection<CogoPoint>(), FrameworkPropertyMetadataOptions.BindsTwoWayByDefault));
+        public ObservableCollection<CogoPoint> CogoPoints
+        {
+            get => (ObservableCollection<CogoPoint>)GetValue(CogoPointsProperty);
+            set => SetValue(CogoPointsProperty, value);
+        }
+
         public static readonly DependencyProperty SelectedPointsProperty =
             DependencyProperty.Register(
                 nameof(SelectedPoints),
                 typeof(ObservableCollection<CogoPoint>),
                 typeof(D3dDxfControl),
-                new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault));
+                new FrameworkPropertyMetadata(new ObservableCollection<CogoPoint>(), FrameworkPropertyMetadataOptions.BindsTwoWayByDefault));
         public ObservableCollection<CogoPoint> SelectedPoints
         {
             get => (ObservableCollection<CogoPoint>)GetValue(SelectedPointsProperty);
@@ -253,15 +256,13 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public D3dDxfControl()
         {
             _attachedWindow = Application.Current.MainWindow;
-            if (_attachedWindow != null) { _attachedWindow.KeyUp += Window_KeyUp; }
-            
-            SelectedPoints = new ObservableCollection<CogoPoint>();
+            if (_attachedWindow != null) { _attachedWindow.KeyUp += Window_KeyUp; }            
         }
         #endregion
 
         #region Methods
         public override void Render()
-        {
+        { 
             if (_d3dResCache is null) { return; }
 
             if (Camera is null)
@@ -1983,13 +1984,20 @@ namespace Cad_Point_Manager.Controls.D3DControl
             {
                 oldCadManager3D.PropertyChanged -= control.CadManager3D_PropertyChanged;
                 oldCadManager3D.ZoomToExtentsRequested -= control.ZoomToExtents;
+                oldCadManager3D.CogoPointManager.CogoPoints.CollectionChanged -= control.CogoPoints_CollectionChanged_Instance;
             }
 
             if (e.NewValue is CadManager3D newCadManager3D)
             {
                 newCadManager3D.PropertyChanged += control.CadManager3D_PropertyChanged;
                 newCadManager3D.ZoomToExtentsRequested += control.ZoomToExtents;
+                newCadManager3D.CogoPointManager.CogoPoints.CollectionChanged += control.CogoPoints_CollectionChanged_Instance;
             }
+        }
+
+        private void CogoPoints_CollectionChanged_Instance(object? sender, NotifyCollectionChangedEventArgs e)
+        {
+            CogoPoints = CadManager3D?.CogoPointManager?.CogoPoints;
         }
 
         private void CadManager3D_PropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -2000,7 +2008,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 {
                     DxfNeedsReload = true;
                 }
-                //DxfNeedsReload = CadManager3D.DxfNeedsReload;
             }
             if (e.PropertyName == nameof(CadManager3D.LineVerticesDirty))
             {
