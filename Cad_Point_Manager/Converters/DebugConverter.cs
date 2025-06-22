@@ -17,7 +17,6 @@ namespace Cad_Point_Manager.Converters
                 return DependencyProperty.UnsetValue;
             }
 
-            Debug.WriteLine($"\n\nheight: {height}");
             return height;
         }
 

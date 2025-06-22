@@ -20,7 +20,9 @@ namespace Cad_Point_Manager.Models.PointRendering
     public class CogoPoint : HitTestableObject
     {
         #region Fields
-        private float _markerToTextOffset = 0.25f;
+        private const float _textRowDistanceFactor = 1.2f;
+
+        private float _markerToTextOffset;
 
         private int _pointNumber;
         private double _northing;
@@ -31,7 +33,10 @@ namespace Cad_Point_Manager.Models.PointRendering
         private PointGroup _pointGroup;
         private string _description;
         private CogoPointManager _cogoPointManager;
-        private Point _textInfoLocation;
+        private Vector2 _textInfoBaseLocation;
+        private Vector2 _pointNameLocation;
+        private Vector2 _pointElevationLocation;
+        private Vector2 _pointDescriptionLocation;
         private double _pointScale;
         #endregion
 
@@ -141,15 +146,51 @@ namespace Cad_Point_Manager.Models.PointRendering
                 }
             }
         }
-        public Point TextInfoLocation
+        public Vector2 TextInfoBaseLocation
         {
-            get => _textInfoLocation;
+            get => _textInfoBaseLocation;
             set
             {
-                if (value != _textInfoLocation)
+                if (value != _textInfoBaseLocation)
                 {
-                    _textInfoLocation = value;
-                    OnPropertyChanged(nameof(TextInfoLocation));
+                    _textInfoBaseLocation = value;
+                    OnPropertyChanged(nameof(TextInfoBaseLocation));
+                }
+            }
+        }
+        public Vector2 PointNumberLocation
+        {
+            get => _pointNameLocation;
+            set
+            {
+                if (value != _pointNameLocation)
+                {
+                    _pointNameLocation = value;
+                    OnPropertyChanged(nameof(PointNumberLocation));
+                }
+            }
+        }
+        public Vector2 PointElevationLocation
+        {
+            get => _pointElevationLocation;
+            set
+            {
+                if (value != _pointElevationLocation)
+                {
+                    _pointElevationLocation = value;
+                    OnPropertyChanged(nameof(PointElevationLocation));
+                }
+            }
+        }
+        public Vector2 PointDescriptionLocation
+        {
+            get => _pointDescriptionLocation;
+            set
+            {
+                if (value != _pointDescriptionLocation)
+                {
+                    _pointDescriptionLocation = value;
+                    OnPropertyChanged(nameof(PointDescriptionLocation));
                 }
             }
         }
@@ -179,9 +220,9 @@ namespace Cad_Point_Manager.Models.PointRendering
         #endregion
 
         #region Constructors
-        public CogoPoint(PointGroup pointGroup, int pointNum, Vector3 position, float textHeight, float markerSize, CogoPointManager cogoPointManager, float elevation = 0,
-            string description = "")
-        {
+        public CogoPoint(PointGroup pointGroup, int pointNum, Vector3 position, float textHeight, float markerSize, 
+            CogoPointManager cogoPointManager, float elevation = 0, string description = "")
+        { 
             CogoPointManager = cogoPointManager;
             PointGroup = pointGroup;
             PointNumber = pointNum;
@@ -191,11 +232,20 @@ namespace Cad_Point_Manager.Models.PointRendering
             MarkerSize = markerSize;
             Elevation = elevation;
             Description = description;
-            TextInfoLocation = new(Easting + textHeight * 0.2, Northing);
+            _markerToTextOffset = textHeight * 0.2f;
+            GetTextLocations();
         }
         #endregion
 
         #region Methods
+        private void GetTextLocations()
+        {
+            TextInfoBaseLocation = new((float)Easting + _markerToTextOffset, (float)Northing);
+            PointNumberLocation = TextInfoBaseLocation;
+            PointElevationLocation = new(TextInfoBaseLocation.X, TextInfoBaseLocation.Y + TextHeight * _textRowDistanceFactor);
+            PointDescriptionLocation = new(TextInfoBaseLocation.X, TextInfoBaseLocation.Y + TextHeight * 2 * _textRowDistanceFactor);
+        }
+
         public override double DistanceToPoint(System.Windows.Point p)
         {
             if (MathHelpers.PointToPointDistance(p, RenderPosition.ToPoint()) < MarkerSize) { return 0.0; }
@@ -278,6 +328,7 @@ namespace Cad_Point_Manager.Models.PointRendering
             for (int i = 0; i < textSpan.Length; i++)
             {
                 textSpan[i].SetIsMouseOver(true);
+                TextVertices[i].SetIsMouseOver(true);
             }
 
             Span<CircleVertex> markerSpan = MarkerVertices;
@@ -341,8 +392,14 @@ namespace Cad_Point_Manager.Models.PointRendering
             TextVertices ??= Array.Empty<TextVertex>();
             Array.Clear(TextVertices);
 
-            TextVertices = textDict.GetIntTextVertices(PointNumber, TextHeight, new Vector2(RenderPosition.X + _markerToTextOffset, RenderPosition.Y), PointGroup.Color);
+            List<TextVertex> textVertices = [];
 
+            textVertices.AddRange(textDict.GetTextVertices(PointNumber.ToString(), TextHeight, PointNumberLocation, PointGroup.Color));
+            textVertices.AddRange(textDict.GetTextVertices(Elevation.ToString("F3"), TextHeight, PointElevationLocation, PointGroup.Color));
+            textVertices.AddRange(textDict.GetTextVertices(Description, TextHeight, PointDescriptionLocation, PointGroup.Color));
+            //TextVertices = textDict.GetIntTextVertices(PointNumber, TextHeight, new Vector2(RenderPosition.X + _markerToTextOffset, RenderPosition.Y), PointGroup.Color);
+
+            //TextVertices = textVertices.ToArray();
             UpdateBounds();
         }
         public void UpdateMarkerVertices()

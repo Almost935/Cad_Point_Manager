@@ -1,4 +1,5 @@
-﻿using Cad_Point_Manager.Controls.D3DControl;
+﻿using Cad_Point_Manager.Common;
+using Cad_Point_Manager.Controls.D3DControl;
 using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Helpers;
 using SharpDX;
@@ -33,13 +34,15 @@ namespace Cad_Point_Manager.Models.HitTesting
         }
 
         public int Index { get; set; }
+        public Enums.SignificantPointType PointType { get; set; }
         #endregion
 
         #region Constructors
-        public HitTestablePoint(Vector3 position)
+        public HitTestablePoint(Vector3 position, Enums.SignificantPointType pointType)
         {
             Position = position;
             _sigPointVertex = new(Position, 0, 0);
+            PointType = pointType;
         }
         #endregion
 

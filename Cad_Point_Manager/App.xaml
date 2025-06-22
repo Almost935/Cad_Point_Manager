@@ -21,6 +21,7 @@
                 <ResourceDictionary Source="Styles/EditableTextBox.xaml" />
                 <ResourceDictionary Source="Styles/ValidationTemplate.xaml" />
                 <ResourceDictionary Source="Styles/ListViewExpanderStyle.xaml" />
+                <ResourceDictionary Source="Styles/CogoPointStyles.xaml" />
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Application.Resources>

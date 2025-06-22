@@ -1,18 +1,20 @@
-﻿using Cad_Point_Manager.Extensions;
+﻿using Cad_Point_Manager.Common;
+using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Models.DrawingObjects3D;
 using SharpDX;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Windows;
 
 namespace Cad_Point_Manager.Helpers
 {
     public static class GeometryHelpers
     {
-        public static List<Vector> GetSignificantPointsList(List<DrawingSegment3D> segments)
+        public static List<(Enums.SignificantPointType pointType, Vector position)> GetSignificantPointsList(List<DrawingSegment3D> segments)
         {
-            var allPoints = new ConcurrentBag<Vector>();
+            var allPoints = new ConcurrentBag<(Enums.SignificantPointType, Vector)>();
 
-            Parallel.ForEach(Enumerable.Range(0, segments.Count), () => new List<Vector>(),
+            Parallel.ForEach(Enumerable.Range(0, segments.Count), () => new List<(Enums.SignificantPointType, Vector)>(),
                 (i, state, localList) =>
                 {
                     var segment1 = segments[i];
@@ -20,13 +22,16 @@ namespace Cad_Point_Manager.Helpers
                     switch (segment1)
                     {
                         case DrawingLine3D line:
-                            localList.AddRange(new[] { line.Start.ToVector(), line.End.ToVector(), line.MidPoint.ToVector() });
+                            localList.AddRange(new[] { 
+                                (Enums.SignificantPointType.EndPoint, line.Start.ToVector()), 
+                                (Enums.SignificantPointType.EndPoint, line.End.ToVector()), 
+                                (Enums.SignificantPointType.MidPoint, line.MidPoint.ToVector()) });
                             break;
                         case DrawingArc3D arc:
-                            localList.AddRange(new[] { arc.RadiusPoint.ToVector(), arc.Start.ToVector(), arc.End.ToVector(), arc.MidPoint.ToVector() });
-                            break;
-                        case DrawingCircle3D circle:
-                            localList.Add(circle.RadiusPoint.ToVector());
+                            localList.AddRange(new[] {
+                                (Enums.SignificantPointType.EndPoint, arc.Start.ToVector()),
+                                (Enums.SignificantPointType.EndPoint, arc.End.ToVector()),
+                                (Enums.SignificantPointType.MidPoint, arc.MidPoint.ToVector()) });
                             break;
                     }
 
@@ -37,7 +42,10 @@ namespace Cad_Point_Manager.Helpers
 
                         if (intersectionsExists)
                         {
-                            localList.AddRange(intersectionPoints);
+                            foreach (var vector in intersectionPoints)
+                            {
+                                localList.Add((Enums.SignificantPointType.Intersection, vector));
+                            }
                         }
                     }
 

@@ -22,4 +22,10 @@
     <SolidColorBrush x:Key="PopoutMenuBackgroundBrush"
                      Color="{StaticResource PopoutMenuBackgroundColor}" />
 
+
+    <SolidColorBrush x:Key="MouseOverBrush"
+                     Color="#FF08E6EE" />
+    <SolidColorBrush x:Key="SemiTransparentMouseOver"
+                     Color="#7F08E6EE" />
+
 </ResourceDictionary>

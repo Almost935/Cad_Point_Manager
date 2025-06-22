@@ -232,7 +232,7 @@ namespace Cad_Point_Manager.Models.HitTesting
             }
             return cogoPoints;
         }
-        public List<(double distance, Vector2 coordinate)> HitTestSignificantPoints(Point p, Rect hitTestRange)
+        public List<(Enums.SignificantPointType pointType, double distance, Vector2 coordinate)> HitTestSignificantPoints(Point p, Rect hitTestRange)
         {
             Vector2 pos = new((float)p.X, (float)p.Y);
             ConcurrentBag<DrawingSegment3D> segments = [];

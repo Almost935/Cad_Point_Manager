@@ -285,17 +285,17 @@ namespace Cad_Point_Manager.Controls.D3DControl
             if (_lineVerticesDirty) { UpdateLineVertices(); }
             if (_textVerticesDirty) { UpdateTextVertices(); }
             if (_textGlowVerticesDirty) { UpdateTextGlowVertices(); }
-            if (_pointTextVerticesDirty) { UpdatePointTextVertices(); }
-            if (_circleVerticesDirty) { UpdateCircleVertices(); }
-            if (_circleGlowVerticesDirty) { UpdateCircleGlowVertices(); }
+            //if (_pointTextVerticesDirty) { UpdatePointTextVertices(); }
+            //if (_circleVerticesDirty) { UpdateCircleVertices(); }
+            //if (_circleGlowVerticesDirty) { UpdateCircleGlowVertices(); }
             if (_sigPointVerticesDirty) { UpdateSigPointVertices(); }
             if (HitTestableObjectTreeDirty) { LoadHitTestableObjectTree(); }
 
             if (!_lineShaderLoaded) { InitializeLineShader(); }
             if (!_textShaderLoaded) { InitializeTextShader(); }
-            if (!_pointTextShadersLoaded) { InitializePointTextShader(); }
-            if (!_circleShadersLoaded) { InitializeCircleShader(); }
-            if (!_circleGlowShadersLoaded) { InitializeCircleGlowShader(); }
+            //if (!_pointTextShadersLoaded) { InitializePointTextShader(); }
+            //if (!_circleShadersLoaded) { InitializeCircleShader(); }
+            //if (!_circleGlowShadersLoaded) { InitializeCircleGlowShader(); }
             if (!_sigPointShadersLoaded) { InitializeSigPointShader(); }
             if (!ConstantBuffersInitialized) { InitializeConstantBuffers(); }
             if (ConstantBuffersDirty) { UpdateConstantBuffers(); }
@@ -1183,6 +1183,14 @@ namespace Cad_Point_Manager.Controls.D3DControl
             ConstantBuffersDirty = true;
             e.Handled = true;
         }
+        protected override void OnMouseEnter(MouseEventArgs e)
+        {
+            base.OnMouseEnter(e);
+
+            _isMouseInside = true;
+            _hitTestCancellationTokenSource = new CancellationTokenSource();
+            _ = RunHitTestingAsync();
+        }
         protected override void OnMouseLeave(MouseEventArgs e)
         {
             base.OnMouseLeave(e);
@@ -1199,18 +1207,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             if (linesDirty) { _lineGlowVerticesDirty = linesDirty; }
             if (textsDirty) { _textVerticesDirty = textsDirty; }
             if (textsDirty) { _textGlowVerticesDirty = textsDirty; }
-            if (circlesDirty) { _circleVerticesDirty = circlesDirty; }
-            if (circlesDirty) { _circleGlowVerticesDirty = circlesDirty; }
-            if (pointTextsDirty) { _pointTextVerticesDirty = pointTextsDirty; }
             if (sigPointsDirty) { _sigPointVerticesDirty = sigPointsDirty; }
-        }
-        protected override void OnMouseEnter(MouseEventArgs e)
-        {
-            base.OnMouseEnter(e);
-
-            _isMouseInside = true;
-            _hitTestCancellationTokenSource = new CancellationTokenSource();
-            _ = RunHitTestingAsync();
         }
         protected override void OnMouseLeftButtonUp(MouseButtonEventArgs e)
         {

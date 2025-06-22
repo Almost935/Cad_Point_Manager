@@ -26,6 +26,7 @@ namespace Cad_Point_Manager.ViewModels
         private Size _viewportSize = Size.Empty;
         private Camera _camera;
         private ObservableCollection<CogoPoint> _cogoPoints;
+        private ObservableCollection<CogoPoint> _selectedCogoPoints = [];
         #endregion
 
         #region Properties
@@ -97,15 +98,20 @@ namespace Cad_Point_Manager.ViewModels
             get => _cogoPoints;
             set
             {
-                if (_cogoPoints != null)
-                    _cogoPoints.CollectionChanged -= SelectedPoints_CollectionChanged;
-
-                _cogoPoints = value;
-
-                if (_cogoPoints != null)
-                    _cogoPoints.CollectionChanged += SelectedPoints_CollectionChanged;
-
-                OnPropertyChanged(nameof(CogoPoints));
+                //if (_cogoPoints != null)
+                //{
+                    _cogoPoints = value;
+                    OnPropertyChanged(nameof(CogoPoints));
+                //}
+            }
+        }
+        public ObservableCollection<CogoPoint> SelectedCogoPoints
+        {
+            get => _selectedCogoPoints;
+            set
+            {
+                _selectedCogoPoints = value;
+                OnPropertyChanged(nameof(SelectedCogoPoints));
             }
         }
         #endregion
@@ -117,6 +123,7 @@ namespace Cad_Point_Manager.ViewModels
         public ICommand SaveJobCommand { get; set; }
         public ICommand SaveAsJobCommand { get; set; }
         public ICommand ZoomToExtentsCommand { get; set; }
+        public ICommand CogoPointClickedCommand { get; set; }
         public ICommand SnapToggleCommand => new RelayCommand<object>(OnSnapTogglePressed);
         #endregion
 
@@ -132,27 +139,8 @@ namespace Cad_Point_Manager.ViewModels
             SaveAsJobCommand = new RelayCommand<RoutedEventArgs>(SaveJobAs);
 
             ZoomToExtentsCommand = new RelayCommand<RoutedEventArgs>(ZoomToExtents);
-        }
 
-        private void SelectedPoints_CollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
-        {
-            Debug.WriteLine($"\n");
-            
-            if (e.Action == System.Collections.Specialized.NotifyCollectionChangedAction.Add)
-            {
-               
-            }
-            if (e.Action == System.Collections.Specialized.NotifyCollectionChangedAction.Remove)
-            {
-                foreach (CogoPoint point in e.OldItems)
-                {
-                    //Debug.WriteLine($"\nCamera.D2dMatrix: {Camera.D2dMatrix}");
-                }
-            }
-            if (e.Action == System.Collections.Specialized.NotifyCollectionChangedAction.Reset)
-            {
-                //Debug.WriteLine($"\nCamera.D2dMatrix: {Camera.D2dMatrix}");
-            }
+            CogoPointClickedCommand = new RelayCommand<CogoPoint>(OnCogoPointClicked);
         }
         #endregion
 
@@ -222,10 +210,10 @@ namespace Cad_Point_Manager.ViewModels
         private void OnSnapTogglePressed(object param)
         {
             if (param is ToggleButton toggle)
-            {
+        {
                 string name = toggle.Name;
                 bool? isChecked = toggle.IsChecked;
-
+           
                 switch (name)
                 {
                     case "Points":
@@ -240,6 +228,25 @@ namespace Cad_Point_Manager.ViewModels
                     case "All":
                         JobFileManager.CadManager3D.SnapSelectionMode = Enums.SelectionMode.All;
                         break;
+                }
+            }
+        }
+
+        private void OnCogoPointClicked(CogoPoint point)
+        {
+            if (point == null) { return; }
+
+            if (point.IsSelected)
+            {
+                point.IsSelected = false;
+                SelectedCogoPoints.Remove(point);
+            }
+            else
+            {
+                point.IsSelected = true;
+                if (!SelectedCogoPoints.Contains(point))
+                {
+                    SelectedCogoPoints.Add(point);
                 }
             }
         }

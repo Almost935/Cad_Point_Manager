@@ -26,8 +26,12 @@ namespace Cad_Point_Manager.Helpers
         public static readonly Vector4 _selectedMouseOverGlowColor = new(170.0f / 255.0f, 252.0f / 255.0f, 235.0f / 255.0f, 1);
         
         public static readonly Vector4 _sigPointColor = new(50.0f / 255.0f, 200.0f / 255.0f, 255.0f / 255.0f, 1);
-        public static readonly float _sigPointRadiusInPixels = 5.0f;
+        public static readonly float _sigPointRadiusInPixels = 4.0f;
 
         public static readonly float _dxfPointToExtentsBaseFactor = 0.05f;
+
+        public static readonly System.Windows.Media.Color _mouseOverCogoPointColor = System.Windows.Media.Color.FromArgb(255, 8, 230, 238);
+        public static readonly System.Windows.Media.Color _selectedCogoPointColor = System.Windows.Media.Color.FromArgb(255, 16, 191, 0);
+        public static readonly System.Windows.Media.Color _selectedCogoPointMouseOverColor = System.Windows.Media.Color.FromArgb(255, 127, 255, 116);
     }
 }

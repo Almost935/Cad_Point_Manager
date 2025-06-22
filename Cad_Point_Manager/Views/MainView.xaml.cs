@@ -1,7 +1,11 @@
 ﻿using Cad_Point_Manager.Controls.D3DControl;
+using Cad_Point_Manager.Helpers;
+using Cad_Point_Manager.Models.PointRendering;
 using Cad_Point_Manager.ViewModels;
 using System.Diagnostics;
+using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 
 namespace Cad_Point_Manager.Views
 {
@@ -11,9 +15,9 @@ namespace Cad_Point_Manager.Views
     public partial class MainView : Page
     {
         public MainView(MainViewModel mainViewModel)
-        {    
+        {
             this.DataContext = mainViewModel;
-            
+
             InitializeComponent();
         }
 
@@ -23,6 +27,46 @@ namespace Cad_Point_Manager.Views
             {
                 mainViewModel.ViewportSize = new System.Windows.Size((float)e.NewSize.Width, (float)e.NewSize.Height);
             }
+        }
+
+        private void SelectedPointButtonsItemsControl_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
+        {
+            // Forward the mouse wheel event to the D3dDxfControl manually
+            if (d3dDxfControl != null)
+            {
+                var args = new MouseWheelEventArgs(e.MouseDevice, e.Timestamp, e.Delta)
+                {
+                    RoutedEvent = UIElement.MouseWheelEvent,
+                    Source = e.OriginalSource
+                };
+                d3dDxfControl.RaiseEvent(args);
+                e.Handled = true;
+            }
+        }
+
+
+        private void SelectedPointButtonsItemsControl_PreviewMouseMove(object sender, MouseEventArgs e)
+        {
+            if (d3dDxfControl != null)
+            {
+                // Create a new MouseEventArgs for forwarding
+                var args = new MouseEventArgs(e.MouseDevice, e.Timestamp)
+                {
+                    RoutedEvent = UIElement.MouseMoveEvent,
+                    Source = e.OriginalSource
+                };
+                d3dDxfControl.RaiseEvent(args);
+            }
+        }
+
+        private void dxfGrid_MouseEnter(object sender, MouseEventArgs e)
+        {
+            Mouse.OverrideCursor = AppCursors.CrosshairCursor;
+        }
+
+        private void dxfGrid_MouseLeave(object sender, MouseEventArgs e)
+        {
+            Mouse.OverrideCursor = null; // Reset the cursor to default
         }
     }
 }

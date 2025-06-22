@@ -19,6 +19,13 @@
             CogoPoints
         }
 
+        public enum SignificantPointType
+        {
+            MidPoint,
+            EndPoint,
+            Intersection
+        }
+
         public enum DrawingObjectType
         {
             Line,

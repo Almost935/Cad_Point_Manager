@@ -11,6 +11,7 @@ namespace Cad_Point_Manager.Models.PointRendering
         #region Fields
         private string _name;
         private Vector4 _color = new(0, 0, 0, 1);
+        private System.Windows.Media.Color _windowsColor = System.Windows.Media.Color.FromArgb(0, 0, 0, 1);
         private bool _isVisible = true;
         private float _textHeight;
         private float _pointMarkerSize;
@@ -43,6 +44,18 @@ namespace Cad_Point_Manager.Models.PointRendering
                 {
                     _color = value;
                     OnPropertyChanged(nameof(Color));
+                }
+            }
+        }
+        public System.Windows.Media.Color WindowsColor
+        {
+            get => _windowsColor;
+            set
+            {
+                if (_windowsColor != value)
+                {
+                    _windowsColor = value;
+                    OnPropertyChanged(nameof(WindowsColor));
                 }
             }
         }
@@ -148,6 +161,7 @@ namespace Cad_Point_Manager.Models.PointRendering
         {
             Name = name;
             Color = color;
+            WindowsColor = System.Windows.Media.Color.FromArgb((byte)(color.W * 255), (byte)(color.X * 255), (byte)(color.Y * 255), (byte)(color.Z * 255));
             TextHeight = textHeight;
             PointMarkerSize = markerSize;
             CogoPointManager = cogoPointManager;

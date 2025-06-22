@@ -89,6 +89,10 @@ namespace Cad_Point_Manager.Models
         #endregion
 
         #region Methods
+        private void GetBaseCogoPointSize()
+        {
+
+        }
         private bool PointNumberExists(int num)
         {
             return PointGroups.SelectMany(pg => pg.Value.Points).Any(p => p.PointNumber == num);
@@ -161,6 +165,7 @@ namespace Cad_Point_Manager.Models
         public void Reset()
         {
             PointGroups.Clear();
+            CogoPoints.Clear();
         }
 
         public void SetCadManagerPointVerticesDirty()

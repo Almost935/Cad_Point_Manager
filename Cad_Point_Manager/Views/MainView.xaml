@@ -15,6 +15,7 @@
       xmlns:colorpicker="clr-namespace:ColorPicker;assembly=ColorPicker"
       xmlns:pointRendering="clr-namespace:Cad_Point_Manager.Models.PointRendering"
       xmlns:models="clr-namespace:Cad_Point_Manager.Models"
+      xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
       d:DataContext="{d:DesignInstance Type=viewModels:MainViewModel}"
       mc:Ignorable="d"
       Title="MainView"
@@ -34,6 +35,8 @@
         <converters:CogoPointBaseToggleCenterConverter x:Key="CogoPointBaseToggleCenterConverter" />
         <converters:PointTransformer x:Key="PointTransformer" />
         <converters:Vector4ToBrushConverter x:Key="Vector4ToBrushConverter" />
+        <converters:Matrix3x2ToScaleConverter x:Key="MatrixToScaleConverter" />
+        <converters:CogoPointColorConverter x:Key="CogoPointColorConverter" />
 
         <Thickness x:Key="ToggleButtonMargin">0,5,0,5</Thickness>
     </Page.Resources>
@@ -159,7 +162,9 @@
         <Grid Grid.Row="2">
             <Grid x:Name="dxfGrid"
                   SizeChanged="dxfGrid_SizeChanged"
-                  ClipToBounds="True">
+                  ClipToBounds="True"
+                  MouseEnter="dxfGrid_MouseEnter"
+                  MouseLeave="dxfGrid_MouseLeave">
                 <Grid.Margin>
                     <MultiBinding Converter="{StaticResource LeftRightMarginConverter}">
                         <Binding ElementName="SourceControl"
@@ -180,36 +185,29 @@
                 </Grid.Margin>
 
                 <d3D:D3dDxfControl x:Name="d3dDxfControl"
-                                   Cursor="Cross"
                                    CadManager3D="{Binding JobFileManager.CadManager3D}"
                                    Camera="{Binding Camera, Mode=TwoWay}"
-                                   CogoPoints="{Binding CogoPoints}"
+                                   CogoPoints="{Binding CogoPoints, Mode=TwoWay}"
+                                   SelectedPoints="{Binding SelectedCogoPoints, Mode=TwoWay}"
                                    Width="{Binding ElementName=dxfGrid, Path=ActualWidth}"
-                                   Height="{Binding ElementName=dxfGrid, Path=ActualHeight}" 
-                                   />
+                                   Height="{Binding ElementName=dxfGrid, Path=ActualHeight}"
+                                   Cursor="Cross" />
 
                 <Canvas x:Name="BackgroundCanvas">
-                    <uc:CogoPointUserControl Width="100"
-                                             Height="100"
-                                             Canvas.Left="200"
-                                             Canvas.Top="100"
-                                             PointNumber="100"
-                                             Elevation="123.45"
-                                             Description="Test Desc"
-                                             PointScale="1" />
                     <ItemsControl x:Name="SelectedPointButtonsItemsControl"
                                   ItemsSource="{Binding CogoPoints}"
                                   Background="{x:Null}"
                                   Width="{Binding ElementName=BackgroundCanvas, Path=ActualWidth}"
                                   Height="{Binding ElementName=BackgroundCanvas, Path=ActualHeight}"
-                                  Panel.ZIndex="10">
+                                  PreviewMouseWheel="SelectedPointButtonsItemsControl_PreviewMouseWheel"
+                                  PreviewMouseMove="SelectedPointButtonsItemsControl_PreviewMouseMove"
+                                  RenderOptions.BitmapScalingMode="LowQuality">
                         <ItemsControl.Resources>
-                            <sys:Double x:Key="HalfWidth">25</sys:Double>
-                            <sys:Double x:Key="HalfHeight">25</sys:Double>
-                            <sys:Double x:Key="EllipseSize">5</sys:Double>
-                            <sys:Double x:Key="StandardLineHeight">12</sys:Double>
-                            <Thickness x:Key="EllipseOffset">-2.5 -2.5 0 0</Thickness>
-                            <Thickness x:Key="TextOffset">4 -33 0 0</Thickness>
+                            <sys:Double x:Key="EllipseSize">0.5</sys:Double>
+                            <sys:Double x:Key="StandardLineHeight">2</sys:Double>
+                            <sys:Double x:Key="TextSize">2</sys:Double>
+                            <Thickness x:Key="EllipseOffset">-0.5 -0.5 0 0</Thickness>
+                            <Thickness x:Key="TextOffset">0.5 -5.7 0 0</Thickness>
                         </ItemsControl.Resources>
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>
@@ -218,49 +216,129 @@
                         </ItemsControl.ItemsPanel>
                         <ItemsControl.ItemTemplate>
                             <DataTemplate DataType="{x:Type pointRendering:CogoPoint}">
-                                <Canvas Background="{x:Null}">
-                                    <Canvas.RenderTransform>
-                                        <TranslateTransform>
-                                            <TranslateTransform.X>
-                                                <MultiBinding Converter="{StaticResource CogoPointBaseToggleCenterConverter}"
-                                                              ConverterParameter="X">
-                                                    <Binding Path="PointPosition" />
-                                                    <Binding Path="DataContext.Camera.D2dMatrix"
-                                                             RelativeSource="{RelativeSource AncestorType=Page}" />
+                                <Grid x:Name="CogoPointGrid"
+                                      Style="{StaticResource CogoPointGridStyle}">
+                                    <Canvas Background="{x:Null}">
+                                        <Canvas.RenderTransform>
+                                            <TransformGroup>
+                                                <ScaleTransform>
+                                                    <ScaleTransform.ScaleX>
+                                                        <Binding Path="DataContext.Camera.D2dMatrix"
+                                                                 RelativeSource="{RelativeSource AncestorType=Page}"
+                                                                 Converter="{StaticResource MatrixToScaleConverter}" />
+                                                    </ScaleTransform.ScaleX>
+                                                    <ScaleTransform.ScaleY>
+                                                        <Binding Path="DataContext.Camera.D2dMatrix"
+                                                                 RelativeSource="{RelativeSource AncestorType=Page}"
+                                                                 Converter="{StaticResource MatrixToScaleConverter}" />
+                                                    </ScaleTransform.ScaleY>
+                                                </ScaleTransform>
+                                                <TranslateTransform>
+                                                    <TranslateTransform.X>
+                                                        <MultiBinding Converter="{StaticResource CogoPointBaseToggleCenterConverter}"
+                                                                      ConverterParameter="X">
+                                                            <Binding Path="PointPosition" />
+                                                            <Binding Path="DataContext.Camera.D2dMatrix"
+                                                                     RelativeSource="{RelativeSource AncestorType=Page}" />
+                                                        </MultiBinding>
+                                                    </TranslateTransform.X>
+                                                    <TranslateTransform.Y>
+                                                        <MultiBinding Converter="{StaticResource CogoPointBaseToggleCenterConverter}"
+                                                                      ConverterParameter="Y">
+                                                            <Binding Path="PointPosition" />
+                                                            <Binding Path="DataContext.Camera.D2dMatrix"
+                                                                     RelativeSource="{RelativeSource AncestorType=Page}" />
+                                                        </MultiBinding>
+                                                    </TranslateTransform.Y>
+                                                </TranslateTransform>
+                                            </TransformGroup>
+                                        </Canvas.RenderTransform>
+                                        <Ellipse x:Name="PointEllipse"
+                                                 Height="{StaticResource EllipseSize}"
+                                                 Width="{StaticResource EllipseSize}"
+                                                 Margin="{StaticResource EllipseOffset}">
+                                            <i:Interaction.Triggers>
+                                                <i:EventTrigger EventName="MouseLeftButtonDown">
+                                                    <i:InvokeCommandAction Command="{Binding DataContext.CogoPointClickedCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                                           CommandParameter="{Binding}" />
+                                                </i:EventTrigger>
+                                            </i:Interaction.Triggers>
+                                            <Ellipse.Fill>
+                                                <MultiBinding Converter="{StaticResource CogoPointColorConverter}">
+                                                    <Binding Path="PointGroup.WindowsColor" />
+                                                    <Binding ElementName="CogoPointGrid"
+                                                             Path="IsMouseOver" />
+                                                    <Binding Path="IsSelected" />
                                                 </MultiBinding>
-                                            </TranslateTransform.X>
-                                            <TranslateTransform.Y>
-                                                <MultiBinding Converter="{StaticResource CogoPointBaseToggleCenterConverter}"
-                                                              ConverterParameter="Y">
-                                                    <Binding Path="PointPosition" />
-                                                    <Binding Path="DataContext.Camera.D2dMatrix"
-                                                             RelativeSource="{RelativeSource AncestorType=Page}" />
-                                                </MultiBinding>
-                                            </TranslateTransform.Y>
-                                        </TranslateTransform>
-                                    </Canvas.RenderTransform>
-                                    <Ellipse Fill="{Binding PointGroup.Color, Converter={StaticResource Vector4ToBrushConverter}, FallbackValue=Red}"
-                                             Height="{StaticResource EllipseSize}"
-                                             Width="{StaticResource EllipseSize}"
-                                             Margin="{StaticResource EllipseOffset}" />
-                                    <StackPanel Margin="{StaticResource TextOffset}">
-                                        <TextBlock Text="{Binding PointNumber, FallbackValue=1}"
-                                                   Foreground="{Binding PointGroup.Color, Converter={StaticResource Vector4ToBrushConverter}, FallbackValue=Red}"
-                                                   LineStackingStrategy="BlockLineHeight"
-                                                   LineHeight="{StaticResource StandardLineHeight}"
-                                                   FontSize="12" />
-                                        <TextBlock Text="{Binding Elevation, StringFormat=N3, FallbackValue=0.000}"
-                                                   Foreground="{Binding PointGroup.Color, Converter={StaticResource Vector4ToBrushConverter}, FallbackValue=Red}"
-                                                   LineStackingStrategy="BlockLineHeight"
-                                                   LineHeight="{StaticResource StandardLineHeight}"
-                                                   FontSize="12" />
-                                        <TextBlock Text="{Binding Description, FallbackValue=Points}"
-                                                   Foreground="{Binding PointGroup.Color, Converter={StaticResource Vector4ToBrushConverter}, FallbackValue=Red}"
-                                                   LineStackingStrategy="BlockLineHeight"
-                                                   LineHeight="{StaticResource StandardLineHeight}"
-                                                   FontSize="12" />
-                                    </StackPanel>
-                                </Canvas>
+                                            </Ellipse.Fill>
+                                        </Ellipse>
+                                        <StackPanel Margin="{StaticResource TextOffset}">
+                                            <TextBlock x:Name="PointText1"
+                                                       Text="{Binding PointNumber, FallbackValue=1}"
+                                                       RenderOptions.EdgeMode="Aliased"
+                                                       LineStackingStrategy="BlockLineHeight"
+                                                       LineHeight="{StaticResource StandardLineHeight}"
+                                                       FontSize="{StaticResource TextSize}">
+                                                <i:Interaction.Triggers>
+                                                    <i:EventTrigger EventName="MouseLeftButtonDown">
+                                                        <i:InvokeCommandAction Command="{Binding DataContext.CogoPointClickedCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                                               CommandParameter="{Binding}" />
+                                                    </i:EventTrigger>
+                                                </i:Interaction.Triggers>
+                                                <TextBlock.Foreground>
+                                                    <MultiBinding Converter="{StaticResource CogoPointColorConverter}">
+                                                        <Binding Path="PointGroup.WindowsColor" />
+                                                        <Binding ElementName="CogoPointGrid"
+                                                                 Path="IsMouseOver" />
+                                                        <Binding Path="IsSelected" />
+                                                    </MultiBinding>
+                                                </TextBlock.Foreground>
+                                            </TextBlock>
+                                            <TextBlock x:Name="PointText2"
+                                                       Text="{Binding Elevation, StringFormat=N3, FallbackValue=0.000}"
+                                                       Style="{StaticResource CogoPointTextBlockStyle}"
+                                                       LineStackingStrategy="BlockLineHeight"
+                                                       LineHeight="{StaticResource StandardLineHeight}"
+                                                       FontSize="{StaticResource TextSize}">
+                                                <i:Interaction.Triggers>
+                                                    <i:EventTrigger EventName="MouseLeftButtonDown">
+                                                        <i:InvokeCommandAction Command="{Binding DataContext.CogoPointClickedCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                                               CommandParameter="{Binding}" />
+                                                    </i:EventTrigger>
+                                                </i:Interaction.Triggers>
+                                                <TextBlock.Foreground>
+                                                    <MultiBinding Converter="{StaticResource CogoPointColorConverter}">
+                                                        <Binding Path="PointGroup.WindowsColor" />
+                                                        <Binding ElementName="CogoPointGrid"
+                                                                 Path="IsMouseOver" />
+                                                        <Binding Path="IsSelected" />
+                                                    </MultiBinding>
+                                                </TextBlock.Foreground>
+                                            </TextBlock>
+                                            <TextBlock x:Name="PointText3"
+                                                       Text="{Binding Description, FallbackValue=Points}"
+                                                       Style="{StaticResource CogoPointTextBlockStyle}"
+                                                       LineStackingStrategy="BlockLineHeight"
+                                                       LineHeight="{StaticResource StandardLineHeight}"
+                                                       FontSize="{StaticResource TextSize}">
+                                                <i:Interaction.Triggers>
+                                                    <i:EventTrigger EventName="MouseLeftButtonDown">
+                                                        <i:InvokeCommandAction Command="{Binding DataContext.CogoPointClickedCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                                               CommandParameter="{Binding}" />
+                                                    </i:EventTrigger>
+                                                </i:Interaction.Triggers>
+                                                <TextBlock.Foreground>
+                                                    <MultiBinding Converter="{StaticResource CogoPointColorConverter}">
+                                                        <Binding Path="PointGroup.WindowsColor" />
+                                                        <Binding ElementName="CogoPointGrid"
+                                                                 Path="IsMouseOver" />
+                                                        <Binding Path="IsSelected" />
+                                                    </MultiBinding>
+                                                </TextBlock.Foreground>
+                                            </TextBlock>
+                                        </StackPanel>
+                                    </Canvas>
+                                </Grid>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
@@ -281,55 +359,94 @@
             <WrapPanel Grid.Column="1"
                        Margin="20 0 0 0"
                        HorizontalAlignment="Center">
-                <RadioButton x:Name="All"
-                             GroupName="SnapToggles"
-                             Style="{StaticResource DarkGreyRadioButtonStyle}"
-                             Width="40"
-                             Height="40"
-                             Margin="{StaticResource ToggleButtonMargin}"
-                             Command="{Binding SnapToggleCommand}"
-                             CommandParameter="{Binding RelativeSource={RelativeSource Self}}"
-                             IsChecked="True">
-                    <RadioButton.Content>
-                        <ContentControl Template="{StaticResource EverythingIcon}" />
-                    </RadioButton.Content>
-                </RadioButton>
-                <RadioButton x:Name="Lines"
-                             GroupName="SnapToggles"
-                             Style="{StaticResource DarkGreyRadioButtonStyle}"
-                             Width="40"
-                             Height="40"
-                             Margin="{StaticResource ToggleButtonMargin}"
-                             Command="{Binding SnapToggleCommand}"
-                             CommandParameter="{Binding RelativeSource={RelativeSource Self}}">
-                    <RadioButton.Content>
-                        <ContentControl Template="{StaticResource LineIcon}" />
-                    </RadioButton.Content>
-                </RadioButton>
-                <RadioButton x:Name="Points"
-                             GroupName="SnapToggles"
-                             Style="{StaticResource DarkGreyRadioButtonStyle}"
-                             Width="40"
-                             Height="40"
-                             Margin="{StaticResource ToggleButtonMargin}"
-                             Command="{Binding SnapToggleCommand}"
-                             CommandParameter="{Binding RelativeSource={RelativeSource Self}}">
-                    <RadioButton.Content>
-                        <ContentControl Template="{StaticResource PointsIcon}" />
-                    </RadioButton.Content>
-                </RadioButton>
-                <RadioButton x:Name="CogoPoints"
-                             GroupName="SnapToggles"
-                             Style="{StaticResource DarkGreyRadioButtonStyle}"
-                             Width="40"
-                             Height="40"
-                             Margin="{StaticResource ToggleButtonMargin}"
-                             Command="{Binding SnapToggleCommand}"
-                             CommandParameter="{Binding RelativeSource={RelativeSource Self}}">
-                    <RadioButton.Content>
-                        <ContentControl Template="{StaticResource CogoPointsIcon}" />
-                    </RadioButton.Content>
-                </RadioButton>
+                <WrapPanel Margin="30 0 30 0"
+                           VerticalAlignment="Center">
+                    <RadioButton x:Name="CogoPointScale"
+                                 Width="40"
+                                 Height="40"
+                                 Style="{StaticResource DarkGreyRadioButtonStyle}">
+                        <RadioButton.Content>
+                            <Canvas Width="32"
+                                    Height="32">
+                                <Ellipse Width="12"
+                                         Height="12"
+                                         Stroke="White"
+                                         Canvas.Left="10"
+                                         Canvas.Top="4" />
+                                <Line X1="8"
+                                      Y1="2"
+                                      X2="24"
+                                      Y2="18"
+                                      Stroke="White" />
+                                <Line X1="24"
+                                      Y1="2"
+                                      X2="8"
+                                      Y2="18"
+                                      Stroke="White" />
+                                <fa:ImageAwesome Icon="Search"
+                                                 Foreground="White"
+                                                 Canvas.Left="10"
+                                                 Canvas.Top="18">
+                                    <fa:ImageAwesome.RenderTransform>
+                                        <ScaleTransform ScaleX="0.15"
+                                                        ScaleY="0.15" />
+                                    </fa:ImageAwesome.RenderTransform>
+                                </fa:ImageAwesome>
+                            </Canvas>
+                        </RadioButton.Content>
+                    </RadioButton>
+                </WrapPanel>
+                <WrapPanel Margin="30 0 30 0">
+                    <RadioButton x:Name="All"
+                                 GroupName="SnapToggles"
+                                 Style="{StaticResource DarkGreyRadioButtonStyle}"
+                                 Width="40"
+                                 Height="40"
+                                 Margin="{StaticResource ToggleButtonMargin}"
+                                 Command="{Binding SnapToggleCommand}"
+                                 CommandParameter="{Binding RelativeSource={RelativeSource Self}}"
+                                 IsChecked="True">
+                        <RadioButton.Content>
+                            <ContentControl Template="{StaticResource EverythingIcon}" />
+                        </RadioButton.Content>
+                    </RadioButton>
+                    <RadioButton x:Name="Lines"
+                                 GroupName="SnapToggles"
+                                 Style="{StaticResource DarkGreyRadioButtonStyle}"
+                                 Width="40"
+                                 Height="40"
+                                 Margin="{StaticResource ToggleButtonMargin}"
+                                 Command="{Binding SnapToggleCommand}"
+                                 CommandParameter="{Binding RelativeSource={RelativeSource Self}}">
+                        <RadioButton.Content>
+                            <ContentControl Template="{StaticResource LineIcon}" />
+                        </RadioButton.Content>
+                    </RadioButton>
+                    <RadioButton x:Name="Points"
+                                 GroupName="SnapToggles"
+                                 Style="{StaticResource DarkGreyRadioButtonStyle}"
+                                 Width="40"
+                                 Height="40"
+                                 Margin="{StaticResource ToggleButtonMargin}"
+                                 Command="{Binding SnapToggleCommand}"
+                                 CommandParameter="{Binding RelativeSource={RelativeSource Self}}">
+                        <RadioButton.Content>
+                            <ContentControl Template="{StaticResource PointsIcon}" />
+                        </RadioButton.Content>
+                    </RadioButton>
+                    <RadioButton x:Name="CogoPoints"
+                                 GroupName="SnapToggles"
+                                 Style="{StaticResource DarkGreyRadioButtonStyle}"
+                                 Width="40"
+                                 Height="40"
+                                 Margin="{StaticResource ToggleButtonMargin}"
+                                 Command="{Binding SnapToggleCommand}"
+                                 CommandParameter="{Binding RelativeSource={RelativeSource Self}}">
+                        <RadioButton.Content>
+                            <ContentControl Template="{StaticResource CogoPointsIcon}" />
+                        </RadioButton.Content>
+                    </RadioButton>
+                </WrapPanel>
             </WrapPanel>
         </Grid>
     </Grid>
