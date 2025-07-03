@@ -32,11 +32,16 @@
         <converters:LeftRightMarginConverter x:Key="LeftRightMarginConverter" />
         <converters:Matrix3x2ToWindowsMatrixConverter x:Key="Matrix3x2ToWindowsMatrixConverter" />
         <converters:CenterOffsetConverter x:Key="CenterOffsetConverter" />
-        <converters:CogoPointBaseToggleCenterConverter x:Key="CogoPointBaseToggleCenterConverter" />
+        <converters:PointMatrix3x2TransformerConverter x:Key="PointMatrix3x2TransformerConverter" />
         <converters:PointTransformer x:Key="PointTransformer" />
         <converters:Vector4ToBrushConverter x:Key="Vector4ToBrushConverter" />
         <converters:Matrix3x2ToScaleConverter x:Key="MatrixToScaleConverter" />
         <converters:CogoPointColorConverter x:Key="CogoPointColorConverter" />
+        <converters:CogoPointScaleConverter x:Key="CogoPointScaleConverter" />
+        <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" 
+                                              CollapseWhenFalse="False"
+                                              Invert="False"/>
+        <converters:CogoToggleButtonConverter x:Key="CogoToggleButtonConverter" />
 
         <Thickness x:Key="ToggleButtonMargin">0,5,0,5</Thickness>
     </Page.Resources>
@@ -142,19 +147,18 @@
               Panel.ZIndex="1">
             <uc:RightHandPopout x:Name="RightSidePopout"
                                 Panel.ZIndex="1"
-                                Width="300"
+                                Width="400"
                                 HorizontalAlignment="Right"
                                 ClipToBounds="False"
-                                Height="{Binding ElementName=dxfBorder, Path=Height}"
                                 CadManager="{Binding JobFileManager.CadManager3D}"
                                 LayerCollectionView="{Binding JobFileManager.CadManager3D.LayersView}"
-                                PointGroupCollectionView="{Binding JobFileManager.CadManager3D.PointGroupsView}" />
+                                PointGroupCollectionView="{Binding JobFileManager.CadManager3D.PointGroupsView}"
+                                Margin="0,-2,0,2" />
             <uc:LeftHandPopout x:Name="LeftSidePopout"
                                Panel.ZIndex="1"
                                Width="400"
                                HorizontalAlignment="Left"
                                ClipToBounds="False"
-                               Height="{Binding ElementName=dxfBorder, Path=Height}"
                                CadManager="{Binding JobFileManager.CadManager3D}"
                                PointsCollectionView="{Binding JobFileManager.CadManager3D.PointsView}" />
         </Grid>
@@ -188,12 +192,42 @@
                                    CadManager3D="{Binding JobFileManager.CadManager3D}"
                                    Camera="{Binding Camera, Mode=TwoWay}"
                                    CogoPoints="{Binding CogoPoints, Mode=TwoWay}"
-                                   SelectedPoints="{Binding SelectedCogoPoints, Mode=TwoWay}"
+                                   SelectedCogoPoints="{Binding SelectedCogoPoints, Mode=TwoWay}"
                                    Width="{Binding ElementName=dxfGrid, Path=ActualWidth}"
                                    Height="{Binding ElementName=dxfGrid, Path=ActualHeight}"
-                                   Cursor="Cross" />
+                                   SnappedSignificantPoint="{Binding SnappedPoint, Mode=TwoWay}"
+                                   Focusable="True" />
 
                 <Canvas x:Name="BackgroundCanvas">
+                    <uc:SignificantPointControl HitTestablePoint="{Binding DataContext.SnappedPoint, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                Focusable="False"
+                                                IsHitTestVisible="False">
+                        <uc:SignificantPointControl.RenderTransform>
+                            <TransformGroup>
+                                <TranslateTransform>
+                                    <TranslateTransform.X>
+                                        <MultiBinding Converter="{StaticResource PointMatrix3x2TransformerConverter}"
+                                                      ConverterParameter="X">
+                                            <Binding Path="DataContext.SnappedPoint.Position"
+                                                     RelativeSource="{RelativeSource AncestorType=Page}" />
+                                            <Binding Path="DataContext.Camera.D2dMatrix"
+                                                     RelativeSource="{RelativeSource AncestorType=Page}" />
+                                        </MultiBinding>
+                                    </TranslateTransform.X>
+                                    <TranslateTransform.Y>
+                                        <MultiBinding Converter="{StaticResource PointMatrix3x2TransformerConverter}"
+                                                      ConverterParameter="Y">
+                                            <Binding Path="DataContext.SnappedPoint.Position"
+                                                     RelativeSource="{RelativeSource AncestorType=Page}" />
+                                            <Binding Path="DataContext.Camera.D2dMatrix"
+                                                     RelativeSource="{RelativeSource AncestorType=Page}" />
+                                        </MultiBinding>
+                                    </TranslateTransform.Y>
+                                </TranslateTransform>
+                            </TransformGroup>
+                        </uc:SignificantPointControl.RenderTransform>
+                    </uc:SignificantPointControl>
+
                     <ItemsControl x:Name="SelectedPointButtonsItemsControl"
                                   ItemsSource="{Binding CogoPoints}"
                                   Background="{x:Null}"
@@ -206,8 +240,10 @@
                             <sys:Double x:Key="EllipseSize">0.5</sys:Double>
                             <sys:Double x:Key="StandardLineHeight">2</sys:Double>
                             <sys:Double x:Key="TextSize">2</sys:Double>
-                            <Thickness x:Key="EllipseOffset">-0.5 -0.5 0 0</Thickness>
-                            <Thickness x:Key="TextOffset">0.5 -5.7 0 0</Thickness>
+                            <Thickness x:Key="EllipseOffset">-0.25 -0.25 0 0</Thickness>
+                            <Thickness x:Key="TextOffset">1.0 -5.7 0 0</Thickness>
+                            <sys:Double x:Key="ToggleButtonSize">10</sys:Double>
+                            <Thickness x:Key="ToggleButtonOffset">5 -5 0 0</Thickness>
                         </ItemsControl.Resources>
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>
@@ -217,25 +253,72 @@
                         <ItemsControl.ItemTemplate>
                             <DataTemplate DataType="{x:Type pointRendering:CogoPoint}">
                                 <Grid x:Name="CogoPointGrid"
-                                      Style="{StaticResource CogoPointGridStyle}">
+                                      Style="{StaticResource CogoPointGridStyle}"
+                                      Background="{x:Null}">
+                                    <ToggleButton x:Name="PointToggleButton"
+                                                  Style="{StaticResource CogoPointAnchorToggleButton}"
+                                                  Width="{StaticResource ToggleButtonSize}"
+                                                  Height="{StaticResource ToggleButtonSize}" 
+                                                  Margin="{StaticResource ToggleButtonOffset}"
+                                                  Visibility="{Binding IsSelected, Converter={StaticResource BoolToVisibilityConverter}}"
+                                                  Panel.ZIndex="2">
+                                        <ToggleButton.RenderTransform>
+                                            <TransformGroup>
+                                                <TranslateTransform>
+                                                    <TranslateTransform.X>
+                                                        <MultiBinding Converter="{StaticResource CogoToggleButtonConverter}"
+                                                                      ConverterParameter="X">
+                                                            <Binding Path="PointPosition" />
+                                                            <Binding Path="TextInfoOffset" />
+                                                            <Binding Path="DataContext.Camera.D2dMatrix"
+                                                                     RelativeSource="{RelativeSource AncestorType=Page}" />
+                                                            <Binding Path="Width"
+                                                                     RelativeSource="{RelativeSource AncestorType=ToggleButton}" />
+                                                        </MultiBinding>
+                                                    </TranslateTransform.X>
+                                                    <TranslateTransform.Y>
+                                                        <MultiBinding Converter="{StaticResource CogoToggleButtonConverter}"
+                                                                      ConverterParameter="Y">
+                                                            <Binding Path="PointPosition" />
+                                                            <Binding Path="TextInfoOffset" />
+                                                            <Binding Path="DataContext.Camera.D2dMatrix"
+                                                                     RelativeSource="{RelativeSource AncestorType=Page}" />
+                                                            <Binding Path="Height"
+                                                                     RelativeSource="{RelativeSource AncestorType=ToggleButton}" />
+                                                        </MultiBinding>
+                                                    </TranslateTransform.Y>
+                                                </TranslateTransform>
+                                            </TransformGroup>
+                                        </ToggleButton.RenderTransform>
+                                        <i:Interaction.Triggers>
+                                            <i:EventTrigger EventName="MouseLeftButtonDown">
+                                                <i:InvokeCommandAction Command="{Binding DataContext.CogoPointClickedCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                                       CommandParameter="{Binding}" />
+                                            </i:EventTrigger>
+                                        </i:Interaction.Triggers>
+                                    </ToggleButton>
                                     <Canvas Background="{x:Null}">
                                         <Canvas.RenderTransform>
                                             <TransformGroup>
                                                 <ScaleTransform>
                                                     <ScaleTransform.ScaleX>
-                                                        <Binding Path="DataContext.Camera.D2dMatrix"
-                                                                 RelativeSource="{RelativeSource AncestorType=Page}"
-                                                                 Converter="{StaticResource MatrixToScaleConverter}" />
+                                                        <MultiBinding Converter="{StaticResource CogoPointScaleConverter}">
+                                                            <Binding Path="DataContext.Camera.D2dMatrix"
+                                                                     RelativeSource="{RelativeSource AncestorType=Page}" />
+                                                            <Binding Path="PointGroup.PointScale" />
+                                                        </MultiBinding>
                                                     </ScaleTransform.ScaleX>
                                                     <ScaleTransform.ScaleY>
-                                                        <Binding Path="DataContext.Camera.D2dMatrix"
-                                                                 RelativeSource="{RelativeSource AncestorType=Page}"
-                                                                 Converter="{StaticResource MatrixToScaleConverter}" />
+                                                        <MultiBinding Converter="{StaticResource CogoPointScaleConverter}">
+                                                            <Binding Path="DataContext.Camera.D2dMatrix"
+                                                                     RelativeSource="{RelativeSource AncestorType=Page}" />
+                                                            <Binding Path="PointGroup.PointScale" />
+                                                        </MultiBinding>
                                                     </ScaleTransform.ScaleY>
                                                 </ScaleTransform>
                                                 <TranslateTransform>
                                                     <TranslateTransform.X>
-                                                        <MultiBinding Converter="{StaticResource CogoPointBaseToggleCenterConverter}"
+                                                        <MultiBinding Converter="{StaticResource PointMatrix3x2TransformerConverter}"
                                                                       ConverterParameter="X">
                                                             <Binding Path="PointPosition" />
                                                             <Binding Path="DataContext.Camera.D2dMatrix"
@@ -243,7 +326,7 @@
                                                         </MultiBinding>
                                                     </TranslateTransform.X>
                                                     <TranslateTransform.Y>
-                                                        <MultiBinding Converter="{StaticResource CogoPointBaseToggleCenterConverter}"
+                                                        <MultiBinding Converter="{StaticResource PointMatrix3x2TransformerConverter}"
                                                                       ConverterParameter="Y">
                                                             <Binding Path="PointPosition" />
                                                             <Binding Path="DataContext.Camera.D2dMatrix"

@@ -3,6 +3,7 @@ using Cad_Point_Manager.Models.HitTesting;
 using Cad_Point_Manager.Models.PointRendering;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -14,14 +15,11 @@ namespace Cad_Point_Manager.Helpers
         public static bool TryGetNextHitTestablePoint(int currentIndex, List<(double distance, HitTestablePoint hitTestablePoint)> pointTups, out (double distance, HitTestablePoint hitTestablePoint) hitTestablePointTup)
         {
             hitTestablePointTup = default;
-            if (currentIndex > pointTups.Count) { return false; }
+            if (currentIndex >= pointTups.Count) { return false; }
 
             hitTestablePointTup = pointTups[currentIndex];
 
-            if (hitTestablePointTup.hitTestablePoint is null)
-            {
-                return false;
-            }
+            if (hitTestablePointTup.hitTestablePoint is null) { return false; }
 
             return true;
         }

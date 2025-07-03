@@ -37,6 +37,7 @@ namespace Cad_Point_Manager.Models.PointRendering
         private Vector2 _pointNameLocation;
         private Vector2 _pointElevationLocation;
         private Vector2 _pointDescriptionLocation;
+        private Point _textInfoOffset = new(2, 0);
         private double _pointScale;
         #endregion
 
@@ -191,6 +192,18 @@ namespace Cad_Point_Manager.Models.PointRendering
                 {
                     _pointDescriptionLocation = value;
                     OnPropertyChanged(nameof(PointDescriptionLocation));
+                }
+            }
+        }
+        public Point TextInfoOffset
+        {
+            get => _textInfoOffset;
+            set
+            {
+                if (_textInfoOffset != value)
+                {
+                    _textInfoOffset = value;
+                    OnPropertyChanged(nameof(TextInfoOffset));
                 }
             }
         }

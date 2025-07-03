@@ -18,30 +18,37 @@ namespace Cad_Point_Manager.Models.HitTesting
         #region Fields
         private const float _boundsSize = 1.0f;
 
-        private SigPointVertex _sigPointVertex;
+        private Point _position;
+        private Enums.SignificantPointType _pointType;
         #endregion
 
         #region Properties
-        public Vector3 Position;
-
-        public SigPointVertex SigPointVertex
+        public Point Position
         {
-            get { return _sigPointVertex; }
+            get { return _position; }
             set
             {
-                _sigPointVertex = value;
+                _position = value;
+                OnPropertyChanged(nameof(Position));
+            }
+        }
+        public Enums.SignificantPointType PointType
+        {
+            get { return _pointType; }
+            set
+            {
+                _pointType = value;
+                OnPropertyChanged(nameof(PointType));
             }
         }
 
         public int Index { get; set; }
-        public Enums.SignificantPointType PointType { get; set; }
         #endregion
 
         #region Constructors
-        public HitTestablePoint(Vector3 position, Enums.SignificantPointType pointType)
+        public HitTestablePoint(Point position, Enums.SignificantPointType pointType)
         {
             Position = position;
-            _sigPointVertex = new(Position, 0, 0);
             PointType = pointType;
         }
         #endregion
@@ -50,22 +57,22 @@ namespace Cad_Point_Manager.Models.HitTesting
         public override void MouseEnter()
         { 
             this.IsMouseOver = true;
-            _sigPointVertex.SetIsMouseOver(true);
+            //_sigPointVertex.SetIsMouseOver(true);
         }
         public override void MouseLeave()
         {
             this.IsMouseOver = false;
-            _sigPointVertex.SetIsMouseOver(false);
+            //_sigPointVertex.SetIsMouseOver(false);
         }
         public override void Select()
         {
             this.IsSelected = true;
-            _sigPointVertex.SetIsSelected(true);
+            //_sigPointVertex.SetIsSelected(true);
         }
         public override void Deselect()
         {
             this.IsSelected = false;
-            _sigPointVertex.SetIsSelected(false);
+            //_sigPointVertex.SetIsSelected(false);
         }
         public override void UpdateBounds()
         {
@@ -77,7 +84,7 @@ namespace Cad_Point_Manager.Models.HitTesting
         }
         public override double DistanceToPoint(Point p)
         {
-            return MathHelpers.PointToPointDistance(p, Position.ToPoint());
+            return MathHelpers.PointToPointDistance(p, Position);
         }
         #endregion
 
@@ -85,8 +92,7 @@ namespace Cad_Point_Manager.Models.HitTesting
         public static bool EqualsWithTolerance(HitTestablePoint p1, HitTestablePoint p2, float tolerance)
         {
             return Math.Abs(p1.Position.X - p2.Position.X) <= tolerance &&
-                   Math.Abs(p1.Position.Y - p2.Position.Y) <= tolerance &&
-                   Math.Abs(p1.Position.Z - p2.Position.Z) <= tolerance;
+                   Math.Abs(p1.Position.Y - p2.Position.Y) <= tolerance;
         }
 
         public static bool EqualsWithTolerance2D(HitTestablePoint p1, HitTestablePoint p2, float tolerance)

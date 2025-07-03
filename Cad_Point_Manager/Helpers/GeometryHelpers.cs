@@ -53,7 +53,7 @@ namespace Cad_Point_Manager.Helpers
                 },
                 localList => { foreach (var pt in localList) allPoints.Add(pt); });
 
-            return allPoints.Distinct(new VectorEqualityComparer(1e-5f)).ToList();
+            return allPoints.ToList();
         }
 
 

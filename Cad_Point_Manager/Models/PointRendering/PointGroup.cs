@@ -44,6 +44,7 @@ namespace Cad_Point_Manager.Models.PointRendering
                 {
                     _color = value;
                     OnPropertyChanged(nameof(Color));
+                    UpdateWindowsColor();
                 }
             }
         }
@@ -177,6 +178,15 @@ namespace Cad_Point_Manager.Models.PointRendering
         public override string ToString()
         {
             return Name;
+        }
+
+        public void UpdateWindowsColor()
+        {
+            WindowsColor = System.Windows.Media.Color.FromArgb(
+                (byte)(Color.W * 255),
+                (byte)(Color.X * 255),
+                (byte)(Color.Y * 255),
+                (byte)(Color.Z * 255));
         }
         #endregion
 

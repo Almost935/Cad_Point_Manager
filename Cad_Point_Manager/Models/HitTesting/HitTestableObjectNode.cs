@@ -290,12 +290,12 @@ namespace Cad_Point_Manager.Models.HitTesting
 
             var coords = GeometryHelpers.GetSignificantPointsList(segments.ToList());
 
-            List<(double distance, Vector2 coordinate)> hits = [];
-            foreach (var item in coords)
+            List<(Enums.SignificantPointType pointType, double distance, Vector2 coordinate)> hits = [];
+            foreach (var (pointType, position) in coords)
             {
-                var vector2Item = item.ToVector2();
-                float d = Vector2.Distance(vector2Item, pos);
-                hits.Add((d, vector2Item));
+                var vector2Pos = position.ToVector2();
+                float d = Vector2.Distance(vector2Pos, pos);
+                hits.Add((pointType, d, vector2Pos));
             }
             hits.Sort((a, b) => a.distance.CompareTo(b.distance));
 

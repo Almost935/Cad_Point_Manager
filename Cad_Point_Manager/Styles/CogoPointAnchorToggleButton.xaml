@@ -2,64 +2,48 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
 
-    <Style x:Key="CogoPointAnchorToggleButton"
-           TargetType="ToggleButton">
-        <Setter Property="Width"
-                Value="60" />
-        <Setter Property="Height"
-                Value="25" />
-        <Setter Property="Background"
-                Value="LightBlue" />
-        <Setter Property="BorderBrush"
-                Value="SteelBlue" />
-        <Setter Property="BorderThickness"
-                Value="1" />
-        <Setter Property="Foreground"
-                Value="Black" />
-        <Setter Property="FontWeight"
-                Value="Bold" />
-        <Setter Property="Cursor"
-                Value="Hand" />
-        <Setter Property="Effect"
-                Value="{x:Null}" />
+    <Style TargetType="{x:Type ToggleButton}"
+           x:Key="CogoPointAnchorToggleButton">
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ToggleButton">
-                    <Border x:Name="border"
-                            Background="{TemplateBinding Background}"
-                            BorderBrush="{TemplateBinding BorderBrush}"
-                            BorderThickness="{TemplateBinding BorderThickness}"
-                            CornerRadius="3">
-                        <ContentPresenter HorizontalAlignment="Center"
-                                          VerticalAlignment="Center"
-                                          Margin="4" />
-                    </Border>
+
+                    <Grid>
+                        <Border x:Name="Border"
+                                BorderBrush="Black"
+                                BorderThickness="0.5"
+                                Width="{TemplateBinding Width}"
+                                Height="{TemplateBinding Height}">
+                            <Border.Background>
+                                <LinearGradientBrush EndPoint="0.5,1"
+                                                     StartPoint="0.5,0">
+                                    <GradientStop Color="#FF748CFF" />
+                                    <GradientStop Color="#FF6558E9"
+                                                  Offset="1" />
+                                </LinearGradientBrush>
+                            </Border.Background>
+                            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                              Margin="{TemplateBinding Padding}"
+                                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                              SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"
+                                              RecognizesAccessKey="True" />
+                        </Border>
+                    </Grid>
+
+
                     <ControlTemplate.Triggers>
-                        <Trigger Property="IsMouseOver"
-                                 Value="True">
-                            <Setter TargetName="border"
-                                    Property="Effect">
-                                <Setter.Value>
-                                    <DropShadowEffect Color="LightBlue"
-                                                      BlurRadius="10"
-                                                      ShadowDepth="0"
-                                                      Opacity="0.6" />
-                                </Setter.Value>
-                            </Setter>
-                        </Trigger>
                         <Trigger Property="IsChecked"
-                                 Value="True">
-                            <Setter TargetName="border"
-                                    Property="Background"
-                                    Value="SkyBlue" />
-                            <Setter TargetName="border"
-                                    Property="BorderBrush"
-                                    Value="DodgerBlue" />
+                                 Value="true">
+                            <Setter Property="Background"
+                                    TargetName="Border"
+                                    Value="#FF53F1F7" />
                         </Trigger>
-                        <Trigger Property="IsEnabled"
-                                 Value="False">
-                            <Setter Property="Opacity"
-                                    Value="0.5" />
+
+                        <Trigger Property="IsMouseOver"
+                                 Value="true">
+                            <Setter Property="Background"
+                                    TargetName="Border"
+                                    Value="#FF95F8FC" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>

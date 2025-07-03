@@ -14,6 +14,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Threading;
+using TextBox = System.Windows.Controls.TextBox;
 
 namespace Cad_Point_Manager.Views.UserControls
 {
@@ -36,6 +37,10 @@ namespace Cad_Point_Manager.Views.UserControls
         private bool _isMouseOverPanel = false;
         private ScaleTransform _mainPanelTransform = new();
         private bool _isColorPickerOpen;
+
+        private bool _pointGroupBeingEdited = false;
+        private string _previousPointGroupName = string.Empty;
+        private string _previousPointGroupScale = string.Empty;
         #endregion
 
         #region Properties
@@ -317,6 +322,164 @@ namespace Cad_Point_Manager.Views.UserControls
                 pointGroupGridView.Columns[1].Width = pointGroupColumnWidth * 1;
                 pointGroupGridView.Columns[2].Width = pointGroupColumnWidth * 1;
                 pointGroupGridView.Columns[3].Width = pointGroupColumnWidth * 1;
+            }
+        }
+
+        // Point Group Scale
+        private void PointGroupScaleBorder_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (e.ClickCount > 1)
+            {
+                if (sender is Border border && border.Child is TextBox textbox && textbox.DataContext is PointGroup pg)
+                {
+                    _pointGroupBeingEdited = true;
+                    _previousPointGroupName = pg.Name;
+                    e.Handled = true;
+                    textbox.IsReadOnly = false;
+                    textbox.Focus();
+
+                    textbox.Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        textbox.SelectAll();
+                    }), DispatcherPriority.Input);
+                }
+            }
+        }
+        private void PointScaleTextbox_LostFocus(object sender, RoutedEventArgs e)
+        {
+            TextBox textBox = sender as TextBox;
+
+            if (textBox != null && textBox.DataContext is PointGroup pg)
+            {
+                e.Handled = true;
+
+                if (_pointGroupBeingEdited)
+                {
+                    pg.Name = _previousPointGroupName;
+                    var binding = textBox.GetBindingExpression(TextBox.TextProperty);
+                    binding?.UpdateTarget();
+                    _pointGroupBeingEdited = false;
+                }
+                textBox.IsReadOnly = true;
+            }
+        }
+        private void PointScaleTextbox_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter)
+            {
+                if (sender is TextBox textBox && textBox.DataContext is PointGroup pg)
+                {
+                    e.Handled = true;
+
+                    var binding = textBox.GetBindingExpression(TextBox.TextProperty);
+                    binding?.ValidateWithoutUpdate();
+                    var textBoxHasError = Validation.GetHasError(textBox);
+
+                    if (textBoxHasError)
+                    {
+                        textBox.SelectAll();
+                        return;
+                    }
+                    else
+                    {
+                        binding?.UpdateSource();
+                        textBox.IsReadOnly = true;
+                        _pointGroupBeingEdited = false;
+                        return;
+                    }
+                }
+            }
+            if (e.Key == Key.Escape)
+            {
+                if (sender is TextBox textBox && textBox.DataContext is PointGroup pg)
+                {
+                    e.Handled = true;
+
+                    pg.Name = _previousPointGroupName;
+                    var binding = textBox.GetBindingExpression(TextBox.TextProperty);
+                    binding?.UpdateTarget();
+                    textBox.IsReadOnly = true;
+                    _pointGroupBeingEdited = false;
+                }
+            }
+        }
+
+        // Point Group Name
+        private void PointGroupNameBorder_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (e.ClickCount > 1)
+            {
+                if (sender is Border border && border.Child is TextBox textbox && textbox.DataContext is PointGroup pg)
+                {
+                    _pointGroupBeingEdited = true;
+                    _previousPointGroupName = pg.Name;
+                    e.Handled = true;
+                    textbox.IsReadOnly = false;
+                    textbox.Focus();
+
+                    textbox.Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        textbox.SelectAll();
+                    }), DispatcherPriority.Input);
+                }
+            }
+        }
+        private void PointGroupNameTextbox_LostFocus(object sender, RoutedEventArgs e)
+        {
+            TextBox textBox = sender as TextBox;
+
+            if (textBox != null && textBox.DataContext is PointGroup pg)
+            {
+                e.Handled = true;
+
+                if (_pointGroupBeingEdited)
+                {
+                    pg.Name = _previousPointGroupName;
+                    var binding = textBox.GetBindingExpression(TextBox.TextProperty);
+                    binding?.UpdateTarget();
+                    _pointGroupBeingEdited = false;
+                }
+                textBox.IsReadOnly = true;
+            }
+        }
+        private void PointGroupNameTextbox_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter)
+            {
+                if (sender is TextBox textBox && textBox.DataContext is PointGroup pg)
+                {
+                    e.Handled = true;
+
+                    var binding = textBox.GetBindingExpression(TextBox.TextProperty);
+                    binding?.ValidateWithoutUpdate();
+                    var textBoxHasError = Validation.GetHasError(textBox);
+
+                    if (textBoxHasError)
+                    {
+                        textBox.SelectAll();
+                        return;
+                    }
+                    else
+                    {
+                        binding?.UpdateSource();
+                        textBox.IsReadOnly = true;
+                        _pointGroupBeingEdited = false;
+                        return;
+                    }
+                }
+            }
+            if (e.Key == Key.Escape)
+            {
+                if (sender is TextBox textBox && textBox.DataContext is PointGroup pg)
+                {
+                    e.Handled = true;
+
+                    pg.Name = _previousPointGroupName;
+                    var binding = textBox.GetBindingExpression(TextBox.TextProperty);
+                    binding?.UpdateTarget();
+                    textBox.IsReadOnly = true;
+                    _pointGroupBeingEdited = false;
+                }
             }
         }
 

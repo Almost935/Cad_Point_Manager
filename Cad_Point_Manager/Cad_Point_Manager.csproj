@@ -30,6 +30,8 @@
     <Compile Remove="Controls\Direct2DDxfControl.cs" />
     <Compile Remove="Converters\ColorToBrushConverter.cs" />
     <Compile Remove="Helpers\DxfHelper.cs" />
+    <Compile Remove="Helpers\Vector2EqualityComparer.cs" />
+    <Compile Remove="Helpers\VectorEqualityComparer.cs" />
     <Compile Remove="Models\CadManager.cs" />
     <Compile Remove="Models\Enums.cs" />
     <Compile Remove="Models\OffscreenBitmap.cs" />

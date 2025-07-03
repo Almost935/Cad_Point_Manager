@@ -46,34 +46,34 @@
                         <GridViewHeaderRowPresenter Grid.Row="0"
                                                     Grid.ColumnSpan="3"
                                                     Columns="{Binding Path=TemplatedParent.View.Columns,
-            RelativeSource={RelativeSource TemplatedParent}}"
+                            RelativeSource={RelativeSource TemplatedParent}}"
                                                     ColumnHeaderContainerStyle="{Binding
-            Path=TemplatedParent.View.ColumnHeaderContainerStyle,
-            RelativeSource={RelativeSource TemplatedParent}}"
+                            Path=TemplatedParent.View.ColumnHeaderContainerStyle,
+                            RelativeSource={RelativeSource TemplatedParent}}"
                                                     ColumnHeaderTemplate="{Binding
-            Path=TemplatedParent.View.ColumnHeaderTemplate,
-            RelativeSource={RelativeSource TemplatedParent}}"
+                            Path=TemplatedParent.View.ColumnHeaderTemplate,
+                            RelativeSource={RelativeSource TemplatedParent}}"
                                                     ColumnHeaderTemplateSelector="{Binding 
-            Path=TemplatedParent.View.ColumnHeaderTemplateSelector,
-            RelativeSource={RelativeSource TemplatedParent}}"
+                            Path=TemplatedParent.View.ColumnHeaderTemplateSelector,
+                            RelativeSource={RelativeSource TemplatedParent}}"
                                                     AllowsColumnReorder="False"
                                                     ColumnHeaderContextMenu="{Binding
-            Path=TemplatedParent.View.ColumnHeaderContextMenu,
-            RelativeSource={RelativeSource TemplatedParent}}"
+                            Path=TemplatedParent.View.ColumnHeaderContextMenu,
+                            RelativeSource={RelativeSource TemplatedParent}}"
                                                     ColumnHeaderToolTip="{Binding
-            Path=TemplatedParent.View.ColumnHeaderToolTip,
-            RelativeSource={RelativeSource TemplatedParent}}"
+                            Path=TemplatedParent.View.ColumnHeaderToolTip,
+                            RelativeSource={RelativeSource TemplatedParent}}"
                                                     SnapsToDevicePixels="{TemplateBinding
-            SnapsToDevicePixels}" />
+                            SnapsToDevicePixels}" />
 
-                        <DockPanel Margin="{TemplateBinding Padding}"
-                                   Background="Transparent"
-                                   Grid.Row="1">
+                        <DockPanel Background="Transparent"
+                                   Grid.Row="1"
+                                   Margin="0">
                             <ScrollViewer DockPanel.Dock="Top"
                                           Grid.Row="1"
-                                          HorizontalScrollBarVisibility="Hidden">
-
-                            </ScrollViewer>
+                                          HorizontalScrollBarVisibility="Hidden"
+                                          Margin="0"
+                                          Padding="0" />
 
                             <ScrollContentPresenter Name="PART_ScrollContentPresenter"
                                                     KeyboardNavigation.DirectionalNavigation="Local" />
@@ -110,7 +110,7 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type Thumb}">
-                    <Border Padding="{TemplateBinding Padding}"
+                    <Border Padding="0"
                             Background="Transparent">
                         <Border HorizontalAlignment="Center"
                                 BorderBrush="{TemplateBinding Background}"
@@ -134,12 +134,6 @@
 
     <Style x:Key="{x:Type GridViewColumnHeader}"
            TargetType="GridViewColumnHeader">
-        <Setter Property="HorizontalContentAlignment"
-                Value="Center" />
-        <Setter Property="VerticalContentAlignment"
-                Value="Center" />
-        <Setter Property="HorizontalContentAlignment"
-                Value="Left" />
         <Setter Property="Foreground"
                 Value="{DynamicResource HeaderTextBrush}" />
         <Setter Property="IsHitTestVisible"
@@ -155,8 +149,7 @@
                                 <VisualState x:Name="Normal" />
                                 <VisualState x:Name="MouseOver">
                                     <Storyboard>
-                                        <ColorAnimationUsingKeyFrames Storyboard.TargetProperty="(Panel.Background).
-                (GradientBrush.GradientStops)[1].(GradientStop.Color)"
+                                        <ColorAnimationUsingKeyFrames Storyboard.TargetProperty="(Panel.Background).(GradientBrush.GradientStops)[1].(GradientStop.Color)"
                                                                       Storyboard.TargetName="HeaderBorder">
                                             <EasingColorKeyFrame KeyTime="0"
                                                                  Value="{DynamicResource ControlMouseOverColor}" />
@@ -169,13 +162,15 @@
                         </VisualStateManager.VisualStateGroups>
                         <Border x:Name="HeaderBorder"
                                 Margin="0"
-                                Background="{DynamicResource HeaderBackgroundBrush}">
+                                Background="{DynamicResource HeaderBackgroundBrush}"
+                                BorderBrush="{DynamicResource HeaderBackgroundBrush}"
+                                BorderThickness="1">
 
-                            <ContentPresenter x:Name="HeaderContent" 
+                            <ContentPresenter x:Name="HeaderContent"
                                               RecognizesAccessKey="True"
                                               VerticalAlignment="Center"
                                               HorizontalAlignment="Left"
-                                              Margin="10 0 0 0"
+                                              Margin="5 0 5 0"
                                               SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
                         </Border>
                         <Thumb x:Name="PART_HeaderGripper"
@@ -209,26 +204,21 @@
 
     <Style  x:Key="LayersListViewItemStyle"
             TargetType="ListViewItem">
-        <Setter Property="HorizontalAlignment"
-                Value="Stretch" />
-        <Setter Property="HorizontalContentAlignment"
-                Value="Stretch" />
-        <Setter Property="VerticalAlignment"
-                Value="Stretch" />
-        <Setter Property="VerticalContentAlignment"
-                Value="Stretch" />
         <Setter Property="SnapsToDevicePixels"
                 Value="true" />
         <Setter Property="OverridesDefaultStyle"
                 Value="true" />
+        <Setter Property="Padding"
+                Value="0" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ListViewItem">
                     <Border x:Name="Border"
                             SnapsToDevicePixels="true"
                             BorderThickness="0"
-                            Background="Transparent">
-                        <GridViewRowPresenter VerticalAlignment="Center" />
+                            Background="Transparent"
+                            Margin="0 0 0 0">
+                        <GridViewRowPresenter />
                     </Border>
                     <ControlTemplate.Triggers>
                         <MultiTrigger>
@@ -279,6 +269,8 @@
                 Value="true" />
         <Setter Property="VerticalContentAlignment"
                 Value="Center" />
+        <Setter Property="HorizontalContentAlignment"
+                Value="Center" />
         <Setter Property="Foreground"
                 Value="Black" />
         <Setter Property="ItemContainerStyle"
@@ -290,10 +282,8 @@
                             BorderThickness="1"
                             Background="{TemplateBinding Background}"
                             BorderBrush="{DynamicResource ControlMediumBrush}">
-
-                        <ScrollViewer Style="{StaticResource LayersListViewScrollviewer}"
-                                      Margin="1">
-                            <ItemsPresenter />
+                        <ScrollViewer Style="{StaticResource LayersListViewScrollviewer}">
+                            <ItemsPresenter HorizontalAlignment="Center"/>
                         </ScrollViewer>
                     </Border>
                     <ControlTemplate.Triggers>

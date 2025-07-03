@@ -22,6 +22,7 @@
                 <ResourceDictionary Source="Styles/ValidationTemplate.xaml" />
                 <ResourceDictionary Source="Styles/ListViewExpanderStyle.xaml" />
                 <ResourceDictionary Source="Styles/CogoPointStyles.xaml" />
+                <ResourceDictionary Source="Styles/CogoPointAnchorToggleButton.xaml" />
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Application.Resources>

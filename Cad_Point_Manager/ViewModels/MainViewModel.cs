@@ -2,6 +2,7 @@
 using Cad_Point_Manager.Common;
 using Cad_Point_Manager.Controls.D3DControl;
 using Cad_Point_Manager.Models;
+using Cad_Point_Manager.Models.HitTesting;
 using Cad_Point_Manager.Models.PointRendering;
 using netDxf;
 using SharpDX;
@@ -27,6 +28,8 @@ namespace Cad_Point_Manager.ViewModels
         private Camera _camera;
         private ObservableCollection<CogoPoint> _cogoPoints;
         private ObservableCollection<CogoPoint> _selectedCogoPoints = [];
+        private HitTestablePoint _snappedPoint;
+        private ObservableCollection<HitTestablePoint> _selectedPoints = [];
         #endregion
 
         #region Properties
@@ -112,6 +115,24 @@ namespace Cad_Point_Manager.ViewModels
             {
                 _selectedCogoPoints = value;
                 OnPropertyChanged(nameof(SelectedCogoPoints));
+            }
+        }
+        public HitTestablePoint SnappedPoint
+        {
+            get => _snappedPoint;
+            set
+            {
+                _snappedPoint = value;
+                OnPropertyChanged(nameof(SnappedPoint));
+            }
+        }
+        public ObservableCollection<HitTestablePoint> SelectedPoints
+        {
+            get => _selectedPoints;
+            set
+            {
+                _selectedPoints = value;
+                OnPropertyChanged(nameof(SelectedPoints));
             }
         }
         #endregion

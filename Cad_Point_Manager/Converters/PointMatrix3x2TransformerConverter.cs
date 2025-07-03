@@ -16,7 +16,7 @@ using Matrix = System.Windows.Media.Matrix;
 
 namespace Cad_Point_Manager.Converters
 {
-    public class CogoPointBaseToggleCenterConverter : IMultiValueConverter
+    public class PointMatrix3x2TransformerConverter : IMultiValueConverter
     {
         /// <summary>
         /// Converts a coordinate by transforming it with the matrix parameter and then subtracting the second parameter.

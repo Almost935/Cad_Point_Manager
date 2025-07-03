@@ -237,7 +237,7 @@ namespace Cad_Point_Manager.Models
 
             DxfDocument = dxfDocument;
             Extents = DxfHelpers.GetBoundsFromHeader(DxfDocument);
-            
+
             GetPointScale();
 
             // Testing
@@ -307,14 +307,14 @@ namespace Cad_Point_Manager.Models
             Rect rect = new(p.X - tolerance, p.Y - tolerance, tolerance * 2, tolerance * 2);
             var nodes = HitTestableObjectTree.GetIntersectingNodes(rect);
 
-            List<(double distance, Vector2 coords)> significantPoints = [];
+            List<(Enums.SignificantPointType pointType, double distance, Vector2 vector)> significantPoints = [];
             foreach (var node in nodes)
             {
                 significantPoints.AddRange(node.HitTestSignificantPoints(p, rect));
             }
-            foreach (var (distance, coords) in significantPoints)
+            foreach (var (pointType, distance, coords) in significantPoints)
             {
-                hits.Add((distance, new HitTestablePoint(coords.ToVector3())));
+                hits.Add((distance, new HitTestablePoint(coords.ToPoint(), pointType)));
             }
             hits.Sort((x, y) => x.distance.CompareTo(y.distance));
             return hits;
@@ -514,7 +514,7 @@ namespace Cad_Point_Manager.Models
                 {
                     if (_cachedPointMarkerVertices is null || _cachedPointMarkerVertices.Count == 0) { continue; }
                     ref var vertex = ref GetCircleVertexRef(i);
-                    vertex.IsSelected = isSelected ? 1.0f : 0.0f;     
+                    vertex.IsSelected = isSelected ? 1.0f : 0.0f;
                 }
             }
         }
@@ -661,34 +661,42 @@ namespace Cad_Point_Manager.Models
         {
             CogoPointManager.PointGroups.Clear();
 
-            float rows = 5;
-            float cols = 15;
-            float yIncrement = Extents.Width / rows;
-            float xIncrement = Extents.Height / cols;
-            int pointNum = 1;
-            float elevation = 0;
-            string description = "Test Point";
-
-            for (int i = 0; i < rows; i++)
-            {
-                string pointGroupName = $"TestGroup {i + 1}";
-                bool created = CogoPointManager.TryCreatePointGroup(pointGroupName, new SharpDX.Vector4(1.0f, 0.0f, 0.0f, 1.0f),
+            bool isCreated = CogoPointManager.TryCreatePointGroup("Point Group 1", new SharpDX.Vector4(1.0f, 0.0f, 0.0f, 1.0f),
                     _pointBaseTextHeight, _pointBaseMarkerSize, out var pointGroup);
-                if (created)
-                {
-                    var groupActivated = CogoPointManager.TrySetActivePointGroup(pointGroupName);
-                    if (!groupActivated) { continue; }
-
-                    float y = Extents.Bottom + (yIncrement * i);
-
-                    for (int j = 0; j < cols; j++)
-                    {
-                        float x = Extents.Left + (xIncrement * j);
-                        var pointCreated = CogoPointManager.TryAddPointToActiveGroup(pointNum, new Vector3(x, y, 0), elevation, description);
-                        if (pointCreated) { pointNum++; continue; }
-                    }
-                }
+            var groupActivated = CogoPointManager.TrySetActivePointGroup(pointGroup);
+            if (isCreated && groupActivated)
+            {
+                var pointCreated = CogoPointManager.TryAddPointToActiveGroup(1, new Vector3(1000, 5000, 0), 0, "test");
             }
+
+            //float rows = 5;
+            //float cols = 15;
+            //float yIncrement = Extents.Width / rows;
+            //float xIncrement = Extents.Height / cols;
+            //int pointNum = 1;
+            //float elevation = 0;
+            //string description = "Test Point";
+
+            //for (int i = 0; i < rows; i++)
+            //{
+            //    string pointGroupName = $"TestGroup {i + 1}";
+            //    bool created = CogoPointManager.TryCreatePointGroup(pointGroupName, new SharpDX.Vector4(1.0f, 0.0f, 0.0f, 1.0f),
+            //        _pointBaseTextHeight, _pointBaseMarkerSize, out var pointGroup);
+            //    if (created)
+            //    {
+            //        var groupActivated = CogoPointManager.TrySetActivePointGroup(pointGroupName);
+            //        if (!groupActivated) { continue; }
+
+            //        float y = Extents.Bottom + (yIncrement * i);
+
+            //        for (int j = 0; j < cols; j++)
+            //        {
+            //            float x = Extents.Left + (xIncrement * j);
+            //            var pointCreated = CogoPointManager.TryAddPointToActiveGroup(pointNum, new Vector3(x, y, 0), elevation, description);
+            //            if (pointCreated) { pointNum++; continue; }
+            //        }
+            //    }
+            //}
         }
 
         public ref TextVertex GetTextVertexRef(int index)

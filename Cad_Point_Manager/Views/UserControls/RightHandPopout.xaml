@@ -9,9 +9,11 @@
              xmlns:converters="clr-namespace:Cad_Point_Manager.Converters"
              xmlns:viewModels="clr-namespace:Cad_Point_Manager.ViewModels"
              xmlns:colorpicker="clr-namespace:ColorPicker;assembly=ColorPicker"
+             xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
+             xmlns:validation="clr-namespace:Cad_Point_Manager.Views.ValidationRules"
              mc:Ignorable="d"
              d:DesignHeight="400"
-             d:DesignWidth="300">
+             d:DesignWidth="400">
 
     <UserControl.Resources>
         <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" />
@@ -50,22 +52,25 @@
                       Style="{StaticResource LayersListViewStyle}"
                       Opacity="{Binding ElementName=root, Path=LayerListOpacity}"
                       IsHitTestVisible="{Binding ElementName=root, Path=LayerListVisible}"
-                      FontSize="14"
                       SelectionMode="Extended"
                       Loaded="LayersListView_Loaded"
                       SelectionChanged="LayersListView_SelectionChanged"
                       Background="{StaticResource PopoutMenuBackgroundBrush}">
                 <ListView.View>
                     <GridView>
-                        <GridViewColumn Header="Name">
+                        <GridViewColumn>
+                            <GridViewColumn.Header>
+                                <TextBlock Text="Name"
+                                           FontSize="{StaticResource ListViewHeaderFontSize}" />
+                            </GridViewColumn.Header>
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
                                     <TextBlock Text="{Binding Path=Value.Name}"
                                                Foreground="{DynamicResource propertiesFontBrush}"
-                                               FontSize="12"
-                                               HorizontalAlignment="Left"
-                                               VerticalAlignment="Center"
-                                               Margin="2 0 0 0">
+                                               FontSize="{StaticResource ListViewFontSize}"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Stretch"
+                                               Margin="0 0 0 0">
                                         <TextBlock.ToolTip>
                                             <TextBlock Text="{Binding Path=Value.Name}" />
                                         </TextBlock.ToolTip>
@@ -73,7 +78,11 @@
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
-                        <GridViewColumn Header="Visibilty">
+                        <GridViewColumn>
+                            <GridViewColumn.Header>
+                                <TextBlock Text="Visibility"
+                                           FontSize="{StaticResource ListViewHeaderFontSize}" />
+                            </GridViewColumn.Header>
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
                                     <CheckBox IsChecked="{Binding Path=Value.IsVisible, Mode=TwoWay}"
@@ -98,26 +107,53 @@
                       Focusable="True"
                       SelectionChanged="PointGroupsListView_SelectionChanged"
                       Background="{StaticResource PopoutMenuBackgroundBrush}"
-                      Loaded="PointGroupsListView_Loaded">
+                      Loaded="PointGroupsListView_Loaded"
+                      Padding="0">
                 <ListView.View>
                     <GridView>
-                        <GridViewColumn Header="Name">
+                        <GridViewColumn>
+                            <GridViewColumn.Header>
+                                <TextBlock Text="Name"
+                                           FontSize="{StaticResource ListViewHeaderFontSize}" />
+                            </GridViewColumn.Header>
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
-                                    <TextBlock Text="{Binding Path=Name}"
-                                               Foreground="{DynamicResource propertiesFontBrush}"
-                                               FontSize="12"
-                                               HorizontalAlignment="Left"
-                                               VerticalAlignment="Center"
-                                               Margin="2 0 0 0">
-                                        <TextBlock.ToolTip>
-                                            <TextBlock Text="{Binding Path=Name}" />
-                                        </TextBlock.ToolTip>
-                                    </TextBlock>
+                                    <Border x:Name="PointGroupNameBorder"
+                                            PreviewMouseLeftButtonDown="PointGroupNameBorder_PreviewMouseLeftButtonDown"
+                                            Focusable="False"
+                                            Margin="0"
+                                            HorizontalAlignment="Stretch">
+                                        <TextBox x:Name="PointGroupNameTextBox"
+                                                 FontSize="{StaticResource ListViewFontSize}"
+                                                 Foreground="{DynamicResource propertiesFontBrush}"
+                                                 Style="{StaticResource EditableTextBox}"
+                                                 IsReadOnly="True"
+                                                 LostFocus="PointGroupNameTextbox_LostFocus"
+                                                 PreviewKeyDown="PointGroupNameTextbox_PreviewKeyDown"
+                                                 ToolTipService.ShowOnDisabled="True">
+                                            <TextBox.Text>
+                                                <Binding Path="Name"
+                                                         UpdateSourceTrigger="Explicit"
+                                                         Mode="TwoWay"
+                                                         ValidatesOnDataErrors="True"
+                                                         NotifyOnValidationError="True"
+                                                         ValidatesOnExceptions="True"
+                                                         ValidatesOnNotifyDataErrors="True">
+                                                    <Binding.ValidationRules>
+                                                        <validation:NoIllegalCharactersRule />
+                                                    </Binding.ValidationRules>
+                                                </Binding>
+                                            </TextBox.Text>
+                                        </TextBox>
+                                    </Border>
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
-                        <GridViewColumn Header="Color">
+                        <GridViewColumn>
+                            <GridViewColumn.Header>
+                                <TextBlock Text="Color"
+                                           FontSize="{StaticResource ListViewHeaderFontSize}" />
+                            </GridViewColumn.Header>
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
                                     <colorpicker:PortableColorPicker Style="{StaticResource DefaultColorPickerStyle}"
@@ -127,35 +163,68 @@
                                                                      ToggleButtonMargin="0 2 0 2"
                                                                      IsPopupOpen="{Binding Path=ColorToggleOpen, Mode=OneWayToSource}"
                                                                      IsPopupOpenChanged="ColorPicker_IsPopupOpenChanged"
-                                                                     Focusable="True" />
+                                                                     Focusable="True"
+                                                                     HorizontalAlignment="Center" />
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
-                        <GridViewColumn Header="Visibilty">
+                        <GridViewColumn>
+                            <GridViewColumn.Header>
+                                <Border>
+                                    <TextBlock Text="Visibility"
+                                               HorizontalAlignment="Stretch"
+                                               FontSize="{StaticResource ListViewHeaderFontSize}" />
+                                </Border>
+                            </GridViewColumn.Header>
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
-                                    <CheckBox IsChecked="{Binding Path=IsVisible, Mode=TwoWay}"
-                                              HorizontalAlignment="Center"
-                                              HorizontalContentAlignment="Center"
-                                              VerticalAlignment="Center"
-                                              VerticalContentAlignment="Center"
-                                              Unchecked="PointGroupsCheckBox_Unchecked"
-                                              Checked="PointGroupsCheckBox_Checked" />
+                                    <Border>
+                                        <CheckBox IsChecked="{Binding Path=IsVisible, Mode=TwoWay}"
+                                                  HorizontalAlignment="Left"
+                                                  HorizontalContentAlignment="Center"
+                                                  VerticalAlignment="Center"
+                                                  VerticalContentAlignment="Center"
+                                                  Unchecked="PointGroupsCheckBox_Unchecked"
+                                                  Checked="PointGroupsCheckBox_Checked" />
+                                    </Border>
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
-                        <GridViewColumn Header="Point Count">
+                        <GridViewColumn>
+                            <GridViewColumn.Header>
+                                <TextBlock Text="Scale"
+                                           FontSize="{StaticResource ListViewHeaderFontSize}" />
+                            </GridViewColumn.Header>
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
-                                    <TextBlock Text="{Binding Path=Points.Count}"
-                                               Foreground="{DynamicResource propertiesFontBrush}"
-                                               FontSize="12"
-                                               HorizontalAlignment="Left"
-                                               VerticalAlignment="Center">
-                                        <TextBlock.ToolTip>
-                                            <TextBlock Text="{Binding Path=Points.Count}" />
-                                        </TextBlock.ToolTip>
-                                    </TextBlock>
+                                    <Border x:Name="PointGroupScaleBorder"
+                                            PreviewMouseLeftButtonDown="PointGroupScaleBorder_PreviewMouseLeftButtonDown"
+                                            Focusable="False"
+                                            BorderBrush="Transparent"
+                                            Background="Transparent"
+                                            HorizontalAlignment="Stretch">
+                                        <TextBox Style="{StaticResource EditableTextBox}"
+                                                 IsReadOnly="true"
+                                                 FontSize="{StaticResource ListViewFontSize}"
+                                                 HorizontalAlignment="Left"
+                                                 LostFocus="PointScaleTextbox_LostFocus"
+                                                 PreviewKeyDown="PointScaleTextbox_PreviewKeyDown">
+                                            <TextBox.Text>
+                                                <Binding Path="PointScale"
+                                                         StringFormat="N3"
+                                                         UpdateSourceTrigger="Explicit"
+                                                         Mode="TwoWay"
+                                                         ValidatesOnDataErrors="True"
+                                                         NotifyOnValidationError="True"
+                                                         ValidatesOnExceptions="True"
+                                                         ValidatesOnNotifyDataErrors="True">
+                                                    <Binding.ValidationRules>
+                                                        <validation:DoubleValidationRule />
+                                                    </Binding.ValidationRules>
+                                                </Binding>
+                                            </TextBox.Text>
+                                        </TextBox>
+                                    </Border>
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>

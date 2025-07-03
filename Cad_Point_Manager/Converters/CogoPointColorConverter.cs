@@ -16,10 +16,6 @@ namespace Cad_Point_Manager.Converters
 {
     public class CogoPointColorConverter : IMultiValueConverter
     {
-        /// <summary>
-        /// Converts a center coordinate and a control size (width or height) to top-left aligned Canvas.Left or Canvas.Top.
-        /// </summary>
-        /// <param name="values">[0] = center coordinate (double), [1] = size (double)</param>
         public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
         {
             if (values.Length != 3 ||
