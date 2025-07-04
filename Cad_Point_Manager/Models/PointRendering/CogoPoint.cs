@@ -13,6 +13,7 @@ using System.Windows.Media;
 using System.Windows.Media.TextFormatting;
 using System.Xml.Linq;
 using static System.Runtime.InteropServices.JavaScript.JSType;
+using Matrix = System.Windows.Media.Matrix;
 using Point = System.Windows.Point;
 
 namespace Cad_Point_Manager.Models.PointRendering
@@ -21,8 +22,7 @@ namespace Cad_Point_Manager.Models.PointRendering
     {
         #region Fields
         private const float _textRowDistanceFactor = 1.2f;
-
-        private float _markerToTextOffset;
+        private const float _markerToTextOffset = 2;
 
         private int _pointNumber;
         private double _northing;
@@ -33,11 +33,10 @@ namespace Cad_Point_Manager.Models.PointRendering
         private PointGroup _pointGroup;
         private string _description;
         private CogoPointManager _cogoPointManager;
-        private Vector2 _textInfoBaseLocation;
-        private Vector2 _pointNameLocation;
-        private Vector2 _pointElevationLocation;
-        private Vector2 _pointDescriptionLocation;
-        private Point _textInfoOffset = new(2, 0);
+        private Point _textInfoPosition = new();
+        private Point _textInfoScreenPosition = new();
+        private Point _textToggleButtonPosition = new();
+        private Point _textToggleButtonScreenPosition = new();
         private double _pointScale;
         #endregion
 
@@ -147,63 +146,51 @@ namespace Cad_Point_Manager.Models.PointRendering
                 }
             }
         }
-        public Vector2 TextInfoBaseLocation
+        public Point TextInfoPosition
         {
-            get => _textInfoBaseLocation;
+            get => _textInfoPosition;
             set
             {
-                if (value != _textInfoBaseLocation)
+                if (_textInfoPosition != value)
                 {
-                    _textInfoBaseLocation = value;
-                    OnPropertyChanged(nameof(TextInfoBaseLocation));
+                    _textInfoPosition = value;
+                    OnPropertyChanged(nameof(TextInfoPosition));
                 }
             }
         }
-        public Vector2 PointNumberLocation
+        public Point TextInfoScreenPosition
         {
-            get => _pointNameLocation;
+            get => _textInfoScreenPosition;
             set
             {
-                if (value != _pointNameLocation)
+                if (_textInfoScreenPosition != value)
                 {
-                    _pointNameLocation = value;
-                    OnPropertyChanged(nameof(PointNumberLocation));
+                    _textInfoScreenPosition = value;
+                    OnPropertyChanged(nameof(TextInfoScreenPosition));
                 }
             }
         }
-        public Vector2 PointElevationLocation
+        public Point TextToggleButtonPosition
         {
-            get => _pointElevationLocation;
+            get => _textToggleButtonPosition;
             set
             {
-                if (value != _pointElevationLocation)
+                if (_textToggleButtonPosition != value)
                 {
-                    _pointElevationLocation = value;
-                    OnPropertyChanged(nameof(PointElevationLocation));
+                    _textToggleButtonPosition = value;
+                    OnPropertyChanged(nameof(TextToggleButtonPosition));
                 }
             }
         }
-        public Vector2 PointDescriptionLocation
+        public Point TextToggleButtonScreenPosition
         {
-            get => _pointDescriptionLocation;
+            get => _textToggleButtonScreenPosition;
             set
             {
-                if (value != _pointDescriptionLocation)
+                if (_textToggleButtonScreenPosition != value)
                 {
-                    _pointDescriptionLocation = value;
-                    OnPropertyChanged(nameof(PointDescriptionLocation));
-                }
-            }
-        }
-        public Point TextInfoOffset
-        {
-            get => _textInfoOffset;
-            set
-            {
-                if (_textInfoOffset != value)
-                {
-                    _textInfoOffset = value;
-                    OnPropertyChanged(nameof(TextInfoOffset));
+                    _textToggleButtonScreenPosition = value;
+                    OnPropertyChanged(nameof(TextToggleButtonScreenPosition));
                 }
             }
         }
@@ -245,7 +232,6 @@ namespace Cad_Point_Manager.Models.PointRendering
             MarkerSize = markerSize;
             Elevation = elevation;
             Description = description;
-            _markerToTextOffset = textHeight * 0.2f;
             GetTextLocations();
         }
         #endregion
@@ -253,10 +239,8 @@ namespace Cad_Point_Manager.Models.PointRendering
         #region Methods
         private void GetTextLocations()
         {
-            TextInfoBaseLocation = new((float)Easting + _markerToTextOffset, (float)Northing);
-            PointNumberLocation = TextInfoBaseLocation;
-            PointElevationLocation = new(TextInfoBaseLocation.X, TextInfoBaseLocation.Y + TextHeight * _textRowDistanceFactor);
-            PointDescriptionLocation = new(TextInfoBaseLocation.X, TextInfoBaseLocation.Y + TextHeight * 2 * _textRowDistanceFactor);
+            TextInfoPosition = new((float)Easting + _markerToTextOffset, (float)Northing);
+            TextToggleButtonPosition = new(PointPosition.X, TextInfoPosition.Y);
         }
 
         public override double DistanceToPoint(System.Windows.Point p)
@@ -407,18 +391,22 @@ namespace Cad_Point_Manager.Models.PointRendering
 
             List<TextVertex> textVertices = [];
 
-            textVertices.AddRange(textDict.GetTextVertices(PointNumber.ToString(), TextHeight, PointNumberLocation, PointGroup.Color));
-            textVertices.AddRange(textDict.GetTextVertices(Elevation.ToString("F3"), TextHeight, PointElevationLocation, PointGroup.Color));
-            textVertices.AddRange(textDict.GetTextVertices(Description, TextHeight, PointDescriptionLocation, PointGroup.Color));
-            //TextVertices = textDict.GetIntTextVertices(PointNumber, TextHeight, new Vector2(RenderPosition.X + _markerToTextOffset, RenderPosition.Y), PointGroup.Color);
+            //textVertices.AddRange(textDict.GetTextVertices(PointNumber.ToString(), TextHeight, PointNumberLocation, PointGroup.Color));
+            //textVertices.AddRange(textDict.GetTextVertices(Elevation.ToString("F3"), TextHeight, PointElevationLocation, PointGroup.Color));
+            //textVertices.AddRange(textDict.GetTextVertices(Description, TextHeight, PointDescriptionLocation, PointGroup.Color));
 
-            //TextVertices = textVertices.ToArray();
             UpdateBounds();
         }
         public void UpdateMarkerVertices()
         {
             MarkerVertices[0] = new(RenderPosition, PointGroup.Color, MarkerSize, PointGroup.IsVisible ? 1 : 0,
                 IsMouseOver ? 1 : 0, IsSelected ? 1 : 0);
+        }
+
+        public void UpdateScreenSpaceCoordinates(Matrix matrix)
+        {
+            TextInfoScreenPosition = matrix.Transform(TextInfoPosition);
+            TextToggleButtonScreenPosition = matrix.Transform(TextToggleButtonPosition);
         }
 
         protected override void OnPropertyChanged(string propertyName)

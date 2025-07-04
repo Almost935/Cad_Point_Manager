@@ -1,4 +1,5 @@
 ﻿using Cad_Point_Manager.Controls.D3DControl.Buffers;
+using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Helpers;
 using Cad_Point_Manager.Models;
 using Cad_Point_Manager.Models.DrawingObjects3D;
@@ -740,6 +741,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 if (e.MiddleButton == MouseButtonState.Pressed)
                 {
                     Camera.Pan(currentMousePos, _prevMousePos);
+                    CadManager3D.CogoPointManager.UpdateScreenSpaceCoordinate(Camera.D2dMatrix.ToWindowsMatrix());
                     ConstantBuffersDirty = true;
                     e.Handled = true;
                 }
@@ -759,6 +761,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             }
 
             Camera.Zoom(zoomSteps, new Vector2((float)_pointerCoords.X, (float)_pointerCoords.Y));
+            CadManager3D.CogoPointManager.UpdateScreenSpaceCoordinate(Camera.D2dMatrix.ToWindowsMatrix());
             _hittestStrokeThickness = 7.0f / (Camera.InitialViewMatrix.M11 * Camera.CurrentZoom);
 
             ConstantBuffersDirty = true;

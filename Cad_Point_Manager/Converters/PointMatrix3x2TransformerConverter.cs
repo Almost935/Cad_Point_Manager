@@ -27,6 +27,7 @@ namespace Cad_Point_Manager.Converters
             if (values.Length < 2 ||
              values[0] is not Point dxfPoint ||
              values[1] is not Matrix3x2 matrix3x2 ||
+             values[2] is not double size ||
              parameter is not string axis)
             {
                 return DependencyProperty.UnsetValue;
@@ -35,7 +36,7 @@ namespace Cad_Point_Manager.Converters
             Matrix matrix = new(matrix3x2.M11, matrix3x2.M12, matrix3x2.M21, matrix3x2.M22, matrix3x2.M31, matrix3x2.M32);
             var translatedPoint = matrix.Transform(dxfPoint);
 
-            return axis == "X" ? translatedPoint.X : translatedPoint.Y;
+            return axis == "X" ? translatedPoint.X - (size / 2) : translatedPoint.Y - (size / 2);
         }
 
         public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)

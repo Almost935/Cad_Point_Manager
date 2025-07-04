@@ -4,6 +4,8 @@ using SharpDX;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Windows;
+using System.Windows.Media;
+using Matrix = System.Windows.Media.Matrix;
 
 namespace Cad_Point_Manager.Models
 {
@@ -98,6 +100,13 @@ namespace Cad_Point_Manager.Models
             return PointGroups.SelectMany(pg => pg.Value.Points).Any(p => p.PointNumber == num);
         }
 
+        public void UpdateScreenSpaceCoordinate(Matrix matrix)
+        {
+            Parallel.ForEach(PointGroups, pointGroup =>
+            {
+                pointGroup.Value.UpdateScreenSpaceCoordinates(matrix);
+            });
+        }
         public bool TrySetActivePointGroup(string groupName)
         {
              bool exists = TryGetPointGroup(groupName, out PointGroup pointGroup);

@@ -180,6 +180,13 @@ namespace Cad_Point_Manager.Models.PointRendering
             return Name;
         }
 
+        public void UpdateScreenSpaceCoordinates(System.Windows.Media.Matrix matrix)
+        {
+            foreach (var point in Points)
+            {
+                point.UpdateScreenSpaceCoordinates(matrix);
+            }
+        }
         public void UpdateWindowsColor()
         {
             WindowsColor = System.Windows.Media.Color.FromArgb(
