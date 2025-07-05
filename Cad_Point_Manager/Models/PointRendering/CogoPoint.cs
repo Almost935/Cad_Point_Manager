@@ -1,18 +1,10 @@
-﻿using Cad_Point_Manager.Common;
-using Cad_Point_Manager.Controls.D3DControl;
+﻿using Cad_Point_Manager.Controls.D3DControl;
 using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Helpers;
 using Cad_Point_Manager.Models.HitTesting;
-using Cad_Point_Manager.Views.UserControls;
 using SharpDX;
 using System.ComponentModel.DataAnnotations;
-using System.Runtime.InteropServices;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Media;
-using System.Windows.Media.TextFormatting;
-using System.Xml.Linq;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 using Matrix = System.Windows.Media.Matrix;
 using Point = System.Windows.Point;
 
@@ -21,7 +13,6 @@ namespace Cad_Point_Manager.Models.PointRendering
     public class CogoPoint : HitTestableObject
     {
         #region Fields
-        private const float _textRowDistanceFactor = 1.2f;
         private const float _markerToTextOffset = 2;
 
         private int _pointNumber;
@@ -33,8 +24,9 @@ namespace Cad_Point_Manager.Models.PointRendering
         private PointGroup _pointGroup;
         private string _description;
         private CogoPointManager _cogoPointManager;
-        private Point _textInfoPosition = new();
-        private Point _textInfoScreenPosition = new();
+        private Point _baseScreenPosition = new();
+        private Point _textInfoOffset = new();
+        private Point _textInfoScreenOffset = new(5, 0);
         private Point _textToggleButtonPosition = new();
         private Point _textToggleButtonScreenPosition = new();
         private double _pointScale;
@@ -146,27 +138,39 @@ namespace Cad_Point_Manager.Models.PointRendering
                 }
             }
         }
-        public Point TextInfoPosition
+        public Point BaseScreenPosition
         {
-            get => _textInfoPosition;
+            get => _baseScreenPosition;
             set
             {
-                if (_textInfoPosition != value)
+                if (_baseScreenPosition != value)
                 {
-                    _textInfoPosition = value;
-                    OnPropertyChanged(nameof(TextInfoPosition));
+                    _baseScreenPosition = value;
+                    OnPropertyChanged(nameof(BaseScreenPosition));
                 }
             }
         }
-        public Point TextInfoScreenPosition
+        public Point TextInfoOffset
         {
-            get => _textInfoScreenPosition;
+            get => _textInfoOffset;
             set
             {
-                if (_textInfoScreenPosition != value)
+                if (_textInfoOffset != value)
                 {
-                    _textInfoScreenPosition = value;
-                    OnPropertyChanged(nameof(TextInfoScreenPosition));
+                    _textInfoOffset = value;
+                    OnPropertyChanged(nameof(TextInfoOffset));
+                }
+            }
+        }
+        public Point TextInfoScreenOffset
+        {
+            get => _textInfoScreenOffset;
+            set
+            {
+                if (_textInfoScreenOffset != value)
+                {
+                    _textInfoScreenOffset = value;
+                    OnPropertyChanged(nameof(TextInfoScreenOffset));
                 }
             }
         }
@@ -239,8 +243,8 @@ namespace Cad_Point_Manager.Models.PointRendering
         #region Methods
         private void GetTextLocations()
         {
-            TextInfoPosition = new((float)Easting + _markerToTextOffset, (float)Northing);
-            TextToggleButtonPosition = new(PointPosition.X, TextInfoPosition.Y);
+            TextInfoOffset = new((float)Easting + _markerToTextOffset, (float)Northing);
+            TextToggleButtonPosition = new(PointPosition.X + _markerToTextOffset / 2, TextInfoOffset.Y);
         }
 
         public override double DistanceToPoint(System.Windows.Point p)
@@ -405,7 +409,8 @@ namespace Cad_Point_Manager.Models.PointRendering
 
         public void UpdateScreenSpaceCoordinates(Matrix matrix)
         {
-            TextInfoScreenPosition = matrix.Transform(TextInfoPosition);
+            BaseScreenPosition = matrix.Transform(PointPosition);
+            TextInfoScreenOffset = matrix.Transform(TextInfoOffset);
             TextToggleButtonScreenPosition = matrix.Transform(TextToggleButtonPosition);
         }
 

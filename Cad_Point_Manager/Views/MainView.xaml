@@ -41,7 +41,7 @@
         <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" 
                                               CollapseWhenFalse="False"
                                               Invert="False"/>
-        <converters:CogoToggleButtonConverter x:Key="CogoToggleButtonConverter" />
+        <converters:PointCenteringConverter x:Key="PointCenteringConverter" />
 
         <Thickness x:Key="ToggleButtonMargin">0,5,0,5</Thickness>
     </Page.Resources>
@@ -274,21 +274,15 @@
                                             <TransformGroup>
                                                 <TranslateTransform>
                                                     <TranslateTransform.X>
-                                                        <MultiBinding Converter="{StaticResource PointMatrix3x2TransformerConverter}"
-                                                                      ConverterParameter="X">
-                                                            <Binding Path="TextToggleButtonPosition" />
-                                                            <Binding Path="DataContext.Camera.D2dMatrix"
-                                                                     RelativeSource="{RelativeSource AncestorType=Page}" />
+                                                        <MultiBinding Converter="{StaticResource PointCenteringConverter}">
+                                                            <Binding Path="TextToggleButtonScreenPosition.X" />
                                                             <Binding ElementName="PointToggleButton"
                                                                      Path="Width" />
                                                         </MultiBinding>
                                                     </TranslateTransform.X>
                                                     <TranslateTransform.Y>
-                                                        <MultiBinding Converter="{StaticResource PointMatrix3x2TransformerConverter}"
-                                                                      ConverterParameter="Y">
-                                                            <Binding Path="TextToggleButtonPosition" />
-                                                            <Binding Path="DataContext.Camera.D2dMatrix"
-                                                                     RelativeSource="{RelativeSource AncestorType=Page}" />
+                                                        <MultiBinding Converter="{StaticResource PointCenteringConverter}">
+                                                            <Binding Path="TextToggleButtonScreenPosition.Y" />
                                                             <Binding ElementName="PointToggleButton"
                                                                      Path="Height" />
                                                         </MultiBinding>
@@ -322,34 +316,8 @@
                                                         </MultiBinding>
                                                     </ScaleTransform.ScaleY>
                                                 </ScaleTransform>
-                                                <TranslateTransform>
-                                                    <TranslateTransform.X>
-                                                        <MultiBinding Converter="{StaticResource PointMatrix3x2TransformerConverter}"
-                                                                      ConverterParameter="X">
-                                                            <Binding Path="PointPosition" />
-                                                            <Binding Path="DataContext.Camera.D2dMatrix"
-                                                                     RelativeSource="{RelativeSource AncestorType=Page}" />
-                                                            <Binding>
-                                                                <Binding.Source>
-                                                                    <sys:Double>0</sys:Double>
-                                                                </Binding.Source>
-                                                            </Binding>
-                                                        </MultiBinding>
-                                                    </TranslateTransform.X>
-                                                    <TranslateTransform.Y>
-                                                        <MultiBinding Converter="{StaticResource PointMatrix3x2TransformerConverter}"
-                                                                      ConverterParameter="Y">
-                                                            <Binding Path="PointPosition" />
-                                                            <Binding Path="DataContext.Camera.D2dMatrix"
-                                                                     RelativeSource="{RelativeSource AncestorType=Page}" />
-                                                            <Binding>
-                                                                <Binding.Source>
-                                                                    <sys:Double>0</sys:Double>
-                                                                </Binding.Source>
-                                                            </Binding>
-                                                        </MultiBinding>
-                                                    </TranslateTransform.Y>
-                                                </TranslateTransform>
+                                                <TranslateTransform X="{Binding BaseScreenPosition.X}"
+                                                                    Y="{Binding BaseScreenPosition.Y}"/>
                                             </TransformGroup>
                                         </Canvas.RenderTransform>
                                         <Ellipse x:Name="PointEllipse"
@@ -371,7 +339,12 @@
                                                 </MultiBinding>
                                             </Ellipse.Fill>
                                         </Ellipse>
-                                        <StackPanel Margin="{StaticResource TextOffset}">
+                                        <StackPanel>
+                                            <StackPanel.RenderTransform>
+                                                <TransformGroup>
+                                                    <TranslateTransform />
+                                                </TransformGroup>
+                                            </StackPanel.RenderTransform>
                                             <TextBlock x:Name="PointText1"
                                                        Text="{Binding PointNumber, FallbackValue=1}"
                                                        RenderOptions.EdgeMode="Aliased"
