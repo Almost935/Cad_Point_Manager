@@ -102,10 +102,14 @@ namespace Cad_Point_Manager.Models
 
         public void UpdateScreenSpaceCoordinate(Matrix matrix)
         {
-            Parallel.ForEach(PointGroups, pointGroup =>
+            foreach (var pg in PointGroups)
             {
-                pointGroup.Value.UpdateScreenSpaceCoordinates(matrix);
-            });
+                pg.Value.UpdateScreenSpaceCoordinates(matrix);
+            }
+            //Parallel.ForEach(PointGroups, pointGroup =>
+            //{
+            //    pointGroup.Value.UpdateScreenSpaceCoordinates(matrix);
+            //});
         }
         public bool TrySetActivePointGroup(string groupName)
         {

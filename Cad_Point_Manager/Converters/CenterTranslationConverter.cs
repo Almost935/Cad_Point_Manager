@@ -5,19 +5,22 @@ using System.Diagnostics;
 
 namespace Cad_Point_Manager.Converters
 {
-    public class DebugConverter : IValueConverter
+    public class CenterTranslationConverter : IValueConverter
     {
-        public bool Invert { get; set; } = false;
-        public bool CollapseWhenFalse { get; set; } = true;
-
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            if (value is not double height)
+            if (value is not double size)
             {
                 return DependencyProperty.UnsetValue;
             }
 
-            return height;
+            bool parameterSet = double.TryParse(parameter.ToString(), out double factor);
+            if (!parameterSet)
+            {
+                factor = 0.5;
+            }
+
+            return -size * factor;
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)

@@ -11,10 +11,6 @@ namespace Cad_Point_Manager.Converters
 {
     public class PointCenteringConverter : IMultiValueConverter
     {
-        /// <summary>
-        /// Converts a coordinate by transforming it with the matrix parameter and then subtracting the second parameter.
-        /// </summary>
-        /// <param name="values">[0] = center coordinate (double), [1] = size (double)</param>
         public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
         {
             if (values.Length < 2 ||

@@ -13,7 +13,7 @@ namespace Cad_Point_Manager.Models.PointRendering
     public class CogoPoint : HitTestableObject
     {
         #region Fields
-        private const float _markerToTextOffset = 2;
+        private const float _textInfoBaseOffset = 2;
 
         private int _pointNumber;
         private double _northing;
@@ -25,8 +25,9 @@ namespace Cad_Point_Manager.Models.PointRendering
         private string _description;
         private CogoPointManager _cogoPointManager;
         private Point _baseScreenPosition = new();
-        private Point _textInfoOffset = new();
-        private Point _textInfoScreenOffset = new(5, 0);
+        private Point _textInfoPosition = new();
+        private Point _textInfoScreenPosition = new();
+        private double _textInfoOffset = 1;
         private Point _textToggleButtonPosition = new();
         private Point _textToggleButtonScreenPosition = new();
         private double _pointScale;
@@ -150,7 +151,31 @@ namespace Cad_Point_Manager.Models.PointRendering
                 }
             }
         }
-        public Point TextInfoOffset
+        public Point TextInfoPosition
+        {
+            get => _textInfoPosition;
+            set
+            {
+                if (_textInfoPosition != value)
+                {
+                    _textInfoPosition = value;
+                    OnPropertyChanged(nameof(TextInfoPosition));
+                }
+            }
+        }
+        public Point TextInfoScreenPosition
+        {
+            get => _textInfoScreenPosition;
+            set
+            {
+                if (_textInfoScreenPosition != value)
+                {
+                    _textInfoScreenPosition = value;
+                    OnPropertyChanged(nameof(TextInfoScreenPosition));
+                }
+            }
+        }
+        public double TextInfoOffset
         {
             get => _textInfoOffset;
             set
@@ -159,18 +184,6 @@ namespace Cad_Point_Manager.Models.PointRendering
                 {
                     _textInfoOffset = value;
                     OnPropertyChanged(nameof(TextInfoOffset));
-                }
-            }
-        }
-        public Point TextInfoScreenOffset
-        {
-            get => _textInfoScreenOffset;
-            set
-            {
-                if (_textInfoScreenOffset != value)
-                {
-                    _textInfoScreenOffset = value;
-                    OnPropertyChanged(nameof(TextInfoScreenOffset));
                 }
             }
         }
@@ -243,8 +256,8 @@ namespace Cad_Point_Manager.Models.PointRendering
         #region Methods
         private void GetTextLocations()
         {
-            TextInfoOffset = new((float)Easting + _markerToTextOffset, (float)Northing);
-            TextToggleButtonPosition = new(PointPosition.X + _markerToTextOffset / 2, TextInfoOffset.Y);
+            TextInfoPosition = new(PointPosition.X + _textInfoOffset, PointPosition.Y);
+            TextToggleButtonPosition = new(PointPosition.X + TextInfoOffset / 1.5, PointPosition.Y);
         }
 
         public override double DistanceToPoint(System.Windows.Point p)
@@ -410,7 +423,7 @@ namespace Cad_Point_Manager.Models.PointRendering
         public void UpdateScreenSpaceCoordinates(Matrix matrix)
         {
             BaseScreenPosition = matrix.Transform(PointPosition);
-            TextInfoScreenOffset = matrix.Transform(TextInfoOffset);
+            TextInfoScreenPosition = matrix.Transform(TextInfoPosition);
             TextToggleButtonScreenPosition = matrix.Transform(TextToggleButtonPosition);
         }
 
