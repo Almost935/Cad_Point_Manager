@@ -1,5 +1,6 @@
 ﻿using System.Windows;
 using Cad_Point_Manager.Models.DrawingObjects3D;
+using SharpDX.Direct3D11;
 
 namespace Cad_Point_Manager.Models.HitTesting
 {
@@ -39,7 +40,44 @@ namespace Cad_Point_Manager.Models.HitTesting
         private void Initialize()
         {
             GetDrawingObjects();
+            UpdateExtents();
             GetRoot();
+        }
+        private void UpdateExtents()
+        {
+            if (HitTestableObjects is null || HitTestableObjects.Count == 0)
+            {
+                Extents = Rect.Empty;
+            }
+
+            int processorCount = Environment.ProcessorCount;
+            int chunkSize = (int)Math.Ceiling(HitTestableObjects.Count / (double)processorCount);
+
+            var partialResults = new Rect[processorCount];
+
+            Parallel.For(0, processorCount, i =>
+            {
+                int start = i * chunkSize;
+                int end = Math.Min(start + chunkSize, HitTestableObjects.Count);
+
+                Rect localUnion = Rect.Empty;
+
+                for (int j = start; j < end; j++)
+                {
+                    localUnion.Union(HitTestableObjects[j].Bounds);
+                }
+
+                partialResults[i] = localUnion;
+            });
+
+            // Merge partial results
+            Rect finalUnion = Rect.Empty;
+            foreach (var r in partialResults)
+            {
+                finalUnion.Union(r);
+            }
+
+            Extents = finalUnion;
         }
         private void GetRoot()
         {

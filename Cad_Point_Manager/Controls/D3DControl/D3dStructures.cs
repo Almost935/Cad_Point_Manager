@@ -266,22 +266,39 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         public Rect ToRect()
         {
-            Rect rect = new Rect(this.Left, this.Bottom, this.Width, this.Height);
+            Rect rect = new(this.Left, this.Bottom, this.Width, this.Height);
             return rect;
         }
+        public void Union(Bounds other)
+        {
+            if (IsEmpty)
+            {
+                this = other;
+                return;
+            }
+            if (other.IsEmpty)
+            {
+                return;
+            }
+
+            float newLeft = Math.Min(this.Left, other.Left);
+            float newRight = Math.Max(this.Right, other.Right);
+            float newBottom = Math.Min(this.Bottom, other.Bottom);
+            float newTop = Math.Max(this.Top, other.Top);
+
+            this = new Bounds(newLeft, newRight, newBottom, newTop);
+        }
+
 
         public static Bounds Empty => new(0, 0, 0, 0);
-
         public static Bounds Translate(Bounds bounds, float x, float y)
         {
             return new Bounds(bounds.Left + x, bounds.Right + x, bounds.Bottom + y, bounds.Top + y);
         }
-
         public static Bounds Scale(Bounds bounds, float scale)
         {
             return new Bounds(bounds.Left / scale, bounds.Right / scale, bounds.Bottom / scale, bounds.Top / scale);
         }
-
         public static Bounds ScaleToCenter(Bounds bounds, float scale)
         {
             Bounds scaledBounds = Bounds.Scale(bounds, scale);
@@ -290,7 +307,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             return scaledBounds;
         }
-
         public static Bounds ScaleTo(Bounds bounds, float scale, Vector2 pivot)
         {
             // Calculate the box center
@@ -319,11 +335,22 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             return new Bounds(newLeft, newRight, newBottom, newTop);
         }
-
         public static Rect ToRect(Bounds bounds)
         {
-            Rect rect = new Rect(bounds.Left, bounds.Bottom, bounds.Width, bounds.Height);
+            Rect rect = new(bounds.Left, bounds.Bottom, bounds.Width, bounds.Height);
             return rect;
+        }
+        public static Bounds Union(Bounds a, Bounds b)
+        {
+            if (a.IsEmpty) { return b; }
+            if (b.IsEmpty) { return a; }
+
+            float left = Math.Min(a.Left, b.Left);
+            float right = Math.Max(a.Right, b.Right);
+            float bottom = Math.Min(a.Bottom, b.Bottom);
+            float top = Math.Max(a.Top, b.Top);
+
+            return new Bounds(left, right, bottom, top);
         }
     }
 

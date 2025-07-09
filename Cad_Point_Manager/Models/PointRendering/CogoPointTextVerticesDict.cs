@@ -75,7 +75,7 @@ namespace Cad_Point_Manager.Models.PointRendering
                         newVerticesList.Add(vertex);
                         dictVerticesList.Add(dictVertex);
                     }
-                    _charsDict.Add(c, (dictVerticesList, (bounds.Right - bounds.Left) + (spaceWidth * GlobalHelperProperties._textHeightToSpaceWidthFactor)));
+                    _charsDict.Add(c, (dictVerticesList, (bounds.Right - bounds.Left) + (spaceWidth * GlobalHelperProperties.TextHeightToSpaceWidthFactor)));
 
                     verticesList.AddRange(newVerticesList);
 
@@ -138,7 +138,7 @@ namespace Cad_Point_Manager.Models.PointRendering
                         newVerticesList.Add(vertex);
                         dictVerticesList.Add(dictVertex);
                     }
-                    _numbersDict.Add(num, (dictVerticesList, (bounds.Right - bounds.Left) + (spaceWidth * GlobalHelperProperties._textHeightToSpaceWidthFactor)));
+                    _numbersDict.Add(num, (dictVerticesList, (bounds.Right - bounds.Left) + (spaceWidth * GlobalHelperProperties.TextHeightToSpaceWidthFactor)));
 
                     verticesList.AddRange(newVerticesList);
 

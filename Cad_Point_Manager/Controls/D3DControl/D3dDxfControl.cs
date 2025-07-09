@@ -252,7 +252,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             if (Camera is null)
             {
                 GetInitialMatrix();
-                Camera = new(Viewport, GlobalHelperProperties._zoomFactor, CadManager3D.Extents);
+                Camera = new(Viewport, GlobalHelperProperties.ZoomFactor, CadManager3D.Extents);
             }
             if (DxfNeedsReload)
             {
@@ -564,16 +564,16 @@ namespace Cad_Point_Manager.Controls.D3DControl
             var device = _d3dResCache.Device;
 
             _lineVertexBuffer?.Dispose();
-            _lineVertexBuffer = new(device, GlobalHelperProperties._initialLineVertices);
+            _lineVertexBuffer = new(device, GlobalHelperProperties.InitialLineVertices);
 
             _lineGlowVertexBuffer?.Dispose();
-            _lineGlowVertexBuffer = new(device, GlobalHelperProperties._initialLineGlowVertices);
+            _lineGlowVertexBuffer = new(device, GlobalHelperProperties.InitialLineGlowVertices);
 
             _textVertexBuffer?.Dispose();
-            _textVertexBuffer = new(device, GlobalHelperProperties._initialTextVertices);
+            _textVertexBuffer = new(device, GlobalHelperProperties.InitialTextVertices);
 
             _textGlowVertexBuffer?.Dispose();
-            _textGlowVertexBuffer = new(device, GlobalHelperProperties._initialTextGlowVertices);
+            _textGlowVertexBuffer = new(device, GlobalHelperProperties.InitialTextGlowVertices);
         }
         private void InitializeConstantBuffers()
         {
@@ -643,33 +643,33 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             var lineSettings = new LineSettingsBuffer
             {
-                SelectedColor = GlobalHelperProperties._selectedObjectColor,
-                SelectedMouseOverColor = GlobalHelperProperties._selectedMouseOverObjectColor
+                SelectedColor = GlobalHelperProperties.SelectedObjectColor,
+                SelectedMouseOverColor = GlobalHelperProperties.SelectedMouseOverObjectColor
             };
             _d3dResCache.DeviceContext.UpdateSubresource(ref lineSettings, _lineSettingsBuffer);
 
             var lineGlowSettings = new LineGlowSettingsBuffer
             {
-                GlowOffset = GlobalHelperProperties._lineGlowPixelWidth * worldUnitsPerPixel,
-                GlowTransparency = GlobalHelperProperties._lineGlowTransparency,
-                SelectedColor = GlobalHelperProperties._selectedObjectColor,
-                SelectedMouseOverColor = GlobalHelperProperties._selectedMouseOverGlowColor
+                GlowOffset = GlobalHelperProperties.LineGlowPixelWidth * worldUnitsPerPixel,
+                GlowTransparency = GlobalHelperProperties.LineGlowTransparency,
+                SelectedColor = GlobalHelperProperties.SelectedObjectColor,
+                SelectedMouseOverColor = GlobalHelperProperties.SelectedMouseOverGlowColor
             };
             _d3dResCache.DeviceContext.UpdateSubresource(ref lineGlowSettings, _lineGlowSettingsBuffer);
 
             var textSettings = new TextSettingsBuffer
             {
-                SelectedColor = GlobalHelperProperties._selectedObjectColor,
-                SelectedMouseOverColor = GlobalHelperProperties._selectedMouseOverObjectColor
+                SelectedColor = GlobalHelperProperties.SelectedObjectColor,
+                SelectedMouseOverColor = GlobalHelperProperties.SelectedMouseOverObjectColor
             };
             _d3dResCache.DeviceContext.UpdateSubresource(ref textSettings, _textSettingsBuffer);
 
             var textGlowSettings = new TextGlowSettingsBuffer
             {
-                GlowOffset = GlobalHelperProperties._lineGlowPixelWidth * worldUnitsPerPixel,
-                GlowTransparency = GlobalHelperProperties._lineGlowTransparency,
-                SelectedColor = GlobalHelperProperties._selectedObjectColor,
-                SelectedMouseOverColor = GlobalHelperProperties._selectedMouseOverGlowColor
+                GlowOffset = GlobalHelperProperties.LineGlowPixelWidth * worldUnitsPerPixel,
+                GlowTransparency = GlobalHelperProperties.LineGlowTransparency,
+                SelectedColor = GlobalHelperProperties.SelectedObjectColor,
+                SelectedMouseOverColor = GlobalHelperProperties.SelectedMouseOverGlowColor
             };
             _d3dResCache.DeviceContext.UpdateSubresource(ref textGlowSettings, _textGlowSettingsBuffer);
 
@@ -741,7 +741,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 if (e.MiddleButton == MouseButtonState.Pressed)
                 {
                     Camera.Pan(currentMousePos, _prevMousePos);
-                    CadManager3D.CogoPointManager.UpdateScreenSpaceCoordinate(Camera.D2dMatrix.ToWindowsMatrix());
+                    CadManager3D.CogoPointManager.UpdateVisualTransforms(Camera.D2dMatrix.ToWindowsMatrix());
                     ConstantBuffersDirty = true;
                     e.Handled = true;
                 }
@@ -761,7 +761,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             }
 
             Camera.Zoom(zoomSteps, new Vector2((float)_pointerCoords.X, (float)_pointerCoords.Y));
-            CadManager3D.CogoPointManager.UpdateScreenSpaceCoordinate(Camera.D2dMatrix.ToWindowsMatrix());
+            CadManager3D.CogoPointManager.UpdateVisualTransforms(Camera.D2dMatrix.ToWindowsMatrix());
             _hittestStrokeThickness = 7.0f / (Camera.InitialViewMatrix.M11 * Camera.CurrentZoom);
 
             ConstantBuffersDirty = true;
@@ -1336,8 +1336,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 if (hitTestableObject is CogoPoint dxfPoint)
                 {
                     dxfPoint.MouseEnter();
-                    CadManager3D.UpdateVerticesIsMouseOver(dxfPoint, true);
-                    _textGlowVertices.AddRange(dxfPoint.TextVertices);
                 }
                 if (hitTestableObject is HitTestablePoint point)
                 {
@@ -1369,8 +1367,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 }
                 if (hitTestableObject is CogoPoint dxfPoint)
                 {
-                    dxfPoint.MouseEnter();
-                    CadManager3D.UpdateVerticesIsMouseOver(dxfPoint, false);
+                    dxfPoint.MouseLeave();
                 }
                 if (hitTestableObject is HitTestablePoint point)
                 {
@@ -1423,7 +1420,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 if (hitTestableObject is CogoPoint dxfPoint)
                 {
                     dxfPoint.Select();
-                    CadManager3D.UpdateVerticesIsSelected(dxfPoint, true);
                     SelectedCogoPoints.Add(dxfPoint);
                 }
             }
@@ -1456,7 +1452,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 if (hitTestableObject is CogoPoint dxfPoint)
                 {
                     dxfPoint.Deselect();
-                    CadManager3D.UpdateVerticesIsSelected(dxfPoint, false);
                     SelectedCogoPoints.Remove(dxfPoint);
                 }
             }

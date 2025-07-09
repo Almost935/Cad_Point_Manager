@@ -26,9 +26,9 @@ namespace Cad_Point_Manager.Models.HitTesting
         #endregion
 
         #region Constructors
-        public HitTestableObjectNode(List<HitTestableObject> hitTestableObject, int level, Rect extents, HitTestableObjectTree tree)
+        public HitTestableObjectNode(List<HitTestableObject> hitTestableObjects, int level, Rect extents, HitTestableObjectTree tree)
         {
-            HitTestableObjects = hitTestableObject;
+            HitTestableObjects = hitTestableObjects;
             Level = level;
             Extents = extents;
             Tree = tree;
@@ -218,10 +218,13 @@ namespace Cad_Point_Manager.Models.HitTesting
 
             foreach (var hitTestableObject in HitTestableObjects)
             {
+                //Debug.WriteLine($"HitTestCogoPoints: hitTestableObject is CogoPoint: {hitTestableObject is CogoPoint}");
                 if (hitTestableObject is CogoPoint point)
                 {
+                    //Debug.WriteLine($"HitTestCogoPoints: point.PointGroup.IsVisible: {point.PointGroup.IsVisible}");
                     if (point.PointGroup.IsVisible)
                     {
+                        //Debug.WriteLine($"HitTestCogoPoints: point.BoundsInRect(hitTestRange): {point.BoundsInRect(hitTestRange)}");
                         if (point.BoundsInRect(hitTestRange))
                         {
                             double d = point.DistanceToPoint(p);

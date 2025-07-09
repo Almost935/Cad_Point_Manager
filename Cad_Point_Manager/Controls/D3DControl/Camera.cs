@@ -198,13 +198,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         public Matrix3x2 Get2DTransformationMatrix()
         {
-            //var zoom = CurrentZoom;
-            //var scaleX = zoom * InitialViewMatrix.M11;
-            //var scaleY = zoom * InitialViewMatrix.M22;
-            //var translateX = (ViewMatrix.M41 + InitialViewMatrix.M41) * scaleX;
-            //var translateY = (ViewMatrix.M42 + InitialViewMatrix.M42) * scaleY;
-            //var matrix = new Matrix3x2(scaleX, 0, 0, scaleY, translateX, translateY);
-
             var halfW = Viewport.Width / 2f;
             var halfH = Viewport.Height / 2f;
             var ndcToPixel = Matrix.Scaling(halfW, -halfH, 1) * Matrix.Translation(halfW, halfH, 0);

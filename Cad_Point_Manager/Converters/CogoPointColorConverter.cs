@@ -30,16 +30,16 @@ namespace Cad_Point_Manager.Converters
             {
                 if (isSelected)
                 {
-                    return new SolidColorBrush(GlobalHelperProperties._selectedCogoPointMouseOverColor);
+                    return new SolidColorBrush(GlobalHelperProperties.SelectedCogoPointMouseOverColor);
                 }
                 else
                 {
-                     return new SolidColorBrush(GlobalHelperProperties._mouseOverCogoPointColor);
+                     return new SolidColorBrush(GlobalHelperProperties.MouseOverCogoPointColor);
                 }
             }
             else if (isSelected)
             {
-                return new SolidColorBrush(GlobalHelperProperties._selectedCogoPointColor);
+                return new SolidColorBrush(GlobalHelperProperties.SelectedCogoPointColor);
             }
             else
             {

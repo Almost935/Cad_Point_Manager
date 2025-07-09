@@ -19,13 +19,14 @@ using System.Windows.Data;
 using Point = System.Windows.Point;
 using Vector2 = SharpDX.Vector2;
 using Vector3 = SharpDX.Vector3;
+using Vector4 = SharpDX.Vector4;
 
 namespace Cad_Point_Manager.Models
 {
     public class CadManager3D : INotifyPropertyChanged
     {
         #region Fields
-        private const float _pointSizeToExtentsFactor = 0.005f;
+        private const float _pointSizeToExtentsFactor = 0.001f;
 
         private D3dResCache _d3dResCache;
 
@@ -45,8 +46,7 @@ namespace Cad_Point_Manager.Models
         private Size2F _viewportSize = Size2F.Empty;
         private Enums.SelectionMode _snapSelectionMode = Enums.SelectionMode.All;
 
-        private float _pointBaseTextHeight;
-        private float _pointBaseMarkerSize;
+        private float _pointBaseScale;
 
         private readonly List<LineVertex> _cachedLineVertices = [];
         private readonly List<TextVertex> _cachedTextVertices = [];
@@ -234,14 +234,14 @@ namespace Cad_Point_Manager.Models
         public void LoadDxf(DxfDocument dxfDocument)
         {
             ClearDxf();
-
             DxfDocument = dxfDocument;
             Extents = DxfHelpers.GetBoundsFromHeader(DxfDocument);
-
             GetPointScale();
 
             // Testing
             GetTestDxfPoints();
+
+            CogoPointManager.UpdatePointExtents();
 
             foreach (var e in DxfDocument.Entities.All)
             {
@@ -263,22 +263,26 @@ namespace Cad_Point_Manager.Models
             HitTestableObjectTreeDirty = true;
             DxfNeedsReload = true;
         }
+
+        public void UpdateExtents()
+        {
+            Extents = Bounds.Union(Extents, CogoPointManager.Extents);
+        }
+
         public void GetPointScale()
         {
             if (Extents.IsEmpty)
             {
-                _pointBaseTextHeight = 1;
+                _pointBaseScale = 1;
                 return;
             }
             if (Extents.Width > Extents.Height)
             {
-                _pointBaseTextHeight = Extents.Width * _pointSizeToExtentsFactor;
-                _pointBaseMarkerSize = _pointBaseTextHeight * 0.05f;
+                _pointBaseScale = Extents.Width * _pointSizeToExtentsFactor;
             }
             else
             {
-                _pointBaseTextHeight = Extents.Height * _pointSizeToExtentsFactor;
-                _pointBaseMarkerSize = _pointBaseTextHeight * 0.05f;
+                _pointBaseScale = Extents.Height * _pointSizeToExtentsFactor;
             }
         }
 
@@ -447,21 +451,6 @@ namespace Cad_Point_Manager.Models
                     }
                 }
             }
-            if (hitTestableObject is CogoPoint dxfPoint)
-            {
-                for (int i = dxfPoint.TextStartIndex; i <= dxfPoint.TextEndIndex; i++)
-                {
-                    if (_cachedPointTextVertices is null || _cachedPointTextVertices.Count == 0) { continue; }
-                    ref var vertex = ref GetPointTextVertexRef(i);
-                    vertex.IsMouseOver = isMouseOver ? 1.0f : 0.0f;
-                }
-                for (int i = dxfPoint.MarkerStartIndex; i <= dxfPoint.MarkerEndIndex; i++)
-                {
-                    if (_cachedPointMarkerVertices is null || _cachedPointMarkerVertices.Count == 0) { continue; }
-                    ref var vertex = ref GetCircleVertexRef(i);
-                    vertex.IsMouseOver = isMouseOver ? 1.0f : 0.0f;
-                }
-            }
         }
 
         public void UpdateVerticesIsSelected(HitTestableObject hitTestableObject, bool isSelected)
@@ -504,18 +493,7 @@ namespace Cad_Point_Manager.Models
             }
             if (hitTestableObject is CogoPoint dxfPoint)
             {
-                for (int i = dxfPoint.TextStartIndex; i <= dxfPoint.TextEndIndex; i++)
-                {
-                    if (_cachedPointTextVertices is null || _cachedPointTextVertices.Count == 0) { continue; }
-                    ref var vertex = ref GetPointTextVertexRef(i);
-                    vertex.IsSelected = isSelected ? 1.0f : 0.0f;
-                }
-                for (int i = dxfPoint.MarkerStartIndex; i <= dxfPoint.MarkerEndIndex; i++)
-                {
-                    if (_cachedPointMarkerVertices is null || _cachedPointMarkerVertices.Count == 0) { continue; }
-                    ref var vertex = ref GetCircleVertexRef(i);
-                    vertex.IsSelected = isSelected ? 1.0f : 0.0f;
-                }
+
             }
         }
 
@@ -618,10 +596,7 @@ namespace Cad_Point_Manager.Models
 
                     foreach (var point in pointGroup.Points)
                     {
-                        point.TextStartIndex = _cachedPointTextVertices.Count;
-                        point.UpdateTextVertices(_pointTextVerticesDict);
-                        _cachedPointTextVertices.AddRange(point.TextVertices);
-                        point.TextEndIndex = _cachedPointTextVertices.Count - 1;
+
                     }
                 }
 
@@ -646,10 +621,7 @@ namespace Cad_Point_Manager.Models
 
                     foreach (CogoPoint point in pointGroup.Points)
                     {
-                        point.UpdateMarkerVertices();
-                        point.MarkerStartIndex = _cachedPointMarkerVertices.Count;
-                        _cachedPointMarkerVertices.AddRange(point.MarkerVertices);
-                        point.MarkerEndIndex = _cachedPointMarkerVertices.Count - 1;
+
                     }
                 }
                 PointCircleVerticesDirty = false;
@@ -659,20 +631,23 @@ namespace Cad_Point_Manager.Models
 
         public void GetTestDxfPoints()
         {
-            CogoPointManager.PointGroups.Clear();
+            //CogoPointManager.PointGroups.Clear();
 
-            //bool isCreated = CogoPointManager.TryCreatePointGroup("Point Group 1", new SharpDX.Vector4(1.0f, 0.0f, 0.0f, 1.0f),
-            //        _pointBaseTextHeight, _pointBaseMarkerSize, out var pointGroup);
+            //bool isCreated = CogoPointManager.TryCreatePointGroup("Point Group 1", new SharpDX.Vector4(1.0f, 0.0f, 0.0f, 1.0f), _pointBaseScale, out var pointGroup);
             //var groupActivated = CogoPointManager.TrySetActivePointGroup(pointGroup);
             //if (isCreated && groupActivated)
             //{
             //    var pointCreated = CogoPointManager.TryAddPointToActiveGroup(1, new Vector3(1000, 5000, 0), 0, "test");
             //}
 
+
+
+            CogoPointManager.PointGroups.Clear();
+
             float rows = 5;
             float cols = 15;
-            float yIncrement = Extents.Width / rows;
-            float xIncrement = Extents.Height / cols;
+            float yIncrement = Extents.Height / (rows - 1);
+            float xIncrement = Extents.Width / (cols - 1);
             int pointNum = 1;
             float elevation = 0;
             string description = "Test Point";
@@ -680,11 +655,10 @@ namespace Cad_Point_Manager.Models
             for (int i = 0; i < rows; i++)
             {
                 string pointGroupName = $"TestGroup {i + 1}";
-                bool created = CogoPointManager.TryCreatePointGroup(pointGroupName, new SharpDX.Vector4(1.0f, 0.0f, 0.0f, 1.0f),
-                    _pointBaseTextHeight, _pointBaseMarkerSize, out var pointGroup);
+                bool created = CogoPointManager.TryCreatePointGroup(pointGroupName, new SharpDX.Vector4(1.0f, 0.0f, 0.0f, 1.0f), _pointBaseScale, out var pointGroup);
                 if (created)
                 {
-                    var groupActivated = CogoPointManager.TrySetActivePointGroup(pointGroupName);
+                    var groupActivated = CogoPointManager.TrySetActivePointGroup(pointGroup);
                     if (!groupActivated) { continue; }
 
                     float y = Extents.Bottom + (yIncrement * i);
@@ -741,6 +715,33 @@ namespace Cad_Point_Manager.Models
         {
             HitTestableObjectTree = new(this, Extents.ToRect(), 5);
             HitTestableObjectTreeDirty = false;
+
+            // DrawingObjectTree Testing
+            //foreach (var node in HitTestableObjectTree.BaseLevelNodes)
+            //{
+            //    Vector4 color = new(0, 0, 0, 1);
+            //    var topLeft = new Vector3((float)node.Extents.Left, (float)node.Extents.Top, 0);
+            //    var bottomRight = new Vector3((float)node.Extents.Right, (float)node.Extents.Bottom, 0);
+            //    var bottomLeft = new Vector3((float)node.Extents.Left, (float)node.Extents.Bottom, 0);
+            //    var topRight = new Vector3((float)node.Extents.Right, (float)node.Extents.Top, 0);
+
+            //    LineVertex topLeftVertex = new(topLeft, color);
+            //    LineVertex bottomRightVertex = new(bottomRight, color);
+            //    LineVertex bottomLeftVertex = new(bottomLeft, color);
+            //    LineVertex topRightVertex = new(topRight, color);
+
+            //    _cachedLineVertices.Add(topLeftVertex);
+            //    _cachedLineVertices.Add(topRightVertex);
+
+            //    _cachedLineVertices.Add(bottomLeftVertex);
+            //    _cachedLineVertices.Add(bottomRightVertex);
+
+            //    _cachedLineVertices.Add(topLeftVertex);
+            //    _cachedLineVertices.Add(bottomLeftVertex);
+
+            //    _cachedLineVertices.Add(topRightVertex);
+            //    _cachedLineVertices.Add(bottomRightVertex);
+            //}
         }
         #endregion
     }

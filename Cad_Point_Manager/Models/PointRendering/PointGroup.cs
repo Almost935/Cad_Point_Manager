@@ -12,10 +12,8 @@ namespace Cad_Point_Manager.Models.PointRendering
         private string _name;
         private Vector4 _color = new(0, 0, 0, 1);
         private System.Windows.Media.Color _windowsColor = System.Windows.Media.Color.FromArgb(0, 0, 0, 1);
+        private System.Windows.Media.SolidColorBrush _windowsBrush;
         private bool _isVisible = true;
-        private float _textHeight;
-        private float _pointMarkerSize;
-        private float _baseSizeFactor = 1.00f;
         private ObservableCollection<CogoPoint> _points = [];
         private bool _colorToggleOpen = false;
         private CogoPointManager _cogoPointManager;
@@ -60,6 +58,18 @@ namespace Cad_Point_Manager.Models.PointRendering
                 }
             }
         }
+        public System.Windows.Media.SolidColorBrush WindowsBrush
+        {
+            get => _windowsBrush;
+            set
+            {
+                if (_windowsBrush != value)
+                {
+                    _windowsBrush = value;
+                    OnPropertyChanged(nameof(WindowsBrush));
+                }
+            }
+        }
         public bool IsVisible
         {
             get => _isVisible;
@@ -69,29 +79,6 @@ namespace Cad_Point_Manager.Models.PointRendering
                 {
                     _isVisible = value;
                     OnPropertyChanged(nameof(IsVisible));
-                }
-            }
-        }
-        public float TextHeight
-        {
-            get => _textHeight;
-            set
-            {
-                if (_textHeight != value)
-                {
-                    _textHeight = value;
-                    OnPropertyChanged(nameof(TextHeight));
-                }
-            }
-        }
-        public float PointMarkerSize {             
-            get => _pointMarkerSize;
-            set
-            {
-                if (_pointMarkerSize != value)
-                {
-                    _pointMarkerSize = value;
-                    OnPropertyChanged(nameof(PointMarkerSize));
                 }
             }
         }
@@ -131,18 +118,6 @@ namespace Cad_Point_Manager.Models.PointRendering
                 }
             }
         }
-        public float BaseSizeFactor
-        {
-            get => _baseSizeFactor;
-            set
-            {
-                if (_baseSizeFactor != value)
-                {
-                    _baseSizeFactor = value;
-                    OnPropertyChanged(nameof(BaseSizeFactor));
-                }
-            }
-        }
         public double PointScale
         {
             get => _pointScale;
@@ -155,24 +130,27 @@ namespace Cad_Point_Manager.Models.PointRendering
                 }
             }
         }
+
+        public double FontBaseSize { get; set; } = 4;
+        public double MarkerBaseSize { get; set; } = 0.75;
         #endregion
 
         #region Constructors
-        public PointGroup(string name, Vector4 color, float textHeight, float markerSize, CogoPointManager cogoPointManager)
+        public PointGroup(string name, Vector4 color, CogoPointManager cogoPointManager, double pointScale)
         {
             Name = name;
             Color = color;
             WindowsColor = System.Windows.Media.Color.FromArgb((byte)(color.W * 255), (byte)(color.X * 255), (byte)(color.Y * 255), (byte)(color.Z * 255));
-            TextHeight = textHeight;
-            PointMarkerSize = markerSize;
+            WindowsBrush = new(WindowsColor);
             CogoPointManager = cogoPointManager;
+            PointScale = pointScale;
         }
         #endregion
 
         #region Methods
         public void AddPoint(int pointNum, Vector3 position, float elevation = 0, string description = "")
         {
-            Points.Add(new(this, pointNum, position, TextHeight, PointMarkerSize, CogoPointManager, elevation, description));
+            Points.Add(new(this, pointNum, position, CogoPointManager, elevation, description));
         }
 
         public override string ToString()
@@ -180,11 +158,11 @@ namespace Cad_Point_Manager.Models.PointRendering
             return Name;
         }
 
-        public void UpdateScreenSpaceCoordinates(System.Windows.Media.Matrix matrix)
+        public void UpdateVisualTransforms(System.Windows.Media.Matrix matrix)
         {
             foreach (var point in Points)
             {
-                point.UpdateScreenSpaceCoordinates(matrix);
+                point.UpdateVisualTransform(matrix);
             }
         }
         public void UpdateWindowsColor()
@@ -194,6 +172,7 @@ namespace Cad_Point_Manager.Models.PointRendering
                 (byte)(Color.X * 255),
                 (byte)(Color.Y * 255),
                 (byte)(Color.Z * 255));
+            WindowsBrush = new(WindowsColor);
         }
         #endregion
 

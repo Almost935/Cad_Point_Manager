@@ -66,7 +66,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             _fontRenderingMinimumSize = fontRenderingMinimumSize;
             MaxWidth = maxWidth;
             TextAlignment = textAlignment;
-            GlowOffset = TextHeight * GlobalHelperProperties._textHeightToGlowOffsetFactor;
+            GlowOffset = TextHeight * GlobalHelperProperties.TextHeightToGlowOffsetFactor;
 
             UpdateTransform();
         }
@@ -84,7 +84,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             _textFormat = new(factory, FontFamilyName, fontWeight, fontStyle, TextHeight);
             TextLayout = new(factory, Text, _textFormat, float.MaxValue, float.MaxValue, 96, true);
 
-            SpaceWidth = TextHeight * GlobalHelperProperties._textHeightToSpaceWidthFactor;
+            SpaceWidth = TextHeight * GlobalHelperProperties.TextHeightToSpaceWidthFactor;
         }
 
         public void Tesselate(D3dResCache resCache)

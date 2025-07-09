@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -55,10 +56,15 @@ namespace Cad_Point_Manager.Models.HitTesting
 
         public bool BoundsInRect(Rect rect)
         {
-            if (Bounds.IsEmpty || rect.IsEmpty) { return false; }
+            if (Bounds.IsEmpty || rect.IsEmpty)
+            {
+                return false;
+            }
 
-            if (Bounds.IntersectsWith(rect) || Bounds.Contains(rect) || rect.Contains(Bounds)) { return true; }
-
+            if (Bounds.IntersectsWith(rect) || Bounds.Contains(rect) || rect.Contains(Bounds))
+            {
+                return true;
+            }
             return false;
         }
         #endregion

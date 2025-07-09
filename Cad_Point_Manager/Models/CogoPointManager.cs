@@ -80,6 +80,8 @@ namespace Cad_Point_Manager.Models
             }
         }
 
+        public Bounds Extents { get; set; } = Bounds.Empty;
+
         public List<int> UsedPointNumbers => PointGroups.SelectMany(pg => pg.Value.Points).Select(p => p.PointNumber).ToList();
         #endregion
 
@@ -91,20 +93,16 @@ namespace Cad_Point_Manager.Models
         #endregion
 
         #region Methods
-        private void GetBaseCogoPointSize()
-        {
-
-        }
         private bool PointNumberExists(int num)
         {
             return PointGroups.SelectMany(pg => pg.Value.Points).Any(p => p.PointNumber == num);
         }
 
-        public void UpdateScreenSpaceCoordinate(Matrix matrix)
+        public void UpdateVisualTransforms(Matrix matrix)
         {
             foreach (var pg in PointGroups)
             {
-                pg.Value.UpdateScreenSpaceCoordinates(matrix);
+                pg.Value.UpdateVisualTransforms(matrix);
             }
             //Parallel.ForEach(PointGroups, pointGroup =>
             //{
@@ -113,11 +111,11 @@ namespace Cad_Point_Manager.Models
         }
         public bool TrySetActivePointGroup(string groupName)
         {
-             bool exists = TryGetPointGroup(groupName, out PointGroup pointGroup);
-            if (exists) 
-            { 
+            bool exists = TryGetPointGroup(groupName, out PointGroup pointGroup);
+            if (exists)
+            {
                 ActivePointGroup = pointGroup;
-                return true; 
+                return true;
             }
             return false;
         }
@@ -144,7 +142,7 @@ namespace Cad_Point_Manager.Models
             return true;
         }
 
-        public bool TryCreatePointGroup(string groupName, Vector4 color, float textHeight, float markerSize, out PointGroup pointGroup)
+        public bool TryCreatePointGroup(string groupName, Vector4 color, double pointScale, out PointGroup pointGroup)
         {
             if (string.IsNullOrWhiteSpace(groupName))
             {
@@ -157,7 +155,7 @@ namespace Cad_Point_Manager.Models
                 return false;
             }
 
-            pointGroup = new(groupName, color, textHeight, markerSize, this);
+            pointGroup = new(groupName, color, this, pointScale);
             PointGroups.Add(new KeyValuePair<string, PointGroup>(groupName, pointGroup));
             return true;
         }
@@ -175,6 +173,40 @@ namespace Cad_Point_Manager.Models
             return true;
         }
 
+        public void UpdatePointExtents()
+        {
+            if (PointGroups == null || PointGroups.Count == 0) { Extents = Bounds.Empty; }
+
+            int processorCount = Environment.ProcessorCount;
+            var partialResults = new Rect[processorCount];
+
+            Parallel.For(0, processorCount, i =>
+            {
+                Bounds localUnion = Bounds.Empty;
+
+                // Use stride to balance uneven group sizes
+                for (int g = i; g < PointGroups.Count; g += processorCount)
+                {
+                    var group = PointGroups[g].Value;
+                    if (group?.Points == null) { continue; }
+
+                    foreach (var point in group.Points)
+                    {
+                        localUnion.Union(point.Bounds);
+                    }
+                }
+                partialResults[i] = localUnion;
+            });
+
+            Bounds finalUnion = Bounds.Empty;
+            foreach (var r in partialResults)
+            {
+                finalUnion.Union(r);
+            }
+
+            Extents = finalUnion;
+        }
+
         public void Reset()
         {
             PointGroups.Clear();
@@ -183,7 +215,7 @@ namespace Cad_Point_Manager.Models
 
         public void SetCadManagerPointVerticesDirty()
         {
-            if (!CadManager.PointTextVerticesDirty) 
+            if (!CadManager.PointTextVerticesDirty)
             {
                 CadManager.PointTextVerticesDirty = true;
             }
@@ -196,9 +228,9 @@ namespace Cad_Point_Manager.Models
         private void UpdateCogoPointsList()
         {
             CogoPoints.Clear();
-            foreach (var pointGroup in PointGroups) 
+            foreach (var pointGroup in PointGroups)
             {
-                foreach (var point in pointGroup.Value.Points) 
+                foreach (var point in pointGroup.Value.Points)
                 {
                     CogoPoints.Add(point);
                 }
