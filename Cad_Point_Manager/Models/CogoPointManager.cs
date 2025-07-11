@@ -80,7 +80,7 @@ namespace Cad_Point_Manager.Models
             }
         }
 
-        public Bounds Extents { get; set; } = Bounds.Empty;
+        public Rect Extents { get; set; } = Rect.Empty;
 
         public List<int> UsedPointNumbers => PointGroups.SelectMany(pg => pg.Value.Points).Select(p => p.PointNumber).ToList();
         #endregion
@@ -175,14 +175,14 @@ namespace Cad_Point_Manager.Models
 
         public void UpdatePointExtents()
         {
-            if (PointGroups == null || PointGroups.Count == 0) { Extents = Bounds.Empty; }
+            if (PointGroups == null || PointGroups.Count == 0) { Extents = Rect.Empty; }
 
             int processorCount = Environment.ProcessorCount;
             var partialResults = new Rect[processorCount];
 
             Parallel.For(0, processorCount, i =>
             {
-                Bounds localUnion = Bounds.Empty;
+                Rect localUnion = Rect.Empty;
 
                 // Use stride to balance uneven group sizes
                 for (int g = i; g < PointGroups.Count; g += processorCount)
@@ -198,7 +198,7 @@ namespace Cad_Point_Manager.Models
                 partialResults[i] = localUnion;
             });
 
-            Bounds finalUnion = Bounds.Empty;
+            Rect finalUnion = Rect.Empty;
             foreach (var r in partialResults)
             {
                 finalUnion.Union(r);

@@ -233,7 +233,7 @@
                                                Width="{Binding ElementName=BackgroundCanvas, Path=ActualWidth}"
                                                Height="{Binding ElementName=BackgroundCanvas, Path=ActualHeight}" />
                     <ItemsControl x:Name="SelectedPointButtonsItemsControl"
-                                  ItemsSource="{Binding CogoPoints}"
+                                  ItemsSource="{Binding SelectedCogoPoints}"
                                   Background="{x:Null}"
                                   Width="{Binding ElementName=BackgroundCanvas, Path=ActualWidth}"
                                   Height="{Binding ElementName=BackgroundCanvas, Path=ActualHeight}"

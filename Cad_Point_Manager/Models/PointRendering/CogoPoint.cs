@@ -16,6 +16,8 @@ namespace Cad_Point_Manager.Models.PointRendering
     public class CogoPoint : HitTestableObject
     {
         #region Fields
+        private const double _textInfoBaseOffset = 1.25;
+
         private int _pointNumber;
         private double _northing;
         private double _easting;
@@ -24,7 +26,6 @@ namespace Cad_Point_Manager.Models.PointRendering
         private string _description;
         private CogoPointManager _cogoPointManager;
         private Point _textInfoPosition = new();
-        private double _textInfoOffset = 0.65;
         private Point _textToggleButtonPosition = new();
         private Point _textToggleButtonScreenPosition = new();
         #endregion
@@ -123,18 +124,6 @@ namespace Cad_Point_Manager.Models.PointRendering
                 }
             }
         }
-        public double TextInfoOffset
-        {
-            get => _textInfoOffset;
-            set
-            {
-                if (_textInfoOffset != value)
-                {
-                    _textInfoOffset = value;
-                    OnPropertyChanged(nameof(TextInfoOffset));
-                }
-            }
-        }
         public Point TextToggleButtonPosition
         {
             get => _textToggleButtonPosition;
@@ -187,8 +176,8 @@ namespace Cad_Point_Manager.Models.PointRendering
         #region Methods
         private void GetTextLocations()
         {
-            TextInfoPosition = new(Position.X + _textInfoOffset, Position.Y);
-            TextToggleButtonPosition = new(Position.X + TextInfoOffset / 1.5, Position.Y);
+            TextInfoPosition = new(Position.X + (_textInfoBaseOffset * PointGroup.PointScale), Position.Y);
+            TextToggleButtonPosition = new(Position.X + +(_textInfoBaseOffset * PointGroup.PointScale) / 1.5, Position.Y);
         }
 
         public override double DistanceToPoint(Point p)
@@ -203,19 +192,11 @@ namespace Cad_Point_Manager.Models.PointRendering
         public override void MouseEnter()
         {
             this.IsMouseOver = true;
-            //VisualGroup.Visual.Effect = new DropShadowEffect()
-            //{
-            //    BlurRadius = 1,
-            //    Color = Colors.Black,
-            //    ShadowDepth = 0, 
-            //    RenderingBias = RenderingBias.Performance
-            //};
             RedrawVisual();
         }
         public override void MouseLeave()
         {
             this.IsMouseOver = false;
-            //VisualGroup.Visual.Effect = null;
             RedrawVisual();
         }
 
@@ -232,6 +213,7 @@ namespace Cad_Point_Manager.Models.PointRendering
 
         public void UpdateVisualTransform(Matrix matrix)
         {
+            TextToggleButtonScreenPosition = matrix.Transform(TextToggleButtonPosition);
             VisualGroup.UpdateTransform(matrix);
         }
         public void RedrawVisual()

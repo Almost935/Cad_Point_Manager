@@ -50,34 +50,21 @@ namespace Cad_Point_Manager.Models.HitTesting
                 Extents = Rect.Empty;
             }
 
-            int processorCount = Environment.ProcessorCount;
-            int chunkSize = (int)Math.Ceiling(HitTestableObjects.Count / (double)processorCount);
+            Rect newExtents = Rect.Empty;
 
-            var partialResults = new Rect[processorCount];
-
-            Parallel.For(0, processorCount, i =>
+            foreach (var hitTestableObject in HitTestableObjects)
             {
-                int start = i * chunkSize;
-                int end = Math.Min(start + chunkSize, HitTestableObjects.Count);
-
-                Rect localUnion = Rect.Empty;
-
-                for (int j = start; j < end; j++)
+                if (newExtents.IsEmpty)
                 {
-                    localUnion.Union(HitTestableObjects[j].Bounds);
+                    newExtents = hitTestableObject.Bounds;
                 }
-
-                partialResults[i] = localUnion;
-            });
-
-            // Merge partial results
-            Rect finalUnion = Rect.Empty;
-            foreach (var r in partialResults)
-            {
-                finalUnion.Union(r);
+                else
+                {
+                    newExtents.Union(hitTestableObject.Bounds);
+                }
             }
 
-            Extents = finalUnion;
+            Extents = newExtents;
         }
         private void GetRoot()
         {

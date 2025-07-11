@@ -685,18 +685,14 @@ namespace Cad_Point_Manager.Controls.D3DControl
             }
             else
             {
-                float centerX = (CadManager3D.Extents.Left + CadManager3D.Extents.Right) * 0.5f;
-                float centerY = (CadManager3D.Extents.Bottom + CadManager3D.Extents.Top) * 0.5f;
+                double scale = Math.Min(Viewport.Width / CadManager3D.Extents.Width, Viewport.Height / CadManager3D.Extents.Height);
 
-                float scale = Math.Min(Viewport.Width / CadManager3D.Extents.Width, Viewport.Height / CadManager3D.Extents.Height);
-
-                //_dxfInitialMatrix = Matrix.Scaling(scale, scale, 1) * Matrix.Translation(-centerX, -centerY, 0);
-                _dxfInitialMatrix = Matrix.Scaling(scale, scale, 1) * Matrix.Translation(-CadManager3D.Extents.Left, -CadManager3D.Extents.Bottom, 0);
-                //_dxfInitialMatrix = Matrix.Identity;
+                _dxfInitialMatrix = Matrix.Scaling(scale.ToFloat(), scale.ToFloat(), 1) * Matrix.Translation(-CadManager3D.Extents.Left.ToFloat(), -CadManager3D.Extents.Top.ToFloat(), 0);
 
                 if (Camera is not null)
                 {
                     Camera.ResetView(_dxfInitialMatrix, CadManager3D.Extents);
+                    CadManager3D.CogoPointManager.UpdateVisualTransforms(Camera.D2dMatrix.ToWindowsMatrix());
                     _hittestStrokeThickness = 7.0f / (Camera.InitialViewMatrix.M11 * Camera.CurrentZoom);
 
                     ConstantBuffersDirty = true;

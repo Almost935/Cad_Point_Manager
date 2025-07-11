@@ -151,8 +151,6 @@ namespace Cad_Point_Manager.ViewModels
         #region Constructors
         public MainViewModel()
         {
-            CogoPoints = new ObservableCollection<CogoPoint>();
-
             NewJobCommand = new RelayCommand<RoutedEventArgs>(NewJob);
             LoadJobCommand = new RelayCommand<RoutedEventArgs>(LoadJob);
             AttachDxfFileCommand = new RelayCommand<RoutedEventArgs>(AttachDxfFile);

@@ -1,9 +1,11 @@
 ﻿using Cad_Point_Manager.Models;
+using Cad_Point_Manager.Extensions;
 using SharpDX;
 using SharpDX.Mathematics.Interop;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using System.Windows;
 
 namespace Cad_Point_Manager.Controls.D3DControl
 {
@@ -43,15 +45,15 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public float CurrentZoom => (float)Math.Pow(_zoomFactor, CurrentZoomStep);
         public Rotation CurrentRotation { get; set; } = Rotation.NoRotation;
         public bool IsIn3DView { get; set; } = false;
-        public Bounds Extents { get; set; } = Bounds.Empty;
+        public Rect Extents { get; set; } = Rect.Empty;
         #endregion
 
         #region Constructors
-        public Camera(ViewportF viewport, float zoomFactor, Bounds bounds)
+        public Camera(ViewportF viewport, float zoomFactor, Rect extents)
         {
             Viewport = viewport;
             _zoomFactor = zoomFactor;
-            Extents = bounds;
+            Extents = extents;
 
             ResetToDefaults();
         }
@@ -67,20 +69,15 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
 
         public void UpdateProjection()
-        {
-            Vector2 basePoint = new(Extents.Center.X, Extents.Center.Y);
+        { 
+            Vector2 basePoint = new(Extents.Center().X.ToFloat(), Extents.Center().Y.ToFloat());
             
             float scaledViewWidth = Viewport.Width / InitialViewMatrix.M11;
             float scaledViewHeight = Viewport.Height / InitialViewMatrix.M11;
             ProjectionMatrix = Matrix.OrthoOffCenterLH(basePoint.X - scaledViewWidth / 2, basePoint.X + scaledViewWidth / 2, basePoint.Y - scaledViewHeight / 2, basePoint.Y + scaledViewHeight / 2, 0.1f, 1000f);
-            
-            //ProjectionMatrix = Matrix.OrthoLH(Viewport.Width, Viewport.Height, 0.1f, 1000f);
-            //ProjectionMatrix = Matrix.OrthoOffCenterLH(0, Viewport.Width, 0, Viewport.Height, 0.1f, 1000f);
-            //ProjectionMatrix = Matrix.OrthoOffCenterLH(Extents.Center.X - (Viewport.Width / 6), Extents.Center.X + (Viewport.Width / 6),
-            //    Extents.Center.Y - (Viewport.Height / 6), Extents.Center.Y + (Viewport.Height / 6), 0.1f, 1000f);
         }
 
-        public void ResetView(Matrix newInitialView, Bounds newExtents)
+        public void ResetView(Matrix newInitialView, Rect newExtents)
         {
             ZeroViews();
 
@@ -88,16 +85,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             InitialViewMatrix = newInitialView;
 
             UpdateProjection();
-
-            //InitialViewMatrix = newInitialView;
-            //_scaledInitialViewMatrix = InitialViewMatrix;
-
-            //float scaleX = ProjectionMatrix.M11 * newInitialView.M11;
-            //float scaleY = ProjectionMatrix.M22 * newInitialView.M22;
-
-            //_scaledInitialViewMatrix.M41 *= scaleX;
-            //_scaledInitialViewMatrix.M42 *= scaleY;
-
             UpdateViewProjection();
         }
         public void ZeroViews()

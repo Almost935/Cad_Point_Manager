@@ -27,6 +27,8 @@ namespace Cad_Point_Manager.Views
 
         #region Properties
         public DrawingVisual Visual { get; set; } = new();
+        public DrawingVisual MarkerVisual { get; set; } = new();
+        public DrawingVisual TextVisual { get; set; } = new();
         public CogoPoint Point { get; }
         public Rect Bounds { get; private set; }
         #endregion
@@ -56,7 +58,10 @@ namespace Cad_Point_Manager.Views
             double desiredTextSize = Point.PointGroup.FontBaseSize * Point.PointGroup.PointScale;
             double textScaleFactor = desiredTextSize / _baseRenderTextSize;
 
-            Brush brush = group.WindowsBrush;
+            Brush brush;
+            if (Point.IsSelected) { brush = GlobalHelperProperties.SelectedCogoPointBrush; }
+            else { brush = group.WindowsBrush; }
+
             Brush glowBrush = new SolidColorBrush(Color.FromArgb(80, 0, 0, 0));
             Pen textGlowPen = new(glowBrush, 0.75);
             
@@ -99,7 +104,6 @@ namespace Cad_Point_Manager.Views
                 var rectGeom = new RectangleGeometry(textGeom.Bounds);
                 _textHitTestGeometry.Children.Add(rectGeom);
 
-                //dc.DrawGeometry(brush, null, textGeom);
                 if (Point.IsMouseOver)
                 {
                     dc.DrawGeometry(glowBrush, textGlowPen, textGeom);
@@ -109,8 +113,6 @@ namespace Cad_Point_Manager.Views
 
             var textTransform = new ScaleTransform(textScaleFactor, -textScaleFactor, textOrigin.X, textOrigin.Y);
             _textHitTestGeometry.Transform = textTransform;
-
-            dc.Pop();
 
             Bounds = Rect.Union(_ellipseGeometry.Bounds, _textHitTestGeometry.Bounds);
 

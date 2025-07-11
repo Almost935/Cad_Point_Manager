@@ -46,6 +46,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         #region Constructor
         public DrawingMtext3D(MText mtext, ObjectLayer3D layer, bool isPartOfBlock = false, DrawingBlock3D block = null)
         {
+            Type = DrawingObject3dType.DrawingMtext3D;
             DxfMtext = mtext;
             EntityObject = mtext;
             Layer = layer;

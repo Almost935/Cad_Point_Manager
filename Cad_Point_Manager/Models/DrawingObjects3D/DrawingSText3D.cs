@@ -184,7 +184,21 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         {
             return 1000;
         }
-        public override void UpdateBounds() { }
+        public override void UpdateBounds() 
+        {
+            if (TextVertices.Count == 0)
+            {
+                Bounds = System.Windows.Rect.Empty;
+                return;
+            }
+
+            float minX = TextVertices.Min(v => v.Position.X);
+            float maxX = TextVertices.Max(v => v.Position.X);
+            float minY = TextVertices.Min(v => v.Position.Y);
+            float maxY = TextVertices.Max(v => v.Position.Y);
+
+            Bounds = new System.Windows.Rect(minX, minY, maxX - minX, maxY - minY);
+        }
         public override void DrawToD2dDeviceContext(DeviceContext1 deviceContext, SharpDX.Direct2D1.Factory2 factory, Brush brush, float thickness, StrokeStyle1 strokeStyle)
         {
             //deviceContext.DrawTextLayout(new RawVector2((float)Position.X, -(float)Position.Y), TextLayout, brush);
@@ -258,12 +272,8 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             //(TransformedGeometry geometry, RawRectangleF bounds) = TextRenderingHelpers.CreateTextGeometry(resCache, Text, TextLayout, fontSizeScaleFactor, TextHeight, _fontFace, _flatteningTolerance);
             (List<Vector2> vertices, RawRectangleF bounds) = TextRenderingHelpers.TesselateTextLayout(resCache, TextLayout, Text, _fontFace);
 
-            Bounds = new System.Windows.Rect(
-                bounds.Left,
-                bounds.Top,
-                bounds.Right - bounds.Left,
-                bounds.Bottom - bounds.Top);
             TextVertices = GetVertices(vertices);
+            UpdateBounds();
         }
 
         public List<TextVertex> GetVertices(List<Vector2> vertices)

@@ -7,6 +7,7 @@ using Vector3 = netDxf.Vector3;
 using Cad_Point_Manager.Models;
 using Cad_Point_Manager.Controls.D3DControl;
 using Cad_Point_Manager.Models.DrawingObjects3D;
+using System.Diagnostics;
 
 namespace Cad_Point_Manager.Helpers
 {
@@ -28,9 +29,9 @@ namespace Cad_Point_Manager.Helpers
             return Rect.Empty;
         }
 
-        public static Bounds GetBoundsFromHeader(DxfDocument doc)
+        public static Rect GetBoundsFromHeader(DxfDocument doc)
         {
-            if (doc == null) return Bounds.Empty;
+            if (doc == null) { return Rect.Empty; }
 
             if (doc.DrawingVariables.TryGetCustomVariable("$EXTMIN", out HeaderVariable extMinHeaderVariable) &&
                 doc.DrawingVariables.TryGetCustomVariable("$EXTMAX", out HeaderVariable extMaxHeaderVariable))
@@ -38,10 +39,10 @@ namespace Cad_Point_Manager.Helpers
                 Vector3 extMin = (Vector3)extMinHeaderVariable.Value;
                 Vector3 extMax = (Vector3)extMaxHeaderVariable.Value;
 
-                return new Bounds((float)extMin.X, (float)extMax.X, (float)extMin.Y, (float)extMax.Y);
+                return new Rect((float)extMin.X, (float)extMin.Y, (float)(extMax.X - extMin.X), (float)(extMax.Y - extMin.Y));
             }
 
-            return Bounds.Empty;
+            return Rect.Empty;
         }
 
         // DrawingObject3D getters

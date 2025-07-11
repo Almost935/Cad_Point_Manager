@@ -6,6 +6,7 @@ using Cad_Point_Manager.Models.DrawingObjects3D;
 using Cad_Point_Manager.Models.HitTesting;
 using Cad_Point_Manager.Models.PointRendering;
 using netDxf;
+using netDxf.Entities;
 using netDxf.Tables;
 using SharpDX;
 using System.Collections.ObjectModel;
@@ -37,7 +38,7 @@ namespace Cad_Point_Manager.Models
         private bool _dxfPointCircleVerticesDirty = true;
         private bool _drawingObjectTreeDirty = true;
         private bool _dxfNeedsReload = true;
-        private Bounds _extents = Bounds.Empty;
+        private Rect _extents = Rect.Empty;
         private ObservableCollection<KeyValuePair<string, ObjectLayer3D>> _layers = [];
         private ICollectionView _layersView;
         private ICollectionView _pointGroupsView;
@@ -120,7 +121,7 @@ namespace Cad_Point_Manager.Models
                 OnPropertyChanged();
             }
         }
-        public Bounds Extents
+        public Rect Extents
         {
             get => _extents;
             set
@@ -245,6 +246,9 @@ namespace Cad_Point_Manager.Models
 
             foreach (var e in DxfDocument.Entities.All)
             {
+                if (e is MText mtext && string.IsNullOrWhiteSpace(mtext.Value)) { continue; }
+                if (e is Text text && string.IsNullOrWhiteSpace(text.Value)) { continue; }
+
                 var layer = GetLayer(e.Layer);
                 var drawingObj3d = DxfHelpers.GetDrawingObject3D(e, layer);
 
@@ -266,7 +270,7 @@ namespace Cad_Point_Manager.Models
 
         public void UpdateExtents()
         {
-            Extents = Bounds.Union(Extents, CogoPointManager.Extents);
+            Extents = Rect.Union(Extents, CogoPointManager.Extents);
         }
 
         public void GetPointScale()
@@ -278,11 +282,11 @@ namespace Cad_Point_Manager.Models
             }
             if (Extents.Width > Extents.Height)
             {
-                _pointBaseScale = Extents.Width * _pointSizeToExtentsFactor;
+                _pointBaseScale = Extents.Width.ToFloat() * _pointSizeToExtentsFactor;
             }
             else
             {
-                _pointBaseScale = Extents.Height * _pointSizeToExtentsFactor;
+                _pointBaseScale = Extents.Height.ToFloat() * _pointSizeToExtentsFactor;
             }
         }
 
@@ -528,7 +532,6 @@ namespace Cad_Point_Manager.Models
                 }
 
                 LineVerticesDirty = false;
-                HitTestableObjectTreeDirty = true;
             }
             return CollectionsMarshal.AsSpan(_cachedLineVertices);
         }
@@ -569,7 +572,6 @@ namespace Cad_Point_Manager.Models
                     }
                 }
                 TextVerticesDirty = false;
-                HitTestableObjectTreeDirty = true;
             }
 
             return CollectionsMarshal.AsSpan(_cachedTextVertices);
@@ -588,20 +590,7 @@ namespace Cad_Point_Manager.Models
 
                 _pointTextVerticesDict ??= new(d3DResCache);
 
-                foreach (var keyValuePair in CogoPointManager.PointGroups)
-                {
-                    var pointGroup = keyValuePair.Value;
-
-                    if (!pointGroup.IsVisible || pointGroup is null) { continue; }
-
-                    foreach (var point in pointGroup.Points)
-                    {
-
-                    }
-                }
-
                 PointTextVerticesDirty = false;
-                HitTestableObjectTreeDirty = true;
             }
 
             return CollectionsMarshal.AsSpan(_cachedPointTextVertices);
@@ -646,8 +635,8 @@ namespace Cad_Point_Manager.Models
 
             float rows = 5;
             float cols = 15;
-            float yIncrement = Extents.Height / (rows - 1);
-            float xIncrement = Extents.Width / (cols - 1);
+            float yIncrement = Extents.Height.ToFloat() / (rows - 1);
+            float xIncrement = Extents.Width.ToFloat() / (cols - 1);
             int pointNum = 1;
             float elevation = 0;
             string description = "Test Point";
@@ -661,11 +650,11 @@ namespace Cad_Point_Manager.Models
                     var groupActivated = CogoPointManager.TrySetActivePointGroup(pointGroup);
                     if (!groupActivated) { continue; }
 
-                    float y = Extents.Bottom + (yIncrement * i);
+                    float y = Extents.Top.ToFloat() + (yIncrement * i);
 
                     for (int j = 0; j < cols; j++)
                     {
-                        float x = Extents.Left + (xIncrement * j);
+                        float x = Extents.Left.ToFloat() + (xIncrement * j);
                         var pointCreated = CogoPointManager.TryAddPointToActiveGroup(pointNum, new Vector3(x, y, 0), elevation, description);
                         if (pointCreated) { pointNum++; continue; }
                     }
@@ -713,10 +702,9 @@ namespace Cad_Point_Manager.Models
 
         public void UpdateHitTestableObjectTree()
         {
-            HitTestableObjectTree = new(this, Extents.ToRect(), 5);
-            HitTestableObjectTreeDirty = false;
+            HitTestableObjectTree = new(this, Extents, 5);
 
-            // DrawingObjectTree Testing
+            //// DrawingObjectTree Testing
             //foreach (var node in HitTestableObjectTree.BaseLevelNodes)
             //{
             //    Vector4 color = new(0, 0, 0, 1);
@@ -742,6 +730,8 @@ namespace Cad_Point_Manager.Models
             //    _cachedLineVertices.Add(topRightVertex);
             //    _cachedLineVertices.Add(bottomRightVertex);
             //}
+
+            HitTestableObjectTreeDirty = false;
         }
         #endregion
     }
