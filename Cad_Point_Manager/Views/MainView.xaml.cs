@@ -1,4 +1,5 @@
 ﻿using Cad_Point_Manager.Controls.D3DControl;
+using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Helpers;
 using Cad_Point_Manager.Models.PointRendering;
 using Cad_Point_Manager.ViewModels;
@@ -14,6 +15,8 @@ namespace Cad_Point_Manager.Views
     /// </summary>
     public partial class MainView : Page
     {
+        private bool _isDraggingText = false;
+
         public MainView(MainViewModel mainViewModel)
         {
             this.DataContext = mainViewModel;

@@ -13,12 +13,19 @@ using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
+using System.Windows.Media;
+using Point = System.Windows.Point;
 
 namespace Cad_Point_Manager.ViewModels
 {
     public class MainViewModel : INotifyPropertyChanged
     {
         #region Fields
+        private CogoPoint? _draggingPoint;
+        private Point _lastTextDragUpdatePosition = new();
+        private Point _latestMouseWorldPosition = new();
+        private bool _isRenderingAttached = false;
+
         private JobFileManager _jobFileManager = new();
         private bool _jobFileLoaded = false;
         private string _dxfFilePath;
@@ -29,7 +36,7 @@ namespace Cad_Point_Manager.ViewModels
         private ObservableCollection<CogoPoint> _cogoPoints;
         private ObservableCollection<CogoPoint> _selectedCogoPoints = [];
         private HitTestablePoint _snappedPoint;
-        private ObservableCollection<HitTestablePoint> _selectedPoints = [];
+        private Point _mousePosition = new();
         #endregion
 
         #region Properties
@@ -126,13 +133,13 @@ namespace Cad_Point_Manager.ViewModels
                 OnPropertyChanged(nameof(SnappedPoint));
             }
         }
-        public ObservableCollection<HitTestablePoint> SelectedPoints
+        public Point MousePosition
         {
-            get => _selectedPoints;
+            get => _mousePosition;
             set
             {
-                _selectedPoints = value;
-                OnPropertyChanged(nameof(SelectedPoints));
+                _mousePosition = value;
+                OnPropertyChanged(nameof(MousePosition));
             }
         }
         #endregion
@@ -144,8 +151,11 @@ namespace Cad_Point_Manager.ViewModels
         public ICommand SaveJobCommand { get; set; }
         public ICommand SaveAsJobCommand { get; set; }
         public ICommand ZoomToExtentsCommand { get; set; }
-        public ICommand CogoPointClickedCommand { get; set; }
+
         public ICommand SnapToggleCommand => new RelayCommand<object>(OnSnapTogglePressed);
+
+        public ICommand CogoPointCheckedCommand { get; set; }
+        public ICommand CogoPointUncheckedCommand { get; set; }
         #endregion
 
         #region Constructors
@@ -159,7 +169,8 @@ namespace Cad_Point_Manager.ViewModels
 
             ZoomToExtentsCommand = new RelayCommand<RoutedEventArgs>(ZoomToExtents);
 
-            CogoPointClickedCommand = new RelayCommand<CogoPoint>(OnCogoPointClicked);
+            CogoPointCheckedCommand = new RelayCommand<CogoPoint>(OnCogoPointToggleButtonChecked);
+            CogoPointUncheckedCommand = new RelayCommand<CogoPoint>(OnCogoPointToggleButtonUnchecked);
         }
         #endregion
 
@@ -251,24 +262,53 @@ namespace Cad_Point_Manager.ViewModels
             }
         }
 
-        private void OnCogoPointClicked(CogoPoint point)
-        {
-            if (point == null) { return; }
 
-            if (point.IsSelected)
+        // CogoPoint Movement Methods
+        private void OnCogoPointToggleButtonChecked(CogoPoint point)
+        {
+            EndDraggingText();
+            BeginDraggingText(point);
+        }
+        private void OnCogoPointToggleButtonUnchecked(CogoPoint point)
+        {
+            EndDraggingText();
+        }
+        public void BeginDraggingText(CogoPoint point)
+        {
+            _draggingPoint = point;
+            point.MouseLeave();
+            _lastTextDragUpdatePosition = MousePosition;
+            point.MoveTextInfoToPoint(MousePosition);
+
+            if (!_isRenderingAttached)
             {
-                point.IsSelected = false;
-                SelectedCogoPoints.Remove(point);
-            }
-            else
-            {
-                point.IsSelected = true;
-                if (!SelectedCogoPoints.Contains(point))
-                {
-                    SelectedCogoPoints.Add(point);
-                }
+                CompositionTarget.Rendering += OnRenderFrame;
+                _isRenderingAttached = true;
             }
         }
+        public void EndDraggingText()
+        {
+            if (_draggingPoint != null)
+            {
+                _draggingPoint = null;
+            }
+
+            if (_isRenderingAttached)
+            {
+                CompositionTarget.Rendering -= OnRenderFrame;
+                _isRenderingAttached = false;
+            }
+        }
+        private void OnRenderFrame(object? sender, EventArgs e)
+        {
+            if (_draggingPoint == null) { return; }
+
+            var translate = MousePosition - _lastTextDragUpdatePosition;
+            _draggingPoint.TranslateTextInfo(translate);
+            _draggingPoint.RedrawTextVisual();
+            _lastTextDragUpdatePosition = MousePosition;
+        }
+
         #endregion
 
         #region INotifyPropertyChanged

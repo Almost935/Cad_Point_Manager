@@ -193,7 +193,8 @@
                                    Width="{Binding ElementName=dxfGrid, Path=ActualWidth}"
                                    Height="{Binding ElementName=dxfGrid, Path=ActualHeight}"
                                    SnappedSignificantPoint="{Binding SnappedPoint, Mode=TwoWay}"
-                                   Focusable="True" />
+                                   Focusable="True" 
+                                   MousePosition="{Binding MousePosition, Mode=OneWayToSource}"/>
 
                 <Canvas x:Name="BackgroundCanvas">
                     <uc:SignificantPointControl HitTestablePoint="{Binding DataContext.SnappedPoint, RelativeSource={RelativeSource AncestorType=Page}}"
@@ -226,7 +227,7 @@
                     </uc:SignificantPointControl>
                     <views:CogoPointVisualHost x:Name="CogoPointVisualHost"
                                                CogoPoints="{Binding CogoPoints, Mode=OneWay}"
-                                               Panel.ZIndex="10"
+                                               Panel.ZIndex="2"
                                                IsHitTestVisible="False"
                                                HorizontalAlignment="Stretch"
                                                VerticalAlignment="Stretch"
@@ -239,7 +240,8 @@
                                   Height="{Binding ElementName=BackgroundCanvas, Path=ActualHeight}"
                                   PreviewMouseWheel="SelectedPointButtonsItemsControl_PreviewMouseWheel"
                                   PreviewMouseMove="SelectedPointButtonsItemsControl_PreviewMouseMove"
-                                  RenderOptions.BitmapScalingMode="LowQuality">
+                                  RenderOptions.BitmapScalingMode="LowQuality"
+                                  Panel.ZIndex="3">
                         <ItemsControl.Resources>
                             <sys:Double x:Key="EllipseSize">0.4</sys:Double>
                             <sys:Double x:Key="StandardLineHeight">1.65</sys:Double>
@@ -260,18 +262,23 @@
                                                   Width="{StaticResource ToggleButtonSize}"
                                                   Height="{StaticResource ToggleButtonSize}"
                                                   Visibility="{Binding IsSelected, Converter={StaticResource BoolToVisibilityConverter}}"
-                                                  Panel.ZIndex="2">
+                                                  Panel.ZIndex="2"
+                                                  IsChecked="{Binding TextBeingMoved}">
                                         <ToggleButton.RenderTransform>
                                             <TransformGroup>
-                                                <TranslateTransform X="0"
-                                                                    Y="{Binding ElementName=PointToggleButton, Path=Height, Converter={StaticResource CenterTranslationConverter}, ConverterParameter=1}" />
+                                                <TranslateTransform X="{Binding ElementName=PointToggleButton, Path=Width, Converter={StaticResource CenterTranslationConverter}, ConverterParameter=0.5}"
+                                                                    Y="{Binding ElementName=PointToggleButton, Path=Height, Converter={StaticResource CenterTranslationConverter}, ConverterParameter=0.5}" />
                                                 <TranslateTransform X="{Binding TextToggleButtonScreenPosition.X}"
                                                                     Y="{Binding TextToggleButtonScreenPosition.Y}" />
                                             </TransformGroup>
                                         </ToggleButton.RenderTransform>
                                         <i:Interaction.Triggers>
-                                            <i:EventTrigger EventName="MouseLeftButtonDown">
-                                                <i:InvokeCommandAction Command="{Binding DataContext.CogoPointClickedCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                            <i:EventTrigger EventName="Checked">
+                                                <i:InvokeCommandAction Command="{Binding DataContext.CogoPointCheckedCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                                       CommandParameter="{Binding}" />
+                                            </i:EventTrigger>
+                                            <i:EventTrigger EventName="Unchecked">
+                                                <i:InvokeCommandAction Command="{Binding DataContext.CogoPointUncheckedCommand, RelativeSource={RelativeSource AncestorType=Page}}"
                                                                        CommandParameter="{Binding}" />
                                             </i:EventTrigger>
                                         </i:Interaction.Triggers>

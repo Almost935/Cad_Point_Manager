@@ -98,17 +98,29 @@ namespace Cad_Point_Manager.Models
             return PointGroups.SelectMany(pg => pg.Value.Points).Any(p => p.PointNumber == num);
         }
 
-        public void UpdateVisualTransforms(Matrix matrix)
+        public void UpdateAllVisualTransforms(Matrix matrix)
         {
             foreach (var pg in PointGroups)
             {
-                pg.Value.UpdateVisualTransforms(matrix);
+                pg.Value.UpdateMarkerVisualTransforms(matrix);
+                pg.Value.UpdateTextVisualTransforms(matrix);
             }
-            //Parallel.ForEach(PointGroups, pointGroup =>
-            //{
-            //    pointGroup.Value.UpdateScreenSpaceCoordinates(matrix);
-            //});
         }
+        public void UpdateMarkerVisualTransforms(Matrix matrix)
+        {
+            foreach (var pg in PointGroups)
+            {
+                pg.Value.UpdateMarkerVisualTransforms(matrix);
+            }
+        }
+        public void UpdateTextVisualTransforms(Matrix matrix)
+        {
+            foreach (var pg in PointGroups)
+            {
+                pg.Value.UpdateTextVisualTransforms(matrix);
+            }
+        }
+
         public bool TrySetActivePointGroup(string groupName)
         {
             bool exists = TryGetPointGroup(groupName, out PointGroup pointGroup);

@@ -10,13 +10,14 @@ using System.Windows.Media.Effects;
 using System.Windows.Media;
 using Matrix = System.Windows.Media.Matrix;
 using Point = System.Windows.Point;
+using System.Drawing.Drawing2D;
 
 namespace Cad_Point_Manager.Models.PointRendering
 {
     public class CogoPoint : HitTestableObject
     {
         #region Fields
-        private const double _textInfoBaseOffset = 1.25;
+        private const double _textToggleButtonOffset = 0;
 
         private int _pointNumber;
         private double _northing;
@@ -25,9 +26,11 @@ namespace Cad_Point_Manager.Models.PointRendering
         private PointGroup _pointGroup;
         private string _description;
         private CogoPointManager _cogoPointManager;
-        private Point _textInfoPosition = new();
         private Point _textToggleButtonPosition = new();
         private Point _textToggleButtonScreenPosition = new();
+        private bool _textBeingMoved = false;
+        private double _textInfoBaseOffset = 1.25;
+        private Vector _textInfoCurrentTranslate = new Vector();
         #endregion
 
         #region Properties
@@ -112,18 +115,6 @@ namespace Cad_Point_Manager.Models.PointRendering
                 }
             }
         }
-        public Point TextInfoPosition
-        {
-            get => _textInfoPosition;
-            set
-            {
-                if (_textInfoPosition != value)
-                {
-                    _textInfoPosition = value;
-                    OnPropertyChanged(nameof(TextInfoPosition));
-                }
-            }
-        }
         public Point TextToggleButtonPosition
         {
             get => _textToggleButtonPosition;
@@ -148,17 +139,56 @@ namespace Cad_Point_Manager.Models.PointRendering
                 }
             }
         }
+        public bool TextBeingMoved
+        {
+            get => _textBeingMoved;
+            set
+            {
+                if (_textBeingMoved != value)
+                {
+                    _textBeingMoved = value;
+                    OnPropertyChanged(nameof(TextBeingMoved));
+                }
+            }
+        }
+        public double TextInfoBaseOffset
+        {
+            get => _textInfoBaseOffset;
+            set
+            {
+                if (_textInfoBaseOffset != value)
+                {
+                    _textInfoBaseOffset = value;
+                    OnPropertyChanged(nameof(TextInfoBaseOffset));
+                }
+            }
+        }
+        public Vector TextInfoCurrentOffset
+        {
+            get => _textInfoCurrentTranslate;
+            set
+            {
+                if (_textInfoCurrentTranslate != value)
+                {
+                    _textInfoCurrentTranslate = value;
+                    OnPropertyChanged(nameof(TextInfoCurrentOffset));
+                }
+            }
+        }
 
-        public Point Position => new(Easting, Northing); 
+        public Point Position => new(Easting, Northing);
         public bool HasPointNumberError => HasErrorsFor(nameof(PointNumber));
 
         public CogoPointVisualGroup VisualGroup { get; set; }
+        public Matrix CurrentlyAppliedMarkerMatrix { get; set; } = Matrix.Identity;
+        public Matrix CurrentlyAppliedTextMatrix { get; set; } = Matrix.Identity;
+        public bool TextInfoInBasePosition { get; set; } = true;
         #endregion
 
         #region Constructors
-        public CogoPoint(PointGroup pointGroup, int pointNum, Vector3 position, 
+        public CogoPoint(PointGroup pointGroup, int pointNum, Vector3 position,
             CogoPointManager cogoPointManager, float elevation = 0, string description = "")
-        { 
+        {
             CogoPointManager = cogoPointManager;
             PointGroup = pointGroup;
             PointNumber = pointNum;
@@ -166,7 +196,7 @@ namespace Cad_Point_Manager.Models.PointRendering
             Easting = position.X;
             Elevation = elevation;
             Description = description;
-            GetTextLocations();
+            ResetTextLocations();
 
             VisualGroup = new(this);
             UpdateBounds();
@@ -174,12 +204,6 @@ namespace Cad_Point_Manager.Models.PointRendering
         #endregion
 
         #region Methods
-        private void GetTextLocations()
-        {
-            TextInfoPosition = new(Position.X + (_textInfoBaseOffset * PointGroup.PointScale), Position.Y);
-            TextToggleButtonPosition = new(Position.X + +(_textInfoBaseOffset * PointGroup.PointScale) / 1.5, Position.Y);
-        }
-
         public override double DistanceToPoint(Point p)
         {
             return VisualGroup.DistanceToPoint(p);
@@ -191,34 +215,74 @@ namespace Cad_Point_Manager.Models.PointRendering
 
         public override void MouseEnter()
         {
+            if (TextBeingMoved) { return; }
             this.IsMouseOver = true;
-            RedrawVisual();
+            RedrawAllVisuals();
         }
         public override void MouseLeave()
         {
             this.IsMouseOver = false;
-            RedrawVisual();
+            RedrawAllVisuals();
         }
 
         public override void Select()
         {
+            if (TextBeingMoved) { return; }
             this.IsSelected = true;
-            RedrawVisual();
+            RedrawAllVisuals();
         }
         public override void Deselect()
         {
+            if (TextBeingMoved) { return; }
             this.IsSelected = false;
-            RedrawVisual();
+            RedrawAllVisuals();
         }
 
-        public void UpdateVisualTransform(Matrix matrix)
+        public void ResetTextLocations()
         {
-            TextToggleButtonScreenPosition = matrix.Transform(TextToggleButtonPosition);
-            VisualGroup.UpdateTransform(matrix);
+            TextInfoCurrentOffset = new();
+            TextToggleButtonPosition = new(Position.X + (_textToggleButtonOffset * PointGroup.PointScale), Position.Y);
+            TextInfoInBasePosition = true;
         }
-        public void RedrawVisual()
+        public void TranslateTextInfo(Vector translate)
         {
-           VisualGroup.Redraw();
+            TextInfoCurrentOffset += translate;
+            TextToggleButtonPosition = TextToggleButtonPosition += translate;
+            CurrentlyAppliedTextMatrix.Translate(translate.X, translate.Y);
+            UpdateTextVisualTransform(CurrentlyAppliedTextMatrix);
+            TextInfoInBasePosition = false;
+        }
+        public void MoveTextInfoToPoint(Point point)
+        {
+            TextInfoCurrentOffset = Position - point;
+            CurrentlyAppliedTextMatrix.Translate(TextInfoCurrentOffset.X, TextInfoCurrentOffset.Y);
+            TextToggleButtonPosition = point;
+            UpdateTextVisualTransform(CurrentlyAppliedTextMatrix);
+            TextInfoInBasePosition = false;
+        }
+        public void UpdateMarkerVisualTransform(Matrix matrix)
+        {
+            CurrentlyAppliedMarkerMatrix = matrix;
+            VisualGroup.UpdateMarkerTransform(matrix);
+        }
+        public void UpdateTextVisualTransform(Matrix matrix)
+        {
+            CurrentlyAppliedTextMatrix = matrix;
+            TextToggleButtonScreenPosition = matrix.Transform(TextToggleButtonPosition);
+            VisualGroup.UpdateTextTransform(matrix);
+        }
+
+        public void RedrawAllVisuals()
+        {
+            VisualGroup.RedrawAll();
+        }
+        public void RedrawEllipseVisual()
+        {
+            VisualGroup.RedrawEllipse();
+        }
+        public void RedrawTextVisual()
+        {
+            VisualGroup.RedrawText();
         }
 
         protected override void OnPropertyChanged(string propertyName)

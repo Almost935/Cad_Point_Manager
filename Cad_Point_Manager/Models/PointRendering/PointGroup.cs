@@ -158,13 +158,21 @@ namespace Cad_Point_Manager.Models.PointRendering
             return Name;
         }
 
-        public void UpdateVisualTransforms(System.Windows.Media.Matrix matrix)
+        public void UpdateMarkerVisualTransforms(System.Windows.Media.Matrix matrix)
         {
             foreach (var point in Points)
             {
-                point.UpdateVisualTransform(matrix);
+                point.UpdateMarkerVisualTransform(matrix);
             }
         }
+        public void UpdateTextVisualTransforms(System.Windows.Media.Matrix matrix)
+        {
+            foreach (var point in Points)
+            {
+                point.UpdateTextVisualTransform(matrix);
+            }
+        }
+
         public void UpdateWindowsColor()
         {
             WindowsColor = System.Windows.Media.Color.FromArgb(

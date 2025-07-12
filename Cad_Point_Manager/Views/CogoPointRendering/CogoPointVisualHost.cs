@@ -1,17 +1,8 @@
 ﻿using Cad_Point_Manager.Models.PointRendering;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows;
-using Cad_Point_Manager.Controls.D3DControl;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
-using SharpDX.Direct3D11;
-using System.Diagnostics;
 
 namespace Cad_Point_Manager.Views
 {
@@ -19,7 +10,7 @@ namespace Cad_Point_Manager.Views
     {
         #region Fields
         private readonly VisualCollection _visuals;
-        private readonly Dictionary<CogoPoint, DrawingVisual> _visualMap = new();
+        private readonly Dictionary<CogoPoint, (DrawingVisual markerVisual, DrawingVisual textVisual)> _visualMap = new();
         private (CogoPoint point, int visualsIndex) _snapBlurVisual = (null, -1);
 
         // Testing Fields
@@ -57,10 +48,9 @@ namespace Cad_Point_Manager.Views
 
             foreach (var (key, value) in _visualMap)
             {
-                if (value is null) { continue; }
-
                 _visualMap[key] = value;
-                _visuals.Add(value);
+                _visuals.Add(value.markerVisual);
+                _visuals.Add(value.textVisual);
             }
         }
 
@@ -85,17 +75,19 @@ namespace Cad_Point_Manager.Views
             {
                 foreach (CogoPoint point in e.NewItems!)
                 {
-                    _visualMap[point] = point.VisualGroup.Visual;
-                    _visuals.Add(point.VisualGroup.Visual);
+                    _visualMap[point] = (point.VisualGroup.MarkerVisual, point.VisualGroup.TextVisual);
+                    _visuals.Add(point.VisualGroup.MarkerVisual);
+                    _visuals.Add(point.VisualGroup.TextVisual);
                 }
             }
             else if (e.Action == NotifyCollectionChangedAction.Remove)
             {
                 foreach (CogoPoint point in e.OldItems!)
                 {
-                    if (_visualMap.TryGetValue(point, out var visual))
+                    if (_visualMap.TryGetValue(point, out var visuals))
                     {
-                        _visuals.Remove(visual);
+                        _visuals.Remove(visuals.markerVisual);
+                        _visuals.Remove(visuals.textVisual);
                         _visualMap.Remove(point);
                     }
                 }

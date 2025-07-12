@@ -6,6 +6,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Windows;
+using Point = System.Windows.Point;
 
 namespace Cad_Point_Manager.Controls.D3DControl
 {

@@ -222,6 +222,18 @@ namespace Cad_Point_Manager.Controls.D3DControl
             get => (ObservableCollection<HitTestablePoint>)GetValue(SelectedSignificantPointsProperty);
             set => SetValue(SelectedSignificantPointsProperty, value);
         }
+
+        public static readonly DependencyProperty MousePositionProperty =
+            DependencyProperty.Register(
+                nameof(MousePosition),
+                typeof(Point),
+                typeof(D3dDxfControl),
+                new FrameworkPropertyMetadata(new Point(), null));
+        public Point MousePosition
+        {
+            get => (Point)GetValue(MousePositionProperty);
+            set => SetValue(MousePositionProperty, value);
+        }
         #endregion
 
         #region Functions
@@ -692,7 +704,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 if (Camera is not null)
                 {
                     Camera.ResetView(_dxfInitialMatrix, CadManager3D.Extents);
-                    CadManager3D.CogoPointManager.UpdateVisualTransforms(Camera.D2dMatrix.ToWindowsMatrix());
+                    CadManager3D.CogoPointManager.UpdateAllVisualTransforms(Camera.D2dMatrix.ToWindowsMatrix());
                     _hittestStrokeThickness = 7.0f / (Camera.InitialViewMatrix.M11 * Camera.CurrentZoom);
 
                     ConstantBuffersDirty = true;
@@ -703,6 +715,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private void UpdateDxfCoords(Vector2 mousePos)
         {
             DxfCoords = Camera.ScreenToWorld(mousePos);
+            MousePosition = DxfCoords.ToPoint();
             DxfCoordsString = formatVectorString(DxfCoords);
         }
 
@@ -737,7 +750,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 if (e.MiddleButton == MouseButtonState.Pressed)
                 {
                     Camera.Pan(currentMousePos, _prevMousePos);
-                    CadManager3D.CogoPointManager.UpdateVisualTransforms(Camera.D2dMatrix.ToWindowsMatrix());
+                    CadManager3D.CogoPointManager.UpdateAllVisualTransforms(Camera.D2dMatrix.ToWindowsMatrix());
                     ConstantBuffersDirty = true;
                     e.Handled = true;
                 }
@@ -757,7 +770,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             }
 
             Camera.Zoom(zoomSteps, new Vector2((float)_pointerCoords.X, (float)_pointerCoords.Y));
-            CadManager3D.CogoPointManager.UpdateVisualTransforms(Camera.D2dMatrix.ToWindowsMatrix());
+            CadManager3D.CogoPointManager.UpdateAllVisualTransforms(Camera.D2dMatrix.ToWindowsMatrix());
             _hittestStrokeThickness = 7.0f / (Camera.InitialViewMatrix.M11 * Camera.CurrentZoom);
 
             ConstantBuffersDirty = true;
