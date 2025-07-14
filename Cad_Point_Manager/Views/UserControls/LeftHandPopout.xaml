@@ -293,7 +293,6 @@
                         </GridViewColumn>
                     </GridView>
                 </ListView.View>
-
                 <ListView.GroupStyle>
                     <GroupStyle>
                         <GroupStyle.ContainerStyle>
@@ -303,7 +302,8 @@
                                         <ControlTemplate TargetType="GroupItem">
                                             <Expander IsExpanded="False"
                                                       Style="{StaticResource ListViewExpanderStyle}"
-                                                      Margin="0 1 0 1">
+                                                      Margin="0 1 0 1"
+                                                      HorizontalAlignment="Left">
                                                 <Expander.Header>
                                                     <TextBlock Text="{Binding Name}"
                                                                FontSize="{StaticResource ListViewHeaderFontSize}"
@@ -322,8 +322,6 @@
                         </GroupStyle.ContainerStyle>
                     </GroupStyle>
                 </ListView.GroupStyle>
-
-
             </ListView>
         </Grid>
 

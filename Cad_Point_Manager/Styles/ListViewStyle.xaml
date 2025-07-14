@@ -283,7 +283,7 @@
                             Background="{TemplateBinding Background}"
                             BorderBrush="{DynamicResource ControlMediumBrush}">
                         <ScrollViewer Style="{StaticResource LayersListViewScrollviewer}">
-                            <ItemsPresenter HorizontalAlignment="Center"/>
+                            <ItemsPresenter HorizontalAlignment="Left"/>
                         </ScrollViewer>
                     </Border>
                     <ControlTemplate.Triggers>

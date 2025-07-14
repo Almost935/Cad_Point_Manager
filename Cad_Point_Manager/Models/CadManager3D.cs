@@ -29,8 +29,6 @@ namespace Cad_Point_Manager.Models
         #region Fields
         private const float _pointSizeToExtentsFactor = 0.001f;
 
-        private D3dResCache _d3dResCache;
-
         private bool _dxfLoaded = false;
         private bool _lineVerticesDirty = true;
         private bool _textVerticesDirty = true;

@@ -279,6 +279,7 @@ namespace Cad_Point_Manager.ViewModels
             point.MouseLeave();
             _lastTextDragUpdatePosition = MousePosition;
             point.MoveTextInfoToPoint(MousePosition);
+            point.RedrawTextVisual();
 
             if (!_isRenderingAttached)
             {
@@ -293,6 +294,8 @@ namespace Cad_Point_Manager.ViewModels
                 _draggingPoint = null;
             }
 
+            JobFileManager.CadManager3D.UpdateHitTestableObjectTree();
+
             if (_isRenderingAttached)
             {
                 CompositionTarget.Rendering -= OnRenderFrame;
@@ -303,8 +306,7 @@ namespace Cad_Point_Manager.ViewModels
         {
             if (_draggingPoint == null) { return; }
 
-            var translate = MousePosition - _lastTextDragUpdatePosition;
-            _draggingPoint.TranslateTextInfo(translate);
+            _draggingPoint.MoveTextInfoToPoint(MousePosition);
             _draggingPoint.RedrawTextVisual();
             _lastTextDragUpdatePosition = MousePosition;
         }

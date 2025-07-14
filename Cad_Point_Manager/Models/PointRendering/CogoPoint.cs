@@ -11,6 +11,8 @@ using System.Windows.Media;
 using Matrix = System.Windows.Media.Matrix;
 using Point = System.Windows.Point;
 using System.Drawing.Drawing2D;
+using System.Diagnostics;
+using System.Windows.Controls.Primitives;
 
 namespace Cad_Point_Manager.Models.PointRendering
 {
@@ -26,11 +28,12 @@ namespace Cad_Point_Manager.Models.PointRendering
         private PointGroup _pointGroup;
         private string _description;
         private CogoPointManager _cogoPointManager;
+        private Point _textInfoBasePosition = new();
+        private Point _textInfoCurrentPosition = new();
         private Point _textToggleButtonPosition = new();
         private Point _textToggleButtonScreenPosition = new();
         private bool _textBeingMoved = false;
         private double _textInfoBaseOffset = 1.25;
-        private Vector _textInfoCurrentTranslate = new Vector();
         #endregion
 
         #region Properties
@@ -51,8 +54,14 @@ namespace Cad_Point_Manager.Models.PointRendering
             get { return _northing; }
             set
             {
+                var preValue = _northing;
+                var newValue = value;
+
                 _northing = value;
                 OnPropertyChanged(nameof(Northing));
+
+                double delta = newValue - preValue;
+                if (delta > double.MinValue) { UpdatePointPosition(new Vector(0, delta)); }
             }
         }
         public double Easting
@@ -62,8 +71,14 @@ namespace Cad_Point_Manager.Models.PointRendering
             {
                 if (_easting != value)
                 {
+                    var preValue = _easting;
+                    var newValue = value;
+
                     _easting = value;
                     OnPropertyChanged(nameof(Easting));
+
+                    double delta = newValue - preValue;
+                    if (delta > double.MinValue) { UpdatePointPosition(new Vector(delta, 0)); }
                 }
             }
         }
@@ -115,6 +130,30 @@ namespace Cad_Point_Manager.Models.PointRendering
                 }
             }
         }
+        public Point TextInfoBasePosition
+        {
+            get => _textInfoBasePosition;
+            set
+            {
+                if (_textInfoBasePosition != value)
+                {
+                    _textInfoBasePosition = value;
+                    OnPropertyChanged(nameof(TextInfoBasePosition));
+                }
+            }
+        }
+        public Point TextInfoCurrentPosition
+        {
+            get => _textInfoCurrentPosition;
+            set
+            {
+                if (_textInfoCurrentPosition != value)
+                {
+                    _textInfoCurrentPosition = value;
+                    OnPropertyChanged(nameof(TextInfoCurrentPosition));
+                }
+            }
+        }
         public Point TextToggleButtonPosition
         {
             get => _textToggleButtonPosition;
@@ -163,18 +202,6 @@ namespace Cad_Point_Manager.Models.PointRendering
                 }
             }
         }
-        public Vector TextInfoCurrentOffset
-        {
-            get => _textInfoCurrentTranslate;
-            set
-            {
-                if (_textInfoCurrentTranslate != value)
-                {
-                    _textInfoCurrentTranslate = value;
-                    OnPropertyChanged(nameof(TextInfoCurrentOffset));
-                }
-            }
-        }
 
         public Point Position => new(Easting, Northing);
         public bool HasPointNumberError => HasErrorsFor(nameof(PointNumber));
@@ -199,6 +226,13 @@ namespace Cad_Point_Manager.Models.PointRendering
             ResetTextLocations();
 
             VisualGroup = new(this);
+            VisualGroup.PropertyChanged += (s, e) =>
+            {
+                if (e.PropertyName == nameof(CogoPointVisualGroup.Bounds))
+                {
+                    UpdateBounds();
+                }
+            };
             UpdateBounds();
         }
         #endregion
@@ -240,22 +274,15 @@ namespace Cad_Point_Manager.Models.PointRendering
 
         public void ResetTextLocations()
         {
-            TextInfoCurrentOffset = new();
+            TextInfoBasePosition = Position;
+            TextInfoCurrentPosition = Position;
             TextToggleButtonPosition = new(Position.X + (_textToggleButtonOffset * PointGroup.PointScale), Position.Y);
             TextInfoInBasePosition = true;
         }
-        public void TranslateTextInfo(Vector translate)
-        {
-            TextInfoCurrentOffset += translate;
-            TextToggleButtonPosition = TextToggleButtonPosition += translate;
-            CurrentlyAppliedTextMatrix.Translate(translate.X, translate.Y);
-            UpdateTextVisualTransform(CurrentlyAppliedTextMatrix);
-            TextInfoInBasePosition = false;
-        }
+
         public void MoveTextInfoToPoint(Point point)
         {
-            TextInfoCurrentOffset = Position - point;
-            CurrentlyAppliedTextMatrix.Translate(TextInfoCurrentOffset.X, TextInfoCurrentOffset.Y);
+            TextInfoCurrentPosition = point;
             TextToggleButtonPosition = point;
             UpdateTextVisualTransform(CurrentlyAppliedTextMatrix);
             TextInfoInBasePosition = false;
@@ -274,7 +301,7 @@ namespace Cad_Point_Manager.Models.PointRendering
 
         public void RedrawAllVisuals()
         {
-            VisualGroup.RedrawAll();
+            VisualGroup?.RedrawAll();
         }
         public void RedrawEllipseVisual()
         {
@@ -285,14 +312,22 @@ namespace Cad_Point_Manager.Models.PointRendering
             VisualGroup.RedrawText();
         }
 
+        private void UpdatePointPosition(Vector translate)
+        {
+            TextInfoBasePosition = Position;
+            TextInfoCurrentPosition += translate;
+            TextToggleButtonPosition += translate;
+            TextToggleButtonScreenPosition = CurrentlyAppliedTextMatrix.Transform(TextToggleButtonPosition);
+            RedrawAllVisuals();
+        }
+
         protected override void OnPropertyChanged(string propertyName)
         {
             base.OnPropertyChanged(propertyName);
 
-            if (propertyName == nameof(PointNumber) || propertyName == nameof(Northing) || propertyName == nameof(Easting) ||
-                propertyName == nameof(Elevation) || propertyName == nameof(Description))
+            if (propertyName == nameof(PointNumber) || propertyName == nameof(Elevation) || propertyName == nameof(Description))
             {
-                _cogoPointManager.SetCadManagerPointVerticesDirty();
+                RedrawAllVisuals();
             }
         }
         #endregion

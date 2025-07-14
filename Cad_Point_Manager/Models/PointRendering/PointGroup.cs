@@ -158,6 +158,22 @@ namespace Cad_Point_Manager.Models.PointRendering
             return Name;
         }
 
+        public void Redraw()
+        {
+            foreach (var point in Points)
+            {
+                point.RedrawAllVisuals();
+            }
+        }
+
+        public void UpdateAllVisualTransforms(System.Windows.Media.Matrix matrix)
+        {
+            foreach (var point in Points)
+            {
+                point.UpdateMarkerVisualTransform(matrix);
+                point.UpdateTextVisualTransform(matrix);
+            }
+        }
         public void UpdateMarkerVisualTransforms(System.Windows.Media.Matrix matrix)
         {
             foreach (var point in Points)
@@ -190,6 +206,11 @@ namespace Cad_Point_Manager.Models.PointRendering
         protected void OnPropertyChanged(string propertyName)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+
+            if (propertyName == nameof(WindowsBrush) || propertyName == nameof(IsVisible) || propertyName == nameof(PointScale))
+            {
+                Redraw();
+            }
         }
         #endregion
     }

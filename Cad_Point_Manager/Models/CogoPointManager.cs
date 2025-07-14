@@ -102,8 +102,7 @@ namespace Cad_Point_Manager.Models
         {
             foreach (var pg in PointGroups)
             {
-                pg.Value.UpdateMarkerVisualTransforms(matrix);
-                pg.Value.UpdateTextVisualTransforms(matrix);
+               pg.Value.UpdateAllVisualTransforms(matrix);
             }
         }
         public void UpdateMarkerVisualTransforms(Matrix matrix)
