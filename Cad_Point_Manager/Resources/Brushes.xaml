@@ -21,6 +21,9 @@
     <Color x:Key="PopoutMenuBackgroundColor">#CCDCDCDC</Color>
     <SolidColorBrush x:Key="PopoutMenuBackgroundBrush"
                      Color="{StaticResource PopoutMenuBackgroundColor}" />
+    <Color x:Key="SemiTransparentTabColor">#7F484A52</Color> 
+    <SolidColorBrush x:Key="SemiTransparentTabBrush"
+                     Color="{StaticResource SemiTransparentTabColor}" /> 
 
 
     <SolidColorBrush x:Key="MouseOverBrush"

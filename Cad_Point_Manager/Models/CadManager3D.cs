@@ -43,7 +43,7 @@ namespace Cad_Point_Manager.Models
         private ICollectionView _pointsView;
         private CogoPointManager _cogoPointManager;
         private Size2F _viewportSize = Size2F.Empty;
-        private Enums.SelectionMode _snapSelectionMode = Enums.SelectionMode.All;
+        private Enums.SelectionMode _snapSelectionMode = Enums.SelectionMode.CogoPoints;
 
         private float _pointBaseScale;
 
@@ -294,9 +294,13 @@ namespace Cad_Point_Manager.Models
             LayersView.SortDescriptions.Clear();
             LayersView.SortDescriptions.Add(new SortDescription("Key", ListSortDirection.Ascending));
 
-            PointGroupsView = CollectionViewSource.GetDefaultView(CogoPointManager.PointGroups.Select(kvp => kvp.Value).ToList());
+            PointGroupsView = new ListCollectionView(CogoPointManager.PointGroups);
             PointGroupsView.SortDescriptions.Clear();
-            PointGroupsView.SortDescriptions.Add(new SortDescription(nameof(PointGroup.Name), ListSortDirection.Ascending));
+            PointGroupsView.SortDescriptions.Add(new SortDescription("Key", ListSortDirection.Ascending));
+
+            //PointGroupsView = CollectionViewSource.GetDefaultView(CogoPointManager.PointGroups.Select(kvp => kvp.Value).ToList());
+            //PointGroupsView.SortDescriptions.Clear();
+            //PointGroupsView.SortDescriptions.Add(new SortDescription(nameof(PointGroup.Name), ListSortDirection.Ascending));
 
             PointsView = CollectionViewSource.GetDefaultView(
                 CogoPointManager.PointGroups.SelectMany(kvp => kvp.Value.Points).ToList());

@@ -23,6 +23,10 @@
                 <ResourceDictionary Source="Styles/ListViewExpanderStyle.xaml" />
                 <ResourceDictionary Source="Styles/CogoPointStyles.xaml" />
                 <ResourceDictionary Source="Styles/CogoPointAnchorToggleButton.xaml" />
+                <ResourceDictionary Source="Styles/BorderWidgetsButton.xaml" />
+                <ResourceDictionary Source="Styles/BorderWidgetsToggleButton.xaml" />
+                <ResourceDictionary Source="Styles/RoundedTextBox.xaml" />
+                <ResourceDictionary Source="Styles/ValidationTextBox.xaml" />
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Application.Resources>

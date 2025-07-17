@@ -1,0 +1,85 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Style TargetType="ToggleButton"
+           x:Key="BorderWidgetsToggleButton">
+        <Setter Property="Foreground"
+                Value="White" />
+        <Setter Property="Background"
+                Value="#FF292929" />
+        <Setter Property="BorderBrush"
+                Value="#666" />
+        <Setter Property="BorderThickness"
+                Value="1" />
+        <Setter Property="Padding"
+                Value="4,2" />
+        <Setter Property="Cursor"
+                Value="Hand" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ToggleButton">
+                    <Border x:Name="border"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="1"
+                            SnapsToDevicePixels="True">
+                        <ContentPresenter HorizontalAlignment="Center"
+                                          VerticalAlignment="Center"
+                                          RecognizesAccessKey="True" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <!-- Mouse Over AND Checked -->
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="IsMouseOver"
+                                           Value="True" />
+                                <Condition Property="IsChecked"
+                                           Value="True" />
+                            </MultiTrigger.Conditions>
+                            <Setter TargetName="border"
+                                    Property="Background"
+                                    Value="#777" />
+                            <Setter TargetName="border"
+                                    Property="BorderBrush"
+                                    Value="#AAA" />
+                        </MultiTrigger>
+
+                        <!-- Mouse Over (alone) -->
+                        <Trigger Property="IsMouseOver"
+                                 Value="True">
+                            <Setter TargetName="border"
+                                    Property="Background"
+                                    Value="#555" />
+                            <Setter TargetName="border"
+                                    Property="BorderBrush"
+                                    Value="#888" />
+                        </Trigger>
+
+                        <!-- Checked (alone) -->
+                        <Trigger Property="IsChecked"
+                                 Value="True">
+                            <Setter TargetName="border"
+                                    Property="Background"
+                                    Value="#666" />
+                            <Setter TargetName="border"
+                                    Property="BorderBrush"
+                                    Value="#999" />
+                        </Trigger>
+
+                        <!-- Disabled -->
+                        <Trigger Property="IsEnabled"
+                                 Value="False">
+                            <Setter TargetName="border"
+                                    Property="Background"
+                                    Value="#333" />
+                            <Setter Property="Foreground"
+                                    Value="#777" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+</ResourceDictionary>

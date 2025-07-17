@@ -10,6 +10,7 @@ using System.Drawing;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
@@ -32,11 +33,15 @@ namespace Cad_Point_Manager.Views.UserControls
         private bool _pointGroupListVisible = true;
         private double _layerListOpacity = 0;
         private double _pointGroupListOpacity = 0;
+        private string _newPointGroupName = "";
+        private Vector4 _newPointGroupColor = new(0, 0, 0, 1);
+        private double _newPointGroupScale = 1;
+        private bool _newPointColorToggleOpen = false;
 
         private readonly DispatcherTimer _hideTimer = new();
         private bool _isMouseOverPanel = false;
         private ScaleTransform _mainPanelTransform = new();
-        private bool _isColorPickerOpen;
+        private bool _pgColorPickerOpen;
 
         private bool _pointGroupBeingEdited = false;
         private string _previousPointGroupName = string.Empty;
@@ -78,6 +83,42 @@ namespace Cad_Point_Manager.Views.UserControls
             {
                 _pointGroupListOpacity = value;
                 OnPropertyChanged(nameof(PointGroupListOpacity));
+            }
+        }
+        public string NewPointGroupName
+        {
+            get { return _newPointGroupName; }
+            set
+            {
+                _newPointGroupName = value;
+                OnPropertyChanged(nameof(NewPointGroupName));
+            }
+        }
+        public Vector4 NewPointGroupColor
+        {
+            get { return _newPointGroupColor; }
+            set
+            {
+                _newPointGroupColor = value;
+                OnPropertyChanged(nameof(NewPointGroupColor));
+            }
+        }
+        public double NewPointGroupScale
+        {
+            get { return _newPointGroupScale; }
+            set
+            {
+                _newPointGroupScale = value;
+                OnPropertyChanged(nameof(NewPointGroupScale));
+            }
+        }
+        public bool NewPointColorToggleOpen
+        {
+            get { return _newPointColorToggleOpen; }
+            set
+            {
+                _newPointColorToggleOpen = value;
+                OnPropertyChanged(nameof(NewPointColorToggleOpen));
             }
         }
         #endregion
@@ -136,10 +177,7 @@ namespace Cad_Point_Manager.Views.UserControls
             new PropertyMetadata(null));
         #endregion
 
-        #region Events
-        public event PropertyChangedEventHandler PropertyChanged;
-        #endregion
-
+        #region Constructors
         public RightHandPopout()
         {
             InitializeComponent();
@@ -151,11 +189,13 @@ namespace Cad_Point_Manager.Views.UserControls
             _hideTimer.Interval = TimeSpan.FromSeconds(1);
             _hideTimer.Tick += HideTimer_Tick;
         }
+        #endregion
 
+        #region Methods
         private void HideTimer_Tick(object sender, EventArgs e)
         {
             _hideTimer.Stop();
-            if (!_isMouseOverPanel && !_isColorPickerOpen)
+            if (!_isMouseOverPanel && !_pgColorPickerOpen && !NewPointColorToggleOpen)
             {
                 HideControl();
             }
@@ -258,6 +298,7 @@ namespace Cad_Point_Manager.Views.UserControls
             LayerListVisible = true;
 
             //layersListView.Focus();
+            Validation.ClearInvalid(NewPointGroupScaleTextBox.GetBindingExpression(TextBox.TextProperty));
             PointGroupListOpacity = 0;
             LayerListOpacity = 1;
         }
@@ -270,17 +311,18 @@ namespace Cad_Point_Manager.Views.UserControls
             //pointGroupsListView.Focus();
             LayerListOpacity = 0;
             PointGroupListOpacity = 1;
+            ValidatePointGroupScale();
         }
         private void PointGroupsListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             _selectedPointGroups.Clear();
             var selectedItems = (sender as ListView).SelectedItems;
 
-            foreach (PointGroup pointGroup in selectedItems)
+            foreach (KeyValuePair<string, PointGroup> kvp in selectedItems)
             {
-                if (pointGroup is not null)
+                if (kvp.Value is not null)
                 {
-                    _selectedPointGroups.Add(pointGroup);
+                    _selectedPointGroups.Add(kvp.Value);
                 }
             }
         }
@@ -324,6 +366,7 @@ namespace Cad_Point_Manager.Views.UserControls
                 pointGroupGridView.Columns[3].Width = pointGroupColumnWidth * 1;
             }
         }
+
 
         // Point Group Scale
         private void PointGroupScaleBorder_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -402,6 +445,13 @@ namespace Cad_Point_Manager.Views.UserControls
                     _pointGroupBeingEdited = false;
                 }
             }
+        }
+        private bool ValidatePointGroupScale()
+        {
+            var binding = NewPointGroupScaleTextBox.GetBindingExpression(TextBox.TextProperty);
+            //binding?.UpdateSource();
+            binding?.ValidateWithoutUpdate();
+            return Validation.GetHasError(NewPointGroupScaleTextBox);
         }
 
         // Point Group Name
@@ -485,14 +535,14 @@ namespace Cad_Point_Manager.Views.UserControls
 
         private void UpdateIsColorPickerOpen()
         {
-            _isColorPickerOpen = false;
+            _pgColorPickerOpen = false;
             foreach (var pg in PointGroupCollectionView)
             {
                 if (pg is PointGroup pointGroup)
                 {
                     if (pointGroup.ColorToggleOpen)
                     {
-                        _isColorPickerOpen = true;
+                        _pgColorPickerOpen = true;
                         return;
                     }
                 }
@@ -514,9 +564,70 @@ namespace Cad_Point_Manager.Views.UserControls
             }
         }
 
+        private void NewPointGroupButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (NewPointGroupName is null || NewPointGroupScale <= 0) { return; }
+
+            string name = NewPointGroupName.Trim();
+            double scale = NewPointGroupScale;
+            Vector4 color = NewPointGroupColor;
+
+            bool nameHasError = !CadManager.CogoPointManager.IsValidPointGroupName(NewPointGroupName, out string errorMessage);
+            bool scaleHasError = ValidatePointGroupScale();
+
+            if (nameHasError || scaleHasError)
+            {
+                //if (nameHasError)
+                //{
+                //    MessageBox.Show(errorMessage, "Invalid Point Group Name", MessageBoxButton.OK, MessageBoxImage.Error);
+                //}
+                //if (scaleHasError)
+                //{
+                //    MessageBox.Show("Point group scale must be a positive number.", "Invalid Point Group Scale", MessageBoxButton.OK, MessageBoxImage.Error);
+                //}
+                if (nameHasError)
+                {
+                    var binding = NewPointGroupNameTextBox.GetBindingExpression(TextBox.TextProperty);
+                    if (binding != null)
+                    {
+                        var error = new ValidationError(
+                            new DataErrorValidationRule(),
+                            binding,
+                            errorMessage,
+                            null
+                        );
+                        Validation.MarkInvalid(binding, error);
+                    }
+                    return;
+                }
+            }
+            else
+            {
+                CadManager.CogoPointManager.TryCreatePointGroup(name, color, scale, out var pg);
+                ResetCreatePointGroup();
+            }
+        }
+
+        private void CancelNewPointGroupButton_Click(object sender, RoutedEventArgs e)
+        {
+            ResetCreatePointGroup();
+        }
+        private void ResetCreatePointGroup()
+        {
+            NewPointGroupName = string.Empty;
+            NewPointGroupColor = new Vector4(0, 0, 0, 1);
+            NewPointGroupScale = 1;
+            Validation.ClearInvalid(NewPointGroupNameTextBox.GetBindingExpression(TextBox.TextProperty));
+            Validation.ClearInvalid(NewPointGroupScaleTextBox.GetBindingExpression(TextBox.TextProperty));
+        }
+        #endregion
+
+        #region INotifyPropertyChanged Implementation
+        public event PropertyChangedEventHandler PropertyChanged;
         protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
+        #endregion
     }
 }

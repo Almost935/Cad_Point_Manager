@@ -3,6 +3,7 @@ using Cad_Point_Manager.Models.PointRendering;
 using SharpDX;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.IO;
 using System.Windows;
 using System.Windows.Media;
 using Matrix = System.Windows.Media.Matrix;
@@ -183,6 +184,45 @@ namespace Cad_Point_Manager.Models
             pointGroup = pair.Value;
             return true;
         }
+
+        public bool IsValidPointGroupName(string name, out string? errorMessage)
+        {
+            errorMessage = null;
+
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                errorMessage = "Name cannot be empty or whitespace.";
+                return false;
+            }
+
+            // Trim spaces just for validation purposes
+            name = name.Trim();
+
+            // Disallowed characters
+            char[] invalidChars = Path.GetInvalidFileNameChars(); // includes \ / : * ? " < > | and control characters
+            if (name.IndexOfAny(invalidChars) >= 0)
+            {
+                errorMessage = $"Name contains invalid characters: {string.Join(" ", invalidChars)}";
+                return false;
+            }
+
+            // Optional: Disallow other problematic characters
+            if (name.Any(c => c == '#' || c == '%'))
+            {
+                errorMessage = "Name contains disallowed characters like # or %.";
+                return false;
+            }
+
+            // Verify uniqueness
+            if (PointGroups.Any(pg => pg.Key.Equals(name, StringComparison.OrdinalIgnoreCase)))
+            {
+                errorMessage = "A point group with this name already exists.";
+                return false;
+            }
+
+            return true;
+        }
+
 
         public void UpdatePointExtents()
         {

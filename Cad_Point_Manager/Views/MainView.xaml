@@ -16,6 +16,7 @@
       xmlns:pointRendering="clr-namespace:Cad_Point_Manager.Models.PointRendering"
       xmlns:models="clr-namespace:Cad_Point_Manager.Models"
       xmlns:views="clr-namespace:Cad_Point_Manager.Views"
+      xmlns:validation="clr-namespace:Cad_Point_Manager.Views.ValidationRules"
       xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
       d:DataContext="{d:DesignInstance Type=viewModels:MainViewModel}"
       mc:Ignorable="d"
@@ -39,6 +40,7 @@
                                               Invert="False" />
         <converters:PointCenteringConverter x:Key="PointCenteringConverter" />
         <converters:CenterTranslationConverter x:Key="CenterTranslationConverter" />
+        <converters:SelectionModeEnumConverter x:Key="SelectionModeEnumConverter" />
 
         <Thickness x:Key="ToggleButtonMargin">0,5,0,5</Thickness>
     </Page.Resources>
@@ -139,35 +141,56 @@
             </Border>
         </Grid>
 
-        <Grid Grid.Row="1">
+        <Grid x:Name="CogoPointCreationGrid"
+              Grid.Row="1">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="0.25*" />
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="0.25*" />
-                <ColumnDefinition Width="0.25*" />
-                <ColumnDefinition Width="0.25*" />
+                <ColumnDefinition Width="0.15*" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="0.15*" />
             </Grid.ColumnDefinitions>
+            <Grid.Resources>
+                <sys:Double x:Key="CogoCreationTextSize">12</sys:Double>
+                <sys:Double x:Key="CogoCreationTextBoxWidth">150</sys:Double>
+                <sys:Double x:Key="CogoCreationTextBoxHeight">25</sys:Double>
+                <Thickness x:Key="CogoPointCreationTextBlockMargin">3,3,3,3</Thickness>
+                <Thickness x:Key="CogoPointCreationTextBoxMargin">10,3,10,3</Thickness>
+                <Style TargetType="{x:Type TextBox}"
+                       BasedOn="{StaticResource RoundedTextBoxStyle}" />
+            </Grid.Resources>
             <Grid Grid.Column="1">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
                 <TextBlock Foreground="White"
-                           FontSize="12"
+                           FontSize="{StaticResource CogoCreationTextSize}"
                            VerticalAlignment="Center"
                            HorizontalAlignment="Center"
-                           Text="Point Number Start:"
-                           Margin="10 0 10 0" />
+                           Text="Point Number Start:" />
                 <TextBox Grid.Column="1"
-                         Height="25"
-                         Margin="10 0 10 0" />
+                         Height="{StaticResource CogoCreationTextBoxHeight}"
+                         MinWidth="{StaticResource CogoCreationTextBoxWidth}"
+                         Margin="{StaticResource CogoPointCreationTextBoxMargin}"
+                         PreviewMouseLeftButtonUp="TextBox_PreviewMouseLeftButtonUp">
+                    <TextBox.Text>
+                        <Binding Path="NewCogoPointNumber"
+                                 Mode="TwoWay">
+                            <Binding.ValidationRules>
+                                <validation:PointNumberValidationRule />
+                            </Binding.ValidationRules>
+                        </Binding>
+                    </TextBox.Text>
+                </TextBox>
             </Grid>
             <Grid Grid.Column="2">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
                 <TextBlock Foreground="White"
@@ -175,14 +198,15 @@
                            VerticalAlignment="Center"
                            HorizontalAlignment="Center"
                            Text="Elevation:"
-                           Margin="10 0 10 0" />
+                           Margin="{StaticResource CogoPointCreationTextBlockMargin}" />
                 <TextBox Grid.Column="1"
-                         Height="25"
-                         Margin="10 0 10 0" />
+                         Height="{StaticResource CogoCreationTextBoxHeight}"
+                         MinWidth="{StaticResource CogoCreationTextBoxWidth}"
+                         Margin="{StaticResource CogoPointCreationTextBoxMargin}" />
             </Grid>
             <Grid Grid.Column="3">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
                 <TextBlock Foreground="White"
@@ -190,14 +214,15 @@
                            VerticalAlignment="Center"
                            HorizontalAlignment="Center"
                            Text="Description:"
-                           Margin="10 0 10 0" />
+                           Margin="{StaticResource CogoPointCreationTextBlockMargin}" />
                 <TextBox Grid.Column="1"
-                         Height="25"
-                         Margin="10 0 10 0" />
+                         Height="{StaticResource CogoCreationTextBoxHeight}"
+                         MinWidth="{StaticResource CogoCreationTextBoxWidth}"
+                         Margin="{StaticResource CogoPointCreationTextBoxMargin}" />
             </Grid>
             <Grid Grid.Column="4">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
                 <TextBlock Foreground="White"
@@ -205,52 +230,83 @@
                            VerticalAlignment="Center"
                            HorizontalAlignment="Center"
                            Text="Active Point Group:"
-                           Margin="10 0 10 0" />
+                           Margin="{StaticResource CogoPointCreationTextBlockMargin}" />
                 <ComboBox Grid.Column="1"
                           Background="White"
-                          Height="25"
-                          Margin="10 0 10 0"
-                          ItemsSource="{Binding JobFileManager.CadManager3D.PointGroupsView}" />
+                          Height="{StaticResource CogoCreationTextBoxHeight}"
+                          MinWidth="{StaticResource CogoCreationTextBoxWidth}"
+                          ItemsSource="{Binding JobFileManager.CadManager3D.PointGroupsView}"
+                          Margin="{StaticResource CogoPointCreationTextBoxMargin}" />
             </Grid>
-            <WrapPanel Grid.Column="5"
+            <Grid Grid.Column="5">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Foreground="White"
+                           FontSize="12"
+                           VerticalAlignment="Center"
+                           HorizontalAlignment="Center"
+                           Text="Active Point Group:"
+                           Margin="{StaticResource CogoPointCreationTextBlockMargin}" />
+                <ComboBox Grid.Column="1"
+                          Background="White"
+                          Height="{StaticResource CogoCreationTextBoxHeight}"
+                          MinWidth="{StaticResource CogoCreationTextBoxWidth}"
+                          ItemsSource="{Binding JobFileManager.CadManager3D.PointGroupsView}"
+                          Margin="{StaticResource CogoPointCreationTextBoxMargin}" />
+            </Grid>
+            <WrapPanel Grid.Column="6"
                        HorizontalAlignment="Center"
                        VerticalAlignment="Center">
-                <RadioButton x:Name="PointCogoCreation"
-                             Grid.Column="0"
-                             GroupName="CogoPointCreationGroup"
-                             Style="{StaticResource DarkGreyRadioButtonStyle}"
-                             Width="40"
-                             Height="40"
-                             Margin="0 0 2 0"
-                             Command="{Binding SnapToggleCommand}"
-                             CommandParameter="{Binding RelativeSource={RelativeSource Self}}">
-                    <RadioButton.Content>
+                <ToggleButton x:Name="PointCogoCreation"
+                              Grid.Column="0"
+                              Style="{StaticResource BorderWidgetsToggleButton}"
+                              Width="40"
+                              Height="40"
+                              Margin="2 0 2 0"
+                              Command="{Binding SnapToggleCommand}"
+                              CommandParameter="{Binding RelativeSource={RelativeSource Self}}"
+                              IsChecked="{Binding JobFileManager.CadManager3D.SnapSelectionMode, Converter={StaticResource SelectionModeEnumConverter}, ConverterParameter=Points, Mode=TwoWay}">
+                    <ToggleButton.Content>
                         <ContentControl Template="{StaticResource PointsIcon}" />
-                    </RadioButton.Content>
-                </RadioButton>
-                <RadioButton x:Name="GeometryCogoCreation"
-                             Grid.Column="1"
-                             GroupName="CogoPointCreationGroup"
-                             Style="{StaticResource DarkGreyRadioButtonStyle}"
-                             Width="40"
-                             Height="40"
-                             Margin="2 0 0 0"
-                             Command="{Binding SnapToggleCommand}"
-                             CommandParameter="{Binding RelativeSource={RelativeSource Self}}">
-                    <RadioButton.Content>
+                    </ToggleButton.Content>
+                </ToggleButton>
+                <ToggleButton x:Name="GeometryCogoCreation"
+                              Grid.Column="1"
+                              Style="{StaticResource BorderWidgetsToggleButton}"
+                              Width="40"
+                              Height="40"
+                              Margin="2 0 2 0"
+                              Command="{Binding SnapToggleCommand}"
+                              CommandParameter="{Binding RelativeSource={RelativeSource Self}}"
+                              IsChecked="{Binding JobFileManager.CadManager3D.SnapSelectionMode, Converter={StaticResource SelectionModeEnumConverter}, ConverterParameter=Geometries, Mode=TwoWay}">
+                    <ToggleButton.Content>
                         <ContentControl Template="{StaticResource LineIcon}" />
-                    </RadioButton.Content>
-                </RadioButton>
+                    </ToggleButton.Content>
+                </ToggleButton>
             </WrapPanel>
+            <Grid Grid.Column="7">
+                <Button Style="{StaticResource BorderWidgetsButton}"
+                        Width="40"
+                        Height="40"
+                        Margin="10 0 10 0">
+                    <Button.Content>
+                        <ContentControl Template="{StaticResource SubmitIcon}" />
+                    </Button.Content>
+                    <i:Interaction.Triggers>
+                        <i:EventTrigger EventName="Click">
+                            <i:InvokeCommandAction Command="{Binding SubmitPointCommand}" />
+                        </i:EventTrigger>
+                    </i:Interaction.Triggers>
+                </Button>
+            </Grid>
         </Grid>
 
-        <Grid Grid.Row="2"
+        <Grid x:Name="PopoutsGrid" 
+              Grid.Row="2"
               ClipToBounds="False"
               Panel.ZIndex="1">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="91*" />
-                <ColumnDefinition Width="29*" />
-            </Grid.ColumnDefinitions>
             <uc:RightHandPopout x:Name="RightSidePopout"
                                 Panel.ZIndex="1"
                                 Width="400"
@@ -373,7 +429,7 @@
                                                   Height="{StaticResource ToggleButtonSize}"
                                                   Visibility="{Binding IsSelected, Converter={StaticResource BoolToVisibilityConverter}}"
                                                   Panel.ZIndex="2"
-                                                  IsChecked="{Binding TextBeingMoved}">
+                                                  IsChecked="{Binding TextBeingMoved, Mode=TwoWay}">
                                         <ToggleButton.RenderTransform>
                                             <TransformGroup>
                                                 <TranslateTransform X="{Binding ElementName=PointToggleButton, Path=Width, Converter={StaticResource CenterTranslationConverter}, ConverterParameter=0.5}"
@@ -401,58 +457,16 @@
             </Grid>
         </Grid>
 
-        <Grid Grid.Row="3">
+        <Grid x:Name="LowerRibbonGrid" Grid.Row="3">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="2*" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
-            <TextBlock Margin="20,0,0,0"
+            <TextBlock Margin="30,2,0,2"
                        Foreground="White"
                        VerticalAlignment="Center"
                        Text="{Binding ElementName=d3dDxfControl, Path=DxfCoordsString}" />
-            <!--<WrapPanel Grid.Column="1"
-                       Margin="20 0 0 0"
-                       HorizontalAlignment="Center">
-                <WrapPanel Margin="30 0 30 0">
-                    <RadioButton x:Name="Lines"
-                                 GroupName="SnapToggles"
-                                 Style="{StaticResource DarkGreyRadioButtonStyle}"
-                                 Width="40"
-                                 Height="40"
-                                 Margin="{StaticResource ToggleButtonMargin}"
-                                 Command="{Binding SnapToggleCommand}"
-                                 CommandParameter="{Binding RelativeSource={RelativeSource Self}}">
-                        <RadioButton.Content>
-                            <ContentControl Template="{StaticResource LineIcon}" />
-                        </RadioButton.Content>
-                    </RadioButton>
-                    <RadioButton x:Name="Points"
-                                 GroupName="SnapToggles"
-                                 Style="{StaticResource DarkGreyRadioButtonStyle}"
-                                 Width="40"
-                                 Height="40"
-                                 Margin="{StaticResource ToggleButtonMargin}"
-                                 Command="{Binding SnapToggleCommand}"
-                                 CommandParameter="{Binding RelativeSource={RelativeSource Self}}">
-                        <RadioButton.Content>
-                            <ContentControl Template="{StaticResource PointsIcon}" />
-                        </RadioButton.Content>
-                    </RadioButton>
-                    <RadioButton x:Name="CogoPoints"
-                                 GroupName="SnapToggles"
-                                 Style="{StaticResource DarkGreyRadioButtonStyle}"
-                                 Width="40"
-                                 Height="40"
-                                 Margin="{StaticResource ToggleButtonMargin}"
-                                 Command="{Binding SnapToggleCommand}"
-                                 CommandParameter="{Binding RelativeSource={RelativeSource Self}}">
-                        <RadioButton.Content>
-                            <ContentControl Template="{StaticResource CogoPointsIcon}" />
-                        </RadioButton.Content>
-                    </RadioButton>
-                </WrapPanel>
-            </WrapPanel>-->
         </Grid>
     </Grid>
 </Page>

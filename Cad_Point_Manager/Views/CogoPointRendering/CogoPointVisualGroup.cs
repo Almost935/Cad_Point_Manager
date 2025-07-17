@@ -92,7 +92,7 @@ namespace Cad_Point_Manager.Views
             else { brush = group.WindowsBrush; }
 
             Brush glowBrush = new SolidColorBrush(Color.FromArgb(80, 0, 0, 0));
-            Pen glowPen = new Pen(brush, lineGlowStrokeThickness)
+            Pen glowPen = new(brush, lineGlowStrokeThickness)
             {
                 LineJoin = PenLineJoin.Round,
                 StartLineCap = PenLineCap.Round,
@@ -159,7 +159,8 @@ namespace Cad_Point_Manager.Views
 
             _textHitTestGeometry = new GeometryGroup();
 
-            bool isFlipped = false;
+            bool isFlippedOnY = false;
+            bool isFlippedOnX = false;
             if (!Point.TextInfoInBasePosition)
             {
                 dc.DrawLine(pen, Point.Position, Point.TextToggleButtonPosition);
@@ -168,12 +169,13 @@ namespace Cad_Point_Manager.Views
                     dc.DrawLine(lineGlowPen, Point.Position, Point.TextToggleButtonPosition);
                 }
 
-                if (Point.TextToggleButtonPosition.X - Point.Position.X < 0) { isFlipped = true; }
+                if (Point.TextToggleButtonPosition.X - Point.Position.X < 0) { isFlippedOnY = true; }
+                if (Point.TextToggleButtonPosition.Y - Point.Position.Y < 0) { isFlippedOnY = true; }
             }
             Matrix textMatrix = new();
             double xOffset = Point.TextInfoBaseOffset * Point.PointGroup.PointScale;
             textMatrix.ScaleAt(textScaleFactor, -textScaleFactor, textOrigin.X, textOrigin.Y);
-            if (isFlipped) { textMatrix.Translate(-xOffset, 0); }
+            if (isFlippedOnY) { textMatrix.Translate(-xOffset, 0); }
             else { textMatrix.Translate(xOffset, 0); }
 
             dc.PushTransform(new MatrixTransform(textMatrix));
@@ -189,7 +191,7 @@ namespace Cad_Point_Manager.Views
                     VisualTreeHelper.GetDpi(TextVisual).PixelsPerDip);
 
                 Point linePos;
-                if (isFlipped) { linePos = new Point(textOrigin.X - formatted.Width, y); }
+                if (isFlippedOnY) { linePos = new Point(textOrigin.X - formatted.Width, y); }
                 else { linePos = new(textOrigin.X, y); }
 
                 dc.DrawText(formatted, linePos);

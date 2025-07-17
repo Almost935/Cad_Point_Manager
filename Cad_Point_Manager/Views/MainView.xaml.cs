@@ -7,6 +7,7 @@ using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Threading;
 
 namespace Cad_Point_Manager.Views
 {
@@ -15,13 +16,19 @@ namespace Cad_Point_Manager.Views
     /// </summary>
     public partial class MainView : Page
     {
-        private bool _isDraggingText = false;
-
         public MainView(MainViewModel mainViewModel)
         {
             this.DataContext = mainViewModel;
 
             InitializeComponent();
+
+            Loaded += (s, e) =>
+            {
+                if (DataContext is MainViewModel vm)
+                {
+                    Application.Current.MainWindow.KeyUp += vm.Window_KeyUp;
+                }
+            };
         }
 
         private void dxfGrid_SizeChanged(object sender, System.Windows.SizeChangedEventArgs e)
@@ -70,6 +77,17 @@ namespace Cad_Point_Manager.Views
         private void dxfGrid_MouseLeave(object sender, MouseEventArgs e)
         {
             Mouse.OverrideCursor = null; // Reset the cursor to default
+        }
+
+        private void TextBox_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            if (sender is TextBox textBox)
+            {
+                textBox.Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    textBox.SelectAll();
+                }), DispatcherPriority.Input);
+            }
         }
     }
 }

@@ -932,6 +932,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             if (Camera is null) { return; }
 
             Camera.ResetView(_dxfInitialMatrix, CadManager3D.Extents);
+            CadManager3D.CogoPointManager.UpdateAllVisualTransforms(Camera.D2dMatrix.ToWindowsMatrix());
             ResetSnappedObjects();
 
             ConstantBuffersDirty = true;

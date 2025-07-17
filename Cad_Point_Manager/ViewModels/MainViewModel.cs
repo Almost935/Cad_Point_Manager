@@ -37,6 +37,8 @@ namespace Cad_Point_Manager.ViewModels
         private ObservableCollection<CogoPoint> _selectedCogoPoints = [];
         private HitTestablePoint _snappedPoint;
         private Point _mousePosition = new();
+
+        private int _newCogoPointNumber;
         #endregion
 
         #region Properties
@@ -142,6 +144,16 @@ namespace Cad_Point_Manager.ViewModels
                 OnPropertyChanged(nameof(MousePosition));
             }
         }
+
+        public int NewCogoPointNumber
+        {
+            get => _newCogoPointNumber;
+            set
+            {
+                _newCogoPointNumber = value;
+                OnPropertyChanged(nameof(NewCogoPointNumber));
+            }
+        }
         #endregion
 
         #region Commands
@@ -156,11 +168,15 @@ namespace Cad_Point_Manager.ViewModels
 
         public ICommand CogoPointCheckedCommand { get; set; }
         public ICommand CogoPointUncheckedCommand { get; set; }
+
+        public ICommand SubmitPointCommand => new RelayCommand(OnSubmitCogoPointClicked);
         #endregion
 
         #region Constructors
         public MainViewModel()
         {
+            //SubscribeToWindowKeyUp();
+
             NewJobCommand = new RelayCommand<RoutedEventArgs>(NewJob);
             LoadJobCommand = new RelayCommand<RoutedEventArgs>(LoadJob);
             AttachDxfFileCommand = new RelayCommand<RoutedEventArgs>(AttachDxfFile);
@@ -246,17 +262,14 @@ namespace Cad_Point_Manager.ViewModels
            
                 switch (name)
                 {
-                    case "Points":
+                    case "PointCogoCreation":
                         JobFileManager.CadManager3D.SnapSelectionMode = Enums.SelectionMode.Points;
                         break;
-                    case "Lines":
+                    case "GeometryCogoCreation":
                         JobFileManager.CadManager3D.SnapSelectionMode = Enums.SelectionMode.Geometries;
                         break;
-                    case "CogoPoints":
+                    default:
                         JobFileManager.CadManager3D.SnapSelectionMode = Enums.SelectionMode.CogoPoints;
-                        break;
-                    case "All":
-                        JobFileManager.CadManager3D.SnapSelectionMode = Enums.SelectionMode.All;
                         break;
                 }
             }
@@ -276,7 +289,8 @@ namespace Cad_Point_Manager.ViewModels
         public void BeginDraggingText(CogoPoint point)
         {
             _draggingPoint = point;
-            point.MouseLeave();
+            _draggingPoint.TextBeingMoved = true;
+            point.MouseLeave(); 
             _lastTextDragUpdatePosition = MousePosition;
             point.MoveTextInfoToPoint(MousePosition);
             point.RedrawTextVisual();
@@ -291,6 +305,7 @@ namespace Cad_Point_Manager.ViewModels
         {
             if (_draggingPoint != null)
             {
+                _draggingPoint.TextBeingMoved = false;
                 _draggingPoint = null;
             }
 
@@ -305,12 +320,36 @@ namespace Cad_Point_Manager.ViewModels
         private void OnRenderFrame(object? sender, EventArgs e)
         {
             if (_draggingPoint == null) { return; }
+            if (!_draggingPoint.TextBeingMoved) { EndDraggingText(); }
 
             _draggingPoint.MoveTextInfoToPoint(MousePosition);
             _draggingPoint.RedrawTextVisual();
             _lastTextDragUpdatePosition = MousePosition;
         }
 
+
+        // Point Creation Methods
+        private void OnSubmitCogoPointClicked()
+        {
+            
+        }
+
+        // Key up event handling
+        private void SubscribeToWindowKeyUp()
+        {
+            var attachedWindow = Application.Current.MainWindow;
+            if (attachedWindow != null)
+            {
+                attachedWindow.KeyUp += Window_KeyUp;
+            }
+        }
+        public void Window_KeyUp(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Escape)
+            {
+                EndDraggingText();
+            }
+        }
         #endregion
 
         #region INotifyPropertyChanged

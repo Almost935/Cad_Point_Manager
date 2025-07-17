@@ -80,7 +80,7 @@
               Grid.Column="1"
               RenderTransformOrigin="0, 1">
             <ListView x:Name="pointsListView"
-                      ItemsSource="{Binding JobFileManager.CadManager3D.PointsView}"
+                      ItemsSource="{Binding ElementName=root, Path=CadManager.PointsView}"
                       Style="{StaticResource LayersListViewStyle}"
                       Opacity="{Binding ElementName=root, Path=PointsListOpacity}"
                       IsHitTestVisible="{Binding ElementName=root, Path=PointsListVisible}"
