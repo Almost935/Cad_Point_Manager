@@ -275,6 +275,13 @@ namespace Cad_Point_Manager.Models.PointRendering
             RedrawAllVisuals();
         }
 
+        public void UpdatePointGroup(PointGroup pointGroup)
+        {
+            if (PointGroup == pointGroup) { return; }
+            PointGroup = pointGroup;
+            RedrawAllVisuals(); 
+        }
+
         public void ResetTextLocations()
         {
             TextInfoBasePosition = Position;

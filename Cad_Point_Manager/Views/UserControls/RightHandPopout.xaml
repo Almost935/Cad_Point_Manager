@@ -12,6 +12,7 @@
              xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
              xmlns:validation="clr-namespace:Cad_Point_Manager.Views.ValidationRules"
              xmlns:fa="http://schemas.fontawesome.io/icons/"
+             xmlns:sys="clr-namespace:System;assembly=mscorlib"
              mc:Ignorable="d"
              d:DesignHeight="400"
              d:DesignWidth="400">
@@ -44,10 +45,12 @@
             <ColumnDefinition Width="*" />
             <ColumnDefinition Width="Auto" />
         </Grid.ColumnDefinitions>
+
         <Grid x:Name="mainPanel"
               HorizontalAlignment="Stretch"
               Grid.Column="0"
-              RenderTransformOrigin="1, 1">
+              RenderTransformOrigin="1, 1"
+              Margin="2 0 2 0">
             <ListView x:Name="layersListView"
                       ItemsSource="{Binding ElementName=root, Path=CadManager.LayersView}"
                       Style="{StaticResource LayersListViewStyle}"
@@ -99,9 +102,9 @@
                     </GridView>
                 </ListView.View>
             </ListView>
-            <Grid x:Name="pointGroupListViewGrid" 
+            <Grid x:Name="pointGroupListViewGrid"
+                  Background="{StaticResource SemiTransparentTabBrush}"
                   Opacity="{Binding ElementName=root, Path=PointGroupListOpacity}"
-                  Background="Transparent"
                   HorizontalAlignment="Stretch"
                   IsHitTestVisible="{Binding ElementName=root, Path=PointGroupListVisible}">
                 <Grid.RowDefinitions>
@@ -118,6 +121,7 @@
                           Focusable="True"
                           SelectionChanged="PointGroupsListView_SelectionChanged"
                           Background="{StaticResource PopoutMenuBackgroundBrush}"
+                          BorderThickness="0"
                           Loaded="PointGroupsListView_Loaded"
                           Padding="0">
                     <ListView.View>
@@ -172,8 +176,7 @@
                                                                          ToggleButtonWidth="20"
                                                                          ToggleButtonHeight="15"
                                                                          ToggleButtonMargin="0 2 0 2"
-                                                                         IsPopupOpen="{Binding Path=ColorToggleOpen, Mode=OneWayToSource}"
-                                                                         IsPopupOpenChanged="ColorPicker_IsPopupOpenChanged"
+                                                                         IsPopupOpen="{Binding ElementName=root, Path=PointGroupListColorPickerOpen, Mode=OneWayToSource}"
                                                                          Focusable="True"
                                                                          HorizontalAlignment="Center" />
                                     </DataTemplate>
@@ -243,80 +246,127 @@
                         </GridView>
                     </ListView.View>
                 </ListView>
-                <Grid Grid.Row="1"
-                      Background="{StaticResource SemiTransparentTabBrush}">
-                    <WrapPanel HorizontalAlignment="Center">
-                        <Button Style="{StaticResource BorderWidgetsButton}"
-                                Width="40"
-                                Height="40"
-                                Margin="2">
-                            <Button.Content>
-                                <ContentControl Template="{StaticResource MergeIcon}" />
-                            </Button.Content>
-                        </Button>
-                    </WrapPanel>
-                </Grid>
+
                 <Grid Grid.Row="2"
-                      Background="{StaticResource SemiTransparentTabBrush}"
                       HorizontalAlignment="Stretch">
                     <Grid.RowDefinitions>
+                        <RowDefinition Height="*" />
                         <RowDefinition Height="*" />
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
                     <Grid.Resources>
                         <Thickness x:Key="NewPointGroupMargin">5 2 5 2</Thickness>
+                        <Thickness x:Key="RowMargin">10 0 10 0</Thickness>
+                        <SolidColorBrush x:Key="TextBlockColor"
+                                         Color="White" />
+                        <sys:Double x:Key="PointGroupCreationTextSize">12</sys:Double>
                     </Grid.Resources>
-                    <StackPanel Grid.Row="0">
-                        <Grid>
+                    <Border Grid.Row="0"
+                            BorderBrush="White"
+                            BorderThickness="0 0 0 0.25"
+                            Margin="0 2 0 2">
+                        <Grid Margin="10 3 10 3">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0"
+                                       Text="Merge Selected Layer to:"
+                                       Foreground="{StaticResource TextBlockColor}"
+                                       Margin="{StaticResource NewPointGroupMargin}"
+                                       VerticalAlignment="Center"
+                                       FontSize="{StaticResource PointGroupCreationTextSize}"/>
+                            <ComboBox x:Name="AvailableMergePointGroupsCBox"
+                                      ItemsSource="{Binding ElementName=root, Path=AvailableMergePointGroups}"
+                                      DisplayMemberPath="Key"
+                                      SelectedValuePath="Value"
+                                      Style="{StaticResource ComboBoxStyle1}"
+                                      SelectedValue="{Binding ElementName=root, Path=MergePointGroup}"
+                                      SelectionChanged="AvailableMergePointGroupsCBox_SelectionChanged"
+                                      Height="25"
+                                      Grid.Column="1"
+                                      Margin="{StaticResource NewPointGroupMargin}">
+                                <ComboBox.ToolTip>
+                                    <TextBlock Text="The layer to which the selected layer will be merged." />
+                                </ComboBox.ToolTip>
+                            </ComboBox>
+                            <Button x:Name="MergePointGroups" 
+                                    Style="{StaticResource BorderWidgetsButton}"
+                                    Width="40"
+                                    Height="40"
+                                    Margin="2"
+                                    Grid.Column="2"
+                                    RenderTransformOrigin="0.5 0.5"
+                                    BorderBrush="White"
+                                    Click="MergePointGroups_Click">
+                                <Button.Content>
+                                    <ContentControl Template="{StaticResource MergeIcon}" />
+                                </Button.Content>
+                                <Button.LayoutTransform>
+                                    <ScaleTransform ScaleX="0.7"
+                                                    ScaleY="0.7" />
+                                </Button.LayoutTransform>
+                            </Button>
+                        </Grid>
+                    </Border>
+                    <StackPanel Grid.Row="1"
+                                Margin="0 2 0 2">
+                        <Grid Margin="{StaticResource RowMargin}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="1.5*" />
                             </Grid.ColumnDefinitions>
                             <TextBlock Text="Point Group Name:"
                                        Grid.Column="0"
                                        HorizontalAlignment="Left"
-                                       VerticalAlignment="Center"
-                                       Margin="{StaticResource NewPointGroupMargin}" />
+                                       VerticalAlignment="Bottom"
+                                       Margin="{StaticResource NewPointGroupMargin}"
+                                       Foreground="{StaticResource TextBlockColor}"
+                                       FontSize="{StaticResource PointGroupCreationTextSize}" />
                             <TextBox x:Name="NewPointGroupNameTextBox"
                                      Text="{Binding ElementName=root, Path=NewPointGroupName}"
                                      Grid.Column="1"
                                      Height="20"
                                      HorizontalAlignment="Stretch"
                                      VerticalAlignment="Center"
-                                     Margin="{StaticResource NewPointGroupMargin}" 
-                                     Style="{StaticResource ValidationTextBox}"/>
+                                     Margin="{StaticResource NewPointGroupMargin}"
+                                     Style="{StaticResource ValidationTextBox}" />
                         </Grid>
-                        <Grid>
+                        <Grid Margin="{StaticResource RowMargin}">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="1.5*" />
                             </Grid.ColumnDefinitions>
                             <TextBlock Text="Point Group Color:"
                                        Grid.Column="0"
                                        HorizontalAlignment="Left"
                                        VerticalAlignment="Center"
-                                       Margin="5" />
+                                       Margin="{StaticResource NewPointGroupMargin}"
+                                       Foreground="{StaticResource TextBlockColor}"
+                                       FontSize="{StaticResource PointGroupCreationTextSize}"/>
                             <colorpicker:PortableColorPicker Style="{StaticResource DefaultColorPickerStyle}"
                                                              SelectedColor="{Binding ElementName=root, Path=NewPointGroupColor, Converter={StaticResource Vector4ToColorConverter}, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
                                                              ToggleButtonWidth="30"
                                                              ToggleButtonHeight="20"
                                                              ToggleButtonMargin="0 2 0 2"
-                                                             IsPopupOpen="{Binding ElementName=root, Path=NewPointColorToggleOpen, Mode=OneWayToSource}"
-                                                             IsPopupOpenChanged="ColorPicker_IsPopupOpenChanged"
+                                                             IsPopupOpen="{Binding ElementName=root, Path=NewPointColorPickerToggleOpen, Mode=OneWayToSource}"
                                                              Focusable="True"
                                                              HorizontalAlignment="Center"
                                                              Grid.Column="1" />
                         </Grid>
-                        <Grid>
+                        <Grid Margin="{StaticResource RowMargin}">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="1.5*" />
                             </Grid.ColumnDefinitions>
                             <TextBlock Text="Point Group Scale:"
                                        Grid.Column="0"
                                        HorizontalAlignment="Left"
                                        VerticalAlignment="Center"
-                                       Margin="{StaticResource NewPointGroupMargin}" />
+                                       Margin="{StaticResource NewPointGroupMargin}"
+                                       Foreground="{StaticResource TextBlockColor}"
+                                       FontSize="{StaticResource PointGroupCreationTextSize}" />
                             <TextBox  x:Name="NewPointGroupScaleTextBox"
                                       Grid.Column="1"
                                       Height="20"
@@ -342,7 +392,7 @@
                     </StackPanel>
                     <WrapPanel HorizontalAlignment="Center"
                                Margin="10 5 10 5"
-                               Grid.Row="1">
+                               Grid.Row="2">
                         <Button x:Name="NewPointGroupButton"
                                 Style="{StaticResource BorderWidgetsButton}"
                                 Width="40"

@@ -170,7 +170,7 @@ namespace Cad_Point_Manager.Views
                 }
 
                 if (Point.TextToggleButtonPosition.X - Point.Position.X < 0) { isFlippedOnY = true; }
-                if (Point.TextToggleButtonPosition.Y - Point.Position.Y < 0) { isFlippedOnY = true; }
+                if (Point.TextToggleButtonPosition.Y - Point.Position.Y < 0) { isFlippedOnX = true; }
             }
             Matrix textMatrix = new();
             double xOffset = Point.TextInfoBaseOffset * Point.PointGroup.PointScale;

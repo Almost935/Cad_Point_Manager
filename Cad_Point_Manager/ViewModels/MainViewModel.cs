@@ -258,15 +258,17 @@ namespace Cad_Point_Manager.ViewModels
             if (param is ToggleButton toggle)
         {
                 string name = toggle.Name;
-                bool? isChecked = toggle.IsChecked;
+                bool isChecked = (bool)toggle.IsChecked;
            
                 switch (name)
                 {
                     case "PointCogoCreation":
-                        JobFileManager.CadManager3D.SnapSelectionMode = Enums.SelectionMode.Points;
+                        if (!isChecked) { JobFileManager.CadManager3D.SnapSelectionMode = Enums.SelectionMode.CogoPoints; }
+                        else { JobFileManager.CadManager3D.SnapSelectionMode = Enums.SelectionMode.Points; }
                         break;
                     case "GeometryCogoCreation":
-                        JobFileManager.CadManager3D.SnapSelectionMode = Enums.SelectionMode.Geometries;
+                        if (!isChecked) { JobFileManager.CadManager3D.SnapSelectionMode = Enums.SelectionMode.CogoPoints; }
+                        else { JobFileManager.CadManager3D.SnapSelectionMode = Enums.SelectionMode.Geometries; }
                         break;
                     default:
                         JobFileManager.CadManager3D.SnapSelectionMode = Enums.SelectionMode.CogoPoints;

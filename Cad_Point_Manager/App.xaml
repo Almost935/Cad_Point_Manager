@@ -27,6 +27,7 @@
                 <ResourceDictionary Source="Styles/BorderWidgetsToggleButton.xaml" />
                 <ResourceDictionary Source="Styles/RoundedTextBox.xaml" />
                 <ResourceDictionary Source="Styles/ValidationTextBox.xaml" />
+                <ResourceDictionary Source="Styles/ValidationComboBox.xaml" />
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Application.Resources>

@@ -15,7 +15,6 @@ namespace Cad_Point_Manager.Models.PointRendering
         private System.Windows.Media.SolidColorBrush _windowsBrush;
         private bool _isVisible = true;
         private ObservableCollection<CogoPoint> _points = [];
-        private bool _colorToggleOpen = false;
         private CogoPointManager _cogoPointManager;
         private double _pointScale = 1;
         #endregion
@@ -91,18 +90,6 @@ namespace Cad_Point_Manager.Models.PointRendering
                 {
                     _points = value;
                     OnPropertyChanged(nameof(Points));
-                }
-            }
-        }
-        public bool ColorToggleOpen
-        {
-            get => _colorToggleOpen;
-            set
-            {
-                if (_colorToggleOpen != value)
-                {
-                    _colorToggleOpen = value;
-                    OnPropertyChanged(nameof(ColorToggleOpen));
                 }
             }
         }
@@ -197,6 +184,14 @@ namespace Cad_Point_Manager.Models.PointRendering
                 (byte)(Color.Y * 255),
                 (byte)(Color.Z * 255));
             WindowsBrush = new(WindowsColor);
+        }
+
+        public void MergeToPointGroup(PointGroup newPG)
+        {
+            foreach (var point in Points)
+            {
+                point.UpdatePointGroup(newPG);
+            }
         }
         #endregion
 

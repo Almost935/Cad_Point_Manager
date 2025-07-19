@@ -9,7 +9,7 @@
                      Color="{StaticResource WidgetColor}" />
     
     <!--Tab Brushes-->
-    <Color x:Key="TabColor">#FF747781</Color>
+    <Color x:Key="TabColor">#FF4B4B4B</Color>
     <SolidColorBrush x:Key="TabBrush"
                      Color="{StaticResource TabColor}" />
     <Color x:Key="TabMouseOverColor">#FF5D5D5D</Color>
@@ -21,14 +21,15 @@
     <Color x:Key="PopoutMenuBackgroundColor">#CCDCDCDC</Color>
     <SolidColorBrush x:Key="PopoutMenuBackgroundBrush"
                      Color="{StaticResource PopoutMenuBackgroundColor}" />
-    <Color x:Key="SemiTransparentTabColor">#7F484A52</Color> 
+    <Color x:Key="SemiTransparentTabColor">#D812161A</Color>
     <SolidColorBrush x:Key="SemiTransparentTabBrush"
-                     Color="{StaticResource SemiTransparentTabColor}" /> 
-
+                     Color="{StaticResource SemiTransparentTabColor}" />
 
     <SolidColorBrush x:Key="MouseOverBrush"
                      Color="#FF08E6EE" />
     <SolidColorBrush x:Key="SemiTransparentMouseOver"
                      Color="#7F08E6EE" />
 
+    <SolidColorBrush x:Key="testBrush"
+                     Color="#D812161A" />
 </ResourceDictionary>

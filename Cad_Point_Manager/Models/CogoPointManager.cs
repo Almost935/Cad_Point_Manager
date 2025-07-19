@@ -223,6 +223,17 @@ namespace Cad_Point_Manager.Models
             return true;
         }
 
+        public void MergePointGroups(List<PointGroup> mergePGs, PointGroup destinationPG)
+        {
+            foreach (var pg in mergePGs.ToList()) // Enumerate a copy
+            {
+                bool removed = PointGroups.Remove(PointGroups.FirstOrDefault(p => p.Value == pg));
+                if (removed)
+                {
+                    pg.MergeToPointGroup(destinationPG);
+                }
+            }
+        }
 
         public void UpdatePointExtents()
         {

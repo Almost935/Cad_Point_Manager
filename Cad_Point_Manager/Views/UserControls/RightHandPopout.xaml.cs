@@ -10,6 +10,7 @@ using System.Drawing;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -30,18 +31,20 @@ namespace Cad_Point_Manager.Views.UserControls
         private readonly List<ObjectLayer3D> _selectedLayers = [];
         private readonly List<PointGroup> _selectedPointGroups = [];
         private bool _layerListVisible = true;
-        private bool _pointGroupListVisible = true;
         private double _layerListOpacity = 0;
+        private bool _pointGroupListVisible = true;
         private double _pointGroupListOpacity = 0;
+        private bool _pointGroupListColorPickerOpen = false;
         private string _newPointGroupName = "";
         private Vector4 _newPointGroupColor = new(0, 0, 0, 1);
         private double _newPointGroupScale = 1;
-        private bool _newPointColorToggleOpen = false;
+        private bool _newPointColorPickerToggleOpen = false;
+        private ICollectionView _availableMergePointGroups;
+        private PointGroup _mergePointGroup = null;
 
         private readonly DispatcherTimer _hideTimer = new();
         private bool _isMouseOverPanel = false;
         private ScaleTransform _mainPanelTransform = new();
-        private bool _pgColorPickerOpen;
 
         private bool _pointGroupBeingEdited = false;
         private string _previousPointGroupName = string.Empty;
@@ -85,6 +88,15 @@ namespace Cad_Point_Manager.Views.UserControls
                 OnPropertyChanged(nameof(PointGroupListOpacity));
             }
         }
+        public bool PointGroupListColorPickerOpen
+        {
+            get { return _pointGroupListColorPickerOpen; }
+            set
+            {
+                _pointGroupListColorPickerOpen = value;
+                OnPropertyChanged(nameof(PointGroupListColorPickerOpen));
+            }
+        }
         public string NewPointGroupName
         {
             get { return _newPointGroupName; }
@@ -112,13 +124,31 @@ namespace Cad_Point_Manager.Views.UserControls
                 OnPropertyChanged(nameof(NewPointGroupScale));
             }
         }
-        public bool NewPointColorToggleOpen
+        public bool NewPointColorPickerToggleOpen
         {
-            get { return _newPointColorToggleOpen; }
+            get { return _newPointColorPickerToggleOpen; }
             set
             {
-                _newPointColorToggleOpen = value;
-                OnPropertyChanged(nameof(NewPointColorToggleOpen));
+                _newPointColorPickerToggleOpen = value;
+                OnPropertyChanged(nameof(NewPointColorPickerToggleOpen));
+            }
+        }
+        public ICollectionView AvailableMergePointGroups
+        {
+            get => _availableMergePointGroups;
+            set
+            {
+                _availableMergePointGroups = value;
+                OnPropertyChanged(nameof(AvailableMergePointGroups));
+            }
+        }
+        public PointGroup MergePointGroup
+        {
+            get => _mergePointGroup;
+            set
+            {
+                _mergePointGroup = value;
+                OnPropertyChanged(nameof(MergePointGroup));
             }
         }
         #endregion
@@ -148,7 +178,7 @@ namespace Cad_Point_Manager.Views.UserControls
             nameof(CadManager),
             typeof(CadManager3D),
             typeof(RightHandPopout),
-            new PropertyMetadata(null));
+            new PropertyMetadata(null, (d, e) => ((RightHandPopout)d).InitializeMergeCollectionView()));
 
         public ICollectionView LayerCollectionView
         {
@@ -195,7 +225,7 @@ namespace Cad_Point_Manager.Views.UserControls
         private void HideTimer_Tick(object sender, EventArgs e)
         {
             _hideTimer.Stop();
-            if (!_isMouseOverPanel && !_pgColorPickerOpen && !NewPointColorToggleOpen)
+            if (!_isMouseOverPanel && !PointGroupListColorPickerOpen && !NewPointColorPickerToggleOpen)
             {
                 HideControl();
             }
@@ -325,6 +355,8 @@ namespace Cad_Point_Manager.Views.UserControls
                     _selectedPointGroups.Add(kvp.Value);
                 }
             }
+            
+            AvailableMergePointGroups.Refresh();
         }
         private void PointGroupsCheckBox_Checked(object sender, RoutedEventArgs e)
         {
@@ -533,36 +565,34 @@ namespace Cad_Point_Manager.Views.UserControls
             }
         }
 
-        private void UpdateIsColorPickerOpen()
-        {
-            _pgColorPickerOpen = false;
-            foreach (var pg in PointGroupCollectionView)
-            {
-                if (pg is PointGroup pointGroup)
-                {
-                    if (pointGroup.ColorToggleOpen)
-                    {
-                        _pgColorPickerOpen = true;
-                        return;
-                    }
-                }
-            }
-        }
-        private void ColorPicker_IsPopupOpenChanged(object? sender, bool e)
-        {
-            if (sender is PortableColorPicker colorPicker)
-            {
-                UpdateIsColorPickerOpen();
-
-                if (!colorPicker.IsPopupOpen)
-                {
-                    var binding = colorPicker.GetBindingExpression(PortableColorPicker.SelectedColorProperty);
-                    binding?.UpdateSource();
-                    CadManager.PointTextVerticesDirty = true;
-                    CadManager.PointCircleVerticesDirty = true;
-                }
-            }
-        }
+        //private void UpdateIsColorPickerOpen()
+        //{
+        //    _pgColorPickerOpen = false;
+        //    foreach (var pg in PointGroupCollectionView)
+        //    {
+        //        if (pg is PointGroup pointGroup)
+        //        {
+        //            if (pointGroup.ColorToggleOpen)
+        //            {
+        //                _pgColorPickerOpen = true;
+        //                return;
+        //            }
+        //        }
+        //    }
+        //}
+        //private void ColorPicker_IsPopupOpenChanged(object? sender, bool e)
+        //{
+        //    if (sender is PortableColorPicker colorPicker)
+        //    {   
+        //        if (!colorPicker.IsPopupOpen)
+        //        {
+        //            var binding = colorPicker.GetBindingExpression(PortableColorPicker.SelectedColorProperty);
+        //            binding?.UpdateSource();
+        //            CadManager.PointTextVerticesDirty = true;
+        //            CadManager.PointCircleVerticesDirty = true;
+        //        }
+        //    }
+        //}
 
         private void NewPointGroupButton_Click(object sender, RoutedEventArgs e)
         {
@@ -577,14 +607,6 @@ namespace Cad_Point_Manager.Views.UserControls
 
             if (nameHasError || scaleHasError)
             {
-                //if (nameHasError)
-                //{
-                //    MessageBox.Show(errorMessage, "Invalid Point Group Name", MessageBoxButton.OK, MessageBoxImage.Error);
-                //}
-                //if (scaleHasError)
-                //{
-                //    MessageBox.Show("Point group scale must be a positive number.", "Invalid Point Group Scale", MessageBoxButton.OK, MessageBoxImage.Error);
-                //}
                 if (nameHasError)
                 {
                     var binding = NewPointGroupNameTextBox.GetBindingExpression(TextBox.TextProperty);
@@ -619,6 +641,56 @@ namespace Cad_Point_Manager.Views.UserControls
             NewPointGroupScale = 1;
             Validation.ClearInvalid(NewPointGroupNameTextBox.GetBindingExpression(TextBox.TextProperty));
             Validation.ClearInvalid(NewPointGroupScaleTextBox.GetBindingExpression(TextBox.TextProperty));
+        }
+
+        // Point Group Merging
+        private void InitializeMergeCollectionView()
+        {
+            if (CadManager is null || CadManager.CogoPointManager is null || CadManager.CogoPointManager.PointGroups is null) { return; }
+            AvailableMergePointGroups = CollectionViewSource.GetDefaultView(CadManager.CogoPointManager.PointGroups);
+            AvailableMergePointGroups.Filter = FilterMergePoints;
+        }
+        private bool FilterMergePoints(object item)
+        {
+            if (item is KeyValuePair<string, PointGroup> keyValuePair)
+            {
+                bool isSelected = _selectedPointGroups.Contains(keyValuePair.Value);
+                return !isSelected;
+            }
+            return false;
+        }
+        private void MergePointGroups_Click(object sender, RoutedEventArgs e)
+        {
+            if (MergePointGroup is null)
+            {
+                var binding = AvailableMergePointGroupsCBox.GetBindingExpression(ComboBox.SelectedValueProperty);
+                if (binding != null)
+                {
+                    var error = new ValidationError(
+                        new DataErrorValidationRule(),
+                        binding,
+                        "You must select a point group to merge to.",
+                        null
+                    );
+                    Validation.MarkInvalid(binding, error);
+                }
+                return;
+            }
+            CadManager.CogoPointManager.MergePointGroups(_selectedPointGroups, MergePointGroup);
+        }
+        private void AvailableMergePointGroupsCBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            var binding = AvailableMergePointGroupsCBox.GetBindingExpression(ComboBox.SelectedItemProperty);
+            if (binding != null)
+            {
+                var error = new ValidationError(
+                    new DataErrorValidationRule(),
+                    binding,
+                    "You must select a point group to merge to.",
+                    null
+                );
+                Validation.ClearInvalid(binding);
+            }
         }
         #endregion
 
