@@ -14,6 +14,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Threading;
+using System.Collections.ObjectModel;
 using TextBox = System.Windows.Controls.TextBox;
 
 namespace Cad_Point_Manager.Views.UserControls
@@ -260,6 +261,7 @@ namespace Cad_Point_Manager.Views.UserControls
                     var binding = textBox.GetBindingExpression(TextBox.TextProperty);
                     binding?.ValidateWithoutUpdate();
                     var textBoxHasError = Validation.GetHasError(textBox);
+                    var pointNumExists = CadManager.CogoPointManager.PointExists(point.PointNumber);
 
                     if (textBoxHasError)
                     {

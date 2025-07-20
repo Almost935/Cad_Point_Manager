@@ -279,6 +279,7 @@ namespace Cad_Point_Manager.Models.PointRendering
         {
             if (PointGroup == pointGroup) { return; }
             PointGroup = pointGroup;
+            bool added = PointGroup.TryAddPoint(this);
             RedrawAllVisuals(); 
         }
 

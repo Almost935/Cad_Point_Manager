@@ -84,6 +84,7 @@ namespace Cad_Point_Manager.Models
         public Rect Extents { get; set; } = Rect.Empty;
 
         public List<int> UsedPointNumbers => PointGroups.SelectMany(pg => pg.Value.Points).Select(p => p.PointNumber).ToList();
+        public bool PointExists(int pointNumber) => PointGroups.SelectMany(pg => pg.Value.Points).Any(p => p.PointNumber == pointNumber);
         #endregion
 
         #region Constructor
@@ -225,7 +226,8 @@ namespace Cad_Point_Manager.Models
 
         public void MergePointGroups(List<PointGroup> mergePGs, PointGroup destinationPG)
         {
-            foreach (var pg in mergePGs.ToList()) // Enumerate a copy
+            var copy = mergePGs.ToList();
+            foreach (var pg in copy) // Enumerate a copy
             {
                 bool removed = PointGroups.Remove(PointGroups.FirstOrDefault(p => p.Value == pg));
                 if (removed)

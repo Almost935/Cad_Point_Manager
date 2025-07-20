@@ -139,6 +139,15 @@ namespace Cad_Point_Manager.Models.PointRendering
         {
             Points.Add(new(this, pointNum, position, CogoPointManager, elevation, description));
         }
+        public bool TryAddPoint(CogoPoint point)
+        {
+            if (Points.Any(p => p.PointNumber == point.PointNumber))
+            {
+                return false;
+            }
+            Points.Add(point);
+            return true;
+        }
 
         public override string ToString()
         {

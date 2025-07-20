@@ -298,13 +298,7 @@ namespace Cad_Point_Manager.Models
             PointGroupsView.SortDescriptions.Clear();
             PointGroupsView.SortDescriptions.Add(new SortDescription("Key", ListSortDirection.Ascending));
 
-            //PointGroupsView = CollectionViewSource.GetDefaultView(CogoPointManager.PointGroups.Select(kvp => kvp.Value).ToList());
-            //PointGroupsView.SortDescriptions.Clear();
-            //PointGroupsView.SortDescriptions.Add(new SortDescription(nameof(PointGroup.Name), ListSortDirection.Ascending));
-
-            //PointsView = CollectionViewSource.GetDefaultView(
-            //    CogoPointManager.PointGroups.SelectMany(kvp => kvp.Value.Points).ToList());
-            PointsView = new ListCollectionView(CogoPointManager.PointGroups);
+            PointsView = new ListCollectionView(CogoPointManager.CogoPoints);
             PointsView.GroupDescriptions.Clear();
             PointsView.GroupDescriptions.Add(new PropertyGroupDescription("PointGroup.Name"));
         }
