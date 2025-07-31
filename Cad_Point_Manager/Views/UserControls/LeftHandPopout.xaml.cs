@@ -1,12 +1,7 @@
 ﻿
 using Cad_Point_Manager.Models;
-using Cad_Point_Manager.Models.DrawingObjects3D;
 using Cad_Point_Manager.Models.PointRendering;
-using ColorPicker;
-using SharpDX;
 using System.ComponentModel;
-using System.Diagnostics;
-using System.Drawing;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
@@ -16,6 +11,11 @@ using System.Windows.Media.Animation;
 using System.Windows.Threading;
 using System.Collections.ObjectModel;
 using TextBox = System.Windows.Controls.TextBox;
+using Cad_Point_Manager.ViewModels;
+using System.Collections.Specialized;
+using Cad_Point_Manager.Models.DrawingObjects3D;
+using Cad_Point_Manager.Views.ValidationRules;
+using System.Windows.Data;
 
 namespace Cad_Point_Manager.Views.UserControls
 {
@@ -28,8 +28,11 @@ namespace Cad_Point_Manager.Views.UserControls
         private const double _panelHideTime = 200;
 
         private readonly List<CogoPoint> _selectedPoints = [];
-        private bool _pointsListVisible = true;
-        private double _pointsListOpacity = 0;
+        private bool _pointsTabVisible = true;
+        private double _pointsTabOpacity = 0;
+        private bool _propertiesTabVisible = true;
+        private double _propertiesTabOpacity = 0;
+        private CogoPointSelectionViewModel _cogoPointSelectionViewModel;
 
         private readonly DispatcherTimer _hideTimer = new();
         private bool _isMouseOverPanel = false;
@@ -45,22 +48,49 @@ namespace Cad_Point_Manager.Views.UserControls
         #endregion
 
         #region Properties
-        public bool PointsListVisible
+        public bool PointsTabVisible
         {
-            get { return _pointsListVisible; }
+            get { return _pointsTabVisible; }
             set
             {
-                _pointsListVisible = value;
-                OnPropertyChanged(nameof(PointsListVisible));
+                _pointsTabVisible = value;
+                OnPropertyChanged(nameof(PointsTabVisible));
             }
         }
-        public double PointsListOpacity
+        public double PointsTabOpacity
         {
-            get { return _pointsListOpacity; }
+            get { return _propertiesTabOpacity; }
             set
             {
-                _pointsListOpacity = value;
-                OnPropertyChanged(nameof(PointsListOpacity));
+                _propertiesTabOpacity = value;
+                OnPropertyChanged(nameof(PointsTabOpacity));
+            }
+        }
+        public bool PropertiesTabVisible
+        {
+            get { return _propertiesTabVisible; }
+            set
+            {
+                _propertiesTabVisible = value;
+                OnPropertyChanged(nameof(PropertiesTabVisible));
+            }
+        }
+        public double PropertiesTabOpacity
+        {
+            get { return _propertiesTabOpacity; }
+            set
+            {
+                _propertiesTabOpacity = value;
+                OnPropertyChanged(nameof(PropertiesTabOpacity));
+            }
+        }
+        public CogoPointSelectionViewModel CogoPointSelectionViewModel
+        {
+            get { return _cogoPointSelectionViewModel; }
+            set
+            {
+                _cogoPointSelectionViewModel = value;
+                OnPropertyChanged(nameof(CogoPointSelectionViewModel));
             }
         }
         #endregion
@@ -90,7 +120,7 @@ namespace Cad_Point_Manager.Views.UserControls
             nameof(CadManager),
             typeof(CadManager3D),
             typeof(LeftHandPopout),
-            new PropertyMetadata(null));
+            new PropertyMetadata(null, OnCadManagerChanged));
 
         public ICollectionView PointsCollectionView
         {
@@ -104,12 +134,28 @@ namespace Cad_Point_Manager.Views.UserControls
             typeof(ICollectionView),
             typeof(LeftHandPopout),
             new PropertyMetadata(null));
+
+        public static readonly DependencyProperty SelectedCogoPointsProperty =
+            DependencyProperty.Register(
+            nameof(SelectedCogoPoints),
+            typeof(ObservableCollection<CogoPoint>),
+            typeof(LeftHandPopout),
+            new FrameworkPropertyMetadata(
+                new ObservableCollection<CogoPoint>(),
+                FrameworkPropertyMetadataOptions.BindsTwoWayByDefault,
+                OnSelectedCogoPointsChanged));
+        public ObservableCollection<CogoPoint> SelectedCogoPoints
+        {
+            get => (ObservableCollection<CogoPoint>)GetValue(SelectedCogoPointsProperty);
+            set
+            {
+                SetValue(SelectedCogoPointsProperty, value);
+                CogoPointSelectionViewModel?.Refresh();
+            }
+        }
         #endregion
 
-        #region Events
-        public event PropertyChangedEventHandler PropertyChanged;
-        #endregion
-
+        #region Constructors
         public LeftHandPopout()
         {
             InitializeComponent();
@@ -121,6 +167,56 @@ namespace Cad_Point_Manager.Views.UserControls
             _hideTimer.Interval = TimeSpan.FromSeconds(1);
             _hideTimer.Tick += HideTimer_Tick;
         }
+        #endregion
+
+        #region Methods
+        private static void OnCadManagerChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is LeftHandPopout control && e.NewValue is not null && e.NewValue is CadManager3D cadManager)
+            {
+
+                control.CogoPointSelectionViewModel?.UpdateCadManager(cadManager);
+                control.CogoPointSelectionViewModel?.Refresh();
+
+                // Subscribe to PointGroups collection changes
+                if (cadManager?.CogoPointManager?.PointGroups is ObservableCollection<KeyValuePair<string, PointGroup>> pg)
+                {
+                    pg.CollectionChanged += control.PointGroups_CollectionChanged;
+                }
+            }
+        }
+        private void PointGroups_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        {
+            CogoPointSelectionViewModel?.UpdateDisplayedPointGroups();
+        }
+
+        private void SelectedCogoPoints_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        {
+            CogoPointSelectionViewModel?.Refresh();
+        }
+        private static void OnSelectedCogoPointsChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is LeftHandPopout control)
+            {
+                if (e.OldValue is ObservableCollection<CogoPoint> oldCollection)
+                {
+                    oldCollection.CollectionChanged -= control.SelectedCogoPoints_CollectionChanged;
+                }
+
+                if (e.NewValue is ObservableCollection<CogoPoint> newCollection)
+                {
+                    newCollection.CollectionChanged += control.SelectedCogoPoints_CollectionChanged;
+                    if (control.CogoPointSelectionViewModel is null)
+                    {
+                        control.CogoPointSelectionViewModel = new(control.CadManager, newCollection);
+                    }
+                    control.CogoPointSelectionViewModel.SelectedPoints = newCollection;
+                }
+
+                control.CogoPointSelectionViewModel?.Refresh();
+            }
+        }
+
 
         private void HideTimer_Tick(object sender, EventArgs e)
         {
@@ -155,7 +251,7 @@ namespace Cad_Point_Manager.Views.UserControls
         }
         private void HideControl()
         {
-            PointsListVisible = false;
+            PointsTabVisible = false;
 
             DoubleAnimation slideOut = new DoubleAnimation
             {
@@ -202,13 +298,18 @@ namespace Cad_Point_Manager.Views.UserControls
         }
         private void PointsBorder_MouseEnter(object sender, MouseEventArgs e)
         {
-            PointsListVisible = true;
-            PointsListOpacity = 1;
+            PointsTabVisible = true;
+            PointsTabOpacity = 1;
+            PropertiesTabVisible = false;
+            PropertiesTabOpacity = 0;
         }
 
-        protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        private void PropertiesBorder_MouseEnter(object sender, MouseEventArgs e)
         {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+            PointsTabVisible = false;
+            PointsTabOpacity = 0;
+            PropertiesTabVisible = true;
+            PropertiesTabOpacity = 1;
         }
 
         // Point Number Editing
@@ -259,9 +360,9 @@ namespace Cad_Point_Manager.Views.UserControls
 
                     point.ClearErrors(nameof(point.PointNumber));
                     var binding = textBox.GetBindingExpression(TextBox.TextProperty);
+                    Validation.ClearInvalid(binding);
                     binding?.ValidateWithoutUpdate();
                     var textBoxHasError = Validation.GetHasError(textBox);
-                    var pointNumExists = CadManager.CogoPointManager.PointExists(point.PointNumber);
 
                     if (textBoxHasError)
                     {
@@ -270,6 +371,28 @@ namespace Cad_Point_Manager.Views.UserControls
                     }
                     else
                     {
+                        var parsable = Int32.TryParse(textBox.Text, out var newPointNum);
+                        if (parsable)
+                        {
+                            var pointNumExists = CadManager.CogoPointManager.PointExists(newPointNum);
+                            if (pointNumExists)
+                            {
+                                var bindingExpr = textBox.GetBindingExpression(TextBox.TextProperty);
+                                if (bindingExpr != null)
+                                {
+                                    var error = new ValidationError(
+                                        new DataErrorValidationRule(),
+                                        bindingExpr,
+                                        "Point number already exists",
+                                        null);
+
+                                    Validation.MarkInvalid(bindingExpr, error);
+                                }
+                                textBox.SelectAll();
+                                return;
+                            }
+                        }
+
                         binding?.UpdateSource();
                         var pointNumberHasError = point.HasPointNumberError;
 
@@ -530,7 +653,7 @@ namespace Cad_Point_Manager.Views.UserControls
                 if (sender is TextBox textBox && textBox.DataContext is CogoPoint point)
                 {
                     e.Handled = true;
-                    point.Elevation  = _previousPointElevation;
+                    point.Elevation = _previousPointElevation;
                     var binding = textBox.GetBindingExpression(TextBox.TextProperty);
                     binding?.UpdateTarget();
                     textBox.IsReadOnly = true;
@@ -617,5 +740,52 @@ namespace Cad_Point_Manager.Views.UserControls
                 }
             }
         }
+
+        // 
+        private void PropertiesPointNumberTextBox_LostFocus(object sender, RoutedEventArgs e)
+        {
+            if (CogoPointSelectionViewModel.SelectedPoints.Count > 0)
+            {
+
+            }
+        }
+        private void PropertiesPointNumberTextBox_GotFocus(object sender, RoutedEventArgs e)
+        {
+            if (sender is TextBox textbox)
+            {
+                textbox.Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    textbox.SelectAll();
+                }), DispatcherPriority.Input);
+            }
+        }
+        private void PropertiesPointNumberTextBox_PreviewTextInput(object sender, TextCompositionEventArgs e)
+        {
+            var tb = sender as TextBox;
+            if (tb is null) { return; }
+
+            var text = tb.Text;
+            bool isValid = int.TryParse(text, out int number) && number > 0;
+
+            if (!isValid)
+            {
+                Validation.MarkInvalid(
+                    BindingOperations.GetBindingExpression(tb, TextBox.TextProperty),
+                    new ValidationError(new PointNumberValidationRule(), tb.GetBindingExpression(TextBox.TextProperty), "Point number must be a positive integer", null));
+            }
+            else
+            {
+                Validation.ClearInvalid(tb.GetBindingExpression(TextBox.TextProperty));
+            }
+        }
+        #endregion
+
+        #region INotifyPropertyChanged Implementation
+        public event PropertyChangedEventHandler PropertyChanged;
+        protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+        #endregion
     }
 }

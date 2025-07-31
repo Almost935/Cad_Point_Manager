@@ -187,6 +187,12 @@ namespace Cad_Point_Manager.ViewModels
 
             CogoPointCheckedCommand = new RelayCommand<CogoPoint>(OnCogoPointToggleButtonChecked);
             CogoPointUncheckedCommand = new RelayCommand<CogoPoint>(OnCogoPointToggleButtonUnchecked);
+
+            SelectedCogoPoints.CollectionChanged += SelectedCogoPoints_CollectionChanged;
+        }
+
+        private void SelectedCogoPoints_CollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+        {
         }
         #endregion
 
@@ -337,14 +343,6 @@ namespace Cad_Point_Manager.ViewModels
         }
 
         // Key up event handling
-        private void SubscribeToWindowKeyUp()
-        {
-            var attachedWindow = Application.Current.MainWindow;
-            if (attachedWindow != null)
-            {
-                attachedWindow.KeyUp += Window_KeyUp;
-            }
-        }
         public void Window_KeyUp(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.Escape)

@@ -103,7 +103,6 @@
                 </ListView.View>
             </ListView>
             <Grid x:Name="pointGroupListViewGrid"
-                  Background="{StaticResource SemiTransparentTabBrush}"
                   Opacity="{Binding ElementName=root, Path=PointGroupListOpacity}"
                   HorizontalAlignment="Stretch"
                   IsHitTestVisible="{Binding ElementName=root, Path=PointGroupListVisible}">
@@ -248,7 +247,8 @@
                 </ListView>
 
                 <Grid Grid.Row="2"
-                      HorizontalAlignment="Stretch">
+                      HorizontalAlignment="Stretch"
+                      Background="{StaticResource SemiTransparentTabBrush}">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="*" />
                         <RowDefinition Height="*" />
@@ -281,7 +281,7 @@
                                       ItemsSource="{Binding ElementName=root, Path=AvailableMergePointGroups}"
                                       DisplayMemberPath="Key"
                                       SelectedValuePath="Value"
-                                      Style="{StaticResource ComboBoxStyle1}"
+                                      Style="{StaticResource ValidationComboBox}"
                                       SelectedValue="{Binding ElementName=root, Path=MergePointGroup}"
                                       SelectionChanged="AvailableMergePointGroupsCBox_SelectionChanged"
                                       Height="25"

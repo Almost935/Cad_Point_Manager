@@ -2,10 +2,24 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <Style TargetType="TextBox"
            x:Key="ValidationTextBox">
-        <Setter Property="Background"
-                Value="White" />
-        <Setter Property="BorderBrush"
-                Value="Gray" />
+        <Style.Resources>
+            <SolidColorBrush x:Key="BackgroundBrush"
+                             Color="White" />
+            <SolidColorBrush x:Key="BorderBrush"
+                             Color="#FF9B9B9B" />
+            <SolidColorBrush x:Key="Foreground"
+                             Color="Black" />
+            <SolidColorBrush x:Key="DisabledBackgroundBrush"
+                             Color="#FFC3C3C3" />
+            <SolidColorBrush x:Key="DisabledStroke"
+                             Color="#FF5F5F5F" />
+            <SolidColorBrush x:Key="DisabledForeground"
+                             Color="#FF646464" />
+            <SolidColorBrush x:Key="ErrorForegroundBrush"
+                             Color="Red" />
+        </Style.Resources>
+        <Setter Property="Foreground"
+                Value="{DynamicResource Foreground}" />
         <Setter Property="BorderThickness"
                 Value="1" />
         <Setter Property="HorizontalContentAlignment"
@@ -23,10 +37,10 @@
             <Setter.Value>
                 <ControlTemplate TargetType="TextBox">
                     <Border x:Name="Border"
-                            Background="{TemplateBinding Background}"
+                            Background="{DynamicResource BackgroundBrush}"
+                            BorderBrush="{DynamicResource BorderBrush}"
                             BorderThickness="1"
-                            BorderBrush="#FFA5A5A5"
-                            CornerRadius="3">
+                            CornerRadius="2">
                         <ScrollViewer x:Name="PART_ContentHost"
                                       Margin="0"
                                       VerticalAlignment="Center" />
@@ -40,12 +54,23 @@
                             <Setter TargetName="Border"
                                     Property="BorderBrush"
                                     Value="Red" />
+                            <Setter Property="Foreground"
+                                    Value="{DynamicResource ErrorForegroundBrush}" />
                         </Trigger>
                         <Trigger Property="Validation.HasError"
                                  Value="False">
                             <Setter Property="ToolTip"
                                     Value="{Binding Text, 
                             RelativeSource={RelativeSource Self}}" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled"
+                                 Value="False">
+                            <Setter Property="Background"
+                                    Value="{DynamicResource DisabledBackgroundBrush}" />
+                            <Setter Property="BorderBrush"
+                                    Value="{DynamicResource DisabledStroke}" />
+                            <Setter Property="Foreground"
+                                    Value="{DynamicResource DisabledForeground}" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>

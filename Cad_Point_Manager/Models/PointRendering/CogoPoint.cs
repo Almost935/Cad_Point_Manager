@@ -46,7 +46,6 @@ namespace Cad_Point_Manager.Models.PointRendering
             {
                 _pointNumber = value;
                 OnPropertyChanged(nameof(PointNumber));
-                ValidatePointName(value);
             }
         }
         public double Northing
@@ -277,9 +276,10 @@ namespace Cad_Point_Manager.Models.PointRendering
 
         public void UpdatePointGroup(PointGroup pointGroup)
         {
+            if (pointGroup == null) { return; }
             if (PointGroup == pointGroup) { return; }
             PointGroup = pointGroup;
-            bool added = PointGroup.TryAddPoint(this);
+            PointGroup.TryAddPoint(this);
             RedrawAllVisuals(); 
         }
 
@@ -340,21 +340,6 @@ namespace Cad_Point_Manager.Models.PointRendering
             {
                 RedrawAllVisuals();
             }
-        }
-        #endregion
-
-        #region Validation
-        public bool ValidatePointName(int value)
-        {
-            ClearErrors(nameof(PointNumber));
-            ValidateProperty(value, nameof(PointNumber));
-
-            if (CogoPointManager?.UsedPointNumbers.Count(x => x == value) > 1)
-            {
-                AddError(nameof(PointNumber), $"Point number {value} is already in use.");
-            }
-
-            return !HasErrorsFor(nameof(PointNumber));
         }
         #endregion
     }

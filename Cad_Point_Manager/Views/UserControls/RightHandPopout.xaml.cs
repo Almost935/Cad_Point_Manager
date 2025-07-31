@@ -1,9 +1,11 @@
 ﻿
+using Cad_Point_Manager.Controls.D3DControl;
 using Cad_Point_Manager.Models;
 using Cad_Point_Manager.Models.DrawingObjects3D;
 using Cad_Point_Manager.Models.PointRendering;
 using ColorPicker;
 using SharpDX;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Drawing;
@@ -159,7 +161,6 @@ namespace Cad_Point_Manager.Views.UserControls
             get { return (double)GetValue(TabWidthProperty); }
             set { SetValue(TabWidthProperty, value); }
         }
-
         public static readonly DependencyProperty TabWidthProperty =
         DependencyProperty.Register(
             nameof(TabWidth),
@@ -172,7 +173,6 @@ namespace Cad_Point_Manager.Views.UserControls
             get { return (CadManager3D)GetValue(CadManagerProperty); }
             set { SetValue(CadManagerProperty, value); }
         }
-
         public static readonly DependencyProperty CadManagerProperty =
         DependencyProperty.Register(
             nameof(CadManager),
@@ -185,7 +185,6 @@ namespace Cad_Point_Manager.Views.UserControls
             get { return (ICollectionView)GetValue(LayerCollectionViewProperty); }
             set { SetValue(LayerCollectionViewProperty, value); }
         }
-
         public static readonly DependencyProperty LayerCollectionViewProperty =
         DependencyProperty.Register(
             nameof(LayerCollectionView),
@@ -198,7 +197,6 @@ namespace Cad_Point_Manager.Views.UserControls
             get { return (ICollectionView)GetValue(PointGroupCollectionViewProperty); }
             set { SetValue(PointGroupCollectionViewProperty, value); }
         }
-
         public static readonly DependencyProperty PointGroupCollectionViewProperty =
         DependencyProperty.Register(
             nameof(PointGroupCollectionView),
@@ -327,7 +325,6 @@ namespace Cad_Point_Manager.Views.UserControls
             PointGroupListVisible = false;
             LayerListVisible = true;
 
-            //layersListView.Focus();
             Validation.ClearInvalid(NewPointGroupScaleTextBox.GetBindingExpression(TextBox.TextProperty));
             PointGroupListOpacity = 0;
             LayerListOpacity = 1;
@@ -338,7 +335,6 @@ namespace Cad_Point_Manager.Views.UserControls
             LayerListVisible = false;
             PointGroupListVisible = true;
 
-            //pointGroupsListView.Focus();
             LayerListOpacity = 0;
             PointGroupListOpacity = 1;
             ValidatePointGroupScale();
@@ -564,35 +560,6 @@ namespace Cad_Point_Manager.Views.UserControls
                 }
             }
         }
-
-        //private void UpdateIsColorPickerOpen()
-        //{
-        //    _pgColorPickerOpen = false;
-        //    foreach (var pg in PointGroupCollectionView)
-        //    {
-        //        if (pg is PointGroup pointGroup)
-        //        {
-        //            if (pointGroup.ColorToggleOpen)
-        //            {
-        //                _pgColorPickerOpen = true;
-        //                return;
-        //            }
-        //        }
-        //    }
-        //}
-        //private void ColorPicker_IsPopupOpenChanged(object? sender, bool e)
-        //{
-        //    if (sender is PortableColorPicker colorPicker)
-        //    {   
-        //        if (!colorPicker.IsPopupOpen)
-        //        {
-        //            var binding = colorPicker.GetBindingExpression(PortableColorPicker.SelectedColorProperty);
-        //            binding?.UpdateSource();
-        //            CadManager.PointTextVerticesDirty = true;
-        //            CadManager.PointCircleVerticesDirty = true;
-        //        }
-        //    }
-        //}
 
         private void NewPointGroupButton_Click(object sender, RoutedEventArgs e)
         {

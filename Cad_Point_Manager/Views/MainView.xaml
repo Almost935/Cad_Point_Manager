@@ -327,7 +327,8 @@
                                HorizontalAlignment="Left"
                                ClipToBounds="False"
                                CadManager="{Binding JobFileManager.CadManager3D}"
-                               PointsCollectionView="{Binding JobFileManager.CadManager3D.PointsView}" />
+                               PointsCollectionView="{Binding JobFileManager.CadManager3D.PointsView}"
+                               SelectedCogoPoints="{Binding SelectedCogoPoints}" />
         </Grid>
 
         <Grid Grid.Row="2">
