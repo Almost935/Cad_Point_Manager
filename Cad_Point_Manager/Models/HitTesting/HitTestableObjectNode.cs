@@ -304,6 +304,24 @@ namespace Cad_Point_Manager.Models.HitTesting
 
             return hits.ToList();
         }
+
+        public List<CogoPoint> HitTestCogoPointsInRect(Rect rect)
+        {
+            List<CogoPoint> cogoPoints = [];
+
+            foreach (var hitTestableObject in HitTestableObjects)
+            {
+                if (hitTestableObject is CogoPoint point)
+                {
+                    if (point.PointGroup.IsVisible)
+                    {
+                        if (point.BoundsInRect(rect)) { cogoPoints.Add(point); }
+                    }
+                }
+            }
+            return cogoPoints;
+        }
+
         private void Subdivide()
         {
             if (Level > 0)

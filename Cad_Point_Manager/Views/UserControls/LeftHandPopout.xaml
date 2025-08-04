@@ -20,6 +20,7 @@
         <converters:KeyValueToValueConverter x:Key="KeyValueToValueConverter" />
         <validation:PointNumberValidationRule x:Key="PointNumberValidationRule" />
         <validation:DoubleValidationRule x:Key="DoubleValidationRule" />
+
         <SolidColorBrush x:Key="propertiesFontBrush"
                          Color="Black" />
 
@@ -369,23 +370,18 @@
                                    FontSize="{StaticResource PropertiesTabTextSize}"
                                    Margin="{StaticResource RowItemMargin}" />
                         <TextBox x:Name="PropertiesPointNumberTextBox"
+                                 Text="{Binding Path=PointNumber, Mode=TwoWay, UpdateSourceTrigger=Explicit}"
                                  Style="{StaticResource ValidationTextBox}"
                                  Grid.Column="1"
                                  Height="20"
                                  FontSize="{StaticResource PropertiesTabTextSize}"
                                  Margin="{StaticResource RowItemMargin}"
                                  IsEnabled="{Binding IsPointNumberEditable}"
+                                 PreviewMouseLeftButtonDown="PropertiesTextBox_PreviewMouseLeftButtonDown"
+                                 GotKeyboardFocus="PropertiesTextBox_GotKeyboardFocus"
                                  LostFocus="PropertiesPointNumberTextBox_LostFocus"
-                                 PreviewTextInput="PropertiesPointNumberTextBox_PreviewTextInput"
-                                 GotFocus="PropertiesPointNumberTextBox_GotFocus"
-                                 ToolTipService.ShowOnDisabled="True">
-                            <TextBox.Text>
-                                <Binding Path="PointNumber"
-                                         UpdateSourceTrigger="Explicit"
-                                         Mode="TwoWay">
-                                </Binding>
-                            </TextBox.Text>
-                        </TextBox>
+                                 TextChanged="PropertiesPointNumberTextBox_TextChanged"
+                                 PreviewKeyUp="PropertiesPointNumberTextBox_PreviewKeyUp" />
                     </Grid>
                     <Grid Margin="{StaticResource RowItemMargin}">
                         <Grid.ColumnDefinitions>
@@ -396,13 +392,19 @@
                                    VerticalAlignment="Center"
                                    FontSize="{StaticResource PropertiesTabTextSize}"
                                    Margin="{StaticResource RowItemMargin}" />
-                        <TextBox Grid.Column="1"
+                        <TextBox x:Name="PropertiesNorthingTextBox"
                                  Style="{StaticResource ValidationTextBox}"
+                                 Text="{Binding Northing, Mode=TwoWay, UpdateSourceTrigger=Explicit}"
+                                 Grid.Column="1"
                                  Height="20"
                                  FontSize="{StaticResource PropertiesTabTextSize}"
                                  Margin="{StaticResource RowItemMargin}"
-                                 Text="{Binding Northing}"
-                                 IsEnabled="{Binding IsCoordinateEditable}" />
+                                 IsEnabled="{Binding IsCoordinateEditable}"
+                                 PreviewMouseLeftButtonDown="PropertiesTextBox_PreviewMouseLeftButtonDown"
+                                 GotKeyboardFocus="PropertiesTextBox_GotKeyboardFocus"
+                                 LostFocus="PropertiesNorthingTextBox_LostFocus"
+                                 TextChanged="PropertiesNorthingTextBox_TextChanged"
+                                 PreviewKeyUp="PropertiesNorthingTextBox_PreviewKeyUp" />
                     </Grid>
                     <Grid Margin="{StaticResource RowItemMargin}">
                         <Grid.ColumnDefinitions>
@@ -413,13 +415,19 @@
                                    VerticalAlignment="Center"
                                    FontSize="{StaticResource PropertiesTabTextSize}"
                                    Margin="{StaticResource RowItemMargin}" />
-                        <TextBox Grid.Column="1"
+                        <TextBox x:Name="PropertiesEastingTextBox"
                                  Style="{StaticResource ValidationTextBox}"
+                                 Text="{Binding Easting, Mode=TwoWay, UpdateSourceTrigger=Explicit}"
+                                 Grid.Column="1"
                                  Height="20"
                                  FontSize="{StaticResource PropertiesTabTextSize}"
                                  Margin="{StaticResource RowItemMargin}"
-                                 Text="{Binding Easting}"
-                                 IsEnabled="{Binding IsCoordinateEditable}" />
+                                 IsEnabled="{Binding IsCoordinateEditable}"
+                                 PreviewMouseLeftButtonDown="PropertiesTextBox_PreviewMouseLeftButtonDown"
+                                 GotKeyboardFocus="PropertiesTextBox_GotKeyboardFocus"
+                                 LostFocus="PropertiesEastingTextBox_LostFocus"
+                                 TextChanged="PropertiesEastingTextBox_TextChanged"
+                                 PreviewKeyUp="PropertiesEastingTextBox_PreviewKeyUp" />
                     </Grid>
                     <Grid Margin="{StaticResource RowItemMargin}">
                         <Grid.ColumnDefinitions>
@@ -430,13 +438,19 @@
                                    VerticalAlignment="Center"
                                    FontSize="{StaticResource PropertiesTabTextSize}"
                                    Margin="{StaticResource RowItemMargin}" />
-                        <TextBox Grid.Column="1"
+                        <TextBox x:Name="PropertiesElevationTextBox"
                                  Style="{StaticResource ValidationTextBox}"
+                                 Text="{Binding Elevation, Mode=TwoWay, UpdateSourceTrigger=Explicit}"
+                                 Grid.Column="1"
                                  Height="20"
                                  FontSize="{StaticResource PropertiesTabTextSize}"
                                  Margin="{StaticResource RowItemMargin}"
-                                 Text="{Binding Elevation}"
-                                 IsEnabled="{Binding IsCoordinateEditable}" />
+                                 IsEnabled="{Binding IsCoordinateEditable}"
+                                 PreviewMouseLeftButtonDown="PropertiesTextBox_PreviewMouseLeftButtonDown"
+                                 GotKeyboardFocus="PropertiesTextBox_GotKeyboardFocus"
+                                 LostFocus="PropertiesElevationTextBox_LostFocus"
+                                 TextChanged="PropertiesElevationTextBox_TextChanged"
+                                 PreviewKeyUp="PropertiesElevationTextBox_PreviewKeyUp" />
                     </Grid>
                     <Grid Margin="{StaticResource RowItemMargin}">
                         <Grid.ColumnDefinitions>
@@ -447,13 +461,19 @@
                                    VerticalAlignment="Center"
                                    FontSize="{StaticResource PropertiesTabTextSize}"
                                    Margin="{StaticResource RowItemMargin}" />
-                        <TextBox Grid.Column="1"
+                        <TextBox x:Name="PropertiesDescriptionTextBox"
+                                 Grid.Column="1"
                                  Style="{StaticResource ValidationTextBox}"
                                  Height="20"
                                  FontSize="{StaticResource PropertiesTabTextSize}"
                                  Margin="{StaticResource RowItemMargin}"
                                  Text="{Binding Description}"
-                                 IsEnabled="{Binding IsDescriptionEditable}" />
+                                 IsEnabled="{Binding IsDescriptionEditable}"
+                                 PreviewMouseLeftButtonDown="PropertiesTextBox_PreviewMouseLeftButtonDown"
+                                 GotKeyboardFocus="PropertiesTextBox_GotKeyboardFocus"
+                                 LostFocus="PropertiesDescriptionTextBox_LostFocus"
+                                 TextChanged="PropertiesDescriptionTextBox_TextChanged"
+                                 PreviewKeyUp="PropertiesDescriptionTextBox_PreviewKeyUp" />
                     </Grid>
                     <Grid Margin="{StaticResource RowItemMargin}">
                         <Grid.ColumnDefinitions>
@@ -464,7 +484,8 @@
                                    VerticalAlignment="Center"
                                    FontSize="{StaticResource PropertiesTabTextSize}"
                                    Margin="{StaticResource RowItemMargin}" />
-                        <ComboBox Grid.Column="1"
+                        <ComboBox x:Name="PropertiesPointGroupComboBox"
+                                  Grid.Column="1"
                                   Height="20"
                                   Style="{StaticResource ValidationComboBox}"
                                   FontSize="{StaticResource PropertiesTabTextSize}"

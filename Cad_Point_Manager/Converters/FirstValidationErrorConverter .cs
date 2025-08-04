@@ -14,14 +14,19 @@ namespace Cad_Point_Manager.Converters
     {
         public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
         {
-            if (values.Length > 0 && values[0] is ReadOnlyObservableCollection<ValidationError> errors && errors.Count > 0)
+            var hasError = values[0] as bool?;
+            var errors = values[1] as ReadOnlyObservableCollection<ValidationError>;
+            var originalTooltip = values[2]?.ToString();
+
+            if (hasError == true && errors != null && errors.Count > 0)
             {
-                return errors[0].ErrorContent;
+                return errors[0].ErrorContent?.ToString();
             }
-            return null;
+
+            return originalTooltip;
         }
 
-        public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture) =>
-            throw new NotImplementedException();
+        public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
+            => throw new NotSupportedException();
     }
 }

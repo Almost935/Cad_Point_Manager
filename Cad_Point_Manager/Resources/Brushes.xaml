@@ -32,4 +32,7 @@
 
     <SolidColorBrush x:Key="testBrush"
                      Color="#D812161A" />
+
+    <SolidColorBrush x:Key="ErrorBrush"
+                     Color="Red" />
 </ResourceDictionary>

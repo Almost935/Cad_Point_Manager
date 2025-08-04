@@ -319,15 +319,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 return;
             }
 
-            //_d3dResCache.D2DDeviceContext.BeginDraw();
-
             Render();
-
-            //_d3dResCache.D2DDeviceContext.EndDraw();
-
             CalcFps();
-
-            //_device.ImmediateContext.Flush();
         }
 
         private void CalcFps()

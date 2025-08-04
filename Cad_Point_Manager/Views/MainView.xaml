@@ -36,13 +36,19 @@
         <converters:CogoPointColorConverter x:Key="CogoPointColorConverter" />
         <converters:CogoPointScaleConverter x:Key="CogoPointScaleConverter" />
         <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"
-                                              CollapseWhenFalse="False"
+                                              CollapseWhenFalse="True"
                                               Invert="False" />
         <converters:PointCenteringConverter x:Key="PointCenteringConverter" />
         <converters:CenterTranslationConverter x:Key="CenterTranslationConverter" />
         <converters:SelectionModeEnumConverter x:Key="SelectionModeEnumConverter" />
+        <converters:SnapToggleEnumToBoolConverter x:Key="SnapToggleEnumToBoolConverter" />
 
         <Thickness x:Key="ToggleButtonMargin">0,5,0,5</Thickness>
+
+        <SolidColorBrush x:Key="DragRectangleBorderBrush"
+                         Color="#FF00F6FF" />
+        <SolidColorBrush x:Key="DragRectangleFillBrush"
+                         Color="#3300FFFF" />
     </Page.Resources>
 
     <Grid>
@@ -240,7 +246,9 @@
                           SelectedValuePath="Value"
                           Margin="{StaticResource CogoPointCreationTextBoxMargin}" />
             </Grid>
-            <Grid Grid.Column="5">
+            <Grid x:Name="IntermediatePointsGrid"
+                  Grid.Column="5"
+                  Visibility="{Binding ElementName=GeometryCogoCreation, Path=IsChecked, Converter={StaticResource BoolToVisibilityConverter}, FallbackValue=Visible}">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
@@ -249,35 +257,40 @@
                            FontSize="12"
                            VerticalAlignment="Center"
                            HorizontalAlignment="Center"
-                           Text="Active Point Group:"
+                           Text="Intermediate Points:"
                            Margin="{StaticResource CogoPointCreationTextBlockMargin}" />
-                <ComboBox Grid.Column="1"
-                          Background="White"
-                          Height="{StaticResource CogoCreationTextBoxHeight}"
-                          MinWidth="{StaticResource CogoCreationTextBoxWidth}"
-                          ItemsSource="{Binding JobFileManager.CadManager3D.PointGroupsView}"
-                          DisplayMemberPath="Key"
-                          SelectedValuePath="Value"
-                          Margin="{StaticResource CogoPointCreationTextBoxMargin}" />
+                <TextBox Grid.Column="1"
+                         Style="{StaticResource RoundedTextBoxStyle}"
+                         Background="White"
+                         Height="{StaticResource CogoCreationTextBoxHeight}"
+                         MinWidth="{StaticResource CogoCreationTextBoxWidth}"
+                         Margin="{StaticResource CogoPointCreationTextBoxMargin}" />
             </Grid>
             <WrapPanel Grid.Column="6"
                        HorizontalAlignment="Center"
                        VerticalAlignment="Center">
                 <ToggleButton x:Name="PointCogoCreation"
+                              Tag="PointCogoCreation"
                               Grid.Column="0"
                               Style="{StaticResource BorderWidgetsToggleButton}"
                               Width="40"
                               Height="40"
                               Margin="2 0 2 0"
                               Command="{Binding SnapToggleCommand}"
-                              CommandParameter="{Binding RelativeSource={RelativeSource Self}}"
-                              Checked="PointCogoCreation_Checked"
-                              Unchecked="PointCogoCreation_Unchecked">
+                              CommandParameter="{Binding RelativeSource={RelativeSource Self}}">
                     <ToggleButton.Content>
                         <ContentControl Template="{StaticResource PointsIcon}" />
                     </ToggleButton.Content>
+                    <ToggleButton.IsChecked>
+                        <MultiBinding Converter="{StaticResource SnapToggleEnumToBoolConverter}">
+                            <Binding Path="Tag"
+                                     RelativeSource="{RelativeSource Self}" />
+                            <Binding Path="JobFileManager.CadManager3D.SnapSelectionMode" />
+                        </MultiBinding>
+                    </ToggleButton.IsChecked>
                 </ToggleButton>
                 <ToggleButton x:Name="GeometryCogoCreation"
+                              Tag="GeometryCogoCreation"
                               Grid.Column="1"
                               Style="{StaticResource BorderWidgetsToggleButton}"
                               Width="40"
@@ -288,6 +301,13 @@
                     <ToggleButton.Content>
                         <ContentControl Template="{StaticResource LineIcon}" />
                     </ToggleButton.Content>
+                    <ToggleButton.IsChecked>
+                        <MultiBinding Converter="{StaticResource SnapToggleEnumToBoolConverter}">
+                            <Binding Path="Tag"
+                                     RelativeSource="{RelativeSource Self}" />
+                            <Binding Path="JobFileManager.CadManager3D.SnapSelectionMode" />
+                        </MultiBinding>
+                    </ToggleButton.IsChecked>
                 </ToggleButton>
             </WrapPanel>
             <Grid Grid.Column="7">
@@ -307,7 +327,7 @@
             </Grid>
         </Grid>
 
-        <Grid x:Name="PopoutsGrid" 
+        <Grid x:Name="PopoutsGrid"
               Grid.Row="2"
               ClipToBounds="False"
               Panel.ZIndex="1">
@@ -368,6 +388,14 @@
                                    MousePosition="{Binding MousePosition, Mode=OneWayToSource}" />
 
                 <Canvas x:Name="BackgroundCanvas">
+                    <Rectangle Stroke="{StaticResource DragRectangleBorderBrush}"
+                               Fill="{StaticResource DragRectangleFillBrush}" 
+                               Width="{Binding ElementName=d3dDxfControl, Path=DragRect.Width}"
+                               Height="{Binding ElementName=d3dDxfControl, Path=DragRect.Height}"
+                               Canvas.Left="{Binding ElementName=d3dDxfControl,Path=DragRect.Left}"
+                               Canvas.Top="{Binding ElementName=d3dDxfControl,Path=DragRect.Top}"
+                               Visibility="{Binding ElementName=d3dDxfControl, Path=IsDragging, Converter={StaticResource BoolToVisibilityConverter}}"
+                               IsHitTestVisible="False"/>
                     <uc:SignificantPointControl HitTestablePoint="{Binding DataContext.SnappedPoint, RelativeSource={RelativeSource AncestorType=Page}}"
                                                 Focusable="False"
                                                 IsHitTestVisible="False">
@@ -462,7 +490,8 @@
             </Grid>
         </Grid>
 
-        <Grid x:Name="LowerRibbonGrid" Grid.Row="3">
+        <Grid x:Name="LowerRibbonGrid"
+              Grid.Row="3">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="2*" />

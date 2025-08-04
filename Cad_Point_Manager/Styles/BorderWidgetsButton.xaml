@@ -3,12 +3,34 @@
 
     <Style TargetType="Button"
            x:Key="BorderWidgetsButton">
+        <Style.Resources>
+            <SolidColorBrush x:Key="Button.Static.Foreground"
+                             Color="White" />
+            <SolidColorBrush x:Key="Button.Static.Background"
+                             Color="#FF292929" />
+            <SolidColorBrush x:Key="Button.Static.Border"
+                             Color="#666" />
+            <SolidColorBrush x:Key="Button.MouseOver.Background"
+                             Color="#555" />
+            <SolidColorBrush x:Key="Button.MouseOver.Border"
+                             Color="#FF7E7E7E" />
+            <SolidColorBrush x:Key="Button.Pressed.MouseOver.Background"
+                             Color="Gray" />
+            <SolidColorBrush x:Key="Button.Pressed.MouseOver.Border"
+                             Color="#FF888888" />
+            <SolidColorBrush x:Key="Button.Disabled.Foreground"
+                             Color="#FFC7C7C7" />
+            <SolidColorBrush x:Key="Button.Disabled.Background"
+                             Color="#333" />
+            <SolidColorBrush x:Key="Button.Disabled.Border"
+                             Color="#777" />
+        </Style.Resources>
         <Setter Property="Foreground"
-                Value="White" />
+                Value="{DynamicResource Button.Static.Foreground}" />
         <Setter Property="Background"
-                Value="#FF292929" />
+                Value="{DynamicResource Button.Static.Background}" />
         <Setter Property="BorderBrush"
-                Value="#666" />
+                Value="{DynamicResource Button.Static.Border}" />
         <Setter Property="BorderThickness"
                 Value="1" />
         <Setter Property="Padding"
@@ -29,25 +51,53 @@
                                           RecognizesAccessKey="True" />
                     </Border>
                     <ControlTemplate.Triggers>
-                        <!-- Mouse Over (alone) -->
-                        <Trigger Property="IsMouseOver"
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="IsPressed"
+                                           Value="False" />
+                                <Condition Property="IsMouseOver"
+                                           Value="True" />
+                            </MultiTrigger.Conditions>
+                            <Setter TargetName="border"
+                                    Property="Background"
+                                    Value="{DynamicResource Button.MouseOver.Background}" />
+                            <Setter TargetName="border"
+                                    Property="BorderBrush"
+                                    Value="{DynamicResource Button.MouseOver.Border}" />
+                        </MultiTrigger>
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="IsPressed"
+                                           Value="True" />
+                                <Condition Property="IsMouseOver"
+                                           Value="True" />
+                            </MultiTrigger.Conditions>
+                            <Setter TargetName="border"
+                                    Property="Background"
+                                    Value="{DynamicResource Button.Pressed.MouseOver.Background}" />
+                            <Setter TargetName="border"
+                                    Property="BorderBrush"
+                                    Value="{DynamicResource Button.Pressed.MouseOver.Border}" />
+                        </MultiTrigger>
+                        <!--<Trigger Property="IsMouseOver"
                                  Value="True">
                             <Setter TargetName="border"
                                     Property="Background"
-                                    Value="#555" />
+                                    Value="{DynamicResource Button.MouseOver.Background}" />
                             <Setter TargetName="border"
                                     Property="BorderBrush"
-                                    Value="#888" />
-                        </Trigger>
+                                    Value="{DynamicResource Button.MouseOver.Border}" />
+                        </Trigger>-->
                         
-                        <!-- Disabled -->
                         <Trigger Property="IsEnabled"
                                  Value="False">
+                            <Setter Property="Foreground"
+                                    Value="{DynamicResource Button.Disabled.Foreground}" />
                             <Setter TargetName="border"
                                     Property="Background"
-                                    Value="#333" />
+                                    Value="{DynamicResource Button.Disabled.Background}" />
                             <Setter Property="Foreground"
-                                    Value="#777" />
+                                    Value="{DynamicResource Button.Disabled.Foreground}" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>

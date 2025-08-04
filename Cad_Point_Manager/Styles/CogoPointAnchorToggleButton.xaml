@@ -4,6 +4,15 @@
 
     <Style TargetType="{x:Type ToggleButton}"
            x:Key="CogoPointAnchorToggleButton">
+        <Style.Resources>
+            <LinearGradientBrush x:Key="Border.Static.Background" 
+                                 EndPoint="0.5,1"
+                                 StartPoint="0.5,0">
+                <GradientStop Color="#FF95A7FF" />
+                <GradientStop Color="#FF7266EA"
+                              Offset="1" />
+            </LinearGradientBrush>
+        </Style.Resources>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ToggleButton">
@@ -13,15 +22,8 @@
                                 BorderBrush="Black"
                                 BorderThickness="0.5"
                                 Width="{TemplateBinding Width}"
-                                Height="{TemplateBinding Height}">
-                            <Border.Background>
-                                <LinearGradientBrush EndPoint="0.5,1"
-                                                     StartPoint="0.5,0">
-                                    <GradientStop Color="#FF748CFF" />
-                                    <GradientStop Color="#FF6558E9"
-                                                  Offset="1" />
-                                </LinearGradientBrush>
-                            </Border.Background>
+                                Height="{TemplateBinding Height}"
+                                Background="{DynamicResource Border.Static.Background}">
                             <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                                               Margin="{TemplateBinding Padding}"
                                               VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
@@ -29,21 +31,12 @@
                                               RecognizesAccessKey="True" />
                         </Border>
                     </Grid>
-
-
                     <ControlTemplate.Triggers>
-                        <Trigger Property="IsChecked"
-                                 Value="true">
-                            <Setter Property="Background"
-                                    TargetName="Border"
-                                    Value="#FF53F1F7" />
-                        </Trigger>
-
                         <Trigger Property="IsMouseOver"
                                  Value="true">
                             <Setter Property="Background"
                                     TargetName="Border"
-                                    Value="#FF95F8FC" />
+                                    Value="{StaticResource MouseOverBrush}" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>

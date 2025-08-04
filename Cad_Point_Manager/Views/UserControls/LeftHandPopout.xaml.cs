@@ -16,6 +16,7 @@ using System.Collections.Specialized;
 using Cad_Point_Manager.Models.DrawingObjects3D;
 using Cad_Point_Manager.Views.ValidationRules;
 using System.Windows.Data;
+using Cad_Point_Manager.Services;
 
 namespace Cad_Point_Manager.Views.UserControls
 {
@@ -27,16 +28,10 @@ namespace Cad_Point_Manager.Views.UserControls
         #region Fields
         private const double _panelHideTime = 200;
 
-        private readonly List<CogoPoint> _selectedPoints = [];
-        private bool _pointsTabVisible = true;
-        private double _pointsTabOpacity = 0;
-        private bool _propertiesTabVisible = true;
-        private double _propertiesTabOpacity = 0;
-        private CogoPointSelectionViewModel _cogoPointSelectionViewModel;
-
         private readonly DispatcherTimer _hideTimer = new();
         private bool _isMouseOverPanel = false;
         private ScaleTransform _mainPanelTransform = new();
+        private ValidationService _validationService = new();
 
         // DxfPoint editing fields
         private int _previousPointNumber;
@@ -45,6 +40,13 @@ namespace Cad_Point_Manager.Views.UserControls
         private double _previousPointElevation;
         private string _previousPointDescription;
         private bool _pointBeingEdited = false;
+
+        private readonly List<CogoPoint> _selectedPoints = [];
+        private bool _pointsTabVisible = true;
+        private double _pointsTabOpacity = 0;
+        private bool _propertiesTabVisible = true;
+        private double _propertiesTabOpacity = 0;
+        private CogoPointSelectionViewModel _cogoPointSelectionViewModel;
         #endregion
 
         #region Properties
@@ -741,28 +743,47 @@ namespace Cad_Point_Manager.Views.UserControls
             }
         }
 
-        // 
+        // Shared Properties Methods
+        private void PropertiesTextBox_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            var textBox = sender as TextBox;
+
+            if (textBox != null && !textBox.IsKeyboardFocusWithin)
+            {
+                e.Handled = true;
+                textBox.Focus(); // Triggers GotKeyboardFocus
+            }
+        }
+        private void PropertiesTextBox_GotKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
+        {
+            var textBox = sender as TextBox;
+            textBox?.SelectAll();
+        }
+
+        // Point Number Properties
         private void PropertiesPointNumberTextBox_LostFocus(object sender, RoutedEventArgs e)
         {
-            if (CogoPointSelectionViewModel.SelectedPoints.Count > 0)
+            if (CogoPointSelectionViewModel.SelectedPoints.Count > 0 && sender is TextBox textbox)
             {
-
-            }
-        }
-        private void PropertiesPointNumberTextBox_GotFocus(object sender, RoutedEventArgs e)
-        {
-            if (sender is TextBox textbox)
-            {
-                textbox.Dispatcher.BeginInvoke(new Action(() =>
+                var text = textbox.Text;
+                var binding = textbox.GetBindingExpression(TextBox.TextProperty);
+                bool isValid = int.TryParse(text, out int pointNum) && pointNum > 0;
+                var pointNumExists = CadManager.CogoPointManager.PointExists(pointNum);
+                if (isValid && !pointNumExists)
                 {
-                    textbox.SelectAll();
-                }), DispatcherPriority.Input);
+                    binding?.UpdateSource();
+                    Validation.ClearInvalid(binding);
+                }
+                else
+                {
+                    binding?.UpdateTarget();
+                    Validation.ClearInvalid(binding);
+                }
             }
         }
-        private void PropertiesPointNumberTextBox_PreviewTextInput(object sender, TextCompositionEventArgs e)
+        private void PropertiesPointNumberTextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
-            var tb = sender as TextBox;
-            if (tb is null) { return; }
+            if (sender is not TextBox tb) { return; }
 
             var text = tb.Text;
             bool isValid = int.TryParse(text, out int number) && number > 0;
@@ -776,6 +797,313 @@ namespace Cad_Point_Manager.Views.UserControls
             else
             {
                 Validation.ClearInvalid(tb.GetBindingExpression(TextBox.TextProperty));
+            }
+        }
+        private void PropertiesPointNumberTextBox_PreviewKeyUp(object sender, KeyEventArgs e)
+        {
+            if (sender is not TextBox textbox) { return; }
+            
+            if (e.Key == Key.Enter)
+            {
+                if (textbox.Text == CogoPointSelectionViewModel.PointNumber)
+                {
+                    var binding = textbox.GetBindingExpression(TextBox.TextProperty);
+                    binding?.UpdateSource();
+                    Validation.ClearInvalid(binding);
+
+                    var request = new TraversalRequest(FocusNavigationDirection.Next);
+                    (sender as UIElement)?.MoveFocus(request);
+                    e.Handled = true;
+
+                    return;
+                }
+
+                bool isInt = int.TryParse(textbox.Text, out int pointNum);
+                if (!isInt)
+                {
+                    Validation.MarkInvalid(BindingOperations.GetBindingExpression(textbox, TextBox.TextProperty),
+                            new ValidationError(new DataErrorValidationRule(), textbox.GetBindingExpression(TextBox.TextProperty), "Point number must be a valid integer.", null));
+                }
+
+                var isValid = _validationService.ValidatePointNumber(pointNum, CadManager.CogoPointManager, out string errorMessage);
+
+                if (!isValid)
+                {
+                    Validation.MarkInvalid(BindingOperations.GetBindingExpression(textbox, TextBox.TextProperty),
+                            new ValidationError(new DataErrorValidationRule(), textbox.GetBindingExpression(TextBox.TextProperty), errorMessage, null));
+                }
+                else
+                {
+                    var binding = textbox.GetBindingExpression(TextBox.TextProperty);
+                    binding?.UpdateSource();
+                    Validation.ClearInvalid(binding);
+
+                    var request = new TraversalRequest(FocusNavigationDirection.Next);
+                    (sender as UIElement)?.MoveFocus(request);
+                    e.Handled = true;
+                }
+            }
+            if (e.Key == Key.Escape)
+            {
+                var binding = textbox.GetBindingExpression(TextBox.TextProperty);
+                binding?.UpdateTarget();
+                Validation.ClearInvalid(binding);
+            }
+        }
+
+        // Northing Properties
+        private void PropertiesNorthingTextBox_LostFocus(object sender, RoutedEventArgs e)
+        {
+            if (CogoPointSelectionViewModel.SelectedPoints.Count > 0 && sender is TextBox textbox)
+            {
+                var text = textbox.Text;
+                var binding = textbox.GetBindingExpression(TextBox.TextProperty);
+                bool isValid = double.TryParse(text, out _);
+                if (isValid)
+                {
+                    binding?.UpdateSource();
+                    Validation.ClearInvalid(binding);
+                }
+                else
+                {
+                    binding?.UpdateTarget();
+                    Validation.ClearInvalid(binding);
+                }
+            }
+        }
+        private void PropertiesNorthingTextBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (sender is not TextBox tb) { return; }
+
+            var text = tb.Text;
+            bool isValid = double.TryParse(text, out double number);
+            if (!isValid)
+            {
+                Validation.MarkInvalid(
+                    BindingOperations.GetBindingExpression(tb, TextBox.TextProperty),
+                    new ValidationError(new DoubleValidationRule(), tb.GetBindingExpression(TextBox.TextProperty), "Northing must be a valid number", null));
+            }
+            else
+            {
+                Validation.ClearInvalid(tb.GetBindingExpression(TextBox.TextProperty));
+            }
+        }
+        private void PropertiesNorthingTextBox_PreviewKeyUp(object sender, KeyEventArgs e)
+        {
+            if (sender is not TextBox textbox) { return; }
+
+            if (e.Key == Key.Enter)
+            {
+                var text = textbox.Text;
+                bool isValid = double.TryParse(text, out _);
+                var binding = textbox.GetBindingExpression(TextBox.TextProperty);
+                if (isValid)
+                {
+                    binding?.UpdateSource();
+                    Validation.ClearInvalid(binding);
+
+                    var request = new TraversalRequest(FocusNavigationDirection.Next);
+                    (sender as UIElement)?.MoveFocus(request);
+                    e.Handled = true;
+                }
+            }
+            if (e.Key == Key.Escape)
+            {
+                var binding = textbox.GetBindingExpression(TextBox.TextProperty);
+                binding?.UpdateTarget();
+                Validation.ClearInvalid(binding);
+            }
+        }
+
+        // Easting Properties
+        private void PropertiesEastingTextBox_LostFocus(object sender, RoutedEventArgs e)
+        {
+            if (CogoPointSelectionViewModel.SelectedPoints.Count > 0 && sender is TextBox textbox)
+            {
+                var text = textbox.Text;
+                var binding = textbox.GetBindingExpression(TextBox.TextProperty);
+                bool isValid = double.TryParse(text, out _);
+                if (isValid)
+                {
+                    binding?.UpdateSource();
+                    Validation.ClearInvalid(binding);
+                }
+                else
+                {
+                    binding?.UpdateTarget();
+                    Validation.ClearInvalid(binding);
+                }
+            }
+        }
+        private void PropertiesEastingTextBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (sender is not TextBox tb) { return; }
+
+            var text = tb.Text;
+            bool isValid = double.TryParse(text, out _);
+            if (!isValid)
+            {
+                Validation.MarkInvalid(
+                    BindingOperations.GetBindingExpression(tb, TextBox.TextProperty),
+                    new ValidationError(new DoubleValidationRule(), tb.GetBindingExpression(TextBox.TextProperty), "Easting must be a valid number", null));
+            }
+            else
+            {
+                Validation.ClearInvalid(tb.GetBindingExpression(TextBox.TextProperty));
+            }
+        }
+        private void PropertiesEastingTextBox_PreviewKeyUp(object sender, KeyEventArgs e)
+        {
+            if (sender is not TextBox textbox) { return; }
+
+            if (e.Key == Key.Enter)
+            {
+                var text = textbox.Text;
+                bool isValid = double.TryParse(text, out _);
+                var binding = textbox.GetBindingExpression(TextBox.TextProperty);
+                if (isValid)
+                {
+                    binding?.UpdateSource();
+                    Validation.ClearInvalid(binding);
+
+                    var request = new TraversalRequest(FocusNavigationDirection.Next);
+                    (sender as UIElement)?.MoveFocus(request);
+                    e.Handled = true;
+                }
+            }
+            if (e.Key == Key.Escape)
+            {
+                var binding = textbox.GetBindingExpression(TextBox.TextProperty);
+                binding?.UpdateTarget();
+                Validation.ClearInvalid(binding);
+            }
+        }
+
+        // Elevation Properties
+        private void PropertiesElevationTextBox_LostFocus(object sender, RoutedEventArgs e)
+        {
+            if (CogoPointSelectionViewModel.SelectedPoints.Count > 0 && sender is TextBox textbox)
+            {
+                var text = textbox.Text;
+                var binding = textbox.GetBindingExpression(TextBox.TextProperty);
+                bool isValid = double.TryParse(text, out _);
+                if (isValid)
+                {
+                    binding?.UpdateSource();
+                    Validation.ClearInvalid(binding);
+                }
+                else
+                {
+                    binding?.UpdateTarget();
+                    Validation.ClearInvalid(binding);
+                }
+            }
+        }
+        private void PropertiesElevationTextBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (sender is not TextBox tb) { return; }
+
+            var text = tb.Text;
+            bool isValid = double.TryParse(text, out _);
+            if (!isValid)
+            {
+                Validation.MarkInvalid(
+                    BindingOperations.GetBindingExpression(tb, TextBox.TextProperty),
+                    new ValidationError(new DoubleValidationRule(), tb.GetBindingExpression(TextBox.TextProperty), "Elevation must be a valid number", null));
+            }
+            else
+            {
+                Validation.ClearInvalid(tb.GetBindingExpression(TextBox.TextProperty));
+            }
+        }
+        private void PropertiesElevationTextBox_PreviewKeyUp(object sender, KeyEventArgs e)
+        {
+            if (sender is not TextBox textbox) { return; }
+
+            if (e.Key == Key.Enter)
+            {
+                var text = textbox.Text;
+                bool isValid = double.TryParse(text, out _);
+                var binding = textbox.GetBindingExpression(TextBox.TextProperty);
+                if (isValid)
+                {
+                    binding?.UpdateSource();
+                    Validation.ClearInvalid(binding);
+
+                    var request = new TraversalRequest(FocusNavigationDirection.Next);
+                    (sender as UIElement)?.MoveFocus(request);
+                    e.Handled = true;
+                }
+            }
+            if (e.Key == Key.Escape)
+            {
+                var binding = textbox.GetBindingExpression(TextBox.TextProperty);
+                binding?.UpdateTarget();
+                Validation.ClearInvalid(binding);
+            }
+        }
+
+        // Description Properties
+        private void PropertiesDescriptionTextBox_LostFocus(object sender, RoutedEventArgs e)
+        {
+            if (CogoPointSelectionViewModel.SelectedPoints.Count > 0 && sender is TextBox textbox)
+            {
+                var text = textbox.Text;
+                var binding = textbox.GetBindingExpression(TextBox.TextProperty);
+                bool isValid = double.TryParse(text, out _);
+                if (isValid)
+                {
+                    binding?.UpdateSource();
+                    Validation.ClearInvalid(binding);
+                }
+                else
+                {
+                    binding?.UpdateTarget();
+                    Validation.ClearInvalid(binding);
+                }
+            }
+        }
+        private void PropertiesDescriptionTextBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (sender is not TextBox tb) { return; }
+
+            var text = tb.Text;
+            bool isValid = double.TryParse(text, out _);
+            if (!isValid)
+            {
+                Validation.MarkInvalid(
+                    BindingOperations.GetBindingExpression(tb, TextBox.TextProperty),
+                    new ValidationError(new DoubleValidationRule(), tb.GetBindingExpression(TextBox.TextProperty), "Elevation must be a valid number", null));
+            }
+            else
+            {
+                Validation.ClearInvalid(tb.GetBindingExpression(TextBox.TextProperty));
+            }
+        }
+        private void PropertiesDescriptionTextBox_PreviewKeyUp(object sender, KeyEventArgs e)
+        {
+            if (sender is not TextBox textbox) { return; }
+
+            if (e.Key == Key.Enter)
+            {
+                var text = textbox.Text;
+                bool isValid = double.TryParse(text, out _);
+                var binding = textbox.GetBindingExpression(TextBox.TextProperty);
+                if (isValid)
+                {
+                    binding?.UpdateSource();
+                    Validation.ClearInvalid(binding);
+
+                    var request = new TraversalRequest(FocusNavigationDirection.Next);
+                    (sender as UIElement)?.MoveFocus(request);
+                    e.Handled = true;
+                }
+            }
+            if (e.Key == Key.Escape)
+            {
+                var binding = textbox.GetBindingExpression(TextBox.TextProperty);
+                binding?.UpdateTarget();
+                Validation.ClearInvalid(binding);
             }
         }
         #endregion

@@ -187,12 +187,6 @@ namespace Cad_Point_Manager.ViewModels
 
             CogoPointCheckedCommand = new RelayCommand<CogoPoint>(OnCogoPointToggleButtonChecked);
             CogoPointUncheckedCommand = new RelayCommand<CogoPoint>(OnCogoPointToggleButtonUnchecked);
-
-            SelectedCogoPoints.CollectionChanged += SelectedCogoPoints_CollectionChanged;
-        }
-
-        private void SelectedCogoPoints_CollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
-        {
         }
         #endregion
 
