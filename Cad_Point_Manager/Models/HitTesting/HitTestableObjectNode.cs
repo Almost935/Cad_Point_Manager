@@ -315,7 +315,7 @@ namespace Cad_Point_Manager.Models.HitTesting
                 {
                     if (point.PointGroup.IsVisible)
                     {
-                        if (point.BoundsInRect(rect)) { cogoPoints.Add(point); }
+                        if (point.RectContainsRect(rect)) { cogoPoints.Add(point); }
                     }
                 }
             }

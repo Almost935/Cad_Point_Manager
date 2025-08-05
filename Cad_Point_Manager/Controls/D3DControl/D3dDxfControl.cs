@@ -106,6 +106,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private bool _hitTestIsRunning;
         private float _hittestStrokeThickness;
         private Point _lastHitTestCoords;
+        private Rect _lastDragHitTestRect = Rect.Empty;
         private CancellationTokenSource _hitTestCancellationTokenSource;
         private int _currentSnapHitTestIndex = 0;
         private int _lastSnapHitTestIndex = 0;
@@ -113,9 +114,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private List<(double distance, HitTestablePoint hitTestablePoint)> _nearestHitTestablePoints = [];
         private List<(double distance, DrawingGeometry3D geometry)> _nearestHitTestableGeometries = [];
         private List<(double distance, CogoPoint point)> _nearestHitTestableCogoPoints = [];
-        private List<(double distance, HitTestableObject hitTestableObject)> _nearestHitTestableObjects = [];
-        private List<HitTestableObject> _snappedHitTestableObjects = [];
-        private List<HitTestableObject> _selectedHitTestableObjects = [];
+        private readonly List<HitTestableObject> _snappedHitTestableObjects = [];
+        private readonly List<HitTestableObject> _selectedHitTestableObjects = [];
         #endregion
 
         #region Properties 
@@ -849,7 +849,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _isPanning = false;
 
             (bool linesDirty, bool textsDirty, bool circlesDirty, bool pointTextsDirty, bool sigPointsDirty) =
-                GetVerticesDirtyBools([_snappedHitTestableObjects]);
+                GetVerticesDirtyBools(_snappedHitTestableObjects);
 
             ResetSnappedObjects();
 
@@ -861,9 +861,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
         protected override void OnMouseLeftButtonUp(MouseButtonEventArgs e)
         {
             List<HitTestableObject> changedObjects = [];
-
-            IsDragging = false;
-            DragRect = new(0, 0, 0, 0);
 
             switch (CadManager3D.SnapSelectionMode)
             {
@@ -882,33 +879,36 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     break;
 
                 case Common.Enums.SelectionMode.Geometries:
-                    if (_snappedHitTestableObjects is not null)
+                    foreach (var snappedObject in _snappedHitTestableObjects)
                     {
-                        if (_snappedHitTestableObjects.IsSelected)
+                        if (snappedObject.IsSelected)
                         {
-                            DeselectObject(_snappedHitTestableObjects);
-                            changedObjects.Add(_snappedHitTestableObjects);
+                            DeselectObject(snappedObject);
+                            changedObjects.Add(snappedObject);
                         }
                         else
                         {
-                            SelectObject(_snappedHitTestableObjects);
-                            changedObjects.Add(_snappedHitTestableObjects);
+                            SelectObject(snappedObject);
+                            changedObjects.Add(snappedObject);
                         }
                     }
                     break;
 
                 case Common.Enums.SelectionMode.CogoPoints:
-                    if (_snappedHitTestableObjects is not null && _snappedHitTestableObjects is CogoPoint)
+
+                    foreach (var snappedObject in _snappedHitTestableObjects)
                     {
-                        if (_snappedHitTestableObjects.IsSelected)
+                        if (snappedObject is not CogoPoint) { continue; }
+
+                        if (snappedObject.IsSelected)
                         {
-                            DeselectObject(_snappedHitTestableObjects);
-                            changedObjects.Add(_snappedHitTestableObjects);
+                            DeselectObject(snappedObject);
+                            changedObjects.Add(snappedObject);
                         }
                         else
                         {
-                            SelectObject(_snappedHitTestableObjects);
-                            changedObjects.Add(_snappedHitTestableObjects);
+                            SelectObject(snappedObject);
+                            changedObjects.Add(snappedObject);
                         }
                     }
                     break;
@@ -916,6 +916,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 default:
                     break;
             }
+
+            IsDragging = false;
+            DragRect = new(0, 0, 0, 0);
 
             var (linesDirty, textsDirty, circlesDirty, pointTextsDirty, sigPointsDirty) = GetVerticesDirtyBools(changedObjects);
             if (linesDirty) { _lineVerticesDirty = linesDirty; }
@@ -1004,9 +1007,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     switch (CadManager3D.SnapSelectionMode)
                     {
                         case Common.Enums.SelectionMode.Points:
-                            if (IsDragging) { }
-                            else { RunPointsHitTest(_hitTestCancellationTokenSource.Token); }
-                            
+                            RunPointsHitTest(_hitTestCancellationTokenSource.Token);
                             break;
 
                         case Common.Enums.SelectionMode.Geometries:
@@ -1014,7 +1015,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
                             break;
 
                         case Common.Enums.SelectionMode.CogoPoints:
-                            RunCogoPointsHitTest(_hitTestCancellationTokenSource.Token);
+                            if (IsDragging) { RunDragCogoPointsHittest(_hitTestCancellationTokenSource.Token); }
+                            else { RunCogoPointsHitTest(_hitTestCancellationTokenSource.Token); }
+
                             break;
 
                         default:
@@ -1123,33 +1126,36 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             Rect rect = new(_lastHitTestCoords.X - _hittestStrokeThickness, _lastHitTestCoords.Y - _hittestStrokeThickness,
                 _hittestStrokeThickness * 2, _hittestStrokeThickness * 2);
-            var snappedGeometryCopy = _snappedHitTestableObjects;
+            var snappedObjectsCopy = _snappedHitTestableObjects.ToList();
             List<HitTestableObject> changedObjects = [];
 
-            if (snappedGeometryCopy is not null)
+            if (_snappedHitTestableObjects is not null && _snappedHitTestableObjects.Count > 0)
             {
-                if (snappedGeometryCopy.DistanceToPoint(_lastHitTestCoords) > _hittestStrokeThickness)
+                foreach (var snappedObj in snappedObjectsCopy)
                 {
-                    changedObjects.Add(snappedGeometryCopy);
-                    ResetSnappedObjects();
-
-                    _nearestHitTestableGeometries = CadManager3D.HitTestGeometries(_lastHitTestCoords, _hittestStrokeThickness).Take(_maxSelectableObjects).ToList();
-                    if (_nearestHitTestableGeometries.Count > 0)
+                    if (snappedObj.DistanceToPoint(_lastHitTestCoords) > _hittestStrokeThickness)
                     {
-                        bool exists = HitTestingHelpers.TryGetNextDrawingGeometry(_currentSnapHitTestIndex, _nearestHitTestableGeometries, out var tup);
-                        if (!exists) { _currentSnapHitTestIndex = 0; }
-                        exists = HitTestingHelpers.TryGetNextDrawingGeometry(_currentSnapHitTestIndex, _nearestHitTestableGeometries, out tup);
+                        changedObjects.Add(snappedObj);
+                        ResetSnappedObjects();
 
-                        if (exists)
+                        _nearestHitTestableGeometries = CadManager3D.HitTestGeometries(_lastHitTestCoords, _hittestStrokeThickness).Take(_maxSelectableObjects).ToList();
+                        if (_nearestHitTestableGeometries.Count > 0)
                         {
-                            var (distance, geometry) = tup;
+                            bool exists = HitTestingHelpers.TryGetNextDrawingGeometry(_currentSnapHitTestIndex, _nearestHitTestableGeometries, out var tup);
+                            if (!exists) { _currentSnapHitTestIndex = 0; }
+                            exists = HitTestingHelpers.TryGetNextDrawingGeometry(_currentSnapHitTestIndex, _nearestHitTestableGeometries, out tup);
 
-                            if (distance <= _hittestStrokeThickness)
+                            if (exists)
                             {
-                                changedObjects.Add(geometry);
-                                _snappedHitTestableObjects = geometry;
-                                SnapObject(_snappedHitTestableObjects);
-                                _lastSnapHitTestIndex = _currentSnapHitTestIndex;
+                                var (distance, geometry) = tup;
+
+                                if (distance <= _hittestStrokeThickness)
+                                {
+                                    changedObjects.Add(geometry);
+                                    _snappedHitTestableObjects.Add(geometry);
+                                    SnapObject(geometry);
+                                    _lastSnapHitTestIndex = _currentSnapHitTestIndex;
+                                }
                             }
                         }
                     }
@@ -1171,8 +1177,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
                         if (distance <= _hittestStrokeThickness)
                         {
                             changedObjects.Add(geometry);
-                            _snappedHitTestableObjects = geometry;
-                            SnapObject(_snappedHitTestableObjects);
+                            _snappedHitTestableObjects.Add(geometry);
+                            SnapObject(geometry);
                             _lastSnapHitTestIndex = _currentSnapHitTestIndex;
                         }
                     }
@@ -1202,34 +1208,36 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             Rect rect = new(_lastHitTestCoords.X - _hittestStrokeThickness, _lastHitTestCoords.Y - _hittestStrokeThickness,
                 _hittestStrokeThickness * 2, _hittestStrokeThickness * 2);
-            var snappedGeometryCopy = _snappedHitTestableObjects;
+            var snappedObjectsCopy = _snappedHitTestableObjects.ToList();
             List<HitTestableObject> changedObjects = [];
 
-            if (snappedGeometryCopy is not null)
+            if (snappedObjectsCopy is not null && snappedObjectsCopy.Count > 0)
             {
-                if (snappedGeometryCopy.DistanceToPoint(_lastHitTestCoords) > _hittestStrokeThickness)
+                foreach (var snappedObj in snappedObjectsCopy)
                 {
-                    changedObjects.Add(snappedGeometryCopy);
-                    ResetSnappedObjects();
-
-                    _nearestHitTestableCogoPoints = CadManager3D.HitTestCogoPoints(_lastHitTestCoords, _hittestStrokeThickness).Take(_maxSelectableObjects).ToList();
-                    if (_nearestHitTestableCogoPoints.Count > 0)
+                    if (snappedObj.DistanceToPoint(_lastHitTestCoords) > _hittestStrokeThickness)
                     {
-                        bool exists = HitTestingHelpers.TryGetNextCogoPoint(_currentSnapHitTestIndex, _nearestHitTestableCogoPoints, out var tup);
-                        if (!exists) { _currentSnapHitTestIndex = 0; }
-                        exists = HitTestingHelpers.TryGetNextCogoPoint(_currentSnapHitTestIndex, _nearestHitTestableCogoPoints, out tup);
+                        changedObjects.Add(snappedObj);
+                        ResetSnappedObjects();
 
-                        if (exists)
+                        _nearestHitTestableCogoPoints = CadManager3D.HitTestCogoPoints(_lastHitTestCoords, _hittestStrokeThickness).Take(_maxSelectableObjects).ToList();
+                        if (_nearestHitTestableCogoPoints.Count > 0)
                         {
-                            var (distance, geometry) = tup;
+                            bool exists = HitTestingHelpers.TryGetNextCogoPoint(_currentSnapHitTestIndex, _nearestHitTestableCogoPoints, out var tup);
+                            if (!exists) { _currentSnapHitTestIndex = 0; }
+                            exists = HitTestingHelpers.TryGetNextCogoPoint(_currentSnapHitTestIndex, _nearestHitTestableCogoPoints, out tup);
 
-                            if (distance <= _hittestStrokeThickness)
+                            if (exists)
                             {
-                                changedObjects.Add(geometry);
-                                _snappedHitTestableObjects = geometry;
-                                //SnapObject(_snappedHitTestableObjects);
-                                _snappedHitTestableObjects.ForEach(x => SnapObject(x));
-                                _lastSnapHitTestIndex = _currentSnapHitTestIndex;
+                                var (distance, geometry) = tup;
+
+                                if (distance <= _hittestStrokeThickness)
+                                {
+                                    changedObjects.Add(geometry);
+                                    _snappedHitTestableObjects.Add(geometry);
+                                    SnapObject(geometry);
+                                    _lastSnapHitTestIndex = _currentSnapHitTestIndex;
+                                }
                             }
                         }
                     }
@@ -1252,8 +1260,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
                         if (distance <= _hittestStrokeThickness)
                         {
                             changedObjects.Add(geometry);
-                            _snappedHitTestableObjects = geometry;
-                            SnapObject(_snappedHitTestableObjects);
+                            _snappedHitTestableObjects.Add(geometry);
+                            SnapObject(geometry);
                             _lastSnapHitTestIndex = _currentSnapHitTestIndex;
                         }
                     }
@@ -1266,19 +1274,31 @@ namespace Cad_Point_Manager.Controls.D3DControl
             if (textsDirty) { _textGlowVerticesDirty = textsDirty; }
         }
 
-        private void RunDragRectangleHittest(CancellationToken token)
+        private void RunDragCogoPointsHittest(CancellationToken token)
         {
             // Check for cancellation
             if (token.IsCancellationRequested) { token.ThrowIfCancellationRequested(); }
 
             if (!Dispatcher.CheckAccess())
             {
-                Dispatcher.Invoke(() => RunDragRectangleHittest(token));
+                Dispatcher.Invoke(() => RunDragCogoPointsHittest(token));
                 return;
             }
             if (!CadManager3D.DxfLoaded) { return; }
 
 
+            ResetSnappedObjects();
+
+            //Debug.WriteLine($"\n_snappedHitTestableObjects.Count: {_snappedHitTestableObjects.Count}");
+
+            _lastDragHitTestRect = DxfDragRect;
+            var points = CadManager3D.HitTestDragCogoPoints(_lastDragHitTestRect);
+            _snappedHitTestableObjects.AddRange(points);
+            //_snappedHitTestableObjects.AddRange(CadManager3D.HitTestDragCogoPoints(DxfDragRect));
+            foreach (var hitTestableObject in _snappedHitTestableObjects)
+            {
+                SnapObject(hitTestableObject);
+            }
         }
 
         public void CancelHitTesting()
@@ -1383,12 +1403,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
             {
                 SnappedSignificantPoint = null;
             }
-            _snappedHitTestableObjects.ForEach
-            if (_snappedHitTestableObjects is not null)
-            {
-                UnsnapObject(_snappedHitTestableObjects);
-                _snappedHitTestableObjects = null;
-            }
+            _snappedHitTestableObjects.ForEach(x => UnsnapObject(x));
+            _snappedHitTestableObjects.Clear();
+
             _lineGlowVertices.Clear();
             _textGlowVertices.Clear();
         }

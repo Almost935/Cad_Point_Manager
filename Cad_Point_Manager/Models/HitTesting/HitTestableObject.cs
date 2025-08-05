@@ -67,6 +67,19 @@ namespace Cad_Point_Manager.Models.HitTesting
             }
             return false;
         }
+        public bool RectContainsRect(Rect rect)
+        {
+            if (Bounds.IsEmpty || rect.IsEmpty)
+            {
+                return false;
+            }
+
+            if (rect.Contains(Bounds))
+            {
+                return true;
+            }
+            return false;
+        }
         #endregion
 
         #region INotifyPropertyChanged Implementation
