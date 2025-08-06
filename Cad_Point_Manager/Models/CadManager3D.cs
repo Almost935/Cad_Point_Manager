@@ -9,6 +9,7 @@ using netDxf;
 using netDxf.Entities;
 using netDxf.Tables;
 using SharpDX;
+using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -375,29 +376,59 @@ namespace Cad_Point_Manager.Models
 
         public List<CogoPoint> HitTestDragCogoPoints(Rect rect)
         {
+            //List<CogoPoint> hits = [];
+
+            //if (HitTestableObjectTree is null) { return hits; }
+
+            //var nodes = HitTestableObjectTree.GetIntersectingNodes(rect);
+
+            //foreach (var node in nodes)
+            //{
+            //    if (rect.Contains(node.Extents))
+            //    {
+            //        foreach (var obj in node.HitTestableObjects)
+            //        {
+            //            if (obj is CogoPoint cogoPoint) { hits.Add(cogoPoint); }
+            //        }
+            //    }
+            //    else
+            //    {
+            //        hits.AddRange(node.HitTestCogoPointsInRect(rect));
+            //    }
+            //}
+
+
+            if (HitTestableObjectTree is null) { return []; }
             List<CogoPoint> hits = [];
-
-            if (HitTestableObjectTree is null) { return hits; }
-
+            ConcurrentBag<CogoPoint> concurrentHits = [];
             var nodes = HitTestableObjectTree.GetIntersectingNodes(rect);
-            foreach (var node in nodes)
+
+            Parallel.For(0, nodes.Count, i =>
             {
+                var node = nodes[i];
+
                 if (rect.Contains(node.Extents))
                 {
                     foreach (var obj in node.HitTestableObjects)
                     {
-                        if (obj is CogoPoint cogoPoint) { hits.Add(cogoPoint); }
+                        if (obj is CogoPoint cogoPoint)
+                        {
+                            concurrentHits.Add(cogoPoint);
+                        }
                     }
                 }
                 else
                 {
-                    hits.AddRange(node.HitTestCogoPointsInRect(rect));
+                    foreach (var point in node.HitTestCogoPointsInRect(rect))
+                    {
+                        concurrentHits.Add(point);
+                    }
                 }
-            }
+            });
 
-            var distinctHits = hits.Distinct().ToList();
+            hits = concurrentHits.ToList();
 
-            return distinctHits;
+            return hits;
         }
 
         public void ClearDxf()
@@ -768,56 +799,6 @@ namespace Cad_Point_Manager.Models
                 LineVerticesDirty = true;
             }
         }
-        #endregion
-
-        #region Static Methods
-        public static List<Rect> GetDragDelta(Rect previous, Rect current)
-        {
-            var deltaRects = new List<Rect>();
-
-            // First, find the union and intersection
-            Rect intersection = Rect.Intersect(previous, current);
-            if (intersection.IsEmpty)
-            {
-                deltaRects.Add(current); // No overlap, full rect is new
-                return deltaRects;
-            }
-
-            // Top band
-            if (current.Top < previous.Top)
-            {
-                double height = previous.Top - current.Top;
-                deltaRects.Add(new Rect(current.Left, current.Top, current.Width, height));
-            }
-
-            // Bottom band
-            if (current.Bottom > previous.Bottom)
-            {
-                double height = current.Bottom - previous.Bottom;
-                deltaRects.Add(new Rect(current.Left, previous.Bottom, current.Width, height));
-            }
-
-            // Left band
-            if (current.Left < previous.Left)
-            {
-                double width = previous.Left - current.Left;
-                double top = Math.Max(current.Top, previous.Top);
-                double height = Math.Min(current.Bottom, previous.Bottom) - top;
-                deltaRects.Add(new Rect(current.Left, top, width, height));
-            }
-
-            // Right band
-            if (current.Right > previous.Right)
-            {
-                double width = current.Right - previous.Right;
-                double top = Math.Max(current.Top, previous.Top);
-                double height = Math.Min(current.Bottom, previous.Bottom) - top;
-                deltaRects.Add(new Rect(previous.Right, top, width, height));
-            }
-
-            return deltaRects;
-        }
-
         #endregion
     }
 }

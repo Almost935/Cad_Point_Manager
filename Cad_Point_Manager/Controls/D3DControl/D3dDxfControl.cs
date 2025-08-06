@@ -106,7 +106,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private bool _hitTestIsRunning;
         private float _hittestStrokeThickness;
         private Point _lastHitTestCoords;
-        private Rect _lastDragHitTestRect = Rect.Empty;
+        private HashSet<HitTestableObject> _cachedDragResults = [];
+        private Rect _lastQueriedDxfRect = Rect.Empty;
         private CancellationTokenSource _hitTestCancellationTokenSource;
         private int _currentSnapHitTestIndex = 0;
         private int _lastSnapHitTestIndex = 0;
@@ -892,9 +893,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
                             changedObjects.Add(snappedObject);
                         }
                     }
+
                     break;
 
                 case Common.Enums.SelectionMode.CogoPoints:
+                    Stopwatch stopwatch = Stopwatch.StartNew();
 
                     foreach (var snappedObject in _snappedHitTestableObjects)
                     {
@@ -911,6 +914,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
                             changedObjects.Add(snappedObject);
                         }
                     }
+
+                    stopwatch.Stop();
+                    Debug.WriteLine($"CogoPoint selection time: {stopwatch.ElapsedMilliseconds} ms");
                     break;
 
                 default:
@@ -1276,29 +1282,80 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         private void RunDragCogoPointsHittest(CancellationToken token)
         {
-            // Check for cancellation
-            if (token.IsCancellationRequested) { token.ThrowIfCancellationRequested(); }
+            if (token.IsCancellationRequested) { return; }
 
             if (!Dispatcher.CheckAccess())
             {
                 Dispatcher.Invoke(() => RunDragCogoPointsHittest(token));
                 return;
             }
+
             if (!CadManager3D.DxfLoaded) { return; }
+            if (_lastQueriedDxfRect == DxfDragRect) { return; }
 
-
-            ResetSnappedObjects();
-
-            //Debug.WriteLine($"\n_snappedHitTestableObjects.Count: {_snappedHitTestableObjects.Count}");
-
-            _lastDragHitTestRect = DxfDragRect;
-            var points = CadManager3D.HitTestDragCogoPoints(_lastDragHitTestRect);
-            _snappedHitTestableObjects.AddRange(points);
-            //_snappedHitTestableObjects.AddRange(CadManager3D.HitTestDragCogoPoints(DxfDragRect));
-            foreach (var hitTestableObject in _snappedHitTestableObjects)
+            // --- CASE 1: RECT GROWING ---
+            if (DxfDragRect.Contains(_lastQueriedDxfRect))
             {
-                SnapObject(hitTestableObject);
+                var addedRegions = GetDragDelta(_lastQueriedDxfRect, DxfDragRect);
+
+                foreach (var region in addedRegions)
+                {
+                    var newHits = CadManager3D.HitTestDragCogoPoints(region).Distinct();
+
+                    foreach (var obj in newHits)
+                    {
+                        if (_cachedDragResults.Add(obj))
+                        {
+                            _snappedHitTestableObjects.Add(obj);
+                            SnapObject(obj);
+                        }
+                    }
+                }
+
+                _lastQueriedDxfRect = DxfDragRect;
+                return;
             }
+
+            // --- CASE 2: RECT SHRINKING ---
+            if (_lastQueriedDxfRect.Contains(DxfDragRect))
+            {
+                var removedRegions = GetDragDelta(DxfDragRect, _lastQueriedDxfRect);
+
+                foreach (var region in removedRegions)
+                {
+                    var possiblyRemoved = CadManager3D.HitTestDragCogoPoints(region).Distinct();
+
+                    foreach (var obj in possiblyRemoved)
+                    {
+                        if (!_cachedDragResults.Contains(obj)) { continue; }
+
+                        // If object is no longer in the new DxfDragRect, remove it
+                        if (!DxfDragRect.Contains(obj.Bounds)) // or obj.Bounds if needed
+                        {
+                            _cachedDragResults.Remove(obj);
+                            _snappedHitTestableObjects.Remove(obj);
+                            UnsnapObject(obj);
+                        }
+                    }
+                }
+
+                _lastQueriedDxfRect = DxfDragRect;
+                return;
+            }
+
+            // --- CASE 3: DIAGONAL / COMPLEX CHANGES ---
+            _cachedDragResults.Clear();
+            _snappedHitTestableObjects.Clear();
+
+            var newHitsAll = CadManager3D.HitTestDragCogoPoints(DxfDragRect).Distinct();
+            foreach (var obj in newHitsAll)
+            {
+                _cachedDragResults.Add(obj);
+                _snappedHitTestableObjects.Add(obj);
+                SnapObject(obj);
+            }
+
+            _lastQueriedDxfRect = DxfDragRect;
         }
 
         public void CancelHitTesting()
@@ -1404,6 +1461,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 SnappedSignificantPoint = null;
             }
             _snappedHitTestableObjects.ForEach(x => UnsnapObject(x));
+            //Parallel.ForEach(_selectedHitTestableObjects, x => x.Redr);
             _snappedHitTestableObjects.Clear();
 
             _lineGlowVertices.Clear();
@@ -1439,8 +1497,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 }
                 if (hitTestableObject is CogoPoint dxfPoint)
                 {
-                    dxfPoint.Select();
-                    SelectedCogoPoints.Add(dxfPoint);
+                    if (!dxfPoint.IsSelected)
+                    {
+                        dxfPoint.Select();
+                        SelectedCogoPoints.Add(dxfPoint);
+                    }
                 }
             }
         }
@@ -1471,8 +1532,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 }
                 if (hitTestableObject is CogoPoint dxfPoint)
                 {
-                    dxfPoint.Deselect();
-                    SelectedCogoPoints.Remove(dxfPoint);
+                    if (dxfPoint.IsSelected)
+                    {
+                        dxfPoint.Deselect();
+                        SelectedCogoPoints.Remove(dxfPoint);
+                    }
                 }
             }
         }
@@ -1616,6 +1680,56 @@ namespace Cad_Point_Manager.Controls.D3DControl
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
+        #endregion
+
+        #region Static Methods
+        public static List<Rect> GetDragDelta(Rect previous, Rect current)
+        {
+            var deltaRects = new List<Rect>();
+
+            // First, find the union and intersection
+            Rect intersection = Rect.Intersect(previous, current);
+            if (intersection.IsEmpty)
+            {
+                deltaRects.Add(current); // No overlap, full rect is new
+                return deltaRects;
+            }
+
+            // Top band
+            if (current.Top < previous.Top)
+            {
+                double height = previous.Top - current.Top;
+                deltaRects.Add(new Rect(current.Left, current.Top, current.Width, height));
+            }
+
+            // Bottom band
+            if (current.Bottom > previous.Bottom)
+            {
+                double height = current.Bottom - previous.Bottom;
+                deltaRects.Add(new Rect(current.Left, previous.Bottom, current.Width, height));
+            }
+
+            // Left band
+            if (current.Left < previous.Left)
+            {
+                double width = previous.Left - current.Left;
+                double top = Math.Max(current.Top, previous.Top);
+                double height = Math.Min(current.Bottom, previous.Bottom) - top;
+                deltaRects.Add(new Rect(current.Left, top, width, height));
+            }
+
+            // Right band
+            if (current.Right > previous.Right)
+            {
+                double width = current.Right - previous.Right;
+                double top = Math.Max(current.Top, previous.Top);
+                double height = Math.Min(current.Bottom, previous.Bottom) - top;
+                deltaRects.Add(new Rect(previous.Right, top, width, height));
+            }
+
+            return deltaRects;
+        }
+
         #endregion
 
         #region IDisposable Support
