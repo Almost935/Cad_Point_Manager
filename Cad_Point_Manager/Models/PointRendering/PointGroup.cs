@@ -211,10 +211,10 @@ namespace Cad_Point_Manager.Models.PointRendering
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 
-            if (propertyName == nameof(WindowsBrush) || propertyName == nameof(IsVisible) || propertyName == nameof(PointScale))
-            {
-                Redraw();
-            }
+            //if (propertyName == nameof(WindowsBrush) || propertyName == nameof(IsVisible) || propertyName == nameof(PointScale))
+            //{
+            //    Redraw();
+            //}
         }
         #endregion
     }

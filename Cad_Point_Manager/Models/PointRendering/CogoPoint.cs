@@ -248,32 +248,21 @@ namespace Cad_Point_Manager.Models.PointRendering
 
         public override void MouseEnter()
         {
-            if (TextBeingMoved || IsMouseOver) { return; }
+            //if (TextBeingMoved || IsMouseOver) { return; }
             this.IsMouseOver = true;
-            //RedrawAllVisuals();
         }
         public override void MouseLeave()
         {
-            if (!IsMouseOver) { return; }
             this.IsMouseOver = false;
-            //RedrawAllVisuals();
         }
 
         public override void Select()
         {
-            //this.IsSelected = true;
-
-            if (IsSelected) { return; }
             this.IsSelected = true;
-            RedrawAllVisuals();
         }
         public override void Deselect()
         {
-            //this.IsSelected = false;
-
-            if (!IsSelected) { return; }
             this.IsSelected = false;
-            RedrawAllVisuals();
         }
 
         public void UpdatePointGroup(PointGroup pointGroup)

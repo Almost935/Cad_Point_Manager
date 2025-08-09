@@ -15,7 +15,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
         #region Fields
         private readonly float _zoomFactor;
 
-        private Matrix _scaledInitialViewMatrix = Matrix.Identity;
         private Matrix _scaledViewMatrix = Matrix.Identity;
 
         private Matrix3x2 _d2dMatrix = Matrix3x2.Identity;
@@ -95,7 +94,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             ProjectionMatrix = Matrix.Identity;
             ViewProjectionMatrix = Matrix.Identity;
             InverseViewProjectionMatrix = Matrix.Identity;
-            _scaledInitialViewMatrix = Matrix.Identity;
             _scaledViewMatrix = Matrix.Identity;
             CurrentZoomStep = 0;
             Translate = Vector2.Zero;

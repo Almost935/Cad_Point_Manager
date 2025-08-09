@@ -171,13 +171,14 @@
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
                                         <colorpicker:PortableColorPicker Style="{StaticResource DefaultColorPickerStyle}"
-                                                                         SelectedColor="{Binding Value.Color, Converter={StaticResource Vector4ToColorConverter}, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
+                                                                         SelectedColor="{Binding Value.Color, Converter={StaticResource Vector4ToColorConverter}}" 
                                                                          ToggleButtonWidth="20"
                                                                          ToggleButtonHeight="15"
                                                                          ToggleButtonMargin="0 2 0 2"
                                                                          IsPopupOpen="{Binding ElementName=root, Path=PointGroupListColorPickerOpen, Mode=OneWayToSource}"
                                                                          Focusable="True"
-                                                                         HorizontalAlignment="Center" />
+                                                                         HorizontalAlignment="Center"
+                                                                         IsPopupOpenChanged="PortableColorPicker_IsPopupOpenChanged"/>
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>

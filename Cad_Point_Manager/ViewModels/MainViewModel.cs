@@ -38,7 +38,11 @@ namespace Cad_Point_Manager.ViewModels
         private HitTestablePoint _snappedPoint;
         private Point _mousePosition = new();
 
-        private int _newCogoPointNumber;
+        private int _newCogoPointsStartCount;
+        private double _newCogoPointsElevation = 0.0;
+        private string _newCogoPointsDescription = "";
+        private PointGroup _newCogoPointsActivePointGroup = null;
+        private int _newCogoPointsIntermediatePointsCount = 0;
         #endregion
 
         #region Properties
@@ -145,13 +149,49 @@ namespace Cad_Point_Manager.ViewModels
             }
         }
 
-        public int NewCogoPointNumber
+        public int NewCogoPointsStartNumber
         {
-            get => _newCogoPointNumber;
+            get => _newCogoPointsStartCount;
             set
             {
-                _newCogoPointNumber = value;
-                OnPropertyChanged(nameof(NewCogoPointNumber));
+                _newCogoPointsStartCount = value;
+                OnPropertyChanged(nameof(NewCogoPointsStartNumber));
+            }
+        }
+        public double NewCogoPointsElevation
+        {
+            get => _newCogoPointsElevation;
+            set
+            {
+                _newCogoPointsElevation = value;
+                OnPropertyChanged(nameof(NewCogoPointsElevation));
+            }
+        }
+        public string NewCogoPointsDescription
+        {
+            get => _newCogoPointsDescription;
+            set
+            {
+                _newCogoPointsDescription = value;
+                OnPropertyChanged(nameof(NewCogoPointsDescription));
+            }
+        }
+        public PointGroup NewCogoPointsActivePointGroup
+        {
+            get => _newCogoPointsActivePointGroup;
+            set
+            {
+                _newCogoPointsActivePointGroup = value;
+                OnPropertyChanged(nameof(NewCogoPointsActivePointGroup));
+            }
+        }
+        public int NewCogoPointsIntermediatePointsCount
+        {
+            get => _newCogoPointsIntermediatePointsCount;
+            set
+            {
+                _newCogoPointsIntermediatePointsCount = value;
+                OnPropertyChanged(nameof(NewCogoPointsIntermediatePointsCount));
             }
         }
         #endregion

@@ -5,6 +5,7 @@ using Cad_Point_Manager.Models.DrawingObjects3D;
 using Cad_Point_Manager.Models.PointRendering;
 using ColorPicker;
 using SharpDX;
+using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -32,6 +33,9 @@ namespace Cad_Point_Manager.Views.UserControls
 
         private readonly List<ObjectLayer3D> _selectedLayers = [];
         private readonly List<PointGroup> _selectedPointGroups = [];
+        private CancellationTokenSource _pointsRedrawCts;
+        private readonly object _pointsRedrawLock = new();
+
         private bool _layerListVisible = true;
         private double _layerListOpacity = 0;
         private bool _pointGroupListVisible = true;
@@ -153,6 +157,8 @@ namespace Cad_Point_Manager.Views.UserControls
                 OnPropertyChanged(nameof(MergePointGroup));
             }
         }
+
+        public List<CogoPoint> SelectedCogoPoints => _selectedPointGroups.SelectMany(pg => pg.Points).ToList();
         #endregion
 
         #region Dependency Properties
@@ -351,7 +357,7 @@ namespace Cad_Point_Manager.Views.UserControls
                     _selectedPointGroups.Add(kvp.Value);
                 }
             }
-            
+
             AvailableMergePointGroups.Refresh();
         }
         private void PointGroupsCheckBox_Checked(object sender, RoutedEventArgs e)
@@ -401,8 +407,9 @@ namespace Cad_Point_Manager.Views.UserControls
         {
             if (e.ClickCount > 1)
             {
-                if (sender is Border border && border.Child is TextBox textbox && textbox.DataContext is PointGroup pg)
+                if (sender is Border border && border.Child is TextBox textbox && textbox.DataContext is KeyValuePair<string, PointGroup> keyValuePair)
                 {
+                    var pg = keyValuePair.Value;
                     _pointGroupBeingEdited = true;
                     _previousPointGroupName = pg.Name;
                     e.Handled = true;
@@ -420,8 +427,9 @@ namespace Cad_Point_Manager.Views.UserControls
         {
             TextBox textBox = sender as TextBox;
 
-            if (textBox != null && textBox.DataContext is PointGroup pg)
+            if (textBox != null && textBox.DataContext is KeyValuePair<string, PointGroup> keyValuePair)
             {
+                var pg = keyValuePair.Value;
                 e.Handled = true;
 
                 if (_pointGroupBeingEdited)
@@ -434,11 +442,11 @@ namespace Cad_Point_Manager.Views.UserControls
                 textBox.IsReadOnly = true;
             }
         }
-        private void PointScaleTextbox_PreviewKeyDown(object sender, KeyEventArgs e)
+        private async void PointScaleTextbox_PreviewKeyDown(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.Enter)
             {
-                if (sender is TextBox textBox && textBox.DataContext is PointGroup pg)
+                if (sender is TextBox textBox && textBox.DataContext is KeyValuePair<string, PointGroup> keyValuePair)
                 {
                     e.Handled = true;
 
@@ -454,6 +462,7 @@ namespace Cad_Point_Manager.Views.UserControls
                     else
                     {
                         binding?.UpdateSource();
+                        await RedrawCogoPointsAsync(SelectedCogoPoints);
                         textBox.IsReadOnly = true;
                         _pointGroupBeingEdited = false;
                         return;
@@ -660,6 +669,93 @@ namespace Cad_Point_Manager.Views.UserControls
                 Validation.ClearInvalid(binding);
             }
         }
+
+        // Point Group Color Picker
+        private async void PortableColorPicker_IsPopupOpenChanged(object sender, bool isOpen)
+        {
+            if (isOpen) { return; }
+
+            PortableColorPicker colorpicker = sender as PortableColorPicker;
+            if (colorpicker is not null)
+            {
+                ConcurrentBag<CogoPoint> pointsToUpdate = [];
+                var color = colorpicker.SelectedColor;
+                foreach (var pg in _selectedPointGroups)
+                {
+                    pg.Color = new Vector4(color.R / 255f, color.G / 255f, color.B / 255f, 1.0f);
+                    pg.UpdateWindowsColor();
+                }
+
+                await RedrawCogoPointsAsync(SelectedCogoPoints);
+            }
+        }
+
+
+        private async Task RedrawCogoPointsAsync(IEnumerable<CogoPoint> points, int? batchSize = null)
+        {
+            if (points is null) return;
+
+            // Dedupe + snapshot (keep it cheap)
+            List<CogoPoint> list;
+            if (points is IList<CogoPoint> ilist)
+            {
+                // Make a unique copy only if duplicates are likely
+                var set = new HashSet<CogoPoint>(ilist);
+                if (set.Count == ilist.Count) list = new List<CogoPoint>(ilist);
+                else list = set.ToList();
+            }
+            else
+            {
+                list = new HashSet<CogoPoint>(points).ToList();
+            }
+
+            if (list.Count == 0) return;
+
+            // Coalesce bursts: cancel the previous redraw
+            CancellationToken token;
+            lock (_pointsRedrawLock)
+            {
+                _pointsRedrawCts?.Cancel();
+                _pointsRedrawCts?.Dispose();
+                _pointsRedrawCts = new CancellationTokenSource();
+                token = _pointsRedrawCts.Token;
+            }
+
+            // Auto batching: single hop for small lists
+            int bs = batchSize ?? (list.Count <= 120 ? list.Count : 256);
+
+            if (bs >= list.Count)
+            {
+                await Dispatcher.InvokeAsync(() =>
+                {
+                    using (Dispatcher.CurrentDispatcher.DisableProcessing())
+                    {
+                        for (int i = 0; i < list.Count; i++)
+                            list[i].RedrawAllVisuals();
+                    }
+                }, DispatcherPriority.Render, token);
+                return;
+            }
+
+            // Batched UI apply to keep input smooth
+            for (int i = 0; i < list.Count; i += bs)
+            {
+                token.ThrowIfCancellationRequested();
+                int count = Math.Min(bs, list.Count - i);
+
+                await Dispatcher.InvokeAsync(() =>
+                {
+                    using (Dispatcher.CurrentDispatcher.DisableProcessing())
+                    {
+                        for (int j = 0; j < count; j++)
+                            list[i + j].RedrawAllVisuals();
+                    }
+                }, DispatcherPriority.Render, token);
+
+                await Task.Yield(); // let the UI breathe
+            }
+        }
+
         #endregion
 
         #region INotifyPropertyChanged Implementation

@@ -42,6 +42,7 @@
         <converters:CenterTranslationConverter x:Key="CenterTranslationConverter" />
         <converters:SelectionModeEnumConverter x:Key="SelectionModeEnumConverter" />
         <converters:SnapToggleEnumToBoolConverter x:Key="SnapToggleEnumToBoolConverter" />
+        <converters:Matrix3x2ToWindowsMatrix x:Key="Matrix3x2ToWindowsMatrix" />
 
         <Thickness x:Key="ToggleButtonMargin">0,5,0,5</Thickness>
 
@@ -180,13 +181,15 @@
                            HorizontalAlignment="Center"
                            Text="Point Number Start:" />
                 <TextBox Grid.Column="1"
+                         Style="{StaticResource ValidationTextBox}"
                          Height="{StaticResource CogoCreationTextBoxHeight}"
                          MinWidth="{StaticResource CogoCreationTextBoxWidth}"
                          Margin="{StaticResource CogoPointCreationTextBoxMargin}"
                          PreviewMouseLeftButtonUp="TextBox_PreviewMouseLeftButtonUp">
                     <TextBox.Text>
-                        <Binding Path="NewCogoPointNumber"
-                                 Mode="TwoWay">
+                        <Binding Path="NewCogoPointsStartNumber"
+                                 Mode="TwoWay"
+                                 UpdateSourceTrigger="PropertyChanged">
                             <Binding.ValidationRules>
                                 <validation:PointNumberValidationRule />
                             </Binding.ValidationRules>
@@ -206,9 +209,19 @@
                            Text="Elevation:"
                            Margin="{StaticResource CogoPointCreationTextBlockMargin}" />
                 <TextBox Grid.Column="1"
+                         Style="{StaticResource ValidationTextBox}"
                          Height="{StaticResource CogoCreationTextBoxHeight}"
                          MinWidth="{StaticResource CogoCreationTextBoxWidth}"
-                         Margin="{StaticResource CogoPointCreationTextBoxMargin}" />
+                         Margin="{StaticResource CogoPointCreationTextBoxMargin}">
+                    <TextBox.Text>
+                        <Binding Path="NewCogoPointsElevation"
+                                 Mode="TwoWay">
+                            <Binding.ValidationRules>
+                                <validation:DoubleValidationRule />
+                            </Binding.ValidationRules>
+                        </Binding>
+                    </TextBox.Text>
+                </TextBox>
             </Grid>
             <Grid Grid.Column="3">
                 <Grid.ColumnDefinitions>
@@ -222,9 +235,19 @@
                            Text="Description:"
                            Margin="{StaticResource CogoPointCreationTextBlockMargin}" />
                 <TextBox Grid.Column="1"
+                         Style="{StaticResource ValidationTextBox}"
                          Height="{StaticResource CogoCreationTextBoxHeight}"
                          MinWidth="{StaticResource CogoCreationTextBoxWidth}"
-                         Margin="{StaticResource CogoPointCreationTextBoxMargin}" />
+                         Margin="{StaticResource CogoPointCreationTextBoxMargin}">
+                    <TextBox.Text>
+                        <Binding Path="NewCogoPointsDescription"
+                                 Mode="TwoWay">
+                            <Binding.ValidationRules>
+                                <validation:NoIllegalCharactersRule />
+                            </Binding.ValidationRules>
+                        </Binding>
+                    </TextBox.Text>
+                </TextBox>
             </Grid>
             <Grid Grid.Column="4">
                 <Grid.ColumnDefinitions>
@@ -239,6 +262,7 @@
                            Margin="{StaticResource CogoPointCreationTextBlockMargin}" />
                 <ComboBox Grid.Column="1"
                           Background="White"
+                          Style="{StaticResource ValidationComboBox}"
                           Height="{StaticResource CogoCreationTextBoxHeight}"
                           MinWidth="{StaticResource CogoCreationTextBoxWidth}"
                           ItemsSource="{Binding JobFileManager.CadManager3D.PointGroupsView}"
@@ -264,7 +288,16 @@
                          Background="White"
                          Height="{StaticResource CogoCreationTextBoxHeight}"
                          MinWidth="{StaticResource CogoCreationTextBoxWidth}"
-                         Margin="{StaticResource CogoPointCreationTextBoxMargin}" />
+                         Margin="{StaticResource CogoPointCreationTextBoxMargin}">
+                    <TextBox.Text>
+                        <Binding Path="NewCogoPointsIntermediatePointsCount"
+                                 Mode="TwoWay">
+                            <Binding.ValidationRules>
+                                <validation:PositiveIntegerValidationRule/>
+                            </Binding.ValidationRules>
+                        </Binding>
+                    </TextBox.Text>
+                </TextBox>
             </Grid>
             <WrapPanel Grid.Column="6"
                        HorizontalAlignment="Center"
@@ -388,14 +421,30 @@
                                    MousePosition="{Binding MousePosition, Mode=OneWayToSource}" />
 
                 <Canvas x:Name="BackgroundCanvas">
-                    <Rectangle Stroke="{StaticResource DragRectangleBorderBrush}"
-                               Fill="{StaticResource DragRectangleFillBrush}" 
+                    <Path Stroke="{StaticResource DragRectangleBorderBrush}"
+                          Fill="{StaticResource DragRectangleFillBrush}"
+                          StrokeThickness="0.5"
+                          IsHitTestVisible="False"
+                          Visibility="{Binding ElementName=d3dDxfControl, Path=IsDragging,
+                           Converter={StaticResource BoolToVisibilityConverter}}">
+                        <Path.Data>
+                            <RectangleGeometry Rect="{Binding ElementName=d3dDxfControl, Path=DragRect}" />
+                        </Path.Data>
+                        <Path.RenderTransform>
+                            <MatrixTransform Matrix="{Binding ElementName=d3dDxfControl,
+                                          Path=Camera.D2dMatrix,
+                                          Converter={StaticResource Matrix3x2ToWindowsMatrix}}" />
+                        </Path.RenderTransform>
+                    </Path>
+                    <!--<Rectangle Stroke="{StaticResource DragRectangleBorderBrush}"
+                               Fill="{StaticResource DragRectangleFillBrush}"
                                Width="{Binding ElementName=d3dDxfControl, Path=DragRect.Width}"
                                Height="{Binding ElementName=d3dDxfControl, Path=DragRect.Height}"
                                Canvas.Left="{Binding ElementName=d3dDxfControl,Path=DragRect.Left}"
                                Canvas.Top="{Binding ElementName=d3dDxfControl,Path=DragRect.Top}"
                                Visibility="{Binding ElementName=d3dDxfControl, Path=IsDragging, Converter={StaticResource BoolToVisibilityConverter}}"
-                               IsHitTestVisible="False"/>
+                               IsHitTestVisible="False">
+                    </Rectangle>-->
                     <uc:SignificantPointControl HitTestablePoint="{Binding DataContext.SnappedPoint, RelativeSource={RelativeSource AncestorType=Page}}"
                                                 Focusable="False"
                                                 IsHitTestVisible="False">

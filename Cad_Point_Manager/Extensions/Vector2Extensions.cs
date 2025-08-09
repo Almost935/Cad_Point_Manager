@@ -6,6 +6,16 @@ namespace Cad_Point_Manager.Extensions
 {
     public static class Vector2Extensions
     {
+        public static float Magnitude(this Vector2 v)
+        {
+            return (float)Math.Sqrt(v.X * v.X + v.Y * v.Y);
+        }
+
+        public static float MagnitudeSquared(this Vector2 v)
+        {
+            return v.X * v.X + v.Y * v.Y;
+        }
+
         public static Point ToPoint(this Vector2 v)
         {
             return new Point(v.X, v.Y);

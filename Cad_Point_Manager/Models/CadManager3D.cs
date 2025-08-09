@@ -376,59 +376,60 @@ namespace Cad_Point_Manager.Models
 
         public List<CogoPoint> HitTestDragCogoPoints(Rect rect)
         {
-            //List<CogoPoint> hits = [];
-
-            //if (HitTestableObjectTree is null) { return hits; }
-
-            //var nodes = HitTestableObjectTree.GetIntersectingNodes(rect);
-
-            //foreach (var node in nodes)
-            //{
-            //    if (rect.Contains(node.Extents))
-            //    {
-            //        foreach (var obj in node.HitTestableObjects)
-            //        {
-            //            if (obj is CogoPoint cogoPoint) { hits.Add(cogoPoint); }
-            //        }
-            //    }
-            //    else
-            //    {
-            //        hits.AddRange(node.HitTestCogoPointsInRect(rect));
-            //    }
-            //}
-
-
-            if (HitTestableObjectTree is null) { return []; }
             List<CogoPoint> hits = [];
-            ConcurrentBag<CogoPoint> concurrentHits = [];
+
+            if (HitTestableObjectTree is null) { return hits; }
+
             var nodes = HitTestableObjectTree.GetIntersectingNodes(rect);
 
-            Parallel.For(0, nodes.Count, i =>
+            foreach (var node in nodes)
             {
-                var node = nodes[i];
-
                 if (rect.Contains(node.Extents))
                 {
                     foreach (var obj in node.HitTestableObjects)
                     {
-                        if (obj is CogoPoint cogoPoint)
-                        {
-                            concurrentHits.Add(cogoPoint);
-                        }
+                        if (obj is CogoPoint cogoPoint) { hits.Add(cogoPoint); }
                     }
                 }
                 else
                 {
-                    foreach (var point in node.HitTestCogoPointsInRect(rect))
-                    {
-                        concurrentHits.Add(point);
-                    }
+                    hits.AddRange(node.HitTestCogoPointsInRect(rect));
                 }
-            });
-
-            hits = concurrentHits.ToList();
-
+            }
             return hits;
+
+
+            //if (HitTestableObjectTree is null) { return []; }
+            //List<CogoPoint> hits = [];
+            //ConcurrentBag<CogoPoint> concurrentHits = [];
+            //var nodes = HitTestableObjectTree.GetIntersectingNodes(rect);
+
+            //Parallel.For(0, nodes.Count, i =>
+            //{
+            //    var node = nodes[i];
+
+            //    if (rect.Contains(node.Extents))
+            //    {
+            //        foreach (var obj in node.HitTestableObjects)
+            //        {
+            //            if (obj is CogoPoint cogoPoint)
+            //            {
+            //                concurrentHits.Add(cogoPoint);
+            //            }
+            //        }
+            //    }
+            //    else
+            //    {
+            //        foreach (var point in node.HitTestCogoPointsInRect(rect))
+            //        {
+            //            concurrentHits.Add(point);
+            //        }
+            //    }
+            //});
+
+            //hits = concurrentHits.ToList();
+
+            //return hits;
         }
 
         public void ClearDxf()
