@@ -2,6 +2,7 @@
 using Cad_Point_Manager.Controls.D3DControl;
 using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Helpers;
+using Cad_Point_Manager.Views.Visuals;
 using SharpDX;
 using System;
 using System.Collections.Generic;
@@ -43,6 +44,7 @@ namespace Cad_Point_Manager.Models.HitTesting
         }
 
         public int Index { get; set; }
+        public HitTestablePointVisualGroup VisualGroup { get; set; }
         #endregion
 
         #region Constructors
@@ -57,22 +59,18 @@ namespace Cad_Point_Manager.Models.HitTesting
         public override void MouseEnter()
         { 
             this.IsMouseOver = true;
-            //_sigPointVertex.SetIsMouseOver(true);
         }
         public override void MouseLeave()
         {
             this.IsMouseOver = false;
-            //_sigPointVertex.SetIsMouseOver(false);
         }
         public override void Select()
         {
             this.IsSelected = true;
-            //_sigPointVertex.SetIsSelected(true);
         }
         public override void Deselect()
         {
             this.IsSelected = false;
-            //_sigPointVertex.SetIsSelected(false);
         }
         public override void UpdateBounds()
         {

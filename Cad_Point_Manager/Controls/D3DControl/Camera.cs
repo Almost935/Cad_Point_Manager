@@ -14,10 +14,13 @@ namespace Cad_Point_Manager.Controls.D3DControl
     {
         #region Fields
         private readonly float _zoomFactor;
+        private bool HasValidViewport => Viewport.Width > 0 && Viewport.Height > 0;
+
 
         private Matrix _scaledViewMatrix = Matrix.Identity;
 
         private Matrix3x2 _d2dMatrix = Matrix3x2.Identity;
+        private System.Windows.Media.Matrix _wpfMatrix = System.Windows.Media.Matrix.Identity;
         #endregion
 
         #region Properties
@@ -33,6 +36,18 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 }
             }
         }
+        public System.Windows.Media.Matrix WpfMatrix
+        {
+            get => _wpfMatrix;
+            set
+            {
+                if (_wpfMatrix != value)
+                {
+                    _wpfMatrix = value;
+                    OnPropertyChanged(nameof(WpfMatrix));
+                }
+            }
+        }
 
         public Matrix InitialViewMatrix { get; private set; } = Matrix.Identity;
         public Matrix ViewMatrix { get; private set; } = Matrix.Identity;
@@ -45,7 +60,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public float CurrentZoom => (float)Math.Pow(_zoomFactor, CurrentZoomStep);
         public Rotation CurrentRotation { get; set; } = Rotation.NoRotation;
         public bool IsIn3DView { get; set; } = false;
-        public Rect Extents { get; set; } = Rect.Empty;
+        public Rect Extents { get; set; } = RectExtensions.Zero;
         #endregion
 
         #region Constructors
@@ -69,9 +84,15 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
 
         public void UpdateProjection()
-        { 
+        {
             Vector2 basePoint = new(Extents.Center().X.ToFloat(), Extents.Center().Y.ToFloat());
-            
+
+            if (!HasValidViewport)
+            {
+                ProjectionMatrix = Matrix.Identity;
+                return;
+            }
+
             float scaledViewWidth = Viewport.Width / InitialViewMatrix.M11;
             float scaledViewHeight = Viewport.Height / InitialViewMatrix.M11;
             ProjectionMatrix = Matrix.OrthoOffCenterLH(basePoint.X - scaledViewWidth / 2, basePoint.X + scaledViewWidth / 2, basePoint.Y - scaledViewHeight / 2, basePoint.Y + scaledViewHeight / 2, 0.1f, 1000f);
@@ -108,7 +129,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         {
             ViewProjectionMatrix = ProjectionMatrix * _scaledViewMatrix;
             InverseViewProjectionMatrix = Matrix.Invert(ViewProjectionMatrix);
-            D2dMatrix = Get2DTransformationMatrix();
+            Update2DTransformationMatrix();
         }
         public void ResetToDefaults()
         {
@@ -182,19 +203,26 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
 
 
-        public Matrix3x2 Get2DTransformationMatrix()
+        public void Update2DTransformationMatrix()
         {
-            var halfW = Viewport.Width / 2f;
-            var halfH = Viewport.Height / 2f;
-            var ndcToPixel = Matrix.Scaling(halfW, -halfH, 1) * Matrix.Translation(halfW, halfH, 0);
-            Matrix final = ViewProjectionMatrix * ndcToPixel;
-            Matrix3x2 matrix = new(
-                final.M11, final.M12,
-                final.M21, final.M22,
-                final.M41, final.M42
-            );
-
-            return matrix;
+            if (HasValidViewport)
+            {
+                var halfW = Viewport.Width / 2f;
+                var halfH = Viewport.Height / 2f;
+                var ndcToPixel = Matrix.Scaling(halfW, -halfH, 1) * Matrix.Translation(halfW, halfH, 0);
+                Matrix final = ViewProjectionMatrix * ndcToPixel;
+                D2dMatrix = new(
+                   final.M11, final.M12,
+                   final.M21, final.M22,
+                   final.M41, final.M42
+                   );
+                WpfMatrix = D2dMatrix.ToWindowsMatrix();
+            }
+            else
+            {
+                D2dMatrix = Matrix3x2.Identity;
+                WpfMatrix = D2dMatrix.ToWindowsMatrix();
+            }
         }
 
         public Vector2 ScreenToWorld(Vector2 screenSpace)

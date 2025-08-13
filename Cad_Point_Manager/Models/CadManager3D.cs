@@ -37,7 +37,7 @@ namespace Cad_Point_Manager.Models
         private bool _dxfPointCircleVerticesDirty = true;
         private bool _drawingObjectTreeDirty = true;
         private bool _dxfNeedsReload = true;
-        private Rect _extents = Rect.Empty;
+        private Rect _extents = RectExtensions.Zero;
         private ObservableCollection<KeyValuePair<string, ObjectLayer3D>> _layers = [];
         private ICollectionView _layersView;
         private ICollectionView _pointGroupsView;

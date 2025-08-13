@@ -14,6 +14,7 @@
       xmlns:sys="clr-namespace:System;assembly=mscorlib"
       xmlns:colorpicker="clr-namespace:ColorPicker;assembly=ColorPicker"
       xmlns:pointRendering="clr-namespace:Cad_Point_Manager.Models.PointRendering"
+      xmlns:hitTesting="clr-namespace:Cad_Point_Manager.Models.HitTesting"
       xmlns:models="clr-namespace:Cad_Point_Manager.Models"
       xmlns:views="clr-namespace:Cad_Point_Manager.Views"
       xmlns:validation="clr-namespace:Cad_Point_Manager.Views.ValidationRules"
@@ -43,6 +44,7 @@
         <converters:SelectionModeEnumConverter x:Key="SelectionModeEnumConverter" />
         <converters:SnapToggleEnumToBoolConverter x:Key="SnapToggleEnumToBoolConverter" />
         <converters:Matrix3x2ToWindowsMatrix x:Key="Matrix3x2ToWindowsMatrix" />
+        <converters:PointMatrixTransformationConverter x:Key="PointMatrixTransformationConverter" />
 
         <Thickness x:Key="ToggleButtonMargin">0,5,0,5</Thickness>
 
@@ -185,17 +187,8 @@
                          Height="{StaticResource CogoCreationTextBoxHeight}"
                          MinWidth="{StaticResource CogoCreationTextBoxWidth}"
                          Margin="{StaticResource CogoPointCreationTextBoxMargin}"
-                         PreviewMouseLeftButtonUp="TextBox_PreviewMouseLeftButtonUp">
-                    <TextBox.Text>
-                        <Binding Path="NewCogoPointsStartNumber"
-                                 Mode="TwoWay"
-                                 UpdateSourceTrigger="PropertyChanged">
-                            <Binding.ValidationRules>
-                                <validation:PointNumberValidationRule />
-                            </Binding.ValidationRules>
-                        </Binding>
-                    </TextBox.Text>
-                </TextBox>
+                         PreviewMouseLeftButtonUp="TextBox_PreviewMouseLeftButtonUp"
+                         Text="{Binding NewCogoPointsStartNumber}" />
             </Grid>
             <Grid Grid.Column="2">
                 <Grid.ColumnDefinitions>
@@ -293,7 +286,7 @@
                         <Binding Path="NewCogoPointsIntermediatePointsCount"
                                  Mode="TwoWay">
                             <Binding.ValidationRules>
-                                <validation:PositiveIntegerValidationRule/>
+                                <validation:PositiveIntegerValidationRule />
                             </Binding.ValidationRules>
                         </Binding>
                     </TextBox.Text>
@@ -416,7 +409,8 @@
                                    SelectedCogoPoints="{Binding SelectedCogoPoints, Mode=TwoWay}"
                                    Width="{Binding ElementName=dxfGrid, Path=ActualWidth}"
                                    Height="{Binding ElementName=dxfGrid, Path=ActualHeight}"
-                                   SnappedSignificantPoint="{Binding SnappedPoint, Mode=TwoWay}"
+                                   SnappedHitTestablePoint="{Binding SnappedHitTestablePoint, Mode=TwoWay}"
+                                   SelectedHitTestablePoints="{Binding SelectedHitTestablePoints, Mode=TwoWay}"
                                    Focusable="True"
                                    MousePosition="{Binding MousePosition, Mode=OneWayToSource}" />
 
@@ -431,21 +425,10 @@
                             <RectangleGeometry Rect="{Binding ElementName=d3dDxfControl, Path=DragRect}" />
                         </Path.Data>
                         <Path.RenderTransform>
-                            <MatrixTransform Matrix="{Binding ElementName=d3dDxfControl,
-                                          Path=Camera.D2dMatrix,
-                                          Converter={StaticResource Matrix3x2ToWindowsMatrix}}" />
+                            <MatrixTransform Matrix="{Binding ElementName=d3dDxfControl, Path=Camera.D2dMatrix, Converter={StaticResource Matrix3x2ToWindowsMatrix}}" />
                         </Path.RenderTransform>
                     </Path>
-                    <!--<Rectangle Stroke="{StaticResource DragRectangleBorderBrush}"
-                               Fill="{StaticResource DragRectangleFillBrush}"
-                               Width="{Binding ElementName=d3dDxfControl, Path=DragRect.Width}"
-                               Height="{Binding ElementName=d3dDxfControl, Path=DragRect.Height}"
-                               Canvas.Left="{Binding ElementName=d3dDxfControl,Path=DragRect.Left}"
-                               Canvas.Top="{Binding ElementName=d3dDxfControl,Path=DragRect.Top}"
-                               Visibility="{Binding ElementName=d3dDxfControl, Path=IsDragging, Converter={StaticResource BoolToVisibilityConverter}}"
-                               IsHitTestVisible="False">
-                    </Rectangle>-->
-                    <uc:SignificantPointControl HitTestablePoint="{Binding DataContext.SnappedPoint, RelativeSource={RelativeSource AncestorType=Page}}"
+                    <uc:SignificantPointControl HitTestablePoint="{Binding DataContext.SnappedHitTestablePoint, RelativeSource={RelativeSource AncestorType=Page}}"
                                                 Focusable="False"
                                                 IsHitTestVisible="False">
                         <uc:SignificantPointControl.RenderTransform>
@@ -454,7 +437,7 @@
                                     <TranslateTransform.X>
                                         <MultiBinding Converter="{StaticResource PointMatrix3x2TransformerConverter}"
                                                       ConverterParameter="X">
-                                            <Binding Path="DataContext.SnappedPoint.Position"
+                                            <Binding Path="DataContext.SnappedHitTestablePoint.Position"
                                                      RelativeSource="{RelativeSource AncestorType=Page}" />
                                             <Binding Path="DataContext.Camera.D2dMatrix"
                                                      RelativeSource="{RelativeSource AncestorType=Page}" />
@@ -463,7 +446,7 @@
                                     <TranslateTransform.Y>
                                         <MultiBinding Converter="{StaticResource PointMatrix3x2TransformerConverter}"
                                                       ConverterParameter="Y">
-                                            <Binding Path="DataContext.SnappedPoint.Position"
+                                            <Binding Path="DataContext.SnappedHitTestablePoint.Position"
                                                      RelativeSource="{RelativeSource AncestorType=Page}" />
                                             <Binding Path="DataContext.Camera.D2dMatrix"
                                                      RelativeSource="{RelativeSource AncestorType=Page}" />
@@ -473,14 +456,46 @@
                             </TransformGroup>
                         </uc:SignificantPointControl.RenderTransform>
                     </uc:SignificantPointControl>
-                    <views:CogoPointVisualHost x:Name="CogoPointVisualHost"
-                                               CogoPoints="{Binding CogoPoints, Mode=OneWay}"
-                                               Panel.ZIndex="2"
-                                               IsHitTestVisible="False"
-                                               HorizontalAlignment="Stretch"
-                                               VerticalAlignment="Stretch"
-                                               Width="{Binding ElementName=BackgroundCanvas, Path=ActualWidth}"
-                                               Height="{Binding ElementName=BackgroundCanvas, Path=ActualHeight}" />
+                    <views:VisualHost x:Name="CogoPointVisualHost"
+                                      CogoPoints="{Binding CogoPoints, Mode=OneWay}"
+                                      Panel.ZIndex="2"
+                                      IsHitTestVisible="False"
+                                      HorizontalAlignment="Stretch"
+                                      VerticalAlignment="Stretch"
+                                      Width="{Binding ElementName=BackgroundCanvas, Path=ActualWidth}"
+                                      Height="{Binding ElementName=BackgroundCanvas, Path=ActualHeight}" />
+                    <ItemsControl x:Name="SelectedHitTestablePointsItemsControl"
+                                  ItemsSource="{Binding SelectedHitTestablePoints}"
+                                  Width="{Binding ElementName=BackgroundCanvas, Path=ActualWidth}"
+                                  Height="{Binding ElementName=BackgroundCanvas, Path=ActualHeight}"
+                                  Panel.ZIndex="500"
+                                  RenderOptions.BitmapScalingMode="LowQuality"
+                                  IsHitTestVisible="False"
+                                  ClipToBounds="False">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <Canvas Background="{x:Null}" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="{x:Type hitTesting:HitTestablePoint}">
+                                <Path Fill="{StaticResource SelectedHitTestablePointBrush}">
+                                    <Path.Data>
+                                        <EllipseGeometry RadiusX="4"
+                                                         RadiusY="4">
+                                            <EllipseGeometry.Center>
+                                                <MultiBinding Converter="{StaticResource PointMatrixTransformationConverter}">
+                                                    <Binding Path="Position"/>
+                                                    <Binding Path="DataContext.Camera.WpfMatrix"
+                                                             RelativeSource="{RelativeSource AncestorType=Page}" />
+                                                </MultiBinding>
+                                            </EllipseGeometry.Center>
+                                        </EllipseGeometry>
+                                    </Path.Data>
+                                </Path>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
                     <ItemsControl x:Name="SelectedPointButtonsItemsControl"
                                   ItemsSource="{Binding SelectedCogoPoints}"
                                   Background="{x:Null}"

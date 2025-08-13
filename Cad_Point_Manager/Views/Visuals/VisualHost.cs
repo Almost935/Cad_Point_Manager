@@ -3,10 +3,11 @@ using System.Windows.Media;
 using System.Windows;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
+using Cad_Point_Manager.Models.HitTesting;
 
 namespace Cad_Point_Manager.Views
 {
-    public class CogoPointVisualHost : FrameworkElement
+    public class VisualHost : FrameworkElement
     {
         #region Fields
         private readonly VisualCollection _visuals;
@@ -23,18 +24,29 @@ namespace Cad_Point_Manager.Views
             DependencyProperty.Register(
                 nameof(CogoPoints),
                 typeof(ObservableCollection<CogoPoint>),
-                typeof(CogoPointVisualHost),
+                typeof(VisualHost),
                 new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.AffectsRender, OnCogoPointsChanged));
-
         public ObservableCollection<CogoPoint> CogoPoints
         {
             get => (ObservableCollection<CogoPoint>)GetValue(CogoPointsProperty);
             set => SetValue(CogoPointsProperty, value);
         }
+
+        //public static readonly DependencyProperty SelectedHittestablePointsProperty =
+        //   DependencyProperty.Register(
+        //       nameof(HitTestablePoint),
+        //       typeof(ObservableCollection<HitTestablePoint>),
+        //       typeof(VisualHost),
+        //       new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.AffectsRender, OnHitTestablePointsChanged));
+        //public ObservableCollection<HitTestablePoint> SelectedHittestablePoints
+        //{
+        //    get => (ObservableCollection<HitTestablePoint>)GetValue(SelectedHittestablePointsProperty);
+        //    set => SetValue(SelectedHittestablePointsProperty, value);
+        //}
         #endregion
 
         #region Constructors
-        public CogoPointVisualHost()
+        public VisualHost()
         {
             _visuals = new VisualCollection(this);
         }
@@ -56,7 +68,7 @@ namespace Cad_Point_Manager.Views
 
         private static void OnCogoPointsChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
-            if (d is not CogoPointVisualHost host) { return; }
+            if (d is not VisualHost host) { return; }
 
             if (e.OldValue is ObservableCollection<CogoPoint> oldList)
             {
@@ -99,6 +111,48 @@ namespace Cad_Point_Manager.Views
                 RebuildVisuals();
             }
         }
+
+        //private static void OnHitTestablePointsChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        //{
+        //    if (d is not VisualHost host) { return; }
+
+        //    if (e.OldValue is ObservableCollection<HitTestablePoint> oldList)
+        //    {
+        //        oldList.CollectionChanged -= host.OnCogoPointsCollectionChanged;
+        //    }
+
+        //    if (e.NewValue is ObservableCollection<HitTestablePoint> newList)
+        //    {
+        //        newList.CollectionChanged += host.OnCogoPointsCollectionChanged;
+        //        host.RebuildVisuals();
+        //    }
+        //}
+        //private void OnHitTestablePointsCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        //{
+        //    if (e.Action == NotifyCollectionChangedAction.Add)
+        //    {
+        //        foreach (HitTestablePoint point in e.NewItems!)
+        //        {
+        //            _visuals.Add(point.);
+        //            _visuals.Add(point.VisualGroup.TextVisual);
+        //        }
+        //    }
+        //    else if (e.Action == NotifyCollectionChangedAction.Remove)
+        //    {
+        //        foreach (HitTestablePoint point in e.OldItems!)
+        //        {
+        //            _visuals.Remove(visuals.markerVisual);
+        //            _visuals.Remove(visuals.textVisual);
+        //            _visualMap.Remove(point);
+        //        }
+        //    }
+        //    else if (e.Action == NotifyCollectionChangedAction.Reset)
+        //    {
+        //        _visuals.Clear();
+        //        _visualMap.Clear();
+        //        RebuildVisuals();
+        //    }
+        //}
 
         protected override int VisualChildrenCount => _visuals.Count;
         protected override Visual GetVisualChild(int index) => _visuals[index];

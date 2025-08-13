@@ -45,8 +45,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private bool _clipSet = false;
         private bool _isMouseInside;
         private Window _attachedWindow;
-        private CancellationTokenSource _redrawCts;
-        private readonly object _redrawCtsLock = new();
         private readonly object _pendingRedrawLock = new();
         private readonly HashSet<CogoPoint> _pendingRedraw = new();
         private DispatcherOperation _redrawOp;
@@ -237,7 +235,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             nameof(Camera),
             typeof(Camera),
             typeof(D3dDxfControl),
-            new PropertyMetadata(null));
+            new PropertyMetadata(new Camera(new ViewportF(), 1.15f, new Rect(0,0,0,0))));
 
         public static readonly DependencyProperty CogoPointsProperty =
             DependencyProperty.Register(
@@ -263,28 +261,28 @@ namespace Cad_Point_Manager.Controls.D3DControl
             set => SetValue(SelectedCogoPointsProperty, value);
         }
 
-        public static readonly DependencyProperty SnappedSignificantPointProperty =
+        public static readonly DependencyProperty SnappedHitTestablePointProperty =
         DependencyProperty.Register(
-            nameof(SnappedSignificantPoint),
+            nameof(SnappedHitTestablePoint),
             typeof(HitTestablePoint),
             typeof(D3dDxfControl),
             new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault));
-        public HitTestablePoint SnappedSignificantPoint
+        public HitTestablePoint SnappedHitTestablePoint
         {
-            get => (HitTestablePoint)GetValue(SnappedSignificantPointProperty);
-            set => SetValue(SnappedSignificantPointProperty, value);
+            get => (HitTestablePoint)GetValue(SnappedHitTestablePointProperty);
+            set => SetValue(SnappedHitTestablePointProperty, value);
         }
 
-        public static readonly DependencyProperty SelectedSignificantPointsProperty =
+        public static readonly DependencyProperty SelectedHitTestablePointsProperty =
             DependencyProperty.Register(
-                nameof(SelectedSignificantPoints),
+                nameof(SelectedHitTestablePoints),
                 typeof(ObservableCollection<HitTestablePoint>),
                 typeof(D3dDxfControl),
                 new FrameworkPropertyMetadata(new ObservableCollection<HitTestablePoint>(), FrameworkPropertyMetadataOptions.BindsTwoWayByDefault));
-        public ObservableCollection<HitTestablePoint> SelectedSignificantPoints
+        public ObservableCollection<HitTestablePoint> SelectedHitTestablePoints
         {
-            get => (ObservableCollection<HitTestablePoint>)GetValue(SelectedSignificantPointsProperty);
-            set => SetValue(SelectedSignificantPointsProperty, value);
+            get => (ObservableCollection<HitTestablePoint>)GetValue(SelectedHitTestablePointsProperty);
+            set => SetValue(SelectedHitTestablePointsProperty, value);
         }
 
         public static readonly DependencyProperty MousePositionProperty =
@@ -884,19 +882,19 @@ namespace Cad_Point_Manager.Controls.D3DControl
         protected async override void OnMouseLeftButtonUp(MouseButtonEventArgs e)
         {
             List<HitTestableObject> changedObjects = [];
-
+            
             switch (CadManager3D.SnapSelectionMode)
             {
                 case Common.Enums.SelectionMode.Points:
-                    if (SnappedSignificantPoint is not null)
+                    if (SnappedHitTestablePoint is not null)
                     {
-                        if (SnappedSignificantPoint.IsSelected)
+                        if (!SnappedHitTestablePoint.IsSelected)
                         {
-                            SnappedSignificantPoint.IsSelected = false;
+                            SelectObject(SnappedHitTestablePoint);
                         }
                         else
                         {
-                            SnappedSignificantPoint.IsSelected = true;
+                            DeselectObject(SnappedHitTestablePoint);
                         }
                     }
                     break;
@@ -936,7 +934,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
                             changedObjects.Add(cogoPoint);
                         }
                     }
-                    await RedrawCogoPointVisualsAsync(_snappedHitTestableObjects.OfType<CogoPoint>().ToList());
+                    //await RedrawCogoPointVisualsAsync(_snappedHitTestableObjects.OfType<CogoPoint>().ToList());
+                    QueueCogoPointRedraw(_snappedHitTestableObjects.OfType<CogoPoint>().ToList());
 
                     break;
 
@@ -1078,7 +1077,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             Rect rect = new(_lastHitTestCoords.X - _hittestStrokeThickness, _lastHitTestCoords.Y - _hittestStrokeThickness,
                 _hittestStrokeThickness * 2, _hittestStrokeThickness * 2);
-            var snappedHitTestablePointCopy = SnappedSignificantPoint;
+            var snappedHitTestablePointCopy = SnappedHitTestablePoint;
 
             if (snappedHitTestablePointCopy is not null)
             {
@@ -1106,7 +1105,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
                             if (distance <= _hittestStrokeThickness)
                             {
-                                SnappedSignificantPoint = point;
+                                SnappedHitTestablePoint = point;
                                 _lastSnapHitTestIndex = _currentSnapHitTestIndex;
                             }
                         }
@@ -1133,7 +1132,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
                     if (distance <= _hittestStrokeThickness)
                     {
-                        SnappedSignificantPoint = point;
+                        SnappedHitTestablePoint = point;
                         _lastSnapHitTestIndex = _currentSnapHitTestIndex;
                     }
                 }
@@ -1357,7 +1356,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     }
                 }
             }
-            await RedrawCogoPointVisualsAsync(redrawPoints.Distinct());
+            //await RedrawCogoPointVisualsAsync(redrawPoints.Distinct());
+            QueueCogoPointRedraw(redrawPoints.Distinct());
+
             _lastQueriedDxfRect = DragRect;
         }
 
@@ -1457,14 +1458,16 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 }
             }
         }
-        private async void ResetSnappedObjects()
+        private void ResetSnappedObjects()
         {
-            if (SnappedSignificantPoint is not null)
+            if (SnappedHitTestablePoint is not null)
             {
-                SnappedSignificantPoint = null;
+                SnappedHitTestablePoint = null;
             }
             _snappedHitTestableObjects.ForEach(x => UnsnapObject(x));
-            await RedrawCogoPointVisualsAsync(_snappedHitTestableObjects.OfType<CogoPoint>());
+
+            //await RedrawCogoPointVisualsAsync(_snappedHitTestableObjects.OfType<CogoPoint>());
+            QueueCogoPointRedraw(_snappedHitTestableObjects.OfType<CogoPoint>());
 
             _snappedHitTestableObjects.Clear();
 
@@ -1507,6 +1510,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
                         SelectedCogoPoints.Add(dxfPoint);
                     }
                 }
+                if (hitTestableObject is HitTestablePoint point)
+                {
+                    point.Select();
+                    SelectedHitTestablePoints.Add(point);
+                }
             }
         }
         private void DeselectObject(HitTestableObject hitTestableObject)
@@ -1542,9 +1550,14 @@ namespace Cad_Point_Manager.Controls.D3DControl
                         SelectedCogoPoints.Remove(dxfPoint);
                     }
                 }
+                if (hitTestableObject is HitTestablePoint point)
+                {
+                    point.Deselect();
+                    SelectedHitTestablePoints.Remove(point);
+                }
             }
         }
-        private async void ResetSelectedObjects()
+        private void ResetSelectedObjects()
         {
             var listCopy = _selectedHitTestableObjects.ToList();
             foreach (var obj in listCopy)
@@ -1553,19 +1566,19 @@ namespace Cad_Point_Manager.Controls.D3DControl
             }
             _selectedHitTestableObjects.Clear();
 
-            var sigPointsCopy = SelectedSignificantPoints.ToList();
+            var sigPointsCopy = SelectedHitTestablePoints.ToList();
             foreach (var obj in sigPointsCopy)
             {
                 DeselectObject(obj);
             }
-            SelectedSignificantPoints.Clear();
+            SelectedHitTestablePoints.Clear();
 
             foreach (var point in SelectedCogoPoints)
             {
                 point.Deselect();
             }
-            await RedrawCogoPointVisualsAsync(SelectedCogoPoints);
 
+            QueueCogoPointRedraw(SelectedCogoPoints);
             SelectedCogoPoints.Clear();
 
             _lineVerticesDirty = _lineGlowVerticesDirty = _textVerticesDirty = true;
@@ -1578,7 +1591,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             lock (_pendingRedrawLock)
             {
-                foreach (var p in points) _pendingRedraw.Add(p);
+                foreach (var p in points) { _pendingRedraw.Add(p); }
 
                 if (_redrawOp == null ||
                     _redrawOp.Status == DispatcherOperationStatus.Completed ||
@@ -1601,68 +1614,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
                         }
                     }, DispatcherPriority.Render);
                 }
-            }
-        }
-
-        private async Task RedrawCogoPointVisualsAsync(IEnumerable<CogoPoint> cogoPoints, int? batchSize = null)
-        {
-            if (cogoPoints is null) return;
-
-            // Snapshot + dedupe
-            var list = cogoPoints as IList<CogoPoint> ?? cogoPoints.Distinct().ToList();
-            if (list.Count == 0) return;
-
-            // Coalesce bursts
-            CancellationToken token;
-            lock (_redrawCtsLock)
-            {
-                _redrawCts?.Cancel();
-                _redrawCts?.Dispose();
-                _redrawCts = new CancellationTokenSource();
-                token = _redrawCts.Token;
-            }
-
-            // Auto-size if not provided
-            int bs = batchSize ?? (list.Count <= 100 ? list.Count : (list.Count <= 2000 ? 256 : 512));
-            if (bs <= 0) bs = list.Count;
-
-            // If batch size covers the whole list, do a single UI hop (fastest + no overflow)
-            if (bs >= list.Count)
-            {
-                await Dispatcher.InvokeAsync(() =>
-                {
-                    token.ThrowIfCancellationRequested();
-
-                    using (Dispatcher.CurrentDispatcher.DisableProcessing())
-                    {
-                        for (int j = 0; j < list.Count; j++)
-                            list[j].RedrawAllVisuals();
-                    }
-                }, DispatcherPriority.Render, token);
-                
-                token.ThrowIfCancellationRequested();
-
-                return;
-            }
-
-            // Otherwise, process in safe chunks
-            for (int i = 0; i < list.Count; i += bs)
-            {
-                token.ThrowIfCancellationRequested();
-                int count = Math.Min(bs, list.Count - i);
-
-                await Dispatcher.InvokeAsync(() =>
-                {
-                    using (Dispatcher.CurrentDispatcher.DisableProcessing())
-                    {
-                        for (int j = 0; j < count; j++)
-                            list[i + j].RedrawAllVisuals();
-                    }
-                }, DispatcherPriority.Render, token);
-
-                token.ThrowIfCancellationRequested();
-
-                await Task.Yield(); // keep UI responsive between batches
             }
         }
 

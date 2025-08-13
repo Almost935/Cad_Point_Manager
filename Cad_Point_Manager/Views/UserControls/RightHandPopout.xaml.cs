@@ -33,8 +33,9 @@ namespace Cad_Point_Manager.Views.UserControls
 
         private readonly List<ObjectLayer3D> _selectedLayers = [];
         private readonly List<PointGroup> _selectedPointGroups = [];
-        private CancellationTokenSource _pointsRedrawCts;
-        private readonly object _pointsRedrawLock = new();
+        private readonly object _pendingRedrawLock = new();
+        private readonly HashSet<CogoPoint> _pendingRedraw = new();
+        private DispatcherOperation _redrawOp;
 
         private bool _layerListVisible = true;
         private double _layerListOpacity = 0;
@@ -405,6 +406,7 @@ namespace Cad_Point_Manager.Views.UserControls
         // Point Group Scale
         private void PointGroupScaleBorder_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
+            e.Handled = true;
             if (e.ClickCount > 1)
             {
                 if (sender is Border border && border.Child is TextBox textbox && textbox.DataContext is KeyValuePair<string, PointGroup> keyValuePair)
@@ -442,7 +444,7 @@ namespace Cad_Point_Manager.Views.UserControls
                 textBox.IsReadOnly = true;
             }
         }
-        private async void PointScaleTextbox_PreviewKeyDown(object sender, KeyEventArgs e)
+        private void PointScaleTextbox_PreviewKeyDown(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.Enter)
             {
@@ -450,6 +452,7 @@ namespace Cad_Point_Manager.Views.UserControls
                 {
                     e.Handled = true;
 
+                    var pg = keyValuePair.Value;
                     var binding = textBox.GetBindingExpression(TextBox.TextProperty);
                     binding?.ValidateWithoutUpdate();
                     var textBoxHasError = Validation.GetHasError(textBox);
@@ -462,9 +465,16 @@ namespace Cad_Point_Manager.Views.UserControls
                     else
                     {
                         binding?.UpdateSource();
-                        await RedrawCogoPointsAsync(SelectedCogoPoints);
+                        List<CogoPoint> points = [];
+                        foreach (var selectedPG in _selectedPointGroups)
+                        {
+                            selectedPG.PointScale = pg.PointScale;
+                            points.AddRange(selectedPG.Points);
+                        }
+                        QueueCogoPointRedraw(points);
                         textBox.IsReadOnly = true;
                         _pointGroupBeingEdited = false;
+
                         return;
                     }
                 }
@@ -671,7 +681,7 @@ namespace Cad_Point_Manager.Views.UserControls
         }
 
         // Point Group Color Picker
-        private async void PortableColorPicker_IsPopupOpenChanged(object sender, bool isOpen)
+        private void PortableColorPicker_IsPopupOpenChanged(object sender, bool isOpen)
         {
             if (isOpen) { return; }
 
@@ -686,73 +696,40 @@ namespace Cad_Point_Manager.Views.UserControls
                     pg.UpdateWindowsColor();
                 }
 
-                await RedrawCogoPointsAsync(SelectedCogoPoints);
+                QueueCogoPointRedraw(SelectedCogoPoints);
             }
         }
 
 
-        private async Task RedrawCogoPointsAsync(IEnumerable<CogoPoint> points, int? batchSize = null)
+        public void QueueCogoPointRedraw(IEnumerable<CogoPoint> points)
         {
             if (points is null) return;
 
-            // Dedupe + snapshot (keep it cheap)
-            List<CogoPoint> list;
-            if (points is IList<CogoPoint> ilist)
+            lock (_pendingRedrawLock)
             {
-                // Make a unique copy only if duplicates are likely
-                var set = new HashSet<CogoPoint>(ilist);
-                if (set.Count == ilist.Count) list = new List<CogoPoint>(ilist);
-                else list = set.ToList();
-            }
-            else
-            {
-                list = new HashSet<CogoPoint>(points).ToList();
-            }
+                foreach (var p in points) { _pendingRedraw.Add(p); }
 
-            if (list.Count == 0) return;
-
-            // Coalesce bursts: cancel the previous redraw
-            CancellationToken token;
-            lock (_pointsRedrawLock)
-            {
-                _pointsRedrawCts?.Cancel();
-                _pointsRedrawCts?.Dispose();
-                _pointsRedrawCts = new CancellationTokenSource();
-                token = _pointsRedrawCts.Token;
-            }
-
-            // Auto batching: single hop for small lists
-            int bs = batchSize ?? (list.Count <= 120 ? list.Count : 256);
-
-            if (bs >= list.Count)
-            {
-                await Dispatcher.InvokeAsync(() =>
+                if (_redrawOp == null ||
+                    _redrawOp.Status == DispatcherOperationStatus.Completed ||
+                    _redrawOp.Status == DispatcherOperationStatus.Aborted)
                 {
-                    using (Dispatcher.CurrentDispatcher.DisableProcessing())
+                    _redrawOp = Dispatcher.InvokeAsync(() =>
                     {
-                        for (int i = 0; i < list.Count; i++)
-                            list[i].RedrawAllVisuals();
-                    }
-                }, DispatcherPriority.Render, token);
-                return;
-            }
+                        List<CogoPoint> batch;
+                        lock (_pendingRedrawLock)
+                        {
+                            if (_pendingRedraw.Count == 0) return;
+                            batch = _pendingRedraw.ToList();
+                            _pendingRedraw.Clear();
+                        }
 
-            // Batched UI apply to keep input smooth
-            for (int i = 0; i < list.Count; i += bs)
-            {
-                token.ThrowIfCancellationRequested();
-                int count = Math.Min(bs, list.Count - i);
-
-                await Dispatcher.InvokeAsync(() =>
-                {
-                    using (Dispatcher.CurrentDispatcher.DisableProcessing())
-                    {
-                        for (int j = 0; j < count; j++)
-                            list[i + j].RedrawAllVisuals();
-                    }
-                }, DispatcherPriority.Render, token);
-
-                await Task.Yield(); // let the UI breathe
+                        using (Dispatcher.CurrentDispatcher.DisableProcessing())
+                        {
+                            for (int i = 0; i < batch.Count; i++)
+                                batch[i].RedrawAllVisuals();
+                        }
+                    }, DispatcherPriority.Render);
+                }
             }
         }
 

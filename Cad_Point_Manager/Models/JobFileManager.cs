@@ -1,4 +1,5 @@
 ﻿using Cad_Point_Manager.Controls.D3DControl;
+using Cad_Point_Manager.Extensions;
 using netDxf;
 using System.IO;
 using System.Text.Json;
@@ -15,7 +16,7 @@ namespace Cad_Point_Manager.Models
         private string _dxfFilePath;
         private DxfDocument _dxfDoc;
         private CadManager3D _cadManager3D = new();
-        private Rect _extents = new();
+        private Rect _extents = RectExtensions.Zero;
         #endregion
 
         #region Properties

@@ -1,18 +1,10 @@
-﻿using Cad_Point_Manager.Controls.D3DControl;
-using Cad_Point_Manager.Extensions;
-using Cad_Point_Manager.Helpers;
-using Cad_Point_Manager.Models.HitTesting;
+﻿using Cad_Point_Manager.Models.HitTesting;
 using Cad_Point_Manager.Views;
 using SharpDX;
 using System.ComponentModel.DataAnnotations;
 using System.Windows;
-using System.Windows.Media.Effects;
-using System.Windows.Media;
 using Matrix = System.Windows.Media.Matrix;
 using Point = System.Windows.Point;
-using System.Drawing.Drawing2D;
-using System.Diagnostics;
-using System.Windows.Controls.Primitives;
 
 namespace Cad_Point_Manager.Models.PointRendering
 {
@@ -152,7 +144,7 @@ namespace Cad_Point_Manager.Models.PointRendering
                     OnPropertyChanged(nameof(TextInfoCurrentPosition));
                 }
             }
-        }
+        } 
         public Point TextToggleButtonPosition
         {
             get => _textToggleButtonPosition;
