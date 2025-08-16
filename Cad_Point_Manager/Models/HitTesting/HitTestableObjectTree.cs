@@ -102,6 +102,8 @@ namespace Cad_Point_Manager.Models.HitTesting
         {
             return Root.GetNodeAtPoint(p);
         }
+
+
         #endregion
     }
 }

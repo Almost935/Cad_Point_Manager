@@ -135,9 +135,11 @@ namespace Cad_Point_Manager.Models.PointRendering
         #endregion
 
         #region Methods
-        public void AddPoint(int pointNum, Vector3 position, float elevation = 0, string description = "")
+        public CogoPoint AddPoint(int pointNum, Vector3 position, float elevation = 0, string description = "")
         {
-            Points.Add(new(this, pointNum, position, CogoPointManager, elevation, description));
+            CogoPoint cogoPoint = new(this, pointNum, position, CogoPointManager, elevation, description);
+            Points.Add(cogoPoint);
+            return cogoPoint;
         }
         public bool TryAddPoint(CogoPoint point)
         {
@@ -166,8 +168,7 @@ namespace Cad_Point_Manager.Models.PointRendering
         {
             foreach (var point in Points)
             {
-                point.UpdateMarkerVisualTransform(matrix);
-                point.UpdateTextVisualTransform(matrix);
+                point.UpdateAllVisualTransforms(matrix);
             }
         }
         public void UpdateMarkerVisualTransforms(System.Windows.Media.Matrix matrix)

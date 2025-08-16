@@ -77,5 +77,31 @@ namespace Cad_Point_Manager.Services
             errorMessage = null;
             return true;
         }
+
+        public bool ValidateString(string input, out string errorMessage)
+        {
+            errorMessage = null;
+            if (input == null) { return false; }
+
+            string illegalChars = "";
+            bool isValid = true;
+            foreach (var character in IllegalGroupNameChars)
+            {
+                if (input.Contains(character))
+                {
+                    isValid = false;
+                    if (string.IsNullOrEmpty(illegalChars))
+                    {
+                        illegalChars = $"{character}";
+                    }
+                    else
+                    {
+                        illegalChars += $", {character}";
+                    }
+                }
+            }
+
+            return isValid;
+        }
     }
 }

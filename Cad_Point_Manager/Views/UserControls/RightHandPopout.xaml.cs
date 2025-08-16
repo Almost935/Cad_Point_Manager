@@ -1,5 +1,6 @@
 ﻿
 using Cad_Point_Manager.Controls.D3DControl;
+using Cad_Point_Manager.Helpers;
 using Cad_Point_Manager.Models;
 using Cad_Point_Manager.Models.DrawingObjects3D;
 using Cad_Point_Manager.Models.PointRendering;
@@ -36,6 +37,7 @@ namespace Cad_Point_Manager.Views.UserControls
         private readonly object _pendingRedrawLock = new();
         private readonly HashSet<CogoPoint> _pendingRedraw = new();
         private DispatcherOperation _redrawOp;
+        private bool _ignorePointGroupSelectionChanged = false;
 
         private bool _layerListVisible = true;
         private double _layerListOpacity = 0;
@@ -348,15 +350,24 @@ namespace Cad_Point_Manager.Views.UserControls
         }
         private void PointGroupsListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
+            var listView = sender as ListView;
+            if (listView is null) { return; }
+
+            Debug.WriteLine("\nPointGroupsListView_SelectionChanged");
+
+            if (_ignorePointGroupSelectionChanged)
+            {
+                Debug.WriteLine("_ignorePointGroupSelectionChanged");
+                return;
+            }
+
             _selectedPointGroups.Clear();
-            var selectedItems = (sender as ListView).SelectedItems;
+            var selectedItems = listView.SelectedItems;
 
             foreach (KeyValuePair<string, PointGroup> kvp in selectedItems)
             {
-                if (kvp.Value is not null)
-                {
-                    _selectedPointGroups.Add(kvp.Value);
-                }
+                Debug.WriteLine($"kvp.Value.Name: {kvp.Value.Name}");
+                _selectedPointGroups.Add(kvp.Value);
             }
 
             AvailableMergePointGroups.Refresh();
@@ -401,35 +412,55 @@ namespace Cad_Point_Manager.Views.UserControls
                 pointGroupGridView.Columns[3].Width = pointGroupColumnWidth * 1;
             }
         }
+        private void PointGroupsListView_PreviewKeyDownOrUp(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter)
+            {
+                return;
+            }
+        }
 
 
         // Point Group Scale
         private void PointGroupScaleBorder_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
-            e.Handled = true;
             if (e.ClickCount > 1)
             {
-                if (sender is Border border && border.Child is TextBox textbox && textbox.DataContext is KeyValuePair<string, PointGroup> keyValuePair)
+                if (sender is Border border &&
+                    border.Child is TextBox textbox &&
+                    textbox.DataContext is KeyValuePair<string, PointGroup> keyValuePair)
                 {
                     var pg = keyValuePair.Value;
                     _pointGroupBeingEdited = true;
                     _previousPointGroupName = pg.Name;
-                    e.Handled = true;
                     textbox.IsReadOnly = false;
-                    textbox.Focus();
+
+                    e.Handled = true;
 
                     textbox.Dispatcher.BeginInvoke(new Action(() =>
                     {
+                        textbox.Focus();
                         textbox.SelectAll();
                     }), DispatcherPriority.Input);
+                }
+            }
+
+            // Swallow click event if _selectedPointGroups is more than 1 so that the selection isn't messed up.
+            if (e.ClickCount == 1 &&
+                _selectedPointGroups.Count > 1 &&
+                sender is Border border2 &&
+                border2.Child is TextBox textbox2 &&
+                textbox2.DataContext is KeyValuePair<string, PointGroup> keyValuePair2)
+            {
+                if (_selectedPointGroups.Contains(keyValuePair2.Value))
+                {
+                    e.Handled = true;
                 }
             }
         }
         private void PointScaleTextbox_LostFocus(object sender, RoutedEventArgs e)
         {
-            TextBox textBox = sender as TextBox;
-
-            if (textBox != null && textBox.DataContext is KeyValuePair<string, PointGroup> keyValuePair)
+            if (sender is TextBox textBox && textBox.DataContext is KeyValuePair<string, PointGroup> keyValuePair)
             {
                 var pg = keyValuePair.Value;
                 e.Handled = true;
@@ -444,7 +475,7 @@ namespace Cad_Point_Manager.Views.UserControls
                 textBox.IsReadOnly = true;
             }
         }
-        private void PointScaleTextbox_PreviewKeyDown(object sender, KeyEventArgs e)
+        private void PointScaleTextbox_PreviewKeyUp(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.Enter)
             {
@@ -474,6 +505,23 @@ namespace Cad_Point_Manager.Views.UserControls
                         QueueCogoPointRedraw(points);
                         textBox.IsReadOnly = true;
                         _pointGroupBeingEdited = false;
+
+                        var listView = VisualTreeHelpers.FindAncestor<ListView>(textBox);
+                        if (listView is not null)
+                        {
+                            Debug.WriteLine("\nlistView is not null");
+
+                            _ignorePointGroupSelectionChanged = true;
+                            listView.SelectedItems.Clear();
+                            foreach (var pg2 in _selectedPointGroups)
+                            {
+                                Debug.WriteLine($"pg2.Name: {pg2.Name}");
+
+                                listView.SelectedItems.Add(new KeyValuePair<string, PointGroup>(pg2.Name, pg2));
+                            }
+
+                            _ignorePointGroupSelectionChanged = false;
+                        }
 
                         return;
                     }

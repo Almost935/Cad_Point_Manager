@@ -97,9 +97,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private GeometryShader _textGlowGeometryShader;
         private bool _textGlowVerticesDirty = false;
 
-        // Debugging fields
-        private CircleVertex _testVertex;
-
         // Panning and Zooming Fields
         private float _panThreshold = 1.0f;
         private bool _isPanning;
@@ -1307,7 +1304,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             if (textsDirty) { _textGlowVerticesDirty = textsDirty; }
         }
 
-        private async void RunDragCogoPointsHittest(CancellationToken token)
+        private void RunDragCogoPointsHittest(CancellationToken token)
         {
             if (token.IsCancellationRequested) { return; }
 
@@ -1458,7 +1455,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 }
             }
         }
-        private void ResetSnappedObjects()
+        public void ResetSnappedObjects()
         {
             if (SnappedHitTestablePoint is not null)
             {
@@ -1557,7 +1554,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 }
             }
         }
-        private void ResetSelectedObjects()
+        public void ResetSelectedObjects()
         {
             var listCopy = _selectedHitTestableObjects.ToList();
             foreach (var obj in listCopy)

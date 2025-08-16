@@ -33,17 +33,12 @@
         </Style>
 
         <converters:LeftRightMarginConverter x:Key="LeftRightMarginConverter" />
-        <converters:PointMatrix3x2TransformerConverter x:Key="PointMatrix3x2TransformerConverter" />
-        <converters:CogoPointColorConverter x:Key="CogoPointColorConverter" />
-        <converters:CogoPointScaleConverter x:Key="CogoPointScaleConverter" />
+        <converters:PointCoordinateMatrixTransformerConverter x:Key="PointCoordinateMatrixTransformerConverter" />
         <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"
                                               CollapseWhenFalse="True"
                                               Invert="False" />
-        <converters:PointCenteringConverter x:Key="PointCenteringConverter" />
         <converters:CenterTranslationConverter x:Key="CenterTranslationConverter" />
-        <converters:SelectionModeEnumConverter x:Key="SelectionModeEnumConverter" />
         <converters:SnapToggleEnumToBoolConverter x:Key="SnapToggleEnumToBoolConverter" />
-        <converters:Matrix3x2ToWindowsMatrix x:Key="Matrix3x2ToWindowsMatrix" />
         <converters:PointMatrixTransformationConverter x:Key="PointMatrixTransformationConverter" />
 
         <Thickness x:Key="ToggleButtonMargin">0,5,0,5</Thickness>
@@ -187,8 +182,23 @@
                          Height="{StaticResource CogoCreationTextBoxHeight}"
                          MinWidth="{StaticResource CogoCreationTextBoxWidth}"
                          Margin="{StaticResource CogoPointCreationTextBoxMargin}"
-                         PreviewMouseLeftButtonUp="TextBox_PreviewMouseLeftButtonUp"
-                         Text="{Binding NewCogoPointsStartNumber}" />
+                         Text="{Binding Path=NewCogoPointsStartNumberText, ValidatesOnDataErrors=True}"
+                         PreviewMouseLeftButtonUp="TextBox_PreviewMouseLeftButtonUp">
+                    <i:Interaction.Triggers>
+                        <i:EventTrigger EventName="LostFocus">
+                            <i:InvokeCommandAction Command="{Binding DataContext.CogoCreationTextBoxLostFocusCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                   PassEventArgsToCommand="True" />
+                        </i:EventTrigger>
+                        <i:EventTrigger EventName="GotFocus">
+                            <i:InvokeCommandAction Command="{Binding DataContext.CogoCreationTextBoxGotFocusCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                   PassEventArgsToCommand="True" />
+                        </i:EventTrigger>
+                        <i:EventTrigger EventName="GotKeyboardFocus">
+                            <i:InvokeCommandAction Command="{Binding DataContext.CogoCreationTextBoxGotKeyboardFocusCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                   PassEventArgsToCommand="True" />
+                        </i:EventTrigger>
+                    </i:Interaction.Triggers>
+                </TextBox>
             </Grid>
             <Grid Grid.Column="2">
                 <Grid.ColumnDefinitions>
@@ -205,15 +215,22 @@
                          Style="{StaticResource ValidationTextBox}"
                          Height="{StaticResource CogoCreationTextBoxHeight}"
                          MinWidth="{StaticResource CogoCreationTextBoxWidth}"
-                         Margin="{StaticResource CogoPointCreationTextBoxMargin}">
-                    <TextBox.Text>
-                        <Binding Path="NewCogoPointsElevation"
-                                 Mode="TwoWay">
-                            <Binding.ValidationRules>
-                                <validation:DoubleValidationRule />
-                            </Binding.ValidationRules>
-                        </Binding>
-                    </TextBox.Text>
+                         Margin="{StaticResource CogoPointCreationTextBoxMargin}"
+                         Text="{Binding NewCogoPointsElevationText, ValidatesOnDataErrors=True}">
+                    <i:Interaction.Triggers>
+                        <i:EventTrigger EventName="LostFocus">
+                            <i:InvokeCommandAction Command="{Binding DataContext.CogoCreationTextBoxLostFocusCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                   PassEventArgsToCommand="True" />
+                        </i:EventTrigger>
+                        <i:EventTrigger EventName="GotFocus">
+                            <i:InvokeCommandAction Command="{Binding DataContext.CogoCreationTextBoxGotFocusCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                   PassEventArgsToCommand="True" />
+                        </i:EventTrigger>
+                        <i:EventTrigger EventName="GotKeyboardFocus">
+                            <i:InvokeCommandAction Command="{Binding DataContext.CogoCreationTextBoxGotKeyboardFocusCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                   PassEventArgsToCommand="True" />
+                        </i:EventTrigger>
+                    </i:Interaction.Triggers>
                 </TextBox>
             </Grid>
             <Grid Grid.Column="3">
@@ -231,15 +248,22 @@
                          Style="{StaticResource ValidationTextBox}"
                          Height="{StaticResource CogoCreationTextBoxHeight}"
                          MinWidth="{StaticResource CogoCreationTextBoxWidth}"
-                         Margin="{StaticResource CogoPointCreationTextBoxMargin}">
-                    <TextBox.Text>
-                        <Binding Path="NewCogoPointsDescription"
-                                 Mode="TwoWay">
-                            <Binding.ValidationRules>
-                                <validation:NoIllegalCharactersRule />
-                            </Binding.ValidationRules>
-                        </Binding>
-                    </TextBox.Text>
+                         Margin="{StaticResource CogoPointCreationTextBoxMargin}"
+                         Text="{Binding NewCogoPointsDescriptionText, ValidatesOnDataErrors=True}">
+                    <i:Interaction.Triggers>
+                        <i:EventTrigger EventName="LostFocus">
+                            <i:InvokeCommandAction Command="{Binding DataContext.CogoCreationTextBoxLostFocusCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                   PassEventArgsToCommand="True" />
+                        </i:EventTrigger>
+                        <i:EventTrigger EventName="GotFocus">
+                            <i:InvokeCommandAction Command="{Binding DataContext.CogoCreationTextBoxGotFocusCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                   PassEventArgsToCommand="True" />
+                        </i:EventTrigger>
+                        <i:EventTrigger EventName="GotKeyboardFocus">
+                            <i:InvokeCommandAction Command="{Binding DataContext.CogoCreationTextBoxGotKeyboardFocusCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                   PassEventArgsToCommand="True" />
+                        </i:EventTrigger>
+                    </i:Interaction.Triggers>
                 </TextBox>
             </Grid>
             <Grid Grid.Column="4">
@@ -261,7 +285,8 @@
                           ItemsSource="{Binding JobFileManager.CadManager3D.PointGroupsView}"
                           DisplayMemberPath="Key"
                           SelectedValuePath="Value"
-                          Margin="{StaticResource CogoPointCreationTextBoxMargin}" />
+                          Margin="{StaticResource CogoPointCreationTextBoxMargin}" 
+                          SelectedValue="{Binding NewCogoPointsPointGroup}"/>
             </Grid>
             <Grid x:Name="IntermediatePointsGrid"
                   Grid.Column="5"
@@ -281,15 +306,22 @@
                          Background="White"
                          Height="{StaticResource CogoCreationTextBoxHeight}"
                          MinWidth="{StaticResource CogoCreationTextBoxWidth}"
-                         Margin="{StaticResource CogoPointCreationTextBoxMargin}">
-                    <TextBox.Text>
-                        <Binding Path="NewCogoPointsIntermediatePointsCount"
-                                 Mode="TwoWay">
-                            <Binding.ValidationRules>
-                                <validation:PositiveIntegerValidationRule />
-                            </Binding.ValidationRules>
-                        </Binding>
-                    </TextBox.Text>
+                         Margin="{StaticResource CogoPointCreationTextBoxMargin}"
+                         Text="{Binding NewCogoPointsIntermediatePointsCountText, ValidatesOnDataErrors=True}">
+                    <i:Interaction.Triggers>
+                        <i:EventTrigger EventName="LostFocus">
+                            <i:InvokeCommandAction Command="{Binding DataContext.CogoCreationTextBoxLostFocusCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                   PassEventArgsToCommand="True" />
+                        </i:EventTrigger>
+                        <i:EventTrigger EventName="GotFocus">
+                            <i:InvokeCommandAction Command="{Binding DataContext.CogoCreationTextBoxGotFocusCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                   PassEventArgsToCommand="True" />
+                        </i:EventTrigger>
+                        <i:EventTrigger EventName="GotKeyboardFocus">
+                            <i:InvokeCommandAction Command="{Binding DataContext.CogoCreationTextBoxGotKeyboardFocusCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                   PassEventArgsToCommand="True" />
+                        </i:EventTrigger>
+                    </i:Interaction.Triggers>
                 </TextBox>
             </Grid>
             <WrapPanel Grid.Column="6"
@@ -425,7 +457,7 @@
                             <RectangleGeometry Rect="{Binding ElementName=d3dDxfControl, Path=DragRect}" />
                         </Path.Data>
                         <Path.RenderTransform>
-                            <MatrixTransform Matrix="{Binding ElementName=d3dDxfControl, Path=Camera.D2dMatrix, Converter={StaticResource Matrix3x2ToWindowsMatrix}}" />
+                            <MatrixTransform Matrix="{Binding ElementName=d3dDxfControl, Path=Camera.WpfMatrix}" />
                         </Path.RenderTransform>
                     </Path>
                     <uc:SignificantPointControl HitTestablePoint="{Binding DataContext.SnappedHitTestablePoint, RelativeSource={RelativeSource AncestorType=Page}}"
@@ -435,20 +467,20 @@
                             <TransformGroup>
                                 <TranslateTransform>
                                     <TranslateTransform.X>
-                                        <MultiBinding Converter="{StaticResource PointMatrix3x2TransformerConverter}"
+                                        <MultiBinding Converter="{StaticResource PointCoordinateMatrixTransformerConverter}"
                                                       ConverterParameter="X">
                                             <Binding Path="DataContext.SnappedHitTestablePoint.Position"
                                                      RelativeSource="{RelativeSource AncestorType=Page}" />
-                                            <Binding Path="DataContext.Camera.D2dMatrix"
+                                            <Binding Path="DataContext.Camera.WpfMatrix"
                                                      RelativeSource="{RelativeSource AncestorType=Page}" />
                                         </MultiBinding>
                                     </TranslateTransform.X>
                                     <TranslateTransform.Y>
-                                        <MultiBinding Converter="{StaticResource PointMatrix3x2TransformerConverter}"
+                                        <MultiBinding Converter="{StaticResource PointCoordinateMatrixTransformerConverter}"
                                                       ConverterParameter="Y">
                                             <Binding Path="DataContext.SnappedHitTestablePoint.Position"
                                                      RelativeSource="{RelativeSource AncestorType=Page}" />
-                                            <Binding Path="DataContext.Camera.D2dMatrix"
+                                            <Binding Path="DataContext.Camera.WpfMatrix"
                                                      RelativeSource="{RelativeSource AncestorType=Page}" />
                                         </MultiBinding>
                                     </TranslateTransform.Y>
@@ -481,11 +513,12 @@
                             <DataTemplate DataType="{x:Type hitTesting:HitTestablePoint}">
                                 <Path Fill="{StaticResource SelectedHitTestablePointBrush}">
                                     <Path.Data>
-                                        <EllipseGeometry RadiusX="4"
+                                        <EllipseGeometry x:Name="HitTestablePointEllipse"
+                                                         RadiusX="4"
                                                          RadiusY="4">
                                             <EllipseGeometry.Center>
                                                 <MultiBinding Converter="{StaticResource PointMatrixTransformationConverter}">
-                                                    <Binding Path="Position"/>
+                                                    <Binding Path="Position" />
                                                     <Binding Path="DataContext.Camera.WpfMatrix"
                                                              RelativeSource="{RelativeSource AncestorType=Page}" />
                                                 </MultiBinding>

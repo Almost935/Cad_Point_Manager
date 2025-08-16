@@ -27,15 +27,31 @@ namespace Cad_Point_Manager.Views
                 if (DataContext is MainViewModel vm)
                 {
                     Application.Current.MainWindow.KeyUp += vm.Window_KeyUp;
+                    vm.ResetSelectionRequested += Vm_ResetSelectionRequested;
+                }
+            };
+
+            Unloaded += (s, e) =>
+            {
+                if (DataContext is MainViewModel vm)
+                {
+                    Application.Current.MainWindow.KeyUp -= vm.Window_KeyUp;
+                    vm.ResetSelectionRequested -= Vm_ResetSelectionRequested;
                 }
             };
         }
 
-        private void dxfGrid_SizeChanged(object sender, System.Windows.SizeChangedEventArgs e)
+        private void Vm_ResetSelectionRequested(object? sender, EventArgs e)
+        {
+            // Call directly into the control (this is “View stuff” so it’s fine here)
+            d3dDxfControl?.ResetSelectedObjects();
+        }
+
+        private void dxfGrid_SizeChanged(object sender, SizeChangedEventArgs e)
         {
             if (DataContext is MainViewModel mainViewModel)
             {
-                mainViewModel.ViewportSize = new System.Windows.Size((float)e.NewSize.Width, (float)e.NewSize.Height);
+                mainViewModel.ViewportSize = new Size((float)e.NewSize.Width, (float)e.NewSize.Height);
             }
         }
 

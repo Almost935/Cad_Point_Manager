@@ -13,8 +13,6 @@ namespace Cad_Point_Manager.Models
     public class CogoPointManager : INotifyPropertyChanged
     {
         #region Fields
-        private List<int> _usedPointNumbers = [];
-
         private ObservableCollection<KeyValuePair<string, PointGroup>> _pointGroups = [];
         private PointGroup _activePointGroup;
         private bool _pointsDirty = false;
@@ -82,6 +80,7 @@ namespace Cad_Point_Manager.Models
         }
 
         public Rect Extents { get; set; } = Rect.Empty;
+        public Matrix CurrentlyAppliedMatrix { get; set; } = Matrix.Identity;
 
         public List<int> UsedPointNumbers => PointGroups.SelectMany(pg => pg.Value.Points).Select(p => p.PointNumber).ToList();
         public bool PointExists(int pointNumber) => PointGroups.SelectMany(pg => pg.Value.Points).Any(p => p.PointNumber == pointNumber);
@@ -95,6 +94,12 @@ namespace Cad_Point_Manager.Models
         #endregion
 
         #region Methods
+        public int GetNextAvailablePointNumber(int startCount)
+        {
+            int num = startCount;
+            while (PointNumberExists(num)){ num++; }
+            return num;
+        }
         private bool PointNumberExists(int num)
         {
             return PointGroups.SelectMany(pg => pg.Value.Points).Any(p => p.PointNumber == num);
@@ -102,9 +107,10 @@ namespace Cad_Point_Manager.Models
 
         public void UpdateAllVisualTransforms(Matrix matrix)
         {
+            CurrentlyAppliedMatrix = matrix;
             foreach (var pg in PointGroups)
             {
-               pg.Value.UpdateAllVisualTransforms(matrix);
+               pg.Value.UpdateAllVisualTransforms(CurrentlyAppliedMatrix);
             }
         }
         public void UpdateMarkerVisualTransforms(Matrix matrix)
@@ -143,15 +149,32 @@ namespace Cad_Point_Manager.Models
             return false;
         }
 
-        public bool TryAddPointToActiveGroup(int pointNum, Vector3 position, float elevation = 0, string description = "")
+        public bool TryAddPointToActiveGroup(int pointNum, Vector3 position, out CogoPoint cogoPoint, float elevation = 0, string description = "")
         {
             if (ActivePointGroup == null || PointNumberExists(pointNum))
             {
+                cogoPoint = null;
                 return false;
             }
 
-            ActivePointGroup.AddPoint(pointNum, position, elevation, description);
-            UpdateCogoPointsList();
+            cogoPoint = ActivePointGroup.AddPoint(pointNum, position, elevation, description);
+            CogoPoints.Add(cogoPoint);
+            //cogoPoint.UpdateAllVisualTransforms(CurrentlyAppliedMatrix);
+            //UpdateAllVisualTransforms(CurrentlyAppliedMatrix);
+
+            return true;
+        }
+        public bool TryAddPoint(int pointNum, Vector3 position, PointGroup pg, out CogoPoint cogoPoint, float elevation = 0, string description = "")
+        {
+            if (pg == null || PointNumberExists(pointNum) || !PointGroupExists(pg))
+            {
+                cogoPoint = null;
+                return false;
+            }
+
+            cogoPoint = ActivePointGroup.AddPoint(pointNum, position, elevation, description);
+            CogoPoints.Add(cogoPoint);
+
             return true;
         }
 
@@ -185,6 +208,11 @@ namespace Cad_Point_Manager.Models
             pointGroup = pair.Value;
             return true;
         }
+        public bool PointGroupExists(PointGroup pg)
+        {
+            return PointGroups.Any(p => p.Value == pg);
+        }
+
 
         public bool IsValidPointGroupName(string name, out string? errorMessage)
         {
@@ -289,7 +317,7 @@ namespace Cad_Point_Manager.Models
             }
         }
 
-        private void UpdateCogoPointsList()
+        public void UpdateCogoPointsList()
         {
             CogoPoints.Clear();
             foreach (var pointGroup in PointGroups)

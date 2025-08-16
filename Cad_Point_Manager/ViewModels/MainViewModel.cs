@@ -16,6 +16,10 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Collections;
 using System.Linq;
+using System.Windows.Controls;
+using Cad_Point_Manager.Services;
+using Cad_Point_Manager.Extensions;
+using System.Windows.Threading;
 
 using Point = System.Windows.Point;
 
@@ -24,6 +28,8 @@ namespace Cad_Point_Manager.ViewModels
     public class MainViewModel : INotifyPropertyChanged, INotifyDataErrorInfo
     {
         #region Fields
+        private readonly ValidationService _validationService = new();
+
         private CogoPoint? _draggingPoint;
         private Point _lastTextDragUpdatePosition = new();
         private Point _latestMouseWorldPosition = new();
@@ -43,11 +49,16 @@ namespace Cad_Point_Manager.ViewModels
         private ObservableCollection<HitTestablePoint> _selectedHitTestablePoints = [];
         private Point _mousePosition = new();
 
-        private int _newCogoPointsStartCount;
+        // CogoPoint Creation Fields
+        private int _newCogoPointsStartCount = 1;
+        private string _newCogoPointsStartNumberText = "1";
         private double _newCogoPointsElevation = 0.0;
+        private string _newCogoPointsElevationText = "0.00";
         private string _newCogoPointsDescription = "";
+        private string _newCogoPointsDescriptionText = "";
         private PointGroup _newCogoPointsActivePointGroup = null;
         private int _newCogoPointsIntermediatePointsCount = 0;
+        private string _newCogoPointsIntermediatePointsCountText = 0.ToString();
         #endregion
 
         #region Properties
@@ -121,8 +132,8 @@ namespace Cad_Point_Manager.ViewModels
             {
                 //if (_cogoPoints != null)
                 //{
-                    _cogoPoints = value;
-                    OnPropertyChanged(nameof(CogoPoints));
+                _cogoPoints = value;
+                OnPropertyChanged(nameof(CogoPoints));
                 //}
             }
         }
@@ -163,6 +174,7 @@ namespace Cad_Point_Manager.ViewModels
             }
         }
 
+        // CogoPoint Creation Properties
         public int NewCogoPointsStartNumber
         {
             get => _newCogoPointsStartCount;
@@ -170,6 +182,32 @@ namespace Cad_Point_Manager.ViewModels
             {
                 _newCogoPointsStartCount = value;
                 OnPropertyChanged(nameof(NewCogoPointsStartNumber));
+            }
+        }
+        public string NewCogoPointsStartNumberText
+        {
+            get => _newCogoPointsStartNumberText;
+            set
+            {
+                if (_newCogoPointsStartNumberText == value) return;
+                _newCogoPointsStartNumberText = value;
+
+                ClearErrors(nameof(NewCogoPointsStartNumberText));
+
+                if (!int.TryParse(value, out var n))
+                {
+                    AddError(nameof(NewCogoPointsStartNumberText), "Enter a valid integer.");
+                }
+                else if (n <= 0)
+                {
+                    AddError(nameof(NewCogoPointsStartNumberText), "Start number must be positive.");
+                }
+                else
+                {
+                    NewCogoPointsStartNumber = n;
+                }
+
+                OnPropertyChanged(nameof(NewCogoPointsStartNumberText));
             }
         }
         public double NewCogoPointsElevation
@@ -181,6 +219,28 @@ namespace Cad_Point_Manager.ViewModels
                 OnPropertyChanged(nameof(NewCogoPointsElevation));
             }
         }
+        public string NewCogoPointsElevationText
+        {
+            get => _newCogoPointsElevationText;
+            set
+            {
+                if (_newCogoPointsElevationText == value) return;
+                _newCogoPointsElevationText = value;
+
+                ClearErrors(nameof(NewCogoPointsElevationText));
+
+                if (!double.TryParse(value, out var n))
+                {
+                    AddError(nameof(NewCogoPointsElevationText), "Enter a valid number.");
+                }
+                else
+                {
+                    NewCogoPointsElevation = n;
+                }
+
+                OnPropertyChanged(nameof(NewCogoPointsElevationText));
+            }
+        }
         public string NewCogoPointsDescription
         {
             get => _newCogoPointsDescription;
@@ -190,13 +250,36 @@ namespace Cad_Point_Manager.ViewModels
                 OnPropertyChanged(nameof(NewCogoPointsDescription));
             }
         }
-        public PointGroup NewCogoPointsActivePointGroup
+        public string NewCogoPointsDescriptionText
+        {
+            get => _newCogoPointsDescriptionText;
+            set
+            {
+                if (_newCogoPointsDescriptionText == value) return;
+                _newCogoPointsDescriptionText = value;
+
+                ClearErrors(nameof(NewCogoPointsDescriptionText));
+                bool isValid = _validationService.ValidateString(value, out string errorMessage);
+
+                if (!isValid)
+                {
+                    AddError(nameof(NewCogoPointsDescriptionText), errorMessage);
+                }
+                else
+                {
+                    NewCogoPointsDescription = value;
+                }
+
+                OnPropertyChanged(nameof(NewCogoPointsDescriptionText));
+            }
+        }
+        public PointGroup NewCogoPointsPointGroup
         {
             get => _newCogoPointsActivePointGroup;
             set
             {
                 _newCogoPointsActivePointGroup = value;
-                OnPropertyChanged(nameof(NewCogoPointsActivePointGroup));
+                OnPropertyChanged(nameof(NewCogoPointsPointGroup));
             }
         }
         public int NewCogoPointsIntermediatePointsCount
@@ -206,6 +289,32 @@ namespace Cad_Point_Manager.ViewModels
             {
                 _newCogoPointsIntermediatePointsCount = value;
                 OnPropertyChanged(nameof(NewCogoPointsIntermediatePointsCount));
+            }
+        }
+        public string NewCogoPointsIntermediatePointsCountText
+        {
+            get => _newCogoPointsIntermediatePointsCountText;
+            set
+            {
+                if (_newCogoPointsIntermediatePointsCountText == value) return;
+                _newCogoPointsIntermediatePointsCountText = value;
+
+                ClearErrors(nameof(NewCogoPointsIntermediatePointsCountText));
+
+                if (!int.TryParse(value, out var n))
+                {
+                    AddError(nameof(NewCogoPointsIntermediatePointsCountText), "Enter a valid integer.");
+                }
+                else if (n < 0)
+                {
+                    AddError(nameof(NewCogoPointsIntermediatePointsCountText), "Intermediate points count must be positive.");
+                }
+                else
+                {
+                    NewCogoPointsIntermediatePointsCount = n;
+                }
+
+                OnPropertyChanged(nameof(NewCogoPointsIntermediatePointsCountText));
             }
         }
         #endregion
@@ -223,7 +332,15 @@ namespace Cad_Point_Manager.ViewModels
         public ICommand CogoPointCheckedCommand { get; set; }
         public ICommand CogoPointUncheckedCommand { get; set; }
 
+        // Cogo point creation commands
         public ICommand SubmitPointCommand => new RelayCommand(OnSubmitCogoPointClicked);
+        public ICommand CogoCreationTextBoxLostFocusCommand => new RelayCommand<RoutedEventArgs>(OnCogoCreationTextBoxLostFocus);
+        public ICommand CogoCreationTextBoxGotFocusCommand => new RelayCommand<RoutedEventArgs>(OnCogoCreationTextBoxGotFocus);
+        public ICommand CogoCreationTextBoxGotKeyboardFocusCommand => new RelayCommand<RoutedEventArgs>(OnCogoCreationTextBoxKeyboardGotFocus);
+        #endregion
+
+        #region Events
+        public event EventHandler? ResetSelectionRequested;
         #endregion
 
         #region Constructors
@@ -239,9 +356,6 @@ namespace Cad_Point_Manager.ViewModels
 
             CogoPointCheckedCommand = new RelayCommand<CogoPoint>(OnCogoPointToggleButtonChecked);
             CogoPointUncheckedCommand = new RelayCommand<CogoPoint>(OnCogoPointToggleButtonUnchecked);
-
-            SelectedHitTestablePoints.Add(new HitTestablePoint(new Point(200, 50), Enums.SignificantPointType.Intersection));
-            SelectedHitTestablePoints.Add(new HitTestablePoint(new Point(1000, 5000), Enums.SignificantPointType.Intersection));
         }
         #endregion
 
@@ -311,10 +425,10 @@ namespace Cad_Point_Manager.ViewModels
         private void OnSnapTogglePressed(object param)
         {
             if (param is ToggleButton toggle)
-        {
+            {
                 string name = toggle.Name;
                 bool isChecked = (bool)toggle.IsChecked;
-           
+
                 switch (name)
                 {
                     case "PointCogoCreation":
@@ -347,7 +461,7 @@ namespace Cad_Point_Manager.ViewModels
         {
             _draggingPoint = point;
             _draggingPoint.TextBeingMoved = true;
-            point.MouseLeave(); 
+            point.MouseLeave();
             _lastTextDragUpdatePosition = MousePosition;
             point.MoveTextInfoToPoint(MousePosition);
             point.RedrawTextVisual();
@@ -392,15 +506,59 @@ namespace Cad_Point_Manager.ViewModels
             {
                 if (SelectedHitTestablePoints.Count > 0)
                 {
-                    //ValidateNewCogoPoints();
-                    var errors = GetErrors(nameof(NewCogoPointsStartNumber));
-                    
+                    var startNumberErrors = GetErrors(nameof(NewCogoPointsStartNumberText));
+                    var elevErrors = GetErrors(nameof(NewCogoPointsElevationText));
+                    var descErrors = GetErrors(nameof(NewCogoPointsDescriptionText));
+
+                    if (startNumberErrors is not null || elevErrors is not null || descErrors is not null || NewCogoPointsPointGroup is null)
+                    {
+                        if (NewCogoPointsPointGroup == null)
+                        {
+                            AddError(nameof(NewCogoPointsPointGroup), "A point group must be selected.");
+                        }
+                        if (startNumberErrors is not null || elevErrors is not null || descErrors is not null)
+                        {
+                            MessageBox.Show("Errors in point creation fields.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                        }
+                        return;
+                    }
+                    else
+                    {
+                        foreach (var hitPoint in SelectedHitTestablePoints)
+                        {
+                            int pointNum = JobFileManager.CadManager3D.CogoPointManager.GetNextAvailablePointNumber(NewCogoPointsStartNumber);
+                            JobFileManager.CadManager3D.CogoPointManager.TryAddPoint(pointNum, hitPoint.Position.ToVector3(), NewCogoPointsPointGroup,
+                                out var cogoPoint, NewCogoPointsElevation.ToFloat(), NewCogoPointsDescription);
+                            cogoPoint.UpdateAllVisualTransforms(JobFileManager.CadManager3D.CogoPointManager.CurrentlyAppliedMatrix);
+                        }
+
+                        ResetSelectionRequested?.Invoke(this, EventArgs.Empty);
+                        JobFileManager.CadManager3D.UpdateHitTestableObjectTree();
+                    }
                 }
             }
             else if (JobFileManager.CadManager3D.SnapSelectionMode == Enums.SelectionMode.Geometries)
             {
-                
+
             }
+        }
+        private void OnCogoCreationTextBoxLostFocus(RoutedEventArgs e)
+        {
+            //var tb = e.Source as TextBox ?? e.OriginalSource as TextBox;
+            //ValidateNewCogoPoints();
+        }
+        private void OnCogoCreationTextBoxGotFocus(RoutedEventArgs e)
+        {
+            //var tb = e.Source as TextBox ?? e.OriginalSource as TextBox;
+            //tb.Dispatcher.BeginInvoke(new Action(() =>
+            //{
+            //    tb.SelectAll();
+            //}), DispatcherPriority.Input);
+        }
+        private void OnCogoCreationTextBoxKeyboardGotFocus(RoutedEventArgs e)
+        {
+            var tb = e.Source as TextBox ?? e.OriginalSource as TextBox;
+            tb.SelectAll();
         }
 
         // Key up event handling
@@ -409,23 +567,6 @@ namespace Cad_Point_Manager.ViewModels
             if (e.Key == Key.Escape)
             {
                 EndDraggingText();
-            }
-        }
-
-        // Validation
-        private void ValidateNewCogoPoints()
-        {
-            ClearErrors(nameof(NewCogoPointsStartNumber));
-            ClearErrors(nameof(NewCogoPointsElevation));
-            ClearErrors(nameof(NewCogoPointsDescription));
-
-            if (NewCogoPointsStartNumber < 1)
-            {
-                AddError(nameof(NewCogoPointsStartNumber), "Start number must be greater than 0.");
-            }
-            if (string.IsNullOrWhiteSpace(NewCogoPointsDescription))
-            {
-                AddError(nameof(NewCogoPointsDescription), "Description cannot be empty.");
             }
         }
         #endregion

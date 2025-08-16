@@ -28,9 +28,17 @@
     <Compile Remove="Controls\D3DControl\D3D11ImageSource.cs" />
     <Compile Remove="Controls\D3DControl\D3dControl.cs" />
     <Compile Remove="Controls\Direct2DDxfControl.cs" />
+    <Compile Remove="Converters\CogoPointColorConverter.cs" />
+    <Compile Remove="Converters\CogoPointScaleConverter.cs" />
+    <Compile Remove="Converters\CogoPointToggleButtonConverter.cs" />
     <Compile Remove="Converters\ColorToBrushConverter.cs" />
+    <Compile Remove="Converters\KeyValueToValueConverter.cs" />
     <Compile Remove="Converters\Matrix3x2ToScaleConverter .cs" />
+    <Compile Remove="Converters\Matrix3x2ToWindowsMatrixConverter.cs" />
+    <Compile Remove="Converters\PointCenteringConverter.cs" />
     <Compile Remove="Converters\PointTransformer.cs" />
+    <Compile Remove="Converters\SelectionModeEnumConverter.cs" />
+    <Compile Remove="Converters\SelectionModeEnumToBooleanConverter.cs" />
     <Compile Remove="Helpers\DxfHelper.cs" />
     <Compile Remove="Helpers\Vector2EqualityComparer.cs" />
     <Compile Remove="Helpers\VectorEqualityComparer.cs" />

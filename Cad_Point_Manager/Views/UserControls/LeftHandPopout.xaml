@@ -17,7 +17,6 @@
 
     <UserControl.Resources>
         <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" />
-        <converters:KeyValueToValueConverter x:Key="KeyValueToValueConverter" />
         <validation:PointNumberValidationRule x:Key="PointNumberValidationRule" />
         <validation:DoubleValidationRule x:Key="DoubleValidationRule" />
 

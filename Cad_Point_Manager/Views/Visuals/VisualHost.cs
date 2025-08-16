@@ -11,12 +11,7 @@ namespace Cad_Point_Manager.Views
     {
         #region Fields
         private readonly VisualCollection _visuals;
-        private readonly Dictionary<CogoPoint, (DrawingVisual markerVisual, DrawingVisual textVisual)> _visualMap = new();
-        private (CogoPoint point, int visualsIndex) _snapBlurVisual = (null, -1);
-
-        // Testing Fields
-        private bool _initialVisualSet = false;
-        private DrawingVisual _testVisual = new();
+        private readonly Dictionary<CogoPoint, (DrawingVisual markerVisual, DrawingVisual textVisual)> _visualMap = [];
         #endregion
 
         #region Dependency Properties
@@ -31,18 +26,6 @@ namespace Cad_Point_Manager.Views
             get => (ObservableCollection<CogoPoint>)GetValue(CogoPointsProperty);
             set => SetValue(CogoPointsProperty, value);
         }
-
-        //public static readonly DependencyProperty SelectedHittestablePointsProperty =
-        //   DependencyProperty.Register(
-        //       nameof(HitTestablePoint),
-        //       typeof(ObservableCollection<HitTestablePoint>),
-        //       typeof(VisualHost),
-        //       new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.AffectsRender, OnHitTestablePointsChanged));
-        //public ObservableCollection<HitTestablePoint> SelectedHittestablePoints
-        //{
-        //    get => (ObservableCollection<HitTestablePoint>)GetValue(SelectedHittestablePointsProperty);
-        //    set => SetValue(SelectedHittestablePointsProperty, value);
-        //}
         #endregion
 
         #region Constructors
@@ -58,11 +41,20 @@ namespace Cad_Point_Manager.Views
             _visuals.Clear();
             _visualMap.Clear();
 
-            foreach (var (key, value) in _visualMap)
+            //foreach (var (key, value) in _visualMap)
+            //{
+            //    _visualMap[key] = value;
+            //    _visuals.Add(value.markerVisual);
+            //    _visuals.Add(value.textVisual);
+            //}
+            foreach (var point in CogoPoints)
             {
-                _visualMap[key] = value;
-                _visuals.Add(value.markerVisual);
-                _visuals.Add(value.textVisual);
+                if (point.VisualGroup.MarkerVisual != null && point.VisualGroup.TextVisual != null)
+                {
+                    _visualMap[point] = (point.VisualGroup.MarkerVisual, point.VisualGroup.TextVisual);
+                    _visuals.Add(point.VisualGroup.MarkerVisual);
+                    _visuals.Add(point.VisualGroup.TextVisual);
+                }
             }
         }
 

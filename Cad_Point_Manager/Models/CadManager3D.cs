@@ -679,17 +679,6 @@ namespace Cad_Point_Manager.Models
 
         public void GetTestDxfPoints()
         {
-            //CogoPointManager.PointGroups.Clear();
-
-            //bool isCreated = CogoPointManager.TryCreatePointGroup("Point Group 1", new SharpDX.Vector4(1.0f, 0.0f, 0.0f, 1.0f), _pointBaseScale, out var pointGroup);
-            //var groupActivated = CogoPointManager.TrySetActivePointGroup(pointGroup);
-            //if (isCreated && groupActivated)
-            //{
-            //    var pointCreated = CogoPointManager.TryAddPointToActiveGroup(1, new Vector3(1000, 5000, 0), 0, "test");
-            //}
-
-
-
             CogoPointManager.PointGroups.Clear();
 
             float rows = 5;
@@ -714,11 +703,13 @@ namespace Cad_Point_Manager.Models
                     for (int j = 0; j < cols; j++)
                     {
                         float x = Extents.Left.ToFloat() + (xIncrement * j);
-                        var pointCreated = CogoPointManager.TryAddPointToActiveGroup(pointNum, new Vector3(x, y, 0), elevation, description);
+                        var pointCreated = CogoPointManager.TryAddPointToActiveGroup(pointNum, new Vector3(x, y, 0), out var point, elevation, description);
                         if (pointCreated) { pointNum++; continue; }
                     }
                 }
             }
+
+            CogoPointManager.UpdateCogoPointsList();
         }
 
         public ref TextVertex GetTextVertexRef(int index)

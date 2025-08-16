@@ -281,6 +281,12 @@ namespace Cad_Point_Manager.Models.PointRendering
             UpdateTextVisualTransform(CurrentlyAppliedTextMatrix);
             TextInfoInBasePosition = false;
         }
+
+        public void UpdateAllVisualTransforms(Matrix matrix)
+        {
+            UpdateMarkerVisualTransform(matrix);
+            UpdateTextVisualTransform(matrix);
+        }
         public void UpdateMarkerVisualTransform(Matrix matrix)
         {
             CurrentlyAppliedMarkerMatrix = matrix;
