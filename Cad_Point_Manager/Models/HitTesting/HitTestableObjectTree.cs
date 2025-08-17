@@ -1,5 +1,7 @@
-﻿using System.Windows;
+﻿using System.Diagnostics;
+using System.Windows;
 using Cad_Point_Manager.Models.DrawingObjects3D;
+using Cad_Point_Manager.Models.PointRendering;
 using SharpDX.Direct3D11;
 
 namespace Cad_Point_Manager.Models.HitTesting
@@ -18,6 +20,9 @@ namespace Cad_Point_Manager.Models.HitTesting
         public int Levels { get; set; }
         public HitTestableObjectNode Root { get; set; }
         public List<HitTestableObjectNode> CurrentlyVisibleNodes { get; set; } = [];
+        public int LeafCapacity { get; set; } = 64;   // 32–128 are common
+        public double MinCellSize { get; set; } = 2;  // world units (≈ a few pixels)
+        public int MaxLevels { get; set; } = 12;
 
         /// <summary>
         /// Consists of all the 0 level nodes in the tree.

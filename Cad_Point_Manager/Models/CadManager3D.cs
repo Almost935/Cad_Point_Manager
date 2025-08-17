@@ -589,8 +589,8 @@ namespace Cad_Point_Manager.Models
 
                 LineVerticesDirty = false;
 
-                //// For Testing
-                //AddObjectTreeNodeLayoutVertices();
+                // For Testing
+                AddObjectTreeNodeLayoutVertices();
             }
             return CollectionsMarshal.AsSpan(_cachedLineVertices);
         }
@@ -755,8 +755,8 @@ namespace Cad_Point_Manager.Models
             HitTestableObjectTree = new(this, Extents, 5);
             HitTestableObjectTreeDirty = false;
 
-            //// For Testing
-            //LineVerticesDirty = true;
+            // For Testing
+            LineVerticesDirty = true;
         }
 
         private void AddObjectTreeNodeLayoutVertices()
@@ -787,9 +787,8 @@ namespace Cad_Point_Manager.Models
 
                 _cachedLineVertices.Add(topRightVertex);
                 _cachedLineVertices.Add(bottomRightVertex);
-
-                LineVerticesDirty = true;
             }
+            LineVerticesDirty = true;
         }
         #endregion
     }

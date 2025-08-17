@@ -353,11 +353,8 @@ namespace Cad_Point_Manager.Views.UserControls
             var listView = sender as ListView;
             if (listView is null) { return; }
 
-            Debug.WriteLine("\nPointGroupsListView_SelectionChanged");
-
             if (_ignorePointGroupSelectionChanged)
             {
-                Debug.WriteLine("_ignorePointGroupSelectionChanged");
                 return;
             }
 
@@ -366,7 +363,6 @@ namespace Cad_Point_Manager.Views.UserControls
 
             foreach (KeyValuePair<string, PointGroup> kvp in selectedItems)
             {
-                Debug.WriteLine($"kvp.Value.Name: {kvp.Value.Name}");
                 _selectedPointGroups.Add(kvp.Value);
             }
 
@@ -475,7 +471,7 @@ namespace Cad_Point_Manager.Views.UserControls
                 textBox.IsReadOnly = true;
             }
         }
-        private void PointScaleTextbox_PreviewKeyUp(object sender, KeyEventArgs e)
+        private async void PointScaleTextbox_PreviewKeyUp(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.Enter)
             {
@@ -502,26 +498,25 @@ namespace Cad_Point_Manager.Views.UserControls
                             selectedPG.PointScale = pg.PointScale;
                             points.AddRange(selectedPG.Points);
                         }
-                        QueueCogoPointRedraw(points);
+                        //QueueCogoPointRedraw(points);
+                        await QueueCogoPointRedrawAsync(points);
                         textBox.IsReadOnly = true;
                         _pointGroupBeingEdited = false;
+                        CadManager.UpdateHitTestableObjectTree();
+                        CadManager.LineVerticesDirty = true;
 
-                        var listView = VisualTreeHelpers.FindAncestor<ListView>(textBox);
-                        if (listView is not null)
-                        {
-                            Debug.WriteLine("\nlistView is not null");
-
-                            _ignorePointGroupSelectionChanged = true;
-                            listView.SelectedItems.Clear();
-                            foreach (var pg2 in _selectedPointGroups)
-                            {
-                                Debug.WriteLine($"pg2.Name: {pg2.Name}");
-
-                                listView.SelectedItems.Add(new KeyValuePair<string, PointGroup>(pg2.Name, pg2));
-                            }
-
-                            _ignorePointGroupSelectionChanged = false;
-                        }
+                        //var listView = VisualTreeHelpers.FindAncestor<ListView>(textBox);
+                        //if (listView is not null)
+                        //{
+                        //    _ignorePointGroupSelectionChanged = true;
+                        //    listView.SelectedItems.Clear();
+                        //    foreach (var pg2 in _selectedPointGroups)
+                        //    {
+                        //        _ignorePointGroupSelectionChanged = true;
+                        //        listView.SelectedItems.Add(new KeyValuePair<string, PointGroup>(pg2.Name, pg2));
+                        //    }
+                        //    _ignorePointGroupSelectionChanged = true;
+                        //}
 
                         return;
                     }
@@ -780,7 +775,44 @@ namespace Cad_Point_Manager.Views.UserControls
                 }
             }
         }
+        // Change the signature to return a Task you can await.
+        public Task QueueCogoPointRedrawAsync(IEnumerable<CogoPoint> points)
+        {
+            if (points is null) return Task.CompletedTask;
 
+            lock (_pendingRedrawLock)
+            {
+                foreach (var p in points) _pendingRedraw.Add(p);
+
+                // If a batch is already queued/running, await that same operation.
+                if (_redrawOp is not null &&
+                    (_redrawOp.Status == DispatcherOperationStatus.Pending ||
+                     _redrawOp.Status == DispatcherOperationStatus.Executing))
+                {
+                    return _redrawOp.Task; // awaitable
+                }
+
+                // Queue a new batch.
+                _redrawOp = Dispatcher.InvokeAsync(() =>
+                {
+                    List<CogoPoint> batch;
+                    lock (_pendingRedrawLock)
+                    {
+                        if (_pendingRedraw.Count == 0) return; // nothing to do
+                        batch = _pendingRedraw.ToList();
+                        _pendingRedraw.Clear();
+                    }
+
+                    using (Dispatcher.CurrentDispatcher.DisableProcessing())
+                    {
+                        for (int i = 0; i < batch.Count; i++)
+                            batch[i].RedrawAllVisuals();
+                    }
+                }, DispatcherPriority.Render);
+
+                return _redrawOp.Task; // awaitable
+            }
+        }
         #endregion
 
         #region INotifyPropertyChanged Implementation

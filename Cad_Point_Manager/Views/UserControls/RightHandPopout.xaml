@@ -111,7 +111,7 @@
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
                 <ListView x:Name="pointGroupsListView"
-                          Grid.Row="0"
+                          Grid.Row="0" 
                           ItemsSource="{Binding ElementName=root, Path=CadManager.PointGroupsView}"
                           Style="{StaticResource LayersListViewStyle}"
                           IsHitTestVisible="{Binding ElementName=root, Path=PointGroupListVisible}"
