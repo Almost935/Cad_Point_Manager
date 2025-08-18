@@ -209,10 +209,11 @@ namespace Cad_Point_Manager.Views
             _textHitTestGeometry.Transform = new MatrixTransform(textMatrix);
             _lineHitTestGeometry = new(Point.Position, Point.TextToggleButtonPosition);
 
-            dc.Pop();
-            Brush testBrush = new SolidColorBrush(Color.FromArgb(50, 0, 255, 0));
-            Pen testPen = new(testBrush, 0.1);
-            dc.DrawGeometry(testBrush, testPen, _textHitTestGeometry);
+            //// Testing
+            //dc.Pop();
+            //Brush testBrush = new SolidColorBrush(Color.FromArgb(50, 0, 255, 0));
+            //Pen testPen = new(testBrush, 0.1);
+            //dc.DrawGeometry(testBrush, testPen, _textHitTestGeometry);
 
             dc.Close();
 

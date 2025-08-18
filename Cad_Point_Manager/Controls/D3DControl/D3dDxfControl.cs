@@ -282,6 +282,18 @@ namespace Cad_Point_Manager.Controls.D3DControl
             set => SetValue(SelectedHitTestablePointsProperty, value);
         }
 
+        public static readonly DependencyProperty SelectedGeometriesProperty =
+            DependencyProperty.Register(
+                nameof(SelectedGeometries),
+                typeof(ObservableCollection<DrawingGeometry3D>),
+                typeof(D3dDxfControl),
+                new FrameworkPropertyMetadata(new ObservableCollection<DrawingGeometry3D>(), FrameworkPropertyMetadataOptions.BindsTwoWayByDefault));
+        public ObservableCollection<DrawingGeometry3D> SelectedGeometries
+        {
+            get => (ObservableCollection<DrawingGeometry3D>)GetValue(SelectedGeometriesProperty);
+            set => SetValue(SelectedGeometriesProperty, value);
+        }
+
         public static readonly DependencyProperty MousePositionProperty =
             DependencyProperty.Register(
                 nameof(MousePosition),
@@ -1485,19 +1497,19 @@ namespace Cad_Point_Manager.Controls.D3DControl
                         _lineGlowVertices.AddRange(geometry.Vertices);
                         _selectedHitTestableObjects.Add(geometry);
                     }
-                    if (obj is DrawingBlock3D block3D)
-                    {
-                        block3D.Select();
-                        CadManager3D.UpdateVerticesIsSelected(block3D, true);
-                        _lineGlowVertices.AddRange(block3D.LineVertices);
-                        _selectedHitTestableObjects.Add(block3D);
-                    }
-                    if (obj is DrawingText3D drawingText)
-                    {
-                        drawingText.Select();
-                        CadManager3D.UpdateVerticesIsSelected(drawingText, true);
-                        _selectedHitTestableObjects.Add(drawingText);
-                    }
+                    //if (obj is DrawingBlock3D block3D)
+                    //{
+                    //    block3D.Select();
+                    //    CadManager3D.UpdateVerticesIsSelected(block3D, true);
+                    //    _lineGlowVertices.AddRange(block3D.LineVertices);
+                    //    _selectedHitTestableObjects.Add(block3D);
+                    //}
+                    //if (obj is DrawingText3D drawingText)
+                    //{
+                    //    drawingText.Select();
+                    //    CadManager3D.UpdateVerticesIsSelected(drawingText, true);
+                    //    _selectedHitTestableObjects.Add(drawingText);
+                    //}
                 }
                 if (hitTestableObject is CogoPoint dxfPoint)
                 {
@@ -1526,18 +1538,18 @@ namespace Cad_Point_Manager.Controls.D3DControl
                         CadManager3D.UpdateVerticesIsSelected(geometry, false);
                         _selectedHitTestableObjects.Remove(geometry);
                     }
-                    if (obj is DrawingBlock3D block3D)
-                    {
-                        block3D.Deselect();
-                        CadManager3D.UpdateVerticesIsSelected(block3D, false);
-                        _selectedHitTestableObjects.Remove(block3D);
-                    }
-                    if (obj is DrawingMtext3D drawingMtext)
-                    {
-                        drawingMtext.Deselect();
-                        CadManager3D.UpdateVerticesIsSelected(drawingMtext, false);
-                        _selectedHitTestableObjects.Remove(drawingMtext);
-                    }
+                    //if (obj is DrawingBlock3D block3D)
+                    //{
+                    //    block3D.Deselect();
+                    //    CadManager3D.UpdateVerticesIsSelected(block3D, false);
+                    //    _selectedHitTestableObjects.Remove(block3D);
+                    //}
+                    //if (obj is DrawingMtext3D drawingMtext)
+                    //{
+                    //    drawingMtext.Deselect();
+                    //    CadManager3D.UpdateVerticesIsSelected(drawingMtext, false);
+                    //    _selectedHitTestableObjects.Remove(drawingMtext);
+                    //}
                 }
                 if (hitTestableObject is CogoPoint dxfPoint)
                 {

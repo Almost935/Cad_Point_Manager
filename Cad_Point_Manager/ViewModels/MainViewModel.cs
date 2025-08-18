@@ -47,6 +47,7 @@ namespace Cad_Point_Manager.ViewModels
         private ObservableCollection<CogoPoint> _selectedCogoPoints = [];
         private HitTestablePoint _snappedHitTestablePoint;
         private ObservableCollection<HitTestablePoint> _selectedHitTestablePoints = [];
+        private ObservableCollection<HitTestablePoint> _selected
         private Point _mousePosition = new();
 
         // CogoPoint Creation Fields

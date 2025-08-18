@@ -589,8 +589,8 @@ namespace Cad_Point_Manager.Models
 
                 LineVerticesDirty = false;
 
-                // For Testing
-                AddObjectTreeNodeLayoutVertices();
+                //// For Testing
+                //AddObjectTreeNodeLayoutVertices();
             }
             return CollectionsMarshal.AsSpan(_cachedLineVertices);
         }
@@ -755,15 +755,15 @@ namespace Cad_Point_Manager.Models
             HitTestableObjectTree = new(this, Extents, 5);
             HitTestableObjectTreeDirty = false;
 
-            // For Testing
-            LineVerticesDirty = true;
+            //// For Testing
+            //LineVerticesDirty = true;
         }
 
         private void AddObjectTreeNodeLayoutVertices()
         {
             if (HitTestableObjectTree is null) { return; }
 
-            foreach (var node in HitTestableObjectTree.BaseLevelNodes)
+            foreach (var node in HitTestableObjectTree.LeafNodes)
             {
                 Vector4 color = new(1, 0, 0, 1);
                 var topLeft = new Vector3((float)node.Extents.Left, (float)node.Extents.Top, 0);

@@ -17,17 +17,13 @@ namespace Cad_Point_Manager.Models.HitTesting
         #region Properties
         public List<HitTestableObject> HitTestableObjects { get; set; } = [];
         public Rect Extents { get; set; }
-        public int Levels { get; set; }
+
         public HitTestableObjectNode Root { get; set; }
         public List<HitTestableObjectNode> CurrentlyVisibleNodes { get; set; } = [];
         public int LeafCapacity { get; set; } = 64;   // 32–128 are common
         public double MinCellSize { get; set; } = 2;  // world units (≈ a few pixels)
         public int MaxLevels { get; set; } = 12;
-
-        /// <summary>
-        /// Consists of all the 0 level nodes in the tree.
-        /// </summary>
-        public List<HitTestableObjectNode> BaseLevelNodes { get; set; } = [];
+        public List<HitTestableObjectNode> LeafNodes { get; set; } = [];
         #endregion
 
         #region Constructors
@@ -35,7 +31,7 @@ namespace Cad_Point_Manager.Models.HitTesting
         {
             _cadManager = cadManager;
             Extents = extents;
-            Levels = levels;
+            MaxLevels = levels;
 
             Initialize();
         }
@@ -73,7 +69,7 @@ namespace Cad_Point_Manager.Models.HitTesting
         }
         private void GetRoot()
         {
-            Root = new(HitTestableObjects, Levels, Extents, this);
+            Root = new(HitTestableObjects, MaxLevels, Extents, this);
         }
         private void GetDrawingObjects()
         {
