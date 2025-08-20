@@ -1,9 +1,5 @@
-﻿using Cad_Point_Manager.Controls.D3DControl;
-using Cad_Point_Manager.Extensions;
-using Cad_Point_Manager.Helpers;
-using Cad_Point_Manager.Models.PointRendering;
+﻿using Cad_Point_Manager.Helpers;
 using Cad_Point_Manager.ViewModels;
-using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;

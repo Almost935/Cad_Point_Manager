@@ -1,11 +1,9 @@
-﻿using Cad_Point_Manager.Controls.D3DControl;
-using Cad_Point_Manager.Models.PointRendering;
+﻿using Cad_Point_Manager.Models.PointRendering;
 using SharpDX;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
 using System.Windows;
-using System.Windows.Media;
 using Matrix = System.Windows.Media.Matrix;
 
 namespace Cad_Point_Manager.Models
@@ -172,7 +170,7 @@ namespace Cad_Point_Manager.Models
                 return false;
             }
 
-            cogoPoint = ActivePointGroup.AddPoint(pointNum, position, elevation, description);
+            cogoPoint = pg.AddPoint(pointNum, position, elevation, description);
             CogoPoints.Add(cogoPoint);
 
             return true;

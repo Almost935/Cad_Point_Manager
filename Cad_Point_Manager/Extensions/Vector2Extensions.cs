@@ -1,34 +1,22 @@
-﻿using SharpDX;
-using System.Windows;
-using Point = System.Windows.Point;
+﻿using Point = System.Windows.Point;
+using Vector2 = System.Numerics.Vector2;
 
 namespace Cad_Point_Manager.Extensions
 {
     public static class Vector2Extensions
-    {
-        public static float Magnitude(this Vector2 v)
-        {
-            return (float)Math.Sqrt(v.X * v.X + v.Y * v.Y);
-        }
-
-        public static float MagnitudeSquared(this Vector2 v)
-        {
-            return v.X * v.X + v.Y * v.Y;
-        }
-
+    { 
         public static Point ToPoint(this Vector2 v)
         {
             return new Point(v.X, v.Y);
         }
 
-        public static Vector3 ToVector3(this Vector2 v, float elevation = 0.0f)
+        public static SharpDX.Vector3 ToSharpDXVector3(this Vector2 v, float elevation = 0.0f)
         {
-            return new Vector3(v.X, v.Y, elevation);
+            return new SharpDX.Vector3((float)v.X, (float)v.Y, elevation);
         }
-
-        public static Vector ToVector(this Vector2 v)
+        public static SharpDX.Vector2 ToSharpDXVector2(this Vector2 v)
         {
-            return new Vector(v.X, v.Y);
+            return new SharpDX.Vector2((float)v.X, (float)v.Y);
         }
 
         public static bool EqualsWithTolerance(this Vector2 v1, Vector2 v2, float tolerance)

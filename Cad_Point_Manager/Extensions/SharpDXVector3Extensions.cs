@@ -1,16 +1,11 @@
 ﻿using SharpDX;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 
 namespace Cad_Point_Manager.Extensions
 {
-    public static class Vector3Extensions
+    public static class SharpDXVector3Extensions
     {
-        public static Vector2 ToVector2(this Vector3 v)
+        public static Vector2 ToSharpDXVector2(this Vector3 v)
         {
             return new Vector2(v.X, v.Y);
         }
@@ -23,6 +18,11 @@ namespace Cad_Point_Manager.Extensions
         public static Vector ToVector(this Vector3 v)
         {
             return new Vector(v.X, v.Y);
+        }
+
+        public static System.Numerics.Vector2 ToVector2(this Vector3 v)
+        {
+            return new System.Numerics.Vector2(v.X, v.Y);
         }
 
         public static bool EqualsWithTolerance(this Vector3 v1, Vector3 v2, float tolerance)
@@ -39,7 +39,7 @@ namespace Cad_Point_Manager.Extensions
         }
         public static float GetDistance2D(this Vector3 v1, Vector3 v2)
         {
-            return Vector2.Distance(v1.ToVector2(), v2.ToVector2());
+            return Vector2.Distance(v1.ToSharpDXVector2(), v2.ToSharpDXVector2());
         }
     }
 }

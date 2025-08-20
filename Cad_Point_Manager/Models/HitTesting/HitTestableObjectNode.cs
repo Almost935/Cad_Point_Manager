@@ -3,12 +3,8 @@ using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Helpers;
 using Cad_Point_Manager.Models.DrawingObjects3D;
 using Cad_Point_Manager.Models.PointRendering;
-using netDxf.Entities;
 using SharpDX;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Speech.Recognition;
 using System.Windows;
 
 using Point = System.Windows.Point;
@@ -297,7 +293,7 @@ namespace Cad_Point_Manager.Models.HitTesting
             List<(Enums.SignificantPointType pointType, double distance, Vector2 coordinate)> hits = [];
             foreach (var (pointType, position) in coords)
             {
-                var vector2Pos = position.ToVector2();
+                var vector2Pos = position.ToSharpDXVector2();
                 float d = Vector2.Distance(vector2Pos, pos);
                 hits.Add((pointType, d, vector2Pos));
             }

@@ -9,10 +9,8 @@ using netDxf;
 using netDxf.Entities;
 using netDxf.Tables;
 using SharpDX;
-using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Windows;
@@ -45,8 +43,7 @@ namespace Cad_Point_Manager.Models
         private CogoPointManager _cogoPointManager;
         private Size2F _viewportSize = Size2F.Empty;
         private Enums.SelectionMode _snapSelectionMode = Enums.SelectionMode.CogoPoints;
-
-        private float _pointBaseScale;
+        private double _pointBaseScale = 1;
 
         private readonly List<LineVertex> _cachedLineVertices = [];
         private readonly List<TextVertex> _cachedTextVertices = [];
@@ -192,6 +189,15 @@ namespace Cad_Point_Manager.Models
                 OnPropertyChanged(nameof(SnapSelectionMode));
             }
         }
+         public double PointBaseScale
+        {
+            get => _pointBaseScale;
+            set
+            {
+                _pointBaseScale = value;
+                OnPropertyChanged(nameof(PointBaseScale));
+            }
+        }
 
         public DxfDocument DxfDocument { get; set; }
         public HitTestableObjectTree HitTestableObjectTree { get; set; }
@@ -276,16 +282,16 @@ namespace Cad_Point_Manager.Models
         {
             if (Extents.IsEmpty)
             {
-                _pointBaseScale = 1;
+                PointBaseScale = 1;
                 return;
             }
             if (Extents.Width > Extents.Height)
             {
-                _pointBaseScale = Extents.Width.ToFloat() * _pointSizeToExtentsFactor;
+                PointBaseScale = Extents.Width * _pointSizeToExtentsFactor;
             }
             else
             {
-                _pointBaseScale = Extents.Height.ToFloat() * _pointSizeToExtentsFactor;
+                PointBaseScale = Extents.Height * _pointSizeToExtentsFactor;
             }
         }
 
@@ -679,37 +685,37 @@ namespace Cad_Point_Manager.Models
 
         public void GetTestDxfPoints()
         {
-            CogoPointManager.PointGroups.Clear();
+            //CogoPointManager.PointGroups.Clear();
 
-            float rows = 5;
-            float cols = 15;
-            float yIncrement = Extents.Height.ToFloat() / (rows - 1);
-            float xIncrement = Extents.Width.ToFloat() / (cols - 1);
-            int pointNum = 1;
-            float elevation = 0;
-            string description = "Test Point";
+            //float rows = 5;
+            //float cols = 15;
+            //float yIncrement = Extents.Height.ToFloat() / (rows - 1);
+            //float xIncrement = Extents.Width.ToFloat() / (cols - 1);
+            //int pointNum = 1;
+            //float elevation = 0;
+            //string description = "Test Point";
 
-            for (int i = 0; i < rows; i++)
-            {
-                string pointGroupName = $"TestGroup {i + 1}";
-                bool created = CogoPointManager.TryCreatePointGroup(pointGroupName, new SharpDX.Vector4(1.0f, 0.0f, 0.0f, 1.0f), _pointBaseScale, out var pointGroup);
-                if (created)
-                {
-                    var groupActivated = CogoPointManager.TrySetActivePointGroup(pointGroup);
-                    if (!groupActivated) { continue; }
+            //for (int i = 0; i < rows; i++)
+            //{
+            //    string pointGroupName = $"TestGroup {i + 1}";
+            //    bool created = CogoPointManager.TryCreatePointGroup(pointGroupName, new SharpDX.Vector4(1.0f, 0.0f, 0.0f, 1.0f), _pointBaseScale, out var pointGroup);
+            //    if (created)
+            //    {
+            //        var groupActivated = CogoPointManager.TrySetActivePointGroup(pointGroup);
+            //        if (!groupActivated) { continue; }
 
-                    float y = Extents.Top.ToFloat() + (yIncrement * i);
+            //        float y = Extents.Top.ToFloat() + (yIncrement * i);
 
-                    for (int j = 0; j < cols; j++)
-                    {
-                        float x = Extents.Left.ToFloat() + (xIncrement * j);
-                        var pointCreated = CogoPointManager.TryAddPointToActiveGroup(pointNum, new Vector3(x, y, 0), out var point, elevation, description);
-                        if (pointCreated) { pointNum++; continue; }
-                    }
-                }
-            }
+            //        for (int j = 0; j < cols; j++)
+            //        {
+            //            float x = Extents.Left.ToFloat() + (xIncrement * j);
+            //            var pointCreated = CogoPointManager.TryAddPointToActiveGroup(pointNum, new Vector3(x, y, 0), out var point, elevation, description);
+            //            if (pointCreated) { pointNum++; continue; }
+            //        }
+            //    }
+            //}
 
-            CogoPointManager.UpdateCogoPointsList();
+            //CogoPointManager.UpdateCogoPointsList();
         }
 
         public ref TextVertex GetTextVertexRef(int index)

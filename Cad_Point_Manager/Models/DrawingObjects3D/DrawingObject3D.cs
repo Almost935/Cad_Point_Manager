@@ -2,10 +2,6 @@
 using netDxf.Entities;
 using SharpDX;
 using SharpDX.Direct2D1;
-using System.ComponentModel;
-using System.Runtime.CompilerServices;
-using System.Windows;
-using Point = System.Windows.Point;
 
 namespace Cad_Point_Manager.Models.DrawingObjects3D
 {

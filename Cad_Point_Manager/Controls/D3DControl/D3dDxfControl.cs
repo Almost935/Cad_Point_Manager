@@ -11,11 +11,9 @@ using SharpDX.Direct3D;
 using SharpDX.Direct3D11;
 using SharpDX.DXGI;
 using SharpDX.Mathematics.Interop;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Windows;
@@ -120,7 +118,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private List<(double distance, DrawingGeometry3D geometry)> _nearestHitTestableGeometries = [];
         private List<(double distance, CogoPoint point)> _nearestHitTestableCogoPoints = [];
         private readonly List<HitTestableObject> _snappedHitTestableObjects = [];
-        private readonly List<HitTestableObject> _selectedHitTestableObjects = [];
+        //private readonly List<HitTestableObject> _selectedHitTestableObjects = [];
         #endregion
 
         #region Properties 
@@ -1495,21 +1493,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
                         geometry.Select();
                         CadManager3D.UpdateVerticesIsSelected(geometry, true);
                         _lineGlowVertices.AddRange(geometry.Vertices);
-                        _selectedHitTestableObjects.Add(geometry);
+                        SelectedGeometries.Add(geometry);
                     }
-                    //if (obj is DrawingBlock3D block3D)
-                    //{
-                    //    block3D.Select();
-                    //    CadManager3D.UpdateVerticesIsSelected(block3D, true);
-                    //    _lineGlowVertices.AddRange(block3D.LineVertices);
-                    //    _selectedHitTestableObjects.Add(block3D);
-                    //}
-                    //if (obj is DrawingText3D drawingText)
-                    //{
-                    //    drawingText.Select();
-                    //    CadManager3D.UpdateVerticesIsSelected(drawingText, true);
-                    //    _selectedHitTestableObjects.Add(drawingText);
-                    //}
                 }
                 if (hitTestableObject is CogoPoint dxfPoint)
                 {
@@ -1536,20 +1521,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     {
                         geometry.Deselect();
                         CadManager3D.UpdateVerticesIsSelected(geometry, false);
-                        _selectedHitTestableObjects.Remove(geometry);
+                        SelectedGeometries.Remove(geometry);
                     }
-                    //if (obj is DrawingBlock3D block3D)
-                    //{
-                    //    block3D.Deselect();
-                    //    CadManager3D.UpdateVerticesIsSelected(block3D, false);
-                    //    _selectedHitTestableObjects.Remove(block3D);
-                    //}
-                    //if (obj is DrawingMtext3D drawingMtext)
-                    //{
-                    //    drawingMtext.Deselect();
-                    //    CadManager3D.UpdateVerticesIsSelected(drawingMtext, false);
-                    //    _selectedHitTestableObjects.Remove(drawingMtext);
-                    //}
                 }
                 if (hitTestableObject is CogoPoint dxfPoint)
                 {
@@ -1568,12 +1541,12 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
         public void ResetSelectedObjects()
         {
-            var listCopy = _selectedHitTestableObjects.ToList();
+            var listCopy = SelectedGeometries.ToList();
             foreach (var obj in listCopy)
             {
                 DeselectObject(obj);
             }
-            _selectedHitTestableObjects.Clear();
+            SelectedGeometries.Clear();
 
             var sigPointsCopy = SelectedHitTestablePoints.ToList();
             foreach (var obj in sigPointsCopy)

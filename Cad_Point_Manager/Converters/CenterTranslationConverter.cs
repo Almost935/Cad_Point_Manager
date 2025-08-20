@@ -1,7 +1,6 @@
 ﻿using System.Globalization;
 using System.Windows.Data;
 using System.Windows;
-using System.Diagnostics;
 
 namespace Cad_Point_Manager.Converters
 {

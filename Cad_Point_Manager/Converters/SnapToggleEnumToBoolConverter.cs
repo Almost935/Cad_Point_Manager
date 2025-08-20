@@ -1,19 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Globalization;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Globalization;
 using System.Windows.Data;
 using System.Windows;
-using SharpDX;
-using System.Windows.Media.Converters;
-using System.Windows.Media;
-using Color = System.Windows.Media.Color;
-using Cad_Point_Manager.Helpers;
 using Cad_Point_Manager.Common;
-using System.Diagnostics;
-using System.Windows.Controls;
 
 namespace Cad_Point_Manager.Converters
 {

@@ -3,7 +3,6 @@ using System.Windows.Media;
 using System.Windows;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
-using Cad_Point_Manager.Models.HitTesting;
 
 namespace Cad_Point_Manager.Views
 {

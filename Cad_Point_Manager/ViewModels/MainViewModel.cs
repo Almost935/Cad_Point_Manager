@@ -5,23 +5,20 @@ using Cad_Point_Manager.Models;
 using Cad_Point_Manager.Models.HitTesting;
 using Cad_Point_Manager.Models.PointRendering;
 using netDxf;
-using SharpDX;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Collections;
-using System.Linq;
-using System.Windows.Controls;
 using Cad_Point_Manager.Services;
 using Cad_Point_Manager.Extensions;
-using System.Windows.Threading;
+using Cad_Point_Manager.Models.DrawingObjects3D;
 
 using Point = System.Windows.Point;
+using TextBox = System.Windows.Controls.TextBox;
 
 namespace Cad_Point_Manager.ViewModels
 {
@@ -29,6 +26,7 @@ namespace Cad_Point_Manager.ViewModels
     {
         #region Fields
         private readonly ValidationService _validationService = new();
+        private readonly SelectionConnectivityService _service = new();
 
         private CogoPoint? _draggingPoint;
         private Point _lastTextDragUpdatePosition = new();
@@ -47,7 +45,9 @@ namespace Cad_Point_Manager.ViewModels
         private ObservableCollection<CogoPoint> _selectedCogoPoints = [];
         private HitTestablePoint _snappedHitTestablePoint;
         private ObservableCollection<HitTestablePoint> _selectedHitTestablePoints = [];
-        private ObservableCollection<HitTestablePoint> _selected
+        private ObservableCollection<DrawingGeometry3D> _selectedGeometries = [];
+        private IReadOnlyList<ChainPath> _chainPaths = [];
+        private double _vertexSnapTolerance = 1e-4;
         private Point _mousePosition = new();
 
         // CogoPoint Creation Fields
@@ -163,6 +163,37 @@ namespace Cad_Point_Manager.ViewModels
             {
                 _selectedHitTestablePoints = value;
                 OnPropertyChanged(nameof(SelectedHitTestablePoints));
+            }
+        }
+        public ObservableCollection<DrawingGeometry3D> SelectedGeometries
+        {
+            get => _selectedGeometries;
+            set
+            {
+                _selectedGeometries = value;
+                OnPropertyChanged(nameof(SelectedGeometries));
+            }
+        }
+        public IReadOnlyList<ChainPath> ChainPaths
+        {
+            get => _chainPaths;
+            private set
+            {
+                _chainPaths = value;
+                OnPropertyChanged(nameof(ChainPaths));
+            }
+        }
+        public double VertexSnapTolerance
+        {
+            get => _vertexSnapTolerance;
+            set
+            {
+                if (Math.Abs(_vertexSnapTolerance - value) > double.Epsilon)
+                {
+                    _vertexSnapTolerance = value;
+                    OnPropertyChanged(nameof(VertexSnapTolerance));
+                    RebuildChains();
+                }
             }
         }
         public Point MousePosition
@@ -357,6 +388,8 @@ namespace Cad_Point_Manager.ViewModels
 
             CogoPointCheckedCommand = new RelayCommand<CogoPoint>(OnCogoPointToggleButtonChecked);
             CogoPointUncheckedCommand = new RelayCommand<CogoPoint>(OnCogoPointToggleButtonUnchecked);
+
+            SelectedGeometries.CollectionChanged += SelectedGeometries_CollectionChanged;
         }
         #endregion
 
@@ -528,7 +561,7 @@ namespace Cad_Point_Manager.ViewModels
                         foreach (var hitPoint in SelectedHitTestablePoints)
                         {
                             int pointNum = JobFileManager.CadManager3D.CogoPointManager.GetNextAvailablePointNumber(NewCogoPointsStartNumber);
-                            JobFileManager.CadManager3D.CogoPointManager.TryAddPoint(pointNum, hitPoint.Position.ToVector3(), NewCogoPointsPointGroup,
+                            JobFileManager.CadManager3D.CogoPointManager.TryAddPoint(pointNum, hitPoint.Position.ToSharpDXVector3(), NewCogoPointsPointGroup,
                                 out var cogoPoint, NewCogoPointsElevation.ToFloat(), NewCogoPointsDescription);
                             cogoPoint.UpdateAllVisualTransforms(JobFileManager.CadManager3D.CogoPointManager.CurrentlyAppliedMatrix);
                         }
@@ -540,7 +573,45 @@ namespace Cad_Point_Manager.ViewModels
             }
             else if (JobFileManager.CadManager3D.SnapSelectionMode == Enums.SelectionMode.Geometries)
             {
+                if (ChainPaths.Count > 0)
+                {
+                    var startNumberErrors = GetErrors(nameof(NewCogoPointsStartNumberText));
+                    var elevErrors = GetErrors(nameof(NewCogoPointsElevationText));
+                    var descErrors = GetErrors(nameof(NewCogoPointsDescriptionText));
+                    var intermediatePointsErrors = GetErrors(nameof(NewCogoPointsIntermediatePointsCountText));
 
+                    if (startNumberErrors is not null || elevErrors is not null || descErrors is not null || intermediatePointsErrors is not null || NewCogoPointsPointGroup is null)
+                    {
+                        if (NewCogoPointsPointGroup == null)
+                        {
+                            AddError(nameof(NewCogoPointsPointGroup), "A point group must be selected.");
+                        }
+                        if (startNumberErrors is not null || elevErrors is not null || descErrors is not null)
+                        {
+                            MessageBox.Show("Errors in point creation fields.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                        }
+                        return;
+                    }
+                    else
+                    {
+                        List<System.Numerics.Vector2> coords = [];
+                        foreach (var chainPath in ChainPaths)
+                        {
+                            var pts = ChainBuilder.ExpandChainPoints(chainPath, NewCogoPointsIntermediatePointsCount);
+                            coords.AddRange(pts.Select(p => new System.Numerics.Vector2((float)p.X, (float)p.Y)).ToList());
+                        }
+                        for (int i = 0; i < coords.Count; i++)
+                        {
+                            int pointNum = JobFileManager.CadManager3D.CogoPointManager.GetNextAvailablePointNumber(NewCogoPointsStartNumber);
+                            JobFileManager.CadManager3D.CogoPointManager.TryAddPoint(pointNum, coords[i].ToSharpDXVector3(), NewCogoPointsPointGroup,
+                            out var cogoPoint, NewCogoPointsElevation.ToFloat(), NewCogoPointsDescription);
+                            cogoPoint.UpdateAllVisualTransforms(JobFileManager.CadManager3D.CogoPointManager.CurrentlyAppliedMatrix);
+                        }
+
+                        ResetSelectionRequested?.Invoke(this, EventArgs.Empty);
+                        JobFileManager.CadManager3D.UpdateHitTestableObjectTree();
+                    }
+                }
             }
         }
         private void OnCogoCreationTextBoxLostFocus(RoutedEventArgs e)
@@ -562,12 +633,24 @@ namespace Cad_Point_Manager.ViewModels
             tb.SelectAll();
         }
 
+        // Geometry Chain Methods
+        private void SelectedGeometries_CollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+        {
+            RebuildChains();
+        }
+        public void RebuildChains()
+        {
+            var directed = _service.BuildChainsFromSelection(SelectedGeometries, VertexSnapTolerance);
+            ChainPaths = directed;
+        }
+
         // Key up event handling
         public void Window_KeyUp(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.Escape)
             {
                 EndDraggingText();
+                JobFileManager.CadManager3D.SnapSelectionMode = Enums.SelectionMode.CogoPoints;
             }
         }
         #endregion

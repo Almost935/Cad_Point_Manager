@@ -13,7 +13,6 @@ using System.Collections.ObjectModel;
 using TextBox = System.Windows.Controls.TextBox;
 using Cad_Point_Manager.ViewModels;
 using System.Collections.Specialized;
-using Cad_Point_Manager.Models.DrawingObjects3D;
 using Cad_Point_Manager.Views.ValidationRules;
 using System.Windows.Data;
 using Cad_Point_Manager.Services;

@@ -1,8 +1,6 @@
-﻿using Cad_Point_Manager.Controls.D3DControl;
-using SharpDX;
+﻿using SharpDX;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Runtime.InteropServices;
 
 namespace Cad_Point_Manager.Models.PointRendering
 {

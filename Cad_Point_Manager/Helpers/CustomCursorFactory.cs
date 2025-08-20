@@ -4,12 +4,9 @@ using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using System.Windows.Controls;
 using System.Windows.Interop;
 using Drawing = System.Drawing;
 using Microsoft.Win32.SafeHandles;
-using System.Reflection.Metadata;
-using System.Numerics;
 
 namespace Cad_Point_Manager.Helpers
 {

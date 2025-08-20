@@ -1,13 +1,6 @@
-﻿using Cad_Point_Manager.Models.PointRendering;
-using SharpDX;
-using System;
-using System.Collections.Generic;
+﻿using SharpDX;
 using System.Globalization;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Data;
-using System.Windows.Media;
 using Color = System.Windows.Media.Color;
 
 namespace Cad_Point_Manager.Converters

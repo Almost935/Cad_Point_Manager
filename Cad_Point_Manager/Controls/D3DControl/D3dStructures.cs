@@ -1,8 +1,5 @@
 ﻿using SharpDX;
-using SharpDX.DirectWrite;
 using System.Runtime.InteropServices;
-using System.Windows;
-using System.Windows.Documents;
 using Matrix = SharpDX.Matrix;
 
 namespace Cad_Point_Manager.Controls.D3DControl

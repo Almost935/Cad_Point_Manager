@@ -39,6 +39,7 @@
     <Compile Remove="Converters\PointTransformer.cs" />
     <Compile Remove="Converters\SelectionModeEnumConverter.cs" />
     <Compile Remove="Converters\SelectionModeEnumToBooleanConverter.cs" />
+    <Compile Remove="Helpers\ChainPointSettingHelper.cs" />
     <Compile Remove="Helpers\DxfHelper.cs" />
     <Compile Remove="Helpers\Vector2EqualityComparer.cs" />
     <Compile Remove="Helpers\VectorEqualityComparer.cs" />

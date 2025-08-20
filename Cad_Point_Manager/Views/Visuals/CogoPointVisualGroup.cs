@@ -1,21 +1,10 @@
-﻿using Cad_Point_Manager.Controls.D3DControl;
-using Cad_Point_Manager.Helpers;
+﻿using Cad_Point_Manager.Helpers;
 using Cad_Point_Manager.Models.PointRendering;
-using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.Globalization;
-using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Media;
-using System.Windows.Media.Effects;
-using System.Windows.Media.Imaging;
 
 namespace Cad_Point_Manager.Views
 {
@@ -135,7 +124,7 @@ namespace Cad_Point_Manager.Views
             _hittestPen = pen.Clone();
 
             Brush glowBrush = new SolidColorBrush(Color.FromArgb(80, 0, 0, 0));
-            Pen textGlowPen = new(glowBrush, _textGlowStrokeThickness) 
+            Pen textGlowPen = new(glowBrush, _textGlowStrokeThickness)
             {
                 LineJoin = PenLineJoin.Round,
                 StartLineCap = PenLineCap.Round,
@@ -160,25 +149,18 @@ namespace Cad_Point_Manager.Views
             _textHitTestGeometry = new GeometryGroup();
 
             bool isFlippedOnY = false;
-            bool isFlippedOnX = false;
             if (!Point.TextInfoInBasePosition)
             {
-                dc.DrawLine(pen, Point.Position, Point.TextToggleButtonPosition);
-                if (Point.IsMouseOver)
-                {
-                    dc.DrawLine(lineGlowPen, Point.Position, Point.TextToggleButtonPosition);
-                }
-
                 if (Point.TextToggleButtonPosition.X - Point.Position.X < 0) { isFlippedOnY = true; }
-                if (Point.TextToggleButtonPosition.Y - Point.Position.Y < 0) { isFlippedOnX = true; }
             }
+
             Matrix textMatrix = new();
             double xOffset = Point.TextInfoBaseOffset * Point.PointGroup.PointScale;
             textMatrix.ScaleAt(textScaleFactor, -textScaleFactor, textOrigin.X, textOrigin.Y);
             if (isFlippedOnY) { textMatrix.Translate(-xOffset, 0); }
             else { textMatrix.Translate(xOffset, 0); }
-
             dc.PushTransform(new MatrixTransform(textMatrix));
+
             foreach (var line in lines)
             {
                 var formatted = new FormattedText(
@@ -208,6 +190,16 @@ namespace Cad_Point_Manager.Views
 
             _textHitTestGeometry.Transform = new MatrixTransform(textMatrix);
             _lineHitTestGeometry = new(Point.Position, Point.TextToggleButtonPosition);
+
+            dc.Pop();
+            if (!Point.TextInfoInBasePosition)
+            {
+                dc.DrawLine(pen, Point.Position, Point.TextToggleButtonPosition);
+                if (Point.IsMouseOver)
+                {
+                    dc.DrawLine(lineGlowPen, Point.Position, Point.TextToggleButtonPosition);
+                }
+            }
 
             //// Testing
             //dc.Pop();

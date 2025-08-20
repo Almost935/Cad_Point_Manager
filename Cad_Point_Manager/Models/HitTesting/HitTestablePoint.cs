@@ -1,14 +1,8 @@
 ﻿using Cad_Point_Manager.Common;
-using Cad_Point_Manager.Controls.D3DControl;
 using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Helpers;
 using Cad_Point_Manager.Views.Visuals;
 using SharpDX;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using Point = System.Windows.Point;
 
@@ -100,7 +94,7 @@ namespace Cad_Point_Manager.Models.HitTesting
         }
         public static float GetDistance2D(HitTestablePoint p1, HitTestablePoint p2)
         {
-            return Vector2.Distance(p1.Position.ToVector2(), p2.Position.ToVector2());
+            return Vector2.Distance(p1.Position.ToSharpDXVector2(), p2.Position.ToSharpDXVector2());
         }
         #endregion
     }

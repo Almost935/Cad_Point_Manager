@@ -1,21 +1,14 @@
-﻿
-using Cad_Point_Manager.Controls.D3DControl;
-using Cad_Point_Manager.Helpers;
-using Cad_Point_Manager.Models;
+﻿using Cad_Point_Manager.Models;
 using Cad_Point_Manager.Models.DrawingObjects3D;
 using Cad_Point_Manager.Models.PointRendering;
 using ColorPicker;
 using SharpDX;
 using System.Collections.Concurrent;
-using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Diagnostics;
-using System.Drawing;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
@@ -454,21 +447,50 @@ namespace Cad_Point_Manager.Views.UserControls
                 }
             }
         }
-        private void PointScaleTextbox_LostFocus(object sender, RoutedEventArgs e)
+        private async void PointScaleTextbox_LostFocus(object sender, RoutedEventArgs e)
         {
             if (sender is TextBox textBox && textBox.DataContext is KeyValuePair<string, PointGroup> keyValuePair)
             {
-                var pg = keyValuePair.Value;
+                //var pg = keyValuePair.Value;
+                //e.Handled = true;
+
+                //if (_pointGroupBeingEdited)
+                //{
+                //    pg.Name = _previousPointGroupName;
+                //    var binding = textBox.GetBindingExpression(TextBox.TextProperty);
+                //    binding?.UpdateTarget();
+                //    _pointGroupBeingEdited = false;
+                //}
+                //textBox.IsReadOnly = true;
+
                 e.Handled = true;
 
-                if (_pointGroupBeingEdited)
+                var pg = keyValuePair.Value;
+                var binding = textBox.GetBindingExpression(TextBox.TextProperty);
+                binding?.ValidateWithoutUpdate();
+                var textBoxHasError = Validation.GetHasError(textBox);
+
+                if (textBoxHasError)
                 {
-                    pg.Name = _previousPointGroupName;
-                    var binding = textBox.GetBindingExpression(TextBox.TextProperty);
-                    binding?.UpdateTarget();
-                    _pointGroupBeingEdited = false;
+                    textBox.SelectAll();
+                    return;
                 }
-                textBox.IsReadOnly = true;
+                else
+                {
+                    binding?.UpdateSource();
+                    List<CogoPoint> points = [];
+                    foreach (var selectedPG in _selectedPointGroups)
+                    {
+                        selectedPG.PointScale = pg.PointScale;
+                        points.AddRange(selectedPG.Points);
+                    }
+
+                    await QueueCogoPointRedrawAsync(points);
+                    textBox.IsReadOnly = true;
+                    _pointGroupBeingEdited = false;
+                    CadManager.UpdateHitTestableObjectTree();
+                    CadManager.LineVerticesDirty = true;
+                }
             }
         }
         private async void PointScaleTextbox_PreviewKeyUp(object sender, KeyEventArgs e)
@@ -498,25 +520,12 @@ namespace Cad_Point_Manager.Views.UserControls
                             selectedPG.PointScale = pg.PointScale;
                             points.AddRange(selectedPG.Points);
                         }
-                        //QueueCogoPointRedraw(points);
+                        
                         await QueueCogoPointRedrawAsync(points);
                         textBox.IsReadOnly = true;
                         _pointGroupBeingEdited = false;
                         CadManager.UpdateHitTestableObjectTree();
                         CadManager.LineVerticesDirty = true;
-
-                        //var listView = VisualTreeHelpers.FindAncestor<ListView>(textBox);
-                        //if (listView is not null)
-                        //{
-                        //    _ignorePointGroupSelectionChanged = true;
-                        //    listView.SelectedItems.Clear();
-                        //    foreach (var pg2 in _selectedPointGroups)
-                        //    {
-                        //        _ignorePointGroupSelectionChanged = true;
-                        //        listView.SelectedItems.Add(new KeyValuePair<string, PointGroup>(pg2.Name, pg2));
-                        //    }
-                        //    _ignorePointGroupSelectionChanged = true;
-                        //}
 
                         return;
                     }
@@ -742,7 +751,6 @@ namespace Cad_Point_Manager.Views.UserControls
                 QueueCogoPointRedraw(SelectedCogoPoints);
             }
         }
-
 
         public void QueueCogoPointRedraw(IEnumerable<CogoPoint> points)
         {

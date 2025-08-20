@@ -285,8 +285,8 @@
                           ItemsSource="{Binding JobFileManager.CadManager3D.PointGroupsView}"
                           DisplayMemberPath="Key"
                           SelectedValuePath="Value"
-                          Margin="{StaticResource CogoPointCreationTextBoxMargin}" 
-                          SelectedValue="{Binding NewCogoPointsPointGroup}"/>
+                          Margin="{StaticResource CogoPointCreationTextBoxMargin}"
+                          SelectedValue="{Binding NewCogoPointsPointGroup}" />
             </Grid>
             <Grid x:Name="IntermediatePointsGrid"
                   Grid.Column="5"
@@ -439,6 +439,7 @@
                                    Camera="{Binding Camera, Mode=TwoWay}"
                                    CogoPoints="{Binding CogoPoints, Mode=TwoWay}"
                                    SelectedCogoPoints="{Binding SelectedCogoPoints, Mode=TwoWay}"
+                                   SelectedGeometries="{Binding SelectedGeometries, Mode=TwoWay}"
                                    Width="{Binding ElementName=dxfGrid, Path=ActualWidth}"
                                    Height="{Binding ElementName=dxfGrid, Path=ActualHeight}"
                                    SnappedHitTestablePoint="{Binding SnappedHitTestablePoint, Mode=TwoWay}"

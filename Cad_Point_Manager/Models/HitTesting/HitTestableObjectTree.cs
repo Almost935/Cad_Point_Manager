@@ -1,8 +1,4 @@
-﻿using System.Diagnostics;
-using System.Windows;
-using Cad_Point_Manager.Models.DrawingObjects3D;
-using Cad_Point_Manager.Models.PointRendering;
-using SharpDX.Direct3D11;
+﻿using System.Windows;
 
 namespace Cad_Point_Manager.Models.HitTesting
 {

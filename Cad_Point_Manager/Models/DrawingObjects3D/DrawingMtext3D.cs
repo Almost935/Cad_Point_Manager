@@ -139,9 +139,9 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             {
                 if (pointInside) return;
 
-                Vector2 v0 = vertices[i * 3 + 0].Position.ToVector2();
-                Vector2 v1 = vertices[i * 3 + 1].Position.ToVector2();
-                Vector2 v2 = vertices[i * 3 + 2].Position.ToVector2();
+                Vector2 v0 = vertices[i * 3 + 0].Position.ToSharpDXVector2();
+                Vector2 v1 = vertices[i * 3 + 1].Position.ToSharpDXVector2();
+                Vector2 v2 = vertices[i * 3 + 2].Position.ToSharpDXVector2();
 
                 if (MathHelpers.IsPointInTriangle(testPoint, v0, v1, v2))
                 {

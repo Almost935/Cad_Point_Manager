@@ -1,12 +1,8 @@
-﻿using Cad_Point_Manager.Models;
-using Cad_Point_Manager.Extensions;
+﻿using Cad_Point_Manager.Extensions;
 using SharpDX;
-using SharpDX.Mathematics.Interop;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Windows;
-using Point = System.Windows.Point;
 
 namespace Cad_Point_Manager.Controls.D3DControl
 {
