@@ -493,12 +493,14 @@ namespace Cad_Point_Manager.ViewModels
         }
         public void BeginDraggingText(CogoPoint point)
         {
+            JobFileManager.CadManager3D.HitTestingEnabled = false;
             _draggingPoint = point;
             _draggingPoint.TextBeingMoved = true;
             point.MouseLeave();
             _lastTextDragUpdatePosition = MousePosition;
             point.MoveTextInfoToPoint(MousePosition);
             point.RedrawTextVisual();
+
 
             if (!_isRenderingAttached)
             {
@@ -508,6 +510,7 @@ namespace Cad_Point_Manager.ViewModels
         }
         public void EndDraggingText()
         {
+            JobFileManager.CadManager3D.HitTestingEnabled = true;
             if (_draggingPoint != null)
             {
                 _draggingPoint.TextBeingMoved = false;
@@ -650,7 +653,6 @@ namespace Cad_Point_Manager.ViewModels
             if (e.Key == Key.Escape)
             {
                 EndDraggingText();
-                JobFileManager.CadManager3D.SnapSelectionMode = Enums.SelectionMode.CogoPoints;
             }
         }
         #endregion

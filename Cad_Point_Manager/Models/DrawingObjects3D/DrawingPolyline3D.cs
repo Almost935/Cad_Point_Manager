@@ -123,6 +123,26 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             deviceContext.DrawGeometry(pathGeometry, brush, thickness, strokeStyle);
         }
 
+        public override bool GeometryInRect(Rect rect)
+        {
+            if (Bounds.IsEmpty || rect.IsEmpty)
+            {
+                return false;
+            }
+
+            bool geometryInRect = true;
+            
+           foreach (var geometry in DrawingSegments)
+            {
+                if (!geometry.BoundsInRect(rect))
+                {
+                    geometryInRect = false;
+                    break;
+                }
+            }
+
+            return false;
+        }
 
         public void UpdateVertices(EntityObject entity)
         {

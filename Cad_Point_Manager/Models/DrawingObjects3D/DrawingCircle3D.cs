@@ -147,6 +147,22 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             }
             deviceContext.DrawGeometry(pathGeometry, brush, thickness, strokeStyle);
         }
+
+        public override bool GeometryInRect(Rect rect)
+        {
+            if (Bounds.IsEmpty || rect.IsEmpty)
+            {
+                return false;
+            }
+
+            // Check if the circle's center is within the rectangle
+            if (BoundsInRect(rect))
+            {
+                return true;
+            }
+
+            return false;
+        }
         #endregion
     }
 }

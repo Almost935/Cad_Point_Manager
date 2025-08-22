@@ -159,6 +159,8 @@ namespace Cad_Point_Manager.Views
             textMatrix.ScaleAt(textScaleFactor, -textScaleFactor, textOrigin.X, textOrigin.Y);
             if (isFlippedOnY) { textMatrix.Translate(-xOffset, 0); }
             else { textMatrix.Translate(xOffset, 0); }
+            if (!Point.TextInfoInBasePosition) { textMatrix.Translate(0, -Point.TextInfoHeight / 2); }
+
             dc.PushTransform(new MatrixTransform(textMatrix));
 
             foreach (var line in lines)
@@ -190,6 +192,7 @@ namespace Cad_Point_Manager.Views
 
             _textHitTestGeometry.Transform = new MatrixTransform(textMatrix);
             _lineHitTestGeometry = new(Point.Position, Point.TextToggleButtonPosition);
+            Point.TextInfoHeight = _textHitTestGeometry.Bounds.Height;
 
             dc.Pop();
             if (!Point.TextInfoInBasePosition)

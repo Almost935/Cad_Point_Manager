@@ -60,6 +60,11 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         {
             PolylineApproximation.DrawToD2dDeviceContext(deviceContext, factory, brush, thickness, strokeStyle);
         }
+
+        public override bool GeometryInRect(System.Windows.Rect rect)
+        {
+            return PolylineApproximation.GeometryInRect(rect);
+        }
         #endregion
     }
 }

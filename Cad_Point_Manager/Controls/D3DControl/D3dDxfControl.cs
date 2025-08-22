@@ -7,6 +7,7 @@ using Cad_Point_Manager.Models.HitTesting;
 using Cad_Point_Manager.Models.PointRendering;
 using SharpDX;
 using SharpDX.D3DCompiler;
+using SharpDX.Direct2D1;
 using SharpDX.Direct3D;
 using SharpDX.Direct3D11;
 using SharpDX.DXGI;
@@ -14,6 +15,7 @@ using SharpDX.Mathematics.Interop;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Windows;
@@ -515,7 +517,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             var context = _d3dResCache.DeviceContext;
             _lineGlowVertexBuffer.Update(context, _lineGlowVertices.ToArray());
-
             _lineGlowVerticesDirty = false;
             D3dIsDirty = true;
         }
@@ -886,7 +887,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             if (textsDirty) { _textVerticesDirty = textsDirty; }
             if (textsDirty) { _textGlowVerticesDirty = textsDirty; }
         }
-        protected async override void OnMouseLeftButtonUp(MouseButtonEventArgs e)
+        protected override void OnMouseLeftButtonUp(MouseButtonEventArgs e)
         {
             List<HitTestableObject> changedObjects = [];
             
@@ -911,6 +912,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     {
                         if (snappedObject.IsSelected)
                         {
+                            if (IsDragging) { continue; }
+
                             DeselectObject(snappedObject);
                             changedObjects.Add(snappedObject);
                         }
@@ -980,6 +983,19 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
                 e.Handled = true;
             }
+            if (e.Key == Key.Delete)
+            {
+                if (CadManager3D.SnapSelectionMode == Common.Enums.SelectionMode.CogoPoints &&
+                    SelectedCogoPoints.Count > 0)
+                {
+                    foreach (var cogoPoint in SelectedCogoPoints.ToList())
+                    {
+                        CadManager3D.CogoPointManager.DeletePoint(cogoPoint);
+                        SelectedCogoPoints.Remove(cogoPoint);
+                    }
+                    e.Handled = true;
+                }
+            }
         }
         private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
         {
@@ -1020,18 +1036,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
         public void UpdateDragRect()
         {
-
             double width = Math.Abs(_dragStart.X - DxfCoords.X);
             double height = Math.Abs(_dragStart.Y - DxfCoords.Y);
             double left = Math.Min(_dragStart.X, DxfCoords.X);
             double top = Math.Min(_dragStart.Y, DxfCoords.Y);
             DragRect = new(left, top, width, height);
-
-            //Point dxfTopLeft = Camera.ScreenToWorld(new Vector2((float)DragRect.Left, (float)(DragRect.Bottom))).ToPoint();
-            //DxfDragRect = new(dxfTopLeft.X, dxfTopLeft.Y, dxfWidth, dxfHeight);
-
-            //var testRect = DxfDragRect;
-            //testRect.Transform(Camera.D2dMatrix.ToWindowsMatrix());
         }
         public async Task RunHitTestingAsync()
         {
@@ -1039,9 +1048,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
             {
                 if (_hitTestCancellationTokenSource.Token.IsCancellationRequested) { break; }
 
-                if (CadManager3D.DxfLoaded)
+                if (CadManager3D.DxfLoaded && CadManager3D.HitTestingEnabled)
                 {
-
                     switch (CadManager3D.SnapSelectionMode)
                     {
                         case Common.Enums.SelectionMode.Points:
@@ -1049,13 +1057,13 @@ namespace Cad_Point_Manager.Controls.D3DControl
                             break;
 
                         case Common.Enums.SelectionMode.Geometries:
-                            RunGeometriesHitTest(_hitTestCancellationTokenSource.Token);
+                            if (IsDragging) { RunDragGeometriesHittest(_hitTestCancellationTokenSource.Token); }
+                            else { RunGeometriesHitTest(_hitTestCancellationTokenSource.Token); }
                             break;
 
                         case Common.Enums.SelectionMode.CogoPoints:
                             if (IsDragging) { RunDragCogoPointsHittest(_hitTestCancellationTokenSource.Token); }
                             else { RunCogoPointsHitTest(_hitTestCancellationTokenSource.Token); }
-
                             break;
 
                         default:
@@ -1368,6 +1376,64 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             _lastQueriedDxfRect = DragRect;
         }
+        private void RunDragGeometriesHittest(CancellationToken token)
+        {
+            if (token.IsCancellationRequested) { return; }
+
+            if (!Dispatcher.CheckAccess())
+            {
+                Dispatcher.Invoke(() => RunDragCogoPointsHittest(token));
+                return;
+            }
+
+            if (!CadManager3D.DxfLoaded) { return; }
+            if (_lastQueriedDxfRect == DragRect) { return; }
+
+            var addedRegions = GetDragDelta(_lastQueriedDxfRect, DragRect);
+            var removedRegions = GetDragDelta(DragRect, _lastQueriedDxfRect);
+            if (_lastQueriedDxfRect.IsEmpty || _lastQueriedDxfRect == new Rect(0, 0, 0, 0))
+            {
+                removedRegions = [];
+            }
+            
+            bool linesDirty = false;
+
+            foreach (var region in addedRegions)
+            {
+                var newHits = CadManager3D.HitTestDragGeometries(region).Distinct();
+
+                foreach (var geometry in newHits)
+                {
+                    if (DragRect.Contains(geometry.Bounds))
+                    {
+                        _snappedHitTestableObjects.Add(geometry);
+                        SnapObject(geometry);
+                        linesDirty = true;
+                    }
+                }
+            }
+            foreach (var region in removedRegions)
+            {
+                var possiblyRemoved = CadManager3D.HitTestDragGeometries(region).Distinct();
+
+                foreach (var geometry in possiblyRemoved)
+                {
+                    if (!DragRect.Contains(geometry.Bounds))
+                    {
+                        _snappedHitTestableObjects.Remove(geometry);
+                        foreach (var vertex in geometry.Vertices)
+                        {
+                            _lineGlowVertices.Remove(vertex);
+                        }
+                        UnsnapObject(geometry);
+                        linesDirty = true;
+                    }
+                }
+            }
+            _lastQueriedDxfRect = DragRect;
+            _lineVerticesDirty = linesDirty;
+            _lineGlowVerticesDirty = linesDirty;
+        }
 
         public void CancelHitTesting()
         {
@@ -1565,7 +1631,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             _lineVerticesDirty = _lineGlowVerticesDirty = _textVerticesDirty = true;
         }
-
         
         public void QueueCogoPointRedraw(IEnumerable<CogoPoint> points)
         {
@@ -1598,7 +1663,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 }
             }
         }
-
 
         private (bool linesDirty, bool textsDirty, bool circlesDirty, bool pointTextsDirty, bool sigPointsDirty) GetVerticesDirtyBools
             (List<HitTestableObject> hitTestableObjects)

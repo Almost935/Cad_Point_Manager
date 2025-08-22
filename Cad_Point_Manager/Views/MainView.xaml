@@ -44,7 +44,7 @@
         <Thickness x:Key="ToggleButtonMargin">0,5,0,5</Thickness>
 
         <SolidColorBrush x:Key="DragRectangleBorderBrush"
-                         Color="#FF00F6FF" />
+                         Color="DeepSkyBlue" />
         <SolidColorBrush x:Key="DragRectangleFillBrush"
                          Color="#3300FFFF" />
     </Page.Resources>
@@ -448,18 +448,20 @@
                                    MousePosition="{Binding MousePosition, Mode=OneWayToSource}" />
 
                 <Canvas x:Name="BackgroundCanvas">
-                    <Path Stroke="{StaticResource DragRectangleBorderBrush}"
+                    <Path x:Name="DragRectPath" 
+                          Stroke="{StaticResource DragRectangleBorderBrush}"
                           Fill="{StaticResource DragRectangleFillBrush}"
                           StrokeThickness="0.5"
                           IsHitTestVisible="False"
                           Visibility="{Binding ElementName=d3dDxfControl, Path=IsDragging,
                            Converter={StaticResource BoolToVisibilityConverter}}">
                         <Path.Data>
-                            <RectangleGeometry Rect="{Binding ElementName=d3dDxfControl, Path=DragRect}" />
+                            <RectangleGeometry Rect="{Binding ElementName=d3dDxfControl, Path=DragRect}">
+                                <RectangleGeometry.Transform>
+                                    <MatrixTransform Matrix="{Binding ElementName=d3dDxfControl, Path=Camera.WpfMatrix}" />
+                                </RectangleGeometry.Transform>
+                            </RectangleGeometry>
                         </Path.Data>
-                        <Path.RenderTransform>
-                            <MatrixTransform Matrix="{Binding ElementName=d3dDxfControl, Path=Camera.WpfMatrix}" />
-                        </Path.RenderTransform>
                     </Path>
                     <uc:SignificantPointControl HitTestablePoint="{Binding DataContext.SnappedHitTestablePoint, RelativeSource={RelativeSource AncestorType=Page}}"
                                                 Focusable="False"

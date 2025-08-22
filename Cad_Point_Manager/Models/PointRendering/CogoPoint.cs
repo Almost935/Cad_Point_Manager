@@ -201,6 +201,7 @@ namespace Cad_Point_Manager.Models.PointRendering
         public Matrix CurrentlyAppliedMarkerMatrix { get; set; } = Matrix.Identity;
         public Matrix CurrentlyAppliedTextMatrix { get; set; } = Matrix.Identity;
         public bool TextInfoInBasePosition { get; set; } = true;
+        public double TextInfoHeight = 0;
         #endregion
 
         #region Constructors
@@ -277,6 +278,7 @@ namespace Cad_Point_Manager.Models.PointRendering
         public void MoveTextInfoToPoint(Point point)
         {
             TextInfoCurrentPosition = point;
+            //TextToggleButtonPosition = new(point.X, point.Y + TextInfoHeight);
             TextToggleButtonPosition = point;
             UpdateTextVisualTransform(CurrentlyAppliedTextMatrix);
             TextInfoInBasePosition = false;
@@ -298,7 +300,7 @@ namespace Cad_Point_Manager.Models.PointRendering
             TextToggleButtonScreenPosition = matrix.Transform(TextToggleButtonPosition);
             VisualGroup.UpdateTextTransform(matrix);
         }
-
+       
         public void RedrawAllVisuals()
         {
             VisualGroup?.RedrawAll();

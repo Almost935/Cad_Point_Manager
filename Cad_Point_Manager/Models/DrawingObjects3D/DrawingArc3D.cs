@@ -4,6 +4,7 @@ using System.Windows;
 using Vector3 = SharpDX.Vector3;
 using SharpDX.Direct2D1;
 using SharpDX.Mathematics.Interop;
+using Cad_Point_Manager.Extensions;
 
 namespace Cad_Point_Manager.Models.DrawingObjects3D
 {
@@ -47,6 +48,8 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                 if (Sweep < 0) { Sweep += 360; }
                 IsLargeArc = Sweep >= 180;
                 Length = (float)((Sweep * (Math.PI / 180)) * Radius);
+                SamplePoints = arc.ToPolyline2D(10).Vertexes
+                    .Select(v => new System.Windows.Point(v.Position.X, v.Position.Y)).ToList();
 
                 UpdateArcMidpoint();
                 UpdateVertices(arc);
@@ -174,12 +177,20 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
 
             if (_dxfArc is not null)
             {
-                var samplePoints = _dxfArc.ToPolyline2D(5).Vertexes;
-                foreach (var vertex in samplePoints)
-                {
-                    Bounds = Rect.Union(Bounds, new System.Windows.Point(vertex.Position.X, vertex.Position.Y));
+                foreach (var point in SamplePoints)
+                { 
+                    Bounds = Rect.Union(Bounds, point);
                 }
             }
+        }
+
+        public override bool GeometryInRect(Rect rect)
+        {
+            if (rect.Contains(Bounds))
+            {
+                return true;
+            }
+            return false;
         }
         #endregion
     }

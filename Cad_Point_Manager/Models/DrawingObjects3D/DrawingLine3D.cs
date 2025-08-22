@@ -1,4 +1,5 @@
 ﻿using Cad_Point_Manager.Controls.D3DControl;
+using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Helpers;
 using netDxf.Entities;
 using SharpDX.Direct2D1;
@@ -59,15 +60,22 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             Bounds = Rect.Union(Bounds, new System.Windows.Point(End.X, End.Y));
         }
 
-
         public override double DistanceToPoint(System.Windows.Point point)
         {
             return (float)MathHelpers.PointToLineDistance(point, new System.Windows.Point(Start.X, Start.Y), new System.Windows.Point(End.X, End.Y));
         }
-
         public override void DrawToD2dDeviceContext(DeviceContext1 deviceContext, Factory2 factory, Brush brush, float thickness, StrokeStyle1 strokeStyle)
         {
             deviceContext.DrawLine(new RawVector2(Start.X, Start.Y), new RawVector2(End.X, End.Y), brush, thickness, strokeStyle);
+        }
+
+        public override bool GeometryInRect(Rect rect)
+        {
+            if (rect.Contains(Start.ToPoint()) && rect.Contains(End.ToPoint()))
+            {
+                return true;
+            }
+            return false;
         }
         #endregion
     }

@@ -110,7 +110,6 @@
             return result;
         }
 
-        // Convenience: original API (vertices only), if you still need it.
         public static List<List<Pt>> BuildChains(IEnumerable<EdgeInput> edges, double eps)
             => BuildChainsDetailed(edges, eps).Select(c => c.Nodes).ToList();
 

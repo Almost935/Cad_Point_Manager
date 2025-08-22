@@ -1,5 +1,6 @@
 ﻿using Cad_Point_Manager.Controls.D3DControl;
 using SharpDX;
+using System.Windows;
 
 namespace Cad_Point_Manager.Models.DrawingObjects3D
 {
@@ -52,5 +53,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                 span[i].SetIsSelected(false);
             }
         }
+
+        public abstract bool GeometryInRect(Rect rect);
     }
 }

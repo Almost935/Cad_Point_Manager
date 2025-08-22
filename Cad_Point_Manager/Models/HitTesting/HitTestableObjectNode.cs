@@ -319,6 +319,22 @@ namespace Cad_Point_Manager.Models.HitTesting
             }
             return cogoPoints;
         }
+        public List<DrawingGeometry3D> HitTestGeometriesInRect(Rect rect)
+        {
+            List<DrawingGeometry3D> geometries = [];
+
+            foreach (var hitTestableObject in HitTestableObjects)
+            {
+                if (hitTestableObject is DrawingGeometry3D geometry)
+                {
+                    if (geometry.Layer.IsVisible)
+                    {
+                        if (geometry.BoundsInRect(rect)) { geometries.Add(geometry); }
+                    }
+                }
+            }
+            return geometries;
+        }
 
         private void Subdivide()
         {

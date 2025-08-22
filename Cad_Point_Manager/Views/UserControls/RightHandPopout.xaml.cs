@@ -675,8 +675,6 @@ namespace Cad_Point_Manager.Views.UserControls
         private void ResetCreatePointGroup()
         {
             NewPointGroupName = string.Empty;
-            NewPointGroupColor = new Vector4(0, 0, 0, 1);
-            NewPointGroupScale = 1;
             Validation.ClearInvalid(NewPointGroupNameTextBox.GetBindingExpression(TextBox.TextProperty));
             Validation.ClearInvalid(NewPointGroupScaleTextBox.GetBindingExpression(TextBox.TextProperty));
         }

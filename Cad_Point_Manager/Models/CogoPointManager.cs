@@ -157,8 +157,6 @@ namespace Cad_Point_Manager.Models
 
             cogoPoint = ActivePointGroup.AddPoint(pointNum, position, elevation, description);
             CogoPoints.Add(cogoPoint);
-            //cogoPoint.UpdateAllVisualTransforms(CurrentlyAppliedMatrix);
-            //UpdateAllVisualTransforms(CurrentlyAppliedMatrix);
 
             return true;
         }
@@ -211,6 +209,21 @@ namespace Cad_Point_Manager.Models
             return PointGroups.Any(p => p.Value == pg);
         }
 
+        public bool DeletePoint(CogoPoint point)
+        {
+            bool deleted = false;
+            if (point != null && point.PointGroup != null)
+            {
+                deleted = point.PointGroup.DeletePoint(point);
+                if (deleted)
+                {
+                    CogoPoints.Remove(point);
+                    SetCadManagerPointVerticesDirty();
+                }
+            }
+
+            return deleted;
+        }
 
         public bool IsValidPointGroupName(string name, out string? errorMessage)
         {

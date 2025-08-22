@@ -133,11 +133,32 @@ namespace Cad_Point_Manager.Models.PointRendering
         #endregion
 
         #region Methods
+        public bool DeletePoint(CogoPoint point)
+        {
+            if (point != null)
+            {
+                Points.Remove(point);
+                return true;
+            }
+            return false;
+        }
+
         public CogoPoint AddPoint(int pointNum, Vector3 position, float elevation = 0, string description = "")
         {
             CogoPoint cogoPoint = new(this, pointNum, position, CogoPointManager, elevation, description);
             Points.Add(cogoPoint);
             return cogoPoint;
+        }
+        public bool TryAddPoint(int pointNum, Vector3 position, out CogoPoint cogoPoint, float elevation = 0, string description = "")
+        {
+            if (Points.Any(p => p.PointNumber == pointNum))
+            {
+                cogoPoint = null;
+                return false;
+            }
+            cogoPoint = new(this, pointNum, position, CogoPointManager, elevation, description);
+            Points.Add(cogoPoint);
+            return true;
         }
         public bool TryAddPoint(CogoPoint point)
         {
