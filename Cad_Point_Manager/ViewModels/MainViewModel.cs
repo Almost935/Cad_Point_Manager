@@ -19,6 +19,7 @@ using Cad_Point_Manager.Models.DrawingObjects3D;
 
 using Point = System.Windows.Point;
 using TextBox = System.Windows.Controls.TextBox;
+using Cad_Point_Manager.Common.Collections;
 
 namespace Cad_Point_Manager.ViewModels
 {
@@ -41,11 +42,11 @@ namespace Cad_Point_Manager.ViewModels
         private DxfDocument _dxfDocument;
         private Size _viewportSize = Size.Empty;
         private Camera _camera;
-        private ObservableCollection<CogoPoint> _cogoPoints;
-        private ObservableCollection<CogoPoint> _selectedCogoPoints = [];
+        private BatchableObservableCollection<CogoPoint> _cogoPoints;
+        private BatchableObservableCollection<CogoPoint> _selectedCogoPoints = [];
         private HitTestablePoint _snappedHitTestablePoint;
         private ObservableCollection<HitTestablePoint> _selectedHitTestablePoints = [];
-        private ObservableCollection<DrawingGeometry3D> _selectedGeometries = [];
+        private BatchableObservableCollection<DrawingGeometry3D> _selectedGeometries = [];
         private IReadOnlyList<ChainPath> _chainPaths = [];
         private double _vertexSnapTolerance = 1e-4;
         private Point _mousePosition = new();
@@ -126,7 +127,7 @@ namespace Cad_Point_Manager.ViewModels
                 OnPropertyChanged(nameof(Camera));
             }
         }
-        public ObservableCollection<CogoPoint> CogoPoints
+        public BatchableObservableCollection<CogoPoint> CogoPoints
         {
             get => _cogoPoints;
             set
@@ -138,7 +139,7 @@ namespace Cad_Point_Manager.ViewModels
                 //}
             }
         }
-        public ObservableCollection<CogoPoint> SelectedCogoPoints
+        public BatchableObservableCollection<CogoPoint> SelectedCogoPoints
         {
             get => _selectedCogoPoints;
             set
@@ -165,7 +166,7 @@ namespace Cad_Point_Manager.ViewModels
                 OnPropertyChanged(nameof(SelectedHitTestablePoints));
             }
         }
-        public ObservableCollection<DrawingGeometry3D> SelectedGeometries
+        public BatchableObservableCollection<DrawingGeometry3D> SelectedGeometries
         {
             get => _selectedGeometries;
             set
@@ -605,6 +606,8 @@ namespace Cad_Point_Manager.ViewModels
                         }
                         for (int i = 0; i < coords.Count; i++)
                         {
+                            //CogoPoint cogoPoint = new(NewCogoPointsPointGroup, 1, coords[i].ToSharpDXVector3(), JobFileManager.CadManager3D.CogoPointManager);
+                            //JobFileManager.CadManager3D.CogoPointManager.AddPoint(cogoPoint);
                             int pointNum = JobFileManager.CadManager3D.CogoPointManager.GetNextAvailablePointNumber(NewCogoPointsStartNumber);
                             JobFileManager.CadManager3D.CogoPointManager.TryAddPoint(pointNum, coords[i].ToSharpDXVector3(), NewCogoPointsPointGroup,
                             out var cogoPoint, NewCogoPointsElevation.ToFloat(), NewCogoPointsDescription);

@@ -16,7 +16,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private Matrix _scaledViewMatrix = Matrix.Identity;
 
         private Matrix3x2 _d2dMatrix = Matrix3x2.Identity;
-        private System.Windows.Media.Matrix _wpfMatrix = System.Windows.Media.Matrix.Identity;
+        private System.Windows.Media.Matrix _windowsMatrix = System.Windows.Media.Matrix.Identity;
         #endregion
 
         #region Properties
@@ -32,15 +32,15 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 }
             }
         }
-        public System.Windows.Media.Matrix WpfMatrix
+        public System.Windows.Media.Matrix WindowsMatrix
         {
-            get => _wpfMatrix;
+            get => _windowsMatrix;
             set
             {
-                if (_wpfMatrix != value)
+                if (_windowsMatrix != value)
                 {
-                    _wpfMatrix = value;
-                    OnPropertyChanged(nameof(WpfMatrix));
+                    _windowsMatrix = value;
+                    OnPropertyChanged(nameof(WindowsMatrix));
                 }
             }
         }
@@ -212,12 +212,12 @@ namespace Cad_Point_Manager.Controls.D3DControl
                    final.M21, final.M22,
                    final.M41, final.M42
                    );
-                WpfMatrix = D2dMatrix.ToWindowsMatrix();
+                WindowsMatrix = D2dMatrix.ToWindowsMatrix();
             }
             else
             {
                 D2dMatrix = Matrix3x2.Identity;
-                WpfMatrix = D2dMatrix.ToWindowsMatrix();
+                WindowsMatrix = D2dMatrix.ToWindowsMatrix();
             }
         }
 

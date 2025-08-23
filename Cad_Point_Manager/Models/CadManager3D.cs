@@ -555,11 +555,52 @@ namespace Cad_Point_Manager.Models
                     }
                 }
             }
-            if (hitTestableObject is CogoPoint dxfPoint)
-            {
+        }
 
+        public void UpdateVerticesIsSelectedAndIsMouseOver(HitTestableObject hitTestableObject, bool isSelected, bool isMouseOver)
+        {
+            if (hitTestableObject is DrawingObject3D drawingObject)
+            {
+                if (drawingObject is DrawingGeometry3D drawingGeometry)
+                {
+                    for (int i = drawingGeometry.StartVertexIndex; i <= drawingGeometry.EndVertexIndex; i++)
+                    {
+                        if (_cachedLineVertices is null || _cachedLineVertices.Count == 0) { continue; }
+                        ref var vertex = ref GetLineVertexRef(i);
+                        vertex.IsSelected = isSelected ? 1.0f : 0.0f;
+                        vertex.IsMouseOver = isMouseOver ? 1.0f : 0.0f;
+                    }
+                }
+                if (drawingObject is DrawingText3D drawingText)
+                {
+                    for (int i = drawingText.StartVertexIndex; i <= drawingText.EndVertexIndex; i++)
+                    {
+                        if (_cachedTextVertices is null || _cachedTextVertices.Count == 0) { continue; }
+                        ref var vertex = ref GetTextVertexRef(i);
+                        vertex.IsSelected = isSelected ? 1.0f : 0.0f;
+                        vertex.IsMouseOver = isMouseOver ? 1.0f : 0.0f;
+                    }
+                }
+                if (drawingObject is DrawingBlock3D drawingBlock)
+                {
+                    for (int i = drawingBlock.StartLineVertexIndex; i <= drawingBlock.EndLineVertexIndex; i++)
+                    {
+                        if (_cachedLineVertices is null || _cachedLineVertices.Count == 0) { continue; }
+                        ref var vertex = ref GetLineVertexRef(i);
+                        vertex.IsSelected = isSelected ? 1.0f : 0.0f;
+                        vertex.IsMouseOver = isMouseOver ? 1.0f : 0.0f;
+                    }
+                    for (int i = drawingBlock.StartTextVertexIndex; i <= drawingBlock.EndTextVertexIndex; i++)
+                    {
+                        if (_cachedTextVertices is null || _cachedTextVertices.Count == 0) { continue; }
+                        ref var vertex = ref GetTextVertexRef(i);
+                        vertex.IsSelected = isSelected ? 1.0f : 0.0f;
+                        vertex.IsMouseOver = isMouseOver ? 1.0f : 0.0f;
+                    }
+                }
             }
         }
+
 
         public ReadOnlySpan<LineVertex> UpdateLineVerticesList()
         {
@@ -685,8 +726,8 @@ namespace Cad_Point_Manager.Models
         {
             CogoPointManager.PointGroups.Clear();
 
-            float rows = 5;
-            float cols = 15;
+            float rows = 20;
+            float cols = 50;
             float yIncrement = Extents.Height.ToFloat() / (rows - 1);
             float xIncrement = Extents.Width.ToFloat() / (cols - 1);
             int pointNum = 1;
@@ -696,7 +737,7 @@ namespace Cad_Point_Manager.Models
             for (int i = 0; i < rows; i++)
             {
                 string pointGroupName = $"TestGroup {i + 1}";
-                bool created = CogoPointManager.TryCreatePointGroup(pointGroupName, new SharpDX.Vector4(1.0f, 0.0f, 0.0f, 1.0f), _pointBaseScale, out var pointGroup);
+                bool created = CogoPointManager.TryCreatePointGroup(pointGroupName, new Vector4(1.0f, 0.0f, 0.0f, 1.0f), _pointBaseScale, out var pointGroup);
                 if (created)
                 {
                     var groupActivated = CogoPointManager.TrySetActivePointGroup(pointGroup);

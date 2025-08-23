@@ -1,4 +1,5 @@
-﻿using Cad_Point_Manager.Controls.D3DControl.Buffers;
+﻿using Cad_Point_Manager.Common.Collections;
+using Cad_Point_Manager.Controls.D3DControl.Buffers;
 using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Helpers;
 using Cad_Point_Manager.Models;
@@ -12,6 +13,7 @@ using SharpDX.Direct3D;
 using SharpDX.Direct3D11;
 using SharpDX.DXGI;
 using SharpDX.Mathematics.Interop;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
@@ -48,6 +50,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private readonly object _pendingRedrawLock = new();
         private readonly HashSet<CogoPoint> _pendingRedraw = new();
         private DispatcherOperation _redrawOp;
+        private volatile bool _suspendHitTesting;
 
         // Drag Selection Fields
         private bool _isDragging = false;
@@ -70,13 +73,10 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private bool _lineVerticesDirty = false;
 
         // Line glow shader related fields
-        private ResizableBuffer<LineVertex> _lineGlowVertexBuffer;
         private Buffer _lineGlowSettingsBuffer;
-        private List<LineVertex> _lineGlowVertices = [];
         private VertexShader _lineGlowVertexShader;
         private PixelShader _lineGlowPixelShader;
         private GeometryShader _lineGlowGeometryShader;
-        private bool _lineGlowVerticesDirty = false;
 
         // Text shader related fields
         private ResizableBuffer<TextVertex> _textVertexBuffer;
@@ -119,8 +119,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private List<(double distance, HitTestablePoint hitTestablePoint)> _nearestHitTestablePoints = [];
         private List<(double distance, DrawingGeometry3D geometry)> _nearestHitTestableGeometries = [];
         private List<(double distance, CogoPoint point)> _nearestHitTestableCogoPoints = [];
-        private readonly List<HitTestableObject> _snappedHitTestableObjects = [];
-        //private readonly List<HitTestableObject> _selectedHitTestableObjects = [];
+        private readonly HashSet<HitTestableObject> _snappedHitTestableObjects = new();
         #endregion
 
         #region Properties 
@@ -232,29 +231,29 @@ namespace Cad_Point_Manager.Controls.D3DControl
             nameof(Camera),
             typeof(Camera),
             typeof(D3dDxfControl),
-            new PropertyMetadata(new Camera(new ViewportF(), 1.15f, new Rect(0,0,0,0))));
+            new PropertyMetadata(new Camera(new ViewportF(), 1.15f, new Rect(0, 0, 0, 0))));
 
         public static readonly DependencyProperty CogoPointsProperty =
             DependencyProperty.Register(
                 nameof(CogoPoints),
-                typeof(ObservableCollection<CogoPoint>),
+                typeof(BatchableObservableCollection<CogoPoint>),
                 typeof(D3dDxfControl),
-                new FrameworkPropertyMetadata(new ObservableCollection<CogoPoint>(), FrameworkPropertyMetadataOptions.BindsTwoWayByDefault));
-        public ObservableCollection<CogoPoint> CogoPoints
+                new FrameworkPropertyMetadata(new BatchableObservableCollection<CogoPoint>(), FrameworkPropertyMetadataOptions.BindsTwoWayByDefault));
+        public BatchableObservableCollection<CogoPoint> CogoPoints
         {
-            get => (ObservableCollection<CogoPoint>)GetValue(CogoPointsProperty);
+            get => (BatchableObservableCollection<CogoPoint>)GetValue(CogoPointsProperty);
             set => SetValue(CogoPointsProperty, value);
         }
 
         public static readonly DependencyProperty SelectedCogoPointsProperty =
             DependencyProperty.Register(
                 nameof(SelectedCogoPoints),
-                typeof(ObservableCollection<CogoPoint>),
+                typeof(BatchableObservableCollection<CogoPoint>),
                 typeof(D3dDxfControl),
-                new FrameworkPropertyMetadata(new ObservableCollection<CogoPoint>(), FrameworkPropertyMetadataOptions.BindsTwoWayByDefault));
-        public ObservableCollection<CogoPoint> SelectedCogoPoints
+                new FrameworkPropertyMetadata(new BatchableObservableCollection<CogoPoint>(), FrameworkPropertyMetadataOptions.BindsTwoWayByDefault));
+        public BatchableObservableCollection<CogoPoint> SelectedCogoPoints
         {
-            get => (ObservableCollection<CogoPoint>)GetValue(SelectedCogoPointsProperty);
+            get => (BatchableObservableCollection<CogoPoint>)GetValue(SelectedCogoPointsProperty);
             set => SetValue(SelectedCogoPointsProperty, value);
         }
 
@@ -285,12 +284,12 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public static readonly DependencyProperty SelectedGeometriesProperty =
             DependencyProperty.Register(
                 nameof(SelectedGeometries),
-                typeof(ObservableCollection<DrawingGeometry3D>),
+                typeof(BatchableObservableCollection<DrawingGeometry3D>),
                 typeof(D3dDxfControl),
-                new FrameworkPropertyMetadata(new ObservableCollection<DrawingGeometry3D>(), FrameworkPropertyMetadataOptions.BindsTwoWayByDefault));
-        public ObservableCollection<DrawingGeometry3D> SelectedGeometries
+                new FrameworkPropertyMetadata(new BatchableObservableCollection<DrawingGeometry3D>(), FrameworkPropertyMetadataOptions.BindsTwoWayByDefault));
+        public BatchableObservableCollection<DrawingGeometry3D> SelectedGeometries
         {
-            get => (ObservableCollection<DrawingGeometry3D>)GetValue(SelectedGeometriesProperty);
+            get => (BatchableObservableCollection<DrawingGeometry3D>)GetValue(SelectedGeometriesProperty);
             set => SetValue(SelectedGeometriesProperty, value);
         }
 
@@ -348,7 +347,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             if (!_clipSet) { SetClip(); _clipSet = true; }
             if (!_vertexBuffersInitialized) { InitializeBuffers(); _vertexBuffersInitialized = true; }
 
-            if (_lineGlowVerticesDirty) { UpdateLineGlowVertices(); }
             if (_lineVerticesDirty) { UpdateLineVertices(); }
             if (_textVerticesDirty) { UpdateTextVertices(); }
             if (_textGlowVerticesDirty) { UpdateTextGlowVertices(); }
@@ -376,7 +374,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             context.OutputMerger.SetRenderTargets(_d3dResCache.OffscreenRenderTargetView);
             context.ClearRenderTargetView(_d3dResCache.OffscreenRenderTargetView, new RawColor4(1, 1, 1, 0));
 
-            DrawLineGlowsWithShader();
             DrawTextGlowsWithShader();
             DrawLinesWithShader();
             DrawTextWithShader();
@@ -392,38 +389,10 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private void DrawLinesWithShader()
         {
             //Stopwatch stopwatch = Stopwatch.StartNew();
-
-            var context = _d3dResCache.DeviceContext;
-
             if (_lineVertexBuffer is null) { return; }
 
-            // Set shaders
-            context.VertexShader.Set(_lineVertexShader);
-            context.PixelShader.Set(_linePixelShader);
-            context.InputAssembler.InputLayout = _lineInputLayout;
-            context.VertexShader.SetConstantBuffer(0, _transformationBuffer);
-            context.VertexShader.SetConstantBuffer(1, _lineSettingsBuffer);
-            context.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding(
-                _lineVertexBuffer.Buffer, _lineVertexBuffer.Stride, 0));
-            context.InputAssembler.PrimitiveTopology = PrimitiveTopology.LineList;
-
-            context.Draw(_lineVertexCount, 0);
-
-            //stopwatch.Stop();
-            //Debug.WriteLine($"DrawLinesWithShader Time: {stopwatch.ElapsedMilliseconds} ms");
-        }
-        private void DrawLineGlowsWithShader()
-        {
-            //Stopwatch stopwatch = Stopwatch.StartNew();
-
             var context = _d3dResCache.DeviceContext;
 
-            if (_lineGlowVertexBuffer == null || _lineGlowVertices.Count == 0)
-            {
-                return;
-            }
-
-            // Set shaders
             context.VertexShader.Set(_lineGlowVertexShader);
             context.GeometryShader.Set(_lineGlowGeometryShader);
             context.PixelShader.Set(_lineGlowPixelShader);
@@ -433,14 +402,22 @@ namespace Cad_Point_Manager.Controls.D3DControl
             context.GeometryShader.SetConstantBuffer(1, _lineGlowSettingsBuffer);
             context.InputAssembler.PrimitiveTopology = PrimitiveTopology.LineList;
             context.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding(
-                _lineGlowVertexBuffer.Buffer, _lineGlowVertexBuffer.Stride, 0));
-
-            context.Draw(_lineGlowVertices.Count, 0);
-
+                _lineVertexBuffer.Buffer, _lineVertexBuffer.Stride, 0));
+            context.Draw(_lineVertexCount, 0);
             context.GeometryShader.Set(null);
 
+            context.VertexShader.Set(_lineVertexShader);
+            context.PixelShader.Set(_linePixelShader);
+            context.InputAssembler.InputLayout = _lineInputLayout;
+            context.VertexShader.SetConstantBuffer(0, _transformationBuffer);
+            context.VertexShader.SetConstantBuffer(1, _lineSettingsBuffer);
+            context.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding(
+                _lineVertexBuffer.Buffer, _lineVertexBuffer.Stride, 0));
+            context.InputAssembler.PrimitiveTopology = PrimitiveTopology.LineList;
+            context.Draw(_lineVertexCount, 0);
+
             //stopwatch.Stop();
-            //Debug.WriteLine($"DrawLineGlowsWithShader Time: {stopwatch.ElapsedMilliseconds} ms");
+            //Debug.WriteLine($"DrawLinesWithShader Time: {stopwatch.ElapsedMilliseconds} ms");
         }
         private void DrawTextWithShader()
         {
@@ -505,19 +482,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _lineVertexCount = vertexSpan.Length;
 
             _lineVerticesDirty = false;
-            D3dIsDirty = true;
-        }
-        private void UpdateLineGlowVertices()
-        {
-            if (_lineGlowVertexBuffer == null)
-            {
-                _lineGlowVerticesDirty = false;
-                return;
-            }
-
-            var context = _d3dResCache.DeviceContext;
-            _lineGlowVertexBuffer.Update(context, _lineGlowVertices.ToArray());
-            _lineGlowVerticesDirty = false;
             D3dIsDirty = true;
         }
         private void UpdateTextVertices()
@@ -648,9 +612,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _lineVertexBuffer?.Dispose();
             _lineVertexBuffer = new(device, GlobalHelperProperties.InitialLineVertices);
 
-            _lineGlowVertexBuffer?.Dispose();
-            _lineGlowVertexBuffer = new(device, GlobalHelperProperties.InitialLineGlowVertices);
-
             _textVertexBuffer?.Dispose();
             _textVertexBuffer = new(device, GlobalHelperProperties.InitialTextVertices);
 
@@ -774,7 +735,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 if (Camera is not null)
                 {
                     Camera.ResetView(_dxfInitialMatrix, CadManager3D.Extents);
-                    CadManager3D.CogoPointManager.UpdateAllVisualTransforms(Camera.D2dMatrix.ToWindowsMatrix());
+                    //CadManager3D.CogoPointManager.UpdateAllVisualTransforms(Camera.D2dMatrix.ToWindowsMatrix());
                     _hittestStrokeThickness = 7.0f / (Camera.InitialViewMatrix.M11 * Camera.CurrentZoom);
 
                     ConstantBuffersDirty = true;
@@ -878,90 +839,76 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _isPanning = false;
 
             (bool linesDirty, bool textsDirty, bool circlesDirty, bool pointTextsDirty, bool sigPointsDirty) =
-                GetVerticesDirtyBools(_snappedHitTestableObjects);
-
+                GetVerticesDirtyBools(_snappedHitTestableObjects.ToList());
+            
             ResetSnappedObjects();
 
             if (linesDirty) { _lineVerticesDirty = linesDirty; }
-            if (linesDirty) { _lineGlowVerticesDirty = linesDirty; }
             if (textsDirty) { _textVerticesDirty = textsDirty; }
             if (textsDirty) { _textGlowVerticesDirty = textsDirty; }
         }
         protected override void OnMouseLeftButtonUp(MouseButtonEventArgs e)
         {
-            List<HitTestableObject> changedObjects = [];
-            
-            switch (CadManager3D.SnapSelectionMode)
-            {
-                case Common.Enums.SelectionMode.Points:
-                    if (SnappedHitTestablePoint is not null)
-                    {
-                        if (!SnappedHitTestablePoint.IsSelected)
-                        {
-                            SelectObject(SnappedHitTestablePoint);
-                        }
-                        else
-                        {
-                            DeselectObject(SnappedHitTestablePoint);
-                        }
-                    }
-                    break;
-
-                case Common.Enums.SelectionMode.Geometries:
-                    foreach (var snappedObject in _snappedHitTestableObjects)
-                    {
-                        if (snappedObject.IsSelected)
-                        {
-                            if (IsDragging) { continue; }
-
-                            DeselectObject(snappedObject);
-                            changedObjects.Add(snappedObject);
-                        }
-                        else
-                        {
-                            SelectObject(snappedObject);
-                            changedObjects.Add(snappedObject);
-                        }
-                    }
-
-                    break;
-
-                case Common.Enums.SelectionMode.CogoPoints:
-                    foreach (var snappedObject in _snappedHitTestableObjects)
-                    {
-                        if (snappedObject is not CogoPoint cogoPoint) { continue; }
-
-                        if (cogoPoint.IsSelected)
-                        {
-                            if (IsDragging) { continue; }
-
-                            DeselectObject(cogoPoint);
-                            changedObjects.Add(cogoPoint);
-                        }
-                        else
-                        {
-                            SelectObject(cogoPoint);
-                            changedObjects.Add(cogoPoint);
-                        }
-                    }
-                    //await RedrawCogoPointVisualsAsync(_snappedHitTestableObjects.OfType<CogoPoint>().ToList());
-                    QueueCogoPointRedraw(_snappedHitTestableObjects.OfType<CogoPoint>().ToList());
-
-                    break;
-
-                default:
-                    break;
-            }
-
+            _suspendHitTesting = true;
             IsDragging = false;
             DragRect = new(0, 0, 0, 0);
+            _lastQueriedDxfRect = Rect.Empty;
 
+            switch (CadManager3D.SnapSelectionMode)
+            {
+                case Common.Enums.SelectionMode.Geometries:
+                    {
+                        var newSel = new HashSet<DrawingGeometry3D>(_snappedHitTestableObjects.OfType<DrawingGeometry3D>());
+                        var oldSel = new HashSet<DrawingGeometry3D>(SelectedGeometries);
 
-            var (linesDirty, textsDirty, circlesDirty, pointTextsDirty, sigPointsDirty) = GetVerticesDirtyBools(changedObjects);
-            if (linesDirty) { _lineVerticesDirty = linesDirty; }
-            if (linesDirty) { _lineGlowVerticesDirty = linesDirty; }
-            if (textsDirty) { _textVerticesDirty = textsDirty; }
-            if (textsDirty) { _textGlowVerticesDirty = textsDirty; }
+                        foreach (var g in newSel.Except(oldSel))
+                        {
+                            g.MouseLeave();
+                            g.Select();
+                            CadManager3D.UpdateVerticesIsSelectedAndIsMouseOver(g, true, false);
+                        }
+                        SelectedGeometries.AddRange(newSel);
+
+                        _lineVerticesDirty = true;
+                        break;
+                    }
+
+                case Common.Enums.SelectionMode.CogoPoints:
+                    {
+                        var newSel = new HashSet<CogoPoint>(_snappedHitTestableObjects.OfType<CogoPoint>());
+                        var oldSel = new HashSet<CogoPoint>(SelectedCogoPoints);
+
+                        foreach (var p in oldSel.Except(newSel)) 
+                        {
+                            p.MouseLeave();
+                            p.Deselect(); 
+                        }
+                        foreach (var p in newSel.Except(oldSel)) 
+                        {
+                            p.MouseLeave();
+                            p.Select(); 
+                        }
+
+                        QueueCogoPointRedraw(newSel);
+                        break;
+                    }
+
+                case Common.Enums.SelectionMode.Points:
+                    {
+                        if (SnappedHitTestablePoint is not null)
+                        {
+                            if (!SnappedHitTestablePoint.IsSelected) { SnappedHitTestablePoint.Select(); }
+                            else { SnappedHitTestablePoint.Deselect(); }
+                        }
+                        break;
+                    }
+            }
+
+            _snappedHitTestableObjects.Clear();
+            _textGlowVertices.Clear();
+            _textGlowVerticesDirty = true;
+
+            _suspendHitTesting = false;
         }
         protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
         {
@@ -1047,6 +994,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             while (_isMouseInside)
             {
                 if (_hitTestCancellationTokenSource.Token.IsCancellationRequested) { break; }
+                if (_suspendHitTesting) { await Task.Delay(50); continue; }
 
                 if (CadManager3D.DxfLoaded && CadManager3D.HitTestingEnabled)
                 {
@@ -1070,7 +1018,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                             break;
                     }
                 }
-                await Task.Delay(50); 
+                await Task.Delay(50);
             }
         }
         private void RunPointsHitTest(CancellationToken token)
@@ -1083,7 +1031,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             if (!Dispatcher.CheckAccess())
             {
-                Dispatcher.Invoke(() => RunPointsHitTest(token));
+                Dispatcher.BeginInvoke(() => RunPointsHitTest(token));
                 return;
             }
             if (!CadManager3D.DxfLoaded) { return; }
@@ -1162,7 +1110,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             }
             if (!Dispatcher.CheckAccess())
             {
-                Dispatcher.Invoke(() => RunGeometriesHitTest(token));
+                Dispatcher.BeginInvoke(() => RunGeometriesHitTest(token));
                 return;
             }
 
@@ -1232,7 +1180,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             }
             var (linesDirty, textsDirty, circlesDirty, pointTextsDirty, sigPointsDirty) = GetVerticesDirtyBools(changedObjects);
             if (linesDirty) { _lineVerticesDirty = linesDirty; }
-            if (linesDirty) { _lineGlowVerticesDirty = linesDirty; }
             if (textsDirty) { _textVerticesDirty = textsDirty; }
             if (textsDirty) { _textGlowVerticesDirty = textsDirty; }
         }
@@ -1245,7 +1192,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             }
             if (!Dispatcher.CheckAccess())
             {
-                Dispatcher.Invoke(() => RunCogoPointsHitTest(token));
+                Dispatcher.BeginInvoke(() => RunCogoPointsHitTest(token));
                 return;
             }
             if (!CadManager3D.DxfLoaded) { return; }
@@ -1317,7 +1264,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             }
             var (linesDirty, textsDirty, circlesDirty, pointTextsDirty, sigPointsDirty) = GetVerticesDirtyBools(changedObjects);
             if (linesDirty) { _lineVerticesDirty = linesDirty; }
-            if (linesDirty) { _lineGlowVerticesDirty = linesDirty; }
             if (textsDirty) { _textVerticesDirty = textsDirty; }
             if (textsDirty) { _textGlowVerticesDirty = textsDirty; }
         }
@@ -1328,7 +1274,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             if (!Dispatcher.CheckAccess())
             {
-                Dispatcher.Invoke(() => RunDragCogoPointsHittest(token));
+                Dispatcher.BeginInvoke(() => RunDragCogoPointsHittest(token));
                 return;
             }
 
@@ -1382,7 +1328,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             if (!Dispatcher.CheckAccess())
             {
-                Dispatcher.Invoke(() => RunDragCogoPointsHittest(token));
+                Dispatcher.BeginInvoke(() => RunDragGeometriesHittest(token));
                 return;
             }
 
@@ -1395,7 +1341,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             {
                 removedRegions = [];
             }
-            
+
             bool linesDirty = false;
 
             foreach (var region in addedRegions)
@@ -1421,10 +1367,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     if (!DragRect.Contains(geometry.Bounds))
                     {
                         _snappedHitTestableObjects.Remove(geometry);
-                        foreach (var vertex in geometry.Vertices)
-                        {
-                            _lineGlowVertices.Remove(vertex);
-                        }
+
                         UnsnapObject(geometry);
                         linesDirty = true;
                     }
@@ -1432,7 +1375,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             }
             _lastQueriedDxfRect = DragRect;
             _lineVerticesDirty = linesDirty;
-            _lineGlowVerticesDirty = linesDirty;
         }
 
         public void CancelHitTesting()
@@ -1474,13 +1416,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     {
                         geometry.MouseEnter();
                         CadManager3D.UpdateVerticesIsMouseOver(geometry, true);
-                        _lineGlowVertices.AddRange(geometry.Vertices);
                     }
                     if (obj is DrawingBlock3D block3D)
                     {
                         block3D.MouseEnter();
                         CadManager3D.UpdateVerticesIsMouseOver(block3D, true);
-                        _lineGlowVertices.AddRange(block3D.LineVertices);
                     }
                     if (obj is DrawingText3D drawingMtext3D)
                     {
@@ -1537,16 +1477,14 @@ namespace Cad_Point_Manager.Controls.D3DControl
             {
                 SnappedHitTestablePoint = null;
             }
-            _snappedHitTestableObjects.ForEach(x => UnsnapObject(x));
+            foreach (var obj in _snappedHitTestableObjects) { UnsnapObject(obj); }
 
-            //await RedrawCogoPointVisualsAsync(_snappedHitTestableObjects.OfType<CogoPoint>());
             QueueCogoPointRedraw(_snappedHitTestableObjects.OfType<CogoPoint>());
 
             _snappedHitTestableObjects.Clear();
-
-            _lineGlowVertices.Clear();
             _textGlowVertices.Clear();
         }
+
 
         private void SelectObject(HitTestableObject hitTestableObject)
         {
@@ -1558,8 +1496,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     {
                         geometry.Select();
                         CadManager3D.UpdateVerticesIsSelected(geometry, true);
-                        _lineGlowVertices.AddRange(geometry.Vertices);
-                        SelectedGeometries.Add(geometry);
                     }
                 }
                 if (hitTestableObject is CogoPoint dxfPoint)
@@ -1587,7 +1523,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     {
                         geometry.Deselect();
                         CadManager3D.UpdateVerticesIsSelected(geometry, false);
-                        SelectedGeometries.Remove(geometry);
                     }
                 }
                 if (hitTestableObject is CogoPoint dxfPoint)
@@ -1608,30 +1543,21 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public void ResetSelectedObjects()
         {
             var listCopy = SelectedGeometries.ToList();
-            foreach (var obj in listCopy)
-            {
-                DeselectObject(obj);
-            }
+            foreach (var obj in listCopy) { DeselectObject(obj); }
             SelectedGeometries.Clear();
 
             var sigPointsCopy = SelectedHitTestablePoints.ToList();
-            foreach (var obj in sigPointsCopy)
-            {
-                DeselectObject(obj);
-            }
+            foreach (var obj in sigPointsCopy) { DeselectObject(obj); }
             SelectedHitTestablePoints.Clear();
 
-            foreach (var point in SelectedCogoPoints)
-            {
-                point.Deselect();
-            }
+            foreach (var point in SelectedCogoPoints) { point.Deselect(); }
 
             QueueCogoPointRedraw(SelectedCogoPoints);
             SelectedCogoPoints.Clear();
 
-            _lineVerticesDirty = _lineGlowVerticesDirty = _textVerticesDirty = true;
+            _lineVerticesDirty = _textVerticesDirty = true;
         }
-        
+
         public void QueueCogoPointRedraw(IEnumerable<CogoPoint> points)
         {
             if (points is null) return;
@@ -1656,8 +1582,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
                         using (Dispatcher.CurrentDispatcher.DisableProcessing())
                         {
-                            for (int i = 0; i < batch.Count; i++)
-                                batch[i].RedrawAllVisuals();
+                            for (int i = 0; i < batch.Count; i++) { batch[i].RedrawAllVisuals(); }
                         }
                     }, DispatcherPriority.Render);
                 }
@@ -1700,7 +1625,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         {
             Camera.ResetView(Matrix.Identity, CadManager3D.Extents);
             ResetSnappedObjects();
-            _lineVerticesDirty = _textVerticesDirty = _lineGlowVerticesDirty = true;
+            _lineVerticesDirty = _textVerticesDirty = true;
         }
 
         private static void OnCadManager3DChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -1869,9 +1794,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
                     _lineSettingsBuffer?.Dispose();
                     _lineSettingsBuffer = null;
-
-                    _lineGlowVertexBuffer?.Dispose();
-                    _lineGlowVertexBuffer = null;
 
                     _lineGlowSettingsBuffer?.Dispose();
                     _lineGlowSettingsBuffer = null;

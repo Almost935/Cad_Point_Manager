@@ -448,7 +448,7 @@
                                    MousePosition="{Binding MousePosition, Mode=OneWayToSource}" />
 
                 <Canvas x:Name="BackgroundCanvas">
-                    <Path x:Name="DragRectPath" 
+                    <Path x:Name="DragRectPath"
                           Stroke="{StaticResource DragRectangleBorderBrush}"
                           Fill="{StaticResource DragRectangleFillBrush}"
                           StrokeThickness="0.5"
@@ -458,7 +458,7 @@
                         <Path.Data>
                             <RectangleGeometry Rect="{Binding ElementName=d3dDxfControl, Path=DragRect}">
                                 <RectangleGeometry.Transform>
-                                    <MatrixTransform Matrix="{Binding ElementName=d3dDxfControl, Path=Camera.WpfMatrix}" />
+                                    <MatrixTransform Matrix="{Binding ElementName=d3dDxfControl, Path=Camera.WindowsMatrix}" />
                                 </RectangleGeometry.Transform>
                             </RectangleGeometry>
                         </Path.Data>
@@ -474,7 +474,7 @@
                                                       ConverterParameter="X">
                                             <Binding Path="DataContext.SnappedHitTestablePoint.Position"
                                                      RelativeSource="{RelativeSource AncestorType=Page}" />
-                                            <Binding Path="DataContext.Camera.WpfMatrix"
+                                            <Binding Path="DataContext.Camera.WindowsMatrix"
                                                      RelativeSource="{RelativeSource AncestorType=Page}" />
                                         </MultiBinding>
                                     </TranslateTransform.X>
@@ -483,7 +483,7 @@
                                                       ConverterParameter="Y">
                                             <Binding Path="DataContext.SnappedHitTestablePoint.Position"
                                                      RelativeSource="{RelativeSource AncestorType=Page}" />
-                                            <Binding Path="DataContext.Camera.WpfMatrix"
+                                            <Binding Path="DataContext.Camera.WindowsMatrix"
                                                      RelativeSource="{RelativeSource AncestorType=Page}" />
                                         </MultiBinding>
                                     </TranslateTransform.Y>
@@ -493,6 +493,7 @@
                     </uc:SignificantPointControl>
                     <views:VisualHost x:Name="CogoPointVisualHost"
                                       CogoPoints="{Binding CogoPoints, Mode=OneWay}"
+                                      TransformMatrix="{Binding Camera.WindowsMatrix}"
                                       Panel.ZIndex="2"
                                       IsHitTestVisible="False"
                                       HorizontalAlignment="Stretch"

@@ -111,7 +111,11 @@
                       SelectionMode="Extended"
                       Loaded="PointsListView_Loaded"
                       SelectionChanged="PointsListView_SelectionChanged"
-                      Background="{StaticResource PopoutMenuBackgroundBrush}">
+                      Background="{StaticResource PopoutMenuBackgroundBrush}"
+                      VirtualizingPanel.IsVirtualizing="True"
+                      VirtualizingPanel.VirtualizationMode="Recycling"
+                      VirtualizingPanel.IsVirtualizingWhenGrouping="True"
+                      VirtualizingPanel.ScrollUnit="Pixel">
                 <ListView.View>
                     <GridView>
                         <GridViewColumn>
@@ -319,6 +323,14 @@
                 </ListView.View>
                 <ListView.GroupStyle>
                     <GroupStyle>
+                        <GroupStyle.Panel>
+                            <ItemsPanelTemplate>
+                                <VirtualizingStackPanel VirtualizingPanel.IsVirtualizing="True"
+                                                        VirtualizingPanel.VirtualizationMode="Recycling"
+                                                        VirtualizingPanel.IsVirtualizingWhenGrouping="True"
+                                                        VirtualizingPanel.ScrollUnit="Pixel" />
+                            </ItemsPanelTemplate>
+                        </GroupStyle.Panel>
                         <GroupStyle.ContainerStyle>
                             <Style TargetType="{x:Type GroupItem}">
                                 <Setter Property="Template">

@@ -264,7 +264,6 @@ namespace Cad_Point_Manager.Models.PointRendering
             if (PointGroup == pointGroup) { return; }
             PointGroup = pointGroup;
             PointGroup.TryAddPoint(this);
-            RedrawAllVisuals(); 
         }
 
         public void ResetTextLocations()
@@ -278,7 +277,6 @@ namespace Cad_Point_Manager.Models.PointRendering
         public void MoveTextInfoToPoint(Point point)
         {
             TextInfoCurrentPosition = point;
-            //TextToggleButtonPosition = new(point.X, point.Y + TextInfoHeight);
             TextToggleButtonPosition = point;
             UpdateTextVisualTransform(CurrentlyAppliedTextMatrix);
             TextInfoInBasePosition = false;
@@ -320,17 +318,17 @@ namespace Cad_Point_Manager.Models.PointRendering
             TextInfoCurrentPosition += translate;
             TextToggleButtonPosition += translate;
             TextToggleButtonScreenPosition = CurrentlyAppliedTextMatrix.Transform(TextToggleButtonPosition);
-            RedrawAllVisuals();
+            //RedrawAllVisuals();
         }
 
         protected override void OnPropertyChanged(string propertyName)
         {
             base.OnPropertyChanged(propertyName);
 
-            if (propertyName == nameof(PointNumber) || propertyName == nameof(Elevation) || propertyName == nameof(Description))
-            {
-                RedrawAllVisuals();
-            }
+            //if (propertyName == nameof(PointNumber) || propertyName == nameof(Elevation) || propertyName == nameof(Description))
+            //{
+            //    RedrawAllVisuals();
+            //}
         }
         #endregion
     }

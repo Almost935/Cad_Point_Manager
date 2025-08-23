@@ -16,6 +16,7 @@ using System.Collections.Specialized;
 using Cad_Point_Manager.Views.ValidationRules;
 using System.Windows.Data;
 using Cad_Point_Manager.Services;
+using Cad_Point_Manager.Common.Collections;
 
 namespace Cad_Point_Manager.Views.UserControls
 {
@@ -139,15 +140,15 @@ namespace Cad_Point_Manager.Views.UserControls
         public static readonly DependencyProperty SelectedCogoPointsProperty =
             DependencyProperty.Register(
             nameof(SelectedCogoPoints),
-            typeof(ObservableCollection<CogoPoint>),
+            typeof(BatchableObservableCollection<CogoPoint>),
             typeof(LeftHandPopout),
             new FrameworkPropertyMetadata(
-                new ObservableCollection<CogoPoint>(),
+                new BatchableObservableCollection<CogoPoint>(),
                 FrameworkPropertyMetadataOptions.BindsTwoWayByDefault,
                 OnSelectedCogoPointsChanged));
-        public ObservableCollection<CogoPoint> SelectedCogoPoints
+        public BatchableObservableCollection<CogoPoint> SelectedCogoPoints
         {
-            get => (ObservableCollection<CogoPoint>)GetValue(SelectedCogoPointsProperty);
+            get => (BatchableObservableCollection<CogoPoint>)GetValue(SelectedCogoPointsProperty);
             set
             {
                 SetValue(SelectedCogoPointsProperty, value);

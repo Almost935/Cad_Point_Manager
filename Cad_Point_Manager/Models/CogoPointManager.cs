@@ -1,4 +1,5 @@
-﻿using Cad_Point_Manager.Models.PointRendering;
+﻿using Cad_Point_Manager.Common.Collections;
+using Cad_Point_Manager.Models.PointRendering;
 using SharpDX;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -15,7 +16,7 @@ namespace Cad_Point_Manager.Models
         private PointGroup _activePointGroup;
         private bool _pointsDirty = false;
         private CadManager3D _cadManager;
-        private ObservableCollection<CogoPoint> _cogoPoints = [];
+        private BatchableObservableCollection<CogoPoint> _cogoPoints = [];
         #endregion
 
         #region Properties
@@ -64,7 +65,7 @@ namespace Cad_Point_Manager.Models
                 }
             }
         }
-        public ObservableCollection<CogoPoint> CogoPoints
+        public BatchableObservableCollection<CogoPoint> CogoPoints
         {
             get => _cogoPoints;
             set
@@ -172,6 +173,12 @@ namespace Cad_Point_Manager.Models
             CogoPoints.Add(cogoPoint);
 
             return true;
+        }
+
+        public void AddPoint(CogoPoint cogoPoint)
+        {
+            CogoPoints.Add(cogoPoint);
+            cogoPoint.PointGroup.Points.Add(cogoPoint);
         }
 
         public bool TryCreatePointGroup(string groupName, Vector4 color, double pointScale, out PointGroup pointGroup)
