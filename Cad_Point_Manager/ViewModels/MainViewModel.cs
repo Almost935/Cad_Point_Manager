@@ -30,7 +30,6 @@ namespace Cad_Point_Manager.ViewModels
         private readonly SelectionConnectivityService _service = new();
 
         private CogoPoint? _draggingPoint;
-        private Point _lastTextDragUpdatePosition = new();
         private Point _latestMouseWorldPosition = new();
         private bool _isRenderingAttached = false;
         private readonly Dictionary<string, List<string>> _errors = new();
@@ -498,7 +497,6 @@ namespace Cad_Point_Manager.ViewModels
             _draggingPoint = point;
             _draggingPoint.TextBeingMoved = true;
             point.MouseLeave();
-            _lastTextDragUpdatePosition = MousePosition;
             point.MoveTextInfoToPoint(MousePosition);
             point.RedrawTextVisual();
 
@@ -533,7 +531,6 @@ namespace Cad_Point_Manager.ViewModels
 
             _draggingPoint.MoveTextInfoToPoint(MousePosition);
             _draggingPoint.RedrawTextVisual();
-            _lastTextDragUpdatePosition = MousePosition;
         }
 
 

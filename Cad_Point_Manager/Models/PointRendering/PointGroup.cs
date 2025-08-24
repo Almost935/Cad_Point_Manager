@@ -1,16 +1,19 @@
 ﻿using SharpDX;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Windows.Media;
 
 namespace Cad_Point_Manager.Models.PointRendering
 {
     public class PointGroup : INotifyPropertyChanged
     {
         #region Fields
+        public readonly ContainerVisual VisualContainer = new();
+
         private string _name;
         private Vector4 _color = new(0, 0, 0, 1);
-        private System.Windows.Media.Color _windowsColor = System.Windows.Media.Color.FromArgb(0, 0, 0, 1);
-        private System.Windows.Media.SolidColorBrush _windowsBrush;
+        //private System.Windows.Media.Color _windowsColor = System.Windows.Media.Color.FromArgb(0, 0, 0, 1);
+        //private System.Windows.Media.SolidColorBrush _groupBrush;
         private bool _isVisible = true;
         private ObservableCollection<CogoPoint> _points = [];
         private CogoPointManager _cogoPointManager;
@@ -43,30 +46,30 @@ namespace Cad_Point_Manager.Models.PointRendering
                 }
             }
         }
-        public System.Windows.Media.Color WindowsColor
-        {
-            get => _windowsColor;
-            set
-            {
-                if (_windowsColor != value)
-                {
-                    _windowsColor = value;
-                    OnPropertyChanged(nameof(WindowsColor));
-                }
-            }
-        }
-        public System.Windows.Media.SolidColorBrush WindowsBrush
-        {
-            get => _windowsBrush;
-            set
-            {
-                if (_windowsBrush != value)
-                {
-                    _windowsBrush = value;
-                    OnPropertyChanged(nameof(WindowsBrush));
-                }
-            }
-        }
+        //public System.Windows.Media.Color WindowsColor
+        //{
+        //    get => _windowsColor;
+        //    set
+        //    {
+        //        if (_windowsColor != value)
+        //        {
+        //            _windowsColor = value;
+        //            OnPropertyChanged(nameof(WindowsColor));
+        //        }
+        //    }
+        //}
+        //public SolidColorBrush GroupBrush
+        //{
+        //    get => _groupBrush;
+        //    set
+        //    {
+        //        if (_groupBrush != value)
+        //        {
+        //            _groupBrush = value;
+        //            OnPropertyChanged(nameof(GroupBrush));
+        //        }
+        //    }
+        //}
         public bool IsVisible
         {
             get => _isVisible;
@@ -118,6 +121,8 @@ namespace Cad_Point_Manager.Models.PointRendering
 
         public double FontBaseSize { get; set; } = 4;
         public double MarkerBaseSize { get; set; } = 0.75;
+        public SolidColorBrush GroupBrush { get; }
+        public Pen SharedPen { get; }
         #endregion
 
         #region Constructors
@@ -126,7 +131,7 @@ namespace Cad_Point_Manager.Models.PointRendering
             Name = name;
             Color = color;
             WindowsColor = System.Windows.Media.Color.FromArgb((byte)(color.W * 255), (byte)(color.X * 255), (byte)(color.Y * 255), (byte)(color.Z * 255));
-            WindowsBrush = new(WindowsColor);
+            GroupBrush = new(WindowsColor);
             CogoPointManager = cogoPointManager;
             PointScale = pointScale;
         }
@@ -212,7 +217,7 @@ namespace Cad_Point_Manager.Models.PointRendering
                 (byte)(Color.X * 255),
                 (byte)(Color.Y * 255),
                 (byte)(Color.Z * 255));
-            WindowsBrush = new(WindowsColor);
+            GroupBrush = new(WindowsColor);
         }
 
         public void MergeToPointGroup(PointGroup newPG)

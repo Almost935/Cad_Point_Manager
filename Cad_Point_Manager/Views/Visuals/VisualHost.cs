@@ -56,24 +56,21 @@ namespace Cad_Point_Manager.Views
         #endregion
 
         #region Methods
+        protected override int VisualChildrenCount => _visuals.Count;
+        protected override Visual GetVisualChild(int index) => _visuals[index];
+
         private void RebuildVisuals()
         {
-            _visuals.Clear();
             _visualMap.Clear();
+            _root.Children.Clear();
 
-            //foreach (var (key, value) in _visualMap)
-            //{
-            //    _visualMap[key] = value;
-            //    _visuals.Add(value.markerVisual);
-            //    _visuals.Add(value.textVisual);
-            //}
             foreach (var point in CogoPoints)
             {
                 if (point.VisualGroup.MarkerVisual != null && point.VisualGroup.TextVisual != null)
                 {
                     _visualMap[point] = (point.VisualGroup.MarkerVisual, point.VisualGroup.TextVisual);
-                    _visuals.Add(point.VisualGroup.MarkerVisual);
-                    _visuals.Add(point.VisualGroup.TextVisual);
+                    _root.Children.Add(point.VisualGroup.MarkerVisual);
+                    _root.Children.Add(point.VisualGroup.TextVisual);
                 }
             }
         }
@@ -89,7 +86,7 @@ namespace Cad_Point_Manager.Views
             _pendingMatrix = m;
             _hasPending = true;
 
-            if (_renderHooked) return;
+            if (_renderHooked) { return; }
             _renderHooked = true;
             CompositionTarget.Rendering += OnRendering;
         }
@@ -103,8 +100,7 @@ namespace Cad_Point_Manager.Views
             _hasPending = false;
 
             // Optional: ignore tiny changes (mouse jitter)
-            if (!SignificantChange(_worldTx.Matrix, _pendingMatrix))
-                return;
+            if (!SignificantChange(_worldTx.Matrix, _pendingMatrix)) { return; }
 
             _worldTx.Matrix = _pendingMatrix; // O(1) update for all children
         }
@@ -139,8 +135,8 @@ namespace Cad_Point_Manager.Views
                 foreach (CogoPoint point in e.NewItems!)
                 {
                     _visualMap[point] = (point.VisualGroup.MarkerVisual, point.VisualGroup.TextVisual);
-                    _visuals.Add(point.VisualGroup.MarkerVisual);
-                    _visuals.Add(point.VisualGroup.TextVisual);
+                    _root.Children.Add(point.VisualGroup.MarkerVisual);
+                    _root.Children.Add(point.VisualGroup.TextVisual);
                 }
             }
             else if (e.Action == NotifyCollectionChangedAction.Remove)
@@ -149,22 +145,17 @@ namespace Cad_Point_Manager.Views
                 {
                     if (_visualMap.TryGetValue(point, out var visuals))
                     {
-                        _visuals.Remove(visuals.markerVisual);
-                        _visuals.Remove(visuals.textVisual);
                         _visualMap.Remove(point);
+                        _root.Children.Remove(point.VisualGroup.MarkerVisual);
+                        _root.Children.Remove(point.VisualGroup.TextVisual);
                     }
                 }
             }
             else if (e.Action == NotifyCollectionChangedAction.Reset)
             {
-                _visuals.Clear();
-                _visualMap.Clear();
                 RebuildVisuals();
             }
         }
-
-        protected override int VisualChildrenCount => _visuals.Count;
-        protected override Visual GetVisualChild(int index) => _visuals[index];
         #endregion
     }
 }

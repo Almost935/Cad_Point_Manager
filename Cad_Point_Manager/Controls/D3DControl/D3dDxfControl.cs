@@ -790,7 +790,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 if (e.MiddleButton == MouseButtonState.Pressed)
                 {
                     Camera.Pan(currentMousePos, _prevMousePos);
-                    CadManager3D.CogoPointManager.UpdateAllVisualTransforms(Camera.D2dMatrix.ToWindowsMatrix());
+                    //CadManager3D.CogoPointManager.UpdateAllVisualTransforms(Camera.D2dMatrix.ToWindowsMatrix());
                     ConstantBuffersDirty = true;
                     e.Handled = true;
                 }
@@ -809,7 +809,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             UpdateDragRect();
 
             Camera.Zoom(zoomStep, new Vector2((float)_pointerCoords.X, (float)_pointerCoords.Y));
-            CadManager3D.CogoPointManager.UpdateAllVisualTransforms(Camera.D2dMatrix.ToWindowsMatrix());
+            //CadManager3D.CogoPointManager.UpdateAllVisualTransforms(Camera.D2dMatrix.ToWindowsMatrix());
             _hittestStrokeThickness = 7.0f / (Camera.InitialViewMatrix.M11 * Camera.CurrentZoom);
 
             ConstantBuffersDirty = true;
@@ -976,7 +976,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             if (Camera is null) { return; }
 
             Camera.ResetView(_dxfInitialMatrix, CadManager3D.Extents);
-            CadManager3D.CogoPointManager.UpdateAllVisualTransforms(Camera.D2dMatrix.ToWindowsMatrix());
+            //CadManager3D.CogoPointManager.UpdateAllVisualTransforms(Camera.D2dMatrix.ToWindowsMatrix());
             ResetSnappedObjects();
 
             ConstantBuffersDirty = true;

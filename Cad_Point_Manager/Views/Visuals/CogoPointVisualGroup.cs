@@ -78,7 +78,7 @@ namespace Cad_Point_Manager.Views
 
             Brush brush;
             if (Point.IsSelected) { brush = GlobalHelperProperties.SelectedCogoPointBrush; }
-            else { brush = group.WindowsBrush; }
+            else { brush = group.GroupBrush; }
 
             Brush glowBrush = new SolidColorBrush(Color.FromArgb(80, 0, 0, 0));
             Pen glowPen = new(brush, lineGlowStrokeThickness)
@@ -114,7 +114,7 @@ namespace Cad_Point_Manager.Views
 
             Brush brush;
             if (Point.IsSelected) { brush = GlobalHelperProperties.SelectedCogoPointBrush; }
-            else { brush = group.WindowsBrush; }
+            else { brush = group.GroupBrush; }
             Pen pen = new(brush, lineStrokeThickness)
             {
                 LineJoin = PenLineJoin.Round,
