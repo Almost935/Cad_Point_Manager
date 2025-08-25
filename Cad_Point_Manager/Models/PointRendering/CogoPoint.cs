@@ -241,12 +241,13 @@ namespace Cad_Point_Manager.Models.PointRendering
 
         public override void MouseEnter()
         {
-            //if (TextBeingMoved || IsMouseOver) { return; }
             this.IsMouseOver = true;
+            VisualGroup.SetHover(true);
         }
         public override void MouseLeave()
         {
             this.IsMouseOver = false;
+            VisualGroup.SetHover(false);
         }
 
         public override void Select()
@@ -290,13 +291,11 @@ namespace Cad_Point_Manager.Models.PointRendering
         public void UpdateMarkerVisualTransform(Matrix matrix)
         {
             CurrentlyAppliedMarkerMatrix = matrix;
-            VisualGroup.UpdateMarkerTransform(matrix);
         }
         public void UpdateTextVisualTransform(Matrix matrix)
         {
             CurrentlyAppliedTextMatrix = matrix;
             TextToggleButtonScreenPosition = matrix.Transform(TextToggleButtonPosition);
-            VisualGroup.UpdateTextTransform(matrix);
         }
        
         public void RedrawAllVisuals()

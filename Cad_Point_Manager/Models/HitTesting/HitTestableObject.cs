@@ -8,36 +8,13 @@ namespace Cad_Point_Manager.Models.HitTesting
     public abstract class HitTestableObject : ValidationBase, INotifyPropertyChanged
     {
         #region Fields
-        private bool _isSelected = false;
-        private bool _isMouseOver = false;
+        
         #endregion
 
         #region Properties
         public Rect Bounds { get; set; } = Rect.Empty;
-        public bool IsSelected
-        {
-            get => _isSelected;
-            set
-            {
-                if (_isSelected != value)
-                {
-                    _isSelected = value;
-                    OnPropertyChanged(nameof(IsSelected));
-                }
-            }
-        }
-        public bool IsMouseOver
-        {
-            get => _isMouseOver;
-            set
-            {
-                if (_isMouseOver != value)
-                {
-                    _isMouseOver = value;
-                    OnPropertyChanged(nameof(IsMouseOver));
-                }
-            }
-        }
+        public bool IsMouseOver { get; set; } = false;
+        public bool IsSelected { get; set; } = false;
         #endregion
 
         #region Methods

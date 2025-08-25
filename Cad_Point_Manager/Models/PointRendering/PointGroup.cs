@@ -1,4 +1,5 @@
-﻿using SharpDX;
+﻿using Cad_Point_Manager.Common.Collections;
+using SharpDX;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Windows.Media;
@@ -12,10 +13,9 @@ namespace Cad_Point_Manager.Models.PointRendering
 
         private string _name;
         private Vector4 _color = new(0, 0, 0, 1);
-        //private System.Windows.Media.Color _windowsColor = System.Windows.Media.Color.FromArgb(0, 0, 0, 1);
-        //private System.Windows.Media.SolidColorBrush _groupBrush;
+        private System.Windows.Media.Color _windowsColor;
         private bool _isVisible = true;
-        private ObservableCollection<CogoPoint> _points = [];
+        private BatchableObservableCollection<CogoPoint> _points = [];
         private CogoPointManager _cogoPointManager;
         private double _pointScale = 1;
         #endregion
@@ -42,34 +42,21 @@ namespace Cad_Point_Manager.Models.PointRendering
                 {
                     _color = value;
                     OnPropertyChanged(nameof(Color));
-                    UpdateWindowsColor();
                 }
             }
         }
-        //public System.Windows.Media.Color WindowsColor
-        //{
-        //    get => _windowsColor;
-        //    set
-        //    {
-        //        if (_windowsColor != value)
-        //        {
-        //            _windowsColor = value;
-        //            OnPropertyChanged(nameof(WindowsColor));
-        //        }
-        //    }
-        //}
-        //public SolidColorBrush GroupBrush
-        //{
-        //    get => _groupBrush;
-        //    set
-        //    {
-        //        if (_groupBrush != value)
-        //        {
-        //            _groupBrush = value;
-        //            OnPropertyChanged(nameof(GroupBrush));
-        //        }
-        //    }
-        //}
+        public System.Windows.Media.Color WindowsColor
+        {
+            get => _windowsColor;
+            set
+            {
+                if (_windowsColor != value)
+                {
+                    _windowsColor = value;
+                    OnPropertyChanged(nameof(WindowsColor));
+                }
+            }
+        }
         public bool IsVisible
         {
             get => _isVisible;
@@ -82,7 +69,7 @@ namespace Cad_Point_Manager.Models.PointRendering
                 }
             }
         }
-        public ObservableCollection<CogoPoint> Points
+        public BatchableObservableCollection<CogoPoint> Points
         {
             get => _points;
             set
@@ -122,7 +109,7 @@ namespace Cad_Point_Manager.Models.PointRendering
         public double FontBaseSize { get; set; } = 4;
         public double MarkerBaseSize { get; set; } = 0.75;
         public SolidColorBrush GroupBrush { get; }
-        public Pen SharedPen { get; }
+        public Pen GroupPen { get; }
         #endregion
 
         #region Constructors
@@ -130,8 +117,18 @@ namespace Cad_Point_Manager.Models.PointRendering
         {
             Name = name;
             Color = color;
-            WindowsColor = System.Windows.Media.Color.FromArgb((byte)(color.W * 255), (byte)(color.X * 255), (byte)(color.Y * 255), (byte)(color.Z * 255));
+            WindowsColor = System.Windows.Media.Color.FromArgb(
+                (byte)(Color.W * 255),
+                (byte)(Color.X * 255),
+                (byte)(Color.Y * 255),
+                (byte)(Color.Z * 255));
             GroupBrush = new(WindowsColor);
+            GroupPen = new(GroupBrush, 0.2)
+            {
+                LineJoin = PenLineJoin.Round,
+                StartLineCap = PenLineCap.Round,
+                EndLineCap = PenLineCap.Round
+            };
             CogoPointManager = cogoPointManager;
             PointScale = pointScale;
         }
@@ -180,44 +177,15 @@ namespace Cad_Point_Manager.Models.PointRendering
             return Name;
         }
 
-        public void Redraw()
+        public void UpdateColor()
         {
-            foreach (var point in Points)
-            {
-                point.RedrawAllVisuals();
-            }
-        }
-
-        public void UpdateAllVisualTransforms(System.Windows.Media.Matrix matrix)
-        {
-            foreach (var point in Points)
-            {
-                point.UpdateAllVisualTransforms(matrix);
-            }
-        }
-        public void UpdateMarkerVisualTransforms(System.Windows.Media.Matrix matrix)
-        {
-            foreach (var point in Points)
-            {
-                point.UpdateMarkerVisualTransform(matrix);
-            }
-        }
-        public void UpdateTextVisualTransforms(System.Windows.Media.Matrix matrix)
-        {
-            foreach (var point in Points)
-            {
-                point.UpdateTextVisualTransform(matrix);
-            }
-        }
-
-        public void UpdateWindowsColor()
-        {
-            WindowsColor = System.Windows.Media.Color.FromArgb(
+            var newColor = System.Windows.Media.Color.FromArgb(
                 (byte)(Color.W * 255),
                 (byte)(Color.X * 255),
                 (byte)(Color.Y * 255),
                 (byte)(Color.Z * 255));
-            GroupBrush = new(WindowsColor);
+            WindowsColor = newColor;
+            GroupBrush.Color = WindowsColor;
         }
 
         public void MergeToPointGroup(PointGroup newPG)

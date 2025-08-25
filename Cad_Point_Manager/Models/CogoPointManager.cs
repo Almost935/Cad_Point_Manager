@@ -12,7 +12,7 @@ namespace Cad_Point_Manager.Models
     public class CogoPointManager : INotifyPropertyChanged
     {
         #region Fields
-        private ObservableCollection<KeyValuePair<string, PointGroup>> _pointGroups = [];
+        private BatchableObservableCollection<KeyValuePair<string, PointGroup>> _pointGroups = [];
         private PointGroup _activePointGroup;
         private bool _pointsDirty = false;
         private CadManager3D _cadManager;
@@ -20,7 +20,7 @@ namespace Cad_Point_Manager.Models
         #endregion
 
         #region Properties
-        public ObservableCollection<KeyValuePair<string, PointGroup>> PointGroups
+        public BatchableObservableCollection<KeyValuePair<string, PointGroup>> PointGroups
         {
             get => _pointGroups;
             private set
@@ -102,29 +102,6 @@ namespace Cad_Point_Manager.Models
         private bool PointNumberExists(int num)
         {
             return PointGroups.SelectMany(pg => pg.Value.Points).Any(p => p.PointNumber == num);
-        }
-
-        public void UpdateAllVisualTransforms(Matrix matrix)
-        {
-            CurrentlyAppliedMatrix = matrix;
-            foreach (var pg in PointGroups)
-            {
-               pg.Value.UpdateAllVisualTransforms(CurrentlyAppliedMatrix);
-            }
-        }
-        public void UpdateMarkerVisualTransforms(Matrix matrix)
-        {
-            foreach (var pg in PointGroups)
-            {
-                pg.Value.UpdateMarkerVisualTransforms(matrix);
-            }
-        }
-        public void UpdateTextVisualTransforms(Matrix matrix)
-        {
-            foreach (var pg in PointGroups)
-            {
-                pg.Value.UpdateTextVisualTransforms(matrix);
-            }
         }
 
         public bool TrySetActivePointGroup(string groupName)

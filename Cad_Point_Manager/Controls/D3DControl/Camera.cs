@@ -91,7 +91,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             float scaledViewWidth = Viewport.Width / InitialViewMatrix.M11;
             float scaledViewHeight = Viewport.Height / InitialViewMatrix.M11;
-            ProjectionMatrix = Matrix.OrthoOffCenterLH(basePoint.X - scaledViewWidth / 2, basePoint.X + scaledViewWidth / 2, basePoint.Y - scaledViewHeight / 2, basePoint.Y + scaledViewHeight / 2, 0.1f, 1000f);
+            ProjectionMatrix = Matrix.OrthoOffCenterLH(basePoint.X - scaledViewWidth / 2, basePoint.X + scaledViewWidth / 2, basePoint.Y - scaledViewHeight / 2, basePoint.Y + scaledViewHeight / 2, 0.0f, 1000f);
         }
 
         public void ResetView(Matrix newInitialView, Rect newExtents)

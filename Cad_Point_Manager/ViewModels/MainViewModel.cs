@@ -21,6 +21,7 @@ using Point = System.Windows.Point;
 using TextBox = System.Windows.Controls.TextBox;
 using Cad_Point_Manager.Common.Collections;
 
+
 namespace Cad_Point_Manager.ViewModels
 {
     public class MainViewModel : INotifyPropertyChanged, INotifyDataErrorInfo
@@ -30,7 +31,6 @@ namespace Cad_Point_Manager.ViewModels
         private readonly SelectionConnectivityService _service = new();
 
         private CogoPoint? _draggingPoint;
-        private Point _latestMouseWorldPosition = new();
         private bool _isRenderingAttached = false;
         private readonly Dictionary<string, List<string>> _errors = new();
 
@@ -41,6 +41,7 @@ namespace Cad_Point_Manager.ViewModels
         private DxfDocument _dxfDocument;
         private Size _viewportSize = Size.Empty;
         private Camera _camera;
+        private BatchableObservableCollection<KeyValuePair<string, PointGroup>> _pointGroups;
         private BatchableObservableCollection<CogoPoint> _cogoPoints;
         private BatchableObservableCollection<CogoPoint> _selectedCogoPoints = [];
         private HitTestablePoint _snappedHitTestablePoint;
@@ -126,16 +127,25 @@ namespace Cad_Point_Manager.ViewModels
                 OnPropertyChanged(nameof(Camera));
             }
         }
+        public BatchableObservableCollection<KeyValuePair<string, PointGroup>> PointGroups
+        {
+            get => _pointGroups;
+            set
+            {
+                _pointGroups = value;
+                OnPropertyChanged(nameof(PointGroups));
+            }
+        }
         public BatchableObservableCollection<CogoPoint> CogoPoints
         {
             get => _cogoPoints;
             set
             {
-                //if (_cogoPoints != null)
-                //{
-                _cogoPoints = value;
-                OnPropertyChanged(nameof(CogoPoints));
-                //}
+                if (_cogoPoints != null)
+                {
+                    _cogoPoints = value;
+                    OnPropertyChanged(nameof(CogoPoints));
+                }
             }
         }
         public BatchableObservableCollection<CogoPoint> SelectedCogoPoints

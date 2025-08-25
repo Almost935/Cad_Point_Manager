@@ -437,6 +437,7 @@
                 <d3D:D3dDxfControl x:Name="d3dDxfControl"
                                    CadManager3D="{Binding JobFileManager.CadManager3D}"
                                    Camera="{Binding Camera, Mode=TwoWay}"
+                                   PointGroups="{Binding PointGroups, Mode=TwoWay}"
                                    CogoPoints="{Binding CogoPoints, Mode=TwoWay}"
                                    SelectedCogoPoints="{Binding SelectedCogoPoints, Mode=TwoWay}"
                                    SelectedGeometries="{Binding SelectedGeometries, Mode=TwoWay}"
@@ -448,7 +449,7 @@
                                    MousePosition="{Binding MousePosition, Mode=OneWayToSource}" />
 
                 <Canvas x:Name="BackgroundCanvas">
-                    <Path x:Name="DragRectPath"
+                    <!--<Path x:Name="DragRectPath"
                           Stroke="{StaticResource DragRectangleBorderBrush}"
                           Fill="{StaticResource DragRectangleFillBrush}"
                           StrokeThickness="0.5"
@@ -462,7 +463,7 @@
                                 </RectangleGeometry.Transform>
                             </RectangleGeometry>
                         </Path.Data>
-                    </Path>
+                    </Path>-->
                     <uc:SignificantPointControl HitTestablePoint="{Binding DataContext.SnappedHitTestablePoint, RelativeSource={RelativeSource AncestorType=Page}}"
                                                 Focusable="False"
                                                 IsHitTestVisible="False">
@@ -492,7 +493,7 @@
                         </uc:SignificantPointControl.RenderTransform>
                     </uc:SignificantPointControl>
                     <views:VisualHost x:Name="CogoPointVisualHost"
-                                      CogoPoints="{Binding CogoPoints, Mode=OneWay}"
+                                      PointGroups="{Binding PointGroups}"
                                       TransformMatrix="{Binding Camera.WindowsMatrix}"
                                       Panel.ZIndex="2"
                                       IsHitTestVisible="False"

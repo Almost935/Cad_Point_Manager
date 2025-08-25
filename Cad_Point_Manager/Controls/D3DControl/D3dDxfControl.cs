@@ -25,9 +25,9 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
-
-
+using BlendOperation = SharpDX.Direct3D11.BlendOperation;
 using Buffer = SharpDX.Direct3D11.Buffer;
+using FillMode = SharpDX.Direct3D11.FillMode;
 using InputElement = SharpDX.Direct3D11.InputElement;
 using Matrix = SharpDX.Matrix;
 using Point = System.Windows.Point;
@@ -38,6 +38,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
     public class D3dDxfControl : Direct3DControl, INotifyPropertyChanged, IDisposable
     {
         #region Fields
+        private bool _sceneDirty = false;
+        private bool _overlayDirty = false;
         private Buffer _transformationBuffer;
 
         private Point _pointerCoords;
@@ -47,10 +49,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private bool _clipSet = false;
         private bool _isMouseInside;
         private Window _attachedWindow;
-        private readonly object _pendingRedrawLock = new();
-        private readonly HashSet<CogoPoint> _pendingRedraw = new();
-        private DispatcherOperation _redrawOp;
         private volatile bool _suspendHitTesting;
+
+        // Drag selection state for cogo points
+        private readonly object _dragCogoLock = new();
+        private HashSet<CogoPoint> _dragCogoCurrent = new();  // last-applied set
 
         // Drag Selection Fields
         private bool _isDragging = false;
@@ -97,6 +100,17 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private GeometryShader _textGlowGeometryShader;
         private bool _textGlowVerticesDirty = false;
 
+        // Drag rectangle shader
+        private ResizableBuffer<OverlayVertex> _dragFillBuffer;
+        private int _dragFillVertexCount;
+        private ResizableBuffer<LineVertex> _dragOutlineBuffer;
+        private int _dragOutlineVertexCount;
+
+        private VertexShader _overlayVS;
+        private PixelShader _overlayPS;
+        private InputLayout _overlayLayout;
+        private bool _overlayShaderLoaded;
+
         // Panning and Zooming Fields
         private float _panThreshold = 1.0f;
         private bool _isPanning;
@@ -131,7 +145,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
         /// <summary>
         /// Determines if the Direct3D control needs to be redrawn. Occurs when the camera is panned or zoomed.
         /// </summary>
-        public bool D3dIsDirty { get; set; }
         public bool HitTestableObjectTreeDirty { get; set; }
         public bool ConstantBuffersInitialized { get; set; }
         public bool ConstantBuffersDirty { get; set; }
@@ -232,6 +245,18 @@ namespace Cad_Point_Manager.Controls.D3DControl
             typeof(Camera),
             typeof(D3dDxfControl),
             new PropertyMetadata(new Camera(new ViewportF(), 1.15f, new Rect(0, 0, 0, 0))));
+
+        public static readonly DependencyProperty PointGroupsProperty =
+            DependencyProperty.Register(
+                nameof(PointGroups),
+                typeof(BatchableObservableCollection<KeyValuePair<string, PointGroup>>),
+                typeof(D3dDxfControl),
+                new FrameworkPropertyMetadata(new BatchableObservableCollection<KeyValuePair<string, PointGroup>>()));
+        public BatchableObservableCollection<KeyValuePair<string, PointGroup>> PointGroups
+        {
+            get => (BatchableObservableCollection<KeyValuePair<string, PointGroup>>)GetValue(PointGroupsProperty);
+            set => SetValue(PointGroupsProperty, value);
+        }
 
         public static readonly DependencyProperty CogoPointsProperty =
             DependencyProperty.Register(
@@ -354,9 +379,14 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             if (!_lineShaderLoaded) { InitializeLineShader(); }
             if (!_textShaderLoaded) { InitializeTextShader(); }
+            if (!_overlayShaderLoaded) { InitializeOverlayShader(); }
+            if (!_overlayShaderLoaded) { InitializeOverlayShader(); }
+            if (_dragFillBuffer == null) _dragFillBuffer = new(_d3dResCache.Device, 6);
+            if (_dragOutlineBuffer == null) _dragOutlineBuffer = new(_d3dResCache.Device, 8);
+
             if (!ConstantBuffersInitialized) { InitializeConstantBuffers(); }
             if (ConstantBuffersDirty) { UpdateConstantBuffers(); }
-            if (D3dIsDirty) { DrawDxf(); }
+            if (_sceneDirty) { DrawDxf(); }
             if (!_hitTestIsRunning)
             {
                 _hitTestIsRunning = true;
@@ -378,9 +408,12 @@ namespace Cad_Point_Manager.Controls.D3DControl
             DrawLinesWithShader();
             DrawTextWithShader();
 
+            // draw overlay last so it sits on top
+            if (IsDragging && _dragFillVertexCount > 0) { DrawDragOverlay(); }
+
             context.CopyResource(_d3dResCache.OffscreenTexture, _d3dResCache.Texture2D);
 
-            D3dIsDirty = false;
+            _sceneDirty = false;
 
             //stopwatch.Stop();
             //Debug.WriteLine($"D3D Render Time: {stopwatch.ElapsedMilliseconds} ms");
@@ -471,6 +504,32 @@ namespace Cad_Point_Manager.Controls.D3DControl
             //stopwatch.Stop();
             //Debug.WriteLine($"DrawTextGlowsWithShader Time: {stopwatch.ElapsedMilliseconds} ms");
         }
+        private void DrawDragOverlay()
+        {
+            var ctx = _d3dResCache.DeviceContext;
+
+            // --- fill (triangles) ---
+            ctx.VertexShader.Set(_overlayVS);
+            ctx.PixelShader.Set(_overlayPS);
+            ctx.InputAssembler.InputLayout = _overlayLayout;
+            ctx.VertexShader.SetConstantBuffer(0, _transformationBuffer);
+            ctx.InputAssembler.PrimitiveTopology = PrimitiveTopology.TriangleList;
+            ctx.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding(_dragFillBuffer.Buffer, _dragFillBuffer.Stride, 0));
+            ctx.Draw(_dragFillVertexCount, 0);
+
+            // --- outline (lines) ---
+            if (_dragOutlineVertexCount > 0)
+            {
+                ctx.VertexShader.Set(_lineVertexShader);
+                ctx.PixelShader.Set(_linePixelShader);
+                ctx.InputAssembler.InputLayout = _lineInputLayout;
+                ctx.VertexShader.SetConstantBuffer(0, _transformationBuffer);
+                ctx.VertexShader.SetConstantBuffer(1, _lineSettingsBuffer);
+                ctx.InputAssembler.PrimitiveTopology = PrimitiveTopology.LineList;
+                ctx.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding(_dragOutlineBuffer.Buffer, _dragOutlineBuffer.Stride, 0));
+                ctx.Draw(_dragOutlineVertexCount, 0);
+            }
+        }
 
         private void UpdateLineVertices()
         {
@@ -482,7 +541,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _lineVertexCount = vertexSpan.Length;
 
             _lineVerticesDirty = false;
-            D3dIsDirty = true;
+            _sceneDirty = true;
         }
         private void UpdateTextVertices()
         {
@@ -498,7 +557,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _textVertexCount = vertexSpan.Length;
 
             _textVerticesDirty = false;
-            D3dIsDirty = true;
+            _sceneDirty = true;
         }
         private void UpdateTextGlowVertices()
         {
@@ -512,7 +571,61 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _textGlowVertexBuffer.Update(context, _textGlowVertices.ToArray());
 
             _textGlowVerticesDirty = false;
-            D3dIsDirty = true;
+            _sceneDirty = true;
+        }
+        private void UpdateDragOverlayVertices(Rect r)
+        {
+            if (r.IsEmpty || r.Width <= 0 || r.Height <= 0)
+            {
+                _dragFillVertexCount = 0;
+                _dragOutlineVertexCount = 0;
+
+                return;
+            }
+
+            // world-space coords (z=0)
+            var lt = new Vector3((float)r.Left, (float)r.Top, 1);
+            var rt = new Vector3((float)r.Right, (float)r.Top, 1);
+            var rb = new Vector3((float)r.Right, (float)r.Bottom, 1);
+            var lb = new Vector3((float)r.Left, (float)r.Bottom, 1);
+
+            // fill color (ARGB #3300FFFF like your XAML)
+            var fill = new Vector4(0f, 1f, 1f, 0.2f); // DeepSkyBlue-ish with alpha
+
+            var fillVerts = new OverlayVertex[6]
+            {
+                new() { Position = lt, Color = fill },
+                new() { Position = lb, Color = fill },
+                new() { Position = rb, Color = fill },
+                new() { Position = lt, Color = fill },
+                new() { Position = rb, Color = fill },
+                new() { Position = rt, Color = fill },
+            };
+
+            _dragFillBuffer.Update(_d3dResCache.DeviceContext, fillVerts);
+            _dragFillVertexCount = 6;
+
+            // outline as 4 segments (1px—no GS "glow" pass)
+            var c = new Vector4(0f, 0.749f, 1f, 1f); // DeepSkyBlue
+            float one = 1f, zero = 0f;
+
+            var outline = new LineVertex[8]
+            {
+                new() { Position = lt, Color = c, IsVisible = one, IsMouseOver = zero, IsSelected = zero },
+                new() { Position = rt, Color = c, IsVisible = one, IsMouseOver = zero, IsSelected = zero },
+
+                new() { Position = rt, Color = c, IsVisible = one, IsMouseOver = zero, IsSelected = zero },
+                new() { Position = rb, Color = c, IsVisible = one, IsMouseOver = zero, IsSelected = zero },
+
+                new() { Position = rb, Color = c, IsVisible = one, IsMouseOver = zero, IsSelected = zero },
+                new() { Position = lb, Color = c, IsVisible = one, IsMouseOver = zero, IsSelected = zero },
+
+                new() { Position = lb, Color = c, IsVisible = one, IsMouseOver = zero, IsSelected = zero },
+                new() { Position = lt, Color = c, IsVisible = one, IsMouseOver = zero, IsSelected = zero },
+            };
+
+            _dragOutlineBuffer.Update(_d3dResCache.DeviceContext, outline);
+            _dragOutlineVertexCount = 8;
         }
 
         private void InitializeLineShader()
@@ -604,6 +717,81 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             _textShaderLoaded = true;
         }
+        private void InitializeOverlayShader()
+        {
+            var path = AppDomain.CurrentDomain.BaseDirectory;
+            while (Path.GetFileName(path) != "Cad_Point_Manager")
+            {
+                path = Path.GetDirectoryName(path);
+                if (path == null) throw new DirectoryNotFoundException("Cad_Point_Manager not found");
+            }
+
+            string fx = Path.Combine(path, @"Controls\D3DControl\Shaders\OverlaySolid.hlsl");
+            var vs = ShaderBytecode.CompileFromFile(fx, "VSMain", "vs_5_0");
+            var ps = ShaderBytecode.CompileFromFile(fx, "PSMain", "ps_5_0");
+            _overlayVS = new VertexShader(_d3dResCache.Device, vs);
+            _overlayPS = new PixelShader(_d3dResCache.Device, ps);
+
+            _overlayLayout = new InputLayout(
+                _d3dResCache.Device,
+                ShaderSignature.GetInputSignature(vs),
+                new[] {
+            new InputElement("POSITION", 0, Format.R32G32B32_Float, 0, 0),
+            new InputElement("COLOR",    0, Format.R32G32B32A32_Float, 12, 0),
+                });
+
+            _overlayShaderLoaded = true;
+        }
+        //private void InitializeAlphaBlendState()
+        //{
+        //    var desc = new BlendStateDescription()
+        //    {
+        //        AlphaToCoverageEnable = false,
+        //        IndependentBlendEnable = false,
+        //    };
+        //    var rt = new RenderTargetBlendDescription()
+        //    {
+        //        IsBlendEnabled = true,
+        //        SourceBlend = BlendOption.SourceAlpha,
+        //        DestinationBlend = BlendOption.InverseSourceAlpha,
+        //        BlendOperation = BlendOperation.Add,
+        //        SourceAlphaBlend = BlendOption.One,
+        //        DestinationAlphaBlend = BlendOption.InverseSourceAlpha,
+        //        AlphaBlendOperation = BlendOperation.Add,
+        //        RenderTargetWriteMask = ColorWriteMaskFlags.All
+        //    };
+        //    desc.RenderTarget[0] = rt;
+        //    _alphaBlend = new BlendState(_d3dResCache.Device, desc);
+        //}
+        //private void InitializeOverlayStates()
+        //{
+        //    if (_rsCullNone == null)
+        //    {
+        //        var rsDesc = new RasterizerStateDescription
+        //        {
+        //            CullMode = CullMode.None,            // <- critical: don’t cull overlay tris
+        //            FillMode = FillMode.Solid,
+        //            IsFrontCounterClockwise = false,     // leave false; culling is off anyway
+        //            IsDepthClipEnabled = true,
+        //            IsMultisampleEnabled = true,
+        //            IsAntialiasedLineEnabled = false
+        //        };
+        //        _rsCullNone = new RasterizerState(_d3dResCache.Device, rsDesc);
+        //    }
+
+        //    if (_dsNoDepth == null)
+        //    {
+        //        var dsDesc = new DepthStencilStateDescription
+        //        {
+        //            IsDepthEnabled = false,              // <- no depth test/write for overlay
+        //            DepthWriteMask = DepthWriteMask.Zero,
+        //            DepthComparison = Comparison.Always,
+        //            IsStencilEnabled = false
+        //        };
+        //        _dsNoDepth = new DepthStencilState(_d3dResCache.Device, dsDesc);
+        //    }
+        //}
+
 
         private void InitializeBuffers()
         {
@@ -717,7 +905,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _d3dResCache.DeviceContext.UpdateSubresource(ref textGlowSettings, _textGlowSettingsBuffer);
 
             ConstantBuffersDirty = false;
-            D3dIsDirty = true;
+            _sceneDirty = true;
         }
 
         private void GetInitialMatrix()
@@ -840,7 +1028,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             (bool linesDirty, bool textsDirty, bool circlesDirty, bool pointTextsDirty, bool sigPointsDirty) =
                 GetVerticesDirtyBools(_snappedHitTestableObjects.ToList());
-            
+
             ResetSnappedObjects();
 
             if (linesDirty) { _lineVerticesDirty = linesDirty; }
@@ -878,18 +1066,16 @@ namespace Cad_Point_Manager.Controls.D3DControl
                         var newSel = new HashSet<CogoPoint>(_snappedHitTestableObjects.OfType<CogoPoint>());
                         var oldSel = new HashSet<CogoPoint>(SelectedCogoPoints);
 
-                        foreach (var p in oldSel.Except(newSel)) 
+                        foreach (var p in oldSel.Except(newSel))
                         {
                             p.MouseLeave();
-                            p.Deselect(); 
+                            p.Deselect();
                         }
-                        foreach (var p in newSel.Except(oldSel)) 
+                        foreach (var p in newSel.Except(oldSel))
                         {
                             p.MouseLeave();
-                            p.Select(); 
+                            p.Select();
                         }
-
-                        QueueCogoPointRedraw(newSel);
                         break;
                     }
 
@@ -968,7 +1154,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 ConstantBuffersDirty = true;
             }
 
-            D3dIsDirty = true;
+            _sceneDirty = true;
         }
 
         public void ZoomToExtents()
@@ -988,7 +1174,10 @@ namespace Cad_Point_Manager.Controls.D3DControl
             double left = Math.Min(_dragStart.X, DxfCoords.X);
             double top = Math.Min(_dragStart.Y, DxfCoords.Y);
             DragRect = new(left, top, width, height);
+
+            UpdateDragOverlayVertices(DragRect);
         }
+
         public async Task RunHitTestingAsync()
         {
             while (_isMouseInside)
@@ -1229,7 +1418,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
                                     changedObjects.Add(point);
                                     _snappedHitTestableObjects.Add(point);
                                     SnapObject(point);
-                                    point.RedrawAllVisuals();
                                     _lastSnapHitTestIndex = _currentSnapHitTestIndex;
                                 }
                             }
@@ -1254,9 +1442,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                         if (distance <= _hittestStrokeThickness)
                         {
                             changedObjects.Add(point);
-                            _snappedHitTestableObjects.Add(point);
                             SnapObject(point);
-                            point.RedrawAllVisuals();
                             _lastSnapHitTestIndex = _currentSnapHitTestIndex;
                         }
                     }
@@ -1268,60 +1454,47 @@ namespace Cad_Point_Manager.Controls.D3DControl
             if (textsDirty) { _textGlowVerticesDirty = textsDirty; }
         }
 
-        private void RunDragCogoPointsHittest(CancellationToken token)
+        private async void RunDragCogoPointsHittest(CancellationToken token)
         {
-            if (token.IsCancellationRequested) { return; }
+            if (token.IsCancellationRequested) return;
+            if (!CadManager3D.DxfLoaded) return;
 
-            if (!Dispatcher.CheckAccess())
-            {
-                Dispatcher.BeginInvoke(() => RunDragCogoPointsHittest(token));
+            // Read DragRect safely from UI thread (cheap, single read)
+            Rect currentRect = await Dispatcher.InvokeAsync(() => DragRect, DispatcherPriority.Render);
+            if (currentRect.IsEmpty || currentRect.Width <= 0 || currentRect.Height <= 0)
                 return;
-            }
 
-            if (!CadManager3D.DxfLoaded) { return; }
-            if (_lastQueriedDxfRect == DragRect) { return; }
+            // 1) Heavy work OFF the UI thread
+            //    Query full set of points inside the rect; *do not* touch WPF objects here.
+            //    Make sure CadManager3D.HitTestDragCogoPoints is read-only & thread-safe.
+            var newSet = CadManager3D
+                .HitTestDragCogoPoints(currentRect)
+                .Where(p => currentRect.Contains(p.Bounds))   // keep if you can’t get “fully-inside” from the index
+                .ToHashSet();
 
-            var addedRegions = GetDragDelta(_lastQueriedDxfRect, DragRect);
-            var removedRegions = GetDragDelta(DragRect, _lastQueriedDxfRect);
-            if (_lastQueriedDxfRect.IsEmpty || _lastQueriedDxfRect == new Rect(0, 0, 0, 0))
+            // 2) Compute diffs off-thread
+            List<CogoPoint> adds, removes;
+            lock (_dragCogoLock)
             {
-                removedRegions = [];
+                adds = newSet.Except(_dragCogoCurrent).ToList();
+                removes = _dragCogoCurrent.Except(newSet).ToList();
+                _dragCogoCurrent = newSet; // update snapshot
             }
-            List<CogoPoint> redrawPoints = [];
 
-            foreach (var region in addedRegions)
+            if (adds.Count == 0 && removes.Count == 0) return;
+            if (token.IsCancellationRequested) return;
+
+            // 3) Apply the minimal UI changes ON the UI thread in one shot
+            await Dispatcher.InvokeAsync(() =>
             {
-                var newHits = CadManager3D.HitTestDragCogoPoints(region).Distinct();
+                foreach (var p in adds)
+                    TrySnapCogoPoint(p);
 
-                foreach (var point in newHits)
-                {
-                    if (DragRect.Contains(point.Bounds))
-                    {
-                        _snappedHitTestableObjects.Add(point);
-                        SnapObject(point);
-                        redrawPoints.Add(point);
-                    }
-                }
-            }
-            foreach (var region in removedRegions)
-            {
-                var possiblyRemoved = CadManager3D.HitTestDragCogoPoints(region).Distinct();
-
-                foreach (var point in possiblyRemoved)
-                {
-                    if (!DragRect.Contains(point.Bounds))
-                    {
-                        _snappedHitTestableObjects.Remove(point);
-                        UnsnapObject(point);
-                        redrawPoints.Add(point);
-                    }
-                }
-            }
-            //await RedrawCogoPointVisualsAsync(redrawPoints.Distinct());
-            QueueCogoPointRedraw(redrawPoints.Distinct());
-
-            _lastQueriedDxfRect = DragRect;
+                foreach (var p in removes)
+                    TryUnsnapCogoPoint(p);
+            }, DispatcherPriority.Background);
         }
+
         private void RunDragGeometriesHittest(CancellationToken token)
         {
             if (token.IsCancellationRequested) { return; }
@@ -1334,6 +1507,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             if (!CadManager3D.DxfLoaded) { return; }
             if (_lastQueriedDxfRect == DragRect) { return; }
+
+            //Stopwatch stopwatch = Stopwatch.StartNew();
 
             var addedRegions = GetDragDelta(_lastQueriedDxfRect, DragRect);
             var removedRegions = GetDragDelta(DragRect, _lastQueriedDxfRect);
@@ -1375,6 +1550,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
             }
             _lastQueriedDxfRect = DragRect;
             _lineVerticesDirty = linesDirty;
+
+            //stopwatch.Stop();
+            //Debug.WriteLine($"stopwatch.ElapsedMilliseconds: {stopwatch.ElapsedMilliseconds}");
         }
 
         public void CancelHitTesting()
@@ -1406,6 +1584,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
             HitTestableObjectTreeDirty = false;
         }
 
+        private void TrySnapCogoPoint(CogoPoint cogoPoint)
+        {
+            _snappedHitTestableObjects.Add(cogoPoint);
+            if (!cogoPoint.IsMouseOver) { SnapObject(cogoPoint); }
+        }
         private void SnapObject(HitTestableObject hitTestableObject)
         {
             if (hitTestableObject is not null)
@@ -1438,6 +1621,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     point.MouseEnter();
                 }
             }
+        }
+        private void TryUnsnapCogoPoint(CogoPoint cogoPoint)
+        {
+            _snappedHitTestableObjects.Remove(cogoPoint);
+            if (cogoPoint.IsMouseOver) { UnsnapObject(cogoPoint); }
         }
         private void UnsnapObject(HitTestableObject hitTestableObject)
         {
@@ -1478,8 +1666,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 SnappedHitTestablePoint = null;
             }
             foreach (var obj in _snappedHitTestableObjects) { UnsnapObject(obj); }
-
-            QueueCogoPointRedraw(_snappedHitTestableObjects.OfType<CogoPoint>());
 
             _snappedHitTestableObjects.Clear();
             _textGlowVertices.Clear();
@@ -1552,41 +1738,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             foreach (var point in SelectedCogoPoints) { point.Deselect(); }
 
-            QueueCogoPointRedraw(SelectedCogoPoints);
             SelectedCogoPoints.Clear();
 
             _lineVerticesDirty = _textVerticesDirty = true;
-        }
-
-        public void QueueCogoPointRedraw(IEnumerable<CogoPoint> points)
-        {
-            if (points is null) return;
-
-            lock (_pendingRedrawLock)
-            {
-                foreach (var p in points) { _pendingRedraw.Add(p); }
-
-                if (_redrawOp == null ||
-                    _redrawOp.Status == DispatcherOperationStatus.Completed ||
-                    _redrawOp.Status == DispatcherOperationStatus.Aborted)
-                {
-                    _redrawOp = Dispatcher.InvokeAsync(() =>
-                    {
-                        List<CogoPoint> batch;
-                        lock (_pendingRedrawLock)
-                        {
-                            if (_pendingRedraw.Count == 0) return;
-                            batch = _pendingRedraw.ToList();
-                            _pendingRedraw.Clear();
-                        }
-
-                        using (Dispatcher.CurrentDispatcher.DisableProcessing())
-                        {
-                            for (int i = 0; i < batch.Count; i++) { batch[i].RedrawAllVisuals(); }
-                        }
-                    }, DispatcherPriority.Render);
-                }
-            }
         }
 
         private (bool linesDirty, bool textsDirty, bool circlesDirty, bool pointTextsDirty, bool sigPointsDirty) GetVerticesDirtyBools
@@ -1637,6 +1791,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 oldCadManager3D.PropertyChanged -= control.CadManager3D_PropertyChanged;
                 oldCadManager3D.ZoomToExtentsRequested -= control.ZoomToExtents;
                 oldCadManager3D.CogoPointManager.CogoPoints.CollectionChanged -= control.CogoPoints_CollectionChanged_Instance;
+                oldCadManager3D.CogoPointManager.PointGroups.CollectionChanged -= control.PointGroups_CollectionChanged_Instance;
             }
 
             if (e.NewValue is CadManager3D newCadManager3D)
@@ -1644,12 +1799,17 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 newCadManager3D.PropertyChanged += control.CadManager3D_PropertyChanged;
                 newCadManager3D.ZoomToExtentsRequested += control.ZoomToExtents;
                 newCadManager3D.CogoPointManager.CogoPoints.CollectionChanged += control.CogoPoints_CollectionChanged_Instance;
+                newCadManager3D.CogoPointManager.PointGroups.CollectionChanged += control.PointGroups_CollectionChanged_Instance;
             }
         }
 
         private void CogoPoints_CollectionChanged_Instance(object? sender, NotifyCollectionChangedEventArgs e)
         {
             CogoPoints = CadManager3D?.CogoPointManager?.CogoPoints;
+        }
+        private void PointGroups_CollectionChanged_Instance(object? sender, NotifyCollectionChangedEventArgs e)
+        {
+            PointGroups = CadManager3D?.CogoPointManager?.PointGroups;
         }
 
         private void CadManager3D_PropertyChanged(object? sender, PropertyChangedEventArgs e)

@@ -726,8 +726,8 @@ namespace Cad_Point_Manager.Models
         {
             CogoPointManager.PointGroups.Clear();
 
-            float rows = 20;
-            float cols = 50;
+            float rows = 30;
+            float cols = 30;
             float yIncrement = Extents.Height.ToFloat() / (rows - 1);
             float xIncrement = Extents.Width.ToFloat() / (cols - 1);
             int pointNum = 1;

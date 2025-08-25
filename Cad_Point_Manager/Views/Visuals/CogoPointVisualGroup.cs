@@ -5,6 +5,7 @@ using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Media;
+using System.Windows.Media.Media3D;
 
 namespace Cad_Point_Manager.Views
 {
@@ -16,15 +17,23 @@ namespace Cad_Point_Manager.Views
         private const double _baseGlowLineStrokeThickness = 0.6;
         private const double _textGlowStrokeThickness = 0.75;
 
+        private GeometryGroup _textGlowGeometry;
         private EllipseGeometry? _ellipseHitTestGeometry;
         private GeometryGroup? _textHitTestGeometry;
         private LineGeometry? _lineHitTestGeometry;
         private Pen _hittestPen;
 
+        private DrawingVisual _markerGlow = new();
+        private DrawingVisual _textGlow = new();
+
+        private readonly ScaleTransform _markerScale = new(1, 1);
+        private readonly ScaleTransform _textScale = new(1, 1);
+
         private Rect _bounds = Rect.Empty;
         #endregion
 
         #region Properties
+        public ContainerVisual Root { get; } = new();
         public DrawingVisual MarkerVisual { get; set; } = new();
         public DrawingVisual TextVisual { get; set; } = new();
         public CogoPoint Point { get; }
@@ -47,19 +56,28 @@ namespace Cad_Point_Manager.Views
         public CogoPointVisualGroup(CogoPoint point)
         {
             Point = point;
+
+            Root.Children.Add(MarkerVisual);
+            Root.Children.Add(TextVisual);
+            
             RedrawAll();
             UpdateBounds();
         }
         #endregion
 
         #region Methods
-        public void UpdateMarkerTransform(Matrix matrix)
+        public void SetHover(bool on)
         {
-            MarkerVisual.Transform = new MatrixTransform(matrix);
-        }
-        public void UpdateTextTransform(Matrix matrix)
-        {
-            TextVisual.Transform = new MatrixTransform(matrix);
+            if (on)
+            {
+                if (!Root.Children.Contains(_markerGlow)) { Root.Children.Insert(0, _markerGlow); }
+                if (!Root.Children.Contains(_textGlow)) { Root.Children.Insert(1, _textGlow); }
+            }
+            else
+            {
+                Root.Children.Remove(_markerGlow);
+                Root.Children.Remove(_textGlow);
+            }
         }
         public void RedrawAll()
         {
@@ -76,12 +94,8 @@ namespace Cad_Point_Manager.Views
             double lineGlowStrokeThickness = _baseGlowLineStrokeThickness * scale;
             double markerRadius = (Point.PointGroup.MarkerBaseSize / 2) * Point.PointGroup.PointScale;
 
-            Brush brush;
-            if (Point.IsSelected) { brush = GlobalHelperProperties.SelectedCogoPointBrush; }
-            else { brush = group.GroupBrush; }
-
             Brush glowBrush = new SolidColorBrush(Color.FromArgb(80, 0, 0, 0));
-            Pen glowPen = new(brush, lineGlowStrokeThickness)
+            Pen glowPen = new(glowBrush, lineGlowStrokeThickness)
             {
                 LineJoin = PenLineJoin.Round,
                 StartLineCap = PenLineCap.Round,
@@ -89,11 +103,11 @@ namespace Cad_Point_Manager.Views
             };
 
             _ellipseHitTestGeometry = new EllipseGeometry(Point.Position, markerRadius, markerRadius);
-            dc.DrawEllipse(brush, null, Point.Position, markerRadius, markerRadius);
-            if (Point.IsMouseOver)
-            {
-                dc.DrawEllipse(glowBrush, new Pen(glowBrush, 0.15), Point.Position, markerRadius, markerRadius);
-            }
+            dc.DrawEllipse(Point.PointGroup.GroupBrush, null, Point.Position, markerRadius, markerRadius);
+
+            using var glowDC = _markerGlow.RenderOpen();
+            glowDC.DrawEllipse(glowBrush, new Pen(glowBrush, 0.15), Point.Position, markerRadius, markerRadius);
+            glowDC.Close();
 
             dc.Close();
 
@@ -112,16 +126,12 @@ namespace Cad_Point_Manager.Views
             double desiredTextSize = Point.PointGroup.FontBaseSize * Point.PointGroup.PointScale;
             double textScaleFactor = desiredTextSize / _baseRenderTextSize;
 
-            Brush brush;
-            if (Point.IsSelected) { brush = GlobalHelperProperties.SelectedCogoPointBrush; }
-            else { brush = group.GroupBrush; }
-            Pen pen = new(brush, lineStrokeThickness)
+            _hittestPen = new(Point.PointGroup.GroupBrush, lineStrokeThickness)
             {
                 LineJoin = PenLineJoin.Round,
                 StartLineCap = PenLineCap.Round,
                 EndLineCap = PenLineCap.Round
             };
-            _hittestPen = pen.Clone();
 
             Brush glowBrush = new SolidColorBrush(Color.FromArgb(80, 0, 0, 0));
             Pen textGlowPen = new(glowBrush, _textGlowStrokeThickness)
@@ -162,6 +172,7 @@ namespace Cad_Point_Manager.Views
             if (!Point.TextInfoInBasePosition) { textMatrix.Translate(0, -Point.TextInfoHeight / 2); }
 
             dc.PushTransform(new MatrixTransform(textMatrix));
+            _textGlowGeometry = new();
 
             foreach (var line in lines)
             {
@@ -171,24 +182,28 @@ namespace Cad_Point_Manager.Views
                     FlowDirection.LeftToRight,
                     new Typeface("Segoe UI"),
                     _baseRenderTextSize,
-                    brush,
+                    Point.PointGroup.GroupBrush,
                     VisualTreeHelper.GetDpi(TextVisual).PixelsPerDip);
 
                 Point linePos;
                 if (isFlippedOnY) { linePos = new Point(textOrigin.X - formatted.Width, y); }
                 else { linePos = new(textOrigin.X, y); }
 
-                dc.DrawText(formatted, linePos);
+                //dc.DrawText(formatted, linePos);
                 var textGeom = formatted.BuildGeometry(linePos);
+                _textGlowGeometry.Children.Add(textGeom);
                 var rectGeom = new RectangleGeometry(textGeom.Bounds);
                 _textHitTestGeometry.Children.Add(rectGeom);
 
-                if (Point.IsMouseOver)
-                {
-                    dc.DrawGeometry(glowBrush, textGlowPen, textGeom);
-                }
+                dc.DrawGeometry(Point.PointGroup.GroupBrush, null, textGeom);
+
                 y += _baseRenderTextSize;
             }
+
+            using var glowDC = _textGlow.RenderOpen();
+            glowDC.PushTransform(new MatrixTransform(textMatrix));
+            glowDC.DrawGeometry(glowBrush, textGlowPen, _textGlowGeometry);
+            glowDC.Close();
 
             _textHitTestGeometry.Transform = new MatrixTransform(textMatrix);
             _lineHitTestGeometry = new(Point.Position, Point.TextToggleButtonPosition);
@@ -197,7 +212,7 @@ namespace Cad_Point_Manager.Views
             dc.Pop();
             if (!Point.TextInfoInBasePosition)
             {
-                dc.DrawLine(pen, Point.Position, Point.TextToggleButtonPosition);
+                dc.DrawLine(Point.PointGroup.GroupPen, Point.Position, Point.TextToggleButtonPosition);
                 if (Point.IsMouseOver)
                 {
                     dc.DrawLine(lineGlowPen, Point.Position, Point.TextToggleButtonPosition);
@@ -214,6 +229,7 @@ namespace Cad_Point_Manager.Views
 
             UpdateBounds();
         }
+
         public void UpdateBounds()
         {
             if (_ellipseHitTestGeometry == null || _textHitTestGeometry == null)

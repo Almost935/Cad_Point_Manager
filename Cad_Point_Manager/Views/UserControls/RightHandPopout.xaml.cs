@@ -212,6 +212,9 @@ namespace Cad_Point_Manager.Views.UserControls
         {
             InitializeComponent();
 
+            pointGroupsListView.AddHandler(UIElement.PreviewMouseLeftButtonDownEvent, 
+                new MouseButtonEventHandler(PointGroupsListView_PreviewMouseLeftButtonDown), handledEventsToo: true);
+
             mainPanel.RenderTransform = _mainPanelTransform;
 
             HideControl();
@@ -408,6 +411,21 @@ namespace Cad_Point_Manager.Views.UserControls
                 return;
             }
         }
+        private void PointGroupsListView_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            var origin = (DependencyObject)e.OriginalSource;
+            var item = ItemsControl.ContainerFromElement(pointGroupsListView, origin) as ListViewItem;
+            if (item == null) return;
+
+            if (!item.IsSelected)
+            {
+                if ((Keyboard.Modifiers & (ModifierKeys.Control | ModifierKeys.Shift)) == ModifierKeys.None)
+                    pointGroupsListView.SelectedItems.Clear();
+
+                item.IsSelected = true;
+                item.Focus();
+            }
+        }
 
 
         // Point Group Scale
@@ -485,7 +503,6 @@ namespace Cad_Point_Manager.Views.UserControls
                         points.AddRange(selectedPG.Points);
                     }
 
-                    await QueueCogoPointRedrawAsync(points);
                     textBox.IsReadOnly = true;
                     _pointGroupBeingEdited = false;
                     CadManager.UpdateHitTestableObjectTree();
@@ -520,8 +537,7 @@ namespace Cad_Point_Manager.Views.UserControls
                             selectedPG.PointScale = pg.PointScale;
                             points.AddRange(selectedPG.Points);
                         }
-                        
-                        await QueueCogoPointRedrawAsync(points);
+
                         textBox.IsReadOnly = true;
                         _pointGroupBeingEdited = false;
                         CadManager.UpdateHitTestableObjectTree();
@@ -743,82 +759,82 @@ namespace Cad_Point_Manager.Views.UserControls
                 foreach (var pg in _selectedPointGroups)
                 {
                     pg.Color = new Vector4(color.R / 255f, color.G / 255f, color.B / 255f, 1.0f);
-                    pg.UpdateWindowsColor();
+                    pg.UpdateColor();
                 }
 
-                QueueCogoPointRedraw(SelectedCogoPoints);
+                //QueueCogoPointRedraw(SelectedCogoPoints);
             }
         }
 
-        public void QueueCogoPointRedraw(IEnumerable<CogoPoint> points)
-        {
-            if (points is null) return;
+        //public void QueueCogoPointRedraw(IEnumerable<CogoPoint> points)
+        //{
+        //    if (points is null) return;
 
-            lock (_pendingRedrawLock)
-            {
-                foreach (var p in points) { _pendingRedraw.Add(p); }
+        //    lock (_pendingRedrawLock)
+        //    {
+        //        foreach (var p in points) { _pendingRedraw.Add(p); }
 
-                if (_redrawOp == null ||
-                    _redrawOp.Status == DispatcherOperationStatus.Completed ||
-                    _redrawOp.Status == DispatcherOperationStatus.Aborted)
-                {
-                    _redrawOp = Dispatcher.InvokeAsync(() =>
-                    {
-                        List<CogoPoint> batch;
-                        lock (_pendingRedrawLock)
-                        {
-                            if (_pendingRedraw.Count == 0) return;
-                            batch = _pendingRedraw.ToList();
-                            _pendingRedraw.Clear();
-                        }
+        //        if (_redrawOp == null ||
+        //            _redrawOp.Status == DispatcherOperationStatus.Completed ||
+        //            _redrawOp.Status == DispatcherOperationStatus.Aborted)
+        //        {
+        //            _redrawOp = Dispatcher.InvokeAsync(() =>
+        //            {
+        //                List<CogoPoint> batch;
+        //                lock (_pendingRedrawLock)
+        //                {
+        //                    if (_pendingRedraw.Count == 0) return;
+        //                    batch = _pendingRedraw.ToList();
+        //                    _pendingRedraw.Clear();
+        //                }
 
-                        using (Dispatcher.CurrentDispatcher.DisableProcessing())
-                        {
-                            for (int i = 0; i < batch.Count; i++)
-                                batch[i].RedrawAllVisuals();
-                        }
-                    }, DispatcherPriority.Render);
-                }
-            }
-        }
+        //                using (Dispatcher.CurrentDispatcher.DisableProcessing())
+        //                {
+        //                    for (int i = 0; i < batch.Count; i++)
+        //                        batch[i].RedrawAllVisuals();
+        //                }
+        //            }, DispatcherPriority.Render);
+        //        }
+        //    }
+        //}
         // Change the signature to return a Task you can await.
-        public Task QueueCogoPointRedrawAsync(IEnumerable<CogoPoint> points)
-        {
-            if (points is null) return Task.CompletedTask;
+        //public Task QueueCogoPointRedrawAsync(IEnumerable<CogoPoint> points)
+        //{
+        //    if (points is null) return Task.CompletedTask;
 
-            lock (_pendingRedrawLock)
-            {
-                foreach (var p in points) _pendingRedraw.Add(p);
+        //    lock (_pendingRedrawLock)
+        //    {
+        //        foreach (var p in points) _pendingRedraw.Add(p);
 
-                // If a batch is already queued/running, await that same operation.
-                if (_redrawOp is not null &&
-                    (_redrawOp.Status == DispatcherOperationStatus.Pending ||
-                     _redrawOp.Status == DispatcherOperationStatus.Executing))
-                {
-                    return _redrawOp.Task; // awaitable
-                }
+        //        // If a batch is already queued/running, await that same operation.
+        //        if (_redrawOp is not null &&
+        //            (_redrawOp.Status == DispatcherOperationStatus.Pending ||
+        //             _redrawOp.Status == DispatcherOperationStatus.Executing))
+        //        {
+        //            return _redrawOp.Task; // awaitable
+        //        }
 
-                // Queue a new batch.
-                _redrawOp = Dispatcher.InvokeAsync(() =>
-                {
-                    List<CogoPoint> batch;
-                    lock (_pendingRedrawLock)
-                    {
-                        if (_pendingRedraw.Count == 0) return; // nothing to do
-                        batch = _pendingRedraw.ToList();
-                        _pendingRedraw.Clear();
-                    }
+        //        // Queue a new batch.
+        //        _redrawOp = Dispatcher.InvokeAsync(() =>
+        //        {
+        //            List<CogoPoint> batch;
+        //            lock (_pendingRedrawLock)
+        //            {
+        //                if (_pendingRedraw.Count == 0) return; // nothing to do
+        //                batch = _pendingRedraw.ToList();
+        //                _pendingRedraw.Clear();
+        //            }
 
-                    using (Dispatcher.CurrentDispatcher.DisableProcessing())
-                    {
-                        for (int i = 0; i < batch.Count; i++)
-                            batch[i].RedrawAllVisuals();
-                    }
-                }, DispatcherPriority.Render);
+        //            using (Dispatcher.CurrentDispatcher.DisableProcessing())
+        //            {
+        //                for (int i = 0; i < batch.Count; i++)
+        //                    batch[i].RedrawAllVisuals();
+        //            }
+        //        }, DispatcherPriority.Render);
 
-                return _redrawOp.Task; // awaitable
-            }
-        }
+        //        return _redrawOp.Task; // awaitable
+        //    }
+        //}
         #endregion
 
         #region INotifyPropertyChanged Implementation

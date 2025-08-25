@@ -5,39 +5,12 @@ using Matrix = SharpDX.Matrix;
 namespace Cad_Point_Manager.Controls.D3DControl
 {
     [StructLayout(LayoutKind.Sequential)]
-    public struct SigPointVertex(Vector3 position, float isMouseOver = 0, float isSelected = 0)
+    public struct OverlayVertex
     {
-        public Vector3 Position = position;
-
-        /// <summary>
-        /// float value indicating whether the mouse is currently over the sig point. 1.0f is true, 0.0f is false.
-        /// </summary>
-        public float IsMouseOver = isMouseOver;
-
-        /// <summary>
-        /// float value indicating whether the sig point is currently selected. 1.0f is true, 0.0f is false.
-        /// </summary>
-        public float IsSelected = isSelected;
-
-        public void SetIsMouseOver(bool isMouseOver)
-        {
-            IsMouseOver = isMouseOver ? 1 : 0;
-        }
-        public void SetIsSelected(bool isSelected)
-        {
-            IsSelected = isSelected ? 1 : 0;
-        }
+        public Vector3 Position;
+        public Vector4 Color;
     }
-    [StructLayout(LayoutKind.Sequential)]
-    public struct SigPointSettingsBuffer
-    {
-        public Vector4 BaseColor;
-        public Vector4 SelectedColor;
-        public Vector4 SelectedMouseOverColor;
-        public float Radius;
-        public Vector2 ViewportSize;
-        public float Padding;
-    }
+
 
     [StructLayout(LayoutKind.Sequential)]
     public struct CircleVertex(Vector3 position, Vector4 color, float radius, float isVisible = 1.0f, float isMouseOver = 0, float isSelected = 0)
