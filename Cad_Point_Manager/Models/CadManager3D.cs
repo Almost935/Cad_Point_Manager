@@ -724,37 +724,37 @@ namespace Cad_Point_Manager.Models
 
         public void GetTestDxfPoints()
         {
-            CogoPointManager.PointGroups.Clear();
+            //CogoPointManager.PointGroups.Clear();
 
-            float rows = 30;
-            float cols = 30;
-            float yIncrement = Extents.Height.ToFloat() / (rows - 1);
-            float xIncrement = Extents.Width.ToFloat() / (cols - 1);
-            int pointNum = 1;
-            float elevation = 0;
-            string description = "Test Point";
+            //float rows = 30;
+            //float cols = 30;
+            //float yIncrement = Extents.Height.ToFloat() / (rows - 1);
+            //float xIncrement = Extents.Width.ToFloat() / (cols - 1);
+            //int pointNum = 1;
+            //float elevation = 0;
+            //string description = "Test Point";
 
-            for (int i = 0; i < rows; i++)
-            {
-                string pointGroupName = $"TestGroup {i + 1}";
-                bool created = CogoPointManager.TryCreatePointGroup(pointGroupName, new Vector4(1.0f, 0.0f, 0.0f, 1.0f), _pointBaseScale, out var pointGroup);
-                if (created)
-                {
-                    var groupActivated = CogoPointManager.TrySetActivePointGroup(pointGroup);
-                    if (!groupActivated) { continue; }
+            //for (int i = 0; i < rows; i++)
+            //{
+            //    string pointGroupName = $"TestGroup {i + 1}";
+            //    bool created = CogoPointManager.TryCreatePointGroup(pointGroupName, new Vector4(1.0f, 0.0f, 0.0f, 1.0f), _pointBaseScale, out var pointGroup);
+            //    if (created)
+            //    {
+            //        var groupActivated = CogoPointManager.TrySetActivePointGroup(pointGroup);
+            //        if (!groupActivated) { continue; }
 
-                    float y = Extents.Top.ToFloat() + (yIncrement * i);
+            //        float y = Extents.Top.ToFloat() + (yIncrement * i);
 
-                    for (int j = 0; j < cols; j++)
-                    {
-                        float x = Extents.Left.ToFloat() + (xIncrement * j);
-                        var pointCreated = CogoPointManager.TryAddPointToActiveGroup(pointNum, new Vector3(x, y, 0), out var point, elevation, description);
-                        if (pointCreated) { pointNum++; continue; }
-                    }
-                }
-            }
+            //        for (int j = 0; j < cols; j++)
+            //        {
+            //            float x = Extents.Left.ToFloat() + (xIncrement * j);
+            //            var pointCreated = CogoPointManager.TryAddPointToActiveGroup(pointNum, new Vector3(x, y, 0), out var point, elevation, description);
+            //            if (pointCreated) { pointNum++; continue; }
+            //        }
+            //    }
+            //}
 
-            CogoPointManager.UpdateCogoPointsList();
+            //CogoPointManager.UpdateCogoPointsList();
         }
 
         public ref TextVertex GetTextVertexRef(int index)

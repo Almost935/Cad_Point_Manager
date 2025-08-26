@@ -38,8 +38,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
     public class D3dDxfControl : Direct3DControl, INotifyPropertyChanged, IDisposable
     {
         #region Fields
-        private bool _sceneDirty = false;
-        private bool _overlayDirty = false;
+        private bool _dxfDirty = true;
+        private bool _interactiveDirty = true;
         private Buffer _transformationBuffer;
 
         private Point _pointerCoords;
@@ -386,45 +386,57 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             if (!ConstantBuffersInitialized) { InitializeConstantBuffers(); }
             if (ConstantBuffersDirty) { UpdateConstantBuffers(); }
-            if (_sceneDirty) { DrawDxf(); }
+            //if (_sceneDirty) { DrawDxf(); }
             if (!_hitTestIsRunning)
             {
                 _hitTestIsRunning = true;
                 _hittestTask = Task.Run(() => RunHitTestingAsync());
             }
+
+
+            var ctx = _d3dResCache.DeviceContext;
+
+            // 1) Rebuild scene only when needed
+            if (_dxfDirty)
+            {
+                DrawDxf(ctx);
+                _dxfDirty = false;
+                _interactiveDirty = true; // force one compose after scene refresh
+            }
+
+            // 2) Compose: copy scene -> interactive, draw overlay on top, present
+            if (_interactiveDirty)
+            {
+                // Copy scene into interactive texture
+                ctx.CopyResource(_d3dResCache.DxfTexture, _d3dResCache.InteractionTexture);
+
+                // Draw overlay on the interactive texture (no clear!)
+                if (IsDragging && _dragFillVertexCount > 0)
+                {
+                    ctx.OutputMerger.SetRenderTargets(_d3dResCache.InteractiveRenderTargetView);
+                    DrawDragOverlay(ctx);
+                }
+
+                // Present the composed image to the shared WPF texture
+                ctx.CopyResource(_d3dResCache.InteractionTexture, _d3dResCache.Texture2D);
+                _interactiveDirty = false;
+            }
         }
 
-        private void DrawDxf()
+        private void DrawDxf(SharpDX.Direct3D11.DeviceContext context)
         {
-            //Stopwatch stopwatch = Stopwatch.StartNew();
+            context.OutputMerger.SetRenderTargets(_d3dResCache.DxfRenderTargetView);
+            context.ClearRenderTargetView(_d3dResCache.DxfRenderTargetView, new RawColor4(1, 1, 1, 1));
 
-            var context = _d3dResCache.DeviceContext;
-
-            // Set render target and clear it
-            context.OutputMerger.SetRenderTargets(_d3dResCache.OffscreenRenderTargetView);
-            context.ClearRenderTargetView(_d3dResCache.OffscreenRenderTargetView, new RawColor4(1, 1, 1, 0));
-
-            DrawTextGlowsWithShader();
-            DrawLinesWithShader();
-            DrawTextWithShader();
-
-            // draw overlay last so it sits on top
-            if (IsDragging && _dragFillVertexCount > 0) { DrawDragOverlay(); }
-
-            context.CopyResource(_d3dResCache.OffscreenTexture, _d3dResCache.Texture2D);
-
-            _sceneDirty = false;
-
-            //stopwatch.Stop();
-            //Debug.WriteLine($"D3D Render Time: {stopwatch.ElapsedMilliseconds} ms");
+            DrawTextGlowsWithShader(context);
+            DrawLinesWithShader(context);
+            DrawTextWithShader(context);
         }
 
-        private void DrawLinesWithShader()
+        private void DrawLinesWithShader(SharpDX.Direct3D11.DeviceContext context)
         {
             //Stopwatch stopwatch = Stopwatch.StartNew();
             if (_lineVertexBuffer is null) { return; }
-
-            var context = _d3dResCache.DeviceContext;
 
             context.VertexShader.Set(_lineGlowVertexShader);
             context.GeometryShader.Set(_lineGlowGeometryShader);
@@ -452,11 +464,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
             //stopwatch.Stop();
             //Debug.WriteLine($"DrawLinesWithShader Time: {stopwatch.ElapsedMilliseconds} ms");
         }
-        private void DrawTextWithShader()
+        private void DrawTextWithShader(SharpDX.Direct3D11.DeviceContext context)
         {
             //Stopwatch stopwatch = Stopwatch.StartNew();
-
-            var context = _d3dResCache.DeviceContext;
 
             if (_textVertexBuffer is null) { return; }
 
@@ -474,11 +484,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
             //stopwatch.Stop();
             //Debug.WriteLine($"DrawTextWithShader Time: {stopwatch.ElapsedMilliseconds} ms");
         }
-        private void DrawTextGlowsWithShader()
+        private void DrawTextGlowsWithShader(SharpDX.Direct3D11.DeviceContext context)
         {
             //Stopwatch stopwatch = Stopwatch.StartNew();
-
-            var context = _d3dResCache.DeviceContext;
 
             if (_textGlowVertexBuffer == null || _textGlowVertices.Count == 0)
             {
@@ -504,30 +512,28 @@ namespace Cad_Point_Manager.Controls.D3DControl
             //stopwatch.Stop();
             //Debug.WriteLine($"DrawTextGlowsWithShader Time: {stopwatch.ElapsedMilliseconds} ms");
         }
-        private void DrawDragOverlay()
+        private void DrawDragOverlay(SharpDX.Direct3D11.DeviceContext context)
         {
-            var ctx = _d3dResCache.DeviceContext;
-
             // --- fill (triangles) ---
-            ctx.VertexShader.Set(_overlayVS);
-            ctx.PixelShader.Set(_overlayPS);
-            ctx.InputAssembler.InputLayout = _overlayLayout;
-            ctx.VertexShader.SetConstantBuffer(0, _transformationBuffer);
-            ctx.InputAssembler.PrimitiveTopology = PrimitiveTopology.TriangleList;
-            ctx.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding(_dragFillBuffer.Buffer, _dragFillBuffer.Stride, 0));
-            ctx.Draw(_dragFillVertexCount, 0);
+            context.VertexShader.Set(_overlayVS);
+            context.PixelShader.Set(_overlayPS);
+            context.InputAssembler.InputLayout = _overlayLayout;
+            context.VertexShader.SetConstantBuffer(0, _transformationBuffer);
+            context.InputAssembler.PrimitiveTopology = PrimitiveTopology.TriangleList;
+            context.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding(_dragFillBuffer.Buffer, _dragFillBuffer.Stride, 0));
+            context.Draw(_dragFillVertexCount, 0);
 
             // --- outline (lines) ---
             if (_dragOutlineVertexCount > 0)
             {
-                ctx.VertexShader.Set(_lineVertexShader);
-                ctx.PixelShader.Set(_linePixelShader);
-                ctx.InputAssembler.InputLayout = _lineInputLayout;
-                ctx.VertexShader.SetConstantBuffer(0, _transformationBuffer);
-                ctx.VertexShader.SetConstantBuffer(1, _lineSettingsBuffer);
-                ctx.InputAssembler.PrimitiveTopology = PrimitiveTopology.LineList;
-                ctx.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding(_dragOutlineBuffer.Buffer, _dragOutlineBuffer.Stride, 0));
-                ctx.Draw(_dragOutlineVertexCount, 0);
+                context.VertexShader.Set(_lineVertexShader);
+                context.PixelShader.Set(_linePixelShader);
+                context.InputAssembler.InputLayout = _lineInputLayout;
+                context.VertexShader.SetConstantBuffer(0, _transformationBuffer);
+                context.VertexShader.SetConstantBuffer(1, _lineSettingsBuffer);
+                context.InputAssembler.PrimitiveTopology = PrimitiveTopology.LineList;
+                context.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding(_dragOutlineBuffer.Buffer, _dragOutlineBuffer.Stride, 0));
+                context.Draw(_dragOutlineVertexCount, 0);
             }
         }
 
@@ -541,7 +547,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _lineVertexCount = vertexSpan.Length;
 
             _lineVerticesDirty = false;
-            _sceneDirty = true;
+            _dxfDirty = true;
         }
         private void UpdateTextVertices()
         {
@@ -557,7 +563,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _textVertexCount = vertexSpan.Length;
 
             _textVerticesDirty = false;
-            _sceneDirty = true;
+            _dxfDirty = true;
         }
         private void UpdateTextGlowVertices()
         {
@@ -571,7 +577,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _textGlowVertexBuffer.Update(context, _textGlowVertices.ToArray());
 
             _textGlowVerticesDirty = false;
-            _sceneDirty = true;
+            _dxfDirty = true;
         }
         private void UpdateDragOverlayVertices(Rect r)
         {
@@ -588,6 +594,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
             var rt = new Vector3((float)r.Right, (float)r.Top, 1);
             var rb = new Vector3((float)r.Right, (float)r.Bottom, 1);
             var lb = new Vector3((float)r.Left, (float)r.Bottom, 1);
+
+            //Debug.WriteLine($"{lt} {rt} {rb} {lb}");
 
             // fill color (ARGB #3300FFFF like your XAML)
             var fill = new Vector4(0f, 1f, 1f, 0.2f); // DeepSkyBlue-ish with alpha
@@ -626,6 +634,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             _dragOutlineBuffer.Update(_d3dResCache.DeviceContext, outline);
             _dragOutlineVertexCount = 8;
+
+            _interactiveDirty = true;
         }
 
         private void InitializeLineShader()
@@ -742,56 +752,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             _overlayShaderLoaded = true;
         }
-        //private void InitializeAlphaBlendState()
-        //{
-        //    var desc = new BlendStateDescription()
-        //    {
-        //        AlphaToCoverageEnable = false,
-        //        IndependentBlendEnable = false,
-        //    };
-        //    var rt = new RenderTargetBlendDescription()
-        //    {
-        //        IsBlendEnabled = true,
-        //        SourceBlend = BlendOption.SourceAlpha,
-        //        DestinationBlend = BlendOption.InverseSourceAlpha,
-        //        BlendOperation = BlendOperation.Add,
-        //        SourceAlphaBlend = BlendOption.One,
-        //        DestinationAlphaBlend = BlendOption.InverseSourceAlpha,
-        //        AlphaBlendOperation = BlendOperation.Add,
-        //        RenderTargetWriteMask = ColorWriteMaskFlags.All
-        //    };
-        //    desc.RenderTarget[0] = rt;
-        //    _alphaBlend = new BlendState(_d3dResCache.Device, desc);
-        //}
-        //private void InitializeOverlayStates()
-        //{
-        //    if (_rsCullNone == null)
-        //    {
-        //        var rsDesc = new RasterizerStateDescription
-        //        {
-        //            CullMode = CullMode.None,            // <- critical: don’t cull overlay tris
-        //            FillMode = FillMode.Solid,
-        //            IsFrontCounterClockwise = false,     // leave false; culling is off anyway
-        //            IsDepthClipEnabled = true,
-        //            IsMultisampleEnabled = true,
-        //            IsAntialiasedLineEnabled = false
-        //        };
-        //        _rsCullNone = new RasterizerState(_d3dResCache.Device, rsDesc);
-        //    }
-
-        //    if (_dsNoDepth == null)
-        //    {
-        //        var dsDesc = new DepthStencilStateDescription
-        //        {
-        //            IsDepthEnabled = false,              // <- no depth test/write for overlay
-        //            DepthWriteMask = DepthWriteMask.Zero,
-        //            DepthComparison = Comparison.Always,
-        //            IsStencilEnabled = false
-        //        };
-        //        _dsNoDepth = new DepthStencilState(_d3dResCache.Device, dsDesc);
-        //    }
-        //}
-
 
         private void InitializeBuffers()
         {
@@ -905,7 +865,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _d3dResCache.DeviceContext.UpdateSubresource(ref textGlowSettings, _textGlowSettingsBuffer);
 
             ConstantBuffersDirty = false;
-            _sceneDirty = true;
+            _dxfDirty = true;
         }
 
         private void GetInitialMatrix()
@@ -1154,7 +1114,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 ConstantBuffersDirty = true;
             }
 
-            _sceneDirty = true;
+            _dxfDirty = true;
         }
 
         public void ZoomToExtents()

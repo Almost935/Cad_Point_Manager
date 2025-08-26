@@ -16,9 +16,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private SharpDX.Direct3D11.Device _device;
         private DeviceContext _deviceContext;
         private Texture2D _texture2D;
-        private Texture2D _offscreenTexture;
+        private Texture2D _dxfTexture;
+        private Texture2D _interactiveTexture;
         private RenderTargetView _renderTargetView;
-        private RenderTargetView _offscreenRenderTargetView;
+        private RenderTargetView _dxfRenderTargetView;
+        private RenderTargetView _interactiveRenderTargetView;
         private Dx11ImageSource _d3DSurface;
 
         private readonly Stopwatch _renderTimer = new();
@@ -72,7 +74,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
 
         // - public methods --------------------------------------------------------------
-
         public Direct3DControl()
         {
             base.Loaded += Window_Loaded;
@@ -203,6 +204,10 @@ namespace Cad_Point_Manager.Controls.D3DControl
             Disposer.SafeDispose(ref _deviceContext);
             Disposer.SafeDispose(ref _texture2D);
             Disposer.SafeDispose(ref _renderTargetView);
+            Disposer.SafeDispose(ref _dxfRenderTargetView);
+            Disposer.SafeDispose(ref _interactiveRenderTargetView);
+            Disposer.SafeDispose(ref _dxfTexture);
+            Disposer.SafeDispose(ref _interactiveTexture);
         }
 
         private void CreateAndBindTargets()
@@ -220,7 +225,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             var width = Math.Max((int)ActualWidth, 100);
             var height = Math.Max((int)ActualHeight, 100);
 
-            var renderDesc = new Texture2DDescription
+            var texture2DRenderDesc = new Texture2DDescription
             {
                 BindFlags = BindFlags.RenderTarget | BindFlags.ShaderResource,
                 Format = Format.B8G8R8A8_UNorm,
@@ -233,23 +238,39 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 CpuAccessFlags = CpuAccessFlags.None,
                 ArraySize = 1
             };
+            _texture2D = new Texture2D(_device, texture2DRenderDesc);
 
-            _texture2D = new Texture2D(_device, renderDesc);
-
-            _offscreenTexture = new Texture2D(_device, renderDesc);
-            _d3dResCache.OffscreenTexture = _offscreenTexture;
+            var offscreenRenderDesc = new Texture2DDescription
+            {
+                BindFlags = BindFlags.RenderTarget | BindFlags.ShaderResource,
+                Format = Format.B8G8R8A8_UNorm,
+                Width = width,
+                Height = height,
+                MipLevels = 1,
+                SampleDescription = new SampleDescription(1, 0),
+                Usage = ResourceUsage.Default,
+                OptionFlags = ResourceOptionFlags.None,
+                CpuAccessFlags = CpuAccessFlags.None,
+                ArraySize = 1
+            };
+            _dxfTexture = new Texture2D(_device, offscreenRenderDesc);
+            _d3dResCache.DxfTexture = _dxfTexture;
+            _interactiveTexture = new(_device, offscreenRenderDesc);
+            _d3dResCache.InteractionTexture = _interactiveTexture;
 
             RenderTargetViewDescription rtvDesc = new RenderTargetViewDescription
             {
                 Dimension = RenderTargetViewDimension.Texture2D,
-                Format = renderDesc.Format,
+                Format = texture2DRenderDesc.Format,
                 Texture2D = { MipSlice = 0 }
             };
             _renderTargetView = new RenderTargetView(_device, _texture2D, rtvDesc);
             _d3dResCache.RenderTargetView = _renderTargetView;
 
-            _offscreenRenderTargetView = new(_device, _offscreenTexture, rtvDesc);
-            _d3dResCache.OffscreenRenderTargetView = _offscreenRenderTargetView;
+            _dxfRenderTargetView = new(_device, _dxfTexture, rtvDesc);
+            _d3dResCache.DxfRenderTargetView = _dxfRenderTargetView;
+            _interactiveRenderTargetView = new(_device, _interactiveTexture, rtvDesc);
+            _d3dResCache.InteractiveRenderTargetView = _interactiveRenderTargetView;
 
             _deviceContext.OutputMerger.SetRenderTargets(_renderTargetView);
             _d3dResCache.Texture2D = _texture2D;

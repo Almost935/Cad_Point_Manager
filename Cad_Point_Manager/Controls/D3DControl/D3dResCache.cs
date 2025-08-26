@@ -18,9 +18,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private Device _device = null;
         private DeviceContext _deviceContext = null;
         private Texture2D _texture2D = null;
-        private Texture2D _offscreenTexture = null;
+        private Texture2D _dxfTexture = null;
+        private Texture2D _interactionTexture = null;
         private RenderTargetView _renderTargetView = null;
-        private RenderTargetView _offscreenRenderTargetView = null;
+        private RenderTargetView _dxfRenderTargetView = null;
+        private RenderTargetView _interactiveRenderTargetView = null;
         private SharpDX.Direct2D1.Device1 _d2DDevice = null;
         private SharpDX.Direct2D1.DeviceContext1 _d2DDeviceContext = null;
         private RenderTarget _d2dRenderTarget = null;
@@ -57,13 +59,22 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 OnPropertyChanged(nameof(Texture2D));
             }
         }
-        public Texture2D OffscreenTexture
+        public Texture2D DxfTexture
         {
-            get { return _offscreenTexture; }
+            get { return _dxfTexture; }
             set
             {
-                _offscreenTexture = value;
-                OnPropertyChanged(nameof(OffscreenTexture));
+                _dxfTexture = value;
+                OnPropertyChanged(nameof(DxfTexture));
+            }
+        }
+        public Texture2D InteractionTexture
+        {
+            get { return _interactionTexture; }
+            set
+            {
+                _interactionTexture = value;
+                OnPropertyChanged(nameof(InteractionTexture));
             }
         }
         public RenderTargetView RenderTargetView
@@ -75,13 +86,22 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 OnPropertyChanged(nameof(RenderTargetView));
             }
         }
-        public RenderTargetView OffscreenRenderTargetView
+        public RenderTargetView DxfRenderTargetView
         {
-            get { return _offscreenRenderTargetView; }
+            get { return _dxfRenderTargetView; }
             set
             {
-                _offscreenRenderTargetView = value;
-                OnPropertyChanged(nameof(OffscreenRenderTargetView));
+                _dxfRenderTargetView = value;
+                OnPropertyChanged(nameof(DxfRenderTargetView));
+            }
+        }
+        public RenderTargetView InteractiveRenderTargetView
+        {
+            get { return _interactiveRenderTargetView; }
+            set
+            {
+                _interactiveRenderTargetView = value;
+                OnPropertyChanged(nameof(InteractiveRenderTargetView));
             }
         }
 
@@ -208,9 +228,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     _device?.Dispose();
                     _deviceContext?.Dispose();
                     _texture2D?.Dispose();
-                    _offscreenTexture?.Dispose();
+                    _dxfTexture?.Dispose();
+                    _interactionTexture?.Dispose();
                     _renderTargetView?.Dispose();
-                    _offscreenRenderTargetView.Dispose();
+                    _dxfRenderTargetView.Dispose();
+                    _interactiveRenderTargetView?.Dispose();
                     _d2DDevice?.Dispose();
                     _d2DDeviceContext?.Dispose();
                     _d2DFactory?.Dispose();
