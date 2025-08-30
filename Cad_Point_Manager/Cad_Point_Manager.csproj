@@ -62,6 +62,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="Controls\D3DControl\Shaders\GlyphMeshShader.hlsl" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Extended.Wpf.Toolkit" Version="4.7.25104.5739" />
     <PackageReference Include="FontAwesome.WPF" Version="4.7.0.9" />
     <PackageReference Include="FreeTypeSharp" Version="3.0.0" />

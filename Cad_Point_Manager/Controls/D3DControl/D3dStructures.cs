@@ -4,20 +4,30 @@ using Matrix = SharpDX.Matrix;
 
 namespace Cad_Point_Manager.Controls.D3DControl
 {
-    // ---------- Rendering structs ----------
     [StructLayout(LayoutKind.Sequential)]
-    struct GlyphInstance
+    public struct GlyphVertexDU
     {
-        public Vector2 OriginWorld;   // baseline origin for the label
-        public float DuToWorld;     // world units per design unit
-        public float YSign;         // +1 (Y-up) or -1 (Y-down)
-        public float PenDU;         // accumulated advance before this glyph (in DU)
-        public Vector4 Color;         // RGBA
-        public float IsVisible;     // 1/0
-        public float IsMouseOver;   // 1/0
-        public float IsSelected;    // 1/0
+        public Vector2 PosDU; // design-unit vertex (triangle-list)
     }
-    public struct GlyphBatch { public ushort GlyphIndex; public int Start; public int Count; }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct GlyphInstance
+    {
+        public Vector2 OriginWorld;
+        public float DuToWorld;
+        public float PenDU;
+        public Vector4 Color;
+        public float IsVisible;
+        public float IsMouseOver;
+        public float IsSelected;
+        public float YSign;
+    }
+
+    public struct GlyphRange
+    {
+        public int StartVertex;   // into the packed glyph vertex buffer
+        public int VertexCount;
+    }
 
 
     [StructLayout(LayoutKind.Sequential)]

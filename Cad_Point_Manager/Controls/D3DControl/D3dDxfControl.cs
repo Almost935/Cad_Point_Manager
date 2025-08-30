@@ -104,6 +104,13 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private bool _pointTextShadersLoaded = false;
         private bool _pointTextVerticesDirty = false;
 
+        // Point glyph rendering
+        private ResizableBuffer<GlyphInstance> _glyphInstanceBuffer;
+        private InputLayout _glyphLayout;
+        private VertexShader _glyphVS;
+        private PixelShader _glyphPS;
+        private bool _glyphShadersLoaded;
+
         // Text glow shader related fields
         private ResizableBuffer<TextVertex> _textGlowVertexBuffer;
         private Buffer _textGlowSettingsBuffer;
@@ -417,6 +424,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             if (!_textShaderLoaded) { InitializeTextShader(); }
             if (!_overlayShaderLoaded) { InitializeOverlayShader(); }
             if (!_pointTextShadersLoaded) { InitializePointTextShader(); }
+            if (!_glyphShadersLoaded) { InitializeGlyphShader(); }
             if (!_circleShadersLoaded) { InitializeCircleShader(); }
             if (!_circleGlowShadersLoaded) { InitializeCircleGlowShader(); }
             if (_dragFillBuffer == null) _dragFillBuffer = new(_d3dResCache.Device, 6);
@@ -934,6 +942,39 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 });
 
             _pointTextShadersLoaded = true;
+        }
+        private void InitializeGlyphShader()
+        {
+            var path = AppDomain.CurrentDomain.BaseDirectory;
+            while (Path.GetFileName(path) != "Cad_Point_Manager")
+            {
+                path = Path.GetDirectoryName(path);
+                if (path == null)
+                    throw new DirectoryNotFoundException("The 'Cad_Point_Manager' directory could not be found in the path.");
+            }
+
+            string shaderPath = Path.Combine(path, @"Controls\D3DControl\Shaders\GlyphMeshShader.hlsl");
+            var vsb = ShaderBytecode.CompileFromFile(shaderPath, "VSMain", "vs_5_0");
+            var psb = ShaderBytecode.CompileFromFile(shaderPath, "PSMain", "ps_5_0");
+            _glyphVS = new VertexShader(_d3dResCache.Device, vsb);
+            _glyphPS = new PixelShader(_d3dResCache.Device, psb);
+
+            _glyphLayout = new InputLayout(_d3dResCache.Device, ShaderSignature.GetInputSignature(vsb),
+                new[]
+                {
+                    new InputElement("POSITION",      0, Format.R32G32_Float,          0, 0, InputClassification.PerVertexData,   0),
+                    new InputElement("GLYPH_ORIGIN",  0, Format.R32G32_Float,          0, 1, InputClassification.PerInstanceData, 1),
+                    new InputElement("GLYPH_SCALE",   0, Format.R32_Float,              8, 1, InputClassification.PerInstanceData, 1),
+                    new InputElement("GLYPH_PEN",     0, Format.R32_Float,             12, 1, InputClassification.PerInstanceData, 1),
+                    new InputElement("COLOR",         0, Format.R32G32B32A32_Float,    16, 1, InputClassification.PerInstanceData, 1),
+                    new InputElement("ISVISIBLE",     0, Format.R32_Float,             32, 1, InputClassification.PerInstanceData, 1),
+                    new InputElement("ISMOUSEOVER",   0, Format.R32_Float,             36, 1, InputClassification.PerInstanceData, 1),
+                    new InputElement("ISSELECTED",    0, Format.R32_Float,             40, 1, InputClassification.PerInstanceData, 1),
+                    new InputElement("YSIGN",         0, Format.R32_Float,             44, 1, InputClassification.PerInstanceData, 1),
+                });
+
+            _glyphInstanceBuffer = new ResizableBuffer<GlyphInstance>(_d3dResCache.Device, initialCapacity: 256);
+            _glyphShadersLoaded = true;
         }
         private void InitializeCircleShader()
         {
