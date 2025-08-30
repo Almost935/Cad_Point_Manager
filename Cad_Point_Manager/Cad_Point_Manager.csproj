@@ -48,6 +48,9 @@
     <Compile Remove="Models\OffscreenBitmap.cs" />
     <Compile Remove="Models\OffscreenBitmapManager.cs" />
     <Compile Remove="Services\DxfService.cs" />
+    <Compile Remove="Views\Visuals\CogoPointVisualGroup.cs" />
+    <Compile Remove="Views\Visuals\HitTestablePointVisualGroup.cs" />
+    <Compile Remove="Views\Visuals\VisualHost.cs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -77,6 +80,7 @@
 
   <ItemGroup>
     <Folder Include="Resources\Testing\" />
+    <Folder Include="Views\Visuals\" />
   </ItemGroup>
 
   <ItemGroup>

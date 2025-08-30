@@ -4,13 +4,28 @@ using Matrix = SharpDX.Matrix;
 
 namespace Cad_Point_Manager.Controls.D3DControl
 {
+    // ---------- Rendering structs ----------
+    [StructLayout(LayoutKind.Sequential)]
+    struct GlyphInstance
+    {
+        public Vector2 OriginWorld;   // baseline origin for the label
+        public float DuToWorld;     // world units per design unit
+        public float YSign;         // +1 (Y-up) or -1 (Y-down)
+        public float PenDU;         // accumulated advance before this glyph (in DU)
+        public Vector4 Color;         // RGBA
+        public float IsVisible;     // 1/0
+        public float IsMouseOver;   // 1/0
+        public float IsSelected;    // 1/0
+    }
+    public struct GlyphBatch { public ushort GlyphIndex; public int Start; public int Count; }
+
+
     [StructLayout(LayoutKind.Sequential)]
     public struct OverlayVertex
     {
         public Vector3 Position;
         public Vector4 Color;
     }
-
 
     [StructLayout(LayoutKind.Sequential)]
     public struct CircleVertex(Vector3 position, Vector4 color, float radius, float isVisible = 1.0f, float isMouseOver = 0, float isSelected = 0)
@@ -200,129 +215,12 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public Matrix WorldViewProjection;  // This is the matrix you send to the shader
     }
 
-    //public struct Bounds
-    //{
-    //    public float Left;
-    //    public float Right;
-    //    public float Top;
-    //    public float Bottom;
-    //    public float Width;
-    //    public float Height;
-
-    //    public readonly Vector2 Center => new((Left + Right) / 2, (Top + Bottom) / 2);
-    //    public readonly Vector2 TopLeft => new(Left, Top);
-    //    public readonly Vector2 TopRight => new(Right, Top);
-    //    public readonly Vector2 BottomLeft => new(Left, Bottom);
-    //    public readonly Vector2 BottomRight => new(Right, Bottom);
-    //    public readonly float MaxDimension => Math.Max(Width, Height);
-    //    public readonly float MinimumDimension => Math.Min(Width, Height);
-    //    public readonly bool IsEmpty => Left == 0 && Right == 0 && Top == 0 && Bottom == 0;
-
-    //    public Bounds(float left, float right, float bottom, float top)
-    //    {
-    //        Left = left;
-    //        Right = right;
-    //        Top = top;
-    //        Bottom = bottom;
-
-    //        Width = right - left;
-    //        Height = top - bottom;
-    //    }
-
-    //    public readonly override string ToString()
-    //    {
-    //        return $"Left: {Left}, Right: {Right}, Bottom: {Bottom}, Top: {Top}, Width: {Width}, Height: {Height})";
-    //    }
-
-    //    public Rect ToRect()
-    //    {
-    //        Rect rect = new(this.Left, this.Bottom, this.Width, this.Height);
-    //        return rect;
-    //    }
-    //    public void Union(Bounds other)
-    //    {
-    //        if (IsEmpty)
-    //        {
-    //            this = other;
-    //            return;
-    //        }
-    //        if (other.IsEmpty)
-    //        {
-    //            return;
-    //        }
-
-    //        float newLeft = Math.Min(this.Left, other.Left);
-    //        float newRight = Math.Max(this.Right, other.Right);
-    //        float newBottom = Math.Min(this.Bottom, other.Bottom);
-    //        float newTop = Math.Max(this.Top, other.Top);
-
-    //        this = new Bounds(newLeft, newRight, newBottom, newTop);
-    //    }
-
-
-    //    public static Bounds Empty => new(0, 0, 0, 0);
-    //    public static Bounds Translate(Bounds bounds, float x, float y)
-    //    {
-    //        return new Bounds(bounds.Left + x, bounds.Right + x, bounds.Bottom + y, bounds.Top + y);
-    //    }
-    //    public static Bounds Scale(Bounds bounds, float scale)
-    //    {
-    //        return new Bounds(bounds.Left / scale, bounds.Right / scale, bounds.Bottom / scale, bounds.Top / scale);
-    //    }
-    //    public static Bounds ScaleToCenter(Bounds bounds, float scale)
-    //    {
-    //        Bounds scaledBounds = Bounds.Scale(bounds, scale);
-    //        Vector2 centerOffset = new((bounds.Center.X - scaledBounds.Center.X), (bounds.Center.Y - scaledBounds.Center.Y));
-    //        scaledBounds = Bounds.Translate(scaledBounds, centerOffset.X, centerOffset.Y);
-
-    //        return scaledBounds;
-    //    }
-    //    public static Bounds ScaleTo(Bounds bounds, float scale, Vector2 pivot)
-    //    {
-    //        // Calculate the box center
-    //        float boxCenterX = (bounds.Left + bounds.Right) / 2f;
-    //        float boxCenterY = (bounds.Bottom + bounds.Top) / 2f;
-
-    //        // Calculate scaling offsets
-    //        float deltaX = (pivot.X - boxCenterX) * (1 - scale);
-    //        float deltaY = (pivot.Y - boxCenterY) * (1 - scale);
-
-    //        // Calculate the new box edges
-    //        float newLeft = bounds.Left + deltaX;
-    //        float newRight = bounds.Right + deltaX;
-    //        float newBottom = bounds.Bottom + deltaY;
-    //        float newTop = bounds.Top + deltaY;
-
-    //        // Scale the box dimensions
-    //        float width = (newRight - newLeft) * (1 / scale);
-    //        float height = (newTop - newBottom) * (1 / scale);
-
-    //        // Adjust the box edges based on the scaled dimensions
-    //        newLeft = pivot.X - (pivot.X - newLeft) * (1 / scale);
-    //        newRight = newLeft + width;
-    //        newBottom = pivot.Y - (pivot.Y - newBottom) * (1 / scale);
-    //        newTop = newBottom + height;
-
-    //        return new Bounds(newLeft, newRight, newBottom, newTop);
-    //    }
-    //    public static Rect ToRect(Bounds bounds)
-    //    {
-    //        Rect rect = new(bounds.Left, bounds.Bottom, bounds.Width, bounds.Height);
-    //        return rect;
-    //    }
-    //    public static Bounds Union(Bounds a, Bounds b)
-    //    {
-    //        if (a.IsEmpty) { return b; }
-    //        if (b.IsEmpty) { return a; }
-
-    //        float left = Math.Min(a.Left, b.Left);
-    //        float right = Math.Max(a.Right, b.Right);
-    //        float bottom = Math.Min(a.Bottom, b.Bottom);
-    //        float top = Math.Max(a.Top, b.Top);
-
-    //        return new Bounds(left, right, bottom, top);
-    //    }
-    //}
+    [StructLayout(LayoutKind.Sequential)]
+    public struct ViewportBuffer
+    {
+        public Vector2 ViewportSize;
+        public Vector2 Padding;
+    }
 
     public struct Rotation
     {

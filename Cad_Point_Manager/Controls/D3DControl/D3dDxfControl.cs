@@ -25,6 +25,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
+
 using BlendOperation = SharpDX.Direct3D11.BlendOperation;
 using Buffer = SharpDX.Direct3D11.Buffer;
 using FillMode = SharpDX.Direct3D11.FillMode;
@@ -41,6 +42,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private bool _dxfDirty = true;
         private bool _interactiveDirty = true;
         private Buffer _transformationBuffer;
+        private Buffer _viewportBuffer;
 
         private Point _pointerCoords;
         private Vector2 _dxfCoords;
@@ -91,6 +93,17 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private bool _textShaderLoaded = false;
         private bool _textVerticesDirty = false;
 
+        // DxfPoint text shader related fields
+        private ResizableBuffer<TextVertex> _pointTextVertexBuffer;
+        private ResizableBuffer<GlyphInstance> _glyphInstanceVB;
+        private Buffer _pointTextSettingsBuffer;
+        private VertexShader _pointTextVertexShader;
+        private PixelShader _pointTextPixelShader;
+        private InputLayout _pointTextInputLayout;
+        private int _pointTextVertexCount;
+        private bool _pointTextShadersLoaded = false;
+        private bool _pointTextVerticesDirty = false;
+
         // Text glow shader related fields
         private ResizableBuffer<TextVertex> _textGlowVertexBuffer;
         private Buffer _textGlowSettingsBuffer;
@@ -99,6 +112,27 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private PixelShader _textGlowPixelShader;
         private GeometryShader _textGlowGeometryShader;
         private bool _textGlowVerticesDirty = false;
+
+        // Circle shader related fields
+        private ResizableBuffer<CircleVertex> _circleVertexBuffer;
+        private Buffer _circleSettingsBuffer;
+        private InputLayout _circleInputLayout;
+        private VertexShader _circleVertexShader;
+        private PixelShader _circlePixelShader;
+        private GeometryShader _circleGeometryShader;
+        private int _circleVertexCount;
+        private bool _circleShadersLoaded = false;
+        private bool _circleVerticesDirty = false;
+
+        // Circle glow shader related fields
+        private ResizableBuffer<CircleVertex> _circleGlowVertexBuffer;
+        private Buffer _circleGlowSettingsBuffer;
+        private List<CircleVertex> _circleGlowVertices = [];
+        private VertexShader _circleGlowVertexShader;
+        private PixelShader _circleGlowPixelShader;
+        private GeometryShader _circleGlowGeometryShader;
+        private bool _circleGlowShadersLoaded = false;
+        private bool _circleGlowVerticesDirty = false;
 
         // Drag rectangle shader
         private ResizableBuffer<OverlayVertex> _dragFillBuffer;
@@ -124,7 +158,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private bool _hitTestIsRunning;
         private float _hittestStrokeThickness;
         private Point _lastHitTestCoords;
-        private HashSet<HitTestableObject> _cachedDragResults = [];
         private Rect _lastQueriedDxfRect = Rect.Empty;
         private CancellationTokenSource _hitTestCancellationTokenSource;
         private int _currentSnapHitTestIndex = 0;
@@ -133,7 +166,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private List<(double distance, HitTestablePoint hitTestablePoint)> _nearestHitTestablePoints = [];
         private List<(double distance, DrawingGeometry3D geometry)> _nearestHitTestableGeometries = [];
         private List<(double distance, CogoPoint point)> _nearestHitTestableCogoPoints = [];
-        private readonly HashSet<HitTestableObject> _snappedHitTestableObjects = new();
+        private readonly HashSet<HitTestableObject> _snappedHitTestableObjects = [];
         #endregion
 
         #region Properties 
@@ -375,18 +408,23 @@ namespace Cad_Point_Manager.Controls.D3DControl
             if (_lineVerticesDirty) { UpdateLineVertices(); }
             if (_textVerticesDirty) { UpdateTextVertices(); }
             if (_textGlowVerticesDirty) { UpdateTextGlowVertices(); }
+            if (_pointTextVerticesDirty) { UpdatePointTextVertices(); }
+            if (_circleVerticesDirty) { UpdateCircleVertices(); }
+            if (_circleGlowVerticesDirty) { UpdateCircleGlowVertices(); }
             if (HitTestableObjectTreeDirty) { LoadHitTestableObjectTree(); }
 
             if (!_lineShaderLoaded) { InitializeLineShader(); }
             if (!_textShaderLoaded) { InitializeTextShader(); }
             if (!_overlayShaderLoaded) { InitializeOverlayShader(); }
-            if (!_overlayShaderLoaded) { InitializeOverlayShader(); }
+            if (!_pointTextShadersLoaded) { InitializePointTextShader(); }
+            if (!_circleShadersLoaded) { InitializeCircleShader(); }
+            if (!_circleGlowShadersLoaded) { InitializeCircleGlowShader(); }
             if (_dragFillBuffer == null) _dragFillBuffer = new(_d3dResCache.Device, 6);
             if (_dragOutlineBuffer == null) _dragOutlineBuffer = new(_d3dResCache.Device, 8);
 
             if (!ConstantBuffersInitialized) { InitializeConstantBuffers(); }
             if (ConstantBuffersDirty) { UpdateConstantBuffers(); }
-            //if (_sceneDirty) { DrawDxf(); }
+
             if (!_hitTestIsRunning)
             {
                 _hitTestIsRunning = true;
@@ -431,6 +469,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
             DrawTextGlowsWithShader(context);
             DrawLinesWithShader(context);
             DrawTextWithShader(context);
+            DrawPointTextWithShader(context);
+            DrawCirclesWithShader(context);
+            DrawCircleGlowsWithShader(context);
         }
 
         private void DrawLinesWithShader(SharpDX.Direct3D11.DeviceContext context)
@@ -474,12 +515,34 @@ namespace Cad_Point_Manager.Controls.D3DControl
             context.PixelShader.Set(_textPixelShader);
             context.InputAssembler.InputLayout = _textInputLayout;
             context.VertexShader.SetConstantBuffer(0, _transformationBuffer);
-            context.PixelShader.SetConstantBuffer(0, _textSettingsBuffer);
+            context.VertexShader.SetConstantBuffer(1, _pointTextSettingsBuffer);
+            context.VertexShader.SetConstantBuffer(2, _viewportBuffer);
             context.InputAssembler.PrimitiveTopology = PrimitiveTopology.TriangleList;
             context.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding(
                  _textVertexBuffer.Buffer, _textVertexBuffer.Stride, 0));
 
             context.Draw(_textVertexCount, 0);
+
+            //stopwatch.Stop();
+            //Debug.WriteLine($"DrawTextWithShader Time: {stopwatch.ElapsedMilliseconds} ms");
+        }
+        private void DrawPointTextWithShader(SharpDX.Direct3D11.DeviceContext context)
+        {
+            //Stopwatch stopwatch = Stopwatch.StartNew();
+
+            if (_pointTextVertexBuffer is null || _pointTextVertexCount == 0) { return; }
+
+            context.VertexShader.Set(_pointTextVertexShader);
+            context.PixelShader.Set(_pointTextPixelShader);
+            context.InputAssembler.InputLayout = _pointTextInputLayout;
+            context.VertexShader.SetConstantBuffer(0, _transformationBuffer);
+            context.VertexShader.SetConstantBuffer(1, _pointTextSettingsBuffer);
+            context.VertexShader.SetConstantBuffer(2, _viewportBuffer);
+            context.InputAssembler.PrimitiveTopology = PrimitiveTopology.TriangleList;
+            context.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding(
+                 _pointTextVertexBuffer.Buffer, _pointTextVertexBuffer.Stride, 0));
+
+            context.Draw(_pointTextVertexCount, 0);
 
             //stopwatch.Stop();
             //Debug.WriteLine($"DrawTextWithShader Time: {stopwatch.ElapsedMilliseconds} ms");
@@ -511,6 +574,61 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             //stopwatch.Stop();
             //Debug.WriteLine($"DrawTextGlowsWithShader Time: {stopwatch.ElapsedMilliseconds} ms");
+        }
+        private void DrawCirclesWithShader(SharpDX.Direct3D11.DeviceContext context)
+        {
+            //Stopwatch stopwatch = Stopwatch.StartNew();
+
+            if (_circleVertexBuffer == null || _circleVertexCount == 0)
+            {
+                return;
+            }
+
+            // Set shaders
+            context.VertexShader.Set(_circleVertexShader);
+            context.GeometryShader.Set(_circleGeometryShader);
+            context.PixelShader.Set(_circlePixelShader);
+            context.InputAssembler.InputLayout = _circleInputLayout;
+            context.VertexShader.SetConstantBuffer(0, _transformationBuffer);
+            context.GeometryShader.SetConstantBuffer(0, _transformationBuffer);
+            context.GeometryShader.SetConstantBuffer(1, _circleSettingsBuffer);
+            context.InputAssembler.PrimitiveTopology = PrimitiveTopology.PointList;
+            context.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding(
+                _circleVertexBuffer.Buffer, _circleVertexBuffer.Stride, 0));
+
+            context.Draw(_circleVertexCount, 0);
+
+            context.GeometryShader.Set(null);
+
+            //stopwatch.Stop();
+            //Debug.WriteLine($"DrawCirclesWithShader Time: {stopwatch.ElapsedMilliseconds} ms");
+        }
+        private void DrawCircleGlowsWithShader(SharpDX.Direct3D11.DeviceContext context)
+        {
+            //Stopwatch stopwatch = Stopwatch.StartNew();
+
+            if (_circleGlowVertexBuffer == null || _circleGlowVertices.Count == 0)
+            {
+                return;
+            }
+
+            // Set shaders
+            context.VertexShader.Set(_circleGlowVertexShader);
+            context.GeometryShader.Set(_circleGlowGeometryShader);
+            context.PixelShader.Set(_circleGlowPixelShader);
+            context.InputAssembler.InputLayout = _circleInputLayout;
+            context.VertexShader.SetConstantBuffer(0, _transformationBuffer);
+            context.GeometryShader.SetConstantBuffer(0, _transformationBuffer);
+            context.InputAssembler.PrimitiveTopology = PrimitiveTopology.PointList;
+            context.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding(
+                _circleGlowVertexBuffer.Buffer, _circleGlowVertexBuffer.Stride, 0));
+
+            context.Draw(_circleGlowVertices.Count, 0);
+
+            context.GeometryShader.Set(null);
+
+            //stopwatch.Stop();
+            //Debug.WriteLine($"DrawCirclesWithShader Time: {stopwatch.ElapsedMilliseconds} ms");
         }
         private void DrawDragOverlay(SharpDX.Direct3D11.DeviceContext context)
         {
@@ -577,6 +695,44 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _textGlowVertexBuffer.Update(context, _textGlowVertices.ToArray());
 
             _textGlowVerticesDirty = false;
+            _dxfDirty = true;
+        }
+        private void UpdatePointTextVertices()
+        {
+            if (_pointTextVertexBuffer is null || CadManager3D is null)
+            {
+                _pointTextVerticesDirty = false;
+                return;
+            }
+
+            var context = _d3dResCache.DeviceContext;
+            var vertexSpan = CadManager3D.UpdatePointTextVertices(_d3dResCache);
+            _pointTextVertexBuffer.Update(context, vertexSpan);
+            _pointTextVertexCount = vertexSpan.Length;
+
+            _pointTextVerticesDirty = false;
+            _dxfDirty = true;
+        }
+        private void UpdateCircleVertices()
+        {
+            if (_circleVertexBuffer is null) { return; }
+
+            var context = _d3dResCache.DeviceContext;
+            var vertexSpan = CadManager3D.UpdateCircleVerticesList();
+            _circleVertexBuffer.Update(context, vertexSpan);
+            _circleVertexCount = vertexSpan.Length;
+
+            _circleVerticesDirty = false;
+            _dxfDirty = true;
+        }
+        private void UpdateCircleGlowVertices()
+        {
+            if (_circleGlowVertexBuffer is null) { return; }
+
+            var context = _d3dResCache.DeviceContext;
+            _circleGlowVertexBuffer.Update(context, _circleGlowVertices.ToArray());
+
+            _circleGlowVerticesDirty = false;
             _dxfDirty = true;
         }
         private void UpdateDragOverlayVertices(Rect r)
@@ -727,6 +883,132 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             _textShaderLoaded = true;
         }
+        private void InitializePointTextShader()
+        {
+            var path = AppDomain.CurrentDomain.BaseDirectory;
+            while (Path.GetFileName(path) != "Cad_Point_Manager")
+            {
+                path = Path.GetDirectoryName(path);
+                if (path == null)
+                    throw new DirectoryNotFoundException("The 'Cad_Point_Manager' directory could not be found in the path.");
+            }
+
+            string shaderPath = Path.Combine(path, @"Controls\D3DControl\Shaders\TextShader.hlsl");
+
+            // Main shaders
+            var textVSBytecode = ShaderBytecode.CompileFromFile(shaderPath, "VSMain", "vs_5_0");
+            _pointTextVertexShader = new VertexShader(_d3dResCache.Device, textVSBytecode);
+
+            var textPSBytecode = ShaderBytecode.CompileFromFile(shaderPath, "PSMain", "ps_5_0");
+            _pointTextPixelShader = new PixelShader(_d3dResCache.Device, textPSBytecode);
+
+            // Layout
+            _pointTextInputLayout = new InputLayout(
+                _d3dResCache.Device,
+                ShaderSignature.GetInputSignature(textVSBytecode),
+                new[]
+                {
+                    new InputElement("POSITION", 0, Format.R32G32B32_Float, 0, 0),
+                    new InputElement("COLOR", 0, Format.R32G32B32A32_Float, 12, 0),
+                    new InputElement("ISVISIBLE", 0, Format.R32_Float, 28, 0),
+                    new InputElement("ISMOUSEOVER", 0, Format.R32_Float, 32, 0),
+                    new InputElement("ISSELECTED", 0, Format.R32_Float, 36, 0),
+                 });
+
+            _textInputLayout = new InputLayout(
+                _d3dResCache.Device,
+                ShaderSignature.GetInputSignature(textVSBytecode),
+                new[] {
+                    // slot 0: glyph base vertex (DU)
+                    new InputElement("POSITION", 0, Format.R32G32_Float, 0, 0, InputClassification.PerVertexData, 0),
+
+                    // slot 1: instance data
+                    new InputElement("ORIGIN",       0, Format.R32G32_Float,   0, 1, InputClassification.PerInstanceData, 1),
+                    new InputElement("DUTOWORLD",    0, Format.R32_Float,      8, 1, InputClassification.PerInstanceData, 1),
+                    new InputElement("YSIGN",        0, Format.R32_Float,     12, 1, InputClassification.PerInstanceData, 1),
+                    new InputElement("PENDU",        0, Format.R32_Float,     16, 1, InputClassification.PerInstanceData, 1),
+                    new InputElement("COLOR",        0, Format.R32G32B32A32_Float, 20,1, InputClassification.PerInstanceData, 1),
+                    new InputElement("ISVISIBLE",    0, Format.R32_Float,     36, 1, InputClassification.PerInstanceData, 1),
+                    new InputElement("ISMOUSEOVER",  0, Format.R32_Float,     40, 1, InputClassification.PerInstanceData, 1),
+                    new InputElement("ISSELECTED",   0, Format.R32_Float,     44, 1, InputClassification.PerInstanceData, 1),
+                });
+
+            _pointTextShadersLoaded = true;
+        }
+        private void InitializeCircleShader()
+        {
+            var path = AppDomain.CurrentDomain.BaseDirectory;
+            while (Path.GetFileName(path) != "Cad_Point_Manager")
+            {
+                path = Path.GetDirectoryName(path);
+                if (path == null)
+                    throw new DirectoryNotFoundException("The 'Cad_Point_Manager' directory could not be found in the path.");
+            }
+
+            string shaderPath = Path.Combine(path, @"Controls\D3DControl\Shaders\CircleShader.hlsl");
+
+            // Main shaders
+            var circleVSBytecode = ShaderBytecode.CompileFromFile(shaderPath, "VSMain", "vs_5_0");
+            _circleVertexShader = new VertexShader(_d3dResCache.Device, circleVSBytecode);
+
+            var circlePSBytecode = ShaderBytecode.CompileFromFile(shaderPath, "PSMain", "ps_5_0");
+            _circlePixelShader = new PixelShader(_d3dResCache.Device, circlePSBytecode);
+
+            var circleGSBytecode = ShaderBytecode.CompileFromFile(shaderPath, "GSMain", "gs_5_0");
+            _circleGeometryShader = new GeometryShader(_d3dResCache.Device, circleGSBytecode);
+
+            _circleInputLayout = new(
+                _d3dResCache.Device,
+                ShaderSignature.GetInputSignature(circleVSBytecode),
+                new[]
+                {
+                    new InputElement("POSITION", 0, Format.R32G32B32_Float, 0, 0),
+                    new InputElement("COLOR", 0, Format.R32G32B32A32_Float, 12, 0),
+                    new InputElement("RADIUS", 0, Format.R32_Float, 28, 0),
+                    new InputElement("ISVISIBLE", 0, Format.R32_Float, 32, 0),
+                    new InputElement("ISMOUSEOVER", 0, Format.R32_Float, 36, 0),
+                    new InputElement("ISSELECTED", 0, Format.R32_Float, 40, 0),
+                 });
+
+            _circleShadersLoaded = true;
+        }
+        private void InitializeCircleGlowShader()
+        {
+            var path = AppDomain.CurrentDomain.BaseDirectory;
+            while (Path.GetFileName(path) != "Cad_Point_Manager")
+            {
+                path = Path.GetDirectoryName(path);
+                if (path == null)
+                    throw new DirectoryNotFoundException("The 'Cad_Point_Manager' directory could not be found in the path.");
+            }
+
+            string shaderPath = Path.Combine(path, @"Controls\D3DControl\Shaders\CircleGlowShader.hlsl");
+
+            // Main shaders
+            var circleVSBytecode = ShaderBytecode.CompileFromFile(shaderPath, "VSMain", "vs_5_0");
+            _circleGlowVertexShader = new VertexShader(_d3dResCache.Device, circleVSBytecode);
+
+            var circlePSBytecode = ShaderBytecode.CompileFromFile(shaderPath, "PSMain", "ps_5_0");
+            _circleGlowPixelShader = new PixelShader(_d3dResCache.Device, circlePSBytecode);
+
+            var circleGSBytecode = ShaderBytecode.CompileFromFile(shaderPath, "GSMain", "gs_5_0");
+            _circleGlowGeometryShader = new GeometryShader(_d3dResCache.Device, circleGSBytecode);
+
+            _circleInputLayout = new(
+                _d3dResCache.Device,
+                ShaderSignature.GetInputSignature(circleVSBytecode),
+                new[]
+                {
+                    new InputElement("POSITION", 0, Format.R32G32B32_Float, 0, 0),
+                    new InputElement("COLOR", 0, Format.R32G32B32A32_Float, 12, 0),
+                    new InputElement("RADIUS", 0, Format.R32_Float, 28, 0),
+                    new InputElement("ISVISIBLE", 0, Format.R32_Float, 32, 0),
+                    new InputElement("ISMOUSEOVER", 0, Format.R32_Float, 36, 0),
+                    new InputElement("ISSELECTED", 0, Format.R32_Float, 40, 0),
+                 });
+
+            _circleGlowShadersLoaded = true;
+        }
         private void InitializeOverlayShader()
         {
             var path = AppDomain.CurrentDomain.BaseDirectory;
@@ -765,6 +1047,15 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             _textGlowVertexBuffer?.Dispose();
             _textGlowVertexBuffer = new(device, GlobalHelperProperties.InitialTextGlowVertices);
+
+            _pointTextVertexBuffer?.Dispose();
+            _pointTextVertexBuffer = new(device, GlobalHelperProperties.InitialTextVertices);
+
+            _circleVertexBuffer?.Dispose();
+            _circleVertexBuffer = new(device, GlobalHelperProperties.InitialCircleVertices);
+
+            _circleGlowVertexBuffer?.Dispose();
+            _circleGlowVertexBuffer = new(device, GlobalHelperProperties.InitialCircleGlowVertices);
         }
         private void InitializeConstantBuffers()
         {
@@ -777,6 +1068,16 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 OptionFlags = ResourceOptionFlags.None
             };
             _transformationBuffer = new Buffer(_d3dResCache.Device, transformationBufferDesc);
+
+            var viewportBufferDesc = new BufferDescription
+            {
+                Usage = ResourceUsage.Default,
+                SizeInBytes = Utilities.SizeOf<ViewportBuffer>(),
+                BindFlags = BindFlags.ConstantBuffer,
+                CpuAccessFlags = CpuAccessFlags.None,
+                OptionFlags = ResourceOptionFlags.None
+            };
+            _viewportBuffer = new Buffer(_d3dResCache.Device, viewportBufferDesc);
 
             var lineBufferDesc = new BufferDescription
             {
@@ -818,6 +1119,36 @@ namespace Cad_Point_Manager.Controls.D3DControl
             };
             _textGlowSettingsBuffer = new Buffer(_d3dResCache.Device, textGlowBufferDesc);
 
+            var pointTextBufferDesc = new BufferDescription
+            {
+                Usage = ResourceUsage.Default,
+                SizeInBytes = Utilities.SizeOf<TextSettingsBuffer>(),
+                BindFlags = BindFlags.ConstantBuffer,
+                CpuAccessFlags = CpuAccessFlags.None,
+                OptionFlags = ResourceOptionFlags.None
+            };
+            _pointTextSettingsBuffer = new Buffer(_d3dResCache.Device, pointTextBufferDesc);
+
+            var circleBufferDesc = new BufferDescription
+            {
+                Usage = ResourceUsage.Default,
+                SizeInBytes = Utilities.SizeOf<CircleSettingsBuffer>(),
+                BindFlags = BindFlags.ConstantBuffer,
+                CpuAccessFlags = CpuAccessFlags.None,
+                OptionFlags = ResourceOptionFlags.None
+            };
+            _circleSettingsBuffer = new Buffer(_d3dResCache.Device, circleBufferDesc);
+
+            var circleGlowBufferDesc = new BufferDescription
+            {
+                Usage = ResourceUsage.Default,
+                SizeInBytes = Utilities.SizeOf<CircleGlowSettingsBuffer>(),
+                BindFlags = BindFlags.ConstantBuffer,
+                CpuAccessFlags = CpuAccessFlags.None,
+                OptionFlags = ResourceOptionFlags.None
+            };
+            _circleGlowSettingsBuffer = new Buffer(_d3dResCache.Device, circleGlowBufferDesc);
+
             ConstantBuffersInitialized = true;
             ConstantBuffersDirty = true;
         }
@@ -829,6 +1160,12 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 WorldViewProjection = transformation
             };
             _d3dResCache.DeviceContext.UpdateSubresource(ref transformationBuffer, _transformationBuffer);
+
+            var viewportBuffer = new ViewportBuffer
+            {
+                ViewportSize = new(Viewport.Width, Viewport.Height)
+            };
+            _d3dResCache.DeviceContext.UpdateSubresource(ref viewportBuffer, _viewportBuffer);
 
             var worldUnitsPerPixel = Camera.GetWorldUnitsPerPixel();
 
@@ -863,6 +1200,30 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 SelectedMouseOverColor = GlobalHelperProperties.SelectedMouseOverGlowColor
             };
             _d3dResCache.DeviceContext.UpdateSubresource(ref textGlowSettings, _textGlowSettingsBuffer);
+
+            var pointTextSettings = new TextSettingsBuffer
+            {
+                SelectedColor = GlobalHelperProperties.SelectedObjectColor,
+                SelectedMouseOverColor = GlobalHelperProperties.SelectedMouseOverGlowColor
+            };
+            _d3dResCache.DeviceContext.UpdateSubresource(ref pointTextSettings, _pointTextSettingsBuffer);
+
+            var circleSettings = new CircleSettingsBuffer
+            {
+                SelectedColor = GlobalHelperProperties.SelectedObjectColor,
+                SelectedMouseOverColor = GlobalHelperProperties.SelectedMouseOverGlowColor
+            };
+            _d3dResCache.DeviceContext.UpdateSubresource(ref circleSettings, _circleSettingsBuffer);
+
+            var circleGlowSettings = new CircleGlowSettingsBuffer
+            {
+                GlowOffset = GlobalHelperProperties.LineGlowPixelWidth * worldUnitsPerPixel,
+                GlowTransparency = GlobalHelperProperties.LineGlowTransparency,
+                SelectedColor = GlobalHelperProperties.SelectedObjectColor,
+                SelectedMouseOverColor = GlobalHelperProperties.SelectedMouseOverGlowColor
+            };
+            _d3dResCache.DeviceContext.UpdateSubresource(ref circleGlowSettings, _circleGlowSettingsBuffer);
+
 
             ConstantBuffersDirty = false;
             _dxfDirty = true;
@@ -1307,6 +1668,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             else
             {
                 _nearestHitTestableGeometries = CadManager3D.HitTestGeometries(_lastHitTestCoords, _hittestStrokeThickness).Take(_maxSelectableObjects).ToList();
+
                 if (_nearestHitTestableGeometries.Count > 0)
                 {
                     bool exists = HitTestingHelpers.TryGetNextDrawingGeometry(_currentSnapHitTestIndex, _nearestHitTestableGeometries, out var tup);
@@ -1793,6 +2155,20 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 if (CadManager3D.TextVerticesDirty)
                 {
                     _textVerticesDirty = true;
+                }
+            }
+            if (e.PropertyName == nameof(CadManager3D.PointTextVerticesDirty))
+            {
+                if (CadManager3D.PointTextVerticesDirty)
+                {
+                    _pointTextVerticesDirty = true;
+                }
+            }
+            if (e.PropertyName == nameof(CadManager3D.PointCircleVerticesDirty))
+            {
+                if (CadManager3D.PointCircleVerticesDirty)
+                {
+                    _circleVerticesDirty = true;
                 }
             }
             if (e.PropertyName == nameof(CadManager3D.HitTestableObjectTreeDirty))

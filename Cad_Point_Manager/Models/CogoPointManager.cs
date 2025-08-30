@@ -1,6 +1,8 @@
 ﻿using Cad_Point_Manager.Common.Collections;
+using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Models.PointRendering;
 using SharpDX;
+using SharpDX.DirectWrite;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
@@ -12,6 +14,8 @@ namespace Cad_Point_Manager.Models
     public class CogoPointManager : INotifyPropertyChanged
     {
         #region Fields
+        private const string _fontName = "Arial";
+
         private BatchableObservableCollection<KeyValuePair<string, PointGroup>> _pointGroups = [];
         private PointGroup _activePointGroup;
         private bool _pointsDirty = false;
@@ -171,7 +175,7 @@ namespace Cad_Point_Manager.Models
                 return false;
             }
 
-            pointGroup = new(groupName, color, this, pointScale);
+            pointGroup = new(groupName, color, this, CadManager.PointBaseScale);
             PointGroups.Add(new KeyValuePair<string, PointGroup>(groupName, pointGroup));
             return true;
         }

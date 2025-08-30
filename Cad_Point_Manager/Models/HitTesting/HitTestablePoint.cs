@@ -1,7 +1,6 @@
 ﻿using Cad_Point_Manager.Common;
 using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Helpers;
-using Cad_Point_Manager.Views.Visuals;
 using SharpDX;
 using System.Windows;
 using Point = System.Windows.Point;
@@ -38,7 +37,6 @@ namespace Cad_Point_Manager.Models.HitTesting
         }
 
         public int Index { get; set; }
-        public HitTestablePointVisualGroup VisualGroup { get; set; }
         #endregion
 
         #region Constructors

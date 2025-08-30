@@ -449,21 +449,6 @@
                                    MousePosition="{Binding MousePosition, Mode=OneWayToSource}" />
 
                 <Canvas x:Name="BackgroundCanvas">
-                    <!--<Path x:Name="DragRectPath"
-                          Stroke="{StaticResource DragRectangleBorderBrush}"
-                          Fill="{StaticResource DragRectangleFillBrush}"
-                          StrokeThickness="0.5"
-                          IsHitTestVisible="False"
-                          Visibility="{Binding ElementName=d3dDxfControl, Path=IsDragging,
-                           Converter={StaticResource BoolToVisibilityConverter}}">
-                        <Path.Data>
-                            <RectangleGeometry Rect="{Binding ElementName=d3dDxfControl, Path=DragRect}">
-                                <RectangleGeometry.Transform>
-                                    <MatrixTransform Matrix="{Binding ElementName=d3dDxfControl, Path=Camera.WindowsMatrix}" />
-                                </RectangleGeometry.Transform>
-                            </RectangleGeometry>
-                        </Path.Data>
-                    </Path>-->
                     <uc:SignificantPointControl HitTestablePoint="{Binding DataContext.SnappedHitTestablePoint, RelativeSource={RelativeSource AncestorType=Page}}"
                                                 Focusable="False"
                                                 IsHitTestVisible="False">
@@ -492,15 +477,6 @@
                             </TransformGroup>
                         </uc:SignificantPointControl.RenderTransform>
                     </uc:SignificantPointControl>
-                    <views:VisualHost x:Name="CogoPointVisualHost"
-                                      PointGroups="{Binding PointGroups}"
-                                      TransformMatrix="{Binding Camera.WindowsMatrix}"
-                                      Panel.ZIndex="2"
-                                      IsHitTestVisible="False"
-                                      HorizontalAlignment="Stretch"
-                                      VerticalAlignment="Stretch"
-                                      Width="{Binding ElementName=BackgroundCanvas, Path=ActualWidth}"
-                                      Height="{Binding ElementName=BackgroundCanvas, Path=ActualHeight}" />
                     <ItemsControl x:Name="SelectedHitTestablePointsItemsControl"
                                   ItemsSource="{Binding SelectedHitTestablePoints}"
                                   Width="{Binding ElementName=BackgroundCanvas, Path=ActualWidth}"

@@ -437,7 +437,7 @@ namespace Cad_Point_Manager.ViewModels
             dlg.Filter = "DXF Files (*.dxf)|*.dxf";
             dlg.InitialDirectory = @"C:\Users\fcraw\source\repos\Cad_Point_Manager\Cad_Point_Manager\Resources\DXF";
 
-            Nullable<bool> result = dlg.ShowDialog();
+            bool? result = dlg.ShowDialog();
 
             if (result == true)
             {
@@ -508,7 +508,6 @@ namespace Cad_Point_Manager.ViewModels
             _draggingPoint.TextBeingMoved = true;
             point.MouseLeave();
             point.MoveTextInfoToPoint(MousePosition);
-            point.RedrawTextVisual();
 
 
             if (!_isRenderingAttached)
@@ -540,7 +539,6 @@ namespace Cad_Point_Manager.ViewModels
             if (!_draggingPoint.TextBeingMoved) { EndDraggingText(); }
 
             _draggingPoint.MoveTextInfoToPoint(MousePosition);
-            _draggingPoint.RedrawTextVisual();
         }
 
 
@@ -574,7 +572,6 @@ namespace Cad_Point_Manager.ViewModels
                             int pointNum = JobFileManager.CadManager3D.CogoPointManager.GetNextAvailablePointNumber(NewCogoPointsStartNumber);
                             JobFileManager.CadManager3D.CogoPointManager.TryAddPoint(pointNum, hitPoint.Position.ToSharpDXVector3(), NewCogoPointsPointGroup,
                                 out var cogoPoint, NewCogoPointsElevation.ToFloat(), NewCogoPointsDescription);
-                            cogoPoint.UpdateAllVisualTransforms(JobFileManager.CadManager3D.CogoPointManager.CurrentlyAppliedMatrix);
                         }
 
                         ResetSelectionRequested?.Invoke(this, EventArgs.Empty);
@@ -618,7 +615,6 @@ namespace Cad_Point_Manager.ViewModels
                             int pointNum = JobFileManager.CadManager3D.CogoPointManager.GetNextAvailablePointNumber(NewCogoPointsStartNumber);
                             JobFileManager.CadManager3D.CogoPointManager.TryAddPoint(pointNum, coords[i].ToSharpDXVector3(), NewCogoPointsPointGroup,
                             out var cogoPoint, NewCogoPointsElevation.ToFloat(), NewCogoPointsDescription);
-                            cogoPoint.UpdateAllVisualTransforms(JobFileManager.CadManager3D.CogoPointManager.CurrentlyAppliedMatrix);
                         }
 
                         ResetSelectionRequested?.Invoke(this, EventArgs.Empty);

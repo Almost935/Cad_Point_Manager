@@ -1,6 +1,11 @@
-﻿using Cad_Point_Manager.Models.HitTesting;
+﻿using Cad_Point_Manager.Controls.D3DControl;
+using Cad_Point_Manager.Extensions;
+using Cad_Point_Manager.Helpers;
+using Cad_Point_Manager.Models.HitTesting;
 using Cad_Point_Manager.Views;
 using SharpDX;
+using SharpDX.DirectWrite;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Windows;
 using Matrix = System.Windows.Media.Matrix;
@@ -11,7 +16,10 @@ namespace Cad_Point_Manager.Models.PointRendering
     public class CogoPoint : HitTestableObject
     {
         #region Fields
-        private const double _textToggleButtonOffset = 0;
+        private const float _textLineSpacingFactor = 1.0f;
+        private const float _markerToPointScaleFactor = 0.5f;
+        private const float _markerBaseSize = 0.4f;
+        private const float _textBaseHeight = 4;
 
         private int _pointNumber;
         private double _northing;
@@ -20,12 +28,7 @@ namespace Cad_Point_Manager.Models.PointRendering
         private PointGroup _pointGroup;
         private string _description;
         private CogoPointManager _cogoPointManager;
-        private Point _textInfoBasePosition = new();
-        private Point _textInfoCurrentPosition = new();
-        private Point _textToggleButtonPosition = new();
-        private Point _textToggleButtonScreenPosition = new();
         private bool _textBeingMoved = false;
-        private double _textInfoBaseOffset = 1.25;
         #endregion
 
         #region Properties
@@ -121,54 +124,6 @@ namespace Cad_Point_Manager.Models.PointRendering
                 }
             }
         }
-        public Point TextInfoBasePosition
-        {
-            get => _textInfoBasePosition;
-            set
-            {
-                if (_textInfoBasePosition != value)
-                {
-                    _textInfoBasePosition = value;
-                    OnPropertyChanged(nameof(TextInfoBasePosition));
-                }
-            }
-        }
-        public Point TextInfoCurrentPosition
-        {
-            get => _textInfoCurrentPosition;
-            set
-            {
-                if (_textInfoCurrentPosition != value)
-                {
-                    _textInfoCurrentPosition = value;
-                    OnPropertyChanged(nameof(TextInfoCurrentPosition));
-                }
-            }
-        } 
-        public Point TextToggleButtonPosition
-        {
-            get => _textToggleButtonPosition;
-            set
-            {
-                if (_textToggleButtonPosition != value)
-                {
-                    _textToggleButtonPosition = value;
-                    OnPropertyChanged(nameof(TextToggleButtonPosition));
-                }
-            }
-        }
-        public Point TextToggleButtonScreenPosition
-        {
-            get => _textToggleButtonScreenPosition;
-            set
-            {
-                if (_textToggleButtonScreenPosition != value)
-                {
-                    _textToggleButtonScreenPosition = value;
-                    OnPropertyChanged(nameof(TextToggleButtonScreenPosition));
-                }
-            }
-        }
         public bool TextBeingMoved
         {
             get => _textBeingMoved;
@@ -181,27 +136,26 @@ namespace Cad_Point_Manager.Models.PointRendering
                 }
             }
         }
-        public double TextInfoBaseOffset
-        {
-            get => _textInfoBaseOffset;
-            set
-            {
-                if (_textInfoBaseOffset != value)
-                {
-                    _textInfoBaseOffset = value;
-                    OnPropertyChanged(nameof(TextInfoBaseOffset));
-                }
-            }
-        }
 
         public Point Position => new(Easting, Northing);
         public bool HasPointNumberError => HasErrorsFor(nameof(PointNumber));
 
-        public CogoPointVisualGroup VisualGroup { get; set; }
-        public Matrix CurrentlyAppliedMarkerMatrix { get; set; } = Matrix.Identity;
-        public Matrix CurrentlyAppliedTextMatrix { get; set; } = Matrix.Identity;
-        public bool TextInfoInBasePosition { get; set; } = true;
-        public double TextInfoHeight = 0;
+        public CircleVertex MarkerVertex { get; set; }
+        public List<TextVertex> TextVertices { get; set; } = [];
+        public List<TextVertex> PointNumberVertices { get; set; } = [];
+        public List<TextVertex> ElevationVertices { get; set; } = [];
+        public List<TextVertex> DescriptionVertices { get; set; } = [];
+        public Rect PointNumberBounds { get; set; } = Rect.Empty;
+        public Rect ElevationBounds { get; set; } = Rect.Empty;
+        public Rect DescriptionBounds { get; set; } = Rect.Empty;
+        public Vector2 TextInfoBasePosition { get; set; }
+        public Vector2 PointNumberPosition { get; set; }
+        public Vector2 ElevationPosition { get; set; }
+        public Vector2 DescriptionPosition { get; set; }
+        public bool TextVerticesInitialized { get; set; }
+        public int TextStartIndex { get; set; }
+        public int TextEndIndex { get; set; }
+        public int MarkerIndex { get; set; }
         #endregion
 
         #region Constructors
@@ -215,16 +169,8 @@ namespace Cad_Point_Manager.Models.PointRendering
             Easting = position.X;
             Elevation = elevation;
             Description = description;
+            InitializeTextLocations();
             ResetTextLocations();
-
-            VisualGroup = new(this);
-            VisualGroup.PropertyChanged += (s, e) =>
-            {
-                if (e.PropertyName == nameof(CogoPointVisualGroup.Bounds))
-                {
-                    UpdateBounds();
-                }
-            };
             UpdateBounds();
         }
         #endregion
@@ -232,22 +178,101 @@ namespace Cad_Point_Manager.Models.PointRendering
         #region Methods
         public override double DistanceToPoint(Point p)
         {
-            return VisualGroup.DistanceToPoint(p);
+            if (MathHelpers.PointToPointDistance(p,Position) < _markerBaseSize) { return 0.0; }
+
+            if (TextVertices.Count < 3) { return double.MaxValue; }
+
+            Vector2 testPoint = new((float)p.X, (float)p.Y);
+            double minDistance = double.MaxValue;
+            bool pointInside = false;
+            object locker = new();
+
+            Parallel.For(0, TextVertices.Count / 3, (i, state) =>
+            {
+                if (pointInside) return;
+
+                Vector2 v0 = TextVertices[i * 3 + 0].Position.ToSharpDXVector2();
+                Vector2 v1 = TextVertices[i * 3 + 1].Position.ToSharpDXVector2();
+                Vector2 v2 = TextVertices[i * 3 + 2].Position.ToSharpDXVector2();
+
+                if (MathHelpers.IsPointInTriangle(testPoint, v0, v1, v2))
+                {
+                    lock (locker)
+                    {
+                        pointInside = true;
+                        minDistance = 0.0;
+                    }
+
+                    state.Stop();
+                }
+                else
+                {
+                    double dist = MathHelpers.DistanceToTriangle(testPoint, v0, v1, v2);
+
+                    lock (locker)
+                    {
+                        if (dist < minDistance)
+                            minDistance = dist;
+                    }
+                }
+            });
+
+            return minDistance;
         }
         public override void UpdateBounds()
         {
-            Bounds = VisualGroup.Bounds;
+            if (TextVertices.Count == 0)
+            {
+                Bounds = Rect.Empty;
+                return;
+            }
+
+            bool haveValid = false;
+            double minX = 0, minY = 0, maxX = 0, maxY = 0;
+
+            for (int i = 0; i < TextVertices.Count; i++)
+            {
+                var p = TextVertices[i].Position;
+                if (!(double.IsFinite(p.X) && double.IsFinite(p.Y)))
+                    continue;
+
+                if (!haveValid)
+                {
+                    minX = maxX = p.X;
+                    minY = maxY = p.Y;
+                    haveValid = true;
+                }
+                else
+                {
+                    minX = Math.Min(minX, p.X);
+                    minY = Math.Min(minY, p.Y);
+                    maxX = Math.Max(maxX, p.X);
+                    maxY = Math.Max(maxY, p.Y);
+                }
+            }
+
+            var bounds = haveValid ? new Rect(new Point(minX, minY), new Point(maxX, maxY)) : Rect.Empty;
+
+            // Only add the circle if its center is valid
+            if (double.IsFinite(Position.X) && double.IsFinite(Position.Y) && double.IsFinite(_markerBaseSize))
+            {
+                var circleBounds = new Rect(
+                    new Point(Position.X - _markerBaseSize, Position.Y - _markerBaseSize),
+                    new Point(Position.X + _markerBaseSize, Position.Y + _markerBaseSize));
+
+                bounds = Rect.Union(bounds, circleBounds); // <-- assign back
+            }
+
+            Bounds = bounds;
         }
 
         public override void MouseEnter()
         {
             this.IsMouseOver = true;
-            VisualGroup.SetHover(true);
         }
         public override void MouseLeave()
         {
             this.IsMouseOver = false;
-            VisualGroup.SetHover(false);
         }
 
         public override void Select()
@@ -269,55 +294,44 @@ namespace Cad_Point_Manager.Models.PointRendering
 
         public void ResetTextLocations()
         {
-            TextInfoBasePosition = Position;
-            TextInfoCurrentPosition = Position;
-            TextToggleButtonPosition = new(Position.X + (_textToggleButtonOffset * PointGroup.PointScale), Position.Y);
-            TextInfoInBasePosition = true;
+            TextInfoBasePosition = new(Position.X.ToFloat() + (_textBaseHeight * PointGroup.PointScale.ToFloat() * _markerToPointScaleFactor), Position.Y.ToFloat());
+            PointNumberPosition = TextInfoBasePosition;
+            ElevationPosition = new(PointNumberPosition.X, PointNumberPosition.Y + _textBaseHeight * PointGroup.PointScale.ToFloat() * _textLineSpacingFactor);
+            DescriptionPosition = new(ElevationPosition.X, ElevationPosition.Y + _textBaseHeight * PointGroup.PointScale.ToFloat() * _textLineSpacingFactor);
         }
 
         public void MoveTextInfoToPoint(Point point)
         {
-            TextInfoCurrentPosition = point;
-            TextToggleButtonPosition = point;
-            UpdateTextVisualTransform(CurrentlyAppliedTextMatrix);
-            TextInfoInBasePosition = false;
-        }
 
-        public void UpdateAllVisualTransforms(Matrix matrix)
-        {
-            UpdateMarkerVisualTransform(matrix);
-            UpdateTextVisualTransform(matrix);
-        }
-        public void UpdateMarkerVisualTransform(Matrix matrix)
-        {
-            CurrentlyAppliedMarkerMatrix = matrix;
-        }
-        public void UpdateTextVisualTransform(Matrix matrix)
-        {
-            CurrentlyAppliedTextMatrix = matrix;
-            TextToggleButtonScreenPosition = matrix.Transform(TextToggleButtonPosition);
-        }
-       
-        public void RedrawAllVisuals()
-        {
-            VisualGroup?.RedrawAll();
-        }
-        public void RedrawEllipseVisual()
-        {
-            VisualGroup.RedrawEllipse();
-        }
-        public void RedrawTextVisual()
-        {
-            VisualGroup.RedrawText();
         }
 
         private void UpdatePointPosition(Vector translate)
         {
-            TextInfoBasePosition = Position;
-            TextInfoCurrentPosition += translate;
-            TextToggleButtonPosition += translate;
-            TextToggleButtonScreenPosition = CurrentlyAppliedTextMatrix.Transform(TextToggleButtonPosition);
-            //RedrawAllVisuals();
+
+        }
+
+        private void InitializeTextLocations()
+        {
+            TextInfoBasePosition = new(Position.X.ToFloat() + (_textBaseHeight * PointGroup.PointScale.ToFloat() * _markerToPointScaleFactor), Position.Y.ToFloat());
+            DescriptionPosition = TextInfoBasePosition;
+            ElevationPosition = new(DescriptionPosition.X, DescriptionPosition.Y + _textBaseHeight * PointGroup.PointScale.ToFloat() * _textLineSpacingFactor);
+            PointNumberPosition = new(ElevationPosition.X, ElevationPosition.Y + _textBaseHeight * PointGroup.PointScale.ToFloat() * _textLineSpacingFactor);
+        }
+
+        public void InitializeTextVertices(CogoPointTextVerticesDict textDict)
+        {
+            TextVertices.Clear();
+            List<TextVertex> pointNum = textDict.GetIntTextVertices(PointNumber, _textBaseHeight * PointGroup.PointScale.ToFloat(), PointNumberPosition, PointGroup.Color);
+            List<TextVertex> elev = textDict.GetTextVertices(Elevation.ToString("F3"), _textBaseHeight * PointGroup.PointScale.ToFloat(), ElevationPosition, PointGroup.Color);
+            List<TextVertex> description = textDict.GetTextVertices(Description, _textBaseHeight * PointGroup.PointScale.ToFloat(), DescriptionPosition, PointGroup.Color);
+            TextVertices = pointNum.Concat(elev).Concat(description).ToList();
+            TextVerticesInitialized = true;
+            UpdateBounds();
+        }
+        public void InitializeMarkerVertices()
+        {
+            MarkerVertex = new(Position.ToSharpDXVector3(), PointGroup.Color, _markerBaseSize * PointGroup.PointScale.ToFloat(), PointGroup.IsVisible ? 1 : 0,
+                IsMouseOver ? 1 : 0, IsSelected ? 1 : 0);
         }
 
         protected override void OnPropertyChanged(string propertyName)

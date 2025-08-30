@@ -25,7 +25,7 @@ namespace Cad_Point_Manager.Models.PointRendering
             _fontFace = _resCache.GetFontFace(_fontName, FontWeight.Normal, FontStretch.Normal, FontStyle.Normal);
         }
 
-        public TextVertex[] GetTextVertices(string text, float textHeight, Vector2 basePoint, Vector4 color)
+        public List<TextVertex> GetTextVertices(string text, float textHeight, Vector2 basePoint, Vector4 color)
         {
             List<TextVertex> verticesList = [];
             float xOffset = 0;
@@ -83,10 +83,10 @@ namespace Cad_Point_Manager.Models.PointRendering
                     textLayout.Dispose();
                 }
             }
-            return verticesList.ToArray();
+            return verticesList;
         }
 
-        public TextVertex[] GetIntTextVertices(int integer, float textHeight, Vector2 basePoint, Vector4 color)
+        public List<TextVertex> GetIntTextVertices(int integer, float textHeight, Vector2 basePoint, Vector4 color)
         {
             List<TextVertex> verticesList = [];
             string text = integer.ToString();
@@ -146,7 +146,7 @@ namespace Cad_Point_Manager.Models.PointRendering
                     textLayout.Dispose();
                 }
             }
-            return verticesList.ToArray();
+            return verticesList;
         }
     }
 }

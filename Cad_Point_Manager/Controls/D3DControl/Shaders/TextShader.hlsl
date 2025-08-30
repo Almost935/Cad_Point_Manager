@@ -1,9 +1,8 @@
 ﻿// TextShader.hlsl
 
-// Constant buffer for 2D transformation matrix
 cbuffer TransformationBuffer : register(b0)
 {
-    row_major matrix transformationMatrix; // 2D transformation matrix
+    row_major matrix transformationMatrix; // world*view*proj (to CLIP space)
 };
 
 cbuffer TextSettingsBuffer : register(b1)
@@ -12,70 +11,80 @@ cbuffer TextSettingsBuffer : register(b1)
     float4 selectedMouseOverColor;
 };
 
+// NEW: viewport size in pixels (width,height)
+cbuffer ViewportBuffer : register(b2)
+{
+    float2 ViewportSize; // e.g., {renderTargetWidth, renderTargetHeight}
+    float2 _padViewport;
+}
+
 float4 GetSnappedColor(float4 color)
 {
     float3 lightBlue = float3(0.4, 0.4, 1.0);
-    float3 resultRgb = lerp(color.rgb, lightBlue, 0.7); 
-
+    float3 resultRgb = lerp(color.rgb, lightBlue, 0.7);
     return float4(resultRgb, color.a);
 }
 
-// Input structure for the Vertex Shader
+// Input / Output
 struct VSInput
 {
-    float3 Position : POSITION; // 3D position of the vertex
-    float4 Color : COLOR; // RGBA color of the vertex
-    float IsVisible : ISVISIBLE; // Visibility flag (0 or 1)
-    float IsMouseOver : ISMOUSEOVER; // Indicates if the mouse is over the vertex (0 or 1)
-    float IsSelected : ISSELECTED; // Indicates if the vertex is selected (0 or 1)
+    float3 Position : POSITION;
+    float4 Color : COLOR;
+    float IsVisible : ISVISIBLE;
+    float IsMouseOver : ISMOUSEOVER;
+    float IsSelected : ISSELECTED;
 };
 
-// Output structure from the Vertex Shader and input for the Pixel Shader
 struct PSInput
 {
-    float4 Position : SV_POSITION; // Transformed position in screen space
-    float4 Color : COLOR; // RGBA color passed to the Pixel Shader
+    float4 Position : SV_POSITION;
+    float4 Color : COLOR;
 };
 
-// Vertex Shader: Transforms input vertex and passes color through
+// Replace per-vertex snapping with a uniform NDC delta computed once
+float2 ComputeSnapDeltaNdc(float2 viewportSize)
+{
+    // Where does the world origin land on screen this frame?
+    float4 originClip = mul(float4(0, 0, 0, 1), transformationMatrix);
+    float2 originNdc = originClip.xy / originClip.w;
+    float2 originPix = (originNdc * 0.5f + 0.5f) * viewportSize;
+
+    // Offset needed to align to pixel centers
+    float2 targetPix = floor(originPix) + 0.5f;
+    float2 deltaPix = targetPix - originPix;
+
+    // Convert pixel delta -> NDC delta
+    return (deltaPix / viewportSize) * 2.0f;
+}
+
 PSInput VSMain(VSInput input)
 {
-    PSInput output;
-    
-    if (input.IsVisible < 0.5) // If not visible, skip the vertex
-    {
-        output.Color = float4(0, 0, 0, 0);
-        return output;
-    }
-    
+    PSInput o;
+
+    float4 clip = mul(float4(input.Position, 1.0), transformationMatrix);
+
+    // colors (unchanged)
+    float4 col = input.Color;
     if (input.IsMouseOver > 0.5)
-    {
-        input.Color = GetSnappedColor(input.Color);
-    }
-    
+        col = GetSnappedColor(col);
     if (input.IsSelected > 0.5)
-    {
-        if (input.IsMouseOver > 0.5) // If mouse is over the vertex and selected
-        {
-            input.Color = selectedMouseOverColor; // Use mouse over color for selected vertex
-        }
-        else
-        {
-            input.Color = selectedColor; // Use selected color
-        }
-    }
-     
-    output.Position = mul(float4(input.Position, 1.0), transformationMatrix);
-    output.Color = input.Color;
+        col = (input.IsMouseOver > 0.5) ? selectedMouseOverColor : selectedColor;
+    if (input.IsVisible < 0.5)
+        col.a = 0.0;
 
-    return output;
+    // --- uniform snap (same offset for all vertices in this draw) ---
+    float2 snapNdc = ComputeSnapDeltaNdc(ViewportSize);
+    clip.xy += snapNdc * clip.w;
+
+    o.Position = clip;
+    o.Color = col;
+    return o;
 }
 
-// Pixel Shader: Determines the color of each pixel
-float4 PSMain(PSInput input) : SV_TARGET
+
+float4 PSMain(PSInput i) : SV_TARGET
 {
-    // Simulate edge fade by softening alpha
-    float edgeFade = smoothstep(0.0, 0.1, input.Color.a); // adjust thresholds
-    return float4(input.Color.rgb, input.Color.a * edgeFade);
+    // Optional softening; you can remove if you’re already premultiplied
+    float edgeFade = smoothstep(0.0, 0.1, i.Color.a);
+    return float4(i.Color.rgb, i.Color.a * edgeFade);
 }
-
