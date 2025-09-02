@@ -640,7 +640,7 @@ namespace Cad_Point_Manager.Models
             }
             return CollectionsMarshal.AsSpan(_cachedLineVertices);
         }
-        public ReadOnlySpan<TextVertex> UpdateTextVerticesList(D3dResCache d3DResCache)
+        public ReadOnlySpan<TextVertex> UpdateTextVerticesList(ResCache d3DResCache)
         {
             if (TextVerticesDirty)
             {
@@ -703,7 +703,7 @@ namespace Cad_Point_Manager.Models
             }
             return CollectionsMarshal.AsSpan(_cachedPointMarkerVertices);
         }
-        public ReadOnlySpan<TextVertex> UpdatePointTextVertices(D3dResCache d3DResCache)
+        public ReadOnlySpan<TextVertex> UpdatePointTextVertices(ResCache d3DResCache)
         {
             if (PointTextVerticesDirty)
             {

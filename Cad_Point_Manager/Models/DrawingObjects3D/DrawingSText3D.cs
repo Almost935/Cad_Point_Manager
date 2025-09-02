@@ -147,7 +147,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         #endregion
 
         #region Methods
-        public override void UpdateTextVertices(D3dResCache resCache)
+        public override void UpdateTextVertices(ResCache resCache)
         {
             GetTextFormat(resCache.WriteFactory);
             GetTextLayout(resCache.WriteFactory);
@@ -265,7 +265,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             TextLayout = new(factory, Text, _textFormat, (float)Bounds.Width, (float)Bounds.Height, 96, true);
         }
 
-        public void Tesselate(D3dResCache resCache)
+        public void Tesselate(ResCache resCache)
         {
             UpdateFontFace(resCache);
 
@@ -311,7 +311,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             return height;
         }
 
-        private void UpdateFontFace(D3dResCache resCache)
+        private void UpdateFontFace(ResCache resCache)
         {
             FontWeight fontWeight = IsBold ? FontWeight.Bold : FontWeight.Normal;
             FontStyle fontStyle = IsItalic ? FontStyle.Italic : FontStyle.Normal;

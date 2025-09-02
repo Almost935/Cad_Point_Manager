@@ -199,7 +199,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                 }
             }
         }
-        public void UpdateTextVertices(D3dResCache resCache)
+        public void UpdateTextVertices(ResCache resCache)
         {
             TextVertices.Clear();
 

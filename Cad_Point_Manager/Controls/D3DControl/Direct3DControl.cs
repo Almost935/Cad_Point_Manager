@@ -1,4 +1,5 @@
-﻿using SharpDX.Direct3D;
+﻿using Cad_Point_Manager.Controls.D3DControl.Rendering.Text;
+using SharpDX.Direct3D;
 using SharpDX.Direct3D11;
 using SharpDX.DXGI;
 using System.ComponentModel;
@@ -25,7 +26,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         private readonly Stopwatch _renderTimer = new();
 
-        protected D3dResCache _d3dResCache = new();
+        protected ResCache _resCache = new();
 
         private long _lastFrameTime = 0;
         private long _lastRenderTime = 0;
@@ -154,8 +155,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private void StartD3D()
         {
             _device = new SharpDX.Direct3D11.Device(DriverType.Hardware, DeviceCreationFlags.BgraSupport);
-            _d3dResCache.Device = _device;
-            _d3dResCache.MaxSize = GetMaxSize(_device.FeatureLevel);
+            _resCache.Device = _device;
+            _resCache.MaxSize = GetMaxSize(_device.FeatureLevel);
 
             var rasterizerStateDescription = new RasterizerStateDescription
             {
@@ -169,8 +170,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _device.ImmediateContext.Rasterizer.State = rasterizerState;
 
             _deviceContext = _device.ImmediateContext;
-            _d3dResCache.DeviceContext = _deviceContext;
-            _d3dResCache.WriteFactory = new();
+            _resCache.DeviceContext = _deviceContext;
+            _resCache.WriteFactory = new();
 
             var baseBlendDesc = new BlendStateDescription();
             baseBlendDesc.RenderTarget[0].IsBlendEnabled = true; // Enable blending
@@ -182,9 +183,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
             baseBlendDesc.RenderTarget[0].AlphaBlendOperation = BlendOperation.Add;
             baseBlendDesc.RenderTarget[0].RenderTargetWriteMask = ColorWriteMaskFlags.All;
             var baseBlendState = new BlendState(_device, baseBlendDesc);
-            _d3dResCache.BaseBlendState = baseBlendState;
+            _resCache.BaseBlendState = baseBlendState;
 
-            _deviceContext.OutputMerger.SetBlendState(_d3dResCache.BaseBlendState);
+            _deviceContext.OutputMerger.SetBlendState(_resCache.BaseBlendState);
 
             _d3DSurface = new Dx11ImageSource();
             _d3DSurface.IsFrontBufferAvailableChanged += OnIsFrontBufferAvailableChanged;
@@ -254,9 +255,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 ArraySize = 1
             };
             _dxfTexture = new Texture2D(_device, offscreenRenderDesc);
-            _d3dResCache.DxfTexture = _dxfTexture;
+            _resCache.DxfTexture = _dxfTexture;
             _interactiveTexture = new(_device, offscreenRenderDesc);
-            _d3dResCache.InteractionTexture = _interactiveTexture;
+            _resCache.InteractionTexture = _interactiveTexture;
 
             RenderTargetViewDescription rtvDesc = new RenderTargetViewDescription
             {
@@ -265,15 +266,15 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 Texture2D = { MipSlice = 0 }
             };
             _renderTargetView = new RenderTargetView(_device, _texture2D, rtvDesc);
-            _d3dResCache.RenderTargetView = _renderTargetView;
+            _resCache.RenderTargetView = _renderTargetView;
 
             _dxfRenderTargetView = new(_device, _dxfTexture, rtvDesc);
-            _d3dResCache.DxfRenderTargetView = _dxfRenderTargetView;
+            _resCache.DxfRenderTargetView = _dxfRenderTargetView;
             _interactiveRenderTargetView = new(_device, _interactiveTexture, rtvDesc);
-            _d3dResCache.InteractiveRenderTargetView = _interactiveRenderTargetView;
+            _resCache.InteractiveRenderTargetView = _interactiveRenderTargetView;
 
             _deviceContext.OutputMerger.SetRenderTargets(_renderTargetView);
-            _d3dResCache.Texture2D = _texture2D;
+            _resCache.Texture2D = _texture2D;
             
             _d3DSurface.Lock();
             _d3DSurface.SetRenderTarget(_texture2D);
@@ -282,31 +283,24 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _device.ImmediateContext.Rasterizer.SetViewport(0, 0, width, height, 0.0f, 1.0f);
 
             InitializeDirect2D();
+            InitializeGlyphAtlas();
         }
         private void InitializeDirect2D()
         {
             using (var dxgiDevice = _device.QueryInterface<SharpDX.DXGI.Device>())
             {
-                _d3dResCache.D2dFactory = new SharpDX.Direct2D1.Factory2();
-                _d3dResCache.D2DDevice = new(_d3dResCache.D2dFactory, dxgiDevice);
-                _d3dResCache.D2DDeviceContext = new(_d3dResCache.D2DDevice, SharpDX.Direct2D1.DeviceContextOptions.EnableMultithreadedOptimizations);
+                _resCache.D2dFactory = new SharpDX.Direct2D1.Factory2();
+                _resCache.D2DDevice = new(_resCache.D2dFactory, dxgiDevice);
+                _resCache.D2DDeviceContext = new(_resCache.D2DDevice, SharpDX.Direct2D1.DeviceContextOptions.EnableMultithreadedOptimizations);
             }
+        }
 
-            //var bitmapProperties = new SharpDX.Direct2D1.BitmapProperties1(
-            //    new SharpDX.Direct2D1.PixelFormat(Format.B8G8R8A8_UNorm, SharpDX.Direct2D1.AlphaMode.Premultiplied),
-            //    dpiX: 96, dpiY: 96,
-            //    bitmapOptions: SharpDX.Direct2D1.BitmapOptions.Target | SharpDX.Direct2D1.BitmapOptions.CannotDraw);
-
-            //using (var surface = _texture2D.QueryInterface<Surface>())
-            //{
-            //    _d3dResCache.D2DTargetBitmap = new SharpDX.Direct2D1.Bitmap1(_d3dResCache.D2DDeviceContext, surface, bitmapProperties);
-
-            //    var rtp = new SharpDX.Direct2D1.RenderTargetProperties(new SharpDX.Direct2D1.PixelFormat(SharpDX.DXGI.Format.Unknown, SharpDX.Direct2D1.AlphaMode.Premultiplied));
-            //    _d3dResCache.D2DRenderTarget = new(_d3dResCache.D2dFactory, surface, rtp);
-            //}
-
-            //_d3dResCache.D2DDeviceContext.Target = _d3dResCache.D2DTargetBitmap;
-            //_d3dResCache.D2DDeviceContext.TextAntialiasMode = SharpDX.Direct2D1.TextAntialiasMode.Grayscale;
+        private void InitializeGlyphAtlas()
+        {
+            _resCache.GlyphTessellator = new DWriteGlyphTessellator(_resCache.D2dFactory);
+            _resCache.CogoPointFontFace = _resCache.GetFontFace("Arial", SharpDX.DirectWrite.FontWeight.Normal, SharpDX.DirectWrite.FontStretch.Normal, SharpDX.DirectWrite.FontStyle.Normal);
+            _resCache.AsciiGlyphAtlas = GlyphAtlas.CreateForAscii(_resCache.Device, _resCache.CogoPointFontFace, _resCache.GlyphTessellator);
+            _resCache.AdvanceWidthCache = AdvanceWidthCache.CreateForAscii(_resCache.CogoPointFontFace);
         }
 
         private void StartRendering()

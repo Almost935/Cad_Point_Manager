@@ -64,7 +64,7 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
 
                             var inst = new GlyphInstance
                             {
-                                OriginWorld = origin,
+                                Origin = origin,
                                 DuToWorld = duToWorld,
                                 PenDU = penDU,
                                 Color = color,

@@ -7,10 +7,11 @@ using SharpDX.DirectWrite;
 using Device = SharpDX.Direct3D11.Device;
 using DeviceContext = SharpDX.Direct3D11.DeviceContext;
 using Factory2 = SharpDX.Direct2D1.Factory2;
+using Cad_Point_Manager.Controls.D3DControl.Rendering.Text;
 
 namespace Cad_Point_Manager.Controls.D3DControl
 {
-    public class D3dResCache : IDisposable, INotifyPropertyChanged
+    public class ResCache : IDisposable, INotifyPropertyChanged
     {
         #region Fields
         private bool disposed = false;
@@ -28,7 +29,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private RenderTarget _d2dRenderTarget = null;
         private Factory2 _d2DFactory = null;
         private Bitmap1 _d2dTargetBitmap = null;
-        private SharpDX.DirectWrite.Factory1 _factoryWrite = null;
+        private SharpDX.DirectWrite.Factory1 _writeFactory = null;
         #endregion
 
         #region Properties
@@ -152,16 +153,20 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
         public SharpDX.DirectWrite.Factory1 WriteFactory
         {
-            get { return _factoryWrite; }
+            get { return _writeFactory; }
             set
             {
-                _factoryWrite = value;
+                _writeFactory = value;
                 OnPropertyChanged(nameof(WriteFactory));
             }
         }
 
         public int MaxSize { get; set; }
         public BlendState BaseBlendState { get; set; }
+        public GlyphAtlas AsciiGlyphAtlas { get; set; }
+        public DWriteGlyphTessellator GlyphTessellator { get; set; }
+        public AdvanceWidthCache AdvanceWidthCache { get; set; }
+        public FontFace CogoPointFontFace { get; set; }
         public ConcurrentDictionary<(string fontName, FontWeight fontWeight, FontStretch fontStretch, FontStyle fontStyle), FontFace> FontFaceDict = [];
         #endregion
 
@@ -231,15 +236,19 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     _dxfTexture?.Dispose();
                     _interactionTexture?.Dispose();
                     _renderTargetView?.Dispose();
-                    _dxfRenderTargetView.Dispose();
+                    _dxfRenderTargetView?.Dispose(); // Fixed null check
                     _interactiveRenderTargetView?.Dispose();
                     _d2DDevice?.Dispose();
                     _d2DDeviceContext?.Dispose();
                     _d2DFactory?.Dispose();
                     _d2dRenderTarget?.Dispose();
                     _d2dTargetBitmap?.Dispose();
-                    _factoryWrite?.Dispose();
+                    _writeFactory?.Dispose();
+
                     BaseBlendState?.Dispose();
+                    AsciiGlyphAtlas?.Dispose();
+                    GlyphTessellator?.Dispose();
+                    CogoPointFontFace.Dispose();
 
                     foreach (var fontFace in FontFaceDict.Values)
                     {
@@ -250,7 +259,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 disposed = true;
             }
         }
-        ~D3dResCache()
+        ~ResCache()
         {
             Dispose(false);
         }

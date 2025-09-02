@@ -13,12 +13,12 @@ namespace Cad_Point_Manager.Models.PointRendering
 
         private readonly Dictionary<int, (List<TextVertex> vertices, float width)> _numbersDict = [];
         private readonly Dictionary<char, (List<TextVertex> vertices, float width)> _charsDict = [];
-        private readonly D3dResCache _resCache;
+        private readonly ResCache _resCache;
         private TextFormat _textFormat;
         private FontFace _fontFace;
         private Vector4 _defaultColor = new(0.0f, 0.0f, 0.0f, 1.0f);
 
-        public CogoPointTextVerticesDict(D3dResCache resCache)
+        public CogoPointTextVerticesDict(ResCache resCache)
         {
             _resCache = resCache;
             _textFormat = new TextFormat(_resCache.WriteFactory, _fontName, FontWeight.Normal, FontStyle.Normal, FontStretch.Normal, _dictBaseTextSize);

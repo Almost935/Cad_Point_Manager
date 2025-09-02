@@ -58,7 +58,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         #endregion
 
         #region Methods
-        public override void UpdateTextVertices(D3dResCache resCache)
+        public override void UpdateTextVertices(ResCache resCache)
         {
             if (DxfMtext is null) { return; }
 
@@ -223,7 +223,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
 
             return textVertices;
         }
-        public void UpdateMtextBlock(D3dResCache resCache)
+        public void UpdateMtextBlock(ResCache resCache)
         {
             //MtextBlock??= new((float)MaxWidth, Position, DxfMtext.AttachmentPoint, Rotation);
             MtextBlock?.Dispose();
@@ -450,7 +450,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             //    TextVertices[i] = TextVertex.RotateAroundPoint(TextVertices[i], new Vector2(Position.X, Position.Y), (float)(MathHelper.DegToRad * Rotation));
             //}
         }
-        private DrawingMtextSegment3D CreateMtextSegment(TextSegmentInformation segmentInfo, D3dResCache resCache)
+        private DrawingMtextSegment3D CreateMtextSegment(TextSegmentInformation segmentInfo, ResCache resCache)
         {
             DrawingMtextSegment3D segment = new(this, segmentInfo.Text, segmentInfo.Color, Vector3.Zero, 0, (float)segmentInfo.TextHeight, segmentInfo.Font,
                 segmentInfo.IsItalic, segmentInfo.IsBold, segmentInfo.IsUnderlined, segmentInfo.IsStrikethrough, segmentInfo.IsNewLine, _fontRenderingMinimumSize, 0, segmentInfo.TextAlignment);

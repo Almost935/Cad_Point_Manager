@@ -16,7 +16,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         #endregion
 
         #region Methods
-        public abstract void UpdateTextVertices(D3dResCache d3DResCache);
+        public abstract void UpdateTextVertices(ResCache d3DResCache);
         #endregion
     }
 }

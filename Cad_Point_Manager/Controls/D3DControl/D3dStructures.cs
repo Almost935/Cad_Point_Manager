@@ -13,14 +13,14 @@ namespace Cad_Point_Manager.Controls.D3DControl
     [StructLayout(LayoutKind.Sequential)]
     public struct GlyphInstance
     {
-        public Vector2 OriginWorld;
-        public float DuToWorld;
-        public float PenDU;
-        public Vector4 Color;
-        public float IsVisible;
-        public float IsMouseOver;
-        public float IsSelected;
-        public float YSign;
+        public Vector2 Origin;     // world position (baseline origin) of the string/line
+        public float DuToWorld;    // scale: DU -> world
+        public float PenDU;        // accumulated advance in DU for this glyph
+        public Vector4 Color;      // rgba
+        public float IsVisible;    // 1/0
+        public float IsMouseOver;  // 1/0
+        public float IsSelected;   // 1/0
+        public float YSign;        // typically -1 when world Y is up and font Y is down
     }
 
     public struct GlyphRange

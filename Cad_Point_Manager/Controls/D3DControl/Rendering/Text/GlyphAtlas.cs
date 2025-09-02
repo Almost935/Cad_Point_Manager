@@ -34,6 +34,14 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
             Ranges = ranges;
         }
 
+        public static GlyphAtlas CreateForAscii(Device device,
+                                            FontFace fontFace,
+                                            IGlyphTessellator tessellator)
+        {
+            var glyphIds = GlyphSets.Ascii32To126(fontFace);
+            return new GlyphAtlas(device, fontFace, tessellator, glyphIds);
+        }
+
         public void Dispose() => VertexBuffer?.Dispose();
     }
 }

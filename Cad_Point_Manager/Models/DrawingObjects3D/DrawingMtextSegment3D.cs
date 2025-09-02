@@ -87,7 +87,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             SpaceWidth = TextHeight * GlobalHelperProperties.TextHeightToSpaceWidthFactor;
         }
 
-        public void Tesselate(D3dResCache resCache)
+        public void Tesselate(ResCache resCache)
         {
             UpdateFontFace(resCache);
 
@@ -168,7 +168,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             }
         }
 
-        private void UpdateFontFace(D3dResCache resCache)
+        private void UpdateFontFace(ResCache resCache)
         {
             FontWeight fontWeight = IsBold ? FontWeight.Bold : FontWeight.Normal;
             FontStyle fontStyle = IsItalic ? FontStyle.Italic : FontStyle.Normal; 

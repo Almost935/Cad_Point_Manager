@@ -19,7 +19,7 @@ namespace Cad_Point_Manager.Helpers
         public static ConcurrentDictionary<(string fontName, FontWeight fontWeight, FontStyle fontstyle), float> FontSizeFactorDict
         { get; } = new ConcurrentDictionary<(string fontName, FontWeight fontWeight, FontStyle fontstyle), float>();
 
-        public static (List<Vector2> vertices, RawRectangleF bounds) TesselateTextLayout(D3dResCache resCache, TextLayout textLayout, 
+        public static (List<Vector2> vertices, RawRectangleF bounds) TesselateTextLayout(ResCache resCache, TextLayout textLayout, 
             string text, FontFace fontFace)
         {
             var fontSizeFactor = GetFontSizeFactor(resCache, textLayout, fontFace); // Multiply by a factor to smoothen curves
@@ -35,7 +35,7 @@ namespace Cad_Point_Manager.Helpers
             return (vertices, bounds);
         }
 
-        public static float GetSpaceWidth(D3dResCache resCache, string fontFamily, float fontSize)
+        public static float GetSpaceWidth(ResCache resCache, string fontFamily, float fontSize)
         {
             using (var textFormat = new TextFormat(resCache.WriteFactory, fontFamily, fontSize))
             {
@@ -51,7 +51,7 @@ namespace Cad_Point_Manager.Helpers
             }
         }
 
-        private static PathGeometry TextLayoutToGeometry(D3dResCache resCache, TextLayout textLayout, string text, FontFace fontFace, 
+        private static PathGeometry TextLayoutToGeometry(ResCache resCache, TextLayout textLayout, string text, FontFace fontFace, 
             float scaleFactor)
         {
             PathGeometry pathGeometry = new(resCache.D2dFactory)
@@ -94,7 +94,7 @@ namespace Cad_Point_Manager.Helpers
             return pathGeometry;
         }
 
-        private static float GetFontSizeFactor(D3dResCache resCache, TextLayout textLayout, FontFace fontFace)
+        private static float GetFontSizeFactor(ResCache resCache, TextLayout textLayout, FontFace fontFace)
         {
             bool fontToTextHeightFactorExists = FontSizeFactorDict.TryGetValue(
                    (textLayout.FontFamilyName, textLayout.FontWeight, textLayout.FontStyle), out float fontToTextHeightFactor);

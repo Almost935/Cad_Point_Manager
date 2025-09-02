@@ -18,8 +18,11 @@ namespace Cad_Point_Manager.Models.PointRendering
         #region Fields
         private const float _textLineSpacingFactor = 1.0f;
         private const float _markerToPointScaleFactor = 0.5f;
-        private const float _markerBaseSize = 0.4f;
         private const float _textBaseHeight = 4;
+
+        private volatile CogoPointBoundsSnapshot _cogoPointBounds;
+        private static readonly CogoPointBoundsSnapshot _empty =
+           new() { Name = Rect.Empty, Elevation = Rect.Empty, Description = Rect.Empty, Ellipse = Rect.Empty };
 
         private int _pointNumber;
         private double _northing;
@@ -140,6 +143,8 @@ namespace Cad_Point_Manager.Models.PointRendering
         public Point Position => new(Easting, Northing);
         public bool HasPointNumberError => HasErrorsFor(nameof(PointNumber));
 
+        public CogoPointBoundsSnapshot CogoPointBounds => _cogoPointBounds ?? _empty;
+
         public CircleVertex MarkerVertex { get; set; }
         public List<TextVertex> TextVertices { get; set; } = [];
         public List<TextVertex> PointNumberVertices { get; set; } = [];
@@ -148,6 +153,7 @@ namespace Cad_Point_Manager.Models.PointRendering
         public Rect PointNumberBounds { get; set; } = Rect.Empty;
         public Rect ElevationBounds { get; set; } = Rect.Empty;
         public Rect DescriptionBounds { get; set; } = Rect.Empty;
+        public Rect EllipseBounds { get; set; } = Rect.Empty;
         public Vector2 TextInfoBasePosition { get; set; }
         public Vector2 PointNumberPosition { get; set; }
         public Vector2 ElevationPosition { get; set; }
@@ -176,94 +182,61 @@ namespace Cad_Point_Manager.Models.PointRendering
         #endregion
 
         #region Methods
+        public void SetBoundsSnapshot(CogoPointBoundsSnapshot snap) => _cogoPointBounds = snap;
+
         public override double DistanceToPoint(Point p)
         {
-            if (MathHelpers.PointToPointDistance(p,Position) < _markerBaseSize) { return 0.0; }
+            //if (MathHelpers.PointToPointDistance(p, Position) < GlobalHelperProperties.CogoPointCirclePixelRadius) { return 0.0; }
 
-            if (TextVertices.Count < 3) { return double.MaxValue; }
+            if (PointNumberBounds.Contains(p) || ElevationBounds.Contains(p) || DescriptionBounds.Contains(p) || EllipseBounds.Contains(p))
+                return 0.0;
+            else
+                return double.MaxValue;
 
-            Vector2 testPoint = new((float)p.X, (float)p.Y);
-            double minDistance = double.MaxValue;
-            bool pointInside = false;
-            object locker = new();
+            //if (TextVertices.Count < 3) { return double.MaxValue; }
 
-            Parallel.For(0, TextVertices.Count / 3, (i, state) =>
-            {
-                if (pointInside) return;
+            //Vector2 testPoint = new((float)p.X, (float)p.Y);
+            //double minDistance = double.MaxValue;
+            //bool pointInside = false;
+            //object locker = new();
 
-                Vector2 v0 = TextVertices[i * 3 + 0].Position.ToSharpDXVector2();
-                Vector2 v1 = TextVertices[i * 3 + 1].Position.ToSharpDXVector2();
-                Vector2 v2 = TextVertices[i * 3 + 2].Position.ToSharpDXVector2();
+            //Parallel.For(0, TextVertices.Count / 3, (i, state) =>
+            //{
+            //    if (pointInside) return;
 
-                if (MathHelpers.IsPointInTriangle(testPoint, v0, v1, v2))
-                {
-                    lock (locker)
-                    {
-                        pointInside = true;
-                        minDistance = 0.0;
-                    }
+            //    Vector2 v0 = TextVertices[i * 3 + 0].Position.ToSharpDXVector2();
+            //    Vector2 v1 = TextVertices[i * 3 + 1].Position.ToSharpDXVector2();
+            //    Vector2 v2 = TextVertices[i * 3 + 2].Position.ToSharpDXVector2();
 
-                    state.Stop();
-                }
-                else
-                {
-                    double dist = MathHelpers.DistanceToTriangle(testPoint, v0, v1, v2);
+            //    if (MathHelpers.IsPointInTriangle(testPoint, v0, v1, v2))
+            //    {
+            //        lock (locker)
+            //        {
+            //            pointInside = true;
+            //            minDistance = 0.0;
+            //        }
+            //        state.Stop();
+            //    }
+            //    else
+            //    {
+            //        double dist = MathHelpers.DistanceToTriangle(testPoint, v0, v1, v2);
+            //        lock (locker)
+            //        {
+            //            if (dist < minDistance)
+            //                minDistance = dist;
+            //        }
+            //    }
+            //});
 
-                    lock (locker)
-                    {
-                        if (dist < minDistance)
-                            minDistance = dist;
-                    }
-                }
-            });
-
-            return minDistance;
+            //return minDistance;
         }
         public override void UpdateBounds()
         {
-            if (TextVertices.Count == 0)
-            {
-                Bounds = Rect.Empty;
-                return;
-            }
-
-            bool haveValid = false;
-            double minX = 0, minY = 0, maxX = 0, maxY = 0;
-
-            for (int i = 0; i < TextVertices.Count; i++)
-            {
-                var p = TextVertices[i].Position;
-                if (!(double.IsFinite(p.X) && double.IsFinite(p.Y)))
-                    continue;
-
-                if (!haveValid)
-                {
-                    minX = maxX = p.X;
-                    minY = maxY = p.Y;
-                    haveValid = true;
-                }
-                else
-                {
-                    minX = Math.Min(minX, p.X);
-                    minY = Math.Min(minY, p.Y);
-                    maxX = Math.Max(maxX, p.X);
-                    maxY = Math.Max(maxY, p.Y);
-                }
-            }
-
-            var bounds = haveValid ? new Rect(new Point(minX, minY), new Point(maxX, maxY)) : Rect.Empty;
-
-            // Only add the circle if its center is valid
-            if (double.IsFinite(Position.X) && double.IsFinite(Position.Y) && double.IsFinite(_markerBaseSize))
-            {
-                var circleBounds = new Rect(
-                    new Point(Position.X - _markerBaseSize, Position.Y - _markerBaseSize),
-                    new Point(Position.X + _markerBaseSize, Position.Y + _markerBaseSize));
-
-                bounds = Rect.Union(bounds, circleBounds); // <-- assign back
-            }
-
-            Bounds = bounds;
+            Bounds = Rect.Empty;
+            if (EllipseBounds != Rect.Empty) { Bounds = Rect.Union(Bounds, EllipseBounds); }
+            if (PointNumberBounds != Rect.Empty) { Bounds = Rect.Union(Bounds, PointNumberBounds); }
+            if (ElevationBounds != Rect.Empty) { Bounds = Rect.Union(Bounds, ElevationBounds); }
+            if (DescriptionBounds != Rect.Empty) { Bounds = Rect.Union(Bounds, DescriptionBounds); }
         }
 
         public override void MouseEnter()
@@ -330,7 +303,7 @@ namespace Cad_Point_Manager.Models.PointRendering
         }
         public void InitializeMarkerVertices()
         {
-            MarkerVertex = new(Position.ToSharpDXVector3(), PointGroup.Color, _markerBaseSize * PointGroup.PointScale.ToFloat(), PointGroup.IsVisible ? 1 : 0,
+            MarkerVertex = new(Position.ToSharpDXVector3(), PointGroup.Color, GlobalHelperProperties.CogoPointCirclePixelRadius * PointGroup.PointScale.ToFloat(), PointGroup.IsVisible ? 1 : 0,
                 IsMouseOver ? 1 : 0, IsSelected ? 1 : 0);
         }
 
