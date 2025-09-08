@@ -1,6 +1,5 @@
-﻿// OverlayCircleShader.hlsl
+﻿// CircleGlowShader.hlsl
 
-// Constant buffer for 2D transformation matrix
 cbuffer TransformationBuffer : register(b0)
 {
     row_major matrix transformationMatrix; // 2D transformation matrix

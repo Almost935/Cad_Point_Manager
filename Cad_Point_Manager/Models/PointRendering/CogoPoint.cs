@@ -268,9 +268,9 @@ namespace Cad_Point_Manager.Models.PointRendering
         public void ResetTextLocations()
         {
             TextInfoBasePosition = new(Position.X.ToFloat() + (_textBaseHeight * PointGroup.PointScale.ToFloat() * _markerToPointScaleFactor), Position.Y.ToFloat());
-            PointNumberPosition = TextInfoBasePosition;
-            ElevationPosition = new(PointNumberPosition.X, PointNumberPosition.Y + _textBaseHeight * PointGroup.PointScale.ToFloat() * _textLineSpacingFactor);
-            DescriptionPosition = new(ElevationPosition.X, ElevationPosition.Y + _textBaseHeight * PointGroup.PointScale.ToFloat() * _textLineSpacingFactor);
+            DescriptionPosition = TextInfoBasePosition;
+            ElevationPosition = new(DescriptionPosition.X, DescriptionPosition.Y + _textBaseHeight * PointGroup.PointScale.ToFloat() * _textLineSpacingFactor);
+            PointNumberPosition = new(ElevationPosition.X, ElevationPosition.Y + _textBaseHeight * PointGroup.PointScale.ToFloat() * _textLineSpacingFactor);
         }
 
         public void MoveTextInfoToPoint(Point point)

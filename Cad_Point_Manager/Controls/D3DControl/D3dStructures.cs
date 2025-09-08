@@ -4,6 +4,18 @@ using Matrix = SharpDX.Matrix;
 
 namespace Cad_Point_Manager.Controls.D3DControl
 {
+    struct OverlayQuadVertex
+    {
+        public Vector2 Local;      // -1..1
+    }
+    struct RoundedHoverRectInstance
+    {
+        public Vector2 Center;       // world
+        public Vector2 HalfSize;     // world
+        public Vector2 RadiusFeather;// x=radius(world), y=feather(world)
+        public Vector4 Color;        // rgba
+    }
+
     [StructLayout(LayoutKind.Sequential)]
     public struct GlyphVertexDU
     {
