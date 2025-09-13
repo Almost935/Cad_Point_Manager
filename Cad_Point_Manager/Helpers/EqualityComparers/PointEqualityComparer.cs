@@ -1,6 +1,6 @@
 ﻿using System.Windows;
 
-namespace Cad_Point_Manager.Helpers
+namespace Cad_Point_Manager.Helpers.EqualityComparers
 {
     public class PointEqualityComparer : IEqualityComparer<Point>
     {
@@ -19,8 +19,8 @@ namespace Cad_Point_Manager.Helpers
         public int GetHashCode(Point v)
         {
             // Round components to the nearest multiple of epsilon to reduce hash collisions
-            int xHash = (int)(Math.Round(v.X / _epsilon));
-            int yHash = (int)(Math.Round(v.Y / _epsilon));
+            int xHash = (int)Math.Round(v.X / _epsilon);
+            int yHash = (int)Math.Round(v.Y / _epsilon);
 
             return xHash * 397 ^ yHash;
         }

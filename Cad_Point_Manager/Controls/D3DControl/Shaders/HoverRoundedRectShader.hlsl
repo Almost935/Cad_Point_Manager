@@ -1,4 +1,4 @@
-﻿// OverlayRoundedRectShader.hlsl
+﻿// HoverRoundedRectShader.hlsl
 cbuffer TransformationBuffer : register(b0)
 {
     row_major matrix transformationMatrix; // 2D transformation matrix

@@ -394,9 +394,9 @@ namespace Cad_Point_Manager.Models
 
         public List<CogoPoint> HitTestDragCogoPoints(Rect rect)
         {
-            List<CogoPoint> hits = [];
+            List<CogoPoint> points = [];
 
-            if (HitTestableObjectTree is null) { return hits; }
+            if (HitTestableObjectTree is null) { return points; }
 
             var nodes = HitTestableObjectTree.GetIntersectingNodes(rect);
 
@@ -406,15 +406,16 @@ namespace Cad_Point_Manager.Models
                 {
                     foreach (var obj in node.HitTestableObjects)
                     {
-                        if (obj is CogoPoint cogoPoint) { hits.Add(cogoPoint); }
+                        if (obj is CogoPoint cogoPoint) { points.Add(cogoPoint); }
                     }
                 }
                 else
                 {
-                    hits.AddRange(node.HitTestCogoPointsInRect(rect));
+                    points.AddRange(node.HitTestCogoPointsInRect(rect));
                 }
             }
-            return hits;
+
+            return points;
         }
         public List<DrawingGeometry3D> HitTestDragGeometries(Rect rect)
         {
@@ -694,7 +695,7 @@ namespace Cad_Point_Manager.Models
 
                     foreach (CogoPoint point in pointGroup.Points)
                     {
-                        point.InitializeMarkerVertices();
+                        point.InitializeMarkerVertex();
                         point.MarkerIndex = _cachedPointMarkerVertices.Count;
                         _cachedPointMarkerVertices.Add(point.MarkerVertex);
                     }

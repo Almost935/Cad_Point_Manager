@@ -13,7 +13,7 @@ using Point = System.Windows.Point;
 
 namespace Cad_Point_Manager.Models.PointRendering
 {
-    public class CogoPoint : HitTestableObject
+    public class CogoPoint : HitTestableObject, IEquatable<CogoPoint>
     {
         #region Fields
         private const float _textLineSpacingFactor = 1.0f;
@@ -186,49 +186,14 @@ namespace Cad_Point_Manager.Models.PointRendering
 
         public override double DistanceToPoint(Point p)
         {
-            //if (MathHelpers.PointToPointDistance(p, Position) < GlobalHelperProperties.CogoPointCirclePixelRadius) { return 0.0; }
-
             if (PointNumberBounds.Contains(p) || ElevationBounds.Contains(p) || DescriptionBounds.Contains(p) || EllipseBounds.Contains(p))
+            {
                 return 0.0;
+            }
             else
+            {
                 return double.MaxValue;
-
-            //if (TextVertices.Count < 3) { return double.MaxValue; }
-
-            //Vector2 testPoint = new((float)p.X, (float)p.Y);
-            //double minDistance = double.MaxValue;
-            //bool pointInside = false;
-            //object locker = new();
-
-            //Parallel.For(0, TextVertices.Count / 3, (i, state) =>
-            //{
-            //    if (pointInside) return;
-
-            //    Vector2 v0 = TextVertices[i * 3 + 0].Position.ToSharpDXVector2();
-            //    Vector2 v1 = TextVertices[i * 3 + 1].Position.ToSharpDXVector2();
-            //    Vector2 v2 = TextVertices[i * 3 + 2].Position.ToSharpDXVector2();
-
-            //    if (MathHelpers.IsPointInTriangle(testPoint, v0, v1, v2))
-            //    {
-            //        lock (locker)
-            //        {
-            //            pointInside = true;
-            //            minDistance = 0.0;
-            //        }
-            //        state.Stop();
-            //    }
-            //    else
-            //    {
-            //        double dist = MathHelpers.DistanceToTriangle(testPoint, v0, v1, v2);
-            //        lock (locker)
-            //        {
-            //            if (dist < minDistance)
-            //                minDistance = dist;
-            //        }
-            //    }
-            //});
-
-            //return minDistance;
+            }
         }
         public override void UpdateBounds()
         {
@@ -238,6 +203,32 @@ namespace Cad_Point_Manager.Models.PointRendering
             if (ElevationBounds != Rect.Empty) { Bounds = Rect.Union(Bounds, ElevationBounds); }
             if (DescriptionBounds != Rect.Empty) { Bounds = Rect.Union(Bounds, DescriptionBounds); }
         }
+        public bool CogoPointIntersectsRect(Rect rect)
+        {
+            if (rect.IsEmpty) { return false; }
+
+            // normalize in case user dragged "backwards"
+            rect = new Rect(
+                Math.Min(rect.Left, rect.Right),
+                Math.Min(rect.Top, rect.Bottom),
+                Math.Abs(rect.Width),
+                Math.Abs(rect.Height));
+
+            bool IntersectsOrContains(Rect part)
+            {
+                if (part.IsEmpty) { return false; }
+                return rect.IntersectsWith(part) || rect.Contains(part) || part.Contains(rect);
+            }
+
+            if (IntersectsOrContains(EllipseBounds)) { return true; }
+            if (IntersectsOrContains(PointNumberBounds)) { return true; }
+            if (IntersectsOrContains(ElevationBounds)) { return true; }
+            if (IntersectsOrContains(DescriptionBounds)) { return true; }
+
+            return false;
+        }
+
+
 
         public override void MouseEnter()
         {
@@ -294,17 +285,23 @@ namespace Cad_Point_Manager.Models.PointRendering
         public void InitializeTextVertices(CogoPointTextVerticesDict textDict)
         {
             TextVertices.Clear();
-            List<TextVertex> pointNum = textDict.GetIntTextVertices(PointNumber, _textBaseHeight * PointGroup.PointScale.ToFloat(), PointNumberPosition, PointGroup.Color);
-            List<TextVertex> elev = textDict.GetTextVertices(Elevation.ToString("F3"), _textBaseHeight * PointGroup.PointScale.ToFloat(), ElevationPosition, PointGroup.Color);
-            List<TextVertex> description = textDict.GetTextVertices(Description, _textBaseHeight * PointGroup.PointScale.ToFloat(), DescriptionPosition, PointGroup.Color);
+            List<TextVertex> pointNum = textDict.GetIntTextVertices(PointNumber, _textBaseHeight * PointGroup.PointScale.ToFloat(), 
+                PointNumberPosition, PointGroup.Color);
+            List<TextVertex> elev = textDict.GetTextVertices(Elevation.ToString("F3"), _textBaseHeight * PointGroup.PointScale.ToFloat(), 
+                ElevationPosition, PointGroup.Color);
+            List<TextVertex> description = textDict.GetTextVertices(Description, _textBaseHeight * PointGroup.PointScale.ToFloat(), 
+                DescriptionPosition, PointGroup.Color);
             TextVertices = pointNum.Concat(elev).Concat(description).ToList();
             TextVerticesInitialized = true;
             UpdateBounds();
         }
-        public void InitializeMarkerVertices()
+        public void InitializeMarkerVertex()
         {
-            MarkerVertex = new(Position.ToSharpDXVector3(), PointGroup.Color, GlobalHelperProperties.CogoPointCirclePixelRadius * PointGroup.PointScale.ToFloat(), PointGroup.IsVisible ? 1 : 0,
-                IsMouseOver ? 1 : 0, IsSelected ? 1 : 0);
+            MarkerVertex = new(Position.ToSharpDXVector3(), PointGroup.Color, 
+                GlobalHelperProperties.CogoPointCirclePixelRadius * PointGroup.PointScale.ToFloat(), 
+                PointGroup.IsVisible ? 1 : 0,
+                IsMouseOver ? 1 : 0, 
+                IsSelected ? 1 : 0);
         }
 
         protected override void OnPropertyChanged(string propertyName)
@@ -316,6 +313,20 @@ namespace Cad_Point_Manager.Models.PointRendering
             //    RedrawAllVisuals();
             //}
         }
+        #endregion
+
+        #region IEquatable Implementation
+        public bool Equals(CogoPoint other) =>
+        other is not null && PointNumber == other.PointNumber;
+
+        public override bool Equals(object obj) =>
+            obj is CogoPoint other && Equals(other);
+
+        public override int GetHashCode() => PointNumber; // int is fine
+
+        public static bool operator ==(CogoPoint a, CogoPoint b) =>
+            EqualityComparer<CogoPoint>.Default.Equals(a, b);
+        public static bool operator !=(CogoPoint a, CogoPoint b) => !(a == b);
         #endregion
     }
 }

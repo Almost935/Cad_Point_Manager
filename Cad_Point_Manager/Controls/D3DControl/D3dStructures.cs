@@ -4,10 +4,12 @@ using Matrix = SharpDX.Matrix;
 
 namespace Cad_Point_Manager.Controls.D3DControl
 {
+    [StructLayout(LayoutKind.Sequential)]
     struct OverlayQuadVertex
     {
         public Vector2 Local;      // -1..1
     }
+    [StructLayout(LayoutKind.Sequential)]
     struct RoundedHoverRectInstance
     {
         public Vector2 Center;       // world
@@ -15,30 +17,67 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public Vector2 RadiusFeather;// x=radius(world), y=feather(world)
         public Vector4 Color;        // rgba
     }
+    [StructLayout(LayoutKind.Sequential)]
+    struct CircleHoverVertex(Vector3 position, float radius, float isSelected = 0)
+    {
+        public Vector3 Position = position;
+        public float Radius = radius;
+        public float IsSelected = isSelected;
+    }
+    [StructLayout(LayoutKind.Sequential)]
+    public struct CircleHoverSettingsBuffer
+    {
+        public float GlowOffset;
+        public float GlowTransparency;
+        private Vector2 Padding;
+        public Vector4 SelectedColor;
+    }
+
 
     [StructLayout(LayoutKind.Sequential)]
     public struct GlyphVertexDU
     {
         public Vector2 PosDU; // design-unit vertex (triangle-list)
     }
-
     [StructLayout(LayoutKind.Sequential)]
     public struct GlyphInstance
     {
-        public Vector2 Origin;     // world position (baseline origin) of the string/line
-        public float DuToWorld;    // scale: DU -> world
-        public float PenDU;        // accumulated advance in DU for this glyph
-        public Vector4 Color;      // rgba
-        public float IsVisible;    // 1/0
-        public float IsMouseOver;  // 1/0
-        public float IsSelected;   // 1/0
-        public float YSign;        // typically -1 when world Y is up and font Y is down
+        public Vector2  Origin;     // world position (baseline origin) of the string/line
+        public float    DuToWorld;    // scale: DU -> world
+        public float    PenDU;        // accumulated advance in DU for this glyph
+        public Vector4  Color;      // rgba
+        public float    IsVisible;    // 1/0
+        public float    IsMouseOver;  // 1/0
+        public float    IsSelected;   // 1/0
+        public float    YSign;        // typically -1 when world Y is up and font Y is down
+        public uint     LabelId;   // stable per text line: PN/Elev/Desc for a cogo point
+        public uint     GroupId;   // PointGroup index
     }
-
+    [StructLayout(LayoutKind.Sequential)]
+    public struct GlyphSettingsBuffer
+    {
+        public Vector4 SelectedColor;
+    }
     public struct GlyphRange
     {
         public int StartVertex;   // into the packed glyph vertex buffer
         public int VertexCount;
+    }
+    [StructLayout(LayoutKind.Sequential)]
+    public struct LabelState
+    {
+        public Vector2 Offset; // world-space drag delta
+        public uint Flags;  // bit0: visible, bit1: selected, bit2: mouseOver
+        public float Pad;    // keep 16B stride
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct GroupState
+    {
+        public Vector4 Color; // rgba
+        public float Scale; // point-scale
+        public uint Flags; // bit0: visible
+        public Vector2 Pad;   // 16B stride
     }
 
 
@@ -196,7 +235,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             float rotatedX = cos * dx - sin * dy + basePoint.X;
             float rotatedY = sin * dx + cos * dy + basePoint.Y;
 
-            return new TextVertex(new Vector3(rotatedX, rotatedY, textVertex.Position.Z), textVertex.Color, isVisible: textVertex.IsVisible, 
+            return new TextVertex(new Vector3(rotatedX, rotatedY, textVertex.Position.Z), textVertex.Color, isVisible: textVertex.IsVisible,
                 isMouseOver: textVertex.IsMouseOver, isSelected: textVertex.IsSelected);
         }
 
@@ -214,12 +253,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
         {
             return new System.Windows.Point(v.Position.X, v.Position.Y);
         }
-    }
-    [StructLayout(LayoutKind.Sequential)]
-    public struct TextSettingsBuffer
-    {
-        public Vector4 SelectedColor;
-        public Vector4 SelectedMouseOverColor;
     }
     [StructLayout(LayoutKind.Sequential)]
     public struct TextGlowSettingsBuffer
@@ -242,26 +275,5 @@ namespace Cad_Point_Manager.Controls.D3DControl
     {
         public Vector2 ViewportSize;
         public Vector2 Padding;
-    }
-
-    public struct Rotation
-    {
-        public float X = 0;
-        public float Y = 0;
-        public float Z = 0;
-
-        public Rotation() { }
-        public Rotation(float x, float y, float z)
-        {
-            X = x;
-            Y = y;
-            Z = z;
-        }
-
-        public static Rotation NoRotation => new Rotation(0, 0, 0);
-
-        public void SetX(float x) { X = x; }
-        public void SetY(float y) { Y = y; }
-        public void SetZ(float z) { Z = z; }
     }
 }

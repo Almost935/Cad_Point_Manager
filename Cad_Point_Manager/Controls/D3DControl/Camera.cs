@@ -54,7 +54,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public Vector2 Translate { get; set; } = Vector2.Zero;
         public int CurrentZoomStep { get; set; } = 0;
         public float CurrentZoom => (float)Math.Pow(_zoomFactor, CurrentZoomStep);
-        public Rotation CurrentRotation { get; set; } = Rotation.NoRotation;
         public bool IsIn3DView { get; set; } = false;
         public Rect Extents { get; set; } = RectExtensions.Zero;
         #endregion
@@ -128,12 +127,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
             Update2DTransformationMatrix();
         }
         public void ResetToDefaults()
-        {
+        { 
             CurrentZoomStep = 0;
-            CurrentRotation.SetX(0);
-            CurrentRotation.SetY(0);
-            CurrentRotation.SetZ(0);
-
+            
             UpdateProjection();
             UpdateView();
             UpdateViewProjection();

@@ -17,6 +17,24 @@ cbuffer ViewportBuffer : register(b2)
     float2 _pad;
 }
 
+struct LabelState
+{
+    float2 Offset; // world-space drag delta
+    uint Flags; // bit0: visible, bit1: selected, bit2: mouseOver
+    float _padLS; // keep 16B stride
+};
+
+struct GroupState
+{
+    float4 Color; // rgba
+    float Scale; // point-scale
+    uint Flags; // bit0: visible
+    float2 _padGS; // keep 16B stride
+};
+
+StructuredBuffer<LabelState> LabelStates : register(t0);
+StructuredBuffer<GroupState> GroupStates : register(t1);
+
 // Per-vertex stream (slot 0): glyph mesh vertices in DESIGN UNITS
 struct VSInPerVertex
 {
@@ -27,14 +45,17 @@ struct VSInPerVertex
 struct VSInPerInstance
 {
     float2 OriginWorld : GLYPH_ORIGIN; // baseline origin in world units
-    float DuToWorld : GLYPH_SCALE; // worldUnits per design-unit
+    float DuToWorld : GLYPH_SCALE; // base worldUnits per design-unit (pre-group scale)
     float PenDU : GLYPH_PEN; // horizontal pen advance in DU
-    float4 Color : COLOR;
-    float IsVisible : ISVISIBLE;
-    float IsMouseOver : ISMOUSEOVER;
-    float IsSelected : ISSELECTED;
+    float4 Color : COLOR; // optional base color (can be multiplied with group color)
+    float IsVisible : ISVISIBLE; // legacy path (will be combined with label/group flags)
+    float IsMouseOver : ISMOUSEOVER; // legacy path
+    float IsSelected : ISSELECTED; // legacy path
     float YSign : YSIGN; // +1 or -1 (flip Y if needed)
+    uint LabelId : LABEL_ID; // per text line (PN/Elev/Desc)
+    uint GroupId : GROUP_ID; // owning PointGroup
 };
+
 
 struct VSOut
 {
@@ -69,11 +90,17 @@ VSOut VSMain(VSInPerVertex v, VSInPerInstance inst)
 
     float4 col = inst.Color;
     if (inst.IsMouseOver > 0.5)
+    {
         col = lerp(col, float4(0.4, 0.4, 1, 1), 0.7);
+    }
     if (inst.IsSelected > 0.5)
+    {
         col = (inst.IsMouseOver > 0.5) ? selectedMouseOverColor : selectedColor;
+    }
     if (inst.IsVisible < 0.5)
+    {
         col.a = 0.0;
+    }
 
     o.Position = clip;
     o.Color = col;
