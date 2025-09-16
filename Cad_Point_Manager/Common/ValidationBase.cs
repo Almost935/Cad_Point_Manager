@@ -7,7 +7,7 @@ namespace Cad_Point_Manager.Common
 {
     public class ValidationBase : INotifyDataErrorInfo
     {
-        private Dictionary<string, List<string>> _errors = new Dictionary<string, List<string>>();
+        private Dictionary<string, List<string>> _errors = [];
         public event EventHandler<DataErrorsChangedEventArgs> ErrorsChanged;
         private object _lock = new object();
         public bool HasErrors { get { return _errors.Any(propErrors => propErrors.Value != null && propErrors.Value.Count > 0); } }
@@ -16,7 +16,7 @@ namespace Cad_Point_Manager.Common
         protected void AddError(string propertyName, string errorMessage)
         {
             if (!_errors.ContainsKey(propertyName))
-                _errors[propertyName] = new List<string>();
+                _errors[propertyName] = [];
 
             if (!_errors[propertyName].Contains(errorMessage))
             {

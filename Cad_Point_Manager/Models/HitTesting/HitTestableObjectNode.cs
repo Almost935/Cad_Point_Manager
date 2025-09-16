@@ -60,7 +60,7 @@ namespace Cad_Point_Manager.Models.HitTesting
         }
         public List<HitTestableObjectNode> GetNodesAtPoint(Point p)
         {
-            List<HitTestableObjectNode> nodes = new();
+            List<HitTestableObjectNode> nodes = [];
 
             if (Extents.Contains(p))
             {

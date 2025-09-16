@@ -558,6 +558,10 @@ namespace Cad_Point_Manager.Models
                     }
                 }
             }
+            if (hitTestableObject is CogoPoint cogoPoint)
+            {
+
+            }
         }
 
         public void UpdateVerticesIsSelectedAndIsMouseOver(HitTestableObject hitTestableObject, bool isSelected, bool isMouseOver)
@@ -743,8 +747,8 @@ namespace Cad_Point_Manager.Models
         {
             CogoPointManager.PointGroups.Clear();
 
-            float rows = 20;
-            float cols = 20;
+            float rows = 5;
+            float cols = 5;
             float yIncrement = Extents.Height.ToFloat() / (rows - 1);
             float xIncrement = Extents.Width.ToFloat() / (cols - 1);
             int pointNum = 1;

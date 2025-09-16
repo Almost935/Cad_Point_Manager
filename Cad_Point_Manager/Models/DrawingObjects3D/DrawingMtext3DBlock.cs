@@ -11,7 +11,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         #region Fields
         private const float _mtextLineSpacingFactor = 0.15f;
 
-        private readonly List<DrawingMtext3DRow> _drawingMtext3DRows = new();
+        private readonly List<DrawingMtext3DRow> _drawingMtext3DRows = [];
         #endregion
 
         #region Properties

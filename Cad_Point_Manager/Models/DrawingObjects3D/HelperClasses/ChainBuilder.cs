@@ -44,7 +44,7 @@
             var adj = new List<List<(int v, int e)>>();
             var elist = new List<(int u, int v, EdgeInput payload)>();
 
-            void EnsureAdjSize(int n) { while (adj.Count <= n) adj.Add(new List<(int, int)>()); }
+            void EnsureAdjSize(int n) { while (adj.Count <= n) adj.Add([]); }
 
             foreach (var e in edges)
             {

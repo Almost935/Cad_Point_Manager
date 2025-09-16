@@ -32,7 +32,7 @@ namespace Cad_Point_Manager.ViewModels
 
         private CogoPoint? _draggingPoint;
         private bool _isRenderingAttached = false;
-        private readonly Dictionary<string, List<string>> _errors = new();
+        private readonly Dictionary<string, List<string>> _errors = [];
 
         private JobFileManager _jobFileManager = new();
         private bool _jobFileLoaded = false;
@@ -678,7 +678,7 @@ namespace Cad_Point_Manager.ViewModels
         protected void AddError(string propertyName, string error)
         {
             if (!_errors.ContainsKey(propertyName))
-                _errors[propertyName] = new List<string>();
+                _errors[propertyName] = [];
 
             if (!_errors[propertyName].Contains(error))
             {

@@ -73,7 +73,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private System.Windows.Media.Matrix _currentlyAppliedDragRectMatrix = new();
 
         // Direct3D related fields
-        public bool _vertexBuffersInitialized = false;
+        public bool _buffersInitialized = false;
 
         // Line shader related fields
         private ResizableBuffer<LineVertex> _lineVertexBuffer;
@@ -111,28 +111,26 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private bool _glyphVerticesDirty = false;
         private CogoPointLabelLayout _labelLayout;
 
+        // Circle shader related fields
+        private ResizableBuffer<CircleVertex> _circleVertexBuffer;
+        private Buffer _circleSettingsBuffer;
+        private InputLayout _circleInputLayout;
+        private VertexShader _circleVertexShader;
+        private PixelShader _circlePixelShader;
+        private GeometryShader _circleGeometryShader;
+        private int _circleVertexCount;
+        private bool _circleShadersLoaded = false;
+        private bool _circleVerticesDirty = false;
+
         // --- Per-label & per-group indirection state ---
-        private bool _glyphStateFieldsInitialized = false;
-
-        private Buffer _labelStateBuffer;
-        //private ShaderResourceView _labelStateSRV;
-        private LabelState[] _labelStatesCPU = [];
-        private int _labelStateCapacity;
-
-        private Buffer _groupStateBuffer;
-        //private ShaderResourceView _groupStateSRV;
-        private GroupState[] _groupStatesCPU = [];
-        private int _groupStateCapacity;
-
         private SceneIdMap _ids;
         private D3dStateBuffers _stateBufs;
         private D3dStateController _stateCtl;
 
         // id management
         private uint _nextLabelId = 0;
-        private readonly Dictionary<(CogoPoint cp, int line), uint> _labelIdOf = new(); // line: 0=PN,1=Elev,2=Desc(if exists)
-        private readonly Dictionary<PointGroup, uint> _groupIdOf = new();
-
+        private readonly Dictionary<(CogoPoint cp, int line), uint> _labelIdOf = []; // line: 0=PN,1=Elev,2=Desc(if exists)
+        private readonly Dictionary<PointGroup, uint> _groupIdOf = [];
 
         // Cogo point hover rendering
         private bool _cogoHoverShadersLoaded = false;
@@ -159,7 +157,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private Buffer _hoverCircleSettingsBuffer;
         private InputLayout _hoverCircleLayout;
 
-
         // Text glow shader related fields
         private ResizableBuffer<TextVertex> _textGlowVertexBuffer;
         private Buffer _textGlowSettingsBuffer;
@@ -168,17 +165,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private PixelShader _textGlowPixelShader;
         private GeometryShader _textGlowGeometryShader;
         private bool _textGlowVerticesDirty = false;
-
-        // Circle shader related fields
-        private ResizableBuffer<CircleVertex> _circleVertexBuffer;
-        private Buffer _circleSettingsBuffer;
-        private InputLayout _circleInputLayout;
-        private VertexShader _circleVertexShader;
-        private PixelShader _circlePixelShader;
-        private GeometryShader _circleGeometryShader;
-        private int _circleVertexCount;
-        private bool _circleShadersLoaded = false;
-        private bool _circleVerticesDirty = false;
 
         // Drag rectangle shader
         private ResizableBuffer<OverlayVertex> _dragFillBuffer;
@@ -450,7 +436,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 CadManager3D.DxfNeedsReload = false;
             }
             if (!_clipSet) { SetClip(); _clipSet = true; }
-            if (!_vertexBuffersInitialized) { InitializeBuffers(); _vertexBuffersInitialized = true; }
+            if (!_buffersInitialized) { InitializeBuffers(); }
 
             if (_lineVerticesDirty) { UpdateLineVertices(); }
             if (_textVerticesDirty) { UpdateTextVertices(); }
@@ -463,7 +449,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             if (!_lineShaderLoaded) { InitializeLineShader(); }
             if (!_textShaderLoaded) { InitializeTextShader(); }
             if (!_overlayShaderLoaded) { InitializeOverlayShader(); }
-            if (!_glyphStateFieldsInitialized) { InitializeGlyphStateFields(); }
             if (!_glyphShadersLoaded) { InitializeGlyphShader(); }
             if (!_circleShadersLoaded) { InitializeCircleShader(); }
             if (!_cogoHoverShadersLoaded) { InitializeCogoPointHoverShaders(); }
@@ -523,7 +508,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             DrawLinesWithShader(context);
             DrawTextWithShader(context);
             DrawCirclesWithShader(context);
-            //DrawCircleGlowsWithShader(context);
             DrawGlyphBatches(context, _resCache.AsciiGlyphAtlas, _glyphBatches);
         }
 
@@ -592,9 +576,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
             ctx.VertexShader.SetConstantBuffer(2, _viewportBuffer);
             ctx.InputAssembler.PrimitiveTopology = PrimitiveTopology.TriangleList;
 
-            //ctx.VertexShader.SetShaderResource(0, _labelStateSRV); // t0
-            //ctx.VertexShader.SetShaderResource(1, _groupStateSRV); // t1
-            //ctx.PixelShader.SetShaderResource(1, _groupStateSRV);  // if PS needs color/tint
+            ctx.VertexShader.SetShaderResource(0, _stateBufs.LabelSRV);
+            ctx.VertexShader.SetShaderResource(1, _stateBufs.GroupSRV);
+            ctx.PixelShader.SetShaderResource(1, _stateBufs.GroupSRV);
 
             // Bind slot 0 (glyph vertex buffer) once
             var vbGlyph = new VertexBufferBinding(atlas.VertexBuffer, Utilities.SizeOf<GlyphVertexDU>(), 0);
@@ -789,6 +773,10 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
                 var worldHeight = (float)(pg.FontBaseSize * pg.PointScale);
                 var duToWorld = worldHeight / _resCache.CogoPointFontFace.Metrics.DesignUnitsPerEm;
+
+                var duPerEm = _resCache.CogoPointFontFace.Metrics.DesignUnitsPerEm; // Point group scale not applied. Scale later in shader
+                var duToWorldBase = (float)pg.FontBaseSize / duPerEm;
+
                 var color = pg.Color;
                 var isGroupVisible = pg.IsVisible ? 1f : 0f;
 
@@ -802,7 +790,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
                 foreach (var p in pg.Points)
                 {
-                    if (p == null) continue;
+                    if (p == null) { continue; }
 
                     var isMO = p.IsMouseOver ? 1f : 0f;
                     var isSel = p.IsSelected ? 1f : 0f;
@@ -828,7 +816,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     p.PointNumberBounds = AddLineAndGetRect(
                         s: p.PointNumber.ToString(),
                         originWorld: p.PointNumberPosition,
-                        duToWorld: duToWorld,
+                        duToWorldBase: duToWorldBase,
+                        groupScale: duToWorld,
                         color: color,
                         isVisible: isGroupVisible, isMouseOver: isMO, isSelected: isSel, ySign: ySign,
                         labelId: idPN, groupId: gId);
@@ -836,7 +825,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     p.ElevationBounds = AddLineAndGetRect(
                         s: p.Elevation.ToString("F3"),
                         originWorld: p.ElevationPosition,
-                        duToWorld: duToWorld,
+                        duToWorldBase: duToWorldBase,
+                        groupScale: duToWorld,
                         color: color,
                         isVisible: isGroupVisible, isMouseOver: isMO, isSelected: isSel, ySign: ySign,
                         labelId: idElev, groupId: gId);
@@ -846,7 +836,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
                         p.DescriptionBounds = AddLineAndGetRect(
                             s: p.Description,
                             originWorld: p.DescriptionPosition,
-                            duToWorld: duToWorld,
+                            duToWorldBase: duToWorldBase,
+                            groupScale: duToWorld,
                             color: color,
                             isVisible: isGroupVisible, isMouseOver: isMO, isSelected: isSel, ySign: ySign,
                             labelId: idDesc, groupId: gId);
@@ -862,7 +853,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             }
 
             _stateBufs.FlushAll();
-            
+
 
             HitTestableObjectTreeDirty = true;
             _glyphVerticesDirty = false;
@@ -1289,8 +1280,15 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _dragFillBuffer?.Dispose();
             _dragFillBuffer = new(device, 6);
 
-            CreateOrResizeGroupStateBuffer(capacity: Math.Max(8, PointGroups?.Count ?? 0));
-            CreateOrResizeLabelStateBuffer(capacity: 256); // start small; we'll grow as needed
+            _dragOutlineBuffer?.Dispose();
+            _dragOutlineBuffer = new(device, 64);
+
+            _ids ??= new();
+            _stateBufs?.Dispose();
+            _stateBufs = new(device, _resCache.DeviceContext);
+            _stateCtl = new(_ids, _stateBufs);
+
+            _buffersInitialized = true;
         }
         private void InitializeConstantBuffers()
         {
@@ -1387,13 +1385,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             ConstantBuffersInitialized = true;
             ConstantBuffersDirty = true;
         }
-        private void InitializeGlyphStateFields()
-        {
-            _ids ??= new();
-            _stateBufs ??= new(_resCache.Device, _resCache.DeviceContext);
-            _stateCtl ??= new(_ids, _stateBufs);
-            _glyphStateFieldsInitialized = true;
-        }
         private void UpdateConstantBuffers()
         {
             var transformation = Camera.ViewProjectionMatrix;
@@ -1462,75 +1453,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _dxfDirty = true;
         }
 
-        private void CreateOrResizeLabelStateBuffer(int capacity)
-        {
-            if (capacity <= _labelStateCapacity) return;
-
-            _labelStateCapacity = capacity;
-            Array.Resize(ref _labelStatesCPU, _labelStateCapacity);
-
-            _labelStateBuffer?.Dispose();
-            _labelStateSRV?.Dispose();
-
-            var desc = new BufferDescription
-            {
-                SizeInBytes = Utilities.SizeOf<LabelState>() * _labelStateCapacity,
-                Usage = ResourceUsage.Dynamic,
-                BindFlags = BindFlags.ShaderResource,
-                CpuAccessFlags = CpuAccessFlags.Write,
-                OptionFlags = ResourceOptionFlags.BufferStructured,
-                StructureByteStride = Utilities.SizeOf<LabelState>()
-            };
-            _labelStateBuffer = new Buffer(_resCache.Device, desc);
-
-            _labelStateSRV = new ShaderResourceView(_resCache.Device, _labelStateBuffer,
-                new ShaderResourceViewDescription
-                {
-                    Format = Format.Unknown,
-                    Dimension = ShaderResourceViewDimension.ExtendedBuffer,
-                    BufferEx = new ShaderResourceViewDescription.ExtendedBufferResource
-                    {
-                        FirstElement = 0,
-                        ElementCount = _labelStateCapacity
-                    }
-                });
-        }
-        private void CreateOrResizeGroupStateBuffer(int capacity)
-        {
-            if (capacity <= _groupStateCapacity) return;
-
-            _groupStateCapacity = capacity;
-            Array.Resize(ref _groupStatesCPU, _groupStateCapacity);
-
-            _groupStateBuffer?.Dispose();
-            _groupStateSRV?.Dispose();
-
-            var desc = new BufferDescription
-            {
-                SizeInBytes = Utilities.SizeOf<GroupState>() * _groupStateCapacity,
-                Usage = ResourceUsage.Dynamic,
-                BindFlags = BindFlags.ShaderResource,
-                CpuAccessFlags = CpuAccessFlags.Write,
-                OptionFlags = ResourceOptionFlags.BufferStructured,
-                StructureByteStride = Utilities.SizeOf<GroupState>()
-            };
-            _groupStateBuffer = new Buffer(_resCache.Device, desc);
-
-            _groupStateSRV = new ShaderResourceView(_resCache.Device, _groupStateBuffer,
-                new ShaderResourceViewDescription
-                {
-                    Format = Format.Unknown,
-                    Dimension = ShaderResourceViewDimension.ExtendedBuffer,
-                    BufferEx = new ShaderResourceViewDescription.ExtendedBufferResource
-                    {
-                        FirstElement = 0,
-                        ElementCount = _groupStateCapacity
-                    }
-                });
-        }
-
-        private Rect AddLineAndGetRect(string s, Vector2 originWorld, float duToWorld, Vector4 color,
-            float isVisible, float isMouseOver, float isSelected, float ySign, uint labelId, uint groupId)
+        private Rect AddLineAndGetRect(string s, Vector2 originWorld, float duToWorldBase,
+            float groupScale, Vector4 color, float isVisible, float isMouseOver,
+            float isSelected, float ySign, uint labelId, uint groupId)
         {
             if (string.IsNullOrEmpty(s)) { return Rect.Empty; }
 
@@ -1548,7 +1473,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 var inst = new GlyphInstance
                 {
                     Origin = originWorld,
-                    DuToWorld = duToWorld,
+                    DuToWorld = duToWorldBase,
                     PenDU = penDU,
                     Color = color,
                     IsVisible = isVisible,
@@ -1566,8 +1491,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
             }
 
             // measure
-            float widthWorld = penDU * duToWorld;
-            return ComputeLineRect(originWorld, widthWorld, duToWorld, ySign);
+            float widthWorld = penDU * groupScale;
+            return ComputeLineRect(originWorld, widthWorld, groupScale, ySign);
         }
         private Rect ComputeLineRect(Vector2 originWorld, float widthWorld, float duToWorld, float ySign)
         {
@@ -1698,14 +1623,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _hitTestCancellationTokenSource.Cancel();
             _isPanning = false;
 
-            //(bool linesDirty, bool textsDirty, bool circlesDirty, bool pointTextsDirty, bool sigPointsDirty) =
-            //    GetVerticesDirtyBools(_snappedHitTestableObjects.ToList());
-
-            ResetSnappedObjects();
-            _lineVerticesDirty = true;
-            //if (linesDirty) { _lineVerticesDirty = linesDirty; }
-            //if (textsDirty) { _textVerticesDirty = textsDirty; }
-            //if (textsDirty) { _textGlowVerticesDirty = textsDirty; }
+             if (_snappedCogoPoints.Count > 0 || _snappedHitTestableObjects.Count > 0)
+            {
+                ResetSnappedObjects();
+                _lineVerticesDirty = true;
+            }
         }
         protected override void OnMouseLeftButtonUp(MouseButtonEventArgs e)
         {
@@ -1749,7 +1671,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                             p.Select();
                         }
                         _glyphVerticesDirty = true;
-
+                        _circleVerticesDirty = true;
                         break;
                     }
 
@@ -1986,6 +1908,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 _hittestStrokeThickness * 2, _hittestStrokeThickness * 2);
             var snappedObjectsCopy = _snappedHitTestableObjects.ToList();
             List<HitTestableObject> changedObjects = [];
+            bool lineVerticesDirty = false;
 
             if (_snappedHitTestableObjects is not null && _snappedHitTestableObjects.Count > 0)
             {
@@ -1995,6 +1918,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     {
                         changedObjects.Add(snappedObj);
                         ResetSnappedObjects();
+                        lineVerticesDirty = true;
 
                         _nearestHitTestableGeometries = CadManager3D.HitTestGeometries(_lastHitTestCoords, _hittestStrokeThickness).Take(_maxSelectableObjects).ToList();
                         if (_nearestHitTestableGeometries.Count > 0)
@@ -2039,16 +1963,14 @@ namespace Cad_Point_Manager.Controls.D3DControl
                             _snappedHitTestableObjects.Add(geometry);
                             SnapObject(geometry);
                             _lastSnapHitTestIndex = _currentSnapHitTestIndex;
+
+                            lineVerticesDirty = true;
                         }
                     }
                 }
             }
-            //var (linesDirty, textsDirty, circlesDirty, pointTextsDirty, sigPointsDirty) = GetVerticesDirtyBools(changedObjects);
-            //if (linesDirty) { _lineVerticesDirty = linesDirty; }
-            //if (textsDirty) { _textVerticesDirty = textsDirty; }
-            //if (textsDirty) { _textGlowVerticesDirty = textsDirty; }
 
-            _lineVerticesDirty = true;
+            _lineVerticesDirty = lineVerticesDirty;
         }
         private void RunCogoPointsHitTest(CancellationToken token)
         {
@@ -2640,6 +2562,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     _hoverCircleGeometryShader?.Dispose(); _hoverCircleGeometryShader = null;
                     _hoverCircleSettingsBuffer?.Dispose(); _hoverCircleSettingsBuffer = null;
                     _hoverCircleLayout?.Dispose(); _hoverCircleLayout = null;
+
+                    _stateBufs.Dispose(); _stateBufs = null;
                 }
 
                 disposedValue = true;

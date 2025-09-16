@@ -28,7 +28,7 @@ namespace Cad_Point_Manager.Views.UserControls
         private readonly List<ObjectLayer3D> _selectedLayers = [];
         private readonly List<PointGroup> _selectedPointGroups = [];
         private readonly object _pendingRedrawLock = new();
-        private readonly HashSet<CogoPoint> _pendingRedraw = new();
+        private readonly HashSet<CogoPoint> _pendingRedraw = [];
         private DispatcherOperation _redrawOp;
         private bool _ignorePointGroupSelectionChanged = false;
 

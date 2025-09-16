@@ -32,7 +32,7 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
 
         private readonly FontFace _fontFace;
         private readonly IGlyphTessellator _tess;
-        private readonly Dictionary<short, GlyphMesh> _cache = new();
+        private readonly Dictionary<short, GlyphMesh> _cache = [];
 
         public GlyphMeshCache(FontFace face, IGlyphTessellator tess)
         {

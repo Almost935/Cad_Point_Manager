@@ -9,7 +9,7 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
     {
         private readonly SceneIdMap _ids;
         private readonly D3dStateBuffers _bufs;
-        private readonly HashSet<uint> _dirty = new();
+        private readonly HashSet<uint> _dirty = [];
 
         public D3dStateController(SceneIdMap ids, D3dStateBuffers bufs)
         {

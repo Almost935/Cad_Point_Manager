@@ -75,7 +75,7 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
                             };
 
                             if (!byGlyph.TryGetValue(gid, out var list))
-                                byGlyph[gid] = list = new List<GlyphInstance>();
+                                byGlyph[gid] = list = [];
                             list.Add(inst);
 
                             penDU += advCache[gid]; // advance in DU (no kerning here)
