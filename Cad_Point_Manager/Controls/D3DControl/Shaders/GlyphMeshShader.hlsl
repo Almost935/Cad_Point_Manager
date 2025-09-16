@@ -17,6 +17,7 @@ cbuffer ViewportBuffer : register(b2)
     float2 _pad;
 }
 
+// ---------- NEW: Indirection state buffers ----------
 struct LabelState
 {
     float2 Offset; // world-space drag delta
@@ -32,6 +33,7 @@ struct GroupState
     float2 _padGS; // keep 16B stride
 };
 
+// Bind these to t0/t1 (match your C# SetShaderResource slots)
 StructuredBuffer<LabelState> LabelStates : register(t0);
 StructuredBuffer<GroupState> GroupStates : register(t1);
 
@@ -56,13 +58,14 @@ struct VSInPerInstance
     uint GroupId : GROUP_ID; // owning PointGroup
 };
 
-
 struct VSOut
 {
     float4 Position : SV_POSITION;
     float4 Color : COLOR;
+    float Visible : TEXCOORD0; // carry to PS for clip
 };
 
+// Pixel-snap helper (unchanged)
 float2 ComputeSnapNdc(float2 viewportSize)
 {
     float4 o = mul(float4(0, 0, 0, 1), transformationMatrix);
@@ -73,14 +76,41 @@ float2 ComputeSnapNdc(float2 viewportSize)
     return (dp / viewportSize) * 2.0f;
 }
 
+// Bit masks for flags (keep in sync with CPU)
+static const uint LABEL_VISIBLE = 1u << 0;
+static const uint LABEL_SELECTED = 1u << 1;
+static const uint LABEL_MOUSEOVR = 1u << 2;
+
+static const uint GROUP_VISIBLE = 1u << 0;
+
 VSOut VSMain(VSInPerVertex v, VSInPerInstance inst)
 {
     VSOut o;
 
+    // --- Fetch dynamic state ---
+    LabelState ls = LabelStates[inst.LabelId];
+    GroupState gs = GroupStates[inst.GroupId];
+
+    // Effective visibility = instance.Visible (legacy) * label * group
+    // We treat any "false" as hidden.
+    float visInst = (inst.IsVisible > 0.5f) ? 1.0f : 0.0f;
+    float visLbl = ((ls.Flags & LABEL_VISIBLE) != 0u) ? 1.0f : 0.0f;
+    float visGrp = ((gs.Flags & GROUP_VISIBLE) != 0u) ? 1.0f : 0.0f;
+    float visible = visInst * visLbl * visGrp;
+
+    // Selection / hover
+    float sel = ((ls.Flags & LABEL_SELECTED) != 0u) ? 1.0f : 0.0f;
+    float mo = ((ls.Flags & LABEL_MOUSEOVR) != 0u) ? 1.0f : 0.0f;
+
+    // --- Position math ---
+    // Apply label drag offset and group scale
+    float2 originWorld = inst.OriginWorld + ls.Offset;
+    float duToWorld = inst.DuToWorld * gs.Scale;
+
     // Convert DU -> world, apply pen advance on X, optional Y sign flip
     float2 world;
-    world.x = inst.OriginWorld.x + (inst.PenDU + v.PosDU.x) * inst.DuToWorld;
-    world.y = inst.OriginWorld.y + (v.PosDU.y * inst.YSign) * inst.DuToWorld;
+    world.x = originWorld.x + (inst.PenDU + v.PosDU.x) * duToWorld;
+    world.y = originWorld.y + (v.PosDU.y * inst.YSign) * duToWorld;
 
     float4 clip = mul(float4(world, 0, 1), transformationMatrix);
 
@@ -88,26 +118,33 @@ VSOut VSMain(VSInPerVertex v, VSInPerInstance inst)
     float2 snap = ComputeSnapNdc(ViewportSize);
     clip.xy += snap * clip.w;
 
-    float4 col = inst.Color;
-    if (inst.IsMouseOver > 0.5)
+    // --- Color/tint ---
+    // Start from group color; optionally modulate by per-instance base color alpha
+    float4 col = gs.Color;
+    col.rgb = col.rgb * inst.Color.rgb; // if you prefer group-only color, remove this line
+    col.a = col.a * inst.Color.a;
+
+    if (mo > 0.5f)
     {
+        // light hover lift (keep your preferred behavior)
         col = lerp(col, float4(0.4, 0.4, 1, 1), 0.7);
     }
-    if (inst.IsSelected > 0.5)
+    if (sel > 0.5f)
     {
-        col = (inst.IsMouseOver > 0.5) ? selectedMouseOverColor : selectedColor;
-    }
-    if (inst.IsVisible < 0.5)
-    {
-        col.a = 0.0;
+        col = (mo > 0.5f) ? selectedMouseOverColor : selectedColor;
     }
 
+    // Pass visibility to PS for clipping
     o.Position = clip;
     o.Color = col;
+    o.Visible = visible;
     return o;
 }
 
 float4 PSMain(VSOut i) : SV_Target
 {
+    // Hard-clip invisible glyphs early
+    if (i.Visible < 0.5f)
+        clip(-1);
     return i.Color; // premultiplied alpha recommended
 }

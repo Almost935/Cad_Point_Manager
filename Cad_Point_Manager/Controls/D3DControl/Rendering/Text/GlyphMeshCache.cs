@@ -19,8 +19,8 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
         {
             public static readonly GlyphMesh Empty = new()
             {
-                PositionsDU = System.Array.Empty<Vector2>(),
-                Indices = System.Array.Empty<int>(),
+                PositionsDU = [],
+                Indices = [],
                 BoundsDU = RectangleF.Empty
             };
 

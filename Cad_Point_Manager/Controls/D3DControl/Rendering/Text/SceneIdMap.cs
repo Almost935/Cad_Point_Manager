@@ -1,0 +1,37 @@
+﻿// Rendering/D3D/SceneIdMap.cs
+using Cad_Point_Manager.Models.PointRendering;
+using System.Collections.Generic;
+
+namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
+{
+    public sealed class SceneIdMap
+    {
+        private readonly Dictionary<(CogoPoint cp, int line), uint> _labelOf = [];
+        private readonly Dictionary<PointGroup, uint> _groupOf = [];
+        private uint _nextLabelId;
+
+        public bool TryGetLabelId(CogoPoint cp, int line, out uint id) => _labelOf.TryGetValue((cp, line), out id);
+        public bool TryGetGroupId(PointGroup pg, out uint id) => _groupOf.TryGetValue(pg, out id);
+
+        public uint GetOrAddLabelId(CogoPoint cp, int line)
+        {
+            if (_labelOf.TryGetValue((cp, line), out var id)) return id;
+            id = _nextLabelId++;
+            _labelOf[(cp, line)] = id;
+            return id;
+        }
+
+        public uint GetOrAddGroupId(PointGroup pg)
+        {
+            if (_groupOf.TryGetValue(pg, out var id)) return id;
+            id = (uint)_groupOf.Count;
+            _groupOf[pg] = id;
+            return id;
+        }
+
+        public int MaxLabelCount => (int)_nextLabelId;
+        public int GroupCount => _groupOf.Count;
+
+        public void Clear() { _labelOf.Clear(); _groupOf.Clear(); _nextLabelId = 0; }
+    }
+}

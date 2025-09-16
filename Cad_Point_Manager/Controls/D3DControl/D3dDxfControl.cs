@@ -100,7 +100,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private bool _textShaderLoaded = false;
         private bool _textVerticesDirty = false;
 
-
         // Point glyph rendering
         private ResizableBuffer<GlyphInstance> _glyphInstanceBuffer;
         private Buffer _cogoPointSettingsBuffer;
@@ -113,15 +112,21 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private CogoPointLabelLayout _labelLayout;
 
         // --- Per-label & per-group indirection state ---
+        private bool _glyphStateFieldsInitialized = false;
+
         private Buffer _labelStateBuffer;
-        private ShaderResourceView _labelStateSRV;
-        private LabelState[] _labelStatesCPU = Array.Empty<LabelState>();
+        //private ShaderResourceView _labelStateSRV;
+        private LabelState[] _labelStatesCPU = [];
         private int _labelStateCapacity;
 
         private Buffer _groupStateBuffer;
-        private ShaderResourceView _groupStateSRV;
-        private GroupState[] _groupStatesCPU = Array.Empty<GroupState>();
+        //private ShaderResourceView _groupStateSRV;
+        private GroupState[] _groupStatesCPU = [];
         private int _groupStateCapacity;
+
+        private SceneIdMap _ids;
+        private D3dStateBuffers _stateBufs;
+        private D3dStateController _stateCtl;
 
         // id management
         private uint _nextLabelId = 0;
@@ -458,6 +463,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             if (!_lineShaderLoaded) { InitializeLineShader(); }
             if (!_textShaderLoaded) { InitializeTextShader(); }
             if (!_overlayShaderLoaded) { InitializeOverlayShader(); }
+            if (!_glyphStateFieldsInitialized) { InitializeGlyphStateFields(); }
             if (!_glyphShadersLoaded) { InitializeGlyphShader(); }
             if (!_circleShadersLoaded) { InitializeCircleShader(); }
             if (!_cogoHoverShadersLoaded) { InitializeCogoPointHoverShaders(); }
@@ -586,9 +592,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
             ctx.VertexShader.SetConstantBuffer(2, _viewportBuffer);
             ctx.InputAssembler.PrimitiveTopology = PrimitiveTopology.TriangleList;
 
-            ctx.VertexShader.SetShaderResource(0, _labelStateSRV); // t0
-            ctx.VertexShader.SetShaderResource(1, _groupStateSRV); // t1
-            ctx.PixelShader.SetShaderResource(1, _groupStateSRV);  // if PS needs color/tint
+            //ctx.VertexShader.SetShaderResource(0, _labelStateSRV); // t0
+            //ctx.VertexShader.SetShaderResource(1, _groupStateSRV); // t1
+            //ctx.PixelShader.SetShaderResource(1, _groupStateSRV);  // if PS needs color/tint
 
             // Bind slot 0 (glyph vertex buffer) once
             var vbGlyph = new VertexBufferBinding(atlas.VertexBuffer, Utilities.SizeOf<GlyphVertexDU>(), 0);
@@ -772,16 +778,29 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private void UpdateGlyphBatches()
         {
             Stopwatch stopwatch = Stopwatch.StartNew();
+
+            _ids.Clear();
             _glyphBatches.Clear();
 
-            foreach (var pg in PointGroups)
+            foreach (var kv in PointGroups)
             {
-                var worldHeight = (float)(pg.Value.FontBaseSize * pg.Value.PointScale);
-                var duToWorld = worldHeight / _resCache.CogoPointFontFace.Metrics.DesignUnitsPerEm;
-                var color = pg.Value.Color;
-                var isVisible = pg.Value.IsVisible ? 1f : 0f;
+                var pg = kv.Value;
+                if (pg is null) continue;
 
-                foreach (var p in pg.Value.Points)
+                var worldHeight = (float)(pg.FontBaseSize * pg.PointScale);
+                var duToWorld = worldHeight / _resCache.CogoPointFontFace.Metrics.DesignUnitsPerEm;
+                var color = pg.Color;
+                var isGroupVisible = pg.IsVisible ? 1f : 0f;
+
+                uint gId = _ids.GetOrAddGroupId(pg);
+                _stateBufs.EnsureGroupCapacity(_ids.GroupCount);
+
+                ref var gs = ref _stateBufs.GroupSpan[(int)gId];
+                gs.Color = color;
+                gs.Scale = (float)pg.PointScale;
+                gs.Flags = pg.IsVisible ? 1u : 0u;
+
+                foreach (var p in pg.Points)
                 {
                     if (p == null) continue;
 
@@ -789,12 +808,50 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     var isSel = p.IsSelected ? 1f : 0f;
                     var ySign = -1f;
 
-                    p.PointNumberBounds = AddLineAndGetRect(p.PointNumber.ToString(), p.PointNumberPosition, duToWorld, color, isVisible, isMO, isSel, ySign);
-                    p.ElevationBounds = AddLineAndGetRect(p.Elevation.ToString("F3"), p.ElevationPosition, duToWorld, color, isVisible, isMO, isSel, ySign);
-                    if (!string.IsNullOrEmpty(p.Description))
+                    uint idPN = _ids.GetOrAddLabelId(p, 0);
+                    uint idElev = _ids.GetOrAddLabelId(p, 1);
+                    bool hasDesc = !string.IsNullOrEmpty(p.Description);
+                    uint idDesc = hasDesc ? _ids.GetOrAddLabelId(p, 2) : 0xFFFFFFFF;
+
+                    _stateBufs.EnsureLabelCapacity(_ids.MaxLabelCount);
+
+                    uint baseFlags = 0;
+                    if (pg.IsVisible) baseFlags |= (uint)LabelFlags.Visible;
+                    if (p.IsSelected) baseFlags |= (uint)LabelFlags.Selected;
+                    if (p.IsMouseOver) baseFlags |= (uint)LabelFlags.MouseOver;
+
+                    _stateBufs.LabelSpan[(int)idPN] = new LabelState { Offset = Vector2.Zero, Flags = baseFlags };
+                    _stateBufs.LabelSpan[(int)idElev] = new LabelState { Offset = Vector2.Zero, Flags = baseFlags };
+                    if (hasDesc)
+                        _stateBufs.LabelSpan[(int)idDesc] = new LabelState { Offset = Vector2.Zero, Flags = baseFlags };
+
+                    p.PointNumberBounds = AddLineAndGetRect(
+                        s: p.PointNumber.ToString(),
+                        originWorld: p.PointNumberPosition,
+                        duToWorld: duToWorld,
+                        color: color,
+                        isVisible: isGroupVisible, isMouseOver: isMO, isSelected: isSel, ySign: ySign,
+                        labelId: idPN, groupId: gId);
+
+                    p.ElevationBounds = AddLineAndGetRect(
+                        s: p.Elevation.ToString("F3"),
+                        originWorld: p.ElevationPosition,
+                        duToWorld: duToWorld,
+                        color: color,
+                        isVisible: isGroupVisible, isMouseOver: isMO, isSelected: isSel, ySign: ySign,
+                        labelId: idElev, groupId: gId);
+
+                    if (hasDesc)
                     {
-                        p.DescriptionBounds = AddLineAndGetRect(p.Description, p.DescriptionPosition, duToWorld, color, isVisible, isMO, isSel, ySign);
+                        p.DescriptionBounds = AddLineAndGetRect(
+                            s: p.Description,
+                            originWorld: p.DescriptionPosition,
+                            duToWorld: duToWorld,
+                            color: color,
+                            isVisible: isGroupVisible, isMouseOver: isMO, isSelected: isSel, ySign: ySign,
+                            labelId: idDesc, groupId: gId);
                     }
+
                     float wupp = Camera.GetWorldUnitsPerPixel();
                     float rW = (float)(GlobalHelperProperties.CogoPointCirclePixelRadius * wupp * p.PointGroup.PointScale);
                     var c = p.Position;
@@ -803,6 +860,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     p.UpdateBounds();
                 }
             }
+
+            _stateBufs.FlushAll();
+            
 
             HitTestableObjectTreeDirty = true;
             _glyphVerticesDirty = false;
@@ -1327,6 +1387,13 @@ namespace Cad_Point_Manager.Controls.D3DControl
             ConstantBuffersInitialized = true;
             ConstantBuffersDirty = true;
         }
+        private void InitializeGlyphStateFields()
+        {
+            _ids ??= new();
+            _stateBufs ??= new(_resCache.Device, _resCache.DeviceContext);
+            _stateCtl ??= new(_ids, _stateBufs);
+            _glyphStateFieldsInitialized = true;
+        }
         private void UpdateConstantBuffers()
         {
             var transformation = Camera.ViewProjectionMatrix;
@@ -1463,22 +1530,20 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
 
         private Rect AddLineAndGetRect(string s, Vector2 originWorld, float duToWorld, Vector4 color,
-            float isVisible, float isMouseOver, float isSelected, float ySign)
+            float isVisible, float isMouseOver, float isSelected, float ySign, uint labelId, uint groupId)
         {
-            if (string.IsNullOrEmpty(s)) return Rect.Empty;
+            if (string.IsNullOrEmpty(s)) { return Rect.Empty; }
 
-            // code points -> glyph ids
             Span<int> cps = stackalloc int[s.Length];
             for (int i = 0; i < s.Length; i++) cps[i] = s[i];
             var gids = _resCache.CogoPointFontFace.GetGlyphIndices(cps.ToArray()); // or cached
 
-            // build instances (what you already do)
             float penDU = 0f;
 
             for (int i = 0; i < gids.Length; i++)
             {
-                short gid = (short)gids[i];
-                if (gid <= 0) continue;
+                short gid = gids[i];
+                if (gid <= 0) { continue; }
 
                 var inst = new GlyphInstance
                 {
@@ -1489,11 +1554,12 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     IsVisible = isVisible,
                     IsMouseOver = isMouseOver,
                     IsSelected = isSelected,
-                    YSign = ySign
+                    YSign = ySign,
+                    LabelId = labelId,
+                    GroupId = groupId
                 };
 
-                if (!_glyphBatches.TryGetValue(gid, out var list))
-                    _glyphBatches[gid] = list = new List<GlyphInstance>(32);
+                if (!_glyphBatches.TryGetValue(gid, out var list)) { _glyphBatches[gid] = list = new List<GlyphInstance>(32); }
 
                 list.Add(inst);
                 penDU += _resCache.AdvanceWidthCache[gid]; // advance in DU
