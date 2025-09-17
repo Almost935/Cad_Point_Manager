@@ -1,5 +1,6 @@
 ﻿using Cad_Point_Manager.Common;
 using Cad_Point_Manager.Controls.D3DControl;
+using Cad_Point_Manager.Controls.D3DControl.Rendering.Text;
 using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Helpers;
 using Cad_Point_Manager.Models.DrawingObjects3D;
@@ -50,7 +51,7 @@ namespace Cad_Point_Manager.Models
         private readonly List<LineVertex> _cachedLineVertices = [];
         private readonly List<TextVertex> _cachedTextVertices = [];
         private readonly List<TextVertex> _cachedPointTextVertices = [];
-        private readonly List<CircleVertex> _cachedPointMarkerVertices = [];
+        private readonly List<PointMarkerInstance> _cachedPointMarkerVertices = [];
 
         private CogoPointTextVerticesDict _pointTextVerticesDict;
         #endregion
@@ -558,10 +559,6 @@ namespace Cad_Point_Manager.Models
                     }
                 }
             }
-            if (hitTestableObject is CogoPoint cogoPoint)
-            {
-
-            }
         }
 
         public void UpdateVerticesIsSelectedAndIsMouseOver(HitTestableObject hitTestableObject, bool isSelected, bool isMouseOver)
@@ -685,7 +682,7 @@ namespace Cad_Point_Manager.Models
 
             return CollectionsMarshal.AsSpan(_cachedTextVertices);
         }
-        public ReadOnlySpan<CircleVertex> UpdateCircleVerticesList()
+        public ReadOnlySpan<PointMarkerInstance> UpdatePointCircleVerticesList(SceneIdMap sceneIdMap)
         {
             if (PointCircleVerticesDirty)
             {
@@ -693,15 +690,24 @@ namespace Cad_Point_Manager.Models
 
                 foreach (var keyValuePair in CogoPointManager.PointGroups)
                 {
-                    var pointGroup = keyValuePair.Value;
+                    var pg = keyValuePair.Value;
+                    if (!pg.IsVisible || pg is null) { continue; }
+                    uint gid = sceneIdMap.GetOrAddGroupId(pg);
 
-                    if (!pointGroup.IsVisible || pointGroup is null) { continue; }
-
-                    foreach (CogoPoint point in pointGroup.Points)
+                    foreach (CogoPoint p in pg.Points)
                     {
-                        point.InitializeMarkerVertex();
-                        point.MarkerIndex = _cachedPointMarkerVertices.Count;
-                        _cachedPointMarkerVertices.Add(point.MarkerVertex);
+                        //p.InitializeMarkerVertex();
+                        //p.MarkerIndex = _cachedPointMarkerVertices.Count;
+                        //_cachedPointMarkerVertices.Add(p.MarkerVertex);
+                        
+                        uint lid = sceneIdMap.GetOrAddLabelId(p, 0);
+                        _cachedPointMarkerVertices.Add(new PointMarkerInstance
+                        {
+                            Position = new Vector3(p.Position.X.ToFloat(), p.Position.Y.ToFloat(), 0f),
+                            Radius = GlobalHelperProperties.CogoPointCirclePixelRadius,
+                            LabelId = lid,
+                            GroupId = gid
+                        });
                     }
                 }
                 PointCircleVerticesDirty = false;
@@ -747,8 +753,8 @@ namespace Cad_Point_Manager.Models
         {
             CogoPointManager.PointGroups.Clear();
 
-            float rows = 5;
-            float cols = 5;
+            float rows = 10;
+            float cols = 50;
             float yIncrement = Extents.Height.ToFloat() / (rows - 1);
             float xIncrement = Extents.Width.ToFloat() / (cols - 1);
             int pointNum = 1;
@@ -807,9 +813,9 @@ namespace Cad_Point_Manager.Models
             }
             return ref span[index];
         }
-        public ref CircleVertex GetCircleVertexRef(int index)
+        public ref PointMarkerInstance GetPointCircleVertexRef(int index)
         {
-            Span<CircleVertex> span = CollectionsMarshal.AsSpan(_cachedPointMarkerVertices);
+            Span<PointMarkerInstance> span = CollectionsMarshal.AsSpan(_cachedPointMarkerVertices);
             if ((uint)index >= (uint)span.Length)
             {
                 throw new ArgumentOutOfRangeException(nameof(index), "Index is out of range.");

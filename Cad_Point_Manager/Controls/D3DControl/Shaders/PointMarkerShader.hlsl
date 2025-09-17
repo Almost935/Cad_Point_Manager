@@ -34,21 +34,15 @@ static const uint LABEL_SELECTED = 2u;
 static const uint LABEL_MOUSEOVER = 4u;
 static const uint GROUP_VISIBLE = 1u;
 
-float4 GetSnappedColor(float4 color)
-{
-    float3 lightBlue = float3(0.4, 0.4, 1.0);
-    float3 resultRgb = lerp(color.rgb, lightBlue, 0.7);
-    return float4(resultRgb, color.a);
-}
 
 // --- Vertex/Geometry interfaces ---
 // Strip per-vertex color and flags; *add* ids
 struct VS_INPUT
 {
     float3 position : POSITION;
-    float radius : RADIUS; // base radius in world (NO group scale)
-    uint labelId : LABEL_ID; // maps to LabelStates
-    uint groupId : GROUP_ID; // maps to GroupStates
+    float radius : RADIUS;
+    uint labelId : LABEL_ID;
+    uint groupId : GROUP_ID;
 };
 
 struct GS_OUTPUT
@@ -83,19 +77,21 @@ void GSMain(point VS_INPUT input[1], inout TriangleStream<GS_OUTPUT> output)
 
     // Visibility
     bool visGrp = (gs.Flags & GROUP_VISIBLE) != 0u;
-    bool visLbl = (ls.Flags & LABEL_VISIBLE) != 0u; // if you want label-visible to hide circle too
+    bool visLbl = (ls.Flags & LABEL_VISIBLE) != 0u;
     if (!visGrp || !visLbl)
+    {
         return;
+    }
 
     // Color from group, then apply hover/selected
     float4 color = gs.Color;
     bool over = (ls.Flags & LABEL_MOUSEOVER) != 0u;
     bool sel = (ls.Flags & LABEL_SELECTED) != 0u;
 
-    if (over)
-        color = GetSnappedColor(color);
     if (sel)
+    {
         color = over ? selectedMouseOverColor : selectedColor;
+    }
 
     // Scale radius by group scale (Option A)
     float radiusWorld = input[0].radius * gs.Scale;
@@ -114,6 +110,8 @@ float4 PSMain(GS_OUTPUT input) : SV_TARGET
 {
     float dist = length(input.offset);
     if (dist > 1.0f)
+    {
         discard;
+    }
     return input.color;
 }

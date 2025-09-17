@@ -49,10 +49,6 @@ struct VSInPerInstance
     float2 OriginWorld : GLYPH_ORIGIN; // baseline origin in world units
     float DuToWorld : GLYPH_SCALE; // base worldUnits per design-unit (pre-group scale)
     float PenDU : GLYPH_PEN; // horizontal pen advance in DU
-    float4 Color : COLOR; // optional base color (can be multiplied with group color)
-    float IsVisible : ISVISIBLE; // legacy path (will be combined with label/group flags)
-    float IsMouseOver : ISMOUSEOVER; // legacy path
-    float IsSelected : ISSELECTED; // legacy path
     float YSign : YSIGN; // +1 or -1 (flip Y if needed)
     uint LabelId : LABEL_ID; // per text line (PN/Elev/Desc)
     uint GroupId : GROUP_ID; // owning PointGroup
@@ -91,13 +87,10 @@ VSOut VSMain(VSInPerVertex v, VSInPerInstance inst)
     LabelState ls = LabelStates[inst.LabelId];
     GroupState gs = GroupStates[inst.GroupId];
 
-    // Effective visibility = instance.Visible (legacy) * label * group
-    // We treat any "false" as hidden.
-    float visInst = (inst.IsVisible > 0.5f) ? 1.0f : 0.0f;
     float visLbl = ((ls.Flags & LABEL_VISIBLE) != 0u) ? 1.0f : 0.0f;
     float visGrp = ((gs.Flags & GROUP_VISIBLE) != 0u) ? 1.0f : 0.0f;
-    float visible = visInst * visLbl * visGrp;
-
+    float visible = visLbl * visGrp;
+    
     // Selection / hover
     float sel = ((ls.Flags & LABEL_SELECTED) != 0u) ? 1.0f : 0.0f;
     float mo = ((ls.Flags & LABEL_MOUSEOVR) != 0u) ? 1.0f : 0.0f;
@@ -119,22 +112,20 @@ VSOut VSMain(VSInPerVertex v, VSInPerInstance inst)
     clip.xy += snap * clip.w;
 
     // --- Color/tint ---
-    // Start from group color; optionally modulate by per-instance base color alpha
     float4 col = gs.Color;
-    col.rgb = col.rgb * inst.Color.rgb; // if you prefer group-only color, remove this line
-    col.a = col.a * inst.Color.a;
+    col.rgb = col.rgb;
+    col.a = col.a;
 
-    if (mo > 0.5f)
-    {
-        // light hover lift (keep your preferred behavior)
-        col = lerp(col, float4(0.4, 0.4, 1, 1), 0.7);
-    }
+    //if (mo > 0.5f)
+    //{
+    //    col = lerp(col, float4(0.4, 0.4, 1, 1), 0.7);
+    //}
     if (sel > 0.5f)
     {
-        col = (mo > 0.5f) ? selectedMouseOverColor : selectedColor;
+        //col = (mo > 0.5f) ? selectedMouseOverColor : selectedColor;
+        col = selectedColor;
     }
 
-    // Pass visibility to PS for clipping
     o.Position = clip;
     o.Color = col;
     o.Visible = visible;

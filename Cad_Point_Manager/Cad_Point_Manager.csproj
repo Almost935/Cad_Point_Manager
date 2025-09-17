@@ -27,6 +27,8 @@
   <ItemGroup>
     <Compile Remove="Controls\D3DControl\D3D11ImageSource.cs" />
     <Compile Remove="Controls\D3DControl\D3dControl.cs" />
+    <Compile Remove="Controls\D3DControl\Rendering\Text\CogoGlyphBatcher.cs" />
+    <Compile Remove="Controls\D3DControl\Rendering\Text\CogoPointLabelLayout.cs" />
     <Compile Remove="Controls\D3DControl\Rendering\Text\CogoPointTextAssembler.cs" />
     <Compile Remove="Controls\D3DControl\Rendering\Text\TextLayoutCache.cs" />
     <Compile Remove="Controls\D3DControl\Rendering\Text\TextMeshBuilder.cs" />

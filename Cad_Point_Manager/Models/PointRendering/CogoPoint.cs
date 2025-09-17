@@ -32,6 +32,7 @@ namespace Cad_Point_Manager.Models.PointRendering
         private string _description;
         private CogoPointManager _cogoPointManager;
         private bool _textBeingMoved = false;
+        private Point _textTbBasePosition = new();
         #endregion
 
         #region Properties
@@ -139,13 +140,23 @@ namespace Cad_Point_Manager.Models.PointRendering
                 }
             }
         }
+        public Point TextTbBasePosition
+        {
+            get => _textTbBasePosition;
+            set
+            {
+                if (_textTbBasePosition != value)
+                {
+                    _textTbBasePosition = value;
+                    OnPropertyChanged(nameof(TextTbBasePosition));
+                }
+            }
+        }
 
         public Point Position => new(Easting, Northing);
         public bool HasPointNumberError => HasErrorsFor(nameof(PointNumber));
 
         public CogoPointBoundsSnapshot CogoPointBounds => _cogoPointBounds ?? _empty;
-
-        public CircleVertex MarkerVertex { get; set; }
         public List<TextVertex> TextVertices { get; set; } = [];
         public List<TextVertex> PointNumberVertices { get; set; } = [];
         public List<TextVertex> ElevationVertices { get; set; } = [];
@@ -228,8 +239,6 @@ namespace Cad_Point_Manager.Models.PointRendering
             return false;
         }
 
-
-
         public override void MouseEnter()
         {
             this.IsMouseOver = true;
@@ -259,6 +268,7 @@ namespace Cad_Point_Manager.Models.PointRendering
         public void ResetTextLocations()
         {
             TextInfoBasePosition = new(Position.X.ToFloat() + (_textBaseHeight * PointGroup.PointScale.ToFloat() * _markerToPointScaleFactor), Position.Y.ToFloat());
+            TextTbBasePosition = TextInfoBasePosition.ToPoint();
             DescriptionPosition = TextInfoBasePosition;
             ElevationPosition = new(DescriptionPosition.X, DescriptionPosition.Y + _textBaseHeight * PointGroup.PointScale.ToFloat() * _textLineSpacingFactor);
             PointNumberPosition = new(ElevationPosition.X, ElevationPosition.Y + _textBaseHeight * PointGroup.PointScale.ToFloat() * _textLineSpacingFactor);
@@ -277,6 +287,7 @@ namespace Cad_Point_Manager.Models.PointRendering
         private void InitializeTextLocations()
         {
             TextInfoBasePosition = new(Position.X.ToFloat() + (_textBaseHeight * PointGroup.PointScale.ToFloat() * _markerToPointScaleFactor), Position.Y.ToFloat());
+            TextTbBasePosition = TextInfoBasePosition.ToPoint();
             DescriptionPosition = TextInfoBasePosition;
             ElevationPosition = new(DescriptionPosition.X, DescriptionPosition.Y + _textBaseHeight * PointGroup.PointScale.ToFloat() * _textLineSpacingFactor);
             PointNumberPosition = new(ElevationPosition.X, ElevationPosition.Y + _textBaseHeight * PointGroup.PointScale.ToFloat() * _textLineSpacingFactor);
@@ -295,23 +306,18 @@ namespace Cad_Point_Manager.Models.PointRendering
             TextVerticesInitialized = true;
             UpdateBounds();
         }
-        public void InitializeMarkerVertex()
-        {
-            MarkerVertex = new(Position.ToSharpDXVector3(), PointGroup.Color, 
-                GlobalHelperProperties.CogoPointCirclePixelRadius * PointGroup.PointScale.ToFloat(), 
-                PointGroup.IsVisible ? 1 : 0,
-                IsMouseOver ? 1 : 0, 
-                IsSelected ? 1 : 0);
-        }
+        //public void InitializeMarkerVertex()
+        //{
+        //    MarkerVertex = new(Position.ToSharpDXVector3(), 
+        //        GlobalHelperProperties.CogoPointCirclePixelRadius, 
+        //        PointGroup.IsVisible ? 1 : 0,
+        //        IsMouseOver ? 1 : 0, 
+        //        IsSelected ? 1 : 0);
+        //}
 
         protected override void OnPropertyChanged(string propertyName)
         {
             base.OnPropertyChanged(propertyName);
-
-            //if (propertyName == nameof(PointNumber) || propertyName == nameof(Elevation) || propertyName == nameof(Description))
-            //{
-            //    RedrawAllVisuals();
-            //}
         }
         #endregion
 

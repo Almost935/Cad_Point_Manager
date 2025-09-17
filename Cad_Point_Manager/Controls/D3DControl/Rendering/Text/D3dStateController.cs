@@ -21,13 +21,14 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
         {
             void Flip(int line)
             {
-                if (!_ids.TryGetLabelId(cp, line, out var lid)) return;
+                if (!_ids.TryGetLabelId(cp, line, out var lid)) { return; }
                 ref var s = ref _bufs.LabelSpan[(int)lid];
-                if (selected) s.Flags |= (uint)LabelFlags.Selected; else s.Flags &= ~(uint)LabelFlags.Selected;
+                if (selected) { s.Flags |= (uint)LabelFlags.Selected; }
+                else { s.Flags &= ~(uint)LabelFlags.Selected; } 
                 _dirty.Add(lid);
             }
             Flip(0); Flip(1);
-            if (!string.IsNullOrEmpty(cp.Description)) Flip(2);
+            if (!string.IsNullOrEmpty(cp.Description)) { Flip(2); }
         }
 
         public void SetGroupVisibility(PointGroup pg, bool visible)

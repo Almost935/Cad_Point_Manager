@@ -45,10 +45,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public Vector2  Origin;     // world position (baseline origin) of the string/line
         public float    DuToWorld;    // scale: DU -> world
         public float    PenDU;        // accumulated advance in DU for this glyph
-        public Vector4  Color;      // rgba
-        public float    IsVisible;    // 1/0
-        public float    IsMouseOver;  // 1/0
-        public float    IsSelected;   // 1/0
         public float    YSign;        // typically -1 when world Y is up and font Y is down
         public uint     LabelId;   // stable per text line: PN/Elev/Desc for a cogo point
         public uint     GroupId;   // PointGroup index
@@ -67,19 +63,26 @@ namespace Cad_Point_Manager.Controls.D3DControl
     public struct LabelState
     {
         public Vector2 Offset; // world-space drag delta
-        public uint Flags;  // bit0: visible, bit1: selected, bit2: mouseOver
-        public float Pad;    // keep 16B stride
+        public uint    Flags;  // bit0: visible, bit1: selected, bit2: mouseOver
+        public float   Pad;    // keep 16B stride
     }
 
     [StructLayout(LayoutKind.Sequential)]
     public struct GroupState
     {
         public Vector4 Color; // rgba
-        public float Scale; // point-scale
-        public uint Flags; // bit0: visible
+        public float   Scale; // point-scale
+        public uint    Flags; // bit0: visible
         public Vector2 Pad;   // 16B stride
     }
 
+    public struct PointMarkerInstance
+    {
+        public Vector3 Position;
+        public float   Radius;
+        public uint    LabelId;
+        public uint    GroupId;
+    }
 
     [StructLayout(LayoutKind.Sequential)]
     public struct OverlayVertex

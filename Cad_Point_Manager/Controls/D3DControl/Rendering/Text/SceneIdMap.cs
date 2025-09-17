@@ -1,5 +1,4 @@
-﻿// Rendering/D3D/SceneIdMap.cs
-using Cad_Point_Manager.Models.PointRendering;
+﻿using Cad_Point_Manager.Models.PointRendering;
 using System.Collections.Generic;
 
 namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
@@ -15,7 +14,7 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
 
         public uint GetOrAddLabelId(CogoPoint cp, int line)
         {
-            if (_labelOf.TryGetValue((cp, line), out var id)) return id;
+            if (_labelOf.TryGetValue((cp, line), out var id)) { return id; }
             id = _nextLabelId++;
             _labelOf[(cp, line)] = id;
             return id;
