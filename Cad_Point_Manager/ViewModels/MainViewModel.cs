@@ -41,8 +41,8 @@ namespace Cad_Point_Manager.ViewModels
         private DxfDocument _dxfDocument;
         private Size _viewportSize = Size.Empty;
         private Camera _camera;
-        private BatchableObservableCollection<KeyValuePair<string, PointGroup>> _pointGroups;
-        private BatchableObservableCollection<CogoPoint> _cogoPoints;
+        private BatchableObservableCollection<KeyValuePair<string, PointGroup>> _pointGroups = [];
+        private BatchableObservableCollection<CogoPoint> _cogoPoints = [];
         private BatchableObservableCollection<CogoPoint> _selectedCogoPoints = [];
         private HitTestablePoint _snappedHitTestablePoint;
         private ObservableCollection<HitTestablePoint> _selectedHitTestablePoints = [];

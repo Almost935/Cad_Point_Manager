@@ -1,4 +1,5 @@
-﻿using SharpDX;
+﻿using Cad_Point_Manager.Models.PointRendering;
+using SharpDX;
 using System.Runtime.InteropServices;
 using Matrix = SharpDX.Matrix;
 
@@ -82,6 +83,28 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public float   Radius;
         public uint    LabelId;
         public uint    GroupId;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    struct ToggleAnchorInstance
+    {
+        public Vector2 Center;
+        public Vector2 Size;           // world half-width/height
+        public Vector2 RadiusFeather;
+        public Vector4 BaseColor;
+        public Vector4 HoverColor;
+        public Vector4 PressedColor;
+        public float On;
+        public uint State; // 0=normal,1=hover,2=pressed
+        private uint _pad0, _pad1;
+    }
+    [StructLayout(LayoutKind.Sequential)]
+    readonly struct AnchorDraw   // for CPU hit-test & mapping
+    {
+        public readonly Vector2 Center;
+        public readonly Vector2 Half;
+        public readonly CogoPoint Point;
+        public AnchorDraw(Vector2 c, Vector2 h, CogoPoint p) { Center = c; Half = h; Point = p; }
     }
 
     [StructLayout(LayoutKind.Sequential)]

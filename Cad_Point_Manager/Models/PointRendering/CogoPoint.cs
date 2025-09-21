@@ -173,6 +173,10 @@ namespace Cad_Point_Manager.Models.PointRendering
         public int TextStartIndex { get; set; }
         public int TextEndIndex { get; set; }
         public int MarkerIndex { get; set; }
+        public Rect ToggleBounds { get; set; } = Rect.Empty;
+        public bool IsMouseOverToggleButton { get; set; } = false;
+        public bool IsToggleButtonSelected { get; set; } = false;
+
         #endregion
 
         #region Constructors
@@ -203,6 +207,13 @@ namespace Cad_Point_Manager.Models.PointRendering
             }
             else
             {
+                if (IsSelected)
+                {
+                    if (ToggleBounds.Contains(p))
+                    {
+                        return 0.0;
+                    }
+                }
                 return double.MaxValue;
             }
         }

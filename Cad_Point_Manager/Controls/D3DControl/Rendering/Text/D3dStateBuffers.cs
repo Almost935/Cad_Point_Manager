@@ -92,6 +92,7 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
 
         public void FlushAll()
         {
+            if (_groupBuf is null || _labelBuf is null) { return; }
             // groups (few): discard whole
             DataStream s;
             _ctx.MapSubresource(_groupBuf, 0, MapMode.WriteDiscard, MapFlags.None, out s);

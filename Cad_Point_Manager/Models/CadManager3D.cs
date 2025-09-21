@@ -31,12 +31,12 @@ namespace Cad_Point_Manager.Models
         private const float _pointSizeToExtentsFactor = 0.001f;
 
         private bool _dxfLoaded = false;
-        private bool _lineVerticesDirty = true;
-        private bool _textVerticesDirty = true;
-        private bool _dxfPointTextVerticesDirty = true;
-        private bool _dxfPointCircleVerticesDirty = true;
-        private bool _drawingObjectTreeDirty = true;
-        private bool _dxfNeedsReload = true;
+        private bool _lineVerticesDirty = false;
+        private bool _textVerticesDirty = false;
+        private bool _dxfPointTextVerticesDirty = false;
+        private bool _dxfPointCircleVerticesDirty = false;
+        private bool _drawingObjectTreeDirty = false;
+        private bool _dxfNeedsReload = false;
         private Rect _extents = RectExtensions.Zero;
         private ObservableCollection<KeyValuePair<string, ObjectLayer3D>> _layers = [];
         private ICollectionView _layersView;

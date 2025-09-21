@@ -44,16 +44,10 @@ namespace Cad_Point_Manager.Models.HitTesting
 
             if (MathHelpers.RectsIntersect(view, Extents))
             {
-                if (ChildNodes is null)
-                {
-                    intersectingNodes.Add(this);
-                }
+                if (ChildNodes is null) { intersectingNodes.Add(this); }
                 else
                 {
-                    foreach (var child in ChildNodes)
-                    {
-                        intersectingNodes.AddRange(child.GetIntersectingQuadTreeNodes(view));
-                    }
+                    foreach (var child in ChildNodes) { intersectingNodes.AddRange(child.GetIntersectingQuadTreeNodes(view)); }
                 }
             }
             return intersectingNodes;
@@ -64,16 +58,10 @@ namespace Cad_Point_Manager.Models.HitTesting
 
             if (Extents.Contains(p))
             {
-                if (Level == 0)
-                {
-                    nodes.Add(this);
-                }
+                if (Level == 0) { nodes.Add(this); }
                 else
                 {
-                    foreach (var child in ChildNodes)
-                    {
-                        nodes.AddRange(child.GetNodesAtPoint(p));
-                    }
+                    foreach (var child in ChildNodes) { nodes.AddRange(child.GetNodesAtPoint(p)); }
                 }
             }
             return nodes;
@@ -84,10 +72,7 @@ namespace Cad_Point_Manager.Models.HitTesting
 
             if (Extents.Contains(p))
             {
-                if (Level == 0)
-                {
-                    node = this;
-                }
+                if (Level == 0) { node = this; }
                 else
                 {
                     foreach (var child in ChildNodes)

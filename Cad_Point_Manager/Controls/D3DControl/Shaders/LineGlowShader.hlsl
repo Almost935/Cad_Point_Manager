@@ -36,10 +36,14 @@ VSInput VSMain(VSInput input)
 [maxvertexcount(6)]
 void GSMain(line VSInput input[2], inout TriangleStream<GSInput> triStream)
 {
-    const bool anyVisible = (input[0].IsVisible > 0.5) || (input[1].IsVisible > 0.5);
-    const bool anySelected = (input[0].IsSelected > 0.5) || (input[1].IsSelected > 0.5);
-    const bool anyMouseOver = (input[0].IsMouseOver > 0.5) || (input[1].IsMouseOver > 0.5);
-    if (!(anyVisible && (anySelected || anyMouseOver)))
+    const bool isVisible = (input[0].IsVisible > 0.5) || (input[1].IsVisible > 0.5);
+    const bool isSelected = (input[0].IsSelected > 0.5) || (input[1].IsSelected > 0.5);
+    const bool isMouseOver = (input[0].IsMouseOver > 0.5) || (input[1].IsMouseOver > 0.5);
+    //if (!(anyVisible && (anySelected || anyMouseOver)))
+    //{
+    //    return;
+    //}
+    if (!isVisible || !isMouseOver)
     {
         return;
     }

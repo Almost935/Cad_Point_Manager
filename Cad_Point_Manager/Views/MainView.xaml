@@ -510,7 +510,7 @@
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
-                    <ItemsControl x:Name="SelectedPointButtonsItemsControl"
+                    <!--<ItemsControl x:Name="SelectedPointButtonsItemsControl"
                                   ItemsSource="{Binding SelectedCogoPoints}"
                                   Background="{x:Null}"
                                   Width="{Binding ElementName=BackgroundCanvas, Path=ActualWidth}"
@@ -581,7 +581,7 @@
                                 </Grid>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
-                    </ItemsControl>
+                    </ItemsControl>-->
                 </Canvas>
             </Grid>
         </Grid>
