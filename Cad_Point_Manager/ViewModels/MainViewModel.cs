@@ -396,9 +396,6 @@ namespace Cad_Point_Manager.ViewModels
 
             ZoomToExtentsCommand = new RelayCommand<RoutedEventArgs>(ZoomToExtents);
 
-            CogoPointCheckedCommand = new RelayCommand<CogoPoint>(OnCogoPointToggleButtonChecked);
-            CogoPointUncheckedCommand = new RelayCommand<CogoPoint>(OnCogoPointToggleButtonUnchecked);
-
             SelectedGeometries.CollectionChanged += SelectedGeometries_CollectionChanged;
         }
         #endregion
@@ -492,54 +489,51 @@ namespace Cad_Point_Manager.ViewModels
 
 
         // CogoPoint Movement Methods
-        private void OnCogoPointToggleButtonChecked(CogoPoint point)
-        {
-            EndDraggingText();
-            BeginDraggingText(point);
-        }
-        private void OnCogoPointToggleButtonUnchecked(CogoPoint point)
-        {
-            EndDraggingText();
-        }
-        public void BeginDraggingText(CogoPoint point)
-        {
-            JobFileManager.CadManager3D.HitTestingEnabled = false;
-            _draggingPoint = point;
-            _draggingPoint.TextBeingMoved = true;
-            point.MouseLeave();
-            point.MoveTextInfoToPoint(MousePosition);
+        //private void OnCogoPointToggleButtonChecked(CogoPoint point)
+        //{
+        //    EndDraggingText();
+        //    BeginDraggingText(point);
+        //}
+        //private void OnCogoPointToggleButtonUnchecked(CogoPoint point)
+        //{
+        //    EndDraggingText();
+        //}
+        //public void BeginDraggingText(CogoPoint point)
+        //{
+        //    JobFileManager.CadManager3D.HitTestingEnabled = false;
+        //    _draggingPoint = point;
+        //    _draggingPoint.TextBeingMoved = true;
+        //    point.MouseLeave();
+        //    point.MoveTextInfoToPoint(MousePosition);
 
 
-            if (!_isRenderingAttached)
-            {
-                CompositionTarget.Rendering += OnRenderFrame;
-                _isRenderingAttached = true;
-            }
-        }
-        public void EndDraggingText()
-        {
-            JobFileManager.CadManager3D.HitTestingEnabled = true;
-            if (_draggingPoint != null)
-            {
-                _draggingPoint.TextBeingMoved = false;
-                _draggingPoint = null;
-            }
+        //    if (!_isRenderingAttached)
+        //    {
+        //        CompositionTarget.Rendering += OnRenderFrame;
+        //        _isRenderingAttached = true;
+        //    }
+        //}
+        //public void EndDraggingText()
+        //{
+        //    JobFileManager.CadManager3D.HitTestingEnabled = true;
+        //    if (_draggingPoint != null)
+        //    {
+        //        _draggingPoint.TextBeingMoved = false;
+        //        _draggingPoint = null;
+        //    }
 
-            JobFileManager.CadManager3D.UpdateHitTestableObjectTree();
+        //    JobFileManager.CadManager3D.UpdateHitTestableObjectTree();
 
-            if (_isRenderingAttached)
-            {
-                CompositionTarget.Rendering -= OnRenderFrame;
-                _isRenderingAttached = false;
-            }
-        }
-        private void OnRenderFrame(object? sender, EventArgs e)
-        {
-            if (_draggingPoint == null) { return; }
-            if (!_draggingPoint.TextBeingMoved) { EndDraggingText(); }
-
-            _draggingPoint.MoveTextInfoToPoint(MousePosition);
-        }
+        //    if (_isRenderingAttached)
+        //    {
+        //        CompositionTarget.Rendering -= OnRenderFrame;
+        //        _isRenderingAttached = false;
+        //    }
+        //}
+        //private void OnRenderFrame(object? sender, EventArgs e)
+        //{
+            
+        //}
 
 
         // Point Creation Methods
@@ -656,10 +650,7 @@ namespace Cad_Point_Manager.ViewModels
         // Key up event handling
         public void Window_KeyUp(object sender, KeyEventArgs e)
         {
-            if (e.Key == Key.Escape)
-            {
-                EndDraggingText();
-            }
+            
         }
         #endregion
 

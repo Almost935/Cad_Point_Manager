@@ -85,6 +85,21 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public uint    GroupId;
     }
 
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct LeaderLineSettings
+    {
+       
+    }
+    [StructLayout(LayoutKind.Sequential)]
+    public struct LeaderLineInstance
+    {
+        public Vector2 Start;        // world: ellipse center
+        public Vector2 End;    // world: text base *before* drag; shader adds LabelSRV.Offset
+        public uint LabelId;  // same scheme you use for glyphs/circles (per-CogoPoint label id)
+        public uint GroupId;  // PointGroup index
+    }
+
     [StructLayout(LayoutKind.Sequential)]
     struct ToggleAnchorInstance
     {

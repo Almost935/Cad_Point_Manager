@@ -696,10 +696,6 @@ namespace Cad_Point_Manager.Models
 
                     foreach (CogoPoint p in pg.Points)
                     {
-                        //p.InitializeMarkerVertex();
-                        //p.MarkerIndex = _cachedPointMarkerVertices.Count;
-                        //_cachedPointMarkerVertices.Add(p.MarkerVertex);
-                        
                         uint lid = sceneIdMap.GetOrAddLabelId(p, 0);
                         _cachedPointMarkerVertices.Add(new PointMarkerInstance
                         {

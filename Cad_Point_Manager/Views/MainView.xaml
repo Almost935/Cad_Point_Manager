@@ -477,39 +477,6 @@
                             </TransformGroup>
                         </uc:SignificantPointControl.RenderTransform>
                     </uc:SignificantPointControl>
-                    <ItemsControl x:Name="SelectedHitTestablePointsItemsControl"
-                                  ItemsSource="{Binding SelectedHitTestablePoints}"
-                                  Width="{Binding ElementName=BackgroundCanvas, Path=ActualWidth}"
-                                  Height="{Binding ElementName=BackgroundCanvas, Path=ActualHeight}"
-                                  Panel.ZIndex="500"
-                                  RenderOptions.BitmapScalingMode="LowQuality"
-                                  IsHitTestVisible="False"
-                                  ClipToBounds="False">
-                        <ItemsControl.ItemsPanel>
-                            <ItemsPanelTemplate>
-                                <Canvas Background="{x:Null}" />
-                            </ItemsPanelTemplate>
-                        </ItemsControl.ItemsPanel>
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate DataType="{x:Type hitTesting:HitTestablePoint}">
-                                <Path Fill="{StaticResource SelectedHitTestablePointBrush}">
-                                    <Path.Data>
-                                        <EllipseGeometry x:Name="HitTestablePointEllipse"
-                                                         RadiusX="4"
-                                                         RadiusY="4">
-                                            <EllipseGeometry.Center>
-                                                <MultiBinding Converter="{StaticResource PointMatrixTransformationConverter}">
-                                                    <Binding Path="Position" />
-                                                    <Binding Path="DataContext.Camera.WpfMatrix"
-                                                             RelativeSource="{RelativeSource AncestorType=Page}" />
-                                                </MultiBinding>
-                                            </EllipseGeometry.Center>
-                                        </EllipseGeometry>
-                                    </Path.Data>
-                                </Path>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
                     <!--<ItemsControl x:Name="SelectedPointButtonsItemsControl"
                                   ItemsSource="{Binding SelectedCogoPoints}"
                                   Background="{x:Null}"

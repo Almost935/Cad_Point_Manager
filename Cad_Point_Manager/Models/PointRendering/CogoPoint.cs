@@ -31,7 +31,6 @@ namespace Cad_Point_Manager.Models.PointRendering
         private PointGroup _pointGroup;
         private string _description;
         private CogoPointManager _cogoPointManager;
-        private bool _textBeingMoved = false;
         private Point _textTbBasePosition = new();
         #endregion
 
@@ -128,30 +127,6 @@ namespace Cad_Point_Manager.Models.PointRendering
                 }
             }
         }
-        public bool TextBeingMoved
-        {
-            get => _textBeingMoved;
-            set
-            {
-                if (_textBeingMoved != value)
-                {
-                    _textBeingMoved = value;
-                    OnPropertyChanged(nameof(TextBeingMoved));
-                }
-            }
-        }
-        public Point TextTbBasePosition
-        {
-            get => _textTbBasePosition;
-            set
-            {
-                if (_textTbBasePosition != value)
-                {
-                    _textTbBasePosition = value;
-                    OnPropertyChanged(nameof(TextTbBasePosition));
-                }
-            }
-        }
 
         public Point Position => new(Easting, Northing);
         public bool HasPointNumberError => HasErrorsFor(nameof(PointNumber));
@@ -166,6 +141,7 @@ namespace Cad_Point_Manager.Models.PointRendering
         public Rect DescriptionBounds { get; set; } = Rect.Empty;
         public Rect EllipseBounds { get; set; } = Rect.Empty;
         public Vector2 TextInfoBasePosition { get; set; }
+        public Vector2 TextInfoCurrentPos { get; set; }
         public Vector2 PointNumberPosition { get; set; }
         public Vector2 ElevationPosition { get; set; }
         public Vector2 DescriptionPosition { get; set; }
@@ -175,8 +151,8 @@ namespace Cad_Point_Manager.Models.PointRendering
         public int MarkerIndex { get; set; }
         public Rect ToggleBounds { get; set; } = Rect.Empty;
         public bool IsMouseOverToggleButton { get; set; } = false;
-        public bool IsToggleButtonSelected { get; set; } = false;
-
+        public bool IsToggleButtonPressed { get; set; } = false;
+        public bool HasLeaderLine { get; set; } = false;
         #endregion
 
         #region Constructors
@@ -278,16 +254,28 @@ namespace Cad_Point_Manager.Models.PointRendering
 
         public void ResetTextLocations()
         {
+            HasLeaderLine = false;
             TextInfoBasePosition = new(Position.X.ToFloat() + (_textBaseHeight * PointGroup.PointScale.ToFloat() * _markerToPointScaleFactor), Position.Y.ToFloat());
-            TextTbBasePosition = TextInfoBasePosition.ToPoint();
+            TextInfoCurrentPos = TextInfoBasePosition;
             DescriptionPosition = TextInfoBasePosition;
             ElevationPosition = new(DescriptionPosition.X, DescriptionPosition.Y + _textBaseHeight * PointGroup.PointScale.ToFloat() * _textLineSpacingFactor);
             PointNumberPosition = new(ElevationPosition.X, ElevationPosition.Y + _textBaseHeight * PointGroup.PointScale.ToFloat() * _textLineSpacingFactor);
         }
 
-        public void MoveTextInfoToPoint(Point point)
+        public void MoveTextInfoToPoint(Point newBasePos)
         {
+            HasLeaderLine = true;
+            TextInfoCurrentPos = newBasePos.ToSharpDXVector2();
 
+            // Recompute the three lines using your spacing + scale
+            float h = _textBaseHeight * PointGroup.PointScale.ToFloat();
+
+            DescriptionPosition = TextInfoCurrentPos;
+            ElevationPosition = new(DescriptionPosition.X, DescriptionPosition.Y + h * _textLineSpacingFactor);
+            PointNumberPosition = new(ElevationPosition.X, ElevationPosition.Y + h * _textLineSpacingFactor);
+
+            // Bounds & verts will be rebuilt by the renderer on the next frame
+            UpdateBounds();
         }
 
         private void UpdatePointPosition(Vector translate)
@@ -298,7 +286,7 @@ namespace Cad_Point_Manager.Models.PointRendering
         private void InitializeTextLocations()
         {
             TextInfoBasePosition = new(Position.X.ToFloat() + (_textBaseHeight * PointGroup.PointScale.ToFloat() * _markerToPointScaleFactor), Position.Y.ToFloat());
-            TextTbBasePosition = TextInfoBasePosition.ToPoint();
+            TextInfoCurrentPos = TextInfoBasePosition;
             DescriptionPosition = TextInfoBasePosition;
             ElevationPosition = new(DescriptionPosition.X, DescriptionPosition.Y + _textBaseHeight * PointGroup.PointScale.ToFloat() * _textLineSpacingFactor);
             PointNumberPosition = new(ElevationPosition.X, ElevationPosition.Y + _textBaseHeight * PointGroup.PointScale.ToFloat() * _textLineSpacingFactor);
@@ -317,15 +305,6 @@ namespace Cad_Point_Manager.Models.PointRendering
             TextVerticesInitialized = true;
             UpdateBounds();
         }
-        //public void InitializeMarkerVertex()
-        //{
-        //    MarkerVertex = new(Position.ToSharpDXVector3(), 
-        //        GlobalHelperProperties.CogoPointCirclePixelRadius, 
-        //        PointGroup.IsVisible ? 1 : 0,
-        //        IsMouseOver ? 1 : 0, 
-        //        IsSelected ? 1 : 0);
-        //}
-
         protected override void OnPropertyChanged(string propertyName)
         {
             base.OnPropertyChanged(propertyName);
