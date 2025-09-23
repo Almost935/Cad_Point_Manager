@@ -89,7 +89,10 @@ namespace Cad_Point_Manager.Controls.D3DControl
     [StructLayout(LayoutKind.Sequential)]
     public struct LeaderLineSettings
     {
-       
+        public Vector2 InvViewport;
+        public float PixelThickness;
+        public float _pad;
+        public Vector4 SelectedColor;
     }
     [StructLayout(LayoutKind.Sequential)]
     public struct LeaderLineInstance

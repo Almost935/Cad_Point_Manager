@@ -1,38 +1,41 @@
 ﻿// LeaderLineShader.hlsl
+// One POINT per line: (A, BBase, LabelId, GroupId) -> GS extrudes pixel-width quad.
+// Uses LabelSRV/GroupSRV for visibility, selection, color; adds LabelSRV.Offset so it follows drag.
 
-cbuffer TransformBuffer : register(b0) 
+cbuffer TransformBuffer : register(b0) // same as your other passes
 {
-    row_major float4x4 ViewProj;
-};
+    row_major float4x4 ViewProj; // world -> clip
+}
 
 cbuffer LeaderLineSettings : register(b1)
 {
+    float2 InvViewport; // (1/width, 1/height) in pixels
     float PixelThickness; // e.g., 1.5
-    float Pad0, Pad1, Pad2;
-    float4 SelectedColor;
-};
+    float _pad0;
+    float4 SelectedColor; // rgba
+}
 
-// Match your C# instance
+// Must match your C# instance (PointList)
 struct VSIn
 {
-    float2 A : POSITION; // world
-    float2 BBase : TEXCOORD0; // world (unoffset)
-    uint LabelId : TEXCOORD1;
-    uint GroupId : TEXCOORD2;
+    float2 A : POSITION; // world: ellipse center
+    float2 BBase : TEXCOORD0; // world: text base (UN-offset)
+    uint LabelId : TEXCOORD1; // index into LabelSRV
+    uint GroupId : TEXCOORD2; // index into GroupSRV
 };
 
 struct VSOut
 {
     float4 aClip : TEXCOORD0; // clip-space A
-    float4 bClip : TEXCOORD1; // clip-space B (with offset applied later)
-    float2 aWorld : TEXCOORD2; // for distance calc
-    float2 bWorld : TEXCOORD3;
+    float4 bClip : TEXCOORD1; // clip-space BBase
+    float2 aWorld : TEXCOORD2; // world A
+    float2 bWorld : TEXCOORD3; // world BBase
     uint labelId : TEXCOORD4;
     uint groupId : TEXCOORD5;
-    float4 pos : SV_POSITION; // we'll render a full-screen-aligned tri pair, but here we just pass one point
+    float4 pos : SV_POSITION; // dummy (IA = PointList)
 };
 
-// State SRVs (exactly like your glyph/circle shaders)
+// Match your C# SRV structs (packing/flags)
 struct LabelState
 {
     float2 Offset;
@@ -50,7 +53,7 @@ struct GroupState
 StructuredBuffer<LabelState> LabelSRV : register(t0);
 StructuredBuffer<GroupState> GroupSRV : register(t1);
 
-// Bit flags (match your app)
+// Flags (same as your other passes)
 static const uint LABEL_VISIBLE = 1u << 0;
 static const uint LABEL_SELECTED = 1u << 1;
 static const uint GROUP_VISIBLE = 1u << 0;
@@ -58,89 +61,89 @@ static const uint GROUP_VISIBLE = 1u << 0;
 VSOut VSMain(VSIn v)
 {
     VSOut o;
+    o.aWorld = v.A;
+    o.bWorld = v.BBase;
+    o.aClip = mul(float4(v.A, 0, 1), ViewProj);
+    o.bClip = mul(float4(v.BBase, 0, 1), ViewProj);
     o.labelId = v.LabelId;
     o.groupId = v.GroupId;
-
-    // We'll add offset in PS for exactness; also keep world positions for distance
-    float2 aW = v.A;
-    float2 bW = v.BBase; // + offset in PS
-    o.aWorld = aW;
-    o.bWorld = bW;
-
-    o.aClip = mul(float4(aW, 0, 1), ViewProj);
-    o.bClip = mul(float4(bW, 0, 1), ViewProj);
-
-    // Dummy SV_POSITION; we'll draw as a line list (hardware line) and do AA in PS
-    o.pos = o.aClip;
+    o.pos = o.aClip; // not used; required output
     return o;
 }
 
-float2 ClosestPointOnSegment(float2 p, float2 a, float2 b)
+struct GSOut
 {
-    float2 ab = b - a;
-    float t = saturate(dot(p - a, ab) / dot(ab, ab) + 1e-12);
-    return a + t * ab;
-}
+    float4 pos : SV_POSITION;
+    float4 col : COLOR0;
+};
 
-float4 PSMain(VSOut i) : SV_Target
+[maxvertexcount(4)]
+void GSMain(point VSOut vin[1], inout TriangleStream<GSOut> tri)
 {
-    // Look up states
+    VSOut i = vin[0];
+
+    // Look up state
     LabelState ls = LabelSRV[i.labelId];
     GroupState gs = GroupSRV[i.groupId];
 
-    // Visibility (exactly like glyph/circles)
-    bool visLbl = (ls.Flags & LABEL_VISIBLE) != 0u;
-    bool visGrp = (gs.Flags & GROUP_VISIBLE) != 0u;
-    if (!(visLbl && visGrp))
-        discard;
+    // Visibility (same rules as glyphs/circles)
+    if (((ls.Flags & LABEL_VISIBLE) == 0u) || ((gs.Flags & GROUP_VISIBLE) == 0u))
+        return;
 
-    // Live endpoint B = base + label offset (so drag follows with SRV updates)
+    // Live endpoint B = BBase + label offset
     float2 aW = i.aWorld;
     float2 bW = i.bWorld + ls.Offset;
 
-    // Project to screen (NDC → pixel scale via derivatives)
+    // Project to CLIP & NDC
     float4 aC = mul(float4(aW, 0, 1), ViewProj);
     float4 bC = mul(float4(bW, 0, 1), ViewProj);
     float2 aN = aC.xy / aC.w;
     float2 bN = bC.xy / bC.w;
 
-    // Current fragment in NDC: approximate from SV_Position via derivatives
-    // We don’t have exact pixel coords in PS without viewport; derivative AA is enough:
-    // Compute distance in NDC using a local linearization
-    float2 pN = ((ddx(aN) + ddy(aN)) * 0.0); // 0, just to silence warnings
+    // Direction in NDC
+    float2 dir = bN - aN;
+    float len = length(dir);
+    if (len < 1e-6)
+        return;
+    dir /= len;
 
-    // Compute screen-space metric via fwidth on the distance field below:
-    // Distance from this pixel to the segment in NDC:
-    // Evaluate at the center line between endpoints; we can reconstruct using derivatives
-    // Instead, compute distance in CLIP via homogeneous division trick:
-    // Simpler robust approach: compute distance in NDC from current interpolants:
-    float2 abN = bN - aN;
+    // Perp in NDC; convert desired pixel thickness to NDC using InvViewport (NDC range = 2)
+    float2 perpN = float2(-dir.y, dir.x);
+    float2 pxToN = 2.0 * InvViewport;
+    float2 offsN = perpN * (0.5 * PixelThickness) * pxToN;
 
-    // Reconstruct this pixel's NDC from interpolated clip (approx):
-    // Use SV_Position is not directly available here; we'll approximate by using
-    // the fact we rasterized the hardware line A->B (good enough with AA below).
-    // For reliable, draw a full-screen tri and compute from SV_Position—but
-    // we’ll rely on derivative AA to give constant thickness:
+    // Quad corners in NDC
+    float2 aN0 = aN - offsN;
+    float2 aN1 = aN + offsN;
+    float2 bN0 = bN - offsN;
+    float2 bN1 = bN + offsN;
 
-    // Signed distance field to a line segment in NDC
-    float2 apN = 0.5 * (aN + bN); // centerline approx for stability
-    float2 cN = ClosestPointOnSegment(apN, aN, bN);
-    float dToLineN = length(apN - cN); // proxy distance
+    // Back to CLIP using original w,z for each end
+    float4 vA0 = float4(aN0 * aC.w, aC.z, aC.w);
+    float4 vA1 = float4(aN1 * aC.w, aC.z, aC.w);
+    float4 vB0 = float4(bN0 * bC.w, bC.z, bC.w);
+    float4 vB1 = float4(bN1 * bC.w, bC.z, bC.w);
 
-    // Pixel scale factor (NDC per pixel) ~ fwidth of the projection
-    float pixN = max(length(fwidth(aN)) + length(fwidth(bN)), 1e-5);
-
-    // Build a 1D AA ramp for thickness in pixels
-    float halfPx = 0.5 * PixelThickness * pixN;
-    float alpha = smoothstep(halfPx, 0.0, dToLineN);
-
-    // Color: group color with selected override
+    // Color from group; override if selected
     float4 col = gs.Color;
     if ((ls.Flags & LABEL_SELECTED) != 0u)
         col = SelectedColor;
 
-    col.a *= alpha;
-    if (col.a <= 0.001)
-        discard;
-    return col;
+    // Emit strip
+    GSOut o;
+    o.col = col;
+    o.pos = vA0;
+    tri.Append(o);
+    o.pos = vA1;
+    tri.Append(o);
+    o.pos = vB0;
+    tri.Append(o);
+    o.pos = vB1;
+    tri.Append(o);
+    tri.RestartStrip();
+}
+
+float4 PSMain(GSOut i) : SV_Target
+{
+    return i.col; // simple solid; AA comes from rasterization of the quad
 }

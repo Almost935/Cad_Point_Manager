@@ -16,7 +16,7 @@ struct VSQuadIn
 struct VSInst
 {
     float2 center : TEXCOORD0; // world center
-    float2 size : TEXCOORD1; // world half-width/half-height
+    float2 size : TEXCOORD1; // world half-width/half-heaight
     float2 rf : TEXCOORD2; // x=corner radius (world), y=feather (world)
     float4 baseCol : TEXCOORD3; // normal color
     float4 hoverCol : TEXCOORD4; // hover color

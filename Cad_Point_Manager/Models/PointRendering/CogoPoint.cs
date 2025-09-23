@@ -130,6 +130,7 @@ namespace Cad_Point_Manager.Models.PointRendering
 
         public Point Position => new(Easting, Northing);
         public bool HasPointNumberError => HasErrorsFor(nameof(PointNumber));
+        public bool HasDescription => !string.IsNullOrWhiteSpace(Description);
 
         public CogoPointBoundsSnapshot CogoPointBounds => _cogoPointBounds ?? _empty;
         public List<TextVertex> TextVertices { get; set; } = [];
@@ -141,6 +142,7 @@ namespace Cad_Point_Manager.Models.PointRendering
         public Rect DescriptionBounds { get; set; } = Rect.Empty;
         public Rect EllipseBounds { get; set; } = Rect.Empty;
         public Vector2 TextInfoBasePosition { get; set; }
+        public Vector2 TextInfoOffset { get; set; }
         public Vector2 TextInfoCurrentPos { get; set; }
         public Vector2 PointNumberPosition { get; set; }
         public Vector2 ElevationPosition { get; set; }
@@ -153,6 +155,9 @@ namespace Cad_Point_Manager.Models.PointRendering
         public bool IsMouseOverToggleButton { get; set; } = false;
         public bool IsToggleButtonPressed { get; set; } = false;
         public bool HasLeaderLine { get; set; } = false;
+        public LabelState PointNumberLabelState { get; set; }
+        public LabelState ElevationLabelState { get; set; }
+        public LabelState DescriptionLabelState { get; set; }
         #endregion
 
         #region Constructors
@@ -250,6 +255,11 @@ namespace Cad_Point_Manager.Models.PointRendering
             if (PointGroup == pointGroup) { return; }
             PointGroup = pointGroup;
             PointGroup.TryAddPoint(this);
+        }
+
+        public void SetTextInfoOffset(Vector2 offset)
+        {
+            TextInfoOffset = offset;
         }
 
         public void ResetTextLocations()
