@@ -31,7 +31,6 @@ namespace Cad_Point_Manager.Models.PointRendering
         private PointGroup _pointGroup;
         private string _description;
         private CogoPointManager _cogoPointManager;
-        private Point _textTbBasePosition = new();
         #endregion
 
         #region Properties
@@ -51,14 +50,11 @@ namespace Cad_Point_Manager.Models.PointRendering
             get { return _northing; }
             set
             {
-                var preValue = _northing;
-                var newValue = value;
-
-                _northing = value;
-                OnPropertyChanged(nameof(Northing));
-
-                double delta = newValue - preValue;
-                if (delta > double.MinValue) { UpdatePointPosition(new Vector(0, delta)); }
+                if (_northing != value)
+                {
+                    _northing = value;
+                    OnPropertyChanged(nameof(Northing));
+                }
             }
         }
         public double Easting
@@ -68,14 +64,8 @@ namespace Cad_Point_Manager.Models.PointRendering
             {
                 if (_easting != value)
                 {
-                    var preValue = _easting;
-                    var newValue = value;
-
                     _easting = value;
                     OnPropertyChanged(nameof(Easting));
-
-                    double delta = newValue - preValue;
-                    if (delta > double.MinValue) { UpdatePointPosition(new Vector(delta, 0)); }
                 }
             }
         }
@@ -133,20 +123,15 @@ namespace Cad_Point_Manager.Models.PointRendering
         public bool HasDescription => !string.IsNullOrWhiteSpace(Description);
 
         public CogoPointBoundsSnapshot CogoPointBounds => _cogoPointBounds ?? _empty;
-        public List<TextVertex> TextVertices { get; set; } = [];
-        public List<TextVertex> PointNumberVertices { get; set; } = [];
-        public List<TextVertex> ElevationVertices { get; set; } = [];
-        public List<TextVertex> DescriptionVertices { get; set; } = [];
         public Rect PointNumberBounds { get; set; } = Rect.Empty;
         public Rect ElevationBounds { get; set; } = Rect.Empty;
         public Rect DescriptionBounds { get; set; } = Rect.Empty;
         public Rect EllipseBounds { get; set; } = Rect.Empty;
         public Vector2 TextInfoBasePosition { get; set; }
         public Vector2 TextInfoOffset { get; set; }
-        public Vector2 TextInfoCurrentPos { get; set; }
-        public Vector2 PointNumberPosition { get; set; }
-        public Vector2 ElevationPosition { get; set; }
-        public Vector2 DescriptionPosition { get; set; }
+        public Vector2 PointNumberOffset { get; set; }
+        public Vector2 ElevationOffset { get; set; }
+        public Vector2 DescriptionOffset { get; set; }
         public bool TextVerticesInitialized { get; set; }
         public int TextStartIndex { get; set; }
         public int TextEndIndex { get; set; }
@@ -155,9 +140,6 @@ namespace Cad_Point_Manager.Models.PointRendering
         public bool IsMouseOverToggleButton { get; set; } = false;
         public bool IsToggleButtonPressed { get; set; } = false;
         public bool HasLeaderLine { get; set; } = false;
-        public LabelState PointNumberLabelState { get; set; }
-        public LabelState ElevationLabelState { get; set; }
-        public LabelState DescriptionLabelState { get; set; }
         #endregion
 
         #region Constructors
@@ -171,15 +153,12 @@ namespace Cad_Point_Manager.Models.PointRendering
             Easting = position.X;
             Elevation = elevation;
             Description = description;
-            InitializeTextLocations();
             ResetTextLocations();
             UpdateBounds();
         }
         #endregion
 
         #region Methods
-        public void SetBoundsSnapshot(CogoPointBoundsSnapshot snap) => _cogoPointBounds = snap;
-
         public override double DistanceToPoint(Point p)
         {
             if (PointNumberBounds.Contains(p) || ElevationBounds.Contains(p) || DescriptionBounds.Contains(p) || EllipseBounds.Contains(p))
@@ -266,55 +245,12 @@ namespace Cad_Point_Manager.Models.PointRendering
         {
             HasLeaderLine = false;
             TextInfoBasePosition = new(Position.X.ToFloat() + (_textBaseHeight * PointGroup.PointScale.ToFloat() * _markerToPointScaleFactor), Position.Y.ToFloat());
-            TextInfoCurrentPos = TextInfoBasePosition;
-            DescriptionPosition = TextInfoBasePosition;
-            ElevationPosition = new(DescriptionPosition.X, DescriptionPosition.Y + _textBaseHeight * PointGroup.PointScale.ToFloat() * _textLineSpacingFactor);
-            PointNumberPosition = new(ElevationPosition.X, ElevationPosition.Y + _textBaseHeight * PointGroup.PointScale.ToFloat() * _textLineSpacingFactor);
+
+            DescriptionOffset = Vector2.Zero;
+            ElevationOffset = new(0, _textBaseHeight * PointGroup.PointScale.ToFloat() * _textLineSpacingFactor);
+            PointNumberOffset = new(0, _textBaseHeight * PointGroup.PointScale.ToFloat() * _textLineSpacingFactor * 2);
         }
 
-        public void MoveTextInfoToPoint(Point newBasePos)
-        {
-            HasLeaderLine = true;
-            TextInfoCurrentPos = newBasePos.ToSharpDXVector2();
-
-            // Recompute the three lines using your spacing + scale
-            float h = _textBaseHeight * PointGroup.PointScale.ToFloat();
-
-            DescriptionPosition = TextInfoCurrentPos;
-            ElevationPosition = new(DescriptionPosition.X, DescriptionPosition.Y + h * _textLineSpacingFactor);
-            PointNumberPosition = new(ElevationPosition.X, ElevationPosition.Y + h * _textLineSpacingFactor);
-
-            // Bounds & verts will be rebuilt by the renderer on the next frame
-            UpdateBounds();
-        }
-
-        private void UpdatePointPosition(Vector translate)
-        {
-
-        }
-
-        private void InitializeTextLocations()
-        {
-            TextInfoBasePosition = new(Position.X.ToFloat() + (_textBaseHeight * PointGroup.PointScale.ToFloat() * _markerToPointScaleFactor), Position.Y.ToFloat());
-            TextInfoCurrentPos = TextInfoBasePosition;
-            DescriptionPosition = TextInfoBasePosition;
-            ElevationPosition = new(DescriptionPosition.X, DescriptionPosition.Y + _textBaseHeight * PointGroup.PointScale.ToFloat() * _textLineSpacingFactor);
-            PointNumberPosition = new(ElevationPosition.X, ElevationPosition.Y + _textBaseHeight * PointGroup.PointScale.ToFloat() * _textLineSpacingFactor);
-        }
-
-        public void InitializeTextVertices(CogoPointTextVerticesDict textDict)
-        {
-            TextVertices.Clear();
-            List<TextVertex> pointNum = textDict.GetIntTextVertices(PointNumber, _textBaseHeight * PointGroup.PointScale.ToFloat(), 
-                PointNumberPosition, PointGroup.Color);
-            List<TextVertex> elev = textDict.GetTextVertices(Elevation.ToString("F3"), _textBaseHeight * PointGroup.PointScale.ToFloat(), 
-                ElevationPosition, PointGroup.Color);
-            List<TextVertex> description = textDict.GetTextVertices(Description, _textBaseHeight * PointGroup.PointScale.ToFloat(), 
-                DescriptionPosition, PointGroup.Color);
-            TextVertices = pointNum.Concat(elev).Concat(description).ToList();
-            TextVerticesInitialized = true;
-            UpdateBounds();
-        }
         protected override void OnPropertyChanged(string propertyName)
         {
             base.OnPropertyChanged(propertyName);

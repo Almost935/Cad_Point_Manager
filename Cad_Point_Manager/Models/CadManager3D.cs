@@ -696,12 +696,12 @@ namespace Cad_Point_Manager.Models
 
                     foreach (CogoPoint p in pg.Points)
                     {
-                        uint lid = sceneIdMap.GetOrAddLabelId(p, 0);
+                        uint pid = sceneIdMap.GetOrAddPointId(p);
                         _cachedPointMarkerVertices.Add(new PointMarkerInstance
                         {
                             Position = new Vector3(p.Position.X.ToFloat(), p.Position.Y.ToFloat(), 0f),
                             Radius = GlobalHelperProperties.CogoPointCirclePixelRadius,
-                            LabelId = lid,
+                            PointId = pid,
                             GroupId = gid
                         });
                     }
@@ -709,40 +709,6 @@ namespace Cad_Point_Manager.Models
                 PointCircleVerticesDirty = false;
             }
             return CollectionsMarshal.AsSpan(_cachedPointMarkerVertices);
-        }
-        public ReadOnlySpan<TextVertex> UpdatePointTextVertices(ResCache d3DResCache)
-        {
-            if (PointTextVerticesDirty)
-            {
-                _cachedPointTextVertices.Clear();
-
-                if (d3DResCache.Device is null)
-                {
-                    return CollectionsMarshal.AsSpan(_cachedPointTextVertices);
-                }
-
-                _pointTextVerticesDict ??= new(d3DResCache);
-
-                foreach (var keyValuePair in CogoPointManager.PointGroups)
-                {
-                    var pointGroup = keyValuePair.Value;
-
-                    if (!pointGroup.IsVisible || pointGroup is null) { continue; }
-
-                    foreach (var point in pointGroup.Points)
-                    {
-                        point.TextStartIndex = _cachedPointTextVertices.Count;
-                        point.InitializeTextVertices(_pointTextVerticesDict);
-                        _cachedPointTextVertices.AddRange(point.TextVertices);
-                        point.TextEndIndex = _cachedPointTextVertices.Count - 1;
-                    }
-                }
-
-                PointTextVerticesDirty = false;
-                HitTestableObjectTreeDirty = true;
-            }
-
-            return CollectionsMarshal.AsSpan(_cachedPointTextVertices);
         }
 
         public void GetTestDxfPoints()

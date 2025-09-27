@@ -43,12 +43,13 @@ namespace Cad_Point_Manager.Controls.D3DControl
     [StructLayout(LayoutKind.Sequential)]
     public struct GlyphInstance
     {
-        public Vector2  Origin;     // world position (baseline origin) of the string/line
-        public float    DuToWorld;    // scale: DU -> world
-        public float    PenDU;        // accumulated advance in DU for this glyph
-        public float    YSign;        // typically -1 when world Y is up and font Y is down
-        public uint     LabelId;   // stable per text line: PN/Elev/Desc for a cogo point
-        public uint     GroupId;   // PointGroup index
+        public Vector2 Origin;    // world position (baseline origin) of the string/line
+        public float DuToWorld; // scale: DU -> world
+        public float PenDU;     // accumulated advance in DU for this glyph
+        public float YSign;     // typically -1 when world Y is up and font Y is down
+        public uint LabelId;   // stable per text line: PN/Elev/Desc for a cogo point
+        public uint PointId;   // Point index
+        public uint GroupId;   // PointGroup index
     }
     [StructLayout(LayoutKind.Sequential)]
     public struct GlyphSettingsBuffer
@@ -64,25 +65,34 @@ namespace Cad_Point_Manager.Controls.D3DControl
     public struct LabelState
     {
         public Vector2 Offset; // world-space drag delta
-        public uint    Flags;  // bit0: visible, bit1: selected, bit2: mouseOver
-        public float   Pad;    // keep 16B stride
+        public uint Flags;  // bit0: visible, bit1: selected, bit2: mouseOver
+        public float Pad;    // keep 16B stride
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct PointState
+    {
+        public Vector2 Offset; // point-scale
+        public uint Flags; // bit0: visible bit1: selected, bit2: mouseOver, bit3: hasLeaderLine, bit4: mouseOverAnchor, bit5: anchorPressed
+        public float Pad;   // 16B stride
     }
 
     [StructLayout(LayoutKind.Sequential)]
     public struct GroupState
     {
         public Vector4 Color; // rgba
-        public float   Scale; // point-scale
-        public uint    Flags; // bit0: visible
+        public float Scale; // point-scale
+        public uint Flags; // bit0: visible
         public Vector2 Pad;   // 16B stride
     }
 
     public struct PointMarkerInstance
     {
         public Vector3 Position;
-        public float   Radius;
-        public uint    LabelId;
-        public uint    GroupId;
+        public float Radius;
+        public uint LabelId;
+        public uint PointId;
+        public uint GroupId;
     }
 
 
@@ -97,25 +107,33 @@ namespace Cad_Point_Manager.Controls.D3DControl
     [StructLayout(LayoutKind.Sequential)]
     public struct LeaderLineInstance
     {
-        public Vector2 Start;        // world: ellipse center
-        public Vector2 End;    // world: text base *before* drag; shader adds LabelSRV.Offset
-        public uint LabelId;  // same scheme you use for glyphs/circles (per-CogoPoint label id)
-        public uint GroupId;  // PointGroup index
+        public Vector2 Start;   // world: ellipse center
+        public Vector2 End;     // world: text base *before* drag; shader adds LabelSRV.Offset
+        public uint PointId;    // Point index
+        public uint GroupId;    // PointGroup index
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    struct ToggleAnchorInstance
+    public struct ToggleAnchorInstance
     {
         public Vector2 Center;
-        public Vector2 Size;           // world half-width/height
-        public Vector2 RadiusFeather;
-        public Vector4 BaseColor;
-        public Vector4 HoverColor;
-        public Vector4 PressedColor;
-        public float On;
-        public uint State; // 0=normal,1=hover,2=pressed
-        private uint _pad0, _pad1;
+        public uint PointId;
+        public uint GroupId;        // TEXCOORD9
     }
+    [StructLayout(LayoutKind.Sequential)]
+    public struct ToggleAnchorSettingsBuffer
+    {
+        // 3 * 16B = 48B
+        public Vector4 BaseColor;
+        public Vector4 SelectedColor;
+        public Vector4 MouseOverColor;
+
+        public float Size;          // world size (square)
+        public float CornerRadius;  // world corner radius
+        public float Feather;       // world feather
+        private float _padding;    // pad to 16B
+    }
+
     [StructLayout(LayoutKind.Sequential)]
     readonly struct AnchorDraw   // for CPU hit-test & mapping
     {
@@ -132,6 +150,13 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public Vector4 Color;
     }
 
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct LayerState
+    {
+        public uint Flags; // bit0: visible bit1: selected, bit2: mouseOver
+        public Vector3 Pad;   // 16B stride
+    }
     [StructLayout(LayoutKind.Sequential)]
     public struct CircleVertex(Vector3 position, Vector4 color, float radius, float isVisible = 1.0f, float isMouseOver = 0, float isSelected = 0)
     {

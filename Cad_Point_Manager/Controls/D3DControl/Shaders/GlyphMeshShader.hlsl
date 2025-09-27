@@ -24,7 +24,12 @@ struct LabelState
     uint Flags; // bit0: visible, bit1: selected, bit2: mouseOver
     float _padLS; // keep 16B stride
 };
-
+struct PointState
+{
+    float2 Offset; // world-space drag delta
+    uint Flags; // bit0: visible, bit1: selected, bit2: mouseOver, bit3: hasLeaderLine, bit4: mouseOverAnchor, bit5: anchorPressed
+    float _padLS; // keep 16B stride
+};
 struct GroupState
 {
     float4 Color; // rgba
@@ -35,7 +40,8 @@ struct GroupState
 
 // Bind these to t0/t1 (match your C# SetShaderResource slots)
 StructuredBuffer<LabelState> LabelStates : register(t0);
-StructuredBuffer<GroupState> GroupStates : register(t1);
+StructuredBuffer<PointState> PointStates : register(t1);
+StructuredBuffer<GroupState> GroupStates : register(t2);
 
 // Per-vertex stream (slot 0): glyph mesh vertices in DESIGN UNITS
 struct VSInPerVertex
@@ -52,6 +58,7 @@ struct VSInPerInstance
     float YSign : YSIGN; // +1 or -1 (flip Y if needed)
     uint LabelId : LABEL_ID; // per text line (PN/Elev/Desc)
     uint GroupId : GROUP_ID; // owning PointGroup
+    uint PointId : POINT_ID; // owning PointGroup
 };
 
 struct VSOut
@@ -74,8 +81,10 @@ float2 ComputeSnapNdc(float2 viewportSize)
 
 // Bit masks for flags (keep in sync with CPU)
 static const uint LABEL_VISIBLE = 1u << 0;
-static const uint LABEL_SELECTED = 1u << 1;
-static const uint LABEL_MOUSEOVR = 1u << 2;
+
+static const uint POINT_VISIBLE = 1u << 0;
+static const uint POINT_SELECTED = 1u << 1;
+static const uint POINT_MOUSEOVR = 1u << 2;
 
 static const uint GROUP_VISIBLE = 1u << 0;
 
@@ -85,19 +94,21 @@ VSOut VSMain(VSInPerVertex v, VSInPerInstance inst)
 
     // --- Fetch dynamic state ---
     LabelState ls = LabelStates[inst.LabelId];
+    PointState ps = PointStates[inst.PointId];
     GroupState gs = GroupStates[inst.GroupId];
 
     float visLbl = ((ls.Flags & LABEL_VISIBLE) != 0u) ? 1.0f : 0.0f;
+    float visPt = ((ps.Flags & POINT_VISIBLE) != 0u) ? 1.0f : 0.0f;
     float visGrp = ((gs.Flags & GROUP_VISIBLE) != 0u) ? 1.0f : 0.0f;
-    float visible = visLbl * visGrp;
+    float visible = visLbl * visGrp * visPt;
     
     // Selection / hover
-    float sel = ((ls.Flags & LABEL_SELECTED) != 0u) ? 1.0f : 0.0f;
-    float mo = ((ls.Flags & LABEL_MOUSEOVR) != 0u) ? 1.0f : 0.0f;
+    float sel = ((ps.Flags & POINT_SELECTED) != 0u) ? 1.0f : 0.0f;
+    float mo = ((ps.Flags & POINT_MOUSEOVR) != 0u) ? 1.0f : 0.0f;
 
     // --- Position math ---
     // Apply label drag offset and group scale
-    float2 originWorld = inst.OriginWorld + ls.Offset;
+    float2 originWorld = inst.OriginWorld + ls.Offset + ps.Offset;
     float duToWorld = inst.DuToWorld * gs.Scale;
 
     // Convert DU -> world, apply pen advance on X, optional Y sign flip
@@ -116,13 +127,8 @@ VSOut VSMain(VSInPerVertex v, VSInPerInstance inst)
     col.rgb = col.rgb;
     col.a = col.a;
 
-    //if (mo > 0.5f)
-    //{
-    //    col = lerp(col, float4(0.4, 0.4, 1, 1), 0.7);
-    //}
     if (sel > 0.5f)
     {
-        //col = (mo > 0.5f) ? selectedMouseOverColor : selectedColor;
         col = selectedColor;
     }
 

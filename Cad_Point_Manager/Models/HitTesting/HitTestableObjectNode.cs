@@ -201,13 +201,10 @@ namespace Cad_Point_Manager.Models.HitTesting
 
             foreach (var hitTestableObject in HitTestableObjects)
             {
-                //Debug.WriteLine($"HitTestCogoPoints: hitTestableObject is CogoPoint: {hitTestableObject is CogoPoint}");
                 if (hitTestableObject is CogoPoint point)
                 {
-                    //Debug.WriteLine($"HitTestCogoPoints: point.PointGroup.IsVisible: {point.PointGroup.IsVisible}");
                     if (point.PointGroup.IsVisible)
                     {
-                        //Debug.WriteLine($"HitTestCogoPoints: point.BoundsInRect(hitTestRange): {point.BoundsInRect(hitTestRange)}");
                         if (point.BoundsInRect(hitTestRange))
                         {
                             double d = point.DistanceToPoint(p);

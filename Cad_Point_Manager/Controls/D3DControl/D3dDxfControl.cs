@@ -25,6 +25,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.ServiceModel;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -49,12 +50,16 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private static readonly Vector4 HoverShadowColor = new(0f, 0f, 0f, 0.2f); // translucent black
 
         // CogoPoint ToggleButton Fields
-        private const float AnchorPixelSize = 18f;
+        private const float AnchorPixelSize = 36f;
         private const float AnchorCornerPixels = 6f;
         private const float AnchorFeatherPixels = 1.5f;
         private const float MaxCogoToggleToDrawingFraction = 0.01f; // max size of toggle button relative to smaller of width/height of drawing area
         private const float CornerFracOfHalf = 0.35f;
         private const float FeatherPx = 1.5f; // keep AA feather in pixels
+        private float AnchorWorldHalfSize;
+        private float AnchorWorldCornerRadius;
+        private float AnchorWorldFeather;
+        private Rect CurrentAnchorBounds;
         private static readonly Vector4 AnchorBase = new(0.00f, 0.95f, 1.00f, 1.00f);
         private static readonly Vector4 AnchorHover = new(0.67f, 1.00f, 1.00f, 1.00f);
         private static readonly Vector4 AnchorPressed = new(0.15f, 0.82f, 0.85f, 1.00f);
@@ -185,10 +190,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private PixelShader _togglePS;
         private InputLayout _toggleLayout;
         private ResizableBuffer<OverlayQuadVertex> _toggleQuadVB;
+        private Buffer _toggleSettingsBuffer;
         private bool _anchorShaderLoaded = false;
-
-        // Interaction state for hover/press
-        private readonly List<AnchorDraw> _anchorDraws = new(64);
 
 
         // Drag rectangle shader
@@ -530,6 +533,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
                 if (_leaderLineInstanceCount > 0)
                 {
+                    ctx.OutputMerger.SetRenderTargets(_resCache.InteractiveRenderTargetView);
                     DrawLeaderLines(ctx);
                 }
 
@@ -615,7 +619,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
             ctx.InputAssembler.PrimitiveTopology = PrimitiveTopology.TriangleList;
 
             ctx.VertexShader.SetShaderResource(0, _stateBufs.LabelSRV);
-            ctx.VertexShader.SetShaderResource(1, _stateBufs.GroupSRV);
+            ctx.VertexShader.SetShaderResource(1, _stateBufs.PointSRV);
+            ctx.VertexShader.SetShaderResource(2, _stateBufs.GroupSRV);
+
             ctx.PixelShader.SetShaderResource(1, _stateBufs.GroupSRV);
 
             // Bind slot 0 (glyph vertex buffer) once
@@ -657,9 +663,10 @@ namespace Cad_Point_Manager.Controls.D3DControl
             ctx.GeometryShader.SetConstantBuffer(1, _pointCircleSettingsBuffer);
 
             // NEW: bind state buffers
-            ctx.VertexShader.SetShaderResource(0, _stateBufs.LabelSRV);
+            ctx.VertexShader.SetShaderResource(0, _stateBufs.PointSRV);
             ctx.VertexShader.SetShaderResource(1, _stateBufs.GroupSRV);
-            ctx.GeometryShader.SetShaderResource(0, _stateBufs.LabelSRV);
+
+            ctx.GeometryShader.SetShaderResource(0, _stateBufs.PointSRV);
             ctx.GeometryShader.SetShaderResource(1, _stateBufs.GroupSRV);
 
             ctx.InputAssembler.PrimitiveTopology = PrimitiveTopology.PointList;
@@ -681,6 +688,14 @@ namespace Cad_Point_Manager.Controls.D3DControl
             ctx.InputAssembler.InputLayout = _toggleLayout;
             ctx.VertexShader.SetConstantBuffer(0, _transformationBuffer);
 
+            // ✅ ADD: settings buffer (b1) for both VS & PS
+            ctx.VertexShader.SetConstantBuffer(1, _toggleSettingsBuffer);
+            ctx.PixelShader.SetConstantBuffer(1, _toggleSettingsBuffer);
+
+            // ✅ ADD: state SRVs (t0/t1) for the VS (shader fetches flags/offset)
+            ctx.VertexShader.SetShaderResource(0, _stateBufs.PointSRV); // t0
+            ctx.VertexShader.SetShaderResource(1, _stateBufs.GroupSRV); // t1
+
             ctx.InputAssembler.PrimitiveTopology = PrimitiveTopology.TriangleList;
 
             ctx.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding(_toggleQuadVB.Buffer, _toggleQuadVB.Stride, 0));
@@ -690,7 +705,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
         private void DrawLeaderLines(SharpDX.Direct3D11.DeviceContext ctx)
         {
-            if (_leaderLineInstanceCount <= 0) return;
+            if (_leaderLineInstanceCount <= 0) { return; }
 
             // Interactive RT already bound in your interactive block
             ctx.InputAssembler.InputLayout = _leaderLineInputLayout;
@@ -707,8 +722,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
             // cb1: settings on GS
             ctx.GeometryShader.SetConstantBuffer(1, _leaderLineSettingsBuffer);
 
-            // SRVs (label/group) on GS (since GS uses them)
-            ctx.GeometryShader.SetShaderResource(0, _stateBufs.LabelSRV);
+            // SRVs (label/group) 
+            ctx.GeometryShader.SetShaderResource(0, _stateBufs.PointSRV);
             ctx.GeometryShader.SetShaderResource(1, _stateBufs.GroupSRV);
 
             // VB
@@ -716,62 +731,61 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             ctx.Draw(_leaderLineInstanceCount, 0);
 
-            Debug.WriteLine($"_leaderLineInstanceCount: {_leaderLineInstanceCount}");
-
             // Clean up GS SRVs (optional, prevents hazards on some drivers)
             ctx.GeometryShader.SetShaderResource(0, null);
             ctx.GeometryShader.SetShaderResource(1, null);
+            ctx.GeometryShader.Set(null);
         }
-        private void DrawDragOverlay(SharpDX.Direct3D11.DeviceContext context)
+        private void DrawDragOverlay(SharpDX.Direct3D11.DeviceContext ctx)
         {
             // --- fill (triangles) ---
-            context.VertexShader.Set(_overlayVS);
-            context.PixelShader.Set(_overlayPS);
-            context.InputAssembler.InputLayout = _overlayLayout;
-            context.VertexShader.SetConstantBuffer(0, _transformationBuffer);
-            context.InputAssembler.PrimitiveTopology = PrimitiveTopology.TriangleList;
-            context.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding(_dragFillBuffer.Buffer, _dragFillBuffer.Stride, 0));
-            context.Draw(_dragFillVertexCount, 0);
+            ctx.VertexShader.Set(_overlayVS);
+            ctx.PixelShader.Set(_overlayPS);
+            ctx.InputAssembler.InputLayout = _overlayLayout;
+            ctx.VertexShader.SetConstantBuffer(0, _transformationBuffer);
+            ctx.InputAssembler.PrimitiveTopology = PrimitiveTopology.TriangleList;
+            ctx.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding(_dragFillBuffer.Buffer, _dragFillBuffer.Stride, 0));
+            ctx.Draw(_dragFillVertexCount, 0);
 
             // --- outline (lines) ---
             if (_dragOutlineVertexCount > 0)
             {
-                context.VertexShader.Set(_lineVertexShader);
-                context.PixelShader.Set(_linePixelShader);
-                context.InputAssembler.InputLayout = _lineInputLayout;
-                context.VertexShader.SetConstantBuffer(0, _transformationBuffer);
-                context.VertexShader.SetConstantBuffer(1, _lineSettingsBuffer);
-                context.InputAssembler.PrimitiveTopology = PrimitiveTopology.LineList;
-                context.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding(_dragOutlineBuffer.Buffer, _dragOutlineBuffer.Stride, 0));
-                context.Draw(_dragOutlineVertexCount, 0);
+                ctx.VertexShader.Set(_lineVertexShader);
+                ctx.PixelShader.Set(_linePixelShader);
+                ctx.InputAssembler.InputLayout = _lineInputLayout;
+                ctx.VertexShader.SetConstantBuffer(0, _transformationBuffer);
+                ctx.VertexShader.SetConstantBuffer(1, _lineSettingsBuffer);
+                ctx.InputAssembler.PrimitiveTopology = PrimitiveTopology.LineList;
+                ctx.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding(_dragOutlineBuffer.Buffer, _dragOutlineBuffer.Stride, 0));
+                ctx.Draw(_dragOutlineVertexCount, 0);
             }
         }
-        private void DrawCogoPointHover(SharpDX.Direct3D11.DeviceContext context)
+        private void DrawCogoPointHover(SharpDX.Direct3D11.DeviceContext ctx)
         {
             if (_hoverRectInstanceCount > 0)
             {
-                context.VertexShader.Set(_hoverRectVertexShader);
-                context.PixelShader.Set(_hoverRectPixelShader);
-                context.InputAssembler.InputLayout = _hoverRectLayout;
-                context.VertexShader.SetConstantBuffer(0, _transformationBuffer);
-                context.InputAssembler.PrimitiveTopology = PrimitiveTopology.TriangleList;
-                context.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding(_hoverRectBuffer.Buffer, _hoverRectBuffer.Stride, 0));
-                context.InputAssembler.SetVertexBuffers(1, new VertexBufferBinding(_hoverRectInstanceBuffer.Buffer, _hoverRectInstanceBuffer.Stride, 0));
-                context.DrawInstanced(6, _hoverRectInstanceCount, 0, 0);
+                ctx.VertexShader.Set(_hoverRectVertexShader);
+                ctx.PixelShader.Set(_hoverRectPixelShader);
+                ctx.InputAssembler.InputLayout = _hoverRectLayout;
+                ctx.VertexShader.SetConstantBuffer(0, _transformationBuffer);
+                ctx.InputAssembler.PrimitiveTopology = PrimitiveTopology.TriangleList;
+                ctx.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding(_hoverRectBuffer.Buffer, _hoverRectBuffer.Stride, 0));
+                ctx.InputAssembler.SetVertexBuffers(1, new VertexBufferBinding(_hoverRectInstanceBuffer.Buffer, _hoverRectInstanceBuffer.Stride, 0));
+                ctx.DrawInstanced(6, _hoverRectInstanceCount, 0, 0);
             }
             if (_hoverCircleVertices.Count > 0)
             {
-                context.VertexShader.Set(_hoverCircleVertexShader);
-                context.GeometryShader.Set(_hoverCircleGeometryShader);
-                context.PixelShader.Set(_hoverCirclePixelShader);
-                context.InputAssembler.InputLayout = _hoverCircleLayout;
-                context.VertexShader.SetConstantBuffer(0, _transformationBuffer);
-                context.GeometryShader.SetConstantBuffer(0, _transformationBuffer);
-                context.GeometryShader.SetConstantBuffer(1, _hoverCircleSettingsBuffer);
-                context.InputAssembler.PrimitiveTopology = PrimitiveTopology.PointList;
-                context.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding(_hoverCircleBuffer.Buffer, _hoverCircleBuffer.Stride, 0));
-                context.Draw(_hoverCircleVertices.Count, 0);
-                context.GeometryShader.Set(null);
+                ctx.VertexShader.Set(_hoverCircleVertexShader);
+                ctx.GeometryShader.Set(_hoverCircleGeometryShader);
+                ctx.PixelShader.Set(_hoverCirclePixelShader);
+                ctx.InputAssembler.InputLayout = _hoverCircleLayout;
+                ctx.VertexShader.SetConstantBuffer(0, _transformationBuffer);
+                ctx.GeometryShader.SetConstantBuffer(0, _transformationBuffer);
+                ctx.GeometryShader.SetConstantBuffer(1, _hoverCircleSettingsBuffer);
+                ctx.InputAssembler.PrimitiveTopology = PrimitiveTopology.PointList;
+                ctx.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding(_hoverCircleBuffer.Buffer, _hoverCircleBuffer.Stride, 0));
+                ctx.Draw(_hoverCircleVertices.Count, 0);
+                ctx.GeometryShader.Set(null);
             }
         }
 
@@ -807,7 +821,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         {
             //Stopwatch stopwatch = Stopwatch.StartNew();
 
-            //_ids.Clear();
+            _ids.Clear();
             _glyphBatches.Clear();
 
             foreach (var kv in PointGroups)
@@ -836,6 +850,16 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 {
                     if (p == null) { continue; }
 
+                    uint baseFlags = 0;
+                    if (pg.IsVisible) { baseFlags |= (uint)CogoPointFlags.Visible; }
+                    if (p.IsSelected) { baseFlags |= (uint)CogoPointFlags.Selected; }
+                    if (p.IsMouseOver) { baseFlags |= (uint)CogoPointFlags.MouseOver; }
+                    if (p.HasLeaderLine) { baseFlags |= (uint)CogoPointFlags.HasLeaderLine; }
+
+                    uint pId = _ids.GetOrAddPointId(p);
+                    _stateBufs.EnsurePointCapacity(_ids.PointCount);
+                    _stateBufs.PointSpan[(int)pId] = new PointState { Offset = Vector2.Zero, Flags = baseFlags };
+
                     var isMO = p.IsMouseOver ? 1f : 0f;
                     var isSel = p.IsSelected ? 1f : 0f;
                     var ySign = -1f;
@@ -843,52 +867,46 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     uint idPN = _ids.GetOrAddLabelId(p, 0);
                     uint idElev = _ids.GetOrAddLabelId(p, 1);
                     uint idDesc = p.HasDescription ? _ids.GetOrAddLabelId(p, 2) : 0xFFFFFFFF;
-
                     _stateBufs.EnsureLabelCapacity(_ids.MaxLabelCount);
 
-                    uint baseFlags = 0;
-                    if (pg.IsVisible) { baseFlags |= (uint)LabelFlags.Visible; }
-                    if (p.IsSelected) { baseFlags |= (uint)LabelFlags.Selected; }
-                    if (p.IsMouseOver) { baseFlags |= (uint)LabelFlags.MouseOver; }
-
-                    p.PointNumberLabelState = new LabelState { Offset = Vector2.Zero, Flags = baseFlags };
-                    _stateBufs.LabelSpan[(int)idPN] = p.PointNumberLabelState;
-                    p.ElevationLabelState = new LabelState { Offset = Vector2.Zero, Flags = baseFlags };
-                    _stateBufs.LabelSpan[(int)idElev] = p.ElevationLabelState;
+                    _stateBufs.LabelSpan[(int)idPN] = new LabelState { Offset = p.PointNumberOffset, Flags = baseFlags };
+                    _stateBufs.LabelSpan[(int)idElev] = new LabelState { Offset = p.ElevationOffset, Flags = baseFlags };
                     if (p.HasDescription)
                     {
-                        p.DescriptionLabelState = new LabelState { Offset = Vector2.Zero, Flags = baseFlags };
-                        _stateBufs.LabelSpan[(int)idDesc] = p.DescriptionLabelState;
+                        _stateBufs.LabelSpan[(int)idDesc] = new LabelState { Offset = p.DescriptionOffset, Flags = baseFlags };
                     }
 
                     p.PointNumberBounds = AddLineAndGetRect(
                         s: p.PointNumber.ToString(),
-                        originWorld: p.PointNumberPosition,
+                        originWorld: p.TextInfoBasePosition,
+                        lineOffset: p.PointNumberOffset,
                         duToWorldBase: duToWorldBase,
                         groupScale: duToWorld,
                         color: color,
                         isVisible: isGroupVisible, isMouseOver: isMO, isSelected: isSel, ySign: ySign,
-                        labelId: idPN, groupId: gId);
+                        labelId: idPN, groupId: gId, pointId: pId);
 
                     p.ElevationBounds = AddLineAndGetRect(
                         s: p.Elevation.ToString("F3"),
-                        originWorld: p.ElevationPosition,
+                        originWorld: p.TextInfoBasePosition,
+                        lineOffset: p.ElevationOffset,
                         duToWorldBase: duToWorldBase,
                         groupScale: duToWorld,
                         color: color,
                         isVisible: isGroupVisible, isMouseOver: isMO, isSelected: isSel, ySign: ySign,
-                        labelId: idElev, groupId: gId);
+                        labelId: idElev, groupId: gId, pointId: pId);
 
                     if (p.HasDescription)
                     {
                         p.DescriptionBounds = AddLineAndGetRect(
                             s: p.Description,
-                            originWorld: p.DescriptionPosition,
+                            originWorld: p.TextInfoBasePosition,
+                            lineOffset: p.DescriptionOffset,
                             duToWorldBase: duToWorldBase,
                             groupScale: duToWorld,
                             color: color,
                             isVisible: isGroupVisible, isMouseOver: isMO, isSelected: isSel, ySign: ySign,
-                            labelId: idDesc, groupId: gId);
+                            labelId: idDesc, groupId: gId, pointId: pId);
                     }
 
                     float wupp = Camera.GetWorldUnitsPerPixel();
@@ -1057,45 +1075,27 @@ namespace Cad_Point_Manager.Controls.D3DControl
             float drawingShort = Math.Min(Camera.Extents.Width, Camera.Extents.Height).ToFloat();
             float maxHalfWorld = (drawingShort * MaxCogoToggleToDrawingFraction) * 0.5f;
 
-            // Final half-size = min(desired, cap). No lower limit → always shrinks when zooming in.
-            float halfWorld = Math.Min(desiredHalfWorld, maxHalfWorld);
-
-            // Corner radius & feather (keep them ≤ halfWorld)
-            float cornerWorld = Math.Min(halfWorld * CornerFracOfHalf, halfWorld - 1e-5f);
-            float featherWorld = FeatherPx * wupp;
-
-            _anchorDraws.Clear();
             var inst = new List<ToggleAnchorInstance>(SelectedCogoPoints.Count);
-
-            for (int i = 0; i < SelectedCogoPoints.Count; i++)
+            foreach (var keyValue in PointGroups)
             {
-                var p = SelectedCogoPoints[i];
+                var pg = keyValue.Value;
+                var gid = _ids.GetOrAddGroupId(pg);
 
-                // Wherever you’re anchoring the toggle (same as before)
-                var center = p.TextInfoCurrentPos;
-                var half = new Vector2(halfWorld, halfWorld);
+                if (pg is null) { continue; }
 
-                p.ToggleBounds = new Rect(
-                    center.X - half.X, center.Y - half.Y,
-                    half.X * 2, half.Y * 2);
-
-                _anchorDraws.Add(new AnchorDraw(center, half, p));
-
-                uint state = 0;
-                if (p.IsMouseOverToggleButton) { state = 1; }
-                if (p.IsToggleButtonPressed) { state = 2; }
-
-                inst.Add(new ToggleAnchorInstance
+                foreach (var p in pg.Points)
                 {
-                    Center = center,
-                    Size = half,
-                    RadiusFeather = new Vector2(cornerWorld, featherWorld),
-                    BaseColor = AnchorBase,
-                    HoverColor = AnchorHover,
-                    PressedColor = AnchorPressed,
-                    On = 0f,
-                    State = state
-                });
+                    if (p is null) { continue; }
+                    var pid = _ids.GetOrAddPointId(p);
+                    var center = p.TextInfoBasePosition;
+
+                    inst.Add(new()
+                    {
+                        Center = center,
+                        PointId = pid,
+                        GroupId = gid
+                    });
+                }
             }
 
             _anchorInstanceBuffer.Update(ctx, CollectionsMarshal.AsSpan(inst));
@@ -1114,18 +1114,16 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 uint gid = _ids.GetOrAddGroupId(pg);
                 foreach (var p in pg.Points)
                 {
-                    if (p is null || !p.HasLeaderLine) { continue; }
-                    var lid = _ids.GetOrAddLabelId(p, 0);
+                    if (p is null) { continue; }
+                    uint pid = _ids.GetOrAddPointId(p);
                     var vertex = new LeaderLineInstance
                     {
                         Start = p.Position.ToSharpDXVector2(),
-                        End = p.TextInfoCurrentPos,     // **unoffset** base
-                        LabelId = lid,                  // pick the same label id you bind for PN/Elev/Desc (use one consistent per point)
+                        End = p.TextInfoBasePosition,
+                        PointId = pid,
                         GroupId = gid
                     };
                     list.Add(vertex);
-
-                    Debug.WriteLine($"vertex.Start: {vertex.Start} vertex.End: {vertex.End}");
                 }
             }
             _leaderLineInstanceCount = list.Count;
@@ -1235,7 +1233,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     new InputElement("POSITION", 0, Format.R32G32B32_Float, 0, 0),
                     new InputElement("RADIUS",   0, Format.R32_Float,       12, 0),
                     new InputElement("LABEL_ID", 0, Format.R32_UInt,        16, 0),
-                    new InputElement("GROUP_ID", 0, Format.R32_UInt,        20, 0)
+                    new InputElement("POINT_ID", 0, Format.R32_UInt,        20, 0),
+                    new InputElement("GROUP_ID", 0, Format.R32_UInt,        24, 0)
                 });
 
             string glyphMeshShaderPath = Path.Combine(path, @"Controls\D3DControl\Shaders\GlyphMeshShader.hlsl");
@@ -1255,7 +1254,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     new InputElement("GLYPH_PEN",     0, Format.R32_Float,          12, 1, InputClassification.PerInstanceData, 1),
                     new InputElement("YSIGN",         0, Format.R32_Float,          16, 1, InputClassification.PerInstanceData, 1),
                     new InputElement("LABEL_ID",      0, Format.R32_UInt,           20, 1, InputClassification.PerInstanceData, 1),
-                    new InputElement("GROUP_ID",      0, Format.R32_UInt,           24, 1, InputClassification.PerInstanceData, 1),
+                    new InputElement("POINT_ID",      0, Format.R32_UInt,           24, 1, InputClassification.PerInstanceData, 1),
+                    new InputElement("GROUP_ID",      0, Format.R32_UInt,           28, 1, InputClassification.PerInstanceData, 1)
                 });
             _glyphInstanceBuffer = new ResizableBuffer<GlyphInstance>(_resCache.Device, initialCapacity: 256);
 
@@ -1370,18 +1370,13 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 ShaderSignature.GetInputSignature(vs),
                 new[]
                 {
-                    // Stream 0 (unit quad)
+                    // stream 0
                     new InputElement("POSITION", 0, Format.R32G32_Float, 0, 0),
-
-                    // Stream 1 (instances; stride = 88)
-                    new InputElement("TEXCOORD", 0, Format.R32G32_Float,         0, 1, InputClassification.PerInstanceData, 1), // Center
-                    new InputElement("TEXCOORD", 1, Format.R32G32_Float,         8, 1, InputClassification.PerInstanceData, 1), // Size
-                    new InputElement("TEXCOORD", 2, Format.R32G32_Float,        16, 1, InputClassification.PerInstanceData, 1), // RadiusFeather
-                    new InputElement("TEXCOORD", 3, Format.R32G32B32A32_Float,  24, 1, InputClassification.PerInstanceData, 1), // BaseColor
-                    new InputElement("TEXCOORD", 4, Format.R32G32B32A32_Float,  40, 1, InputClassification.PerInstanceData, 1), // HoverColor
-                    new InputElement("TEXCOORD", 5, Format.R32G32B32A32_Float,  56, 1, InputClassification.PerInstanceData, 1), // PressedColor
-                    new InputElement("TEXCOORD", 6, Format.R32_Float,           72, 1, InputClassification.PerInstanceData, 1), // On
-                    new InputElement("TEXCOORD", 7, Format.R32_UInt,            76, 1, InputClassification.PerInstanceData, 1), // State
+                    
+                    // stream 1
+                    new InputElement("TEXCOORD", 0, Format.R32G32_Float, 0, 1, InputClassification.PerInstanceData, 1), // Center (float2) @ offset 0
+                    new InputElement("POINT_ID", 0, Format.R32_UInt,      8, 1, InputClassification.PerInstanceData, 1), // PointId  @ offset 8
+                    new InputElement("GROUP_ID", 0, Format.R32_UInt,     12, 1, InputClassification.PerInstanceData, 1), // GroupId  @ offset 12
                 });
 
             // Dedicated unit quad for this shader
@@ -1423,10 +1418,10 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             _leaderLineInputLayout = new InputLayout(_resCache.Device, ShaderSignature.GetInputSignature(lineVSBytecode), new[]
             {
-                new InputElement("POSITION", 0, Format.R32G32_Float,      0, 0), // A
-                new InputElement("TEXCOORD", 0, Format.R32G32_Float,      8, 0), // BBase
-                new InputElement("TEXCOORD", 1, Format.R32_UInt,         16, 0), // LabelId
-                new InputElement("TEXCOORD", 2, Format.R32_UInt,         20, 0), // GroupId
+                new InputElement("POSITION", 0, Format.R32G32_Float,     0, 0), // A
+                new InputElement("END", 0, Format.R32G32_Float,          8, 0), // BBase
+                new InputElement("POINT_ID", 0, Format.R32_UInt,         16, 0), // PointId
+                new InputElement("GROUP_ID", 0, Format.R32_UInt,         20, 0), // GroupId
             });
 
             _leaderLineShadersLoaded = true;
@@ -1555,6 +1550,16 @@ namespace Cad_Point_Manager.Controls.D3DControl
             };
             _leaderLineSettingsBuffer = new Buffer(_resCache.Device, leaderLineBufferDesc);
 
+            var toggleAnchorBufferDesc = new BufferDescription
+            {
+                Usage = ResourceUsage.Default,
+                SizeInBytes = Utilities.SizeOf<ToggleAnchorSettingsBuffer>(),
+                BindFlags = BindFlags.ConstantBuffer,
+                CpuAccessFlags = CpuAccessFlags.None,
+                OptionFlags = ResourceOptionFlags.None
+            };
+            _toggleSettingsBuffer = new Buffer(_resCache.Device, toggleAnchorBufferDesc);
+
             ConstantBuffersInitialized = true;
             ConstantBuffersDirty = true;
         }
@@ -1621,18 +1626,29 @@ namespace Cad_Point_Manager.Controls.D3DControl
             };
             _resCache.DeviceContext.UpdateSubresource(ref leaderLineSettings, _leaderLineSettingsBuffer);
 
+            var toggleSettings = new ToggleAnchorSettingsBuffer
+            {
+                BaseColor = AnchorBase,
+                SelectedColor = AnchorPressed,
+                MouseOverColor = AnchorHover,
+                Size = AnchorWorldHalfSize,
+                CornerRadius = AnchorWorldCornerRadius,
+                Feather = AnchorWorldFeather
+            };
+            _resCache.DeviceContext.UpdateSubresource(ref toggleSettings, _toggleSettingsBuffer);
+
             ConstantBuffersDirty = false;
             _dxfDirty = true;
         }
 
         private Rect AddLineAndGetRect(string s, Vector2 originWorld, float duToWorldBase,
             float groupScale, Vector4 color, float isVisible, float isMouseOver,
-            float isSelected, float ySign, uint labelId, uint groupId)
+            float isSelected, float ySign, uint labelId, uint groupId, uint pointId, Vector2 lineOffset)
         {
             if (string.IsNullOrEmpty(s)) { return Rect.Empty; }
 
             Span<int> cps = stackalloc int[s.Length];
-            for (int i = 0; i < s.Length; i++) cps[i] = s[i];
+            for (int i = 0; i < s.Length; i++) { cps[i] = s[i]; }
             var gids = _resCache.CogoPointFontFace.GetGlyphIndices(cps.ToArray()); // or cached
 
             float penDU = 0f;
@@ -1649,18 +1665,19 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     PenDU = penDU,
                     YSign = ySign,
                     LabelId = labelId,
-                    GroupId = groupId
+                    GroupId = groupId,
+                    PointId = pointId,
                 };
 
                 if (!_glyphBatches.TryGetValue(gid, out var list)) { _glyphBatches[gid] = list = new List<GlyphInstance>(32); }
 
                 list.Add(inst);
-                penDU += _resCache.AdvanceWidthCache[gid]; // advance in DU
+                penDU += _resCache.AdvanceWidthCache[gid];
             }
 
             // measure
             float widthWorld = penDU * groupScale;
-            return ComputeLineRect(originWorld, widthWorld, groupScale, ySign);
+            return ComputeLineRect(originWorld + lineOffset, widthWorld, groupScale, ySign);
         }
         private Rect ComputeLineRect(Vector2 originWorld, float widthWorld, float duToWorld, float ySign)
         {
@@ -1673,6 +1690,66 @@ namespace Cad_Point_Manager.Controls.D3DControl
             float height = Math.Abs(capH);
 
             return new Rect(originWorld.X, y, widthWorld, height);
+        }
+        private void RecomputeCogoPointBoundsFast(CogoPoint p)
+        {
+            var pg = p.PointGroup;
+            var duPerEm = _resCache.CogoPointFontFace.Metrics.DesignUnitsPerEm;
+            float duToWorldBase = (float)pg.FontBaseSize / duPerEm;
+            float duToWorld = (float)(pg.FontBaseSize * pg.PointScale) / duPerEm; // includes group scale
+            float ySign = -1f;
+
+            var baseOrigin = p.TextInfoBasePosition + p.TextInfoOffset;
+
+            p.PointNumberBounds = MeasureLineRectFast(
+                p.PointNumber.ToString(), baseOrigin, p.PointNumberOffset, duToWorldBase, duToWorld, ySign);
+
+            p.ElevationBounds = MeasureLineRectFast(
+                p.Elevation.ToString("F3"), baseOrigin, p.ElevationOffset, duToWorldBase, duToWorld, ySign);
+
+            if (p.HasDescription)
+                p.DescriptionBounds = MeasureLineRectFast(
+                    p.Description, baseOrigin, p.DescriptionOffset, duToWorldBase, duToWorld, ySign);
+            else
+                p.DescriptionBounds = Rect.Empty;
+
+            // Circle stays pixel-fixed → recompute from WUPP and group scale
+            float wupp = Camera.GetWorldUnitsPerPixel();
+            float rW = (float)(GlobalHelperProperties.CogoPointCirclePixelRadius * wupp * pg.PointScale);
+            var c = p.Position;
+            p.EllipseBounds = new Rect(c.X - rW, c.Y - rW, 2 * rW, 2 * rW);
+
+            p.UpdateBounds();
+
+            // Make hover/interaction + hit tree pick up the new rects (no glyph rebuild)
+            _interactiveDirty = true;
+            HitTestableObjectTreeDirty = true;
+        }
+        // CPU-fast bounds refresh that doesn’t touch glyph batches
+        private Rect MeasureLineRectFast(string s, Vector2 baseOrigin, Vector2 labelOffset,
+                                        float duToWorldBase, float duToWorld, float ySign)
+        {
+            if (string.IsNullOrEmpty(s)) return Rect.Empty;
+
+            // Same glyph ID lookup + advances you do in AddLineAndGetRect
+            Span<int> cps = stackalloc int[s.Length];
+            for (int i = 0; i < s.Length; i++) cps[i] = s[i];
+            var gids = _resCache.CogoPointFontFace.GetGlyphIndices(cps.ToArray());
+
+            float widthDU = 0f;
+            for (int i = 0; i < gids.Length; i++)
+            {
+                short gid = gids[i];
+                if (gid <= 0) continue;
+                widthDU += _resCache.AdvanceWidthCache[gid];
+            }
+
+            // Shader applies origin + ls.Offset (+ ps.Offset) and scales DU by group
+            var originWorld = baseOrigin + labelOffset; // + pointOffset if you start using PointState.Offset
+            float widthWorld = widthDU * duToWorld;     // duToWorld includes group scale
+
+            // Reuse your existing height/top computation (cap-height × duToWorld)
+            return ComputeLineRect(originWorld, widthWorld, duToWorld, ySign);
         }
 
         private void GetInitialMatrix()
@@ -1688,7 +1765,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 {
                     Camera.ResetView(_dxfInitialMatrix, CadManager3D.Extents);
                     _hittestStrokeThickness = 7.0f / (Camera.InitialViewMatrix.M11 * Camera.CurrentZoom);
-
+                    UpdateToggleAnchorDimensions();
                     ConstantBuffersDirty = true;
                 }
             }
@@ -1724,21 +1801,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 var s = e.GetPosition(this);
                 var w = Camera.ScreenToWorld(new Vector2((float)s.X, (float)s.Y));
 
-                //_pressedToggleButtonPoint.SetTextInfoOffset(new Vector2((float)s.X, (float)s.Y));
                 var delta = new Vector2(w.X - _pressedToggleButtonPoint.TextInfoBasePosition.X, w.Y - _pressedToggleButtonPoint.TextInfoBasePosition.Y);
                 UpdateCogoPointOffset(_pressedToggleButtonPoint, delta);
-
-                // Move the text/toggle to the mouse
-                //_pressedToggleButtonPoint.MoveTextInfoToPoint(new Point(w.X, w.Y));
-
-                // Update the leader line
-                //UpdateLeaderLineFor(_pressedToggleButtonPoint);
-
-                // Request rebuilds
-                //_glyphVerticesDirty = true;
-                //_anchorVerticesDirty = true;
-                //_leaderLineVerticesDirty = true;
-                //_interactiveDirty = true;
 
                 e.Handled = true;
                 return;
@@ -1793,9 +1857,10 @@ namespace Cad_Point_Manager.Controls.D3DControl
             Camera.Zoom(zoomStep, new Vector2((float)_pointerCoords.X, (float)_pointerCoords.Y));
             _hittestStrokeThickness = 7.0f / (Camera.InitialViewMatrix.M11 * Camera.CurrentZoom);
 
+            UpdateToggleAnchorDimensions();
+
             _hoverVerticesDirty = true;
             ConstantBuffersDirty = true;
-            _anchorVerticesDirty = true;
             e.Handled = true;
         }
         protected override void OnMouseEnter(MouseEventArgs e)
@@ -1832,12 +1897,10 @@ namespace Cad_Point_Manager.Controls.D3DControl
         {
             if (_pressedToggleButtonPoint != null)
             {
+                RecomputeCogoPointBoundsFast(_pressedToggleButtonPoint);
                 ResetCogoToggleButtonPress();
-                //_glyphVerticesDirty = true;
-                //_anchorVerticesDirty = true;
-                //_leaderLineVerticesDirty = true;
 
-                if (IsMouseCaptured) ReleaseMouseCapture();
+                if (IsMouseCaptured) { ReleaseMouseCapture(); }
                 e.Handled = true;
                 return;
             }
@@ -1890,6 +1953,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                                     SelectObject(p); hoverVerticesDirty = true; cogoPointVerticesDirty = true;
                                 }
                             }
+                            _stateCtl.FlushPointUpdates();
                         }
                         else
                         {
@@ -1898,6 +1962,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                                 if (IsShiftPressed || p.IsSelected) { DeselectObject(p); hoverVerticesDirty = true; cogoPointVerticesDirty = true; }
                                 else { SelectObject(p); hoverVerticesDirty = true; cogoPointVerticesDirty = true; }
                             }
+                            _stateCtl.FlushPointUpdates();
                         }
                         break;
                     }
@@ -1915,22 +1980,16 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             if (lineVerticesDirty) { _lineVerticesDirty = true; }
             if (hoverVerticesDirty) { _hoverVerticesDirty = true; }
-            if (cogoPointVerticesDirty) { _pointCircleVerticesDirty = true; _anchorVerticesDirty = true; }
+            if (cogoPointVerticesDirty) { _interactiveDirty = true; _dxfDirty = true; }
 
-            IsDragging = false;
-            DragRect = new(0, 0, 0, 0);
-            _lastQueriedDxfRect = Rect.Empty;
+            EndDrag();
 
             _suspendHitTesting = false;
             UpdateDragRect();
         }
         protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
         {
-            _dragStartScreen = e.GetPosition(this);
-            _dragStart = DxfCoords.ToPoint();
-            DragRect = new(0, 0, 0, 0);
-            _dxfDragRectTranslate = new(0, 0);
-            CurrentlyAppliedDragRectMatrix = new();
+            StartDrag(e.GetPosition(this));
 
             if (_mouseOverToggleButtonPoint != null)
             {
@@ -1942,14 +2001,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 var w = Camera.ScreenToWorld(new Vector2((float)s.X, (float)s.Y));
                 var delta = new Vector2(w.X - _pressedToggleButtonPoint.TextInfoBasePosition.X, w.Y - _pressedToggleButtonPoint.TextInfoBasePosition.Y);
                 UpdateCogoPointOffset(_pressedToggleButtonPoint, delta);
-                //_pressedToggleButtonPoint.MoveTextInfoToPoint(new Point(w.X, w.Y));
-
-
-                // request rebuilds so the new locations render right away
-                //_hoverVerticesDirty = true;  // hover
-                //_glyphVerticesDirty = true;  // text
-                //_anchorVerticesDirty = true;  // toggle
-                //_leaderLineVerticesDirty = true; // leader line
 
                 CaptureMouse();
                 e.Handled = true;
@@ -1961,6 +2012,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
             if (e.Key == Key.Escape)
             {
                 ResetSelectedObjects();
+                EndDrag();
+                _dxfDirty = true;
+                _interactiveDirty = true;
             }
             if (e.Key == Key.Tab)
             {
@@ -2009,12 +2063,43 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _dxfDirty = true;
         }
 
+        private void UpdateToggleAnchorDimensions()
+        {
+            float wupp = Camera.GetWorldUnitsPerPixel();
+
+            float desiredHalfWorld = (AnchorPixelSize * 0.5f) * wupp;
+            float drawingShort = Math.Min(Camera.Extents.Width, Camera.Extents.Height).ToFloat();
+            float maxHalfWorld = (drawingShort * MaxCogoToggleToDrawingFraction) * 0.5f;
+
+            AnchorWorldHalfSize = Math.Min(desiredHalfWorld, maxHalfWorld) / 2;
+            AnchorWorldCornerRadius = Math.Min(AnchorWorldHalfSize * CornerFracOfHalf, AnchorWorldHalfSize - 1e-5f);
+            AnchorWorldFeather = FeatherPx * wupp;
+            CurrentAnchorBounds = new(0, 0, 2 * AnchorWorldHalfSize, 2 * AnchorWorldHalfSize);
+
+            foreach (var pg in CadManager3D.CogoPointManager.PointGroups)
+            {
+                foreach (var p in pg.Value.Points)
+                {
+                    p.ToggleBounds = new(p.TextInfoBasePosition.X + p.TextInfoOffset.X - AnchorWorldHalfSize,
+                                              p.TextInfoBasePosition.Y + p.TextInfoOffset.Y - AnchorWorldHalfSize,
+                                              2 * AnchorWorldHalfSize,
+                                              2 * AnchorWorldHalfSize);
+                }
+            }
+        }
         private void UpdateCogoPointOffset(CogoPoint point, Vector2 offset)
         {
             if (point is null) { return; }
 
-            _stateCtl.SetLabelOffset(point, offset);
-            _stateCtl.FlushLabelUpdates();
+            point.SetTextInfoOffset(offset);
+            _stateCtl.SetPointOffset(point, offset, true);
+            _stateCtl.FlushPointUpdates();
+
+            point.ToggleBounds = new(point.TextInfoBasePosition.X + point.TextInfoOffset.X - AnchorWorldHalfSize,
+                                      point.TextInfoBasePosition.Y + point.TextInfoOffset.Y - AnchorWorldHalfSize,
+                                      2 * AnchorWorldHalfSize,
+                                      2 * AnchorWorldHalfSize);
+
             _interactiveDirty = true;
             _dxfDirty = true;
         }
@@ -2255,7 +2340,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             var snappedCogoPointsCopy = _mouseOverCogoPoints.ToList();
             List<HitTestableObject> changedObjects = [];
             bool hoverVerticesDirty = false;
-            bool cogoToggleVerticesDirty = false;
 
             if (snappedCogoPointsCopy is not null && snappedCogoPointsCopy.Count > 0)
             {
@@ -2266,7 +2350,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
                         changedObjects.Add(snappedCogoPoint);
                         ResetMouseOverObjects();
                         ResetCogoToggleButtonMouseOver();
-                        cogoToggleVerticesDirty = true;
                         hoverVerticesDirty = true;
 
                         _nearestHitTestableCogoPoints = CadManager3D.HitTestCogoPoints(_lastHitTestCoords, _hittestStrokeThickness).Take(_maxSelectableObjects).ToList();
@@ -2297,7 +2380,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
                         if (snappedCogoPoint.IsSelected && !snappedCogoPoint.IsMouseOverToggleButton && snappedCogoPoint.ToggleBounds.Contains(_lastHitTestCoords))
                         {
                             MouseOverCogoToggleButton(snappedCogoPoint);
-                            cogoToggleVerticesDirty = true;
                         }
                     }
                 }
@@ -2327,14 +2409,12 @@ namespace Cad_Point_Manager.Controls.D3DControl
                             if (point.IsSelected && point.ToggleBounds.Contains(_lastHitTestCoords))
                             {
                                 MouseOverCogoToggleButton(point);
-                                cogoToggleVerticesDirty = true;
                             }
                         }
                     }
                 }
             }
             if (hoverVerticesDirty) { _hoverVerticesDirty = true; }
-            if (cogoToggleVerticesDirty) { _anchorVerticesDirty = true; }
         }
         private async void RunDragCogoPointsHittest(CancellationToken token)
         {
@@ -2531,6 +2611,14 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             _mouseOverHitTestableObjects.Clear();
             _mouseOverCogoPoints.Clear();
+
+            if (_mouseOverToggleButtonPoint is not null)
+            {
+                _mouseOverToggleButtonPoint.IsMouseOverToggleButton = false;
+                _stateCtl.SetPointAnchorMouseOver(_mouseOverToggleButtonPoint, false);
+                _mouseOverToggleButtonPoint = null;
+                _stateCtl.FlushPointUpdates();
+            }
         }
         private void SelectObject(HitTestableObject hitTestableObject)
         {
@@ -2550,7 +2638,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     {
                         dxfPoint.Select();
                         _stateCtl.SetPointSelected(dxfPoint, true);
-                        _stateCtl.FlushLabelUpdates();
                         SelectedCogoPoints.Add(dxfPoint);
                     }
                 }
@@ -2579,7 +2666,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     {
                         dxfPoint.Deselect();
                         _stateCtl.SetPointSelected(dxfPoint, false);
-                        _stateCtl.FlushLabelUpdates();
                         SelectedCogoPoints.Remove(dxfPoint);
                     }
                 }
@@ -2604,7 +2690,22 @@ namespace Cad_Point_Manager.Controls.D3DControl
             foreach (var point in cogoPointsCopy) { DeselectObject(point); }
             SelectedCogoPoints.Clear();
 
-            _lineVerticesDirty = _textVerticesDirty = _anchorVerticesDirty = true;
+            _stateCtl.FlushPointUpdates();
+            _lineVerticesDirty = _textVerticesDirty = _dxfDirty = _interactiveDirty = true;
+        }
+        public void EndDrag()
+        {
+            IsDragging = false;
+            DragRect = new(0, 0, 0, 0);
+            _lastQueriedDxfRect = Rect.Empty;
+        }
+        public void StartDrag(Point start)
+        {
+            _dragStartScreen = start;
+            _dragStart = DxfCoords.ToPoint();
+            DragRect = new(0, 0, 0, 0);
+            _dxfDragRectTranslate = new(0, 0);
+            CurrentlyAppliedDragRectMatrix = new();
         }
 
         private void MouseOverCogoToggleButton(CogoPoint cogoPoint)
@@ -2615,14 +2716,19 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 else
                 {
                     _mouseOverToggleButtonPoint.IsMouseOverToggleButton = false;
+                    _stateCtl.SetPointAnchorMouseOver(_mouseOverToggleButtonPoint, false);
                     _mouseOverToggleButtonPoint = cogoPoint;
                     _mouseOverToggleButtonPoint.IsMouseOverToggleButton = true;
+                    _stateCtl.SetPointAnchorMouseOver(_mouseOverToggleButtonPoint, true);
+                    _stateCtl.FlushPointUpdates();
                 }
             }
             else
             {
                 _mouseOverToggleButtonPoint = cogoPoint;
                 _mouseOverToggleButtonPoint.IsMouseOverToggleButton = true;
+                _stateCtl.SetPointAnchorMouseOver(_mouseOverToggleButtonPoint, true);
+                _stateCtl.FlushPointUpdates();
             }
         }
         private void ResetCogoToggleButtonMouseOver()
@@ -2719,6 +2825,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 if (CadManager3D.PointTextVerticesDirty)
                 {
                     _glyphVerticesDirty = true;
+                    _leaderLineVerticesDirty = true;
+                    _anchorVerticesDirty = true;
                 }
             }
             if (e.PropertyName == nameof(CadManager3D.PointCircleVerticesDirty))

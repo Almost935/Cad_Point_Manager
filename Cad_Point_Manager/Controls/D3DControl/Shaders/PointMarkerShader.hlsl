@@ -11,12 +11,11 @@ cbuffer CircleSettingsBuffer : register(b1)
     float4 selectedMouseOverColor;
 };
 
-// NEW: state buffers (same slots as glyphs)
-struct LabelState
+struct PointState
 {
-    float2 Offset;
-    uint Flags;
-    float Pad;
+    float2 Offset; // world-space drag delta
+    uint Flags; // bit0: visible, bit1: selected, bit2: mouseOver, bit3: hasLeaderLine, bit4: mouseOverAnchor, bit5: anchorPressed
+    float _padLS; // keep 16B stride
 };
 struct GroupState
 {
@@ -26,14 +25,13 @@ struct GroupState
     float2 Pad;
 };
 
-StructuredBuffer<LabelState> LabelStates : register(t0);
+StructuredBuffer<PointState> PointStates : register(t0);
 StructuredBuffer<GroupState> GroupStates : register(t1);
 
-static const uint LABEL_VISIBLE = 1u;
-static const uint LABEL_SELECTED = 2u;
-static const uint LABEL_MOUSEOVER = 4u;
+static const uint POINT_VISIBLE = 1u << 0;
+static const uint POINT_SELECTED = 1u << 1;
+static const uint POINT_MOUSEOVR = 1u << 2;
 static const uint GROUP_VISIBLE = 1u;
-
 
 // --- Vertex/Geometry interfaces ---
 // Strip per-vertex color and flags; *add* ids
@@ -43,6 +41,7 @@ struct VS_INPUT
     float radius : RADIUS;
     uint labelId : LABEL_ID;
     uint groupId : GROUP_ID;
+    uint pointId : POINT_ID;
 };
 
 struct GS_OUTPUT
@@ -70,23 +69,21 @@ void EmitCorner(float4 color, float4 position, float2 offset, inout TriangleStre
 [maxvertexcount(4)]
 void GSMain(point VS_INPUT input[1], inout TriangleStream<GS_OUTPUT> output)
 {
-    uint lid = input[0].labelId;
-    uint gid = input[0].groupId;
-    GroupState gs = GroupStates[gid];
-    LabelState ls = LabelStates[lid];
+    GroupState gs = GroupStates[input[0].groupId];
+    PointState ps = PointStates[input[0].pointId];
 
     // Visibility
     bool visGrp = (gs.Flags & GROUP_VISIBLE) != 0u;
-    bool visLbl = (ls.Flags & LABEL_VISIBLE) != 0u;
-    if (!visGrp || !visLbl)
+    bool visPt = (ps.Flags & POINT_VISIBLE) != 0u;
+    if (!visGrp || !visPt)
     {
         return;
     }
 
     // Color from group, then apply hover/selected
     float4 color = gs.Color;
-    bool over = (ls.Flags & LABEL_MOUSEOVER) != 0u;
-    bool sel = (ls.Flags & LABEL_SELECTED) != 0u;
+    bool over = (ps.Flags & POINT_MOUSEOVR) != 0u;
+    bool sel = (ps.Flags & POINT_SELECTED) != 0u;
 
     if (sel)
     {

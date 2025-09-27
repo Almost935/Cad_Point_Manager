@@ -19,24 +19,23 @@ cbuffer LeaderLineSettings : register(b1)
 struct VSIn
 {
     float2 A : POSITION; // world: ellipse center
-    float2 BBase : TEXCOORD0; // world: text base (UN-offset)
-    uint LabelId : TEXCOORD1; // index into LabelSRV
-    uint GroupId : TEXCOORD2; // index into GroupSRV
+    float2 BBase : END; // world: text base (UN-offset)
+    uint PointId : POINT_ID; // index into PointSRV
+    uint GroupId : GROUP_ID; // index into GroupSRV
 };
 
 struct VSOut
 {
-    float4 aClip : TEXCOORD0; // clip-space A
-    float4 bClip : TEXCOORD1; // clip-space BBase
-    float2 aWorld : TEXCOORD2; // world A
-    float2 bWorld : TEXCOORD3; // world BBase
-    uint labelId : TEXCOORD4;
-    uint groupId : TEXCOORD5;
-    float4 pos : SV_POSITION; // dummy (IA = PointList)
+    float4 aClip : TEXCOORD0;   // clip-space A
+    float4 bClip : TEXCOORD1;   // clip-space BBase
+    float2 aWorld : TEXCOORD2;  // world A
+    float2 bWorld : TEXCOORD3;  // world BBase
+    uint pointId : TEXCOORD4;   // index into PointSRV
+    uint groupId : TEXCOORD5;   // index into GroupSRV
+    float4 pos : SV_POSITION;   // dummy (IA = PointList)
 };
 
-// Match your C# SRV structs (packing/flags)
-struct LabelState
+struct PointState
 {
     float2 Offset;
     uint Flags;
@@ -50,12 +49,14 @@ struct GroupState
     float2 Pad;
 };
 
-StructuredBuffer<LabelState> LabelSRV : register(t0);
+StructuredBuffer<PointState> PointSRV : register(t0);
 StructuredBuffer<GroupState> GroupSRV : register(t1);
 
-// Flags (same as your other passes)
-static const uint LABEL_VISIBLE = 1u << 0;
-static const uint LABEL_SELECTED = 1u << 1;
+static const uint POINT_VISIBLE = 1u << 0;
+static const uint POINT_SELECTED = 1u << 1;
+static const uint POINT_MOUSE_OVER = 1u << 2;
+static const uint POINT_HAS_LEADER = 1u << 3; 
+
 static const uint GROUP_VISIBLE = 1u << 0;
 
 VSOut VSMain(VSIn v)
@@ -65,7 +66,7 @@ VSOut VSMain(VSIn v)
     o.bWorld = v.BBase;
     o.aClip = mul(float4(v.A, 0, 1), ViewProj);
     o.bClip = mul(float4(v.BBase, 0, 1), ViewProj);
-    o.labelId = v.LabelId;
+    o.pointId = v.PointId;
     o.groupId = v.GroupId;
     o.pos = o.aClip; // not used; required output
     return o;
@@ -83,16 +84,16 @@ void GSMain(point VSOut vin[1], inout TriangleStream<GSOut> tri)
     VSOut i = vin[0];
 
     // Look up state
-    LabelState ls = LabelSRV[i.labelId];
+    PointState ps = PointSRV[i.pointId];
     GroupState gs = GroupSRV[i.groupId];
 
     // Visibility (same rules as glyphs/circles)
-    if (((ls.Flags & LABEL_VISIBLE) == 0u) || ((gs.Flags & GROUP_VISIBLE) == 0u))
+    if (((gs.Flags & GROUP_VISIBLE) == 0u) || ((ps.Flags & POINT_VISIBLE) == 0u) || ((ps.Flags & POINT_HAS_LEADER) == 0u))
         return;
 
     // Live endpoint B = BBase + label offset
     float2 aW = i.aWorld;
-    float2 bW = i.bWorld + ls.Offset;
+    float2 bW = i.bWorld + ps.Offset;
 
     // Project to CLIP & NDC
     float4 aC = mul(float4(aW, 0, 1), ViewProj);
@@ -126,7 +127,7 @@ void GSMain(point VSOut vin[1], inout TriangleStream<GSOut> tri)
 
     // Color from group; override if selected
     float4 col = gs.Color;
-    if ((ls.Flags & LABEL_SELECTED) != 0u)
+    if ((ps.Flags & POINT_SELECTED) != 0u)
         col = SelectedColor;
 
     // Emit strip

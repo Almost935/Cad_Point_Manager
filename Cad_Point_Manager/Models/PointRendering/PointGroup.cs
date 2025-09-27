@@ -1,4 +1,5 @@
 ﻿using Cad_Point_Manager.Common.Collections;
+using Cad_Point_Manager.Controls.D3DControl;
 using SharpDX;
 using SharpDX.DirectWrite;
 using System.Collections.ObjectModel;
@@ -111,6 +112,7 @@ namespace Cad_Point_Manager.Models.PointRendering
         public double MarkerBaseSize { get; set; } = 0.75;
         public SolidColorBrush GroupBrush { get; }
         public Pen GroupPen { get; }
+        public GroupState PointGroupState { get; set; }
         #endregion
 
         #region Constructors

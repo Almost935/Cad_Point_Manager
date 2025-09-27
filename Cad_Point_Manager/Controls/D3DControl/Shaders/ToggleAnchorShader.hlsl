@@ -2,111 +2,135 @@
 
 cbuffer TransformBuffer : register(b0)
 {
-    // World->Clip for your 2D scene
     row_major float4x4 ViewProj;
 }
 
-// Stream 0: unit quad vertices in [-1..1] space
+cbuffer ToggleAnchorSettingsBuffer : register(b1)
+{
+    float4 baseColor;
+    float4 selectedColor;
+    float4 mouseOverColor;
+    float size;
+    float cornerRadius;
+    float feather;
+}
+
+// Stream 0: unit quad
 struct VSQuadIn
 {
-    float2 local : POSITION; // e.g., (-1,-1),(1,-1),(1,1), (-1,-1),(1,1),(-1,1)
+    float2 local : POSITION;
 };
 
-// Stream 1: per-instance data
+// Stream 1: per-instance data  (FIXED: unique TEXCOORD slots)
 struct VSInst
 {
     float2 center : TEXCOORD0; // world center
-    float2 size : TEXCOORD1; // world half-width/half-heaight
-    float2 rf : TEXCOORD2; // x=corner radius (world), y=feather (world)
-    float4 baseCol : TEXCOORD3; // normal color
-    float4 hoverCol : TEXCOORD4; // hover color
-    float4 pressCol : TEXCOORD5; // pressed color
-    float on : TEXCOORD6; // 0 or 1 (draw inner dot)
-    uint state : TEXCOORD7; // 0=normal, 1=hover, 2=pressed
+    uint pointId : POINT_ID; // index into PointStates
+    uint groupId : GROUP_ID; // index into GroupStates
 };
 
 struct VSOut
 {
     float4 pos : SV_POSITION;
-    float2 uv : TEXCOORD0; // local coords scaled into world units
-    float2 size : TEXCOORD1; // world half extents
-    float2 rf : TEXCOORD2; // radius/feather (world)
-    float4 baseCol : TEXCOORD3;
-    float4 hoverCol : TEXCOORD4;
-    float4 pressCol : TEXCOORD5;
-    float on : TEXCOORD6;
-    uint state : TEXCOORD7;
+    float2 uv : TEXCOORD0;
+    float2 size : TEXCOORD1;
+    float2 rf : TEXCOORD2;
+    uint state : TEXCOORD3; // 0=normal, 1=mouseOver, 2=selected
+    float show : TEXCOORD4; // 1 = draw, 0 = cull
 };
+
+struct PointState
+{
+    float2 Offset;
+    uint Flags; // bit0: visible, bit1: selected, bit2: mouseOver, bit3: hasLeaderLine, bit4: mouseOverAnchor, bit5: anchorPressed
+    float _padLS;
+};
+struct GroupState
+{
+    float4 Color;
+    float Scale;
+    uint Flags; // bit0: visible
+    float2 _padGS;
+};
+
+StructuredBuffer<PointState> PointStates : register(t0);
+StructuredBuffer<GroupState> GroupStates : register(t1);
+
+static const uint POINT_VISIBLE = 1u << 0;
+static const uint POINT_SELECTED = 1u << 1;
+static const uint POINT_MOUSEOVR = 1u << 2;
+static const uint POINT_MOUSEOVERANCHOR = 1u << 4;
+static const uint POINT_ANCHORPRESSED = 1u << 5;
+
+static const uint GROUP_VISIBLE = 1u << 0;
 
 VSOut VSMain(VSQuadIn v, VSInst i)
 {
     VSOut o;
 
-    // Local [-1..1] → world offset using half-size in world units
-    float2 worldPos = i.center + v.local * i.size;
+    // Fetch dynamic state
+    PointState ps = PointStates[i.pointId];
+    GroupState gs = GroupStates[i.groupId];
+    
+    // Visibility + selection gates
+    const float visPt = ((ps.Flags & POINT_VISIBLE) != 0u) ? 1.0f : 0.0f;
+    const float visGrp = ((gs.Flags & GROUP_VISIBLE) != 0u) ? 1.0f : 0.0f;
+    const float sel = ((ps.Flags & POINT_SELECTED) != 0u) ? 1.0f : 0.0f;
+    const float mouseOver = ((ps.Flags & POINT_MOUSEOVERANCHOR) != 0u) ? 1.0f : 0.0f;
+    const float anchorPressed = ((ps.Flags & POINT_ANCHORPRESSED) != 0u) ? 1.0f : 0.0f;
+
+    uint state = 0; // normal
+    if (mouseOver > 0.5f)
+        state = 1; // mouseOver
+    if (anchorPressed > 0.5f)
+        state = 2; // selected
+    
+    // Show only when visible
+    o.show = visPt * visGrp * sel;
+
+    // Build world position as usual
+    const float2 worldPos = i.center + ps.Offset + v.local * size;
 
     o.pos = mul(float4(worldPos, 0.0, 1.0), ViewProj);
-    o.uv = v.local * i.size; // keep world-scaled local for SDF math
-    o.size = i.size;
-    o.rf = i.rf;
-    o.baseCol = i.baseCol;
-    o.hoverCol = i.hoverCol;
-    o.pressCol = i.pressCol;
-    o.on = i.on;
-    o.state = i.state;
+    o.uv = v.local * size;
+    o.size = size;
+    o.rf = cornerRadius;
+    o.state = state;
 
     return o;
 }
 
 float4 PSMain(VSOut i) : SV_Target
 {
-    // --- SDF for rounded rect (unchanged) ---
+    // Early kill when not to be shown
+    if (i.show < 0.5f)
+        discard;
+
+    // Rounded-rect SDF
     float2 q = abs(i.uv) - (i.size - i.rf.x);
     float d = length(max(q, 0.0)) - i.rf.x;
 
-    // ===== Screen-space AA using derivatives (uniform across corners/sides) =====
-    // aa ~ distance change across one pixel in screen space
     float aa = max(fwidth(d), 1e-6);
-
-    // Fill alpha (inside the shape), centered on the edge (d = 0)
-    // This yields ~1 inside, ~0 outside, with a smooth ~1px transition
     float fillAlpha = smoothstep(0.5 * aa, -0.5 * aa, d);
 
-    // ----- Choose color by UI state (unchanged) -----
-    float4 col = i.baseCol;
+    // Simple state-based color (you can refine)
+    float4 col = baseColor;
     if (i.state == 1)
-        col = i.hoverCol;
+        col = mouseOverColor;
     if (i.state == 2)
-        col = i.pressCol;
+        col = selectedColor;
 
-    // Optional "on" dot (unchanged)
-    if (i.on > 0.5)
-    {
-        float dotR = min(i.size.x, i.size.y) * 0.35;
-        float dotA = saturate(1.0 - length(i.uv) / dotR);
-        float4 dotCol = float4(0, 0, 0, 1);
-        col = lerp(col, dotCol, dotA);
-    }
-
-    // ===== Uniform-thickness border in pixels =====
-    // Desired border thickness in *pixels* (tweak to taste)
+    // Uniform 1px border
     const float BorderPx = 1.0;
-
-    // Outer coverage (edge-inclusive)
     float outer = smoothstep(0.5 * aa, -0.5 * aa, d);
-    // Inner coverage: offset SDF inward by BorderPx pixels
     float inner = smoothstep(0.5 * aa, -0.5 * aa, d + BorderPx * aa);
-
-    // Ring mask = region between the two iso-lines; ~BorderPx thick in pixels
     float borderMask = saturate(outer - inner);
-
-    // Blend a border color only in the ring; keep the fill elsewhere
     float4 borderCol = float4(0, 0, 0, 0.3);
     float4 outCol = lerp(col, borderCol, borderMask);
 
-    // Final alpha = fill coverage (so only inside the shape is visible)
     outCol.a *= fillAlpha;
     if (outCol.a <= 0.001)
         discard;
+
     return outCol;
 }
