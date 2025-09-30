@@ -1,4 +1,5 @@
 ﻿using Cad_Point_Manager.Controls.D3DControl;
+using Cad_Point_Manager.Controls.D3DControl.Rendering.Text;
 using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Helpers;
 using netDxf.Entities;
@@ -26,21 +27,24 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             DrawingBlock3D = block;
             EntityObject = line;
 
+            UpdateData();
             UpdateColor();
-            UpdateData(line);
         }
         #endregion
 
         #region Methods
-        public override void UpdateData(EntityObject entity)
+        public override void UpdateVertices(uint layerId)
         {
-            if (entity is Line line)
+            LineVertex startVertex = new(Start, layerId);
+            LineVertex endVertex = new(End, layerId);
+            Vertices = new[] { startVertex, endVertex };
+        }
+        public override void UpdateData()
+        {
+            if (EntityObject is not null && EntityObject is Line line)
             {
                 Start = new Vector3((float)line.StartPoint.X, (float)line.StartPoint.Y, 0);
-                LineVertex startVertex = new(Start, Color);
                 End = new Vector3((float)line.EndPoint.X, (float)line.EndPoint.Y, 0);
-                LineVertex endVertex = new(End, Color);
-                Vertices = new[] { startVertex, endVertex };
                 Length = Vector3.Distance(Start, End); 
                 MidPoint = (Start + End) / 2;
 

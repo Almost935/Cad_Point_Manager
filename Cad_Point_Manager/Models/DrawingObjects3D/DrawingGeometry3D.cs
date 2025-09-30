@@ -12,6 +12,8 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         public int StartVertexIndex { get; set; }
         public int EndVertexIndex { get; set; }
 
+        public abstract void UpdateVertices(uint layerId);
+
         public override void MouseEnter()
         {
             this.IsMouseOver = true;

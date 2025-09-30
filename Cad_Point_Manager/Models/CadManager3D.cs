@@ -10,6 +10,7 @@ using netDxf;
 using netDxf.Entities;
 using netDxf.Tables;
 using SharpDX;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -52,8 +53,6 @@ namespace Cad_Point_Manager.Models
         private readonly List<TextVertex> _cachedTextVertices = [];
         private readonly List<TextVertex> _cachedPointTextVertices = [];
         private readonly List<PointMarkerInstance> _cachedPointMarkerVertices = [];
-
-        private CogoPointTextVerticesDict _pointTextVerticesDict;
         #endregion
 
         #region Properties
@@ -520,7 +519,6 @@ namespace Cad_Point_Manager.Models
                 }
             }
         }
-
         public void UpdateVerticesIsSelected(HitTestableObject hitTestableObject, bool isSelected)
         {
             if (hitTestableObject is DrawingObject3D drawingObject)
@@ -560,7 +558,6 @@ namespace Cad_Point_Manager.Models
                 }
             }
         }
-
         public void UpdateVerticesIsSelectedAndIsMouseOver(HitTestableObject hitTestableObject, bool isSelected, bool isMouseOver)
         {
             if (hitTestableObject is DrawingObject3D drawingObject)
@@ -605,7 +602,7 @@ namespace Cad_Point_Manager.Models
             }
         }
 
-        public ReadOnlySpan<LineVertex> UpdateLineVerticesList()
+        public ReadOnlySpan<LineVertex> UpdateLineVerticesList(SceneIdMap sceneIdMap)
         {
             if (LineVerticesDirty)
             {
@@ -614,23 +611,24 @@ namespace Cad_Point_Manager.Models
                 foreach (var keyValuePair in Layers)
                 {
                     var layer = keyValuePair.Value;
-                    if (layer.IsVisible)
-                    {
-                        foreach (var obj in layer.DrawingObject3Ds)
-                        {
-                            if (obj is DrawingGeometry3D drawingGeometry)
-                            {
-                                drawingGeometry.StartVertexIndex = _cachedLineVertices.Count;
-                                _cachedLineVertices.AddRange(drawingGeometry.Vertices);
-                                drawingGeometry.EndVertexIndex = _cachedLineVertices.Count - 1;
-                            }
+                    var lid = sceneIdMap.GetOrAddLayerId(layer);
 
-                            if (obj is DrawingBlock3D drawingBlock)
-                            {
-                                drawingBlock.StartLineVertexIndex = _cachedLineVertices.Count;
-                                _cachedLineVertices.AddRange(drawingBlock.LineVertices);
-                                drawingBlock.EndLineVertexIndex = _cachedLineVertices.Count - 1;
-                            }
+                    foreach (var obj in layer.DrawingObject3Ds)
+                    {
+                        if (obj is DrawingGeometry3D drawingGeometry)
+                        {
+                            drawingGeometry.UpdateVertices(lid);
+                            drawingGeometry.StartVertexIndex = _cachedLineVertices.Count;
+                            _cachedLineVertices.AddRange(drawingGeometry.Vertices);
+                            drawingGeometry.EndVertexIndex = _cachedLineVertices.Count - 1;
+                        }
+
+                        if (obj is DrawingBlock3D drawingBlock)
+                        {
+                            drawingBlock.UpdateGeometryVertices(lid);
+                            drawingBlock.StartLineVertexIndex = _cachedLineVertices.Count;
+                            _cachedLineVertices.AddRange(drawingBlock.LineVertices);
+                            drawingBlock.EndLineVertexIndex = _cachedLineVertices.Count - 1;
                         }
                     }
                 }
@@ -642,7 +640,7 @@ namespace Cad_Point_Manager.Models
             }
             return CollectionsMarshal.AsSpan(_cachedLineVertices);
         }
-        public ReadOnlySpan<TextVertex> UpdateTextVerticesList(ResCache d3DResCache)
+        public ReadOnlySpan<TextVertex> UpdateTextVerticesList(ResCache d3DResCache, SceneIdMap sceneIdMap)
         {
             if (TextVerticesDirty)
             {
@@ -655,6 +653,7 @@ namespace Cad_Point_Manager.Models
                 foreach (var kvp in Layers)
                 {
                     var layer = kvp.Value;
+                    var lid = sceneIdMap.GetOrAddLayerId(layer);
                     if (!layer.IsVisible) continue;
 
                     foreach (var obj in layer.DrawingObject3Ds)
@@ -663,14 +662,14 @@ namespace Cad_Point_Manager.Models
 
                         if (obj is DrawingText3D text3D)
                         {
-                            text3D.UpdateTextVertices(d3DResCache);
+                            text3D.UpdateTextVertices(d3DResCache, lid);
                             text3D.StartVertexIndex = start;
                             _cachedTextVertices.AddRange(text3D.TextVertices);
                             text3D.EndVertexIndex = _cachedTextVertices.Count - 1;
                         }
                         if (obj is DrawingBlock3D drawingBlock)
                         {
-                            drawingBlock.UpdateTextVertices(d3DResCache);
+                            drawingBlock.UpdateTextVertices(d3DResCache, lid);
                             drawingBlock.StartTextVertexIndex = start;
                             _cachedTextVertices.AddRange(drawingBlock.TextVertices);
                             drawingBlock.EndTextVertexIndex = _cachedTextVertices.Count - 1;
@@ -793,38 +792,6 @@ namespace Cad_Point_Manager.Models
 
             //// For Testing
             //LineVerticesDirty = true;
-        }
-
-        private void AddObjectTreeNodeLayoutVertices()
-        {
-            if (HitTestableObjectTree is null) { return; }
-
-            foreach (var node in HitTestableObjectTree.LeafNodes)
-            {
-                Vector4 color = new(1, 0, 0, 1);
-                var topLeft = new Vector3((float)node.Extents.Left, (float)node.Extents.Top, 0);
-                var bottomRight = new Vector3((float)node.Extents.Right, (float)node.Extents.Bottom, 0);
-                var bottomLeft = new Vector3((float)node.Extents.Left, (float)node.Extents.Bottom, 0);
-                var topRight = new Vector3((float)node.Extents.Right, (float)node.Extents.Top, 0);
-
-                LineVertex topLeftVertex = new(topLeft, color);
-                LineVertex bottomRightVertex = new(bottomRight, color);
-                LineVertex bottomLeftVertex = new(bottomLeft, color);
-                LineVertex topRightVertex = new(topRight, color);
-
-                _cachedLineVertices.Add(topLeftVertex);
-                _cachedLineVertices.Add(topRightVertex);
-
-                _cachedLineVertices.Add(bottomLeftVertex);
-                _cachedLineVertices.Add(bottomRightVertex);
-
-                _cachedLineVertices.Add(topLeftVertex);
-                _cachedLineVertices.Add(bottomLeftVertex);
-
-                _cachedLineVertices.Add(topRightVertex);
-                _cachedLineVertices.Add(bottomRightVertex);
-            }
-            LineVerticesDirty = true;
         }
         #endregion
     }

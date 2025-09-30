@@ -21,6 +21,14 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
         AnchorPressed = 1u << 5,
     }
 
+    [Flags]
+    public enum LayerFlags : uint
+    {
+        Visible = 1u << 0,
+        Selected = 1u << 1,
+        MouseOver = 1u << 2,
+    }
+
     public sealed class D3dStateBuffers : IDisposable
     {
         private readonly Device _device;
@@ -32,11 +40,14 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
         private ShaderResourceView _pointSrv;
         private Buffer _groupBuf;
         private ShaderResourceView _groupSrv;
+        private Buffer _layerBuf;
+        private ShaderResourceView _layerSrv;
 
         private LabelState[] _labelCpu = [];
         private PointState[] _pointCpu = [];
         private GroupState[] _groupCpu = [];
-        private int _labelCap, _groupCap, _pointCap;
+        private LayerState[] _layerCpu = [];
+        private int _labelCap, _groupCap, _pointCap, _layerCap;
 
         public D3dStateBuffers(Device device, DeviceContext ctx)
         {
@@ -47,9 +58,11 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
         public ShaderResourceView LabelSRV => _labelSrv;
         public ShaderResourceView PointSRV => _pointSrv;
         public ShaderResourceView GroupSRV => _groupSrv;
+        public ShaderResourceView LayerSRV => _layerSrv;
         public Span<LabelState> LabelSpan => _labelCpu.AsSpan(0, _labelCap);
         public Span<PointState> PointSpan => _pointCpu.AsSpan(0, _pointCap);
         public Span<GroupState> GroupSpan => _groupCpu.AsSpan(0, _groupCap);
+        public Span<LayerState> LayerSpan => _layerCpu.AsSpan(0, _layerCap);
 
         public void EnsureLabelCapacity(int count)
         {
@@ -100,7 +113,6 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
                 BufferEx = new ShaderResourceViewDescription.ExtendedBufferResource { FirstElement = 0, ElementCount = _groupCap }
             });
         }
-
         public void EnsurePointCapacity(int count)
         {
             if (count <= _pointCap) return;
@@ -126,11 +138,42 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
             });
         }
 
+        public void EnsureLayerCapacity(int count)
+        {
+            if (count <= _layerCap) return;
+            _layerCap = NextPow2(count);
+            Array.Resize(ref _layerCpu, _layerCap);
+
+            _layerSrv?.Dispose(); _layerBuf?.Dispose();
+            var desc = new BufferDescription
+            {
+                SizeInBytes = Utilities.SizeOf<LayerState>() * _layerCap,
+                Usage = ResourceUsage.Dynamic,
+                BindFlags = BindFlags.ShaderResource,
+                CpuAccessFlags = CpuAccessFlags.Write,
+                OptionFlags = ResourceOptionFlags.BufferStructured,
+                StructureByteStride = Utilities.SizeOf<LayerState>()
+            };
+            _layerBuf = new Buffer(_device, desc);
+            _layerSrv = new ShaderResourceView(_device, _layerBuf, new ShaderResourceViewDescription
+            {
+                Format = Format.Unknown,
+                Dimension = ShaderResourceViewDimension.ExtendedBuffer,
+                BufferEx = new ShaderResourceViewDescription.ExtendedBufferResource { FirstElement = 0, ElementCount = _layerCap }
+            });
+        }
+
         public void FlushAll()
         {
             if (_groupBuf is null || _labelBuf is null || _pointBuf is null) { return; }
-            // groups (few): discard whole
             DataStream s;
+
+            // layers (few): discard whole
+            _ctx.MapSubresource(_layerBuf, 0, MapMode.WriteDiscard, MapFlags.None, out s);
+            s.WriteRange(_layerCpu, 0, _layerCap);
+            _ctx.UnmapSubresource(_layerBuf, 0);
+
+            // groups (few): discard whole
             _ctx.MapSubresource(_groupBuf, 0, MapMode.WriteDiscard, MapFlags.None, out s);
             s.WriteRange(_groupCpu, 0, _groupCap);
             _ctx.UnmapSubresource(_groupBuf, 0);
@@ -144,6 +187,21 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
             _ctx.MapSubresource(_labelBuf, 0, MapMode.WriteDiscard, MapFlags.None, out s);
             s.WriteRange(_labelCpu, 0, _labelCap);
             _ctx.UnmapSubresource(_labelBuf, 0);
+        }
+
+        public void FlushLayerSubset(HashSet<uint> dirty)
+        {
+            if (dirty == null || dirty.Count == 0) return;
+
+            DataStream s;
+            _ctx.MapSubresource(_layerBuf, 0, MapMode.WriteNoOverwrite, MapFlags.None, out s);
+            int stride = Utilities.SizeOf<LayerState>();
+            foreach (var id in dirty)
+            {
+                s.Position = id * stride;
+                s.Write(_layerCpu[id]);
+            }
+            _ctx.UnmapSubresource(_layerBuf, 0);
         }
 
         public void FlushPointSubset(HashSet<uint> dirty)
@@ -181,6 +239,7 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
             _labelSrv?.Dispose(); _labelBuf?.Dispose();
             _pointSrv?.Dispose(); _pointBuf?.Dispose();
             _groupSrv?.Dispose(); _groupBuf?.Dispose();
+            _layerSrv?.Dispose(); _layerBuf?.Dispose();
         }
 
         private static int NextPow2(int v)

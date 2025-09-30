@@ -27,14 +27,14 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             EntityObject = circle;
 
             UpdateColor();
-            UpdateData(circle);
+            UpdateData();
         }
         #endregion
 
         #region Methods
-        public override void UpdateData(EntityObject entity)
+        public override void UpdateData()
         {
-            if (entity is Circle circle)
+            if (EntityObject is Circle circle)
             {
                 Radius = (float)circle.Radius;
                 StartAngle = 0;
@@ -42,9 +42,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                 Sweep = EndAngle - StartAngle;
                 RadiusPoint = new Vector3((float)circle.Center.X, (float)circle.Center.Y, (float)circle.Center.Z);
                 Length = (float)((Sweep / 360) * (2 * Math.PI * Radius));
-
-                UpdateBounds();
-                UpdateVertices(circle);
             }
             else
             {
@@ -52,9 +49,9 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             }
         }
 
-        public override void UpdateVertices(EntityObject entity)
+        public override void UpdateVertices(uint layerId)
         {
-            if (entity is Circle circle)
+            if (EntityObject is Circle circle)
             {
                 Array.Clear(Vertices);
 
@@ -68,11 +65,9 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                     if (i == vertices.Count - 1)
                     {
                         LineVertex start = new(
-                            new Vector3((float)vertices[i].Position.X, (float)vertices[i].Position.Y, 0),
-                            Color);
+                            new Vector3((float)vertices[i].Position.X, (float)vertices[i].Position.Y, 0), layerId);
                         LineVertex end = new(
-                            new Vector3((float)vertices[0].Position.X, (float)vertices[0].Position.Y, 0),
-                            Color);
+                            new Vector3((float)vertices[0].Position.X, (float)vertices[0].Position.Y, 0), layerId);
                         lineVertices.Add(start);
                         lineVertices.Add(end);
 
@@ -80,11 +75,9 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                     }
 
                     LineVertex s = new(
-                        new Vector3((float)vertices[i].Position.X, (float)vertices[i].Position.Y, 0),
-                        Color);
+                        new Vector3((float)vertices[i].Position.X, (float)vertices[i].Position.Y, 0), layerId);
                     LineVertex e = new(
-                        new Vector3((float)vertices[i + 1].Position.X, (float)vertices[i + 1].Position.Y, 0),
-                        Color);
+                        new Vector3((float)vertices[i + 1].Position.X, (float)vertices[i + 1].Position.Y, 0), layerId);
 
                     lineVertices.Add(s);
                     lineVertices.Add(e);
@@ -93,6 +86,8 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                 Vertices = lineVertices.ToArray();
                 Start = Vertices.First().Position;
                 End = Vertices.Last().Position;
+
+                UpdateBounds();
             }
             else
             {

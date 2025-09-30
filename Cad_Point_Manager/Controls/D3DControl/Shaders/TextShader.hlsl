@@ -29,8 +29,7 @@ float4 GetSnappedColor(float4 color)
 struct VSInput
 {
     float3 Position : POSITION;
-    float4 Color : COLOR;
-    float IsVisible : ISVISIBLE;
+    uint LayerId : LAYERID; // Layer index for indirection
     float IsMouseOver : ISMOUSEOVER;
     float IsSelected : ISSELECTED;
 };
@@ -40,6 +39,17 @@ struct PSInput
     float4 Position : SV_POSITION;
     float4 Color : COLOR;
 };
+
+struct LayerState
+{
+    float4 Color;
+    uint Flags;
+    float3 Pad;
+};
+
+StructuredBuffer<LayerState> LayerStates : register(t0);
+
+static const uint LAYER_VISIBLE = 1u << 0;
 
 // Replace per-vertex snapping with a uniform NDC delta computed once
 float2 ComputeSnapDeltaNdc(float2 viewportSize)
@@ -62,14 +72,17 @@ PSInput VSMain(VSInput input)
     PSInput o;
 
     float4 clip = mul(float4(input.Position, 1.0), transformationMatrix);
+    
+    LayerState ls = LayerStates[input.LayerId];
+    float visLayer = ((ls.Flags & LAYER_VISIBLE) != 0u) ? 1.0f : 0.0f;
 
     // colors (unchanged)
-    float4 col = input.Color;
+    float4 col = ls.Color;
     if (input.IsMouseOver > 0.5)
         col = GetSnappedColor(col);
     if (input.IsSelected > 0.5)
         col = (input.IsMouseOver > 0.5) ? selectedMouseOverColor : selectedColor;
-    if (input.IsVisible < 0.5)
+    if (!visLayer)
         col.a = 0.0;
 
     // --- uniform snap (same offset for all vertices in this draw) ---

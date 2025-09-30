@@ -30,8 +30,6 @@ namespace Cad_Point_Manager.ViewModels
         private readonly ValidationService _validationService = new();
         private readonly SelectionConnectivityService _service = new();
 
-        private CogoPoint? _draggingPoint;
-        private bool _isRenderingAttached = false;
         private readonly Dictionary<string, List<string>> _errors = [];
 
         private JobFileManager _jobFileManager = new();
@@ -41,6 +39,7 @@ namespace Cad_Point_Manager.ViewModels
         private DxfDocument _dxfDocument;
         private Size _viewportSize = Size.Empty;
         private Camera _camera;
+        private ObservableCollection<KeyValuePair<string, ObjectLayer3D>> _layers = [];
         private BatchableObservableCollection<KeyValuePair<string, PointGroup>> _pointGroups = [];
         private BatchableObservableCollection<CogoPoint> _cogoPoints = [];
         private BatchableObservableCollection<CogoPoint> _selectedCogoPoints = [];
@@ -125,6 +124,15 @@ namespace Cad_Point_Manager.ViewModels
             {
                 _camera = value;
                 OnPropertyChanged(nameof(Camera));
+            }
+        }
+        public ObservableCollection<KeyValuePair<string, ObjectLayer3D>> Layers
+        {
+            get => _layers;
+            set
+            {
+                _layers = value;
+                OnPropertyChanged(nameof(Layers));
             }
         }
         public BatchableObservableCollection<KeyValuePair<string, PointGroup>> PointGroups
@@ -486,55 +494,6 @@ namespace Cad_Point_Manager.ViewModels
                 }
             }
         }
-
-
-        // CogoPoint Movement Methods
-        //private void OnCogoPointToggleButtonChecked(CogoPoint point)
-        //{
-        //    EndDraggingText();
-        //    BeginDraggingText(point);
-        //}
-        //private void OnCogoPointToggleButtonUnchecked(CogoPoint point)
-        //{
-        //    EndDraggingText();
-        //}
-        //public void BeginDraggingText(CogoPoint point)
-        //{
-        //    JobFileManager.CadManager3D.HitTestingEnabled = false;
-        //    _draggingPoint = point;
-        //    _draggingPoint.TextBeingMoved = true;
-        //    point.MouseLeave();
-        //    point.MoveTextInfoToPoint(MousePosition);
-
-
-        //    if (!_isRenderingAttached)
-        //    {
-        //        CompositionTarget.Rendering += OnRenderFrame;
-        //        _isRenderingAttached = true;
-        //    }
-        //}
-        //public void EndDraggingText()
-        //{
-        //    JobFileManager.CadManager3D.HitTestingEnabled = true;
-        //    if (_draggingPoint != null)
-        //    {
-        //        _draggingPoint.TextBeingMoved = false;
-        //        _draggingPoint = null;
-        //    }
-
-        //    JobFileManager.CadManager3D.UpdateHitTestableObjectTree();
-
-        //    if (_isRenderingAttached)
-        //    {
-        //        CompositionTarget.Rendering -= OnRenderFrame;
-        //        _isRenderingAttached = false;
-        //    }
-        //}
-        //private void OnRenderFrame(object? sender, EventArgs e)
-        //{
-            
-        //}
-
 
         // Point Creation Methods
         private void OnSubmitCogoPointClicked()

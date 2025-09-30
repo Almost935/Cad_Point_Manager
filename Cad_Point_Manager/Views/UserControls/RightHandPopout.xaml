@@ -83,6 +83,25 @@
                         </GridViewColumn>
                         <GridViewColumn>
                             <GridViewColumn.Header>
+                                <TextBlock Text="Color"
+                                           FontSize="{StaticResource ListViewHeaderFontSize}" />
+                            </GridViewColumn.Header>
+                            <GridViewColumn.CellTemplate>
+                                <DataTemplate>
+                                    <colorpicker:PortableColorPicker Style="{StaticResource DefaultColorPickerStyle}"
+                                                                     SelectedColor="{Binding Value.Color, Converter={StaticResource Vector4ToColorConverter}}"
+                                                                     ToggleButtonWidth="20"
+                                                                     ToggleButtonHeight="15"
+                                                                     ToggleButtonMargin="0 2 0 2"
+                                                                     Focusable="True"
+                                                                     HorizontalAlignment="Center"
+                                                                     IsPopupOpen="{Binding ElementName=root, Path=LayerListColorPickerOpen, Mode=OneWayToSource}"
+                                                                     IsPopupOpenChanged="LayersPortableColorPicker_IsPopupOpenChanged"/>
+                                </DataTemplate>
+                            </GridViewColumn.CellTemplate>
+                        </GridViewColumn>
+                        <GridViewColumn>
+                            <GridViewColumn.Header>
                                 <TextBlock Text="Visibility"
                                            FontSize="{StaticResource ListViewHeaderFontSize}" />
                             </GridViewColumn.Header>
@@ -179,7 +198,7 @@
                                                                          IsPopupOpen="{Binding ElementName=root, Path=PointGroupListColorPickerOpen, Mode=OneWayToSource}"
                                                                          Focusable="True"
                                                                          HorizontalAlignment="Center"
-                                                                         IsPopupOpenChanged="PortableColorPicker_IsPopupOpenChanged" />
+                                                                         IsPopupOpenChanged="PointGroupsPortableColorPicker_IsPopupOpenChanged" />
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>

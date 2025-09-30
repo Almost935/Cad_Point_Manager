@@ -437,6 +437,7 @@
                 <d3D:D3dDxfControl x:Name="d3dDxfControl"
                                    CadManager3D="{Binding JobFileManager.CadManager3D}"
                                    Camera="{Binding Camera, Mode=TwoWay}"
+                                   Layers="{Binding Layers, Mode=TwoWay}"
                                    PointGroups="{Binding PointGroups, Mode=TwoWay}"
                                    CogoPoints="{Binding CogoPoints, Mode=TwoWay}"
                                    SelectedCogoPoints="{Binding SelectedCogoPoints, Mode=TwoWay}"
@@ -477,78 +478,6 @@
                             </TransformGroup>
                         </uc:SignificantPointControl.RenderTransform>
                     </uc:SignificantPointControl>
-                    <!--<ItemsControl x:Name="SelectedPointButtonsItemsControl"
-                                  ItemsSource="{Binding SelectedCogoPoints}"
-                                  Background="{x:Null}"
-                                  Width="{Binding ElementName=BackgroundCanvas, Path=ActualWidth}"
-                                  Height="{Binding ElementName=BackgroundCanvas, Path=ActualHeight}"
-                                  PreviewMouseWheel="SelectedPointButtonsItemsControl_PreviewMouseWheel"
-                                  PreviewMouseMove="SelectedPointButtonsItemsControl_PreviewMouseMove"
-                                  RenderOptions.BitmapScalingMode="LowQuality"
-                                  Panel.ZIndex="3">
-                        <ItemsControl.Resources>
-                            <sys:Double x:Key="EllipseSize">0.4</sys:Double>
-                            <sys:Double x:Key="StandardLineHeight">1.65</sys:Double>
-                            <sys:Double x:Key="TextSize">2</sys:Double>
-                            <sys:Double x:Key="ToggleButtonSize">12</sys:Double>
-                            <Thickness x:Key="ToggleButtonMargin">0 0 6 -6</Thickness>
-                        </ItemsControl.Resources>
-                        <ItemsControl.ItemsPanel>
-                            <ItemsPanelTemplate>
-                                <Grid Background="{x:Null}" />
-                            </ItemsPanelTemplate>
-                        </ItemsControl.ItemsPanel>
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate DataType="{x:Type pointRendering:CogoPoint}">
-                                <Grid x:Name="CogoPointGrid"
-                                      Style="{StaticResource CogoPointGridStyle}">
-                                    <ToggleButton x:Name="PointToggleButton"
-                                                  Style="{StaticResource CogoPointAnchorToggleButton}"
-                                                  Width="{StaticResource ToggleButtonSize}"
-                                                  Height="{StaticResource ToggleButtonSize}"
-                                                  Visibility="{Binding IsSelected, Converter={StaticResource BoolToVisibilityConverter}}"
-                                                  Panel.ZIndex="2"
-                                                  IsChecked="{Binding TextBeingMoved, Mode=TwoWay}"
-                                                  Margin="{StaticResource ToggleButtonMargin}"
-                                                  HorizontalAlignment="Left"
-                                                  VerticalAlignment="Top">
-                                        <ToggleButton.RenderTransform>
-                                            <TransformGroup>
-                                                <TranslateTransform>
-                                                    <TranslateTransform.X>
-                                                        <MultiBinding Converter="{StaticResource PointCoordinateMatrixTransformerConverter}"
-                                                                      ConverterParameter="X">
-                                                            <Binding Path="TextTbBasePosition" />
-                                                            <Binding Path="DataContext.Camera.WindowsMatrix"
-                                                                     RelativeSource="{RelativeSource AncestorType=Page}" />
-                                                        </MultiBinding>
-                                                    </TranslateTransform.X>
-                                                    <TranslateTransform.Y>
-                                                        <MultiBinding Converter="{StaticResource PointCoordinateMatrixTransformerConverter}"
-                                                                      ConverterParameter="Y">
-                                                            <Binding Path="TextTbBasePosition" />
-                                                            <Binding Path="DataContext.Camera.WindowsMatrix"
-                                                                     RelativeSource="{RelativeSource AncestorType=Page}" />
-                                                        </MultiBinding>
-                                                    </TranslateTransform.Y>
-                                                </TranslateTransform>
-                                            </TransformGroup>
-                                        </ToggleButton.RenderTransform>
-                                        <i:Interaction.Triggers>
-                                            <i:EventTrigger EventName="Checked">
-                                                <i:InvokeCommandAction Command="{Binding DataContext.CogoPointCheckedCommand, RelativeSource={RelativeSource AncestorType=Page}}"
-                                                                       CommandParameter="{Binding}" />
-                                            </i:EventTrigger>
-                                            <i:EventTrigger EventName="Unchecked">
-                                                <i:InvokeCommandAction Command="{Binding DataContext.CogoPointUncheckedCommand, RelativeSource={RelativeSource AncestorType=Page}}"
-                                                                       CommandParameter="{Binding}" />
-                                            </i:EventTrigger>
-                                        </i:Interaction.Triggers>
-                                    </ToggleButton>
-                                </Grid>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>-->
                 </Canvas>
             </Grid>
         </Grid>

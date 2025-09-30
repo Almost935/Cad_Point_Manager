@@ -7,6 +7,8 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
     {
         #region Fields
         private int _polylineApproximationPrecision = 1000;
+
+        private Polyline2D _polyline;
         #endregion
 
         #region Properties
@@ -23,26 +25,28 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             DrawingBlock3D = block;
 
             UpdateColor();
-            UpdateData(spline);
+            UpdateData();
         }
         #endregion
 
         #region Methods
-        public override void UpdateData(EntityObject entity)
+        public override void UpdateData()
         {
-            if (entity is Spline spline)
+            if (EntityObject is Spline spline)
             {
-                var polyline = spline.ToPolyline2D(_polylineApproximationPrecision);
-                PolylineApproximation = new(polyline, Layer, isPartOfBlock: IsPartOfBlock, block: DrawingBlock3D);
-                PolylineApproximation.UpdateVertices((Polyline2D)polyline);
-                Vertices = PolylineApproximation.Vertices;
-
-                UpdateBounds();
+                _polyline = spline.ToPolyline2D(_polylineApproximationPrecision);
+                PolylineApproximation = new(_polyline, Layer, isPartOfBlock: IsPartOfBlock, block: DrawingBlock3D);
             }
             else
             {
                 throw new ArgumentException("entity must be of type Spline");
             }
+        }
+
+        public override void UpdateVertices(uint layerId)
+        {
+            PolylineApproximation.UpdateVertices(layerId);
+            Vertices = PolylineApproximation.Vertices;
         }
 
         public override void UpdateBounds()

@@ -29,7 +29,6 @@ namespace Cad_Point_Manager.Models.PointRendering
         {
             List<TextVertex> verticesList = [];
             float xOffset = 0;
-            bool colorChangeFlag = color != _defaultColor;
 
             for (int i = 0; i < text.Length; i++)
             {
@@ -48,10 +47,6 @@ namespace Cad_Point_Manager.Models.PointRendering
                         TextVertex vertex = tup.vertices[j];
                         vertex.Transform(matrix);
 
-                        if (colorChangeFlag)
-                        {
-                            vertex.Color = color;
-                        }
                         translated.Add(vertex);
                     }
                     verticesList.AddRange(translated);
@@ -91,7 +86,6 @@ namespace Cad_Point_Manager.Models.PointRendering
             List<TextVertex> verticesList = [];
             string text = integer.ToString();
             float xOffset = 0;
-            bool colorChangeFlag = color != _defaultColor;
 
             for (int i = 0; i < text.Length; i++)
             {
@@ -110,11 +104,6 @@ namespace Cad_Point_Manager.Models.PointRendering
                     {
                         TextVertex vertex = tup.vertices[j];
                         vertex.Transform(matrix);
-
-                        if (colorChangeFlag)
-                        {
-                            vertex.Color = color;
-                        }
                         translated.Add(vertex);
                     }
                     verticesList.AddRange(translated);

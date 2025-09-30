@@ -13,14 +13,6 @@ cbuffer TextGlowSettingsBuffer : register(b1)
     float4 selectedMouseOverColor;
 };
 
-float4 GetSnappedColor(float4 color)
-{
-    float3 lightBlue = float3(0.4, 0.4, 1.0);
-    float3 resultRgb = lerp(color.rgb, lightBlue, 0.7);
-
-    return float4(resultRgb, color.a);
-}
-
 struct VSInput
 {
     float3 Position : POSITION;
@@ -61,7 +53,7 @@ void GSMain(triangle VSInput input[3], inout TriangleStream<GSInput> triStream)
     }
     else
     {
-        color = float4(GetSnappedColor(input[0].Color).rgb, glowTransparency);
+        color = float4(0, 0, 0,  glowTransparency);
     }
         
     for (int i = 0; i < 3; i++)

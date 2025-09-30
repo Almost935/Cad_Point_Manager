@@ -70,14 +70,14 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             DrawingBlock3D = block;
            
             UpdateColor();
-            UpdateData(insert);
+            UpdateData();
         }
         #endregion
 
         #region Methods
-        public override void UpdateData(EntityObject entity)
+        public override void UpdateData()
         {
-            if (entity is Insert insert)
+            if (EntityObject is Insert insert)
             {
                 InsertionPoint = new((float)insert.Position.X, (float)insert.Position.Y, (float)insert.Position.Z);
 
@@ -175,7 +175,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                     var obj = DxfHelpers.GetDrawingObject3D(e, Layer);
                     if (obj is not null) { DrawingObjects.Add(obj); }
                 }
-                UpdateGeometryVertices();
             }
             else
             {
@@ -183,7 +182,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             }
         }
 
-        private void UpdateGeometryVertices()
+        public void UpdateGeometryVertices(uint layerId)
         {
             LineVertices.Clear();
 
@@ -191,15 +190,17 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             {
                 if (obj is DrawingBlock3D block)
                 {
+                    block.UpdateGeometryVertices(layerId);
                     LineVertices.AddRange(block.LineVertices);
                 }
                 if (obj is DrawingGeometry3D geometry)
                 {
+                    geometry.UpdateVertices(layerId);
                     LineVertices.AddRange(geometry.Vertices);
                 }
             }
         }
-        public void UpdateTextVertices(ResCache resCache)
+        public void UpdateTextVertices(ResCache resCache, uint layerId)
         {
             TextVertices.Clear();
 
@@ -207,17 +208,17 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             {
                 if (obj is DrawingBlock3D block)
                 {
-                    block.UpdateTextVertices(resCache);
+                    block.UpdateTextVertices(resCache, layerId);
                     TextVertices.AddRange(block.TextVertices);
                 }
                 if (obj is DrawingSText3D text)
                 {
-                    text.UpdateTextVertices(resCache);
+                    text.UpdateTextVertices(resCache, layerId);
                     TextVertices.AddRange(text.TextVertices);
                 }
                 if (obj is DrawingMtext3D mtext)
                 {
-                    mtext.UpdateTextVertices(resCache);
+                    mtext.UpdateTextVertices(resCache, layerId);
 
                     foreach (var row in mtext.MtextBlock.Rows)
                     {

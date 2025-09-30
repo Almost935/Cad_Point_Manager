@@ -28,7 +28,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             EntityObject = polyline2D;
 
             UpdateColor();
-            UpdateData(polyline2D);
+            UpdateData();
         }
 
         public DrawingPolyline3D(Polyline3D polyline3D, ObjectLayer3D layer, bool isPartOfBlock = false, DrawingBlock3D block = null)
@@ -40,33 +40,25 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             EntityObject = polyline3D;
 
             UpdateColor();
-            UpdateData(polyline3D);
+            UpdateData();
         }
         #endregion
 
         #region Methods
-        public override void UpdateData(EntityObject entity)
+        public override void UpdateData()
         {
-            if (entity is Polyline2D polyline2d)
+            if (EntityObject is Polyline2D polyline2d)
             {
                 IsClosed = polyline2d.IsClosed;
-
-                UpdateVertices(polyline2d);
-                UpdateBounds();
-
                 Length = 0;
                 foreach (var segment in DrawingSegments)
                 {
                     Length += segment.Length;
                 }
             }
-            else if (entity is Polyline3D polyline3d)
+            else if (EntityObject is Polyline3D polyline3d)
             {
                 IsClosed = polyline3d.IsClosed;
-
-                UpdateVertices(polyline3d);
-                UpdateBounds();
-
                 Length = 0;
                 foreach (var segment in DrawingSegments)
                 {
@@ -141,9 +133,9 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             return false;
         }
 
-        public void UpdateVertices(EntityObject entity)
+        public override void UpdateVertices(uint layerId)
         {
-            if (entity is Polyline2D polyline2D)
+            if (EntityObject is Polyline2D polyline2D)
             {
                 var start = polyline2D.Vertexes.First();
                 var end = polyline2D.Vertexes.Last();
@@ -156,8 +148,10 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                 foreach (var e in entities)
                 {
                     var obj = DxfHelpers.GetDrawingSegment3D(e, Layer);
+
                     if (obj is not null)
                     {
+                        obj.UpdateVertices(layerId);
                         DrawingSegments.Add(obj);
                     }
                 }
@@ -178,9 +172,10 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                     }
                 }
                 Vertices = DrawingSegments.SelectMany(s => s.Vertices).ToArray();
+                UpdateBounds();
             }
 
-            else if (entity is Polyline3D polyline3D)
+            else if (EntityObject is Polyline3D polyline3D)
             {
                 var start = polyline3D.Vertexes.First();
                 var end = polyline3D.Vertexes.Last();
@@ -195,12 +190,11 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                     var obj = DxfHelpers.GetDrawingSegment3D(e, Layer);
                     if (obj is not null)
                     {
+                        obj.UpdateVertices(layerId);
                         DrawingSegments.Add(obj);
                     }
                 }
 
-                // Loop through vertices to verify that drawing arcs are correctly aligned. Autocad always draws arcs counter-clockwise
-                // so need to find the correct start and end vertices
                 for (int i = 0; i < vertices.Count - 1; i++)
                 {
                     var segment = DrawingSegments[i];
@@ -217,6 +211,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                     }
                 }
                 Vertices = DrawingSegments.SelectMany(s => s.Vertices).ToArray();
+                UpdateBounds();
             }
             else
             {

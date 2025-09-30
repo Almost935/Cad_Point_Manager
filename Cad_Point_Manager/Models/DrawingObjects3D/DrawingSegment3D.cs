@@ -1,4 +1,6 @@
-﻿namespace Cad_Point_Manager.Models.DrawingObjects3D
+﻿using Cad_Point_Manager.Controls.D3DControl.Rendering.Text;
+
+namespace Cad_Point_Manager.Models.DrawingObjects3D
 {
     public abstract class DrawingSegment3D : DrawingGeometry3D
     {

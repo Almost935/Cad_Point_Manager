@@ -13,13 +13,13 @@ cbuffer LineGlowSettingsBuffer : register(b1)
     float4 selectedMouseOverColor;
 };
 
+// Input structure for the Vertex Shader
 struct VSInput
 {
-    float3 Position : POSITION;
-    float4 Color : COLOR;
-    float IsVisible : ISVISIBLE;
+    float3 Position : POSITION; // 3D position of the vertex
+    uint LayerId : LAYERID; // Layer index for indirection
     float IsMouseOver : ISMOUSEOVER;
-    float IsSelected : ISSELECTED;
+    float IsSelected : ISSELECTED; // Indicates if the vertex is selected (0 or 1)
 };
 
 struct GSInput
@@ -27,6 +27,17 @@ struct GSInput
     float4 Position : SV_POSITION;
     float4 Color : COLOR;
 };
+
+struct LayerState
+{
+    float4 Color;
+    uint Flags;
+    float3 Pad;
+};
+
+StructuredBuffer<LayerState> LayerStates : register(t0);
+
+static const uint LAYER_VISIBLE = 1u << 0;
 
 VSInput VSMain(VSInput input)
 {
@@ -36,14 +47,12 @@ VSInput VSMain(VSInput input)
 [maxvertexcount(6)]
 void GSMain(line VSInput input[2], inout TriangleStream<GSInput> triStream)
 {
-    const bool isVisible = (input[0].IsVisible > 0.5) || (input[1].IsVisible > 0.5);
+    LayerState ls = LayerStates[input[0].LayerId];
+    float visLayer = ((ls.Flags & LAYER_VISIBLE) != 0u) ? 1.0f : 0.0f;
     const bool isSelected = (input[0].IsSelected > 0.5) || (input[1].IsSelected > 0.5);
     const bool isMouseOver = (input[0].IsMouseOver > 0.5) || (input[1].IsMouseOver > 0.5);
-    //if (!(anyVisible && (anySelected || anyMouseOver)))
-    //{
-    //    return;
-    //}
-    if (!isVisible || !isMouseOver)
+
+    if (!visLayer || !isMouseOver)
     {
         return;
     }

@@ -1,4 +1,5 @@
 ﻿// Rendering/D3D/D3dStateController.cs
+using Cad_Point_Manager.Models.DrawingObjects3D;
 using Cad_Point_Manager.Models.PointRendering;
 using SharpDX;
 using System.Collections.Generic;
@@ -11,6 +12,23 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
         private readonly D3dStateBuffers _bufs;
         private readonly HashSet<uint> _dirtyLabels = [];
         private readonly HashSet<uint> _dirtyPoints = [];
+        private readonly HashSet<uint> _dirtyLayers = [];
+
+        public void SetLayerVisibility(ObjectLayer3D layer, bool visible)
+        {
+            if (!_ids.TryGetLayerId(layer, out var lid)) { return; }
+            ref var ls = ref _bufs.LayerSpan[(int)lid];
+            if (visible) ls.Flags |= 1u; else ls.Flags &= ~1u;
+            _dirtyLayers.Add(lid);
+        }
+
+        public void SetLayerColor(ObjectLayer3D layer, Vector4 color)
+        {
+            if (!_ids.TryGetLayerId(layer, out var lid)) { return; }
+            ref var ls = ref _bufs.LayerSpan[(int)lid];
+            ls.Color = color;
+            _dirtyLayers.Add(lid);
+        }
 
         public D3dStateController(SceneIdMap ids, D3dStateBuffers bufs)
         {
@@ -26,13 +44,33 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
             else { s.Flags &= ~(uint)CogoPointFlags.MouseOverAnchor; }
             _dirtyPoints.Add(pid);
         }
-
         public void SetPointSelected(CogoPoint cp, bool selected)
         {
             if (!_ids.TryGetPointId(cp, out var pid)) { return; }
             ref var s = ref _bufs.PointSpan[(int)pid];
             if (selected) { s.Flags |= (uint)CogoPointFlags.Selected; }
             else { s.Flags &= ~(uint)CogoPointFlags.Selected; }
+            _dirtyPoints.Add(pid);
+        }
+        public void SetPointOffset(CogoPoint cp, Vector2 offset, bool? hasLeaderLine = null)
+        {
+            if (!_ids.TryGetPointId(cp, out var pid)) { return; }
+
+            ref var s = ref _bufs.PointSpan[(int)pid];
+            s.Offset = offset;
+            if (hasLeaderLine is not null)
+            {
+                if ((bool)hasLeaderLine) { s.Flags |= (uint)CogoPointFlags.HasLeaderLine; }
+                else { s.Flags &= ~(uint)CogoPointFlags.HasLeaderLine; }
+            }
+            _dirtyPoints.Add(pid);
+        }
+        public void SetPointLeaderLineAngle(CogoPoint cp, float angle)
+        {
+            if (!_ids.TryGetPointId(cp, out var pid)) { return; }
+
+            ref var s = ref _bufs.PointSpan[(int)pid];
+            s.LeaderLineAngle = angle;
             _dirtyPoints.Add(pid);
         }
 
@@ -64,19 +102,10 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
             if (!string.IsNullOrEmpty(cp.Description)) Set(2);
         }
 
-        public void SetPointOffset(CogoPoint cp, Vector2 offset, bool? hasLeaderLine = null)
+        public void FlushLayerUpdates()
         {
-            if (!_ids.TryGetPointId(cp, out var pid)) { return; }
-
-            ref var s = ref _bufs.PointSpan[(int)pid];
-            s.Offset = offset;
-            //_bufs.PointSpan[(int)pid].Offset = offset;
-            if (hasLeaderLine is not null)
-            {
-                if ((bool)hasLeaderLine) { s.Flags |= (uint)CogoPointFlags.HasLeaderLine; }
-                else { s.Flags &= ~(uint)CogoPointFlags.HasLeaderLine; }
-            }
-            _dirtyPoints.Add(pid);
+            _bufs.FlushLayerSubset(_dirtyLayers);
+            _dirtyLayers.Clear();
         }
 
         public void FlushPointUpdates()

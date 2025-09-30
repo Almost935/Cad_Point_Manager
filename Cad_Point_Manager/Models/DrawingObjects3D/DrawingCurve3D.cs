@@ -1,4 +1,5 @@
-﻿using netDxf.Entities;
+﻿using Cad_Point_Manager.Controls.D3DControl.Rendering.Text;
+using netDxf.Entities;
 using Vector3 = SharpDX.Vector3;
 
 namespace Cad_Point_Manager.Models.DrawingObjects3D
@@ -17,8 +18,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         #endregion
 
         #region Methods
-        public abstract void UpdateVertices(EntityObject entity);
-
         public static int CalculateArcSegments(double radius, double angleInDegrees, double smoothnessFactor = 10)
         {
             double angleInRadians = angleInDegrees * Math.PI / 180.0;

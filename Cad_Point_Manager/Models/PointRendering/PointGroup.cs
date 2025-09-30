@@ -15,7 +15,6 @@ namespace Cad_Point_Manager.Models.PointRendering
 
         private string _name;
         private Vector4 _color = new(0, 0, 0, 1);
-        private System.Windows.Media.Color _windowsColor;
         private bool _isVisible = true;
         private BatchableObservableCollection<CogoPoint> _points = [];
         private CogoPointManager _cogoPointManager;
@@ -44,18 +43,6 @@ namespace Cad_Point_Manager.Models.PointRendering
                 {
                     _color = value;
                     OnPropertyChanged(nameof(Color));
-                }
-            }
-        }
-        public System.Windows.Media.Color WindowsColor
-        {
-            get => _windowsColor;
-            set
-            {
-                if (_windowsColor != value)
-                {
-                    _windowsColor = value;
-                    OnPropertyChanged(nameof(WindowsColor));
                 }
             }
         }
@@ -110,8 +97,6 @@ namespace Cad_Point_Manager.Models.PointRendering
 
         public double FontBaseSize { get; set; } = 4;
         public double MarkerBaseSize { get; set; } = 0.75;
-        public SolidColorBrush GroupBrush { get; }
-        public Pen GroupPen { get; }
         public GroupState PointGroupState { get; set; }
         #endregion
 
@@ -120,18 +105,6 @@ namespace Cad_Point_Manager.Models.PointRendering
         {
             Name = name;
             Color = color;
-            WindowsColor = System.Windows.Media.Color.FromArgb(
-                (byte)(Color.W * 255),
-                (byte)(Color.X * 255),
-                (byte)(Color.Y * 255),
-                (byte)(Color.Z * 255));
-            GroupBrush = new(WindowsColor);
-            GroupPen = new(GroupBrush, 0.2)
-            {
-                LineJoin = PenLineJoin.Round,
-                StartLineCap = PenLineCap.Round,
-                EndLineCap = PenLineCap.Round
-            };
             CogoPointManager = cogoPointManager;
             PointScale = pointScale;
         }
@@ -178,17 +151,6 @@ namespace Cad_Point_Manager.Models.PointRendering
         public override string ToString()
         {
             return Name;
-        }
-
-        public void UpdateColor()
-        {
-            var newColor = System.Windows.Media.Color.FromArgb(
-                (byte)(Color.W * 255),
-                (byte)(Color.X * 255),
-                (byte)(Color.Y * 255),
-                (byte)(Color.Z * 255));
-            WindowsColor = newColor;
-            GroupBrush.Color = WindowsColor;
         }
 
         public void MergeToPointGroup(PointGroup newPG)

@@ -23,7 +23,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             return Type.ToString();
         }
 
-        public abstract void UpdateData(EntityObject entity);
+        public abstract void UpdateData();
         public abstract void DrawToD2dDeviceContext(DeviceContext1 deviceContext, Factory2 factory, Brush brush, float thickness, StrokeStyle1 strokeStyle);
 
         public void UpdateColor()

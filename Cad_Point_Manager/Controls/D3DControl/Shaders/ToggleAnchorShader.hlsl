@@ -41,9 +41,10 @@ struct VSOut
 
 struct PointState
 {
-    float2 Offset;
+    float2 Offset; // world-space drag delta
+    float LeaderLineAngle; // degrees
     uint Flags; // bit0: visible, bit1: selected, bit2: mouseOver, bit3: hasLeaderLine, bit4: mouseOverAnchor, bit5: anchorPressed
-    float _padLS;
+    float2 _padLS; // keep 16B stride
 };
 struct GroupState
 {

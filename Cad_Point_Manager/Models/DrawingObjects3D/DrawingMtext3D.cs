@@ -50,19 +50,20 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             DxfMtext = mtext;
             EntityObject = mtext;
             Layer = layer;
+            IsPartOfBlock = isPartOfBlock;
             DrawingBlock3D = block;
 
             UpdateColor();
-            UpdateData(mtext);
+            UpdateData();
         }
         #endregion
 
         #region Methods
-        public override void UpdateTextVertices(ResCache resCache)
+        public override void UpdateTextVertices(ResCache resCache, uint layerId)
         {
             if (DxfMtext is null) { return; }
 
-            UpdateMtextBlock(resCache);
+            UpdateMtextBlock(resCache, layerId);
             MtextBlock.SetTextPositions();
             MtextBlock.GetTextBox(MtextBlock.Height);
             SetRotation();
@@ -172,9 +173,9 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         {
             //deviceContext.DrawTextLayout(new RawVector2((float)Position.X, -(float)Position.Y), TextLayout, brush);
         }
-        public override void UpdateData(EntityObject entity)
+        public override void UpdateData()
         {
-            if (entity is MText mText)
+            if (EntityObject is MText mText)
             {
                 DxfMtext = mText;
                 Text = mText.Value;
@@ -223,7 +224,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
 
             return textVertices;
         }
-        public void UpdateMtextBlock(ResCache resCache)
+        public void UpdateMtextBlock(ResCache resCache, uint layerId)
         {
             //MtextBlock??= new((float)MaxWidth, Position, DxfMtext.AttachmentPoint, Rotation);
             MtextBlock?.Dispose();
@@ -238,9 +239,9 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                 foreach (var text in segmentTexts)
                 {
                     TextSegmentInformation segmentInfo = new(text, Color, FontFamilyName, DxfMtext.Height, IsBold, IsItalic, false, false, false, false, Enums.TextAlignment.Left);
-                    var textSegment = CreateMtextSegment(segmentInfo, resCache);
+                    var textSegment = CreateMtextSegment(segmentInfo, resCache, layerId);
                     textSegment.GetTextLayout(resCache.WriteFactory);
-                    textSegment.Tesselate(resCache);
+                    textSegment.Tesselate(resCache, layerId);
                     MtextBlock.AddSegment(textSegment);
                 }
                 return;
@@ -420,13 +421,13 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                             var newSegmentInfo = new TextSegmentInformation(segmentText, segmentInfo.Color, segmentInfo.Font, segmentInfo.TextHeight,
                                 segmentInfo.IsBold, segmentInfo.IsItalic, segmentInfo.IsUnderlined, segmentInfo.IsOverstriked, segmentInfo.IsStrikethrough,
                                 isNewLine, segmentInfo.TextAlignment);
-                            var newSegment = CreateMtextSegment(newSegmentInfo, resCache);
+                            var newSegment = CreateMtextSegment(newSegmentInfo, resCache, layerId);
                             MtextBlock.AddSegment(newSegment);
                         }
                     }
                     else
                     {
-                        var segment = CreateMtextSegment(segmentInfo, resCache);
+                        var segment = CreateMtextSegment(segmentInfo, resCache, layerId);
                         MtextBlock.AddSegment(segment); 
                     }
                 }
@@ -450,12 +451,12 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             //    TextVertices[i] = TextVertex.RotateAroundPoint(TextVertices[i], new Vector2(Position.X, Position.Y), (float)(MathHelper.DegToRad * Rotation));
             //}
         }
-        private DrawingMtextSegment3D CreateMtextSegment(TextSegmentInformation segmentInfo, ResCache resCache)
+        private DrawingMtextSegment3D CreateMtextSegment(TextSegmentInformation segmentInfo, ResCache resCache, uint layerId)
         {
             DrawingMtextSegment3D segment = new(this, segmentInfo.Text, segmentInfo.Color, Vector3.Zero, 0, (float)segmentInfo.TextHeight, segmentInfo.Font,
                 segmentInfo.IsItalic, segmentInfo.IsBold, segmentInfo.IsUnderlined, segmentInfo.IsStrikethrough, segmentInfo.IsNewLine, _fontRenderingMinimumSize, 0, segmentInfo.TextAlignment);
             segment.GetTextLayout(resCache.WriteFactory);
-            segment.Tesselate(resCache);
+            segment.Tesselate(resCache, layerId);
 
             return segment;
         }

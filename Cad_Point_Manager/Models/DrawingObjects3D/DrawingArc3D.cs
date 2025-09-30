@@ -1,10 +1,11 @@
 ﻿using Cad_Point_Manager.Controls.D3DControl;
+using Cad_Point_Manager.Controls.D3DControl.Rendering.Text;
+using Cad_Point_Manager.Extensions;
 using netDxf.Entities;
-using System.Windows;
-using Vector3 = SharpDX.Vector3;
 using SharpDX.Direct2D1;
 using SharpDX.Mathematics.Interop;
-using Cad_Point_Manager.Extensions;
+using System.Windows;
+using Vector3 = SharpDX.Vector3;
 
 namespace Cad_Point_Manager.Models.DrawingObjects3D
 {
@@ -31,14 +32,14 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             EntityObject = arc;
 
             UpdateColor();
-            UpdateData(arc);
+            UpdateData();
         }
         #endregion
 
         #region Methods
-        public override void UpdateData(EntityObject entity)
+        public override void UpdateData()
         {
-            if (entity is Arc arc)
+            if (EntityObject is Arc arc)
             {
                 Radius = (float)arc.Radius;
                 StartAngle = (float)arc.StartAngle;
@@ -50,10 +51,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                 Length = (float)((Sweep * (Math.PI / 180)) * Radius);
                 SamplePoints = arc.ToPolyline2D(10).Vertexes
                     .Select(v => new System.Windows.Point(v.Position.X, v.Position.Y)).ToList();
-
                 UpdateArcMidpoint();
-                UpdateVertices(arc);
-                UpdateBounds();
             }
             else
             {
@@ -61,9 +59,9 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             }
         }
 
-        public override void UpdateVertices(EntityObject entity)
+        public override void UpdateVertices(uint layerId)
         {
-            if (entity is Arc arc)
+            if (EntityObject is Arc arc)
             {
                 Array.Clear(Vertices);
 
@@ -76,11 +74,9 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                     if (i == vertices.Count - 1) { break; }
 
                     LineVertex s = new(
-                        new Vector3((float)vertices[i].Position.X, (float)vertices[i].Position.Y, 0),
-                        Color);
+                        new Vector3((float)vertices[i].Position.X, (float)vertices[i].Position.Y, 0), layerId);
                     LineVertex e = new(
-                        new Vector3((float)vertices[i + 1].Position.X, (float)vertices[i + 1].Position.Y, 0),
-                        Color);
+                        new Vector3((float)vertices[i + 1].Position.X, (float)vertices[i + 1].Position.Y, 0), layerId);
 
                     lineVertices.Add(s);
                     lineVertices.Add(e);
@@ -89,6 +85,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                 Vertices = lineVertices.ToArray();
                 Start = Vertices.First().Position;
                 End = Vertices.Last().Position;
+                UpdateBounds();
             }
             else
             {

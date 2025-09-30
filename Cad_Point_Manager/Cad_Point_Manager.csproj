@@ -53,6 +53,7 @@
     <Compile Remove="Models\Enums.cs" />
     <Compile Remove="Models\OffscreenBitmap.cs" />
     <Compile Remove="Models\OffscreenBitmapManager.cs" />
+    <Compile Remove="Models\PointRendering\CogoPointTextVerticesDict.cs" />
     <Compile Remove="Services\DxfService.cs" />
     <Compile Remove="Views\Visuals\CogoPointVisualGroup.cs" />
     <Compile Remove="Views\Visuals\HitTestablePointVisualGroup.cs" />

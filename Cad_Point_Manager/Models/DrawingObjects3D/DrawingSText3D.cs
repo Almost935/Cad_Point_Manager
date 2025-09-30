@@ -49,14 +49,14 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             DrawingBlock3D = block;
 
             UpdateColor();
-            UpdateData(text);
+            UpdateData();
         }
         #endregion
 
         #region Methods
-        public override void UpdateData(EntityObject entity)
+        public override void UpdateData()
         {
-            if (entity is Text text)
+            if (EntityObject is Text text)
             {
                 Text = text.Value;
                 WidthFactor = (float)text.WidthFactor;
@@ -144,14 +144,12 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
 
             return adjustedPos;
         }
-        #endregion
-
-        #region Methods
-        public override void UpdateTextVertices(ResCache resCache)
+ 
+        public override void UpdateTextVertices(ResCache resCache, uint layerId)
         {
             GetTextFormat(resCache.WriteFactory);
             GetTextLayout(resCache.WriteFactory);
-            Tesselate(resCache);
+            Tesselate(resCache, layerId);
         }
         public override void MouseEnter()
         {
@@ -265,18 +263,18 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             TextLayout = new(factory, Text, _textFormat, (float)Bounds.Width, (float)Bounds.Height, 96, true);
         }
 
-        public void Tesselate(ResCache resCache)
+        public void Tesselate(ResCache resCache, uint layerId)
         {
             UpdateFontFace(resCache);
 
             //(TransformedGeometry geometry, RawRectangleF bounds) = TextRenderingHelpers.CreateTextGeometry(resCache, Text, TextLayout, fontSizeScaleFactor, TextHeight, _fontFace, _flatteningTolerance);
             (List<Vector2> vertices, RawRectangleF bounds) = TextRenderingHelpers.TesselateTextLayout(resCache, TextLayout, Text, _fontFace);
 
-            TextVertices = GetVertices(vertices);
+            TextVertices = GetVertices(vertices, layerId);
             UpdateBounds();
         }
 
-        public List<TextVertex> GetVertices(List<Vector2> vertices)
+        public List<TextVertex> GetVertices(List<Vector2> vertices, uint layerId)
         {
             List<TextVertex> textVertices = [];
             Matrix translationTransform = Matrix.Translation((float)Transform.OffsetX, (float)Transform.OffsetY, 0);
@@ -288,11 +286,11 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                 var v3 = vertices[i + 2];
 
                 var scaledVector1 = Vector2.TransformCoordinate(v1, translationTransform);
-                TextVertex textVertex1 = new(new Vector3(scaledVector1.X, scaledVector1.Y, 0), Color, isVisible: 1, isMouseOver: 0, isSelected: 0);
+                TextVertex textVertex1 = new(new Vector3(scaledVector1.X, scaledVector1.Y, 0), layerId, isMouseOver: 0, isSelected: 0);
                 var scaledVector2 = Vector2.TransformCoordinate(v2, translationTransform);
-                TextVertex textVertex2 = new(new Vector3(scaledVector2.X, scaledVector2.Y, 0), Color, isVisible: 1, isMouseOver: 0, isSelected: 0);
+                TextVertex textVertex2 = new(new Vector3(scaledVector2.X, scaledVector2.Y, 0), layerId, isMouseOver: 0, isSelected: 0);
                 var scaledVector3 = Vector2.TransformCoordinate(v3, translationTransform);
-                TextVertex textVertex3 = new(new Vector3(scaledVector3.X, scaledVector3.Y, 0), Color, isVisible: 1, isMouseOver: 0, isSelected: 0);
+                TextVertex textVertex3 = new(new Vector3(scaledVector3.X, scaledVector3.Y, 0), layerId, isMouseOver: 0, isSelected: 0);
 
                 textVertices.AddRange([textVertex1, textVertex2, textVertex3]);
             }

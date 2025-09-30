@@ -16,15 +16,18 @@ using SharpDX.Direct3D;
 using SharpDX.Direct3D11;
 using SharpDX.DXGI;
 using SharpDX.Mathematics.Interop;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 using System.ServiceModel;
 using System.Windows;
 using System.Windows.Controls;
@@ -195,10 +198,14 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
 
         // Drag rectangle shader
+        private VertexShader _overlayOutlineVS;
+        private PixelShader _overlayOutlinePS;
+        private InputLayout _overlayOutlineLayout;
+        private bool _overlayOutlineShadersLoaded = false;
+        private Buffer _overlayOutlineSettingsBuffer;
+
         private ResizableBuffer<OverlayVertex> _dragFillBuffer;
         private int _dragFillVertexCount;
-        private ResizableBuffer<LineVertex> _dragOutlineBuffer;
-        private int _dragOutlineVertexCount;
 
         private VertexShader _overlayVS;
         private PixelShader _overlayPS;
@@ -345,6 +352,18 @@ namespace Cad_Point_Manager.Controls.D3DControl
             typeof(D3dDxfControl),
             new PropertyMetadata(new Camera(new ViewportF(), 1.15f, new Rect(0, 0, 0, 0))));
 
+        public static readonly DependencyProperty LayersProperty =
+            DependencyProperty.Register(
+                nameof(Layers),
+                typeof(ObservableCollection<KeyValuePair<string, ObjectLayer3D>>),
+                typeof(D3dDxfControl),
+                new FrameworkPropertyMetadata(new ObservableCollection<KeyValuePair<string, ObjectLayer3D>>()));
+        public ObservableCollection<KeyValuePair<string, ObjectLayer3D>> Layers
+        {
+            get => (ObservableCollection<KeyValuePair<string, ObjectLayer3D>>)GetValue(LayersProperty);
+            set => SetValue(LayersProperty, value);
+        }
+
         public static readonly DependencyProperty PointGroupsProperty =
             DependencyProperty.Register(
                 nameof(PointGroups),
@@ -488,9 +507,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             if (!_anchorShaderLoaded) { InitializeToggleAnchorShaders(); }
             if (!_leaderLineShadersLoaded) { InitializeLeaderLineShaders(); }
 
-            _dragFillBuffer ??= new(_resCache.Device, 6);
-            _dragOutlineBuffer ??= new(_resCache.Device, 8);
-
             if (!ConstantBuffersInitialized) { InitializeConstantBuffers(); }
             if (ConstantBuffersDirty) { UpdateConstantBuffers(); }
 
@@ -563,8 +579,10 @@ namespace Cad_Point_Manager.Controls.D3DControl
             ctx.PixelShader.Set(_lineGlowPixelShader);
             ctx.InputAssembler.InputLayout = _lineInputLayout;
             ctx.VertexShader.SetConstantBuffer(0, _transformationBuffer);
+            ctx.VertexShader.SetShaderResource(0, _stateBufs.LayerSRV);
             ctx.GeometryShader.SetConstantBuffer(0, _transformationBuffer);
             ctx.GeometryShader.SetConstantBuffer(1, _lineGlowSettingsBuffer);
+            ctx.GeometryShader.SetShaderResource(0, _stateBufs.LayerSRV);
             ctx.InputAssembler.PrimitiveTopology = PrimitiveTopology.LineList;
             ctx.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding(
                 _lineVertexBuffer.Buffer, _lineVertexBuffer.Stride, 0));
@@ -576,6 +594,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             ctx.InputAssembler.InputLayout = _lineInputLayout;
             ctx.VertexShader.SetConstantBuffer(0, _transformationBuffer);
             ctx.VertexShader.SetConstantBuffer(1, _lineSettingsBuffer);
+            ctx.VertexShader.SetShaderResource(0, _stateBufs.LayerSRV);
             ctx.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding(
                 _lineVertexBuffer.Buffer, _lineVertexBuffer.Stride, 0));
             ctx.InputAssembler.PrimitiveTopology = PrimitiveTopology.LineList;
@@ -594,8 +613,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
             ctx.PixelShader.Set(_textPixelShader);
             ctx.InputAssembler.InputLayout = _textInputLayout;
             ctx.VertexShader.SetConstantBuffer(0, _transformationBuffer);
-            //context.VertexShader.SetConstantBuffer(1, _pointTextSettingsBuffer);
             ctx.VertexShader.SetConstantBuffer(2, _viewportBuffer);
+            ctx.VertexShader.SetShaderResource(0, _stateBufs.LayerSRV);
             ctx.InputAssembler.PrimitiveTopology = PrimitiveTopology.TriangleList;
             ctx.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding(
                  _textVertexBuffer.Buffer, _textVertexBuffer.Stride, 0));
@@ -747,18 +766,18 @@ namespace Cad_Point_Manager.Controls.D3DControl
             ctx.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding(_dragFillBuffer.Buffer, _dragFillBuffer.Stride, 0));
             ctx.Draw(_dragFillVertexCount, 0);
 
-            // --- outline (lines) ---
-            if (_dragOutlineVertexCount > 0)
-            {
-                ctx.VertexShader.Set(_lineVertexShader);
-                ctx.PixelShader.Set(_linePixelShader);
-                ctx.InputAssembler.InputLayout = _lineInputLayout;
-                ctx.VertexShader.SetConstantBuffer(0, _transformationBuffer);
-                ctx.VertexShader.SetConstantBuffer(1, _lineSettingsBuffer);
-                ctx.InputAssembler.PrimitiveTopology = PrimitiveTopology.LineList;
-                ctx.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding(_dragOutlineBuffer.Buffer, _dragOutlineBuffer.Stride, 0));
-                ctx.Draw(_dragOutlineVertexCount, 0);
-            }
+            // --- border (same VB, triangle list) ---
+            ctx.VertexShader.Set(_overlayOutlineVS);
+            ctx.PixelShader.Set(_overlayOutlinePS);
+            ctx.InputAssembler.InputLayout = _overlayOutlineLayout;
+            ctx.VertexShader.SetConstantBuffer(0, _transformationBuffer);      // b0
+            ctx.PixelShader.SetConstantBuffer(0, null);                        // not used
+            ctx.VertexShader.SetConstantBuffer(1, _overlayOutlineSettingsBuffer); // b1
+            ctx.PixelShader.SetConstantBuffer(1, _overlayOutlineSettingsBuffer);  // b1
+            ctx.InputAssembler.PrimitiveTopology = PrimitiveTopology.TriangleList;
+            ctx.InputAssembler.SetVertexBuffers(0,
+               new VertexBufferBinding(_dragFillBuffer.Buffer, _dragFillBuffer.Stride, 0));
+            ctx.Draw(_dragFillVertexCount, 0);
         }
         private void DrawCogoPointHover(SharpDX.Direct3D11.DeviceContext ctx)
         {
@@ -794,7 +813,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             if (_lineVertexBuffer is null || CadManager3D is null) { return; }
 
             var context = _resCache.DeviceContext;
-            var vertexSpan = CadManager3D.UpdateLineVerticesList();
+            var vertexSpan = CadManager3D.UpdateLineVerticesList(_ids);
             _lineVertexBuffer.Update(context, vertexSpan);
             _lineVertexCount = vertexSpan.Length;
 
@@ -810,7 +829,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             }
 
             var context = _resCache.DeviceContext;
-            var vertexSpan = CadManager3D.UpdateTextVerticesList(_resCache);
+            var vertexSpan = CadManager3D.UpdateTextVerticesList(_resCache, _ids);
             _textVertexBuffer.Update(context, vertexSpan);
             _textVertexCount = vertexSpan.Length;
 
@@ -858,7 +877,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
                     uint pId = _ids.GetOrAddPointId(p);
                     _stateBufs.EnsurePointCapacity(_ids.PointCount);
-                    _stateBufs.PointSpan[(int)pId] = new PointState { Offset = Vector2.Zero, Flags = baseFlags };
+                    _stateBufs.PointSpan[(int)pId] = new PointState { Offset = Vector2.Zero, LeaderLineAngle = 0, Flags = baseFlags };
 
                     var isMO = p.IsMouseOver ? 1f : 0f;
                     var isSel = p.IsSelected ? 1f : 0f;
@@ -944,9 +963,18 @@ namespace Cad_Point_Manager.Controls.D3DControl
             if (r.IsEmpty || r.Width <= 0 || r.Height <= 0)
             {
                 _dragFillVertexCount = 0;
-                _dragOutlineVertexCount = 0;
                 return;
             }
+
+            var settings = new OverlayOutlineSettings
+            {
+                RectMinWorld = new Vector2((float)r.Left, (float)r.Top),
+                RectMaxWorld = new Vector2((float)r.Right, (float)r.Bottom),
+                ThicknessPx = 1.5f,     // tweak as desired
+                FeatherPx = 1.0f,     // small AA feather
+                BorderColor = new Vector4(0f, 0.749f, 1f, 1f) // DeepSkyBlue like your lines
+            };
+            _resCache.DeviceContext.UpdateSubresource(ref settings, _overlayOutlineSettingsBuffer);
 
             // world-space coords (z=0)
             var lt = new Vector3((float)r.Left, (float)r.Top, 1);
@@ -971,28 +999,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             _dragFillBuffer.Update(_resCache.DeviceContext, fillVerts);
             _dragFillVertexCount = 6;
-
-            // outline as 4 segments (1px—no GS "glow" pass)
-            var c = new Vector4(0f, 0.749f, 1f, 1f); // DeepSkyBlue
-            float one = 1f, zero = 0f;
-
-            var outline = new LineVertex[8]
-            {
-                new() { Position = lt, Color = c, IsVisible = one, IsMouseOver = zero, IsSelected = zero },
-                new() { Position = rt, Color = c, IsVisible = one, IsMouseOver = zero, IsSelected = zero },
-
-                new() { Position = rt, Color = c, IsVisible = one, IsMouseOver = zero, IsSelected = zero },
-                new() { Position = rb, Color = c, IsVisible = one, IsMouseOver = zero, IsSelected = zero },
-
-                new() { Position = rb, Color = c, IsVisible = one, IsMouseOver = zero, IsSelected = zero },
-                new() { Position = lb, Color = c, IsVisible = one, IsMouseOver = zero, IsSelected = zero },
-
-                new() { Position = lb, Color = c, IsVisible = one, IsMouseOver = zero, IsSelected = zero },
-                new() { Position = lt, Color = c, IsVisible = one, IsMouseOver = zero, IsSelected = zero },
-            };
-
-            _dragOutlineBuffer.Update(_resCache.DeviceContext, outline);
-            _dragOutlineVertexCount = 8;
 
             _interactiveDirty = true;
         }
@@ -1116,6 +1122,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 {
                     if (p is null) { continue; }
                     uint pid = _ids.GetOrAddPointId(p);
+                    
                     var vertex = new LeaderLineInstance
                     {
                         Start = p.Position.ToSharpDXVector2(),
@@ -1168,10 +1175,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 new[]
                 {
                     new InputElement("POSITION", 0, Format.R32G32B32_Float, 0, 0),
-                    new InputElement("COLOR", 0, Format.R32G32B32A32_Float, 12, 0),
-                    new InputElement("ISVISIBLE", 0, Format.R32_Float, 28, 0),
-                    new InputElement("ISMOUSEOVER", 0, Format.R32_Float, 32, 0),
-                    new InputElement("ISSELECTED", 0, Format.R32_Float, 36, 0),
+                    new InputElement("LAYERID", 0, Format.R32_UInt, 12, 0),
+                    new InputElement("ISMOUSEOVER", 0, Format.R32_Float, 16, 0),
+                    new InputElement("ISSELECTED", 0, Format.R32_Float, 20, 0),
                 });
 
             _lineShadersLoaded = true;
@@ -1202,10 +1208,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 new[]
                 {
                     new InputElement("POSITION", 0, Format.R32G32B32_Float, 0, 0),
-                    new InputElement("COLOR", 0, Format.R32G32B32A32_Float, 12, 0),
-                    new InputElement("ISVISIBLE", 0, Format.R32_Float, 28, 0),
-                    new InputElement("ISMOUSEOVER", 0, Format.R32_Float, 32, 0),
-                    new InputElement("ISSELECTED", 0, Format.R32_Float, 36, 0),
+                    new InputElement("LAYERID", 0, Format.R32_UInt, 12, 0),
+                    new InputElement("ISMOUSEOVER", 0, Format.R32_Float, 16, 0),
+                    new InputElement("ISSELECTED", 0, Format.R32_Float, 20, 0),
                  });
 
             _textShaderLoaded = true;
@@ -1326,6 +1331,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
         private void InitializeOverlayShaders()
         {
+            // Fill
             var path = AppDomain.CurrentDomain.BaseDirectory;
             while (Path.GetFileName(path) != "Cad_Point_Manager")
             {
@@ -1343,9 +1349,19 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 _resCache.Device,
                 ShaderSignature.GetInputSignature(vs),
                 new[] {
-            new InputElement("POSITION", 0, Format.R32G32B32_Float, 0, 0),
-            new InputElement("COLOR",    0, Format.R32G32B32A32_Float, 12, 0),
+                    new InputElement("POSITION", 0, Format.R32G32B32_Float, 0, 0),
+                    new InputElement("COLOR",    0, Format.R32G32B32A32_Float, 12, 0),
                 });
+
+            // Border
+            string outlineFx = Path.Combine(path, @"Controls\D3DControl\Shaders\OverlayOutlineShader.hlsl");
+            var ovs = ShaderBytecode.CompileFromFile(outlineFx, "VSMain", "vs_5_0");
+            var ops = ShaderBytecode.CompileFromFile(outlineFx, "PSMain", "ps_5_0");
+            _overlayOutlineVS = new VertexShader(_resCache.Device, ovs);
+            _overlayOutlinePS = new PixelShader(_resCache.Device, ops);
+
+            // Reuse the SAME input layout as OverlaySolid (POSITION, COLOR)
+            _overlayOutlineLayout = _overlayLayout;
 
             _overlayShaderLoaded = true;
         }
@@ -1452,9 +1468,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _dragFillBuffer?.Dispose();
             _dragFillBuffer = new(device, 6);
 
-            _dragOutlineBuffer?.Dispose();
-            _dragOutlineBuffer = new(device, 64);
-
             _ids ??= new();
             _stateBufs?.Dispose();
             _stateBufs = new(device, device.ImmediateContext);
@@ -1559,6 +1572,16 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 OptionFlags = ResourceOptionFlags.None
             };
             _toggleSettingsBuffer = new Buffer(_resCache.Device, toggleAnchorBufferDesc);
+
+            var overlayOutlineBufferDesc = new BufferDescription
+            {
+                Usage = ResourceUsage.Default,
+                SizeInBytes = Utilities.SizeOf<OverlayOutlineSettings>(),
+                BindFlags = BindFlags.ConstantBuffer,
+                CpuAccessFlags = CpuAccessFlags.None,
+                OptionFlags = ResourceOptionFlags.None
+            };
+            _overlayOutlineSettingsBuffer = new Buffer(_resCache.Device, overlayOutlineBufferDesc);
 
             ConstantBuffersInitialized = true;
             ConstantBuffersDirty = true;
@@ -2775,26 +2798,68 @@ namespace Cad_Point_Manager.Controls.D3DControl
             {
                 oldCadManager3D.PropertyChanged -= control.CadManager3D_PropertyChanged;
                 oldCadManager3D.ZoomToExtentsRequested -= control.ZoomToExtents;
-                oldCadManager3D.CogoPointManager.CogoPoints.CollectionChanged -= control.CogoPoints_CollectionChanged_Instance;
-                oldCadManager3D.CogoPointManager.PointGroups.CollectionChanged -= control.PointGroups_CollectionChanged_Instance;
+                oldCadManager3D.CogoPointManager.CogoPoints.CollectionChanged -= control.CogoPoints_CollectionChanged;
+                oldCadManager3D.CogoPointManager.PointGroups.CollectionChanged -= control.PointGroups_CollectionChanged;
+                oldCadManager3D.Layers.CollectionChanged -= control.Layers_CollectionChanged;
             }
 
             if (e.NewValue is CadManager3D newCadManager3D)
             {
                 newCadManager3D.PropertyChanged += control.CadManager3D_PropertyChanged;
                 newCadManager3D.ZoomToExtentsRequested += control.ZoomToExtents;
-                newCadManager3D.CogoPointManager.CogoPoints.CollectionChanged += control.CogoPoints_CollectionChanged_Instance;
-                newCadManager3D.CogoPointManager.PointGroups.CollectionChanged += control.PointGroups_CollectionChanged_Instance;
+                newCadManager3D.CogoPointManager.CogoPoints.CollectionChanged += control.CogoPoints_CollectionChanged;
+                newCadManager3D.CogoPointManager.PointGroups.CollectionChanged += control.PointGroups_CollectionChanged;
+                newCadManager3D.Layers.CollectionChanged += control.Layers_CollectionChanged;
             }
         }
 
-        private void CogoPoints_CollectionChanged_Instance(object? sender, NotifyCollectionChangedEventArgs e)
+        private void CogoPoints_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
         {
             CogoPoints = CadManager3D?.CogoPointManager?.CogoPoints;
         }
-        private void PointGroups_CollectionChanged_Instance(object? sender, NotifyCollectionChangedEventArgs e)
+        private void PointGroups_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
         {
             PointGroups = CadManager3D?.CogoPointManager?.PointGroups;
+        }
+        private void Layers_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        {
+            Layers = CadManager3D?.Layers;
+            if (e.Action == NotifyCollectionChangedAction.Add)
+            {
+                foreach (KeyValuePair<string, ObjectLayer3D> keyValue in e.NewItems)
+                {
+                    var layer = keyValue.Value;
+                    layer.PropertyChanged += Layer_PropertyChanged;
+                    var lid = _ids.GetOrAddLayerId(layer);
+                    _stateBufs.EnsureLayerCapacity(_ids.LayerCount);
+
+                    ref var ls = ref _stateBufs.LayerSpan[(int)lid];
+                    ls.Color = layer.Color;
+                    ls.Flags = layer.IsVisible ? 1u : 0u;
+                }
+            }
+        }
+
+        private void Layer_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(ObjectLayer3D.IsVisible))
+            {
+                if (sender is ObjectLayer3D layer)
+                {
+                    _stateCtl.SetLayerVisibility(layer, layer.IsVisible);
+                    _stateCtl.FlushLayerUpdates();
+                    _dxfDirty = true;
+                }
+            }
+            if (e.PropertyName == nameof(ObjectLayer3D.Color))
+            {
+                if (sender is ObjectLayer3D layer)
+                {
+                    _stateCtl.SetLayerColor(layer, layer.Color);
+                    _stateCtl.FlushLayerUpdates();
+                    _dxfDirty = true;
+                }
+            }
         }
 
         private void CadManager3D_PropertyChanged(object? sender, PropertyChangedEventArgs e)
