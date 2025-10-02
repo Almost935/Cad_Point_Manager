@@ -225,20 +225,6 @@ namespace Cad_Point_Manager.Models
         public CadManager3D()
         {
             CogoPointManager = new(this);
-            CogoPointManager.PropertyChanged += CogoPointManager_PropertyChanged;
-        }
-
-        private void CogoPointManager_PropertyChanged(object? sender, PropertyChangedEventArgs e)
-        {
-            if (e.PropertyName == nameof(CogoPointManager.PointsDirty))
-            {
-                if (CogoPointManager.PointsDirty)
-                {
-                    PointTextVerticesDirty = true;
-                    PointCircleVerticesDirty = true;
-                    CogoPointManager.PointsDirty = false;
-                }
-            }
         }
         #endregion
 

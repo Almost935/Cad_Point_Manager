@@ -1,5 +1,4 @@
-﻿using Cad_Point_Manager.Common.Collections;
-using Cad_Point_Manager.Controls.D3DControl.Buffers;
+﻿using Cad_Point_Manager.Controls.D3DControl.Buffers;
 using Cad_Point_Manager.Controls.D3DControl.Rendering.Text;
 using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Helpers;
@@ -367,36 +366,36 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public static readonly DependencyProperty PointGroupsProperty =
             DependencyProperty.Register(
                 nameof(PointGroups),
-                typeof(BatchableObservableCollection<KeyValuePair<string, PointGroup>>),
+                typeof(ObservableCollection<KeyValuePair<string, PointGroup>>),
                 typeof(D3dDxfControl),
-                new FrameworkPropertyMetadata(new BatchableObservableCollection<KeyValuePair<string, PointGroup>>()));
-        public BatchableObservableCollection<KeyValuePair<string, PointGroup>> PointGroups
+                new FrameworkPropertyMetadata(new ObservableCollection<KeyValuePair<string, PointGroup>>()));
+        public ObservableCollection<KeyValuePair<string, PointGroup>> PointGroups
         {
-            get => (BatchableObservableCollection<KeyValuePair<string, PointGroup>>)GetValue(PointGroupsProperty);
+            get => (ObservableCollection<KeyValuePair<string, PointGroup>>)GetValue(PointGroupsProperty);
             set => SetValue(PointGroupsProperty, value);
         }
 
         public static readonly DependencyProperty CogoPointsProperty =
             DependencyProperty.Register(
                 nameof(CogoPoints),
-                typeof(BatchableObservableCollection<CogoPoint>),
+                typeof(ObservableCollection<CogoPoint>),
                 typeof(D3dDxfControl),
-                new FrameworkPropertyMetadata(new BatchableObservableCollection<CogoPoint>(), FrameworkPropertyMetadataOptions.BindsTwoWayByDefault));
-        public BatchableObservableCollection<CogoPoint> CogoPoints
+                new FrameworkPropertyMetadata(new ObservableCollection<CogoPoint>(), FrameworkPropertyMetadataOptions.BindsTwoWayByDefault));
+        public ObservableCollection<CogoPoint> CogoPoints
         {
-            get => (BatchableObservableCollection<CogoPoint>)GetValue(CogoPointsProperty);
+            get => (ObservableCollection<CogoPoint>)GetValue(CogoPointsProperty);
             set => SetValue(CogoPointsProperty, value);
         }
 
         public static readonly DependencyProperty SelectedCogoPointsProperty =
             DependencyProperty.Register(
                 nameof(SelectedCogoPoints),
-                typeof(BatchableObservableCollection<CogoPoint>),
+                typeof(ObservableCollection<CogoPoint>),
                 typeof(D3dDxfControl),
-                new FrameworkPropertyMetadata(new BatchableObservableCollection<CogoPoint>(), FrameworkPropertyMetadataOptions.BindsTwoWayByDefault));
-        public BatchableObservableCollection<CogoPoint> SelectedCogoPoints
+                new FrameworkPropertyMetadata(new ObservableCollection<CogoPoint>(), FrameworkPropertyMetadataOptions.BindsTwoWayByDefault));
+        public ObservableCollection<CogoPoint> SelectedCogoPoints
         {
-            get => (BatchableObservableCollection<CogoPoint>)GetValue(SelectedCogoPointsProperty);
+            get => (ObservableCollection<CogoPoint>)GetValue(SelectedCogoPointsProperty);
             set => SetValue(SelectedCogoPointsProperty, value);
         }
 
@@ -427,12 +426,12 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public static readonly DependencyProperty SelectedGeometriesProperty =
             DependencyProperty.Register(
                 nameof(SelectedGeometries),
-                typeof(BatchableObservableCollection<DrawingGeometry3D>),
+                typeof(ObservableCollection<DrawingGeometry3D>),
                 typeof(D3dDxfControl),
-                new FrameworkPropertyMetadata(new BatchableObservableCollection<DrawingGeometry3D>(), FrameworkPropertyMetadataOptions.BindsTwoWayByDefault));
-        public BatchableObservableCollection<DrawingGeometry3D> SelectedGeometries
+                new FrameworkPropertyMetadata(new ObservableCollection<DrawingGeometry3D>(), FrameworkPropertyMetadataOptions.BindsTwoWayByDefault));
+        public ObservableCollection<DrawingGeometry3D> SelectedGeometries
         {
-            get => (BatchableObservableCollection<DrawingGeometry3D>)GetValue(SelectedGeometriesProperty);
+            get => (ObservableCollection<DrawingGeometry3D>)GetValue(SelectedGeometriesProperty);
             set => SetValue(SelectedGeometriesProperty, value);
         }
 
@@ -2114,6 +2113,54 @@ namespace Cad_Point_Manager.Controls.D3DControl
         {
             if (point is null) { return; }
 
+            bool labelsNeedUpdate = false;
+            if (offset.X < 0 && !point.IsFlipped_Y)
+            {
+                point.IsFlipped_Y = true;
+
+                point.PointNumberOffset = new(-point.PointNumberBounds.Width.ToFloat() - point.TextInfoBaseOffset_X / 2, point.PointNumberOffset.Y);
+                point.ElevationOffset = new(-point.ElevationBounds.Width.ToFloat() - point.TextInfoBaseOffset_X / 2, point.ElevationOffset.Y);
+                point.DescriptionOffset = new(-point.DescriptionBounds.Width.ToFloat() - point.TextInfoBaseOffset_X / 2, point.DescriptionOffset.Y);
+
+                _stateCtl.SetLabelOffsets(point, point.PointNumberOffset, point.ElevationOffset, point.DescriptionOffset);
+                labelsNeedUpdate = true;
+            }
+            if (offset.X > 0 && point.IsFlipped_Y)
+            {
+                point.IsFlipped_Y = false;
+
+                point.PointNumberOffset = new(0, point.PointNumberOffset.Y);
+                point.ElevationOffset = new(0, point.ElevationOffset.Y);
+                point.DescriptionOffset = new(0, point.DescriptionOffset.Y);
+
+                _stateCtl.SetLabelOffsets(point, point.PointNumberOffset, point.ElevationOffset, point.DescriptionOffset);
+                labelsNeedUpdate = true;
+            }
+
+            if (offset.Y < 0 && !point.IsFlipped_X)
+            {
+                point.IsFlipped_X = true;
+
+                point.PointNumberOffset = new(point.PointNumberOffset.X, -point.PointNumberBounds.Height.ToFloat() - point.BaseDescriptionOffset_Y);
+                point.ElevationOffset = new(point.ElevationOffset.X, -point.ElevationBounds.Height.ToFloat() - point.BaseElevationOffset_Y);
+                point.DescriptionOffset = new(point.DescriptionOffset.X, -point.DescriptionBounds.Height.ToFloat() - point.BasePointNumberOffset_Y);
+                _stateCtl.SetLabelOffsets(point, point.PointNumberOffset, point.ElevationOffset, point.DescriptionOffset);
+                labelsNeedUpdate = true;
+            }
+            if (offset.Y > 0 && point.IsFlipped_X)
+            {
+                point.IsFlipped_X = false;
+
+                point.PointNumberOffset = new(point.PointNumberOffset.X, point.BasePointNumberOffset_Y);
+                point.ElevationOffset = new(point.ElevationOffset.X, point.BaseElevationOffset_Y);
+                point.DescriptionOffset = new(point.DescriptionOffset.X, point.BaseDescriptionOffset_Y);
+
+                _stateCtl.SetLabelOffsets(point, point.PointNumberOffset, point.ElevationOffset, point.DescriptionOffset);
+                labelsNeedUpdate = true;
+            }
+
+            if (labelsNeedUpdate) { _stateCtl.FlushLabelUpdates(); }
+
             point.SetTextInfoOffset(offset);
             _stateCtl.SetPointOffset(point, offset, true);
             _stateCtl.FlushPointUpdates();
@@ -2817,9 +2864,29 @@ namespace Cad_Point_Manager.Controls.D3DControl
         {
             CogoPoints = CadManager3D?.CogoPointManager?.CogoPoints;
         }
+
         private void PointGroups_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
         {
             PointGroups = CadManager3D?.CogoPointManager?.PointGroups;
+            if (e.Action == NotifyCollectionChangedAction.Add)
+            {
+                foreach (KeyValuePair<string, PointGroup> keyValue in e.NewItems)
+                {
+                    var pg = keyValue.Value;
+                    pg.PropertyChanged += PointGroup_PropertyChanged;
+                    var lid = _ids.GetOrAddGroupId(pg);
+                    _stateBufs.EnsureGroupCapacity(_ids.GroupCount);
+                }
+            }
+            if (e.Action == NotifyCollectionChangedAction.Remove)
+            {
+                foreach (KeyValuePair<string, PointGroup> keyValue in e.OldItems)
+                {
+                    var pg = keyValue.Value;
+                    if (pg is null) { continue; }
+                    pg.PropertyChanged -= PointGroup_PropertyChanged;
+                }
+            }
         }
         private void Layers_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
         {
@@ -2829,6 +2896,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 foreach (KeyValuePair<string, ObjectLayer3D> keyValue in e.NewItems)
                 {
                     var layer = keyValue.Value;
+                    if (layer is null) { continue; }
                     layer.PropertyChanged += Layer_PropertyChanged;
                     var lid = _ids.GetOrAddLayerId(layer);
                     _stateBufs.EnsureLayerCapacity(_ids.LayerCount);
@@ -2836,6 +2904,15 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     ref var ls = ref _stateBufs.LayerSpan[(int)lid];
                     ls.Color = layer.Color;
                     ls.Flags = layer.IsVisible ? 1u : 0u;
+                }
+            }
+            if (e.Action == NotifyCollectionChangedAction.Remove)
+            {
+                foreach (KeyValuePair<string, ObjectLayer3D> keyValue in e.OldItems)
+                {
+                    var layer = keyValue.Value;
+                    if (layer is null) { continue; }
+                    layer.PropertyChanged -= Layer_PropertyChanged;
                 }
             }
         }
@@ -2857,6 +2934,27 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 {
                     _stateCtl.SetLayerColor(layer, layer.Color);
                     _stateCtl.FlushLayerUpdates();
+                    _dxfDirty = true;
+                }
+            }
+        }
+        private void PointGroup_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(PointGroup.IsVisible))
+            {
+                if (sender is PointGroup pg)
+                {
+                    _stateCtl.SetGroupVisibility(pg, pg.IsVisible);
+                    _stateCtl.FlushGroupUpdates();
+                    _dxfDirty = true;
+                }
+            }
+            if (e.PropertyName == nameof(PointGroup.Color) || e.PropertyName == nameof(PointGroup.PointScale))
+            {
+                if (sender is PointGroup pg)
+                {
+                    _stateCtl.SetGroupScaleColor(pg, pg.PointScale.ToFloat(), pg.Color);
+                    _stateCtl.FlushGroupUpdates();
                     _dxfDirty = true;
                 }
             }

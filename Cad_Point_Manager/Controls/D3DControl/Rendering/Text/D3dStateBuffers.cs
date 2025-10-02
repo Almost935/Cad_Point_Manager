@@ -204,6 +204,21 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
             _ctx.UnmapSubresource(_layerBuf, 0);
         }
 
+        public void FlushGroupSubset(HashSet<uint> dirty)
+        {
+            if (dirty == null || dirty.Count == 0) return;
+
+            DataStream s;
+            _ctx.MapSubresource(_groupBuf, 0, MapMode.WriteNoOverwrite, MapFlags.None, out s);
+            int stride = Utilities.SizeOf<GroupState>();
+            foreach (var id in dirty)
+            {
+                s.Position = id * stride;
+                s.Write(_groupCpu[id]);
+            }
+            _ctx.UnmapSubresource(_groupBuf, 0);
+        }
+
         public void FlushPointSubset(HashSet<uint> dirty)
         {
             if (dirty == null || dirty.Count == 0) return;

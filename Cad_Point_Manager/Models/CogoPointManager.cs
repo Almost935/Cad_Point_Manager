@@ -16,15 +16,14 @@ namespace Cad_Point_Manager.Models
         #region Fields
         private const string _fontName = "Arial";
 
-        private BatchableObservableCollection<KeyValuePair<string, PointGroup>> _pointGroups = [];
+        private ObservableCollection<KeyValuePair<string, PointGroup>> _pointGroups = [];
         private PointGroup _activePointGroup;
-        private bool _pointsDirty = false;
         private CadManager3D _cadManager;
-        private BatchableObservableCollection<CogoPoint> _cogoPoints = [];
+        private ObservableCollection<CogoPoint> _cogoPoints = [];
         #endregion
 
         #region Properties
-        public BatchableObservableCollection<KeyValuePair<string, PointGroup>> PointGroups
+        public ObservableCollection<KeyValuePair<string, PointGroup>> PointGroups
         {
             get => _pointGroups;
             private set
@@ -45,18 +44,6 @@ namespace Cad_Point_Manager.Models
                 }
             }
         }
-        public bool PointsDirty
-        {
-            get => _pointsDirty;
-            set
-            {
-                if (_pointsDirty != value)
-                {
-                    _pointsDirty = value;
-                    OnPropertyChanged(nameof(PointsDirty));
-                }
-            }
-        }
         public CadManager3D CadManager
         {
             get => _cadManager;
@@ -69,7 +56,7 @@ namespace Cad_Point_Manager.Models
                 }
             }
         }
-        public BatchableObservableCollection<CogoPoint> CogoPoints
+        public ObservableCollection<CogoPoint> CogoPoints
         {
             get => _cogoPoints;
             set
@@ -206,10 +193,8 @@ namespace Cad_Point_Manager.Models
                 if (deleted)
                 {
                     CogoPoints.Remove(point);
-                    SetCadManagerPointVerticesDirty();
                 }
             }
-
             return deleted;
         }
 
@@ -302,18 +287,6 @@ namespace Cad_Point_Manager.Models
         {
             PointGroups.Clear();
             CogoPoints.Clear();
-        }
-
-        public void SetCadManagerPointVerticesDirty()
-        {
-            if (!CadManager.PointTextVerticesDirty)
-            {
-                CadManager.PointTextVerticesDirty = true;
-            }
-            if (!CadManager.PointCircleVerticesDirty)
-            {
-                CadManager.PointCircleVerticesDirty = true;
-            }
         }
 
         public void UpdateCogoPointsList()

@@ -1,5 +1,4 @@
-﻿using Cad_Point_Manager.Common.Collections;
-using Cad_Point_Manager.Controls.D3DControl;
+﻿using Cad_Point_Manager.Controls.D3DControl;
 using SharpDX;
 using SharpDX.DirectWrite;
 using System.Collections.ObjectModel;
@@ -16,7 +15,7 @@ namespace Cad_Point_Manager.Models.PointRendering
         private string _name;
         private Vector4 _color = new(0, 0, 0, 1);
         private bool _isVisible = true;
-        private BatchableObservableCollection<CogoPoint> _points = [];
+        private ObservableCollection<CogoPoint> _points = [];
         private CogoPointManager _cogoPointManager;
         private double _pointScale = 1;
         #endregion
@@ -58,7 +57,7 @@ namespace Cad_Point_Manager.Models.PointRendering
                 }
             }
         }
-        public BatchableObservableCollection<CogoPoint> Points
+        public ObservableCollection<CogoPoint> Points
         {
             get => _points;
             set
@@ -168,11 +167,6 @@ namespace Cad_Point_Manager.Models.PointRendering
         protected void OnPropertyChanged(string propertyName)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-
-            //if (propertyName == nameof(WindowsBrush) || propertyName == nameof(IsVisible) || propertyName == nameof(PointScale))
-            //{
-            //    Redraw();
-            //}
         }
         #endregion
     }

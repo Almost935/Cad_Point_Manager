@@ -132,6 +132,10 @@ namespace Cad_Point_Manager.Models.PointRendering
         public Vector2 PointNumberOffset { get; set; }
         public Vector2 ElevationOffset { get; set; }
         public Vector2 DescriptionOffset { get; set; }
+        public float TextInfoBaseOffset_X => _textBaseHeight * PointGroup.PointScale.ToFloat() * _markerToPointScaleFactor;
+        public float BasePointNumberOffset_Y => _textBaseHeight * PointGroup.PointScale.ToFloat() * _textLineSpacingFactor * 2;
+        public float BaseElevationOffset_Y => _textBaseHeight * PointGroup.PointScale.ToFloat() * _textLineSpacingFactor;
+        public float BaseDescriptionOffset_Y => 0;
         public bool TextVerticesInitialized { get; set; }
         public int TextStartIndex { get; set; }
         public int TextEndIndex { get; set; }
@@ -140,6 +144,8 @@ namespace Cad_Point_Manager.Models.PointRendering
         public bool IsMouseOverToggleButton { get; set; } = false;
         public bool IsToggleButtonPressed { get; set; } = false;
         public bool HasLeaderLine { get; set; } = false;
+        public bool IsFlipped_Y { get; set; } = false;
+        public bool IsFlipped_X { get; set; } = false;
         #endregion
 
         #region Constructors
@@ -244,11 +250,10 @@ namespace Cad_Point_Manager.Models.PointRendering
         public void ResetTextLocations()
         {
             HasLeaderLine = false;
-            TextInfoBasePosition = new(Position.X.ToFloat() + (_textBaseHeight * PointGroup.PointScale.ToFloat() * _markerToPointScaleFactor), Position.Y.ToFloat());
-
-            DescriptionOffset = Vector2.Zero;
-            ElevationOffset = new(0, _textBaseHeight * PointGroup.PointScale.ToFloat() * _textLineSpacingFactor);
-            PointNumberOffset = new(0, _textBaseHeight * PointGroup.PointScale.ToFloat() * _textLineSpacingFactor * 2);
+            TextInfoBasePosition = new(Position.X.ToFloat() + TextInfoBaseOffset_X, Position.Y.ToFloat());
+            DescriptionOffset = new(0, BaseDescriptionOffset_Y);
+            ElevationOffset = new(0, BaseElevationOffset_Y);
+            PointNumberOffset = new(0, BasePointNumberOffset_Y);
         }
 
         protected override void OnPropertyChanged(string propertyName)

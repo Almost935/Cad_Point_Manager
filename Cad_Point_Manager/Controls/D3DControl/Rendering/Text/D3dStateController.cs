@@ -6,10 +6,11 @@ using System.Collections.Generic;
 
 namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
 {
-    public sealed class D3dStateController : IRenderStateUpdater
+    public sealed class D3dStateController
     {
         private readonly SceneIdMap _ids;
         private readonly D3dStateBuffers _bufs;
+        private readonly HashSet<uint> _dirtyGroups = [];
         private readonly HashSet<uint> _dirtyLabels = [];
         private readonly HashSet<uint> _dirtyPoints = [];
         private readonly HashSet<uint> _dirtyLayers = [];
@@ -79,7 +80,7 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
             if (!_ids.TryGetGroupId(pg, out var gid)) { return; }
             ref var gs = ref _bufs.GroupSpan[(int)gid];
             if (visible) gs.Flags |= 1u; else gs.Flags &= ~1u;
-            _bufs.FlushAll();
+            _dirtyGroups.Add(gid);
         }
 
         public void SetGroupScaleColor(PointGroup pg, float scale, Vector4 color)
@@ -87,21 +88,32 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
             if (!_ids.TryGetGroupId(pg, out var gid)) { return; }
             ref var gs = ref _bufs.GroupSpan[(int)gid];
             gs.Scale = scale; gs.Color = color;
-            _bufs.FlushAll();
+            _dirtyGroups.Add(gid);
         }
 
-        public void SetLabelOffset(CogoPoint cp, Vector2 offset)
+        public void SetLabelOffsets(CogoPoint cp, Vector2 pointNumOffset, Vector2 elevOffset, Vector2 descrOffset)
         {
             void Set(int line)
             {
                 if (!_ids.TryGetLabelId(cp, line, out var lid)) { return; }
-                _bufs.LabelSpan[(int)lid].Offset = offset;
+                _bufs.LabelSpan[(int)lid].Offset = line switch
+                {
+                    0 => pointNumOffset,
+                    1 => elevOffset,
+                    2 => descrOffset,
+                    _ => Vector2.Zero
+                };
                 _dirtyLabels.Add(lid);
             }
             Set(0); Set(1);
             if (!string.IsNullOrEmpty(cp.Description)) Set(2);
         }
 
+        public void FlushGroupUpdates()
+        {
+            _bufs.FlushGroupSubset(_dirtyGroups);
+            _dirtyGroups.Clear();
+        }
         public void FlushLayerUpdates()
         {
             _bufs.FlushLayerSubset(_dirtyLayers);

@@ -5,6 +5,7 @@ using ColorPicker;
 using SharpDX;
 using System.Collections.Concurrent;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
@@ -27,7 +28,6 @@ namespace Cad_Point_Manager.Views.UserControls
 
         private readonly List<ObjectLayer3D> _selectedLayers = [];
         private readonly List<PointGroup> _selectedPointGroups = [];
-        private bool _ignorePointGroupSelectionChanged = false;
 
         private bool _layerListVisible = true;
         private double _layerListOpacity = 0;
@@ -407,22 +407,12 @@ namespace Cad_Point_Manager.Views.UserControls
             {
                 pg.IsVisible = true;
             }
-            if (CadManager is not null)
-            {
-                CadManager.PointTextVerticesDirty = true;
-                CadManager.PointCircleVerticesDirty = true;
-            }
         }
         private void PointGroupsCheckBox_Unchecked(object sender, RoutedEventArgs e)
         {
             foreach (var pg in _selectedPointGroups)
             {
                 pg.IsVisible = false;
-            }
-            if (CadManager is not null)
-            {
-                CadManager.PointTextVerticesDirty = true;
-                CadManager.PointCircleVerticesDirty = true;
             }
         }
         private void PointGroupsListView_Loaded(object sender, RoutedEventArgs e)
@@ -789,84 +779,15 @@ namespace Cad_Point_Manager.Views.UserControls
             PortableColorPicker colorpicker = sender as PortableColorPicker;
             if (colorpicker is not null)
             {
-                ConcurrentBag<CogoPoint> pointsToUpdate = [];
                 var color = colorpicker.SelectedColor;
+                Debug.WriteLine($"\n");
                 foreach (var pg in _selectedPointGroups)
                 {
+                    Debug.WriteLine($"Changing color of point group {pg.Name} to {color}");
                     pg.Color = new Vector4(color.R / 255f, color.G / 255f, color.B / 255f, 1.0f);
                 }
             }
         }
-
-        //public void QueueCogoPointRedraw(IEnumerable<CogoPoint> points)
-        //{
-        //    if (points is null) return;
-
-        //    lock (_pendingRedrawLock)
-        //    {
-        //        foreach (var p in points) { _pendingRedraw.Add(p); }
-
-        //        if (_redrawOp == null ||
-        //            _redrawOp.Status == DispatcherOperationStatus.Completed ||
-        //            _redrawOp.Status == DispatcherOperationStatus.Aborted)
-        //        {
-        //            _redrawOp = Dispatcher.InvokeAsync(() =>
-        //            {
-        //                List<CogoPoint> batch;
-        //                lock (_pendingRedrawLock)
-        //                {
-        //                    if (_pendingRedraw.Count == 0) return;
-        //                    batch = _pendingRedraw.ToList();
-        //                    _pendingRedraw.Clear();
-        //                }
-
-        //                using (Dispatcher.CurrentDispatcher.DisableProcessing())
-        //                {
-        //                    for (int i = 0; i < batch.Count; i++)
-        //                        batch[i].RedrawAllVisuals();
-        //                }
-        //            }, DispatcherPriority.Render);
-        //        }
-        //    }
-        //}
-        // Change the signature to return a Task you can await.
-        //public Task QueueCogoPointRedrawAsync(IEnumerable<CogoPoint> points)
-        //{
-        //    if (points is null) return Task.CompletedTask;
-
-        //    lock (_pendingRedrawLock)
-        //    {
-        //        foreach (var p in points) _pendingRedraw.Add(p);
-
-        //        // If a batch is already queued/running, await that same operation.
-        //        if (_redrawOp is not null &&
-        //            (_redrawOp.Status == DispatcherOperationStatus.Pending ||
-        //             _redrawOp.Status == DispatcherOperationStatus.Executing))
-        //        {
-        //            return _redrawOp.Task; // awaitable
-        //        }
-
-        //        // Queue a new batch.
-        //        _redrawOp = Dispatcher.InvokeAsync(() =>
-        //        {
-        //            List<CogoPoint> batch;
-        //            lock (_pendingRedrawLock)
-        //            {
-        //                if (_pendingRedraw.Count == 0) return; // nothing to do
-        //                batch = _pendingRedraw.ToList();
-        //                _pendingRedraw.Clear();
-        //            }
-
-        //            using (Dispatcher.CurrentDispatcher.DisableProcessing())
-        //            {
-        //                for (int i = 0; i < batch.Count; i++)
-        //                    batch[i].RedrawAllVisuals();
-        //            }
-        //        }, DispatcherPriority.Render);
-
-        //        return _redrawOp.Task; // awaitable
-        //    }
-        //}
         #endregion
 
         #region INotifyPropertyChanged Implementation
