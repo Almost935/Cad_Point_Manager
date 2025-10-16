@@ -546,7 +546,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             }
         }
 
-        private void DrawDxf(SharpDX.Direct3D11.DeviceContext ctx)
+        private void DrawDxf(DeviceContext ctx)
         {
             ctx.OutputMerger.SetRenderTargets(_resCache.DxfRenderTargetView);
             ctx.ClearRenderTargetView(_resCache.DxfRenderTargetView, new RawColor4(1, 1, 1, 1));
@@ -557,7 +557,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             DrawGlyphBatches(ctx, _resCache.AsciiGlyphAtlas, _glyphBatches);
         }
 
-        private void DrawLinesWithShader(SharpDX.Direct3D11.DeviceContext ctx)
+        private void DrawLinesWithShader(DeviceContext ctx)
         {
             //Stopwatch stopwatch = Stopwatch.StartNew();
             if (_lineVertexBuffer is null) { return; }
@@ -593,7 +593,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             //stopwatch.Stop();
             //Debug.WriteLine($"DrawLinesWithShader Time: {stopwatch.ElapsedMilliseconds} ms");
         }
-        private void DrawTextWithShader(SharpDX.Direct3D11.DeviceContext ctx)
+        private void DrawTextWithShader(DeviceContext ctx)
         {
             //Stopwatch stopwatch = Stopwatch.StartNew();
 
@@ -614,7 +614,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             //stopwatch.Stop();
             //Debug.WriteLine($"DrawTextWithShader Time: {stopwatch.ElapsedMilliseconds} ms");
         }
-        private void DrawGlyphBatches(SharpDX.Direct3D11.DeviceContext ctx, GlyphAtlas atlas, Dictionary<short, List<GlyphInstance>> batches)
+        private void DrawGlyphBatches(DeviceContext ctx, GlyphAtlas atlas, Dictionary<short, List<GlyphInstance>> batches)
         {
             if (atlas == null || atlas.VertexBuffer == null) return;
 
@@ -659,7 +659,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     startInstanceLocation: 0);
             }
         }
-        private void DrawPointCirclesWithShader(SharpDX.Direct3D11.DeviceContext ctx)
+        private void DrawPointCirclesWithShader(DeviceContext ctx)
         {
             //Stopwatch stopwatch = Stopwatch.StartNew();
 
@@ -688,7 +688,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             //stopwatch.Stop();
             //Debug.WriteLine($"DrawCirclesWithShader Time: {stopwatch.ElapsedMilliseconds} ms");
         }
-        private void DrawCogoPointAnchors(SharpDX.Direct3D11.DeviceContext ctx)
+        private void DrawCogoPointAnchors(DeviceContext ctx)
         {
             if (_anchorVerticesCount == 0) return;
 
@@ -712,7 +712,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             ctx.DrawInstanced(6, _anchorVerticesCount, 0, 0);
         }
-        private void DrawLeaderLines(SharpDX.Direct3D11.DeviceContext ctx)
+        private void DrawLeaderLines(DeviceContext ctx)
         {
             if (_leaderLineInstanceCount <= 0) { return; }
 
@@ -745,7 +745,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             ctx.GeometryShader.SetShaderResource(1, null);
             ctx.GeometryShader.Set(null);
         }
-        private void DrawDragOverlay(SharpDX.Direct3D11.DeviceContext ctx)
+        private void DrawDragOverlay(DeviceContext ctx)
         {
             // --- fill (triangles) ---
             ctx.VertexShader.Set(_overlayVS);
@@ -769,7 +769,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                new VertexBufferBinding(_dragFillBuffer.Buffer, _dragFillBuffer.Stride, 0));
             ctx.Draw(_dragFillVertexCount, 0);
         }
-        private void DrawCogoPointHover(SharpDX.Direct3D11.DeviceContext ctx)
+        private void DrawCogoPointHover(DeviceContext ctx)
         {
             if (_hoverRectInstanceCount > 0)
             {
@@ -841,7 +841,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 var worldHeight = (float)(pg.FontBaseSize * pg.PointScale);
                 var duToWorld = worldHeight / _resCache.CogoPointFontFace.Metrics.DesignUnitsPerEm;
 
-                var duPerEm = _resCache.CogoPointFontFace.Metrics.DesignUnitsPerEm; 
+                var duPerEm = _resCache.CogoPointFontFace.Metrics.DesignUnitsPerEm;
                 var duToWorldBase = (float)pg.FontBaseSize / duPerEm;
 
                 var color = pg.Color.ToSharpDXVector4();
@@ -1638,7 +1638,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         private Rect AddLineAndGetRect(string s, Vector2 originWorld, float duToWorldBase,
             float duToWorld, Vector4 color, float isVisible, float isMouseOver,
-            float isSelected, float ySign, uint labelId, uint groupId, uint pointId, 
+            float isSelected, float ySign, uint labelId, uint groupId, uint pointId,
             Vector2 lineOffset)
         {
             if (string.IsNullOrEmpty(s)) { return Rect.Empty; }
@@ -1941,11 +1941,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
                         {
                             foreach (var p in newSel)
                             {
-                                if (IsShiftPressed) 
-                                { 
+                                if (IsShiftPressed)
+                                {
                                     if (!p.IsSelected) { continue; }
                                     DeselectObject(p); SelectedCogoPoints.Remove(p);
-                                    hoverVerticesDirty = true; cogoPointVerticesDirty = true; 
+                                    hoverVerticesDirty = true; cogoPointVerticesDirty = true;
                                 }
                                 else
                                 {
@@ -1960,17 +1960,17 @@ namespace Cad_Point_Manager.Controls.D3DControl
                         {
                             foreach (var p in newSel)
                             {
-                                if (IsShiftPressed) 
+                                if (IsShiftPressed)
                                 {
                                     if (!p.IsSelected) { continue; }
                                     DeselectObject(p); SelectedCogoPoints.Remove(p);
-                                    hoverVerticesDirty = true; cogoPointVerticesDirty = true; 
+                                    hoverVerticesDirty = true; cogoPointVerticesDirty = true;
                                 }
-                                else 
-                                { 
+                                else
+                                {
                                     if (p.IsSelected) { continue; }
-                                    SelectObject(p); SelectedCogoPoints.Add(p); 
-                                    hoverVerticesDirty = true; cogoPointVerticesDirty = true; 
+                                    SelectObject(p); SelectedCogoPoints.Add(p);
+                                    hoverVerticesDirty = true; cogoPointVerticesDirty = true;
                                 }
                             }
                             _stateCtl.FlushPointUpdates();
@@ -2375,7 +2375,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 }
             }
 
-            if (flushObjectStates) 
+            if (flushObjectStates)
             {
                 _stateCtl.FlushObjectUpdates();
                 _dxfDirty = true;
@@ -2660,8 +2660,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
             {
                 SnappedHitTestablePoint = null;
             }
-            foreach (var obj in _mouseOverHitTestableObjects) 
-            { 
+            foreach (var obj in _mouseOverHitTestableObjects)
+            {
                 DehoverObject(obj);
             }
             _stateCtl.FlushObjectUpdates();
@@ -2905,6 +2905,50 @@ namespace Cad_Point_Manager.Controls.D3DControl
             }
         }
 
+        private void CogoPoint_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(CogoPoint.Easting) || e.PropertyName == nameof(CogoPoint.Northing) ||
+                e.PropertyName == nameof(CogoPoint.Elevation) || e.PropertyName == nameof(CogoPoint.Description))
+            {
+                _glyphVerticesDirty = true;
+                _pointCircleVerticesDirty = true;
+                _anchorVerticesDirty = true;
+                _leaderLineVerticesDirty = true;
+            }
+        }
+
+        private void PointGroups_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        {
+            PointGroups = CadManager3D?.CogoPointManager?.PointGroups;
+            if (e.Action == NotifyCollectionChangedAction.Add)
+            {
+                foreach (KeyValuePair<string, PointGroup> keyValue in e.NewItems)
+                {
+                    var pg = keyValue.Value;
+                    pg.PropertyChanged -= PointGroup_PropertyChanged;
+                    pg.PropertyChanged += PointGroup_PropertyChanged;
+
+                    var gId = _ids.GetOrAddGroupId(pg);
+                    _stateBufs.InitializeGroupState(_ids.GroupCount, pg, gId);
+
+                    _stateBufs.EnsureGroupCapacity(_ids.GroupCount);
+
+                    ref var gs = ref _stateBufs.GroupSpan[(int)gId];
+                    gs.Color = pg.Color.ToSharpDXVector4();
+                    gs.Scale = (float)pg.PointScale;
+                    gs.Flags = pg.IsVisible ? 1u : 0u;
+                }
+            }
+            if (e.Action == NotifyCollectionChangedAction.Remove)
+            {
+                foreach (KeyValuePair<string, PointGroup> keyValue in e.OldItems)
+                {
+                    var pg = keyValue.Value;
+                    if (pg is null) { continue; }
+                    pg.PropertyChanged -= PointGroup_PropertyChanged;
+                }
+            }
+        }
         private void CogoPoints_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
         {
             CogoPoints = CadManager3D?.CogoPointManager?.CogoPoints;
@@ -2933,51 +2977,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 {
                     if (obj is not CogoPoint cogoPoint) { continue; }
                     cogoPoint.PropertyChanged -= CogoPoint_PropertyChanged;
-                }
-            }
-        }
-
-        private void CogoPoint_PropertyChanged(object? sender, PropertyChangedEventArgs e)
-        {
-            if (e.PropertyName == nameof(CogoPoint.Easting) || e.PropertyName == nameof(CogoPoint.Northing) || 
-                e.PropertyName == nameof(CogoPoint.Elevation) || e.PropertyName == nameof(CogoPoint.Description))
-            {
-                _glyphVerticesDirty = true;
-                _pointCircleVerticesDirty = true;
-                _anchorVerticesDirty = true;
-                _leaderLineVerticesDirty = true;
-            }
-        }
-
-        private void PointGroups_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
-        {
-            PointGroups = CadManager3D?.CogoPointManager?.PointGroups;
-            if (e.Action == NotifyCollectionChangedAction.Add)
-            {
-                foreach (KeyValuePair<string, PointGroup> keyValue in e.NewItems)
-                {
-                    var pg = keyValue.Value;
-                    pg.PropertyChanged -= PointGroup_PropertyChanged;
-                    pg.PropertyChanged += PointGroup_PropertyChanged;
-                    
-                    var gId = _ids.GetOrAddGroupId(pg);
-                    _stateBufs.InitializeGroupState(_ids.GroupCount, pg, gId);
-
-                    _stateBufs.EnsureGroupCapacity(_ids.GroupCount);
-
-                    ref var gs = ref _stateBufs.GroupSpan[(int)gId];
-                    gs.Color = pg.Color.ToSharpDXVector4();
-                    gs.Scale = (float)pg.PointScale;
-                    gs.Flags = pg.IsVisible ? 1u : 0u;
-                }
-            }
-            if (e.Action == NotifyCollectionChangedAction.Remove)
-            {
-                foreach (KeyValuePair<string, PointGroup> keyValue in e.OldItems)
-                {
-                    var pg = keyValue.Value;
-                    if (pg is null) { continue; }
-                    pg.PropertyChanged -= PointGroup_PropertyChanged;
                 }
             }
         }
@@ -3026,7 +3025,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             }
             //if (e.Action == NotifyCollectionChangedAction.Remove)
             //{
-                
+
             //}
         }
 

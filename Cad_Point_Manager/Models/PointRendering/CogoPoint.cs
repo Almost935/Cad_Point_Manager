@@ -17,7 +17,7 @@ namespace Cad_Point_Manager.Models.PointRendering
     {
         #region Fields
         private const float _textLineSpacingFactor = 1.0f;
-        private const float _markerToPointScaleFactor = 0.5f;
+        private const float _markerToPointScaleFactor = 0.1f;
         private const float _textBaseHeight = 4;
 
         private volatile CogoPointBoundsSnapshot _cogoPointBounds;
@@ -132,14 +132,6 @@ namespace Cad_Point_Manager.Models.PointRendering
         public Vector2 PointNumberOffset { get; set; }
         public Vector2 ElevationOffset { get; set; }
         public Vector2 DescriptionOffset { get; set; }
-        //public float TextInfoBaseOffset_X => _textBaseHeight * PointGroup.PointScale.ToFloat() * _markerToPointScaleFactor;
-        //public float BasePointNumberOffset_Y => _textBaseHeight * PointGroup.PointScale.ToFloat() * _textLineSpacingFactor * 2;
-        //public float BaseElevationOffset_Y => _textBaseHeight * PointGroup.PointScale.ToFloat() * _textLineSpacingFactor;
-        //public float BaseDescriptionOffset_Y => 0;
-        public float TextInfoBaseOffset_X => _textBaseHeight * _markerToPointScaleFactor;
-        public float BasePointNumberOffset_Y => _textBaseHeight * _textLineSpacingFactor * 2;
-        public float BaseElevationOffset_Y => _textBaseHeight * _textLineSpacingFactor;
-        public float BaseDescriptionOffset_Y => 0;
         public bool TextVerticesInitialized { get; set; }
         public int TextStartIndex { get; set; }
         public int TextEndIndex { get; set; }
@@ -150,6 +142,11 @@ namespace Cad_Point_Manager.Models.PointRendering
         public bool HasLeaderLine { get; set; } = false;
         public bool IsFlipped_Y { get; set; } = false;
         public bool IsFlipped_X { get; set; } = false;
+
+        public float TextInfoBaseOffset_X => _textBaseHeight * _markerToPointScaleFactor;
+        public float BasePointNumberOffset_Y => _textBaseHeight * _textLineSpacingFactor * 2;
+        public float BaseElevationOffset_Y => _textBaseHeight * _textLineSpacingFactor;
+        public float BaseDescriptionOffset_Y => 0;
         #endregion
 
         #region Constructors
@@ -256,19 +253,19 @@ namespace Cad_Point_Manager.Models.PointRendering
             HasLeaderLine = false;
             //TextInfoBasePosition = new(Position.X.ToFloat() + TextInfoBaseOffset_X, Position.Y.ToFloat());
             TextInfoBasePosition = new(Position.X.ToFloat(), Position.Y.ToFloat());
-            DescriptionOffset = new(0, BaseDescriptionOffset_Y);
-            ElevationOffset = new(0, BaseElevationOffset_Y);
-            PointNumberOffset = new(0, BasePointNumberOffset_Y);
+            DescriptionOffset = new(TextInfoBaseOffset_X, BaseDescriptionOffset_Y);
+            ElevationOffset = new(TextInfoBaseOffset_X, BaseElevationOffset_Y);
+            PointNumberOffset = new(TextInfoBaseOffset_X, BasePointNumberOffset_Y);
         }
 
         protected override void OnPropertyChanged(string propertyName)
         {
             base.OnPropertyChanged(propertyName);
 
-            if (propertyName == nameof(Easting) || propertyName == nameof(Northing))
-            {
-                TextInfoBasePosition = new(Position.X.ToFloat() + TextInfoBaseOffset_X, Position.Y.ToFloat());
-            }
+            //if (propertyName == nameof(Easting) || propertyName == nameof(Northing))
+            //{
+            //    TextInfoBasePosition = new(Position.X.ToFloat() + TextInfoBaseOffset_X, Position.Y.ToFloat());
+            //}
         }
         #endregion
 

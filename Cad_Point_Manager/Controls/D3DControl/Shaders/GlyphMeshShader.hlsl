@@ -108,8 +108,8 @@ VSOut VSMain(VSInPerVertex v, VSInPerInstance inst)
     float mo = ((ps.Flags & POINT_MOUSEOVR) != 0u) ? 1.0f : 0.0f;
 
     // --- Position math ---
-    // Apply label drag offset and group scale
-    float x = inst.OriginWorld.x + (ls.Offset.x) + ps.Offset.x;
+    // Apply label drag offset and group scale. Group scale only applicable to label y offset.
+    float x = inst.OriginWorld.x + ls.Offset.x + ps.Offset.x;
     float y = inst.OriginWorld.y + (ls.Offset.y * gs.Scale) + ps.Offset.y;
     float2 originWorld = float2(x, y);
     
