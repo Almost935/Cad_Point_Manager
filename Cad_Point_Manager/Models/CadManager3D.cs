@@ -1,4 +1,5 @@
 ﻿using Cad_Point_Manager.Common;
+using Cad_Point_Manager.Common.Collections;
 using Cad_Point_Manager.Controls.D3DControl;
 using Cad_Point_Manager.Controls.D3DControl.Rendering.Text;
 using Cad_Point_Manager.Extensions;
@@ -16,9 +17,10 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 using System.Windows;
 using System.Windows.Data;
-
+using System.Windows.Media;
 using Point = System.Windows.Point;
 using Vector2 = SharpDX.Vector2;
 using Vector3 = SharpDX.Vector3;
@@ -39,7 +41,7 @@ namespace Cad_Point_Manager.Models
         private bool _drawingObjectTreeDirty = false;
         private bool _dxfNeedsReload = false;
         private Rect _extents = RectExtensions.Zero;
-        private ObservableCollection<KeyValuePair<string, ObjectLayer3D>> _layers = [];
+        private BatchableObservableCollection<KeyValuePair<string, ObjectLayer3D>> _layers = [];
         private ICollectionView _layersView;
         private ICollectionView _pointGroupsView;
         private ICollectionView _pointsView;
@@ -128,7 +130,7 @@ namespace Cad_Point_Manager.Models
                 OnPropertyChanged(nameof(Extents));
             }
         }
-        public ObservableCollection<KeyValuePair<string, ObjectLayer3D>> Layers
+        public BatchableObservableCollection<KeyValuePair<string, ObjectLayer3D>> Layers
         {
             get => _layers;
             set
@@ -466,128 +468,6 @@ namespace Cad_Point_Manager.Models
             }
         }
 
-        public void UpdateVerticesIsMouseOver(HitTestableObject hitTestableObject, bool isMouseOver)
-        {
-            if (hitTestableObject is DrawingObject3D drawingObject)
-            {
-                if (drawingObject is DrawingGeometry3D drawingGeometry)
-                {
-                    for (int i = drawingGeometry.StartVertexIndex; i <= drawingGeometry.EndVertexIndex; i++)
-                    {
-                        if (_cachedLineVertices is null || _cachedLineVertices.Count == 0) { continue; }
-                        ref var vertex = ref GetLineVertexRef(i);
-                        vertex.IsMouseOver = isMouseOver ? 1.0f : 0.0f;
-                    }
-                }
-                if (drawingObject is DrawingText3D drawingText)
-                {
-                    for (int i = drawingText.StartVertexIndex; i <= drawingText.EndVertexIndex; i++)
-                    {
-                        if (_cachedTextVertices is null || _cachedTextVertices.Count == 0) { continue; }
-                        ref var vertex = ref GetTextVertexRef(i);
-                        vertex.IsMouseOver = isMouseOver ? 1.0f : 0.0f;
-                    }
-                }
-                if (drawingObject is DrawingBlock3D drawingBlock)
-                {
-                    for (int i = drawingBlock.StartLineVertexIndex; i <= drawingBlock.EndLineVertexIndex; i++)
-                    {
-                        if (_cachedLineVertices is null || _cachedLineVertices.Count == 0) { continue; }
-                        ref var vertex = ref GetLineVertexRef(i);
-                        vertex.IsMouseOver = isMouseOver ? 1.0f : 0.0f;
-                    }
-                    for (int i = drawingBlock.StartTextVertexIndex; i <= drawingBlock.EndTextVertexIndex; i++)
-                    {
-                        if (_cachedTextVertices is null || _cachedTextVertices.Count == 0) { continue; }
-                        ref var vertex = ref GetTextVertexRef(i);
-                        vertex.IsMouseOver = isMouseOver ? 1.0f : 0.0f;
-                    }
-                }
-            }
-        }
-        public void UpdateVerticesIsSelected(HitTestableObject hitTestableObject, bool isSelected)
-        {
-            if (hitTestableObject is DrawingObject3D drawingObject)
-            {
-                if (drawingObject is DrawingGeometry3D drawingGeometry)
-                {
-                    for (int i = drawingGeometry.StartVertexIndex; i <= drawingGeometry.EndVertexIndex; i++)
-                    {
-                        if (_cachedLineVertices is null || _cachedLineVertices.Count == 0) { continue; }
-                        ref var vertex = ref GetLineVertexRef(i);
-                        vertex.IsSelected = isSelected ? 1.0f : 0.0f;
-                    }
-                }
-                if (drawingObject is DrawingText3D drawingText)
-                {
-                    for (int i = drawingText.StartVertexIndex; i <= drawingText.EndVertexIndex; i++)
-                    {
-                        if (_cachedTextVertices is null || _cachedTextVertices.Count == 0) { continue; }
-                        ref var vertex = ref GetTextVertexRef(i);
-                        vertex.IsSelected = isSelected ? 1.0f : 0.0f;
-                    }
-                }
-                if (drawingObject is DrawingBlock3D drawingBlock)
-                {
-                    for (int i = drawingBlock.StartLineVertexIndex; i <= drawingBlock.EndLineVertexIndex; i++)
-                    {
-                        if (_cachedLineVertices is null || _cachedLineVertices.Count == 0) { continue; }
-                        ref var vertex = ref GetLineVertexRef(i);
-                        vertex.IsSelected = isSelected ? 1.0f : 0.0f;
-                    }
-                    for (int i = drawingBlock.StartTextVertexIndex; i <= drawingBlock.EndTextVertexIndex; i++)
-                    {
-                        if (_cachedTextVertices is null || _cachedTextVertices.Count == 0) { continue; }
-                        ref var vertex = ref GetTextVertexRef(i);
-                        vertex.IsSelected = isSelected ? 1.0f : 0.0f;
-                    }
-                }
-            }
-        }
-        public void UpdateVerticesIsSelectedAndIsMouseOver(HitTestableObject hitTestableObject, bool isSelected, bool isMouseOver)
-        {
-            if (hitTestableObject is DrawingObject3D drawingObject)
-            {
-                if (drawingObject is DrawingGeometry3D drawingGeometry)
-                {
-                    for (int i = drawingGeometry.StartVertexIndex; i <= drawingGeometry.EndVertexIndex; i++)
-                    {
-                        if (_cachedLineVertices is null || _cachedLineVertices.Count == 0) { continue; }
-                        ref var vertex = ref GetLineVertexRef(i);
-                        vertex.IsSelected = isSelected ? 1.0f : 0.0f;
-                        vertex.IsMouseOver = isMouseOver ? 1.0f : 0.0f;
-                    }
-                }
-                if (drawingObject is DrawingText3D drawingText)
-                {
-                    for (int i = drawingText.StartVertexIndex; i <= drawingText.EndVertexIndex; i++)
-                    {
-                        if (_cachedTextVertices is null || _cachedTextVertices.Count == 0) { continue; }
-                        ref var vertex = ref GetTextVertexRef(i);
-                        vertex.IsSelected = isSelected ? 1.0f : 0.0f;
-                        vertex.IsMouseOver = isMouseOver ? 1.0f : 0.0f;
-                    }
-                }
-                if (drawingObject is DrawingBlock3D drawingBlock)
-                {
-                    for (int i = drawingBlock.StartLineVertexIndex; i <= drawingBlock.EndLineVertexIndex; i++)
-                    {
-                        if (_cachedLineVertices is null || _cachedLineVertices.Count == 0) { continue; }
-                        ref var vertex = ref GetLineVertexRef(i);
-                        vertex.IsSelected = isSelected ? 1.0f : 0.0f;
-                        vertex.IsMouseOver = isMouseOver ? 1.0f : 0.0f;
-                    }
-                    for (int i = drawingBlock.StartTextVertexIndex; i <= drawingBlock.EndTextVertexIndex; i++)
-                    {
-                        if (_cachedTextVertices is null || _cachedTextVertices.Count == 0) { continue; }
-                        ref var vertex = ref GetTextVertexRef(i);
-                        vertex.IsSelected = isSelected ? 1.0f : 0.0f;
-                        vertex.IsMouseOver = isMouseOver ? 1.0f : 0.0f;
-                    }
-                }
-            }
-        }
-
         public ReadOnlySpan<LineVertex> UpdateLineVerticesList(SceneIdMap sceneIdMap)
         {
             if (LineVerticesDirty)
@@ -597,13 +477,15 @@ namespace Cad_Point_Manager.Models
                 foreach (var keyValuePair in Layers)
                 {
                     var layer = keyValuePair.Value;
-                    var lid = sceneIdMap.GetOrAddLayerId(layer);
+                    var lId = sceneIdMap.GetOrAddLayerId(layer);
 
                     foreach (var obj in layer.DrawingObject3Ds)
                     {
+                        var objectId = sceneIdMap.GetOrAddObjectId(obj);
+
                         if (obj is DrawingGeometry3D drawingGeometry)
                         {
-                            drawingGeometry.UpdateVertices(lid);
+                            drawingGeometry.UpdateVertices(lId, objectId);
                             drawingGeometry.StartVertexIndex = _cachedLineVertices.Count;
                             _cachedLineVertices.AddRange(drawingGeometry.Vertices);
                             drawingGeometry.EndVertexIndex = _cachedLineVertices.Count - 1;
@@ -611,7 +493,7 @@ namespace Cad_Point_Manager.Models
 
                         if (obj is DrawingBlock3D drawingBlock)
                         {
-                            drawingBlock.UpdateGeometryVertices(lid);
+                            drawingBlock.UpdateGeometryVertices(lId, objectId);
                             drawingBlock.StartLineVertexIndex = _cachedLineVertices.Count;
                             _cachedLineVertices.AddRange(drawingBlock.LineVertices);
                             drawingBlock.EndLineVertexIndex = _cachedLineVertices.Count - 1;
@@ -644,18 +526,19 @@ namespace Cad_Point_Manager.Models
 
                     foreach (var obj in layer.DrawingObject3Ds)
                     {
+                        var objectId = sceneIdMap.GetOrAddObjectId(obj);
                         int start = _cachedTextVertices.Count;
 
                         if (obj is DrawingText3D text3D)
                         {
-                            text3D.UpdateTextVertices(d3DResCache, lid);
+                            text3D.UpdateTextVertices(d3DResCache, lid, objectId);
                             text3D.StartVertexIndex = start;
                             _cachedTextVertices.AddRange(text3D.TextVertices);
                             text3D.EndVertexIndex = _cachedTextVertices.Count - 1;
                         }
                         if (obj is DrawingBlock3D drawingBlock)
                         {
-                            drawingBlock.UpdateTextVertices(d3DResCache, lid);
+                            drawingBlock.UpdateTextVertices(d3DResCache, lid, objectId);
                             drawingBlock.StartTextVertexIndex = start;
                             _cachedTextVertices.AddRange(drawingBlock.TextVertices);
                             drawingBlock.EndTextVertexIndex = _cachedTextVertices.Count - 1;
@@ -669,30 +552,27 @@ namespace Cad_Point_Manager.Models
         }
         public ReadOnlySpan<PointMarkerInstance> UpdatePointCircleVerticesList(SceneIdMap sceneIdMap)
         {
-            if (PointCircleVerticesDirty)
+            _cachedPointMarkerVertices.Clear();
+
+            foreach (var keyValuePair in CogoPointManager.PointGroups)
             {
-                _cachedPointMarkerVertices.Clear();
+                var pg = keyValuePair.Value;
+                if (!pg.IsVisible || pg is null) { continue; }
+                uint gid = sceneIdMap.GetOrAddGroupId(pg);
 
-                foreach (var keyValuePair in CogoPointManager.PointGroups)
+                foreach (CogoPoint p in pg.Points)
                 {
-                    var pg = keyValuePair.Value;
-                    if (!pg.IsVisible || pg is null) { continue; }
-                    uint gid = sceneIdMap.GetOrAddGroupId(pg);
-
-                    foreach (CogoPoint p in pg.Points)
+                    uint pid = sceneIdMap.GetOrAddPointId(p);
+                    _cachedPointMarkerVertices.Add(new PointMarkerInstance
                     {
-                        uint pid = sceneIdMap.GetOrAddPointId(p);
-                        _cachedPointMarkerVertices.Add(new PointMarkerInstance
-                        {
-                            Position = new Vector3(p.Position.X.ToFloat(), p.Position.Y.ToFloat(), 0f),
-                            Radius = GlobalHelperProperties.CogoPointCirclePixelRadius,
-                            PointId = pid,
-                            GroupId = gid
-                        });
-                    }
+                        Position = new Vector3(p.Position.X.ToFloat(), p.Position.Y.ToFloat(), 0f),
+                        Radius = GlobalHelperProperties.CogoPointCirclePixelRadius,
+                        PointId = pid,
+                        GroupId = gid
+                    });
                 }
-                PointCircleVerticesDirty = false;
             }
+            PointCircleVerticesDirty = false;
             return CollectionsMarshal.AsSpan(_cachedPointMarkerVertices);
         }
 
@@ -711,7 +591,7 @@ namespace Cad_Point_Manager.Models
             for (int i = 0; i < rows; i++)
             {
                 string pointGroupName = $"TestGroup {i + 1}";
-                bool created = CogoPointManager.TryCreatePointGroup(pointGroupName, new Vector4(1.0f, 0.0f, 0.0f, 1.0f), _pointBaseScale, out var pointGroup);
+                bool created = CogoPointManager.TryCreatePointGroup(pointGroupName, Colors.Red, _pointBaseScale, out var pointGroup);
                 if (created)
                 {
                     var groupActivated = CogoPointManager.TrySetActivePointGroup(pointGroup);
@@ -731,44 +611,6 @@ namespace Cad_Point_Manager.Models
             CogoPointManager.UpdateCogoPointsList();
             PointTextVerticesDirty = true;
             PointCircleVerticesDirty = true;
-        }
-
-        public ref TextVertex GetTextVertexRef(int index)
-        {
-            Span<TextVertex> span = CollectionsMarshal.AsSpan(_cachedTextVertices);
-            if ((uint)index >= (uint)span.Length)
-            {
-                throw new ArgumentOutOfRangeException(nameof(index), "Index is out of range.");
-            }
-            return ref span[index];
-        }
-        public ref TextVertex GetPointTextVertexRef(int index)
-        {
-            Span<TextVertex> span = CollectionsMarshal.AsSpan(_cachedPointTextVertices);
-            if ((uint)index >= (uint)span.Length)
-            {
-                throw new ArgumentOutOfRangeException(nameof(index), "Index is out of range.");
-            }
-            return ref span[index];
-        }
-        public ref LineVertex GetLineVertexRef(int index)
-        {
-            Span<LineVertex> span = CollectionsMarshal.AsSpan(_cachedLineVertices);
-            if ((uint)index >= (uint)span.Length)
-            {
-                throw new ArgumentOutOfRangeException(nameof(index), "Index is out of range.");
-            }
-            return ref span[index];
-        }
-        public ref PointMarkerInstance GetPointCircleVertexRef(int index)
-        {
-            Span<PointMarkerInstance> span = CollectionsMarshal.AsSpan(_cachedPointMarkerVertices);
-            if ((uint)index >= (uint)span.Length)
-            {
-                throw new ArgumentOutOfRangeException(nameof(index), "Index is out of range.");
-            }
-
-            return ref span[index];
         }
 
         public void UpdateHitTestableObjectTree()

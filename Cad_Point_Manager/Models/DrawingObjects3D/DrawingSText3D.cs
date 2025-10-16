@@ -145,11 +145,11 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             return adjustedPos;
         }
  
-        public override void UpdateTextVertices(ResCache resCache, uint layerId)
+        public override void UpdateTextVertices(ResCache resCache, uint layerId, uint objectId)
         {
             GetTextFormat(resCache.WriteFactory);
             GetTextLayout(resCache.WriteFactory);
-            Tesselate(resCache, layerId);
+            Tesselate(resCache, layerId, objectId);
         }
         public override void MouseEnter()
         {
@@ -263,18 +263,17 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             TextLayout = new(factory, Text, _textFormat, (float)Bounds.Width, (float)Bounds.Height, 96, true);
         }
 
-        public void Tesselate(ResCache resCache, uint layerId)
+        public void Tesselate(ResCache resCache, uint layerId, uint objectId)
         {
             UpdateFontFace(resCache);
 
-            //(TransformedGeometry geometry, RawRectangleF bounds) = TextRenderingHelpers.CreateTextGeometry(resCache, Text, TextLayout, fontSizeScaleFactor, TextHeight, _fontFace, _flatteningTolerance);
             (List<Vector2> vertices, RawRectangleF bounds) = TextRenderingHelpers.TesselateTextLayout(resCache, TextLayout, Text, _fontFace);
 
-            TextVertices = GetVertices(vertices, layerId);
+            TextVertices = GetVertices(vertices, layerId, objectId);
             UpdateBounds();
         }
 
-        public List<TextVertex> GetVertices(List<Vector2> vertices, uint layerId)
+        public List<TextVertex> GetVertices(List<Vector2> vertices, uint layerId, uint objectId)
         {
             List<TextVertex> textVertices = [];
             Matrix translationTransform = Matrix.Translation((float)Transform.OffsetX, (float)Transform.OffsetY, 0);
@@ -286,11 +285,11 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                 var v3 = vertices[i + 2];
 
                 var scaledVector1 = Vector2.TransformCoordinate(v1, translationTransform);
-                TextVertex textVertex1 = new(new Vector3(scaledVector1.X, scaledVector1.Y, 0), layerId, isMouseOver: 0, isSelected: 0);
+                TextVertex textVertex1 = new(new Vector3(scaledVector1.X, scaledVector1.Y, 0), layerId, objectId, isMouseOver: 0, isSelected: 0);
                 var scaledVector2 = Vector2.TransformCoordinate(v2, translationTransform);
-                TextVertex textVertex2 = new(new Vector3(scaledVector2.X, scaledVector2.Y, 0), layerId, isMouseOver: 0, isSelected: 0);
+                TextVertex textVertex2 = new(new Vector3(scaledVector2.X, scaledVector2.Y, 0), layerId, objectId, isMouseOver: 0, isSelected: 0);
                 var scaledVector3 = Vector2.TransformCoordinate(v3, translationTransform);
-                TextVertex textVertex3 = new(new Vector3(scaledVector3.X, scaledVector3.Y, 0), layerId, isMouseOver: 0, isSelected: 0);
+                TextVertex textVertex3 = new(new Vector3(scaledVector3.X, scaledVector3.Y, 0), layerId, objectId, isMouseOver: 0, isSelected: 0);
 
                 textVertices.AddRange([textVertex1, textVertex2, textVertex3]);
             }

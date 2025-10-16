@@ -4,6 +4,7 @@ using SharpDX.DirectWrite;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Windows.Media;
+using Color = System.Windows.Media.Color;
 
 namespace Cad_Point_Manager.Models.PointRendering
 {
@@ -13,7 +14,7 @@ namespace Cad_Point_Manager.Models.PointRendering
         public readonly ContainerVisual VisualContainer = new();
 
         private string _name;
-        private Vector4 _color = new(0, 0, 0, 1);
+        private Color _color = Colors.Black;
         private bool _isVisible = true;
         private ObservableCollection<CogoPoint> _points = [];
         private CogoPointManager _cogoPointManager;
@@ -33,7 +34,7 @@ namespace Cad_Point_Manager.Models.PointRendering
                 }
             }
         }
-        public Vector4 Color
+        public Color Color
         {
             get => _color;
             set
@@ -100,7 +101,7 @@ namespace Cad_Point_Manager.Models.PointRendering
         #endregion
 
         #region Constructors
-        public PointGroup(string name, Vector4 color, CogoPointManager cogoPointManager, double pointScale)
+        public PointGroup(string name, Color color, CogoPointManager cogoPointManager, double pointScale)
         {
             Name = name;
             Color = color;

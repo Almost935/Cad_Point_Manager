@@ -30,6 +30,7 @@ struct VSInput
 {
     float3 Position : POSITION;
     uint LayerId : LAYERID; // Layer index for indirection
+    uint ObjectId : OBJECTID; // Object index for indirection
     float IsMouseOver : ISMOUSEOVER;
     float IsSelected : ISSELECTED;
 };
@@ -43,13 +44,25 @@ struct PSInput
 struct LayerState
 {
     float4 Color;
-    uint Flags;
+    uint Flags; // bit0: visible, bit1: selected, bit2: mouseOver
     float3 Pad;
+};
+struct ObjectState
+{
+    uint Flags; // bit0: visible, bit1: selected, bit2: mouseOver, bit3: colorByLayer
+    float3 Pad;
+    float4 Color;
 };
 
 StructuredBuffer<LayerState> LayerStates : register(t0);
+StructuredBuffer<ObjectState> ObjectStates : register(t1);
 
 static const uint LAYER_VISIBLE = 1u << 0;
+
+static const uint OBJ_VISIBLE = 1u << 0;
+static const uint OBJ_SELECTED = 1u << 1;
+static const uint OBJ_MOUSEOVER = 1u << 2;
+static const uint OBJ_COLOR_BY_LAYER = 1u << 3;
 
 // Replace per-vertex snapping with a uniform NDC delta computed once
 float2 ComputeSnapDeltaNdc(float2 viewportSize)
@@ -74,12 +87,23 @@ PSInput VSMain(VSInput input)
     float4 clip = mul(float4(input.Position, 1.0), transformationMatrix);
     
     LayerState ls = LayerStates[input.LayerId];
+    ObjectState os = ObjectStates[input.ObjectId];
+    
     float visLayer = ((ls.Flags & LAYER_VISIBLE) != 0u) ? 1.0f : 0.0f;
+    float visObject = ((os.Flags & OBJ_VISIBLE) != 0u) ? 1.0f : 0.0f;
+    float colorByLayer = ((os.Flags & OBJ_COLOR_BY_LAYER) != 0u) ? 1.0f : 0.0f;
 
     // colors (unchanged)
-    float4 col = ls.Color;
-    if (input.IsMouseOver > 0.5)
-        col = GetSnappedColor(col);
+    float4 col;
+    if (colorByLayer < 0.5)
+    {
+        col = os.Color;
+    }
+    else
+    {
+        col = ls.Color;
+    }
+
     if (input.IsSelected > 0.5)
         col = (input.IsMouseOver > 0.5) ? selectedMouseOverColor : selectedColor;
     if (!visLayer)

@@ -33,10 +33,10 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         #endregion
 
         #region Methods
-        public override void UpdateVertices(uint layerId)
+        public override void UpdateVertices(uint layerId, uint objectId)
         {
-            LineVertex startVertex = new(Start, layerId);
-            LineVertex endVertex = new(End, layerId);
+            LineVertex startVertex = new(Start, layerId, objectId);
+            LineVertex endVertex = new(End, layerId, objectId);
             Vertices = new[] { startVertex, endVertex };
         }
         public override void UpdateData()

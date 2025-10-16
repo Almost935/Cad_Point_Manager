@@ -52,7 +52,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public Vector4 SelectedColor;
     }
 
-
     [StructLayout(LayoutKind.Sequential)]
     public struct GlyphVertexDU
     {
@@ -83,7 +82,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
     public struct LabelState
     {
         public Vector2 Offset; // world-space drag delta
-        public uint Flags;  // bit0: visible, bit1: selected, bit2: mouseOver
+        public uint Flags;  // bit0: visible
         public float Pad;    // keep 16B stride
     }
 
@@ -152,7 +151,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public float Feather;       // world feather
         private float _padding;    // pad to 16B
     }
-
     [StructLayout(LayoutKind.Sequential)]
     readonly struct AnchorDraw   // for CPU hit-test & mapping
     {
@@ -167,8 +165,15 @@ namespace Cad_Point_Manager.Controls.D3DControl
     public struct LayerState
     {
         public Vector4 Color; // rgba
-        public uint Flags; // bit0: visible bit1: selected, bit2: mouseOver
+        public uint Flags; // bit0: visible 
         public Vector3 Pad;   // 16B stride
+    }
+    [StructLayout(LayoutKind.Sequential)]
+    public struct ObjectState
+    {
+        public uint Flags; // bit0: visible bit1: selected, bit2: mouseOver, bit3: colorByLayer        
+        public Vector3 Pad;   // 16B stride
+        public Vector4 Color;
     }
     [StructLayout(LayoutKind.Sequential)]
     public struct CircleVertex(Vector3 position, Vector4 color, float radius, float isVisible = 1.0f, float isMouseOver = 0, float isSelected = 0)
@@ -219,22 +224,12 @@ namespace Cad_Point_Manager.Controls.D3DControl
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct LineVertex(Vector3 position, uint layerId, float isMouseOver = 0, float isSelected = 0)
+    public struct LineVertex(Vector3 position, uint layerId, uint objectId)
     {
         public Vector3 Position = position;
         public uint LayerId = layerId;   // Layer index
-        public float IsMouseOver = isMouseOver;
-        public float IsSelected = isSelected;
-
-        public void SetIsMouseOver(bool isMouseOver)
-        {
-            IsMouseOver = isMouseOver ? 1 : 0;
-        }
-
-        public void SetIsSelected(bool isSelected)
-        {
-            IsSelected = isSelected ? 1 : 0;
-        }
+        public uint ObjectId = objectId;  // Object index
+        private Vector3 _padding; // Padding to ensure the structure is 16-byte aligned
     }
     [StructLayout(LayoutKind.Sequential)]
     public struct LineSettingsBuffer
@@ -253,26 +248,28 @@ namespace Cad_Point_Manager.Controls.D3DControl
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct TextVertex(Vector3 position, uint layerId, float isMouseOver = 0, float isSelected = 0)
+    public struct TextVertex(Vector3 position, uint layerId, uint objectId, float isMouseOver = 0, float isSelected = 0)
     {
         public Vector3 Position { get; set; } = position;
-        public uint LayerId { get; set; } = layerId;   // Layer index   
+        public uint LayerId { get; set; } = layerId;   // Layer index
+        public uint ObjectId { get; set; } = objectId; // Object index
         public float IsMouseOver { get; set; } = isMouseOver;
         public float IsSelected { get; set; } = isSelected;
+        private Vector2 _padding; // Padding to ensure the structure is 16-byte aligned
 
         public readonly TextVertex Translate(Vector3 offset)
         {
-            return new TextVertex(Position + offset, LayerId,
+            return new TextVertex(Position + offset, LayerId, ObjectId,
                 isMouseOver: IsMouseOver, isSelected: IsSelected);
         }
         public readonly TextVertex Translate(Vector2 offset)
         {
-            return new TextVertex(new Vector3(Position.X + offset.X, Position.Y + offset.Y, Position.Z), LayerId,
+            return new TextVertex(new Vector3(Position.X + offset.X, Position.Y + offset.Y, Position.Z), LayerId, ObjectId, 
                 isMouseOver: IsMouseOver, isSelected: IsSelected);
         }
         public readonly TextVertex Translate(float x, float y, float z)
         {
-            return new TextVertex(new Vector3(Position.X + x, Position.Y + y, Position.Z + z), LayerId,
+            return new TextVertex(new Vector3(Position.X + x, Position.Y + y, Position.Z + z), LayerId, ObjectId,
                 isMouseOver: IsMouseOver, isSelected: IsSelected);
         }
         public void Transform(Matrix transform)
@@ -292,7 +289,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             float rotatedY = sin * dx + cos * dy + basePoint.Y;
 
             return new TextVertex(new Vector3(rotatedX, rotatedY, textVertex.Position.Z), layerId: textVertex.LayerId,
-                isMouseOver: textVertex.IsMouseOver, isSelected: textVertex.IsSelected);
+                objectId: textVertex.ObjectId, isMouseOver: textVertex.IsMouseOver, isSelected: textVertex.IsSelected);
         }
 
         public void SetIsMouseOver(bool isMouseOver)

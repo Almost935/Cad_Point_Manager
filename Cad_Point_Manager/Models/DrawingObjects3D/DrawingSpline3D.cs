@@ -43,9 +43,9 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             }
         }
 
-        public override void UpdateVertices(uint layerId)
+        public override void UpdateVertices(uint layerId, uint objectId)
         {
-            PolylineApproximation.UpdateVertices(layerId);
+            PolylineApproximation.UpdateVertices(layerId, objectId);
             Vertices = PolylineApproximation.Vertices;
         }
 

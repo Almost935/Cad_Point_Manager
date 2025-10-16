@@ -15,6 +15,8 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         public DrawingObject3dColorType DrawingObject3DColorType { get; set; }
         public bool IsPartOfBlock { get; set; } = false;
         public DrawingBlock3D DrawingBlock3D { get; set; }
+        
+        public bool ColorByLayer => EntityObject.Color.IsByLayer;
         #endregion
 
         #region Methods

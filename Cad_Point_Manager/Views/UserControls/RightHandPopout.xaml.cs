@@ -14,6 +14,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Threading;
+using Color = System.Windows.Media.Color;
 using TextBox = System.Windows.Controls.TextBox;
 
 namespace Cad_Point_Manager.Views.UserControls
@@ -36,7 +37,7 @@ namespace Cad_Point_Manager.Views.UserControls
         private double _pointGroupListOpacity = 0;
         private bool _pointGroupListColorPickerOpen = false;
         private string _newPointGroupName = "";
-        private Vector4 _newPointGroupColor = new(0, 0, 0, 1);
+        private Color _newPointGroupColor = Colors.Black;
         private double _newPointGroupScale = 1;
         private bool _newPointColorPickerToggleOpen = false;
         private ICollectionView _availableMergePointGroups;
@@ -114,7 +115,7 @@ namespace Cad_Point_Manager.Views.UserControls
                 OnPropertyChanged(nameof(NewPointGroupName));
             }
         }
-        public Vector4 NewPointGroupColor
+        public Color NewPointGroupColor
         {
             get { return _newPointGroupColor; }
             set
@@ -317,22 +318,12 @@ namespace Cad_Point_Manager.Views.UserControls
             {
                 layer.IsVisible = true;
             }
-            if (CadManager is not null)
-            {
-                CadManager.LineVerticesDirty = true;
-                CadManager.TextVerticesDirty = true;
-            }
         }
         private void LayerCheckBox_Unchecked(object sender, RoutedEventArgs e)
         {
             foreach (var layer in _selectedLayers)
             {
                 layer.IsVisible = false;
-            }
-            if (CadManager is not null)
-            {
-                CadManager.LineVerticesDirty = true;
-                CadManager.TextVerticesDirty = true;
             }
         }
         private void LayersBorder_MouseEnter(object sender, MouseEventArgs e)
@@ -454,7 +445,6 @@ namespace Cad_Point_Manager.Views.UserControls
             }
         }
 
-
         // Point Group Scale
         private void PointGroupScaleBorder_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
@@ -496,18 +486,6 @@ namespace Cad_Point_Manager.Views.UserControls
         {
             if (sender is TextBox textBox && textBox.DataContext is KeyValuePair<string, PointGroup> keyValuePair)
             {
-                //var pg = keyValuePair.Value;
-                //e.Handled = true;
-
-                //if (_pointGroupBeingEdited)
-                //{
-                //    pg.Name = _previousPointGroupName;
-                //    var binding = textBox.GetBindingExpression(TextBox.TextProperty);
-                //    binding?.UpdateTarget();
-                //    _pointGroupBeingEdited = false;
-                //}
-                //textBox.IsReadOnly = true;
-
                 e.Handled = true;
 
                 var pg = keyValuePair.Value;
@@ -533,7 +511,6 @@ namespace Cad_Point_Manager.Views.UserControls
                     textBox.IsReadOnly = true;
                     _pointGroupBeingEdited = false;
                     CadManager.UpdateHitTestableObjectTree();
-                    CadManager.LineVerticesDirty = true;
                 }
             }
         }
@@ -680,7 +657,7 @@ namespace Cad_Point_Manager.Views.UserControls
 
             string name = NewPointGroupName.Trim();
             double scale = NewPointGroupScale;
-            Vector4 color = NewPointGroupColor;
+            Color color = NewPointGroupColor;
 
             bool nameHasError = !CadManager.CogoPointManager.IsValidPointGroupName(NewPointGroupName, out string errorMessage);
             bool scaleHasError = ValidatePointGroupScale();
@@ -780,11 +757,9 @@ namespace Cad_Point_Manager.Views.UserControls
             if (colorpicker is not null)
             {
                 var color = colorpicker.SelectedColor;
-                Debug.WriteLine($"\n");
                 foreach (var pg in _selectedPointGroups)
                 {
-                    Debug.WriteLine($"Changing color of point group {pg.Name} to {color}");
-                    pg.Color = new Vector4(color.R / 255f, color.G / 255f, color.B / 255f, 1.0f);
+                    pg.Color = color;
                 }
             }
         }

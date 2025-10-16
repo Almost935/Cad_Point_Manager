@@ -59,11 +59,11 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         #endregion
 
         #region Methods
-        public override void UpdateTextVertices(ResCache resCache, uint layerId)
+        public override void UpdateTextVertices(ResCache resCache, uint layerId, uint objectId)
         {
             if (DxfMtext is null) { return; }
 
-            UpdateMtextBlock(resCache, layerId);
+            UpdateMtextBlock(resCache, layerId, objectId);
             MtextBlock.SetTextPositions();
             MtextBlock.GetTextBox(MtextBlock.Height);
             SetRotation();
@@ -224,7 +224,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
 
             return textVertices;
         }
-        public void UpdateMtextBlock(ResCache resCache, uint layerId)
+        public void UpdateMtextBlock(ResCache resCache, uint layerId, uint objectId)
         {
             //MtextBlock??= new((float)MaxWidth, Position, DxfMtext.AttachmentPoint, Rotation);
             MtextBlock?.Dispose();
@@ -239,9 +239,9 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                 foreach (var text in segmentTexts)
                 {
                     TextSegmentInformation segmentInfo = new(text, Color, FontFamilyName, DxfMtext.Height, IsBold, IsItalic, false, false, false, false, Enums.TextAlignment.Left);
-                    var textSegment = CreateMtextSegment(segmentInfo, resCache, layerId);
+                    var textSegment = CreateMtextSegment(segmentInfo, resCache, layerId, objectId);
                     textSegment.GetTextLayout(resCache.WriteFactory);
-                    textSegment.Tesselate(resCache, layerId);
+                    textSegment.Tesselate(resCache, layerId, objectId);
                     MtextBlock.AddSegment(textSegment);
                 }
                 return;
@@ -421,14 +421,14 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                             var newSegmentInfo = new TextSegmentInformation(segmentText, segmentInfo.Color, segmentInfo.Font, segmentInfo.TextHeight,
                                 segmentInfo.IsBold, segmentInfo.IsItalic, segmentInfo.IsUnderlined, segmentInfo.IsOverstriked, segmentInfo.IsStrikethrough,
                                 isNewLine, segmentInfo.TextAlignment);
-                            var newSegment = CreateMtextSegment(newSegmentInfo, resCache, layerId);
+                            var newSegment = CreateMtextSegment(newSegmentInfo, resCache, layerId, objectId);
                             MtextBlock.AddSegment(newSegment);
                         }
                     }
                     else
                     {
-                        var segment = CreateMtextSegment(segmentInfo, resCache, layerId);
-                        MtextBlock.AddSegment(segment); 
+                        var segment = CreateMtextSegment(segmentInfo, resCache, layerId, objectId);
+                        MtextBlock.AddSegment(segment);
                     }
                 }
             }
@@ -451,12 +451,12 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             //    TextVertices[i] = TextVertex.RotateAroundPoint(TextVertices[i], new Vector2(Position.X, Position.Y), (float)(MathHelper.DegToRad * Rotation));
             //}
         }
-        private DrawingMtextSegment3D CreateMtextSegment(TextSegmentInformation segmentInfo, ResCache resCache, uint layerId)
+        private DrawingMtextSegment3D CreateMtextSegment(TextSegmentInformation segmentInfo, ResCache resCache, uint layerId, uint objectId)
         {
             DrawingMtextSegment3D segment = new(this, segmentInfo.Text, segmentInfo.Color, Vector3.Zero, 0, (float)segmentInfo.TextHeight, segmentInfo.Font,
                 segmentInfo.IsItalic, segmentInfo.IsBold, segmentInfo.IsUnderlined, segmentInfo.IsStrikethrough, segmentInfo.IsNewLine, _fontRenderingMinimumSize, 0, segmentInfo.TextAlignment);
             segment.GetTextLayout(resCache.WriteFactory);
-            segment.Tesselate(resCache, layerId);
+            segment.Tesselate(resCache, layerId, objectId);
 
             return segment;
         }

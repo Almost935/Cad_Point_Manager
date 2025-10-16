@@ -21,7 +21,7 @@ cbuffer ViewportBuffer : register(b2)
 struct LabelState
 {
     float2 Offset; // world-space drag delta
-    uint Flags; // bit0: visible, bit1: selected, bit2: mouseOver
+    uint Flags; // bit0: visible
     float _padLS; // keep 16B stride
 };
 struct PointState
@@ -109,7 +109,13 @@ VSOut VSMain(VSInPerVertex v, VSInPerInstance inst)
 
     // --- Position math ---
     // Apply label drag offset and group scale
-    float2 originWorld = inst.OriginWorld + ls.Offset + ps.Offset;
+    float x = inst.OriginWorld.x + (ls.Offset.x) + ps.Offset.x;
+    float y = inst.OriginWorld.y + (ls.Offset.y * gs.Scale) + ps.Offset.y;
+    float2 originWorld = float2(x, y);
+    
+    //float2 originWorld = inst.OriginWorld + (ls.Offset + ps.Offset) * gs.Scale;
+    //float2 originWorld = inst.OriginWorld + ps.Offset + (ls.Offset * gs.Scale);
+    
     float duToWorld = inst.DuToWorld * gs.Scale;
 
     // Convert DU -> world, apply pen advance on X, optional Y sign flip
@@ -143,6 +149,8 @@ float4 PSMain(VSOut i) : SV_Target
 {
     // Hard-clip invisible glyphs early
     if (i.Visible < 0.5f)
+    {
         clip(-1);
+    }
     return i.Color; // premultiplied alpha recommended
 }

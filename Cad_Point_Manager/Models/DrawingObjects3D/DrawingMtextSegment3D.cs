@@ -87,13 +87,13 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             SpaceWidth = TextHeight * GlobalHelperProperties.TextHeightToSpaceWidthFactor;
         }
 
-        public void Tesselate(ResCache resCache, uint layerId)
+        public void Tesselate(ResCache resCache, uint layerId, uint objectId)
         {
             UpdateFontFace(resCache);
 
             (List<Vector2> vertices, RawRectangleF bounds) = TextRenderingHelpers.TesselateTextLayout(resCache, TextLayout, Text, _fontFace);
             UpdateBounds(bounds);
-            TextVertices = GetVertices(vertices, layerId);
+            TextVertices = GetVertices(vertices, layerId, objectId);
         }
 
         private void UpdateBounds(RawRectangleF textGeometryBounds)
@@ -134,7 +134,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             return matrix;
         }
 
-        public TextVertex[] GetVertices(List<Vector2> vertices, uint layerId)
+        public TextVertex[] GetVertices(List<Vector2> vertices, uint layerId, uint objectId)
         {
             List<TextVertex> textVertices = [];
 
@@ -144,9 +144,9 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                 var v2 = vertices[i + 1];
                 var v3 = vertices[i + 2];
 
-                TextVertex textVertex1 = new(new Vector3(v1.X, v1.Y, 0), layerId, isMouseOver: 0, isSelected: 0);
-                TextVertex textVertex2 = new(new Vector3(v2.X, v2.Y, 0), layerId, isMouseOver: 0, isSelected: 0);
-                TextVertex textVertex3 = new(new Vector3(v3.X, v3.Y, 0), layerId, isMouseOver: 0, isSelected: 0);
+                TextVertex textVertex1 = new(new Vector3(v1.X, v1.Y, 0), layerId, objectId, isMouseOver: 0, isSelected: 0);
+                TextVertex textVertex2 = new(new Vector3(v2.X, v2.Y, 0), layerId, objectId, isMouseOver: 0, isSelected: 0);
+                TextVertex textVertex3 = new(new Vector3(v3.X, v3.Y, 0), layerId, objectId, isMouseOver: 0, isSelected: 0);
 
                 textVertices.AddRange([textVertex1, textVertex2, textVertex3]);
             }

@@ -133,7 +133,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             return false;
         }
 
-        public override void UpdateVertices(uint layerId)
+        public override void UpdateVertices(uint layerId, uint objectId)
         {
             if (EntityObject is Polyline2D polyline2D)
             {
@@ -151,7 +151,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
 
                     if (obj is not null)
                     {
-                        obj.UpdateVertices(layerId);
+                        obj.UpdateVertices(layerId, objectId);
                         DrawingSegments.Add(obj);
                     }
                 }
@@ -190,7 +190,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                     var obj = DxfHelpers.GetDrawingSegment3D(e, Layer);
                     if (obj is not null)
                     {
-                        obj.UpdateVertices(layerId);
+                        obj.UpdateVertices(layerId, objectId);
                         DrawingSegments.Add(obj);
                     }
                 }

@@ -18,8 +18,7 @@ struct VSInput
 {
     float3 Position : POSITION; // 3D position of the vertex
     uint LayerId : LAYERID; // Layer index for indirection
-    float IsMouseOver : ISMOUSEOVER;
-    float IsSelected : ISSELECTED; // Indicates if the vertex is selected (0 or 1)
+    uint ObjectId : OBJECTID; // Object index for indirection
 };
 
 struct GSInput
@@ -34,10 +33,21 @@ struct LayerState
     uint Flags;
     float3 Pad;
 };
+struct ObjectState
+{
+    uint Flags; // bit0: visible, bit1: selected, bit2: mouseOver
+    float3 Pad;
+    float4 Color;
+};
 
 StructuredBuffer<LayerState> LayerStates : register(t0);
+StructuredBuffer<ObjectState> ObjectStates : register(t1);
 
 static const uint LAYER_VISIBLE = 1u << 0;
+
+static const uint OBJ_VISIBLE = 1u << 0;
+static const uint OBJ_SELECTED = 1u << 1;
+static const uint OBJ_MOUSEOVER = 1u << 2;
 
 VSInput VSMain(VSInput input)
 {
@@ -48,10 +58,13 @@ VSInput VSMain(VSInput input)
 void GSMain(line VSInput input[2], inout TriangleStream<GSInput> triStream)
 {
     LayerState ls = LayerStates[input[0].LayerId];
-    float visLayer = ((ls.Flags & LAYER_VISIBLE) != 0u) ? 1.0f : 0.0f;
-    const bool isSelected = (input[0].IsSelected > 0.5) || (input[1].IsSelected > 0.5);
-    const bool isMouseOver = (input[0].IsMouseOver > 0.5) || (input[1].IsMouseOver > 0.5);
+    ObjectState os = ObjectStates[input[0].ObjectId];
 
+    float visLayer = ((ls.Flags & LAYER_VISIBLE) != 0u) ? 1.0f : 0.0f;
+    float visObject = ((os.Flags & OBJ_VISIBLE) != 0u) ? 1.0f : 0.0f;
+    float isSelected = ((os.Flags & OBJ_SELECTED) != 0u) ? 1.0f : 0.0f;
+    float isMouseOver = ((os.Flags & OBJ_MOUSEOVER) != 0u) ? 1.0f : 0.0f;
+    
     if (!visLayer || !isMouseOver)
     {
         return;
@@ -74,7 +87,7 @@ void GSMain(line VSInput input[2], inout TriangleStream<GSInput> triStream)
     float3 p3 = start - offset;
 
     float4 color;
-    if (input[0].IsSelected > 0.5)
+    if (isSelected > 0.5)
     {
         color = float4(selectedMouseOverColor.rgb, 1);
     }

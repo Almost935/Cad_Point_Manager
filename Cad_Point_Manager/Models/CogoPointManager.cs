@@ -7,6 +7,8 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
 using System.Windows;
+using System.Windows.Media;
+using Color = System.Windows.Media.Color;
 using Matrix = System.Windows.Media.Matrix;
 
 namespace Cad_Point_Manager.Models
@@ -16,14 +18,14 @@ namespace Cad_Point_Manager.Models
         #region Fields
         private const string _fontName = "Arial";
 
-        private ObservableCollection<KeyValuePair<string, PointGroup>> _pointGroups = [];
+        private BatchableObservableCollection<KeyValuePair<string, PointGroup>> _pointGroups = [];
         private PointGroup _activePointGroup;
         private CadManager3D _cadManager;
-        private ObservableCollection<CogoPoint> _cogoPoints = [];
+        private BatchableObservableCollection<CogoPoint> _cogoPoints = [];
         #endregion
 
         #region Properties
-        public ObservableCollection<KeyValuePair<string, PointGroup>> PointGroups
+        public BatchableObservableCollection<KeyValuePair<string, PointGroup>> PointGroups
         {
             get => _pointGroups;
             private set
@@ -56,7 +58,7 @@ namespace Cad_Point_Manager.Models
                 }
             }
         }
-        public ObservableCollection<CogoPoint> CogoPoints
+        public BatchableObservableCollection<CogoPoint> CogoPoints
         {
             get => _cogoPoints;
             set
@@ -149,7 +151,7 @@ namespace Cad_Point_Manager.Models
             cogoPoint.PointGroup.Points.Add(cogoPoint);
         }
 
-        public bool TryCreatePointGroup(string groupName, Vector4 color, double pointScale, out PointGroup pointGroup)
+        public bool TryCreatePointGroup(string groupName, Color color, double pointScale, out PointGroup pointGroup)
         {
             if (string.IsNullOrWhiteSpace(groupName))
             {

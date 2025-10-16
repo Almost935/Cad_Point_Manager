@@ -1,5 +1,7 @@
-﻿using netDxf.Tables;
+﻿using Cad_Point_Manager.Common.Collections;
+using netDxf.Tables;
 using SharpDX;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
@@ -15,7 +17,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         #region Properties
         public string Name { get; set; }
         public Layer DxfLayer { get; set; }
-        public List<DrawingObject3D> DrawingObject3Ds { get; set; } = [];
+        public BatchableObservableCollection<DrawingObject3D> DrawingObject3Ds { get; set; } = [];
         public List<DrawingSText3D> DrawingText3Ds { get; set; } = [];
 
         public bool IsVisible

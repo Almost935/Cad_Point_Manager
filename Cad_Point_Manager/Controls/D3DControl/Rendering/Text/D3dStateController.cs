@@ -8,12 +8,41 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
 {
     public sealed class D3dStateController
     {
+        #region Fields
         private readonly SceneIdMap _ids;
         private readonly D3dStateBuffers _bufs;
+        private readonly HashSet<uint> _dirtyObjects = [];
         private readonly HashSet<uint> _dirtyGroups = [];
         private readonly HashSet<uint> _dirtyLabels = [];
         private readonly HashSet<uint> _dirtyPoints = [];
         private readonly HashSet<uint> _dirtyLayers = [];
+        #endregion
+
+        #region Constructors
+        public D3dStateController(SceneIdMap ids, D3dStateBuffers bufs)
+        {
+            _ids = ids;
+            _bufs = bufs;
+        }
+        #endregion
+
+        #region Methods
+        public void SetObjectSelected(DrawingObject3D obj, bool selected)
+        {
+            if (!_ids.TryGetObjectId(obj, out var oId)) { return; }
+            ref var s = ref _bufs.ObjectSpan[(int)oId];
+            if (selected) { s.Flags |= (uint)ObjectFlags.Selected; }
+            else { s.Flags &= ~(uint)ObjectFlags.Selected; }
+            _dirtyObjects.Add(oId);
+        }
+        public void SetObjectMouseOver(DrawingObject3D obj, bool mouseOver)
+        {
+            if (!_ids.TryGetObjectId(obj, out var oId)) { return; }
+            ref var s = ref _bufs.ObjectSpan[(int)oId];
+            if (mouseOver) { s.Flags |= (uint)ObjectFlags.MouseOver; }
+            else { s.Flags &= ~(uint)ObjectFlags.MouseOver; }
+            _dirtyObjects.Add(oId);
+        }
 
         public void SetLayerVisibility(ObjectLayer3D layer, bool visible)
         {
@@ -22,19 +51,12 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
             if (visible) ls.Flags |= 1u; else ls.Flags &= ~1u;
             _dirtyLayers.Add(lid);
         }
-
         public void SetLayerColor(ObjectLayer3D layer, Vector4 color)
         {
             if (!_ids.TryGetLayerId(layer, out var lid)) { return; }
             ref var ls = ref _bufs.LayerSpan[(int)lid];
             ls.Color = color;
             _dirtyLayers.Add(lid);
-        }
-
-        public D3dStateController(SceneIdMap ids, D3dStateBuffers bufs)
-        {
-            _ids = ids;
-            _bufs = bufs;
         }
 
         public void SetPointAnchorMouseOver(CogoPoint cp, bool mouseOver)
@@ -82,7 +104,6 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
             if (visible) gs.Flags |= 1u; else gs.Flags &= ~1u;
             _dirtyGroups.Add(gid);
         }
-
         public void SetGroupScaleColor(PointGroup pg, float scale, Vector4 color)
         {
             if (!_ids.TryGetGroupId(pg, out var gid)) { return; }
@@ -90,7 +111,6 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
             gs.Scale = scale; gs.Color = color;
             _dirtyGroups.Add(gid);
         }
-
         public void SetLabelOffsets(CogoPoint cp, Vector2 pointNumOffset, Vector2 elevOffset, Vector2 descrOffset)
         {
             void Set(int line)
@@ -109,6 +129,11 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
             if (!string.IsNullOrEmpty(cp.Description)) Set(2);
         }
 
+        public void FlushObjectUpdates()
+        {
+            _bufs.FlushObjectSubset(_dirtyObjects);
+            _dirtyObjects.Clear();
+        }
         public void FlushGroupUpdates()
         {
             _bufs.FlushGroupSubset(_dirtyGroups);
@@ -119,17 +144,16 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
             _bufs.FlushLayerSubset(_dirtyLayers);
             _dirtyLayers.Clear();
         }
-
         public void FlushPointUpdates()
         {
             _bufs.FlushPointSubset(_dirtyPoints);
             _dirtyPoints.Clear();
         }
-
         public void FlushLabelUpdates()
         {
             _bufs.FlushLabelSubset(_dirtyLabels);
             _dirtyLabels.Clear();
         }
+        #endregion
     }
 }

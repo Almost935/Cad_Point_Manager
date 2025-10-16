@@ -120,39 +120,19 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         public override void MouseEnter()
         {
             this.IsMouseOver = true;
-
-            for (int i = 0; i < LineVertices.Count; i++)
-            {
-                LineVertices[i].SetIsMouseOver(true);
-            }
         }
         public override void MouseLeave()
         {
             this.IsMouseOver = false;
-
-            for (int i = 0; i < LineVertices.Count; i++)
-            {
-                LineVertices[i].SetIsMouseOver(false);
-            }
         }
 
         public override void Select()
         {
             this.IsSelected = true;
-
-            for (int i = 0; i < LineVertices.Count; i++)
-            {
-                LineVertices[i].SetIsSelected(true);
-            }
         }
         public override void Deselect()
         {
             this.IsSelected = false;
-
-            for (int i = 0; i < LineVertices.Count; i++)
-            {
-                LineVertices[i].SetIsSelected(false);
-            }
         }
 
         public override void DrawToD2dDeviceContext(DeviceContext1 deviceContext, Factory2 factory, Brush brush, float thickness, StrokeStyle1 strokeStyle)
@@ -182,7 +162,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             }
         }
 
-        public void UpdateGeometryVertices(uint layerId)
+        public void UpdateGeometryVertices(uint layerId, uint objectId)
         {
             LineVertices.Clear();
 
@@ -190,17 +170,17 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             {
                 if (obj is DrawingBlock3D block)
                 {
-                    block.UpdateGeometryVertices(layerId);
+                    block.UpdateGeometryVertices(layerId, objectId);
                     LineVertices.AddRange(block.LineVertices);
                 }
                 if (obj is DrawingGeometry3D geometry)
                 {
-                    geometry.UpdateVertices(layerId);
+                    geometry.UpdateVertices(layerId, objectId);
                     LineVertices.AddRange(geometry.Vertices);
                 }
             }
         }
-        public void UpdateTextVertices(ResCache resCache, uint layerId)
+        public void UpdateTextVertices(ResCache resCache, uint layerId, uint objectId)
         {
             TextVertices.Clear();
 
@@ -208,17 +188,17 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             {
                 if (obj is DrawingBlock3D block)
                 {
-                    block.UpdateTextVertices(resCache, layerId);
+                    block.UpdateTextVertices(resCache, layerId, objectId);
                     TextVertices.AddRange(block.TextVertices);
                 }
                 if (obj is DrawingSText3D text)
                 {
-                    text.UpdateTextVertices(resCache, layerId);
+                    text.UpdateTextVertices(resCache, layerId, objectId);
                     TextVertices.AddRange(text.TextVertices);
                 }
                 if (obj is DrawingMtext3D mtext)
                 {
-                    mtext.UpdateTextVertices(resCache, layerId);
+                    mtext.UpdateTextVertices(resCache, layerId, objectId);
 
                     foreach (var row in mtext.MtextBlock.Rows)
                     {
