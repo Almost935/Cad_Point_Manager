@@ -6,6 +6,7 @@ using SharpDX;
 using SharpDX.Direct3D;
 using SharpDX.Direct3D11;
 using SharpDX.DXGI;
+using System.Diagnostics;
 using System.Security.AccessControl;
 using Buffer = SharpDX.Direct3D11.Buffer;
 using Device = SharpDX.Direct3D11.Device;
@@ -101,7 +102,7 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
 
             LabelSpan[(int)lId] = new LabelState { Offset = offset, Flags = baseFlags };
         }
-        public void InitializePointState(int count, CogoPoint pg, uint gId)
+        public void InitializePointState(int count, CogoPoint pg, uint pId)
         {
             EnsurePointCapacity(count);
 
@@ -110,7 +111,7 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
             if (pg.IsSelected) { baseFlags |= (uint)CogoPointFlags.Selected; }
             if (pg.IsMouseOver) { baseFlags |= (uint)CogoPointFlags.MouseOver; }
             if (pg.HasLeaderLine) { baseFlags |= (uint)CogoPointFlags.HasLeaderLine; }
-            PointSpan[(int)gId] = new PointState { Flags = baseFlags, Offset = Vector2.Zero, LeaderLineAngle = 0 };
+            PointSpan[(int)pId] = new PointState { Flags = baseFlags, Offset = Vector2.Zero, LeaderLineAngle = 0 };
         }
         public void InitializeGroupState(int count, PointGroup pg, uint gId)
         {
@@ -118,7 +119,13 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
 
             uint baseFlags = 0;
             if (pg.IsVisible) { baseFlags |= (uint)PointGroupFlags.Visible; }
-            GroupSpan[(int)gId] = new GroupState { Color = pg.Color.ToSharpDXVector4(), Scale = (float)pg.PointScale, Flags = baseFlags };
+            GroupSpan[(int)gId] = new GroupState 
+            { 
+                Color = pg.Color.ToSharpDXVector4(), 
+                Scale = (float)pg.PointScale, 
+                Flags = baseFlags, 
+                TextInfoBaseXoffset = pg.PointInfoBaseXoffset 
+            };
         }
         public void InitializeLayerState(int count, ObjectLayer3D layer, uint lId)
         {

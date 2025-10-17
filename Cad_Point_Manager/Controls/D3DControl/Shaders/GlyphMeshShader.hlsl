@@ -36,7 +36,8 @@ struct GroupState
     float4 Color; // rgba
     float Scale; // point-scale
     uint Flags; // bit0: visible
-    float2 _padGS; // keep 16B stride
+    float TextInfoBaseXoffset; // distance between base position and text labels
+    float _padGS; // keep 16B stride
 };
 
 // Bind these to t0/t1 (match your C# SetShaderResource slots)
@@ -109,13 +110,10 @@ VSOut VSMain(VSInPerVertex v, VSInPerInstance inst)
 
     // --- Position math ---
     // Apply label drag offset and group scale. Group scale only applicable to label y offset.
-    float x = inst.OriginWorld.x + ls.Offset.x + ps.Offset.x;
+    float x = inst.OriginWorld.x + ls.Offset.x + gs.TextInfoBaseXoffset + ps.Offset.x;
     float y = inst.OriginWorld.y + (ls.Offset.y * gs.Scale) + ps.Offset.y;
     float2 originWorld = float2(x, y);
-    
-    //float2 originWorld = inst.OriginWorld + (ls.Offset + ps.Offset) * gs.Scale;
-    //float2 originWorld = inst.OriginWorld + ps.Offset + (ls.Offset * gs.Scale);
-    
+
     float duToWorld = inst.DuToWorld * gs.Scale;
 
     // Convert DU -> world, apply pen advance on X, optional Y sign flip

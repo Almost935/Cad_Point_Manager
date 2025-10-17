@@ -92,7 +92,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public Vector2 Offset; // point-scale
         public float LeaderLineAngle; // degrees
         public uint Flags; // bit0: visible bit1: selected, bit2: mouseOver, bit3: hasLeaderLine, bit4: mouseOverAnchor, bit5: anchorPressed
-        public Vector2 Pad;   // 16B stride
+        public Vector2 _pad;   // 16B stride
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -101,7 +101,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public Vector4 Color; // rgba
         public float Scale; // point-scale
         public uint Flags; // bit0: visible
-        public Vector2 Pad;   // 16B stride
+        public float TextInfoBaseXoffset; // world offset from point to base of text (before any drag)
+        public float _pad;   // 16B stride
     }
 
     public struct PointMarkerInstance

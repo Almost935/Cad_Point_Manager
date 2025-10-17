@@ -17,7 +17,8 @@ namespace Cad_Point_Manager.Models.PointRendering
     {
         #region Fields
         private const float _textLineSpacingFactor = 1.0f;
-        private const float _markerToPointScaleFactor = 0.1f;
+        //private const float _markerToPointScaleFactor = 0.1f;
+        private const float _markerToPointScaleFactor = 1f;
         private const float _textBaseHeight = 4;
 
         private volatile CogoPointBoundsSnapshot _cogoPointBounds;
@@ -166,6 +167,11 @@ namespace Cad_Point_Manager.Models.PointRendering
         #endregion
 
         #region Methods
+        public override string ToString()
+        {
+            return $"CogoPoint PointNumber: {PointNumber}";
+        }
+
         public override double DistanceToPoint(Point p)
         {
             if (PointNumberBounds.Contains(p) || ElevationBounds.Contains(p) || DescriptionBounds.Contains(p) || EllipseBounds.Contains(p))
@@ -192,6 +198,7 @@ namespace Cad_Point_Manager.Models.PointRendering
             if (ElevationBounds != Rect.Empty) { Bounds = Rect.Union(Bounds, ElevationBounds); }
             if (DescriptionBounds != Rect.Empty) { Bounds = Rect.Union(Bounds, DescriptionBounds); }
         }
+
         public bool CogoPointIntersectsRect(Rect rect)
         {
             if (rect.IsEmpty) { return false; }
@@ -253,9 +260,9 @@ namespace Cad_Point_Manager.Models.PointRendering
             HasLeaderLine = false;
             //TextInfoBasePosition = new(Position.X.ToFloat() + TextInfoBaseOffset_X, Position.Y.ToFloat());
             TextInfoBasePosition = new(Position.X.ToFloat(), Position.Y.ToFloat());
-            DescriptionOffset = new(TextInfoBaseOffset_X, BaseDescriptionOffset_Y);
-            ElevationOffset = new(TextInfoBaseOffset_X, BaseElevationOffset_Y);
-            PointNumberOffset = new(TextInfoBaseOffset_X, BasePointNumberOffset_Y);
+            DescriptionOffset = new(0, BaseDescriptionOffset_Y);
+            ElevationOffset = new(0, BaseElevationOffset_Y);
+            PointNumberOffset = new(0, BasePointNumberOffset_Y);
         }
 
         protected override void OnPropertyChanged(string propertyName)

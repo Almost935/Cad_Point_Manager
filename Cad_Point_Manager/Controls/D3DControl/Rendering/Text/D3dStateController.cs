@@ -3,6 +3,7 @@ using Cad_Point_Manager.Models.DrawingObjects3D;
 using Cad_Point_Manager.Models.PointRendering;
 using SharpDX;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
 {
@@ -104,13 +105,14 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
             if (visible) gs.Flags |= 1u; else gs.Flags &= ~1u;
             _dirtyGroups.Add(gid);
         }
-        public void SetGroupScaleColor(PointGroup pg, float scale, Vector4 color)
+        public void SetGroupScaleColorBaseOffset(PointGroup pg, float scale, Vector4 color, float baseXoffset)
         {
             if (!_ids.TryGetGroupId(pg, out var gid)) { return; }
             ref var gs = ref _bufs.GroupSpan[(int)gid];
-            gs.Scale = scale; gs.Color = color;
+            gs.Scale = scale; gs.Color = color; gs.TextInfoBaseXoffset = baseXoffset;
             _dirtyGroups.Add(gid);
         }
+
         public void SetLabelOffsets(CogoPoint cp, Vector2 pointNumOffset, Vector2 elevOffset, Vector2 descrOffset)
         {
             void Set(int line)

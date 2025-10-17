@@ -44,10 +44,11 @@ struct PointState
 };
 struct GroupState
 {
-    float4 Color;
-    float Scale;
-    uint Flags;
-    float2 Pad;
+    float4 Color; // rgba
+    float Scale; // point-scale
+    uint Flags; // bit0: visible
+    float TextInfoBaseXoffset; // distance between base position and text labels
+    float _padGS; // keep 16B stride
 };
 
 StructuredBuffer<PointState> PointSRV : register(t0);

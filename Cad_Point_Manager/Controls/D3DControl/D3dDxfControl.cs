@@ -865,7 +865,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     uint idElev = _ids.GetOrAddLabelId(p, 1);
                     uint idDesc = p.HasDescription ? _ids.GetOrAddLabelId(p, 2) : 0xFFFFFFFF;
 
-                    p.PointNumberBounds = AddLineAndGetRect(
+                    AddCogoTextLabelLine(
                         s: p.PointNumber.ToString(),
                         originWorld: p.TextInfoBasePosition,
                         lineOffset: p.PointNumberOffset,
@@ -874,8 +874,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                         color: color,
                         isVisible: isGroupVisible, isMouseOver: isMO, isSelected: isSel, ySign: ySign,
                         labelId: idPN, groupId: gId, pointId: pId);
-
-                    p.ElevationBounds = AddLineAndGetRect(
+                    AddCogoTextLabelLine(
                         s: p.Elevation.ToString("F3"),
                         originWorld: p.TextInfoBasePosition,
                         lineOffset: p.ElevationOffset,
@@ -884,10 +883,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
                         color: color,
                         isVisible: isGroupVisible, isMouseOver: isMO, isSelected: isSel, ySign: ySign,
                         labelId: idElev, groupId: gId, pointId: pId);
-
                     if (p.HasDescription)
                     {
-                        p.DescriptionBounds = AddLineAndGetRect(
+                        AddCogoTextLabelLine(
                             s: p.Description,
                             originWorld: p.TextInfoBasePosition,
                             lineOffset: p.DescriptionOffset,
@@ -896,9 +894,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
                             color: color,
                             isVisible: isGroupVisible, isMouseOver: isMO, isSelected: isSel, ySign: ySign,
                             labelId: idDesc, groupId: gId, pointId: pId);
-
-                        RecomputeCogoPointBoundsFast(p);
                     }
+                    RecomputeCogoPointBoundsFast(p);
 
                     float wupp = Camera.GetWorldUnitsPerPixel();
                     float rW = (float)(GlobalHelperProperties.CogoPointCirclePixelRadius * wupp * p.PointGroup.PointScale);
@@ -1636,12 +1633,12 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _dxfDirty = true;
         }
 
-        private Rect AddLineAndGetRect(string s, Vector2 originWorld, float duToWorldBase,
+        private void AddCogoTextLabelLine(string s, Vector2 originWorld, float duToWorldBase,
             float duToWorld, Vector4 color, float isVisible, float isMouseOver,
             float isSelected, float ySign, uint labelId, uint groupId, uint pointId,
             Vector2 lineOffset)
         {
-            if (string.IsNullOrEmpty(s)) { return Rect.Empty; }
+            if (string.IsNullOrEmpty(s)) { return; }
 
             Span<int> cps = stackalloc int[s.Length];
             for (int i = 0; i < s.Length; i++) { cps[i] = s[i]; }
@@ -1671,7 +1668,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             }
 
             float widthWorld = penDU * duToWorld;
-            return ComputeLineRect(originWorld + lineOffset, widthWorld, duToWorld, ySign);
+            //return ComputeLineRect(originWorld + lineOffset, widthWorld, duToWorld, ySign);
         }
 
         private void RecomputeCogoPointBoundsFast(CogoPoint p)
@@ -1685,14 +1682,17 @@ namespace Cad_Point_Manager.Controls.D3DControl
             var baseOrigin = p.TextInfoBasePosition + p.TextInfoOffset;
 
             p.PointNumberBounds = MeasureLineRectFast(
-                p.PointNumber.ToString(), baseOrigin, p.PointNumberOffset, duToWorldBase, duToWorld, ySign, p.PointGroup.PointScale.ToFloat());
+                p.PointNumber.ToString(), baseOrigin, p.PointNumberOffset, pg.PointInfoBaseXoffset,
+                duToWorldBase, duToWorld, ySign, p.PointGroup.PointScale.ToFloat());
 
             p.ElevationBounds = MeasureLineRectFast(
-                p.Elevation.ToString("F3"), baseOrigin, p.ElevationOffset, duToWorldBase, duToWorld, ySign, p.PointGroup.PointScale.ToFloat());
+                p.Elevation.ToString("F3"), baseOrigin, p.ElevationOffset, pg.PointInfoBaseXoffset,
+                duToWorldBase, duToWorld, ySign, p.PointGroup.PointScale.ToFloat());
 
             if (p.HasDescription)
                 p.DescriptionBounds = MeasureLineRectFast(
-                    p.Description, baseOrigin, p.DescriptionOffset, duToWorldBase, duToWorld, ySign, p.PointGroup.PointScale.ToFloat());
+                    p.Description, baseOrigin, p.DescriptionOffset, pg.PointInfoBaseXoffset,
+                    duToWorldBase, duToWorld, ySign, p.PointGroup.PointScale.ToFloat());
             else
                 p.DescriptionBounds = Rect.Empty;
 
@@ -1708,7 +1708,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _interactiveDirty = true;
             HitTestableObjectTreeDirty = true;
         }
-        private Rect MeasureLineRectFast(string s, Vector2 baseOrigin, Vector2 labelOffset,
+        private Rect MeasureLineRectFast(string s, Vector2 baseOrigin, Vector2 labelOffset, float baseGroupXoffset,
                                         float duToWorldBase, float duToWorld, float ySign, float groupScale)
         {
             if (string.IsNullOrEmpty(s)) return Rect.Empty;
@@ -1728,7 +1728,10 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             // Shader applies origin + ls.Offset (+ ps.Offset) and scales DU by group
             //var originWorld = baseOrigin + labelOffset; // + pointOffset if you start using PointState.Offset
-            var originWorld = baseOrigin + (labelOffset * groupScale);
+            //Vector2 originWorld = baseOrigin + (labelOffset * groupScale);
+            float originX = baseOrigin.X + labelOffset.X + baseGroupXoffset;
+            float originY = baseOrigin.Y + (labelOffset.Y * groupScale);
+            Vector2 originWorld = new(originX, originY);
             float widthWorld = widthDU * duToWorld;     // duToWorld includes group scale
 
             // Reuse your existing height/top computation (cap-height × duToWorld)
@@ -2105,7 +2108,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
             if (point is null) { return; }
 
             bool labelsNeedUpdate = false;
-            if (offset.X < 0 && !point.IsFlipped_Y)
+
+            var centerX_Offset = offset.X + point.TextInfoBaseOffset_X;
+            if (centerX_Offset < 0 && !point.IsFlipped_Y)
             {
                 point.IsFlipped_Y = true;
 
@@ -2116,7 +2121,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 _stateCtl.SetLabelOffsets(point, point.PointNumberOffset, point.ElevationOffset, point.DescriptionOffset);
                 labelsNeedUpdate = true;
             }
-            if (offset.X > 0 && point.IsFlipped_Y)
+            if (centerX_Offset > 0 && point.IsFlipped_Y)
             {
                 point.IsFlipped_Y = false;
 
@@ -2930,13 +2935,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
                     var gId = _ids.GetOrAddGroupId(pg);
                     _stateBufs.InitializeGroupState(_ids.GroupCount, pg, gId);
-
-                    _stateBufs.EnsureGroupCapacity(_ids.GroupCount);
-
-                    ref var gs = ref _stateBufs.GroupSpan[(int)gId];
-                    gs.Color = pg.Color.ToSharpDXVector4();
-                    gs.Scale = (float)pg.PointScale;
-                    gs.Flags = pg.IsVisible ? 1u : 0u;
                 }
             }
             if (e.Action == NotifyCollectionChangedAction.Remove)
@@ -2969,6 +2967,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     _stateBufs.InitializeLabelState(_ids.MaxLabelCount, cp.ElevationOffset, idElev);
                     uint idDesc = _ids.GetOrAddLabelId(cp, 2);
                     _stateBufs.InitializeLabelState(_ids.MaxLabelCount, cp.DescriptionOffset, idDesc);
+
+                    //// Testing for offsets
+                    //Debug.WriteLine($"\nPoint: {cp} TextInfoBaseOffset_X: {cp.TextInfoBaseOffset_X} " +
+                    //    $"\nOffsets: PN: {cp.PointNumberOffset}, Elev: {cp.ElevationOffset}, Desc: {cp.DescriptionOffset}" +
+                    //    $"\nTextInfoBaseOffset_X: {cp.TextInfoBaseOffset_X}");
                 }
             }
             if (e.Action == NotifyCollectionChangedAction.Remove)
@@ -3052,26 +3055,26 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
         private void PointGroup_PropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
-            if (e.PropertyName == nameof(PointGroup.IsVisible))
+            if (sender is PointGroup pg)
             {
-                if (sender is PointGroup pg)
+                if (e.PropertyName == nameof(PointGroup.IsVisible))
                 {
                     _stateCtl.SetGroupVisibility(pg, pg.IsVisible);
                     _stateCtl.FlushGroupUpdates();
                     _dxfDirty = true;
                 }
-            }
-            if (e.PropertyName == nameof(PointGroup.Color) || e.PropertyName == nameof(PointGroup.PointScale))
-            {
-                if (sender is PointGroup pg)
+                if (e.PropertyName == nameof(PointGroup.Color) || e.PropertyName == nameof(PointGroup.PointScale))
                 {
-                    _stateCtl.SetGroupScaleColor(pg, pg.PointScale.ToFloat(), pg.Color.ToSharpDXVector4());
+                    _stateCtl.SetGroupScaleColorBaseOffset(pg, pg.PointScale.ToFloat(), pg.Color.ToSharpDXVector4(), pg.PointInfoBaseXoffset);
                     _stateCtl.FlushGroupUpdates();
                     _dxfDirty = true;
 
-                    foreach (var point in pg.Points)
+                    if (e.PropertyName == nameof(PointGroup.PointScale))
                     {
-                        RecomputeCogoPointBoundsFast(point);
+                        foreach (var point in pg.Points)
+                        {
+                            RecomputeCogoPointBoundsFast(point);
+                        }
                     }
                 }
             }
