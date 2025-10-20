@@ -11,20 +11,15 @@ using netDxf;
 using netDxf.Entities;
 using netDxf.Tables;
 using SharpDX;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Security.Cryptography;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Media;
 using Point = System.Windows.Point;
 using Vector2 = SharpDX.Vector2;
 using Vector3 = SharpDX.Vector3;
-using Vector4 = SharpDX.Vector4;
 
 namespace Cad_Point_Manager.Models
 {
@@ -581,7 +576,7 @@ namespace Cad_Point_Manager.Models
             CogoPointManager.PointGroups.Clear();
 
             float rows = 10;
-            float cols = 50;
+            float cols = 10;
             float yIncrement = Extents.Height.ToFloat() / (rows - 1);
             float xIncrement = Extents.Width.ToFloat() / (cols - 1);
             int pointNum = 1;

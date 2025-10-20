@@ -76,7 +76,7 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
             else { s.Flags &= ~(uint)CogoPointFlags.Selected; }
             _dirtyPoints.Add(pid);
         }
-        public void SetPointOffset(CogoPoint cp, Vector2 offset, bool? hasLeaderLine = null)
+        public void SetPointOffset(CogoPoint cp, Vector2 offset, bool? hasLeaderLine = null, bool? isFlippedY = null, bool? isFlippedX = null)
         {
             if (!_ids.TryGetPointId(cp, out var pid)) { return; }
 
@@ -87,14 +87,16 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
                 if ((bool)hasLeaderLine) { s.Flags |= (uint)CogoPointFlags.HasLeaderLine; }
                 else { s.Flags &= ~(uint)CogoPointFlags.HasLeaderLine; }
             }
-            _dirtyPoints.Add(pid);
-        }
-        public void SetPointLeaderLineAngle(CogoPoint cp, float angle)
-        {
-            if (!_ids.TryGetPointId(cp, out var pid)) { return; }
-
-            ref var s = ref _bufs.PointSpan[(int)pid];
-            s.LeaderLineAngle = angle;
+            if (isFlippedY is not null)
+            {
+                if ((bool)isFlippedY) { s.Flags |= (uint)CogoPointFlags.IsFlippedY; }
+                else { s.Flags &= ~(uint)CogoPointFlags.IsFlippedY; }
+            }
+            if (isFlippedX is not null)
+            {
+                if ((bool)isFlippedX) { s.Flags |= (uint)CogoPointFlags.IsFlippedX; }
+                else { s.Flags &= ~(uint)CogoPointFlags.IsFlippedX; }
+            }
             _dirtyPoints.Add(pid);
         }
 

@@ -38,9 +38,8 @@ struct VSOut
 struct PointState
 {
     float2 Offset; // world-space drag delta
-    float LeaderLineAngle; // degrees
-    uint Flags; // bit0: visible, bit1: selected, bit2: mouseOver, bit3: hasLeaderLine, bit4: mouseOverAnchor, bit5: anchorPressed
-    float2 _padLS; // keep 16B stride
+    uint Flags; // bit0: visible bit1: selected, bit2: mouseOver, bit3: hasLeaderLine, bit4: mouseOverAnchor, bit5: anchorPressed, bit6: isFlippedY, bit7: isFlippedX
+    float _padLS; // keep 16B stride
 };
 struct GroupState
 {
@@ -95,7 +94,8 @@ void GSMain(point VSOut vin[1], inout TriangleStream<GSOut> tri)
 
     // Live endpoint B = BBase + label offset
     float2 aW = i.aWorld;
-    float2 bW = i.bWorld + ps.Offset;
+    //float2 bW = i.bWorld + ps.Offset + gs.TextInfoBaseXoffset;
+    float2 bW = float2(i.bWorld.x + ps.Offset.x, i.bWorld.y + ps.Offset.y);
 
     // Project to CLIP & NDC
     float4 aC = mul(float4(aW, 0, 1), ViewProj);

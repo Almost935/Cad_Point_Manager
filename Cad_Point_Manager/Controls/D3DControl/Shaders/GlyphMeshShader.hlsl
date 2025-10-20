@@ -27,9 +27,8 @@ struct LabelState
 struct PointState
 {
     float2 Offset; // world-space drag delta
-    float LeaderLineAngle; // degrees
-    uint Flags; // bit0: visible, bit1: selected, bit2: mouseOver, bit3: hasLeaderLine, bit4: mouseOverAnchor, bit5: anchorPressed
-    float2 _padLS; // keep 16B stride
+    uint Flags; // bit0: visible bit1: selected, bit2: mouseOver, bit3: hasLeaderLine, bit4: mouseOverAnchor, bit5: anchorPressed, bit6: isFlippedY, bit7: isFlippedX
+    float _padLS; // keep 16B stride
 };
 struct GroupState
 {
@@ -60,7 +59,7 @@ struct VSInPerInstance
     float YSign : YSIGN; // +1 or -1 (flip Y if needed)
     uint LabelId : LABEL_ID; // per text line (PN/Elev/Desc)
     uint GroupId : GROUP_ID; // owning PointGroup
-    uint PointId : POINT_ID; // owning PointGroup
+    uint PointId : POINT_ID;
 };
 
 struct VSOut
@@ -87,6 +86,8 @@ static const uint LABEL_VISIBLE = 1u << 0;
 static const uint POINT_VISIBLE = 1u << 0;
 static const uint POINT_SELECTED = 1u << 1;
 static const uint POINT_MOUSEOVR = 1u << 2;
+static const uint POINT_ISFLIPPEDY = 1u << 6;
+static const uint POINT_ISFLIPPEDX = 1u << 7;
 
 static const uint GROUP_VISIBLE = 1u << 0;
 
@@ -107,10 +108,17 @@ VSOut VSMain(VSInPerVertex v, VSInPerInstance inst)
     // Selection / hover
     float sel = ((ps.Flags & POINT_SELECTED) != 0u) ? 1.0f : 0.0f;
     float mo = ((ps.Flags & POINT_MOUSEOVR) != 0u) ? 1.0f : 0.0f;
-
+    
+    // Flipped axis
+    float isFlippedY = ((ps.Flags & POINT_ISFLIPPEDY) != 0u) ? -1.0f : 1.0f;
+    float isFlippedX = ((ps.Flags & POINT_ISFLIPPEDX) != 0u) ? -1.0f : 1.0f;
+    
+    // Set text info offset sign based on flippedX
+    float textInfoOffset = gs.TextInfoBaseXoffset * isFlippedY;
+    
     // --- Position math ---
     // Apply label drag offset and group scale. Group scale only applicable to label y offset.
-    float x = inst.OriginWorld.x + ls.Offset.x + gs.TextInfoBaseXoffset + ps.Offset.x;
+    float x = inst.OriginWorld.x + ls.Offset.x + textInfoOffset + ps.Offset.x;
     float y = inst.OriginWorld.y + (ls.Offset.y * gs.Scale) + ps.Offset.y;
     float2 originWorld = float2(x, y);
 

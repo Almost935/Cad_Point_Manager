@@ -42,9 +42,8 @@ struct VSOut
 struct PointState
 {
     float2 Offset; // world-space drag delta
-    float LeaderLineAngle; // degrees
-    uint Flags; // bit0: visible, bit1: selected, bit2: mouseOver, bit3: hasLeaderLine, bit4: mouseOverAnchor, bit5: anchorPressed
-    float2 _padLS; // keep 16B stride
+    uint Flags; // bit0: visible bit1: selected, bit2: mouseOver, bit3: hasLeaderLine, bit4: mouseOverAnchor, bit5: anchorPressed, bit6: isFlippedY, bit7: isFlippedX
+    float _padLS; // keep 16B stride
 };
 struct GroupState
 {
@@ -91,10 +90,10 @@ VSOut VSMain(VSQuadIn v, VSInst i)
     o.show = visPt * visGrp * sel;
 
     // Build world position as usual
-    const float2 worldPos = i.center + ps.Offset + v.local * size;
+    float2 worldPos = i.center + ps.Offset + v.local * size;
 
     o.pos = mul(float4(worldPos, 0.0, 1.0), ViewProj);
-    o.uv = v.local * size;
+    o.uv = (v.local * size);
     o.size = size;
     o.rf = cornerRadius;
     o.state = state;

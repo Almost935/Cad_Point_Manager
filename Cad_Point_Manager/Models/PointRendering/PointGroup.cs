@@ -11,8 +11,7 @@ namespace Cad_Point_Manager.Models.PointRendering
     public class PointGroup : INotifyPropertyChanged
     {
         #region Fields
-        //private const float _markerToPointScaleFactor = 0.1f;
-        private const float _markerToPointScaleFactor = 1f;
+        private const float _markerToPointScaleFactor = 0.5f;
 
         private string _name;
         private Color _color = Colors.Black;
@@ -104,7 +103,7 @@ namespace Cad_Point_Manager.Models.PointRendering
                 if (_pointInfoBaseXoffset != value)
                 {
                     _pointInfoBaseXoffset = value;
-                    OnPropertyChanged(nameof(_pointInfoBaseXoffset));
+                    OnPropertyChanged(nameof(PointInfoBaseXoffset));
                 }
             }
         }
@@ -176,7 +175,7 @@ namespace Cad_Point_Manager.Models.PointRendering
             }
         }
 
-        private void UpdatePointInfoBaseXoffset()
+        public void UpdatePointInfoBaseXoffset()
         {
             PointInfoBaseXoffset = (float)(FontBaseSize * PointScale * _markerToPointScaleFactor);
         }
@@ -188,11 +187,6 @@ namespace Cad_Point_Manager.Models.PointRendering
         protected void OnPropertyChanged(string propertyName)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-
-            if (propertyName == nameof(PointScale))
-            {
-                UpdatePointInfoBaseXoffset();
-            }
         }
         #endregion
     }

@@ -226,6 +226,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         // CogoPoint Movement Fields
         private CogoPoint _mouseOverToggleButtonPoint = null;
         private CogoPoint _pressedToggleButtonPoint = null;
+        private bool _cogoPointTextBeingMoved => _pressedToggleButtonPoint is not null;
         #endregion
 
         #region Properties 
@@ -327,7 +328,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             typeof(CadManager3D),
             typeof(D3dDxfControl),
             new PropertyMetadata(null, OnCadManager3DChanged));
-
         public Camera Camera
         {
             get { return (Camera)GetValue(CameraProperty); }
@@ -690,7 +690,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
         private void DrawCogoPointAnchors(DeviceContext ctx)
         {
-            if (_anchorVerticesCount == 0) return;
+            if (_anchorVerticesCount == 0) { return; }
 
             ctx.VertexShader.Set(_toggleVS);
             ctx.PixelShader.Set(_togglePS);
@@ -865,9 +865,10 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     uint idElev = _ids.GetOrAddLabelId(p, 1);
                     uint idDesc = p.HasDescription ? _ids.GetOrAddLabelId(p, 2) : 0xFFFFFFFF;
 
+                    var pos = p.Position.ToSharpDXVector2();
                     AddCogoTextLabelLine(
                         s: p.PointNumber.ToString(),
-                        originWorld: p.TextInfoBasePosition,
+                        originWorld: pos,
                         lineOffset: p.PointNumberOffset,
                         duToWorldBase: duToWorldBase,
                         duToWorld: duToWorld,
@@ -876,7 +877,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                         labelId: idPN, groupId: gId, pointId: pId);
                     AddCogoTextLabelLine(
                         s: p.Elevation.ToString("F3"),
-                        originWorld: p.TextInfoBasePosition,
+                        originWorld: pos,
                         lineOffset: p.ElevationOffset,
                         duToWorldBase: duToWorldBase,
                         duToWorld: duToWorld,
@@ -887,7 +888,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     {
                         AddCogoTextLabelLine(
                             s: p.Description,
-                            originWorld: p.TextInfoBasePosition,
+                            originWorld: pos,
                             lineOffset: p.DescriptionOffset,
                             duToWorldBase: duToWorldBase,
                             duToWorld: duToWorld,
@@ -1048,7 +1049,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             // Cap from DXF extents: a fraction of the drawing short side
             float drawingShort = Math.Min(Camera.Extents.Width, Camera.Extents.Height).ToFloat();
-            float maxHalfWorld = (drawingShort * MaxCogoToggleToDrawingFraction) * 0.5f;
 
             var inst = new List<ToggleAnchorInstance>(SelectedCogoPoints.Count);
             foreach (var keyValue in PointGroups)
@@ -1680,21 +1680,23 @@ namespace Cad_Point_Manager.Controls.D3DControl
             float ySign = -1f;
 
             var baseOrigin = p.TextInfoBasePosition + p.TextInfoOffset;
+            var baseGroupXoffset = p.IsFlippedY ? -pg.PointInfoBaseXoffset : pg.PointInfoBaseXoffset;
 
-            p.PointNumberBounds = MeasureLineRectFast(
-                p.PointNumber.ToString(), baseOrigin, p.PointNumberOffset, pg.PointInfoBaseXoffset,
+            p.PointNumberBounds = MeasureLineRect(
+                p.PointNumber.ToString(), baseOrigin, p.PointNumberOffset, baseGroupXoffset,
                 duToWorldBase, duToWorld, ySign, p.PointGroup.PointScale.ToFloat());
 
-            p.ElevationBounds = MeasureLineRectFast(
-                p.Elevation.ToString("F3"), baseOrigin, p.ElevationOffset, pg.PointInfoBaseXoffset,
+            p.ElevationBounds = MeasureLineRect(
+                p.Elevation.ToString("F3"), baseOrigin, p.ElevationOffset, baseGroupXoffset,
                 duToWorldBase, duToWorld, ySign, p.PointGroup.PointScale.ToFloat());
 
             if (p.HasDescription)
-                p.DescriptionBounds = MeasureLineRectFast(
-                    p.Description, baseOrigin, p.DescriptionOffset, pg.PointInfoBaseXoffset,
+            {
+                p.DescriptionBounds = MeasureLineRect(
+                    p.Description, baseOrigin, p.DescriptionOffset, baseGroupXoffset,
                     duToWorldBase, duToWorld, ySign, p.PointGroup.PointScale.ToFloat());
-            else
-                p.DescriptionBounds = Rect.Empty;
+            }
+            else { p.DescriptionBounds = Rect.Empty; }
 
             // Circle stays pixel-fixed → recompute from WUPP and group scale
             float wupp = Camera.GetWorldUnitsPerPixel();
@@ -1702,13 +1704,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
             var c = p.Position;
             p.EllipseBounds = new Rect(c.X - rW, c.Y - rW, 2 * rW, 2 * rW);
 
-            p.UpdateBounds();
-
-            // Make hover/interaction + hit tree pick up the new rects (no glyph rebuild)
-            _interactiveDirty = true;
-            HitTestableObjectTreeDirty = true;
+            p.UpdateBounds();            
         }
-        private Rect MeasureLineRectFast(string s, Vector2 baseOrigin, Vector2 labelOffset, float baseGroupXoffset,
+        private Rect MeasureLineRect(string s, Vector2 baseOrigin, Vector2 labelOffset, float baseGroupXoffset,
                                         float duToWorldBase, float duToWorld, float ySign, float groupScale)
         {
             if (string.IsNullOrEmpty(s)) return Rect.Empty;
@@ -1727,8 +1725,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             }
 
             // Shader applies origin + ls.Offset (+ ps.Offset) and scales DU by group
-            //var originWorld = baseOrigin + labelOffset; // + pointOffset if you start using PointState.Offset
-            //Vector2 originWorld = baseOrigin + (labelOffset * groupScale);
             float originX = baseOrigin.X + labelOffset.X + baseGroupXoffset;
             float originY = baseOrigin.Y + (labelOffset.Y * groupScale);
             Vector2 originWorld = new(originX, originY);
@@ -1794,12 +1790,14 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _pointerCoords = e.GetPosition(this);
             var currentMousePos = new Vector2((float)_pointerCoords.X, (float)_pointerCoords.Y);
 
-            if (_pressedToggleButtonPoint != null)
+            if (_cogoPointTextBeingMoved)
             {
                 var s = e.GetPosition(this);
                 var w = Camera.ScreenToWorld(new Vector2((float)s.X, (float)s.Y));
 
-                var delta = new Vector2(w.X - _pressedToggleButtonPoint.TextInfoBasePosition.X, w.Y - _pressedToggleButtonPoint.TextInfoBasePosition.Y);
+                var delta = new Vector2(w.X - _pressedToggleButtonPoint.TextInfoBasePosition.X,
+                    w.Y - _pressedToggleButtonPoint.TextInfoBasePosition.Y);
+
                 UpdateCogoPointOffset(_pressedToggleButtonPoint, delta);
 
                 e.Handled = true;
@@ -1893,13 +1891,16 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
         protected override void OnMouseLeftButtonUp(MouseButtonEventArgs e)
         {
-            if (_pressedToggleButtonPoint != null)
+            if (_cogoPointTextBeingMoved)
             {
                 RecomputeCogoPointBoundsFast(_pressedToggleButtonPoint);
-                ResetCogoToggleButtonPress();
+                EndCogoToggleButtonPress();
 
                 if (IsMouseCaptured) { ReleaseMouseCapture(); }
                 e.Handled = true;
+
+                _interactiveDirty = true;
+                HitTestableObjectTreeDirty = true;
                 return;
             }
 
@@ -2004,9 +2005,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
         protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
         {
-            StartDrag(e.GetPosition(this));
+            BeginDrag(e.GetPosition(this));
 
-            if (_mouseOverToggleButtonPoint != null)
+            if (_mouseOverToggleButtonPoint is not null)
             {
                 PressCogoToggleButton(_mouseOverToggleButtonPoint);
                 ResetHoverObjects();
@@ -2014,9 +2015,12 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
                 var s = e.GetPosition(this);
                 var w = Camera.ScreenToWorld(new Vector2((float)s.X, (float)s.Y));
-                var delta = new Vector2(w.X - _pressedToggleButtonPoint.TextInfoBasePosition.X, w.Y - _pressedToggleButtonPoint.TextInfoBasePosition.Y);
+                var delta = new Vector2(w.X - _pressedToggleButtonPoint.TextInfoBasePosition.X,
+                    w.Y - _pressedToggleButtonPoint.TextInfoBasePosition.Y);
                 UpdateCogoPointOffset(_pressedToggleButtonPoint, delta);
                 _pressedToggleButtonPoint.HasLeaderLine = true;
+
+                _hoverVerticesDirty = true;
 
                 CaptureMouse();
                 e.Handled = true;
@@ -2096,34 +2100,54 @@ namespace Cad_Point_Manager.Controls.D3DControl
             {
                 foreach (var p in pg.Value.Points)
                 {
-                    p.ToggleBounds = new(p.TextInfoBasePosition.X + p.TextInfoOffset.X - AnchorWorldHalfSize,
-                                              p.TextInfoBasePosition.Y + p.TextInfoOffset.Y - AnchorWorldHalfSize,
-                                              2 * AnchorWorldHalfSize,
-                                              2 * AnchorWorldHalfSize);
+                    UpdateToggleAnchorBounds(p);
                 }
             }
         }
+        public void UpdateToggleAnchorBounds(CogoPoint point)
+        {
+            if (point is null) { return; }
+            point.ToggleBounds = new(point.TextInfoBasePosition.X + point.TextInfoOffset.X - AnchorWorldHalfSize,
+                point.TextInfoBasePosition.Y + point.TextInfoOffset.Y - AnchorWorldHalfSize,
+                2 * AnchorWorldHalfSize,
+                2 * AnchorWorldHalfSize);
+        }
+
         private void UpdateCogoPointOffset(CogoPoint point, Vector2 offset)
         {
             if (point is null) { return; }
 
+            point.SetTextInfoOffset(offset);
+
+            bool labelsNeedUpdate = SetCogoPointLabelQuadrant(point, offset);
+            if (labelsNeedUpdate) { _stateCtl.FlushLabelUpdates(); }
+
+            _stateCtl.SetPointOffset(point, offset, true, point.IsFlippedY, point.IsFlippedX);
+            _stateCtl.FlushPointUpdates();
+
+            UpdateToggleAnchorBounds(point);
+
+            _interactiveDirty = true;
+            _dxfDirty = true;
+        }
+        private bool SetCogoPointLabelQuadrant(CogoPoint point, Vector2 offset)
+        {
             bool labelsNeedUpdate = false;
 
-            var centerX_Offset = offset.X + point.TextInfoBaseOffset_X;
-            if (centerX_Offset < 0 && !point.IsFlipped_Y)
+            if (offset.X < 0 && !point.IsFlippedY)
             {
-                point.IsFlipped_Y = true;
+                point.IsFlippedY = true;
 
-                point.PointNumberOffset = new(-point.PointNumberBounds.Width.ToFloat() - point.TextInfoBaseOffset_X / 2, point.PointNumberOffset.Y);
-                point.ElevationOffset = new(-point.ElevationBounds.Width.ToFloat() - point.TextInfoBaseOffset_X / 2, point.ElevationOffset.Y);
-                point.DescriptionOffset = new(-point.DescriptionBounds.Width.ToFloat() - point.TextInfoBaseOffset_X / 2, point.DescriptionOffset.Y);
+                point.PointNumberOffset = new(-point.PointNumberBounds.Width.ToFloat(), point.PointNumberOffset.Y);
+                point.ElevationOffset = new(-point.ElevationBounds.Width.ToFloat(), point.ElevationOffset.Y);
+                point.DescriptionOffset = new(-point.DescriptionBounds.Width.ToFloat(), point.DescriptionOffset.Y);
 
                 _stateCtl.SetLabelOffsets(point, point.PointNumberOffset, point.ElevationOffset, point.DescriptionOffset);
                 labelsNeedUpdate = true;
             }
-            if (centerX_Offset > 0 && point.IsFlipped_Y)
+            if (offset.X > 0 && point.IsFlippedY)
             {
-                point.IsFlipped_Y = false;
+                point.IsFlippedY = false;
 
                 point.PointNumberOffset = new(0, point.PointNumberOffset.Y);
                 point.ElevationOffset = new(0, point.ElevationOffset.Y);
@@ -2133,19 +2157,22 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 labelsNeedUpdate = true;
             }
 
-            if (offset.Y < 0 && !point.IsFlipped_X)
+            if (offset.Y < 0 && !point.IsFlippedX)
             {
-                point.IsFlipped_X = true;
+                point.IsFlippedX = true;
 
-                point.PointNumberOffset = new(point.PointNumberOffset.X, -point.PointNumberBounds.Height.ToFloat() - point.BaseDescriptionOffset_Y);
-                point.ElevationOffset = new(point.ElevationOffset.X, -point.ElevationBounds.Height.ToFloat() - point.BaseElevationOffset_Y);
-                point.DescriptionOffset = new(point.DescriptionOffset.X, -point.DescriptionBounds.Height.ToFloat() - point.BasePointNumberOffset_Y);
+                var translation = (float)(point.DescriptionBounds.Height / point.PointGroup.PointScale);
+
+                point.PointNumberOffset = new(point.PointNumberOffset.X, -point.BaseDescriptionOffset_Y - translation);
+                point.ElevationOffset = new(point.ElevationOffset.X, -point.BaseElevationOffset_Y - translation);
+                point.DescriptionOffset = new(point.DescriptionOffset.X, -point.BasePointNumberOffset_Y - translation);
+
                 _stateCtl.SetLabelOffsets(point, point.PointNumberOffset, point.ElevationOffset, point.DescriptionOffset);
                 labelsNeedUpdate = true;
             }
-            if (offset.Y > 0 && point.IsFlipped_X)
+            if (offset.Y > 0 && point.IsFlippedX)
             {
-                point.IsFlipped_X = false;
+                point.IsFlippedX = false;
 
                 point.PointNumberOffset = new(point.PointNumberOffset.X, point.BasePointNumberOffset_Y);
                 point.ElevationOffset = new(point.ElevationOffset.X, point.BaseElevationOffset_Y);
@@ -2155,19 +2182,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 labelsNeedUpdate = true;
             }
 
-            if (labelsNeedUpdate) { _stateCtl.FlushLabelUpdates(); }
-
-            point.SetTextInfoOffset(offset);
-            _stateCtl.SetPointOffset(point, offset, true);
-            _stateCtl.FlushPointUpdates();
-
-            point.ToggleBounds = new(point.TextInfoBasePosition.X + point.TextInfoOffset.X - AnchorWorldHalfSize,
-                                      point.TextInfoBasePosition.Y + point.TextInfoOffset.Y - AnchorWorldHalfSize,
-                                      2 * AnchorWorldHalfSize,
-                                      2 * AnchorWorldHalfSize);
-
-            _interactiveDirty = true;
-            _dxfDirty = true;
+            return labelsNeedUpdate;
         }
 
         public void ZoomToExtents()
@@ -2194,6 +2209,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             while (_isMouseInside)
             {
                 if (_hitTestCancellationTokenSource.Token.IsCancellationRequested) { break; }
+
                 if (_suspendHitTesting) { await Task.Delay(50); continue; }
 
                 if (CadManager3D.DxfLoaded && CadManager3D.HitTestingEnabled)
@@ -2210,9 +2226,13 @@ namespace Cad_Point_Manager.Controls.D3DControl
                             break;
 
                         case Common.Enums.SelectionMode.CogoPoints:
-                            if (IsDragging) { RunDragCogoPointsHittest(_hitTestCancellationTokenSource.Token); }
-                            else { RunCogoPointsHitTest(_hitTestCancellationTokenSource.Token); }
-                            break;
+                            if (_cogoPointTextBeingMoved) { break; }
+                            else
+                            {
+                                if (IsDragging) { RunDragCogoPointsHittest(_hitTestCancellationTokenSource.Token); }
+                                else { RunCogoPointsHitTest(_hitTestCancellationTokenSource.Token); }
+                                break;
+                            }
 
                         default:
                             break;
@@ -2399,19 +2419,44 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             _lastHitTestCoords = new(DxfCoords.X, DxfCoords.Y);
 
-            Rect rect = new(_lastHitTestCoords.X - _hittestStrokeThickness, _lastHitTestCoords.Y - _hittestStrokeThickness,
-                _hittestStrokeThickness * 2, _hittestStrokeThickness * 2);
             var snappedCogoPointsCopy = _mouseOverCogoPoints.ToList();
-            List<HitTestableObject> changedObjects = [];
             bool hoverVerticesDirty = false;
+
+            if (_mouseOverToggleButtonPoint is not null)
+            {
+                if (_mouseOverToggleButtonPoint.IsSelected &&
+                    _mouseOverToggleButtonPoint.ToggleBounds.Contains(_lastHitTestCoords))
+                {
+                    if (!_mouseOverToggleButtonPoint.IsMouseOverToggleButton)
+                    {
+                        ResetHoverObjects();
+                        MouseOverCogoToggleButton(_mouseOverToggleButtonPoint);
+                        _hoverVerticesDirty = true;
+                        return;
+                    }
+                }
+                else
+                {
+                    ResetCogoToggleButtonMouseOver();
+                    hoverVerticesDirty = true;
+                }
+            }
 
             if (snappedCogoPointsCopy is not null && snappedCogoPointsCopy.Count > 0)
             {
                 foreach (var snappedCogoPoint in snappedCogoPointsCopy)
                 {
+                    if (snappedCogoPoint.IsSelected &&
+                        snappedCogoPoint.ToggleBounds.Contains(_lastHitTestCoords))
+                    {
+                        ResetHoverObjects();
+                        MouseOverCogoToggleButton(snappedCogoPoint);
+                        _hoverVerticesDirty = true;
+                        return;
+                    }
+
                     if (snappedCogoPoint.DistanceToPoint(_lastHitTestCoords) > _hittestStrokeThickness)
                     {
-                        changedObjects.Add(snappedCogoPoint);
                         ResetHoverObjects();
                         ResetCogoToggleButtonMouseOver();
                         hoverVerticesDirty = true;
@@ -2429,21 +2474,17 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
                                 if (distance <= _hittestStrokeThickness)
                                 {
-                                    changedObjects.Add(point);
+                                    if (point.IsSelected && point.ToggleBounds.Contains(_lastHitTestCoords))
+                                    {
+                                        MouseOverCogoToggleButton(point);
+                                        _hoverVerticesDirty = true;
+                                        return;
+                                    }
                                     _mouseOverCogoPoints.Add(point);
                                     point.MouseEnter();
                                     _lastSnapHitTestIndex = _currentSnapHitTestIndex;
-
-                                    if (point.IsSelected && point.ToggleBounds.Contains(_lastHitTestCoords)) { MouseOverCogoToggleButton(point); }
                                 }
                             }
-                        }
-                    }
-                    else
-                    {
-                        if (snappedCogoPoint.IsSelected && !snappedCogoPoint.IsMouseOverToggleButton && snappedCogoPoint.ToggleBounds.Contains(_lastHitTestCoords))
-                        {
-                            MouseOverCogoToggleButton(snappedCogoPoint);
                         }
                     }
                 }
@@ -2464,20 +2505,22 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
                         if (distance <= _hittestStrokeThickness)
                         {
-                            changedObjects.Add(point);
+                            if (point.IsSelected && point.ToggleBounds.Contains(_lastHitTestCoords))
+                            {
+                                MouseOverCogoToggleButton(point);
+                                ResetHoverObjects();
+                                _hoverVerticesDirty = true;
+                                return;
+                            }
                             _mouseOverCogoPoints.Add(point);
                             point.MouseEnter();
                             hoverVerticesDirty = true;
                             _lastSnapHitTestIndex = _currentSnapHitTestIndex;
-
-                            if (point.IsSelected && point.ToggleBounds.Contains(_lastHitTestCoords))
-                            {
-                                MouseOverCogoToggleButton(point);
-                            }
                         }
                     }
                 }
             }
+
             if (hoverVerticesDirty) { _hoverVerticesDirty = true; }
         }
         private async void RunDragCogoPointsHittest(CancellationToken token)
@@ -2675,14 +2718,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             _mouseOverHitTestableObjects.Clear();
             _mouseOverCogoPoints.Clear();
-
-            if (_mouseOverToggleButtonPoint is not null)
-            {
-                _mouseOverToggleButtonPoint.IsMouseOverToggleButton = false;
-                _stateCtl.SetPointAnchorMouseOver(_mouseOverToggleButtonPoint, false);
-                _mouseOverToggleButtonPoint = null;
-                _stateCtl.FlushPointUpdates();
-            }
         }
         private void SelectObject(HitTestableObject hitTestableObject)
         {
@@ -2762,7 +2797,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             DragRect = new(0, 0, 0, 0);
             _lastQueriedDxfRect = Rect.Empty;
         }
-        public void StartDrag(Point start)
+        public void BeginDrag(Point start)
         {
             _dragStartScreen = start;
             _dragStart = DxfCoords.ToPoint();
@@ -2796,7 +2831,12 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
         private void ResetCogoToggleButtonMouseOver()
         {
-            _mouseOverToggleButtonPoint?.IsMouseOverToggleButton = false;
+            if (_mouseOverToggleButtonPoint is null ||
+                !_mouseOverToggleButtonPoint.IsMouseOverToggleButton) { return; }
+
+            _mouseOverToggleButtonPoint.IsMouseOverToggleButton = false;
+            _stateCtl.SetPointAnchorMouseOver(_mouseOverToggleButtonPoint, false);
+            _stateCtl.FlushPointUpdates();
             _mouseOverToggleButtonPoint = null;
         }
         private void PressCogoToggleButton(CogoPoint cogoPoint)
@@ -2817,7 +2857,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 _pressedToggleButtonPoint.IsToggleButtonPressed = true;
             }
         }
-        private void ResetCogoToggleButtonPress()
+        private void EndCogoToggleButtonPress()
         {
             _pressedToggleButtonPoint?.IsToggleButtonPressed = false;
             _pressedToggleButtonPoint = null;
@@ -2967,11 +3007,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     _stateBufs.InitializeLabelState(_ids.MaxLabelCount, cp.ElevationOffset, idElev);
                     uint idDesc = _ids.GetOrAddLabelId(cp, 2);
                     _stateBufs.InitializeLabelState(_ids.MaxLabelCount, cp.DescriptionOffset, idDesc);
-
-                    //// Testing for offsets
-                    //Debug.WriteLine($"\nPoint: {cp} TextInfoBaseOffset_X: {cp.TextInfoBaseOffset_X} " +
-                    //    $"\nOffsets: PN: {cp.PointNumberOffset}, Elev: {cp.ElevationOffset}, Desc: {cp.DescriptionOffset}" +
-                    //    $"\nTextInfoBaseOffset_X: {cp.TextInfoBaseOffset_X}");
                 }
             }
             if (e.Action == NotifyCollectionChangedAction.Remove)
@@ -3062,20 +3097,48 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     _stateCtl.SetGroupVisibility(pg, pg.IsVisible);
                     _stateCtl.FlushGroupUpdates();
                     _dxfDirty = true;
+                    _interactiveDirty = true;
                 }
                 if (e.PropertyName == nameof(PointGroup.Color) || e.PropertyName == nameof(PointGroup.PointScale))
                 {
-                    _stateCtl.SetGroupScaleColorBaseOffset(pg, pg.PointScale.ToFloat(), pg.Color.ToSharpDXVector4(), pg.PointInfoBaseXoffset);
-                    _stateCtl.FlushGroupUpdates();
-                    _dxfDirty = true;
-
                     if (e.PropertyName == nameof(PointGroup.PointScale))
                     {
+                        pg.UpdatePointInfoBaseXoffset();
+
+                        bool labelsNeedUpdate = false;
                         foreach (var point in pg.Points)
                         {
                             RecomputeCogoPointBoundsFast(point);
+                            UpdateToggleAnchorBounds(point);
+
+                            if (point.IsFlippedX || point.IsFlippedY)
+                            {
+                                point.UpdateOffsetOrientation();
+                                _stateCtl.SetLabelOffsets(point, point.PointNumberOffset, point.ElevationOffset, point.DescriptionOffset);
+                                labelsNeedUpdate = true;
+
+                                RecomputeCogoPointBoundsFast(point); // Done a second time because the first call is just to get lines width
+                            }
                         }
+                        if (labelsNeedUpdate) { _stateCtl.FlushLabelUpdates(); }
+
+                        _stateCtl.SetGroupScaleColorBaseOffset(pg, pg.PointScale.ToFloat(), pg.Color.ToSharpDXVector4(), pg.PointInfoBaseXoffset);
+                        _stateCtl.FlushGroupUpdates();
+
+                        HitTestableObjectTreeDirty = true;
                     }
+
+                    _dxfDirty = true;
+                    _interactiveDirty = true;
+                }
+                if (e.PropertyName == nameof(PointGroup.PointInfoBaseXoffset))
+                {
+                    foreach (var point in pg.Points)
+                    {
+                        UpdateToggleAnchorBounds(point);
+                    }
+                    _interactiveDirty = true;
+                    _dxfDirty = true;
                 }
             }
         }

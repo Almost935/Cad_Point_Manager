@@ -17,13 +17,13 @@ namespace Cad_Point_Manager.Models.PointRendering
     {
         #region Fields
         private const float _textLineSpacingFactor = 1.0f;
-        //private const float _markerToPointScaleFactor = 0.1f;
-        private const float _markerToPointScaleFactor = 1f;
         private const float _textBaseHeight = 4;
 
         private volatile CogoPointBoundsSnapshot _cogoPointBounds;
-        private static readonly CogoPointBoundsSnapshot _empty =
-           new() { Name = Rect.Empty, Elevation = Rect.Empty, Description = Rect.Empty, Ellipse = Rect.Empty };
+        private static readonly CogoPointBoundsSnapshot _empty = new() 
+        { 
+            Name = Rect.Empty, Elevation = Rect.Empty, Description = Rect.Empty, Ellipse = Rect.Empty
+        };
 
         private int _pointNumber;
         private double _northing;
@@ -128,6 +128,7 @@ namespace Cad_Point_Manager.Models.PointRendering
         public Rect ElevationBounds { get; set; } = Rect.Empty;
         public Rect DescriptionBounds { get; set; } = Rect.Empty;
         public Rect EllipseBounds { get; set; } = Rect.Empty;
+        public Rect ToggleBounds { get; set; } = Rect.Empty;
         public Vector2 TextInfoBasePosition { get; set; }
         public Vector2 TextInfoOffset { get; set; }
         public Vector2 PointNumberOffset { get; set; }
@@ -137,14 +138,12 @@ namespace Cad_Point_Manager.Models.PointRendering
         public int TextStartIndex { get; set; }
         public int TextEndIndex { get; set; }
         public int MarkerIndex { get; set; }
-        public Rect ToggleBounds { get; set; } = Rect.Empty;
         public bool IsMouseOverToggleButton { get; set; } = false;
         public bool IsToggleButtonPressed { get; set; } = false;
         public bool HasLeaderLine { get; set; } = false;
-        public bool IsFlipped_Y { get; set; } = false;
-        public bool IsFlipped_X { get; set; } = false;
+        public bool IsFlippedY { get; set; } = false;
+        public bool IsFlippedX { get; set; } = false;
 
-        public float TextInfoBaseOffset_X => _textBaseHeight * _markerToPointScaleFactor;
         public float BasePointNumberOffset_Y => _textBaseHeight * _textLineSpacingFactor * 2;
         public float BaseElevationOffset_Y => _textBaseHeight * _textLineSpacingFactor;
         public float BaseDescriptionOffset_Y => 0;
@@ -254,11 +253,40 @@ namespace Cad_Point_Manager.Models.PointRendering
         {
             TextInfoOffset = offset;
         }
+        public void UpdateOffsetOrientation()
+        {
+            if (IsFlippedY)
+            {
+                PointNumberOffset = new(-PointNumberBounds.Width.ToFloat(), PointNumberOffset.Y);
+                ElevationOffset = new(-ElevationBounds.Width.ToFloat(), ElevationOffset.Y);
+                DescriptionOffset = new(-DescriptionBounds.Width.ToFloat(), DescriptionOffset.Y);
+            }
+            else
+            {
+                PointNumberOffset = new(0, PointNumberOffset.Y);
+                ElevationOffset = new(0, ElevationOffset.Y);
+                DescriptionOffset = new(0, DescriptionOffset.Y);
+            }
+
+            if (IsFlippedX)
+            {
+                var translation = (float)(DescriptionBounds.Height / PointGroup.PointScale);
+
+                PointNumberOffset = new(PointNumberOffset.X, -BaseDescriptionOffset_Y - translation);
+                ElevationOffset = new(ElevationOffset.X, -BaseElevationOffset_Y - translation);
+                DescriptionOffset = new(DescriptionOffset.X, -BasePointNumberOffset_Y - translation);
+            }
+            else
+            {
+                PointNumberOffset = new(PointNumberOffset.X, BasePointNumberOffset_Y);
+                ElevationOffset = new(ElevationOffset.X, BaseElevationOffset_Y);
+                DescriptionOffset = new(DescriptionOffset.X, BaseDescriptionOffset_Y);
+            }
+        }
 
         public void ResetTextLocations()
         {
             HasLeaderLine = false;
-            //TextInfoBasePosition = new(Position.X.ToFloat() + TextInfoBaseOffset_X, Position.Y.ToFloat());
             TextInfoBasePosition = new(Position.X.ToFloat(), Position.Y.ToFloat());
             DescriptionOffset = new(0, BaseDescriptionOffset_Y);
             ElevationOffset = new(0, BaseElevationOffset_Y);
