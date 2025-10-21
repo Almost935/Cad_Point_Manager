@@ -10,9 +10,10 @@ cbuffer ToggleAnchorSettingsBuffer : register(b1)
     float4 baseColor;
     float4 selectedColor;
     float4 mouseOverColor;
-    float size;
-    float cornerRadius;
+    float desiredHalf; // was "size" before
+    float cornerFracOfHalf; // pass the fraction (e.g., 0.35), not a world radius
     float feather;
+    float maxHalfBase; // NEW: max half-size *before* per-group scaling
 }
 
 // Stream 0: unit quad
@@ -69,35 +70,32 @@ VSOut VSMain(VSQuadIn v, VSInst i)
 {
     VSOut o;
 
-    // Fetch dynamic state
     PointState ps = PointStates[i.pointId];
     GroupState gs = GroupStates[i.groupId];
-    
-    // Visibility + selection gates
-    const float visPt = ((ps.Flags & POINT_VISIBLE) != 0u) ? 1.0f : 0.0f;
-    const float visGrp = ((gs.Flags & GROUP_VISIBLE) != 0u) ? 1.0f : 0.0f;
-    const float sel = ((ps.Flags & POINT_SELECTED) != 0u) ? 1.0f : 0.0f;
-    const float mouseOver = ((ps.Flags & POINT_MOUSEOVERANCHOR) != 0u) ? 1.0f : 0.0f;
-    const float anchorPressed = ((ps.Flags & POINT_ANCHORPRESSED) != 0u) ? 1.0f : 0.0f;
 
-    uint state = 0; // normal
-    if (mouseOver > 0.5f)
-        state = 1; // mouseOver
-    if (anchorPressed > 0.5f)
-        state = 2; // selected
-    
-    // Show only when visible
+    const float visPt   = ((ps.Flags & POINT_VISIBLE) != 0u) ? 1.0f : 0.0f;
+    const float visGrp  = ((gs.Flags & GROUP_VISIBLE) != 0u) ? 1.0f : 0.0f;
+    const float sel     = ((ps.Flags & POINT_SELECTED) != 0u) ? 1.0f : 0.0f;
+    const float moAnchor= ((ps.Flags & POINT_MOUSEOVERANCHOR) != 0u) ? 1.0f : 0.0f;
+    const float pressed = ((ps.Flags & POINT_ANCHORPRESSED) != 0u) ? 1.0f : 0.0f;
+
+    uint state = (pressed > 0.5f) ? 2 : ((moAnchor > 0.5f) ? 1 : 0);
     o.show = visPt * visGrp * sel;
 
-    // Build world position as usual
-    float2 worldPos = i.center + ps.Offset + v.local * size;
+    // Per-instance clamp using group scale
+    float halfSize = min(desiredHalf, maxHalfBase * gs.Scale);
 
-    o.pos = mul(float4(worldPos, 0.0, 1.0), ViewProj);
-    o.uv = (v.local * size);
-    o.size = size;
-    o.rf = cornerRadius;
+    // Position & UV in world units
+    float2 worldPos = i.center + ps.Offset + v.local * halfSize;
+    o.pos   = mul(float4(worldPos, 0.0, 1.0), ViewProj);
+    o.uv = v.local * halfSize;
+    o.size = halfSize;
+
+    // Compute round radius from a fraction of the current half
+    float rf = min(halfSize * cornerFracOfHalf, halfSize - 1e-5);
+    o.rf = float2(rf, feather);
+
     o.state = state;
-
     return o;
 }
 

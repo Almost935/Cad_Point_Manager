@@ -141,15 +141,13 @@ namespace Cad_Point_Manager.Controls.D3DControl
     [StructLayout(LayoutKind.Sequential)]
     public struct ToggleAnchorSettingsBuffer
     {
-        // 3 * 16B = 48B
-        public Vector4 BaseColor;
-        public Vector4 SelectedColor;
-        public Vector4 MouseOverColor;
-
-        public float Size;          // world size (square)
-        public float CornerRadius;  // world corner radius
-        public float Feather;       // world feather
-        private float _padding;    // pad to 16B
+        public Vector4 BaseColor; // rgba
+        public Vector4 SelectedColor; // rgba
+        public Vector4 MouseOverColor; // rgba
+        public float DesiredHalf; // world units
+        public float CornerFracOfHalf; // e.g., 0.35f
+        public float Feather; // world units
+        public float MaxHalfBase; // world units (pre-scale)
     }
     [StructLayout(LayoutKind.Sequential)]
     readonly struct AnchorDraw   // for CPU hit-test & mapping

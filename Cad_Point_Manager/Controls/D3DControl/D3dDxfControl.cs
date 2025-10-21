@@ -41,19 +41,18 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private static readonly Vector4 HoverShadowColor = new(0f, 0f, 0f, 0.2f); // translucent black
 
         // CogoPoint ToggleButton Fields
-        private const float AnchorPixelSize = 36f;
-        private const float AnchorCornerPixels = 6f;
-        private const float AnchorFeatherPixels = 1.5f;
-        private const float MaxCogoToggleToDrawingFraction = 0.01f; // max size of toggle button relative to smaller of width/height of drawing area
-        private const float CornerFracOfHalf = 0.35f;
-        private const float FeatherPx = 1.5f; // keep AA feather in pixels
-        private float AnchorWorldHalfSize;
-        private float AnchorWorldCornerRadius;
-        private float AnchorWorldFeather;
-        private Rect CurrentAnchorBounds;
-        private static readonly Vector4 AnchorBase = new(0.00f, 0.95f, 1.00f, 1.00f);
-        private static readonly Vector4 AnchorHover = new(0.67f, 1.00f, 1.00f, 1.00f);
-        private static readonly Vector4 AnchorPressed = new(0.15f, 0.82f, 0.85f, 1.00f);
+        // Ensure these fields exist on D3dDxfControl (names are suggestions)
+        private float _desiredHalfWorldForAnchors;
+        private float _maxHalfBaseForAnchors;
+        private float _featherWorldForAnchors;
+
+        public float AnchorPixelSize = 18f; // UI handle size in pixels
+        public float FeatherPx = 1.25f; // anti-aliased edge in px
+        public float CornerFracOfHalf = 0.35f; // rounded corner as a fraction of half
+        public float MaxCogoToggleToDrawingFraction = 0.02f;// cap relative to drawing extents
+        private static readonly Vector4 AnchorBaseColor = new(0.00f, 0.95f, 1.00f, 1.00f);
+        private static readonly Vector4 AnchorHoverColor = new(0.67f, 1.00f, 1.00f, 1.00f);
+        private static readonly Vector4 AnchorPressedColor = new(0.15f, 0.82f, 0.85f, 1.00f);
 
         private bool _dxfDirty = true;
         private bool _interactiveDirty = true;
@@ -1042,14 +1041,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             if (_resCache is null || Camera is null) return;
 
             var ctx = _resCache.DeviceContext;
-            float wupp = Camera.GetWorldUnitsPerPixel();
-
-            // Desired size from pixels (keeps shrinking as you zoom in)
-            float desiredHalfWorld = (AnchorPixelSize * 0.5f) * wupp;
-
-            // Cap from DXF extents: a fraction of the drawing short side
-            float drawingShort = Math.Min(Camera.Extents.Width, Camera.Extents.Height).ToFloat();
-
             var inst = new List<ToggleAnchorInstance>(SelectedCogoPoints.Count);
             foreach (var keyValue in PointGroups)
             {
@@ -1620,12 +1611,13 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             var toggleSettings = new ToggleAnchorSettingsBuffer
             {
-                BaseColor = AnchorBase,
-                SelectedColor = AnchorPressed,
-                MouseOverColor = AnchorHover,
-                Size = AnchorWorldHalfSize,
-                CornerRadius = AnchorWorldCornerRadius,
-                Feather = AnchorWorldFeather
+                BaseColor = AnchorBaseColor, // Vector4
+                SelectedColor = AnchorPressedColor,// Vector4
+                MouseOverColor = AnchorHoverColor, // Vector4
+                DesiredHalf = _desiredHalfWorldForAnchors,
+                CornerFracOfHalf = CornerFracOfHalf, // 0..1
+                Feather = _featherWorldForAnchors,
+                MaxHalfBase = _maxHalfBaseForAnchors
             };
             _resCache.DeviceContext.UpdateSubresource(ref toggleSettings, _toggleSettingsBuffer);
 
@@ -2087,14 +2079,17 @@ namespace Cad_Point_Manager.Controls.D3DControl
         {
             float wupp = Camera.GetWorldUnitsPerPixel();
 
+            // Zoom-driven desired half (from pixels → world)
             float desiredHalfWorld = (AnchorPixelSize * 0.5f) * wupp;
-            float drawingShort = Math.Min(Camera.Extents.Width, Camera.Extents.Height).ToFloat();
-            float maxHalfWorld = (drawingShort * MaxCogoToggleToDrawingFraction) * 0.5f;
 
-            AnchorWorldHalfSize = Math.Min(desiredHalfWorld, maxHalfWorld) / 2;
-            AnchorWorldCornerRadius = Math.Min(AnchorWorldHalfSize * CornerFracOfHalf, AnchorWorldHalfSize - 1e-5f);
-            AnchorWorldFeather = FeatherPx * wupp;
-            CurrentAnchorBounds = new(0, 0, 2 * AnchorWorldHalfSize, 2 * AnchorWorldHalfSize);
+            // A drawing-size-based cap BEFORE group scaling
+            float drawingShort = (float)Math.Min(Camera.Extents.Width, Camera.Extents.Height);
+            float maxHalfBase = (drawingShort * MaxCogoToggleToDrawingFraction) * 0.5f;
+
+            // Cache for settings
+            _desiredHalfWorldForAnchors = desiredHalfWorld;
+            _maxHalfBaseForAnchors = maxHalfBase;
+            _featherWorldForAnchors = FeatherPx * wupp;
 
             foreach (var pg in CadManager3D.CogoPointManager.PointGroups)
             {
@@ -2104,13 +2099,15 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 }
             }
         }
-        public void UpdateToggleAnchorBounds(CogoPoint point)
+        private void UpdateToggleAnchorBounds(CogoPoint pt)
         {
-            if (point is null) { return; }
-            point.ToggleBounds = new(point.TextInfoBasePosition.X + point.TextInfoOffset.X - AnchorWorldHalfSize,
-                point.TextInfoBasePosition.Y + point.TextInfoOffset.Y - AnchorWorldHalfSize,
-                2 * AnchorWorldHalfSize,
-                2 * AnchorWorldHalfSize);
+            float half = MathF.Min(
+            _desiredHalfWorldForAnchors,
+            _maxHalfBaseForAnchors * (float)pt.PointGroup.PointScale
+            );
+
+            var center = pt.TextInfoBasePosition + pt.TextInfoOffset; // world center of the toggle
+            pt.ToggleBounds = new(center.X - half, center.Y - half, 2f * half, 2f * half);
         }
 
         private void UpdateCogoPointOffset(CogoPoint point, Vector2 offset)
