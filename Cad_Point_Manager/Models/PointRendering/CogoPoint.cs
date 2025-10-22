@@ -129,7 +129,6 @@ namespace Cad_Point_Manager.Models.PointRendering
         public Rect DescriptionBounds { get; set; } = Rect.Empty;
         public Rect EllipseBounds { get; set; } = Rect.Empty;
         public Rect ToggleBounds { get; set; } = Rect.Empty;
-        public Vector2 TextInfoBasePosition { get; set; }
         public Vector2 TextInfoOffset { get; set; }
         public Vector2 PointNumberOffset { get; set; }
         public Vector2 ElevationOffset { get; set; }
@@ -287,7 +286,6 @@ namespace Cad_Point_Manager.Models.PointRendering
         public void ResetTextLocations()
         {
             HasLeaderLine = false;
-            TextInfoBasePosition = new(Position.X.ToFloat(), Position.Y.ToFloat());
             DescriptionOffset = new(0, BaseDescriptionOffset_Y);
             ElevationOffset = new(0, BaseElevationOffset_Y);
             PointNumberOffset = new(0, BasePointNumberOffset_Y);

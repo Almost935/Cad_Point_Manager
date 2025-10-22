@@ -560,7 +560,7 @@ namespace Cad_Point_Manager.Models
                     uint pid = sceneIdMap.GetOrAddPointId(p);
                     _cachedPointMarkerVertices.Add(new PointMarkerInstance
                     {
-                        Position = new Vector3(p.Position.X.ToFloat(), p.Position.Y.ToFloat(), 0f),
+                        Position = Vector3.Zero,
                         Radius = GlobalHelperProperties.CogoPointCirclePixelRadius,
                         PointId = pid,
                         GroupId = gid

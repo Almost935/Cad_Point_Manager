@@ -27,8 +27,9 @@ struct LabelState
 struct PointState
 {
     float2 Offset; // world-space drag delta
+    float2 PointInfoOffset; // Text info offset in world units
     uint Flags; // bit0: visible bit1: selected, bit2: mouseOver, bit3: hasLeaderLine, bit4: mouseOverAnchor, bit5: anchorPressed, bit6: isFlippedY, bit7: isFlippedX
-    float _padLS; // keep 16B stride
+    float3 _padLS; // keep 16B stride
 };
 struct GroupState
 {
@@ -118,8 +119,8 @@ VSOut VSMain(VSInPerVertex v, VSInPerInstance inst)
     
     // --- Position math ---
     // Apply label drag offset and group scale. Group scale only applicable to label y offset.
-    float x = inst.OriginWorld.x + ls.Offset.x + textInfoOffset + ps.Offset.x;
-    float y = inst.OriginWorld.y + (ls.Offset.y * gs.Scale) + ps.Offset.y;
+    float x = inst.OriginWorld.x + ls.Offset.x + textInfoOffset + ps.PointInfoOffset.x + ps.Offset.x;
+    float y = inst.OriginWorld.y + (ls.Offset.y * gs.Scale) + ps.PointInfoOffset.y + ps.Offset.y;
     float2 originWorld = float2(x, y);
 
     float duToWorld = inst.DuToWorld * gs.Scale;

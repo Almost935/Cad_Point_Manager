@@ -38,8 +38,9 @@ struct VSOut
 struct PointState
 {
     float2 Offset; // world-space drag delta
+    float2 PointInfoOffset; // Text info offset in world units
     uint Flags; // bit0: visible bit1: selected, bit2: mouseOver, bit3: hasLeaderLine, bit4: mouseOverAnchor, bit5: anchorPressed, bit6: isFlippedY, bit7: isFlippedX
-    float _padLS; // keep 16B stride
+    float3 _padLS; // keep 16B stride
 };
 struct GroupState
 {
@@ -93,9 +94,9 @@ void GSMain(point VSOut vin[1], inout TriangleStream<GSOut> tri)
         return;
 
     // Live endpoint B = BBase + label offset
-    float2 aW = i.aWorld;
-    //float2 bW = i.bWorld + ps.Offset + gs.TextInfoBaseXoffset;
-    float2 bW = float2(i.bWorld.x + ps.Offset.x, i.bWorld.y + ps.Offset.y);
+    float2 aW = i.aWorld + ps.Offset;
+    //float2 bW = float2(i.bWorld.x + ps.PointInfoOffset.x, i.bWorld.y + ps.PointInfoOffset.y);
+    float2 bW = i.bWorld + ps.Offset + ps.PointInfoOffset;
 
     // Project to CLIP & NDC
     float4 aC = mul(float4(aW, 0, 1), ViewProj);

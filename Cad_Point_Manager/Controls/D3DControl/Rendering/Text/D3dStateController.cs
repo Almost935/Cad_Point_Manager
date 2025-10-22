@@ -76,12 +76,20 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
             else { s.Flags &= ~(uint)CogoPointFlags.Selected; }
             _dirtyPoints.Add(pid);
         }
-        public void SetPointOffset(CogoPoint cp, Vector2 offset, bool? hasLeaderLine = null, bool? isFlippedY = null, bool? isFlippedX = null)
+        public void SetPointOffset(CogoPoint cp, Vector2 offset)
         {
             if (!_ids.TryGetPointId(cp, out var pid)) { return; }
 
             ref var s = ref _bufs.PointSpan[(int)pid];
             s.Offset = offset;
+            _dirtyPoints.Add(pid);
+        }
+        public void SetPointInfoOffset(CogoPoint cp, Vector2 offset, bool? hasLeaderLine = null, bool? isFlippedY = null, bool? isFlippedX = null)
+        {
+            if (!_ids.TryGetPointId(cp, out var pid)) { return; }
+
+            ref var s = ref _bufs.PointSpan[(int)pid]; 
+            s.PointInfoOffset = offset;
             if (hasLeaderLine is not null)
             {
                 if ((bool)hasLeaderLine) { s.Flags |= (uint)CogoPointFlags.HasLeaderLine; }

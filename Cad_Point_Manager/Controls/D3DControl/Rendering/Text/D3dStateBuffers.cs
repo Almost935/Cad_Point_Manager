@@ -104,18 +104,18 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
 
             LabelSpan[(int)lId] = new LabelState { Offset = offset, Flags = baseFlags };
         }
-        public void InitializePointState(int count, CogoPoint pg, uint pId)
+        public void InitializePointState(int count, CogoPoint CP, uint pId)
         {
             EnsurePointCapacity(count);
 
             uint baseFlags = 0;
             baseFlags |= (uint)CogoPointFlags.Visible;
-            if (pg.IsSelected) { baseFlags |= (uint)CogoPointFlags.Selected; }
-            if (pg.IsMouseOver) { baseFlags |= (uint)CogoPointFlags.MouseOver; }
-            if (pg.HasLeaderLine) { baseFlags |= (uint)CogoPointFlags.HasLeaderLine; }
-            if (pg.IsFlippedY) { baseFlags |= (uint)CogoPointFlags.IsFlippedY; }
-            if (pg.IsFlippedX) { baseFlags |= (uint)CogoPointFlags.IsFlippedX; }
-            PointSpan[(int)pId] = new PointState { Flags = baseFlags, Offset = Vector2.Zero };
+            if (CP.IsSelected) { baseFlags |= (uint)CogoPointFlags.Selected; }
+            if (CP.IsMouseOver) { baseFlags |= (uint)CogoPointFlags.MouseOver; }
+            if (CP.HasLeaderLine) { baseFlags |= (uint)CogoPointFlags.HasLeaderLine; }
+            if (CP.IsFlippedY) { baseFlags |= (uint)CogoPointFlags.IsFlippedY; }
+            if (CP.IsFlippedX) { baseFlags |= (uint)CogoPointFlags.IsFlippedX; }
+            PointSpan[(int)pId] = new PointState { Flags = baseFlags, Offset = CP.Position.ToSharpDXVector2(), PointInfoOffset = Vector2.Zero };
         }
         public void InitializeGroupState(int count, PointGroup pg, uint gId)
         {

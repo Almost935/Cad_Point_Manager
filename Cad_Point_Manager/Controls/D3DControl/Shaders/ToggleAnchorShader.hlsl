@@ -43,8 +43,9 @@ struct VSOut
 struct PointState
 {
     float2 Offset; // world-space drag delta
+    float2 PointInfoOffset; // Text info offset in world units
     uint Flags; // bit0: visible bit1: selected, bit2: mouseOver, bit3: hasLeaderLine, bit4: mouseOverAnchor, bit5: anchorPressed, bit6: isFlippedY, bit7: isFlippedX
-    float _padLS; // keep 16B stride
+    float3 _padLS; // keep 16B stride
 };
 struct GroupState
 {
@@ -86,7 +87,7 @@ VSOut VSMain(VSQuadIn v, VSInst i)
     float halfSize = min(desiredHalf, maxHalfBase * gs.Scale);
 
     // Position & UV in world units
-    float2 worldPos = i.center + ps.Offset + v.local * halfSize;
+    float2 worldPos = i.center + ps.Offset + ps.PointInfoOffset + v.local * halfSize;
     o.pos   = mul(float4(worldPos, 0.0, 1.0), ViewProj);
     o.uv = v.local * halfSize;
     o.size = halfSize;

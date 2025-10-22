@@ -14,8 +14,9 @@ cbuffer CircleSettingsBuffer : register(b1)
 struct PointState
 {
     float2 Offset; // world-space drag delta
+    float2 PointInfoOffset; // Text info offset in world units
     uint Flags; // bit0: visible bit1: selected, bit2: mouseOver, bit3: hasLeaderLine, bit4: mouseOverAnchor, bit5: anchorPressed, bit6: isFlippedY, bit7: isFlippedX
-    float _padLS; // keep 16B stride
+    float3 _padLS; // keep 16B stride
 };
 struct GroupState
 {
@@ -93,7 +94,7 @@ void GSMain(point VS_INPUT input[1], inout TriangleStream<GS_OUTPUT> output)
     // Scale radius by group scale (Option A)
     float radiusWorld = input[0].radius * gs.Scale;
 
-    float4 center = mul(float4(input[0].position, 1), transformationMatrix);
+    float4 center = mul(float4(input[0].position + float3(ps.Offset.xy, 0), 1), transformationMatrix);
     float radiusX = radiusWorld * transformationMatrix._11;
     float radiusY = radiusWorld * transformationMatrix._22;
 

@@ -864,7 +864,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     uint idElev = _ids.GetOrAddLabelId(p, 1);
                     uint idDesc = p.HasDescription ? _ids.GetOrAddLabelId(p, 2) : 0xFFFFFFFF;
 
-                    var pos = p.Position.ToSharpDXVector2();
+                    var pos = Vector2.Zero; // zero base position because position is handled in PointState.Offset
                     AddCogoTextLabelLine(
                         s: p.PointNumber.ToString(),
                         originWorld: pos,
@@ -1053,7 +1053,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 {
                     if (p is null) { continue; }
                     var pid = _ids.GetOrAddPointId(p);
-                    var center = p.TextInfoBasePosition;
+                    var center = Vector2.Zero;
 
                     inst.Add(new()
                     {
@@ -1085,8 +1085,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
                     var vertex = new LeaderLineInstance
                     {
-                        Start = p.Position.ToSharpDXVector2(),
-                        End = p.TextInfoBasePosition,
+                        Start = Vector2.Zero,
+                        End = Vector2.Zero,
                         PointId = pid,
                         GroupId = gid
                     };
@@ -1660,7 +1660,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             }
 
             float widthWorld = penDU * duToWorld;
-            //return ComputeLineRect(originWorld + lineOffset, widthWorld, duToWorld, ySign);
         }
 
         private void RecomputeCogoPointBoundsFast(CogoPoint p)
@@ -1671,7 +1670,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             float duToWorld = (float)(pg.FontBaseSize * pg.PointScale) / duPerEm; // includes group scale
             float ySign = -1f;
 
-            var baseOrigin = p.TextInfoBasePosition + p.TextInfoOffset;
+            var baseOrigin = p.Position.ToSharpDXVector2() + p.TextInfoOffset;
             var baseGroupXoffset = p.IsFlippedY ? -pg.PointInfoBaseXoffset : pg.PointInfoBaseXoffset;
 
             p.PointNumberBounds = MeasureLineRect(
@@ -1787,10 +1786,12 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 var s = e.GetPosition(this);
                 var w = Camera.ScreenToWorld(new Vector2((float)s.X, (float)s.Y));
 
-                var delta = new Vector2(w.X - _pressedToggleButtonPoint.TextInfoBasePosition.X,
-                    w.Y - _pressedToggleButtonPoint.TextInfoBasePosition.Y);
+                //var delta = new Vector2(w.X - _pressedToggleButtonPoint.TextInfoBasePosition.X,
+                //    w.Y - _pressedToggleButtonPoint.TextInfoBasePosition.Y);
+                var delta = new Vector2(w.X - _pressedToggleButtonPoint.Position.X.ToFloat(),
+                    w.Y - _pressedToggleButtonPoint.Position.Y.ToFloat());
 
-                UpdateCogoPointOffset(_pressedToggleButtonPoint, delta);
+                UpdateCogoPointInfoOffset(_pressedToggleButtonPoint, delta);
 
                 e.Handled = true;
                 return;
@@ -2007,9 +2008,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
                 var s = e.GetPosition(this);
                 var w = Camera.ScreenToWorld(new Vector2((float)s.X, (float)s.Y));
-                var delta = new Vector2(w.X - _pressedToggleButtonPoint.TextInfoBasePosition.X,
-                    w.Y - _pressedToggleButtonPoint.TextInfoBasePosition.Y);
-                UpdateCogoPointOffset(_pressedToggleButtonPoint, delta);
+                var delta = new Vector2(w.X - _pressedToggleButtonPoint.Position.X.ToFloat(),
+                    w.Y - _pressedToggleButtonPoint.Position.Y.ToFloat());
+                UpdateCogoPointInfoOffset(_pressedToggleButtonPoint, delta);
                 _pressedToggleButtonPoint.HasLeaderLine = true;
 
                 _hoverVerticesDirty = true;
@@ -2106,11 +2107,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _maxHalfBaseForAnchors * (float)pt.PointGroup.PointScale
             );
 
-            var center = pt.TextInfoBasePosition + pt.TextInfoOffset; // world center of the toggle
+            var center = pt.Position.ToSharpDXVector2() + pt.TextInfoOffset; // world center of the toggle
             pt.ToggleBounds = new(center.X - half, center.Y - half, 2f * half, 2f * half);
         }
 
-        private void UpdateCogoPointOffset(CogoPoint point, Vector2 offset)
+        private void UpdateCogoPointInfoOffset(CogoPoint point, Vector2 offset)
         {
             if (point is null) { return; }
 
@@ -2119,7 +2120,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             bool labelsNeedUpdate = SetCogoPointLabelQuadrant(point, offset);
             if (labelsNeedUpdate) { _stateCtl.FlushLabelUpdates(); }
 
-            _stateCtl.SetPointOffset(point, offset, true, point.IsFlippedY, point.IsFlippedX);
+            _stateCtl.SetPointInfoOffset(point, offset, true, point.IsFlippedY, point.IsFlippedX);
             _stateCtl.FlushPointUpdates();
 
             UpdateToggleAnchorBounds(point);
@@ -2947,18 +2948,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             }
         }
 
-        private void CogoPoint_PropertyChanged(object? sender, PropertyChangedEventArgs e)
-        {
-            if (e.PropertyName == nameof(CogoPoint.Easting) || e.PropertyName == nameof(CogoPoint.Northing) ||
-                e.PropertyName == nameof(CogoPoint.Elevation) || e.PropertyName == nameof(CogoPoint.Description))
-            {
-                _glyphVerticesDirty = true;
-                _pointCircleVerticesDirty = true;
-                _anchorVerticesDirty = true;
-                _leaderLineVerticesDirty = true;
-            }
-        }
-
         private void PointGroups_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
         {
             PointGroups = CadManager3D?.CogoPointManager?.PointGroups;
@@ -3098,6 +3087,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 }
                 if (e.PropertyName == nameof(PointGroup.Color) || e.PropertyName == nameof(PointGroup.PointScale))
                 {
+                    _stateCtl.SetGroupScaleColorBaseOffset(pg, pg.PointScale.ToFloat(), pg.Color.ToSharpDXVector4(), pg.PointInfoBaseXoffset);
+                    _stateCtl.FlushGroupUpdates();
+
                     if (e.PropertyName == nameof(PointGroup.PointScale))
                     {
                         pg.UpdatePointInfoBaseXoffset();
@@ -3118,10 +3110,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
                             }
                         }
                         if (labelsNeedUpdate) { _stateCtl.FlushLabelUpdates(); }
-
-                        _stateCtl.SetGroupScaleColorBaseOffset(pg, pg.PointScale.ToFloat(), pg.Color.ToSharpDXVector4(), pg.PointInfoBaseXoffset);
-                        _stateCtl.FlushGroupUpdates();
-
                         HitTestableObjectTreeDirty = true;
                     }
 
@@ -3136,6 +3124,28 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     }
                     _interactiveDirty = true;
                     _dxfDirty = true;
+                }
+            }
+        }
+        private void CogoPoint_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(CogoPoint.Easting) || e.PropertyName == nameof(CogoPoint.Northing) ||
+                e.PropertyName == nameof(CogoPoint.Elevation) || e.PropertyName == nameof(CogoPoint.Description))
+            {
+                if (sender is CogoPoint cp)
+                {
+                    _stateCtl.SetPointOffset(cp, cp.Position.ToSharpDXVector2());
+                    _stateCtl.FlushPointUpdates();
+                    RecomputeCogoPointBoundsFast(cp);
+                    _dxfDirty = true;
+                    _interactiveDirty = true;
+                }
+            }
+            if (e.PropertyName == nameof(CogoPoint.PointGroup))
+            {
+                if (sender is CogoPoint cp)
+                {
+
                 }
             }
         }
@@ -3193,7 +3203,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             return deltaRects;
         }
-
         #endregion
 
         #region IDisposable Support
