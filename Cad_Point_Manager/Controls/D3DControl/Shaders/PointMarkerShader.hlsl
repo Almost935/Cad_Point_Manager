@@ -15,15 +15,17 @@ struct PointState
 {
     float2 Offset; // world-space drag delta
     float2 PointInfoOffset; // Text info offset in world units
+    uint GroupId; // index into GroupState buffer
     uint Flags; // bit0: visible bit1: selected, bit2: mouseOver, bit3: hasLeaderLine, bit4: mouseOverAnchor, bit5: anchorPressed, bit6: isFlippedY, bit7: isFlippedX
-    float3 _padLS; // keep 16B stride
+    float2 _padLS; // keep 16B stride
 };
 struct GroupState
 {
-    float4 Color;
-    float Scale;
-    uint Flags;
-    float2 Pad;
+    float4 Color; // rgba
+    float Scale; // point-scale
+    uint Flags; // bit0: visible
+    float TextInfoBaseXoffset; // distance between base position and text labels
+    float _padGS; // keep 16B stride
 };
 
 StructuredBuffer<PointState> PointStates : register(t0);
@@ -41,7 +43,6 @@ struct VS_INPUT
     float3 position : POSITION;
     float radius : RADIUS;
     uint labelId : LABEL_ID;
-    uint groupId : GROUP_ID;
     uint pointId : POINT_ID;
 };
 
@@ -70,8 +71,8 @@ void EmitCorner(float4 color, float4 position, float2 offset, inout TriangleStre
 [maxvertexcount(4)]
 void GSMain(point VS_INPUT input[1], inout TriangleStream<GS_OUTPUT> output)
 {
-    GroupState gs = GroupStates[input[0].groupId];
     PointState ps = PointStates[input[0].pointId];
+    GroupState gs = GroupStates[ps.GroupId];
 
     // Visibility
     bool visGrp = (gs.Flags & GROUP_VISIBLE) != 0u;

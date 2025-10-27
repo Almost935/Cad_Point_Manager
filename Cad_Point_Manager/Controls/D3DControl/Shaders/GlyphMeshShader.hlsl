@@ -28,8 +28,9 @@ struct PointState
 {
     float2 Offset; // world-space drag delta
     float2 PointInfoOffset; // Text info offset in world units
+    uint GroupId; // index into GroupState buffer
     uint Flags; // bit0: visible bit1: selected, bit2: mouseOver, bit3: hasLeaderLine, bit4: mouseOverAnchor, bit5: anchorPressed, bit6: isFlippedY, bit7: isFlippedX
-    float3 _padLS; // keep 16B stride
+    float2 _padLS; // keep 16B stride
 };
 struct GroupState
 {
@@ -59,8 +60,7 @@ struct VSInPerInstance
     float PenDU : GLYPH_PEN; // horizontal pen advance in DU
     float YSign : YSIGN; // +1 or -1 (flip Y if needed)
     uint LabelId : LABEL_ID; // per text line (PN/Elev/Desc)
-    uint GroupId : GROUP_ID; // owning PointGroup
-    uint PointId : POINT_ID;
+    uint PointId : POINT_ID; // per point
 };
 
 struct VSOut
@@ -99,7 +99,7 @@ VSOut VSMain(VSInPerVertex v, VSInPerInstance inst)
     // --- Fetch dynamic state ---
     LabelState ls = LabelStates[inst.LabelId];
     PointState ps = PointStates[inst.PointId];
-    GroupState gs = GroupStates[inst.GroupId];
+    GroupState gs = GroupStates[ps.GroupId];
 
     float visLbl = ((ls.Flags & LABEL_VISIBLE) != 0u) ? 1.0f : 0.0f;
     float visPt = ((ps.Flags & POINT_VISIBLE) != 0u) ? 1.0f : 0.0f;

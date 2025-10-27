@@ -96,7 +96,7 @@
                                                                      Focusable="True"
                                                                      HorizontalAlignment="Center"
                                                                      IsPopupOpen="{Binding ElementName=root, Path=LayerListColorPickerOpen, Mode=OneWayToSource}"
-                                                                     IsPopupOpenChanged="LayersPortableColorPicker_IsPopupOpenChanged"/>
+                                                                     IsPopupOpenChanged="LayersPortableColorPicker_IsPopupOpenChanged" />
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
@@ -129,152 +129,190 @@
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
-                <ListView x:Name="pointGroupsListView"
-                          Grid.Row="0"
-                          ItemsSource="{Binding ElementName=root, Path=CadManager.PointGroupsView}"
-                          Style="{StaticResource LayersListViewStyle}"
-                          IsHitTestVisible="{Binding ElementName=root, Path=PointGroupListVisible}"
-                          SelectionMode="Extended"
-                          Focusable="True"
-                          SelectionChanged="PointGroupsListView_SelectionChanged"
-                          PreviewKeyDown="PointGroupsListView_PreviewKeyDownOrUp"
-                          PreviewKeyUp="PointGroupsListView_PreviewKeyDownOrUp"
-                          Background="{StaticResource PopoutMenuBackgroundBrush}"
-                          BorderThickness="0"
-                          Loaded="PointGroupsListView_Loaded"
-                          Padding="0">
-                    <ListView.View>
-                        <GridView>
-                            <GridViewColumn>
-                                <GridViewColumn.Header>
-                                    <TextBlock Text="Name"
-                                               FontSize="{StaticResource ListViewHeaderFontSize}" />
-                                </GridViewColumn.Header>
-                                <GridViewColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <Border x:Name="PointGroupNameBorder"
-                                                PreviewMouseLeftButtonDown="PointGroupNameBorder_PreviewMouseLeftButtonDown"
-                                                Focusable="False"
-                                                Margin="0"
-                                                HorizontalAlignment="Stretch">
-                                            <TextBox x:Name="PointGroupNameTextBox"
-                                                     FontSize="{StaticResource ListViewFontSize}"
-                                                     Foreground="{DynamicResource propertiesFontBrush}"
-                                                     Style="{StaticResource EditableTextBox}"
-                                                     IsReadOnly="True"
-                                                     LostFocus="PointGroupNameTextbox_LostFocus"
-                                                     PreviewKeyDown="PointGroupNameTextbox_PreviewKeyDown"
-                                                     ToolTipService.ShowOnDisabled="True">
-                                                <TextBox.Text>
-                                                    <Binding Path="Value.Name"
-                                                             UpdateSourceTrigger="Explicit"
-                                                             Mode="TwoWay"
-                                                             ValidatesOnDataErrors="True"
-                                                             NotifyOnValidationError="True"
-                                                             ValidatesOnExceptions="True"
-                                                             ValidatesOnNotifyDataErrors="True">
-                                                        <Binding.ValidationRules>
-                                                            <validation:NoIllegalCharactersRule />
-                                                        </Binding.ValidationRules>
-                                                    </Binding>
-                                                </TextBox.Text>
-                                            </TextBox>
-                                        </Border>
-                                    </DataTemplate>
-                                </GridViewColumn.CellTemplate>
-                            </GridViewColumn>
-                            <GridViewColumn>
-                                <GridViewColumn.Header>
-                                    <TextBlock Text="Color"
-                                               FontSize="{StaticResource ListViewHeaderFontSize}" />
-                                </GridViewColumn.Header>
-                                <GridViewColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <colorpicker:PortableColorPicker Style="{StaticResource DefaultColorPickerStyle}"
-                                                                         SelectedColor="{Binding Value.Color, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
-                                                                         ToggleButtonWidth="20"
-                                                                         ToggleButtonHeight="15"
-                                                                         ToggleButtonMargin="0 2 0 2"
-                                                                         IsPopupOpen="{Binding ElementName=root, Path=PointGroupListColorPickerOpen, Mode=OneWayToSource}"
-                                                                         Focusable="True"
-                                                                         HorizontalAlignment="Center"
-                                                                         IsPopupOpenChanged="PointGroupsPortableColorPicker_IsPopupOpenChanged" />
-                                    </DataTemplate>
-                                </GridViewColumn.CellTemplate>
-                            </GridViewColumn>
-                            <GridViewColumn>
-                                <GridViewColumn.Header>
-                                    <Border>
-                                        <TextBlock Text="Visibility"
-                                                   HorizontalAlignment="Stretch"
+                <Grid Grid.Row="0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <ListView x:Name="pointGroupsListView"
+                              Grid.Row="0"
+                              ItemsSource="{Binding ElementName=root, Path=CadManager.PointGroupsView}"
+                              Style="{StaticResource LayersListViewStyle}"
+                              IsHitTestVisible="{Binding ElementName=root, Path=PointGroupListVisible}"
+                              SelectionMode="Extended"
+                              Focusable="True"
+                              SelectionChanged="PointGroupsListView_SelectionChanged"
+                              PreviewKeyDown="PointGroupsListView_PreviewKeyDownOrUp"
+                              PreviewKeyUp="PointGroupsListView_PreviewKeyDownOrUp"
+                              Background="{StaticResource PopoutMenuBackgroundBrush}"
+                              BorderThickness="0"
+                              Loaded="PointGroupsListView_Loaded"
+                              Padding="0">
+                        <ListView.View>
+                            <GridView>
+                                <GridViewColumn>
+                                    <GridViewColumn.Header>
+                                        <TextBlock Text="Name"
                                                    FontSize="{StaticResource ListViewHeaderFontSize}" />
-                                    </Border>
-                                </GridViewColumn.Header>
-                                <GridViewColumn.CellTemplate>
-                                    <DataTemplate>
+                                    </GridViewColumn.Header>
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Border x:Name="PointGroupNameBorder"
+                                                    PreviewMouseLeftButtonDown="PointGroupNameBorder_PreviewMouseLeftButtonDown"
+                                                    Focusable="False"
+                                                    Margin="0"
+                                                    HorizontalAlignment="Stretch">
+                                                <TextBox x:Name="PointGroupNameTextBox"
+                                                         FontSize="{StaticResource ListViewFontSize}"
+                                                         Foreground="{DynamicResource propertiesFontBrush}"
+                                                         Style="{StaticResource EditableTextBox}"
+                                                         IsReadOnly="True"
+                                                         LostFocus="PointGroupNameTextbox_LostFocus"
+                                                         PreviewKeyDown="PointGroupNameTextbox_PreviewKeyDown"
+                                                         ToolTipService.ShowOnDisabled="True">
+                                                    <TextBox.Text>
+                                                        <Binding Path="Value.Name"
+                                                                 UpdateSourceTrigger="Explicit"
+                                                                 Mode="TwoWay"
+                                                                 ValidatesOnDataErrors="True"
+                                                                 NotifyOnValidationError="True"
+                                                                 ValidatesOnExceptions="True"
+                                                                 ValidatesOnNotifyDataErrors="True">
+                                                            <Binding.ValidationRules>
+                                                                <validation:NoIllegalCharactersRule />
+                                                            </Binding.ValidationRules>
+                                                        </Binding>
+                                                    </TextBox.Text>
+                                                </TextBox>
+                                            </Border>
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn>
+                                <GridViewColumn>
+                                    <GridViewColumn.Header>
+                                        <TextBlock Text="Color"
+                                                   FontSize="{StaticResource ListViewHeaderFontSize}" />
+                                    </GridViewColumn.Header>
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <colorpicker:PortableColorPicker Style="{StaticResource DefaultColorPickerStyle}"
+                                                                             SelectedColor="{Binding Value.Color, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
+                                                                             ToggleButtonWidth="20"
+                                                                             ToggleButtonHeight="15"
+                                                                             ToggleButtonMargin="0 2 0 2"
+                                                                             IsPopupOpen="{Binding ElementName=root, Path=PointGroupListColorPickerOpen, Mode=OneWayToSource}"
+                                                                             Focusable="True"
+                                                                             HorizontalAlignment="Center"
+                                                                             IsPopupOpenChanged="PointGroupsPortableColorPicker_IsPopupOpenChanged" />
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn>
+                                <GridViewColumn>
+                                    <GridViewColumn.Header>
                                         <Border>
-                                            <CheckBox IsChecked="{Binding Path=Value.IsVisible, Mode=TwoWay}"
-                                                      HorizontalAlignment="Left"
-                                                      HorizontalContentAlignment="Center"
-                                                      VerticalAlignment="Center"
-                                                      VerticalContentAlignment="Center"
-                                                      Unchecked="PointGroupsCheckBox_Unchecked"
-                                                      Checked="PointGroupsCheckBox_Checked" />
+                                            <TextBlock Text="Visibility"
+                                                       HorizontalAlignment="Stretch"
+                                                       FontSize="{StaticResource ListViewHeaderFontSize}" />
                                         </Border>
-                                    </DataTemplate>
-                                </GridViewColumn.CellTemplate>
-                            </GridViewColumn>
-                            <GridViewColumn>
-                                <GridViewColumn.Header>
-                                    <TextBlock Text="Scale"
-                                               FontSize="{StaticResource ListViewHeaderFontSize}" />
-                                </GridViewColumn.Header>
-                                <GridViewColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <Border x:Name="PointGroupScaleBorder"
-                                                PreviewMouseLeftButtonDown="PointGroupScaleBorder_PreviewMouseLeftButtonDown"
-                                                Focusable="False"
-                                                BorderBrush="Transparent"
-                                                Background="Transparent"
-                                                HorizontalAlignment="Stretch">
-                                            <TextBox Style="{StaticResource EditableTextBox}"
-                                                     IsReadOnly="true"
-                                                     FontSize="{StaticResource ListViewFontSize}"
-                                                     HorizontalAlignment="Left"
-                                                     LostFocus="PointScaleTextbox_LostFocus"
-                                                     PreviewKeyDown="PointScaleTextbox_PreviewKeyUp"
-                                                     Opacity="{Binding ElementName=root, Path=PointGroupListOpacity}">
-                                                <TextBox.Text>
-                                                    <Binding Path="Value.PointScale"
-                                                             StringFormat="N3"
-                                                             UpdateSourceTrigger="Explicit"
-                                                             Mode="TwoWay"
-                                                             ValidatesOnDataErrors="True"
-                                                             NotifyOnValidationError="True"
-                                                             ValidatesOnExceptions="True"
-                                                             ValidatesOnNotifyDataErrors="True">
-                                                        <Binding.ValidationRules>
-                                                            <validation:PositiveDoubleValidationRule />
-                                                        </Binding.ValidationRules>
-                                                    </Binding>
-                                                </TextBox.Text>
-                                            </TextBox>
-                                        </Border>
-                                    </DataTemplate>
-                                </GridViewColumn.CellTemplate>
-                            </GridViewColumn>
-                        </GridView>
-                    </ListView.View>
-                </ListView>
-
+                                    </GridViewColumn.Header>
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Border>
+                                                <CheckBox IsChecked="{Binding Path=Value.IsVisible, Mode=TwoWay}"
+                                                          HorizontalAlignment="Left"
+                                                          HorizontalContentAlignment="Center"
+                                                          VerticalAlignment="Center"
+                                                          VerticalContentAlignment="Center"
+                                                          Unchecked="PointGroupsCheckBox_Unchecked"
+                                                          Checked="PointGroupsCheckBox_Checked" />
+                                            </Border>
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn>
+                                <GridViewColumn>
+                                    <GridViewColumn.Header>
+                                        <TextBlock Text="Scale"
+                                                   FontSize="{StaticResource ListViewHeaderFontSize}" />
+                                    </GridViewColumn.Header>
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Border x:Name="PointGroupScaleBorder"
+                                                    PreviewMouseLeftButtonDown="PointGroupScaleBorder_PreviewMouseLeftButtonDown"
+                                                    Focusable="False"
+                                                    BorderBrush="Transparent"
+                                                    Background="Transparent"
+                                                    HorizontalAlignment="Stretch">
+                                                <TextBox Style="{StaticResource EditableTextBox}"
+                                                         IsReadOnly="true"
+                                                         FontSize="{StaticResource ListViewFontSize}"
+                                                         HorizontalAlignment="Left"
+                                                         LostFocus="PointScaleTextbox_LostFocus"
+                                                         PreviewKeyDown="PointScaleTextbox_PreviewKeyUp"
+                                                         Opacity="{Binding ElementName=root, Path=PointGroupListOpacity}">
+                                                    <TextBox.Text>
+                                                        <Binding Path="Value.PointScale"
+                                                                 StringFormat="N3"
+                                                                 UpdateSourceTrigger="Explicit"
+                                                                 Mode="TwoWay"
+                                                                 ValidatesOnDataErrors="True"
+                                                                 NotifyOnValidationError="True"
+                                                                 ValidatesOnExceptions="True"
+                                                                 ValidatesOnNotifyDataErrors="True">
+                                                            <Binding.ValidationRules>
+                                                                <validation:PositiveDoubleValidationRule />
+                                                            </Binding.ValidationRules>
+                                                        </Binding>
+                                                    </TextBox.Text>
+                                                </TextBox>
+                                            </Border>
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn>
+                            </GridView>
+                        </ListView.View>
+                    </ListView>
+                    <Grid  Grid.Row="1"
+                           Background="{Binding ElementName=pointGroupsListView, Path=Background}">
+                        <WrapPanel HorizontalAlignment="Center">
+                            <Button x:Name="NewNewPointGroupButton" 
+                                    Style="{StaticResource BorderWidgetsButton}"
+                                    Width="40"
+                                    Height="40"
+                                    Margin="5 2 5 2"
+                                    Click="NewPointGroupButton_Click">
+                                <Button.Content>
+                                    <ContentControl Template="{StaticResource PlusIcon}" />
+                                </Button.Content>
+                                <Button.LayoutTransform>
+                                    <ScaleTransform ScaleX="0.7"
+                                                    ScaleY="0.7" />
+                                </Button.LayoutTransform>
+                                <Button.ToolTip>
+                                    <TextBlock Text="Add New Point Group" />
+                                </Button.ToolTip>
+                            </Button>
+                            <Button Style="{StaticResource BorderWidgetsButton}"
+                                    Width="40"
+                                    Height="40"
+                                    Margin="5 2 5 2">
+                                <Button.Content>
+                                    <ContentControl Template="{StaticResource CancelIcon}"
+                                                    Foreground="White" />
+                                </Button.Content>
+                                <Button.LayoutTransform>
+                                    <ScaleTransform ScaleX="0.7"
+                                                    ScaleY="0.7" />
+                                </Button.LayoutTransform>
+                                <Button.ToolTip>
+                                    <TextBlock Text="Add New Point Group" />
+                                </Button.ToolTip>
+                            </Button>
+                        </WrapPanel>
+                    </Grid>
+                </Grid>
                 <Grid Grid.Row="2"
                       HorizontalAlignment="Stretch"
                       Background="{StaticResource SemiTransparentTabBrush}">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="*" />
-                        <RowDefinition Height="*" />
-                        <RowDefinition Height="*" />
-                    </Grid.RowDefinitions>
                     <Grid.Resources>
                         <Thickness x:Key="NewPointGroupMargin">5 2 5 2</Thickness>
                         <Thickness x:Key="RowMargin">10 0 10 0</Thickness>
@@ -282,10 +320,7 @@
                                          Color="White" />
                         <sys:Double x:Key="PointGroupCreationTextSize">12</sys:Double>
                     </Grid.Resources>
-                    <Border Grid.Row="0"
-                            BorderBrush="White"
-                            BorderThickness="0 0 0 0.25"
-                            Margin="0 2 0 2">
+                    <Border Grid.Row="0">
                         <Grid Margin="10 3 10 3">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
@@ -298,20 +333,20 @@
                                        Margin="{StaticResource NewPointGroupMargin}"
                                        VerticalAlignment="Center"
                                        FontSize="{StaticResource PointGroupCreationTextSize}" />
-                            <ComboBox x:Name="AvailableMergePointGroupsCBox"
-                                      ItemsSource="{Binding ElementName=root, Path=AvailableMergePointGroups}"
-                                      DisplayMemberPath="Key"
-                                      SelectedValuePath="Value"
-                                      Style="{StaticResource ValidationComboBox}"
-                                      SelectedValue="{Binding ElementName=root, Path=MergePointGroup}"
-                                      SelectionChanged="AvailableMergePointGroupsCBox_SelectionChanged"
-                                      Height="25"
-                                      Grid.Column="1"
-                                      Margin="{StaticResource NewPointGroupMargin}">
-                                <ComboBox.ToolTip>
+                            <controls:NoRevertComboBox x:Name="AvailableMergePointGroupsCBox"
+                                                       ItemsSource="{Binding ElementName=root, Path=AvailableMergePointGroups}"
+                                                       DisplayMemberPath="Key"
+                                                       SelectedValuePath="Value"
+                                                       Style="{StaticResource ValidationComboBox}"
+                                                       SelectedValue="{Binding ElementName=root, Path=MergePointGroup}"
+                                                       SelectionChanged="AvailableMergePointGroupsCBox_SelectionChanged"
+                                                       Height="25"
+                                                       Grid.Column="1"
+                                                       Margin="{StaticResource NewPointGroupMargin}">
+                                <controls:NoRevertComboBox.ToolTip>
                                     <TextBlock Text="The layer to which the selected layer will be merged." />
-                                </ComboBox.ToolTip>
-                            </ComboBox>
+                                </controls:NoRevertComboBox.ToolTip>
+                            </controls:NoRevertComboBox>
                             <Button x:Name="MergePointGroups"
                                     Style="{StaticResource BorderWidgetsButton}"
                                     Width="40"
@@ -331,110 +366,6 @@
                             </Button>
                         </Grid>
                     </Border>
-                    <StackPanel Grid.Row="1"
-                                Margin="0 2 0 2">
-                        <Grid Margin="{StaticResource RowMargin}">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="1.5*" />
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Text="Point Group Name:"
-                                       Grid.Column="0"
-                                       HorizontalAlignment="Left"
-                                       VerticalAlignment="Bottom"
-                                       Margin="{StaticResource NewPointGroupMargin}"
-                                       Foreground="{StaticResource TextBlockColor}"
-                                       FontSize="{StaticResource PointGroupCreationTextSize}" />
-                            <TextBox x:Name="NewPointGroupNameTextBox"
-                                     Text="{Binding ElementName=root, Path=NewPointGroupName}"
-                                     Grid.Column="1"
-                                     Height="20"
-                                     HorizontalAlignment="Stretch"
-                                     VerticalAlignment="Center"
-                                     Margin="{StaticResource NewPointGroupMargin}"
-                                     Style="{StaticResource ValidationTextBox}" />
-                        </Grid>
-                        <Grid Margin="{StaticResource RowMargin}">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="1.5*" />
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Text="Point Group Color:"
-                                       Grid.Column="0"
-                                       HorizontalAlignment="Left"
-                                       VerticalAlignment="Center"
-                                       Margin="{StaticResource NewPointGroupMargin}"
-                                       Foreground="{StaticResource TextBlockColor}"
-                                       FontSize="{StaticResource PointGroupCreationTextSize}" />
-                            <colorpicker:PortableColorPicker Style="{StaticResource DefaultColorPickerStyle}"
-                                                             SelectedColor="{Binding ElementName=root, Path=NewPointGroupColor, Converter={StaticResource Vector4ToColorConverter}, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
-                                                             ToggleButtonWidth="30"
-                                                             ToggleButtonHeight="20"
-                                                             ToggleButtonMargin="0 2 0 2"
-                                                             IsPopupOpen="{Binding ElementName=root, Path=NewPointColorPickerToggleOpen, Mode=OneWayToSource}"
-                                                             Focusable="True"
-                                                             HorizontalAlignment="Center"
-                                                             Grid.Column="1" />
-                        </Grid>
-                        <Grid Margin="{StaticResource RowMargin}">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="1.5*" />
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Text="Point Group Scale:"
-                                       Grid.Column="0"
-                                       HorizontalAlignment="Left"
-                                       VerticalAlignment="Center"
-                                       Margin="{StaticResource NewPointGroupMargin}"
-                                       Foreground="{StaticResource TextBlockColor}"
-                                       FontSize="{StaticResource PointGroupCreationTextSize}" />
-                            <TextBox  x:Name="NewPointGroupScaleTextBox"
-                                      Grid.Column="1"
-                                      Height="20"
-                                      HorizontalAlignment="Stretch"
-                                      VerticalAlignment="Center"
-                                      Margin="{StaticResource NewPointGroupMargin}"
-                                      Style="{StaticResource ValidationTextBox}">
-                                <TextBox.Text>
-                                    <Binding ElementName="root"
-                                             Path="NewPointGroupScale"
-                                             StringFormat="N3"
-                                             Mode="TwoWay"
-                                             UpdateSourceTrigger="LostFocus"
-                                             ValidatesOnDataErrors="True"
-                                             ValidatesOnExceptions="True">
-                                        <Binding.ValidationRules>
-                                            <validation:PositiveDoubleValidationRule />
-                                        </Binding.ValidationRules>
-                                    </Binding>
-                                </TextBox.Text>
-                            </TextBox>
-                        </Grid>
-                    </StackPanel>
-                    <WrapPanel HorizontalAlignment="Center"
-                               Margin="10 5 10 5"
-                               Grid.Row="2">
-                        <Button x:Name="NewPointGroupButton"
-                                Style="{StaticResource BorderWidgetsButton}"
-                                Width="40"
-                                Height="40"
-                                Margin="2"
-                                Click="NewPointGroupButton_Click">
-                            <Button.Content>
-                                <ContentControl Template="{StaticResource SubmitIcon}" />
-                            </Button.Content>
-                        </Button>
-                        <Button x:Name="CancelNewPointGroupButton"
-                                Style="{StaticResource BorderWidgetsButton}"
-                                Width="40"
-                                Height="40"
-                                Margin="2"
-                                Click="CancelNewPointGroupButton_Click">
-                            <Button.Content>
-                                <ContentControl Template="{StaticResource CancelIcon}" />
-                            </Button.Content>
-                        </Button>
-                    </WrapPanel>
                 </Grid>
             </Grid>
         </Grid>

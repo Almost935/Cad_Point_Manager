@@ -1,4 +1,6 @@
-﻿using Cad_Point_Manager.Extensions;
+﻿using Cad_Point_Manager.Common.Collections;
+using Cad_Point_Manager.Extensions;
+using Cad_Point_Manager.Models.Printing;
 using SharpDX;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
@@ -12,11 +14,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private readonly float _zoomFactor;
         private bool HasValidViewport => Viewport.Width > 0 && Viewport.Height > 0;
 
-
         private Matrix _scaledViewMatrix = Matrix.Identity;
-
         private Matrix3x2 _d2dMatrix = Matrix3x2.Identity;
         private System.Windows.Media.Matrix _windowsMatrix = System.Windows.Media.Matrix.Identity;
+        private bool _isDirty = true;
+        private BatchableObservableCollection<View> _views;
         #endregion
 
         #region Properties
@@ -41,6 +43,30 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 {
                     _windowsMatrix = value;
                     OnPropertyChanged(nameof(WindowsMatrix));
+                }
+            }
+        }
+        public bool IsDirty
+        {
+            get => _isDirty;
+            set
+            {
+                if (_isDirty != value)
+                {
+                    _isDirty = value;
+                    OnPropertyChanged(nameof(IsDirty));
+                }
+            }
+        }
+        public BatchableObservableCollection<View> Views
+        {
+            get => _views;
+            set
+            {
+                if (_views != value)
+                {
+                    _views = value;
+                    OnPropertyChanged(nameof(Views));
                 }
             }
         }

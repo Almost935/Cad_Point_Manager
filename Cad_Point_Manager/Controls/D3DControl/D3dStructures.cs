@@ -66,7 +66,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public float YSign;     // typically -1 when world Y is up and font Y is down
         public uint LabelId;   // stable per text line: PN/Elev/Desc for a cogo point
         public uint PointId;   // Point index
-        public uint GroupId;   // PointGroup index
     }
     [StructLayout(LayoutKind.Sequential)]
     public struct GlyphSettingsBuffer
@@ -91,8 +90,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
     {
         public Vector2 Offset;
         public Vector2 PointInfoOffset; // Offset of the point info text from the point position
+        public uint GroupId;   // PointGroup index
         public uint Flags; // bit0: visible bit1: selected, bit2: mouseOver, bit3: hasLeaderLine, bit4: mouseOverAnchor, bit5: anchorPressed, bit6: isFlippedY, bit7: isFlippedX
-        public Vector3 _pad;   // 16B stride
+        public Vector2 _pad;   // 16B stride
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -111,7 +111,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public float Radius;
         public uint LabelId;
         public uint PointId;
-        public uint GroupId;
     }
 
 

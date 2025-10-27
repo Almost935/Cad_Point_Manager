@@ -12,6 +12,7 @@ using netDxf;
 using System.Collections;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls.Primitives;
@@ -560,14 +561,16 @@ namespace Cad_Point_Manager.ViewModels
                             var pts = ChainBuilder.ExpandChainPoints(chainPath, NewCogoPointsIntermediatePointsCount);
                             coords.AddRange(pts.Select(p => new System.Numerics.Vector2((float)p.X, (float)p.Y)).ToList());
                         }
+                        
                         for (int i = 0; i < coords.Count; i++)
                         {
-                            //CogoPoint cogoPoint = new(NewCogoPointsPointGroup, 1, coords[i].ToSharpDXVector3(), JobFileManager.CadManager3D.CogoPointManager);
-                            //JobFileManager.CadManager3D.CogoPointManager.AddPoint(cogoPoint);
                             int pointNum = JobFileManager.CadManager3D.CogoPointManager.GetNextAvailablePointNumber(NewCogoPointsStartNumber);
                             JobFileManager.CadManager3D.CogoPointManager.TryAddPoint(pointNum, coords[i].ToSharpDXVector3(), NewCogoPointsPointGroup,
                             out var cogoPoint, NewCogoPointsElevation.ToFloat(), NewCogoPointsDescription);
                         }
+
+                        JobFileManager.CadManager3D.CogoPointTextVerticesDirty = true;
+                        JobFileManager.CadManager3D.CogoPointCircleVerticesDirty = true;
 
                         ResetSelectionRequested?.Invoke(this, EventArgs.Empty);
                         JobFileManager.CadManager3D.UpdateHitTestableObjectTree();
@@ -601,8 +604,13 @@ namespace Cad_Point_Manager.ViewModels
         }
         public void RebuildChains()
         {
+            Stopwatch stopwatch = Stopwatch.StartNew();
+
             var directed = _service.BuildChainsFromSelection(SelectedGeometries, VertexSnapTolerance);
             ChainPaths = directed;
+
+            stopwatch.Stop();
+            Debug.WriteLine($"Chain rebuild time: {stopwatch.ElapsedMilliseconds} ms DateTime.Now: {DateTime.Now}");
         }
 
         // Key up event handling

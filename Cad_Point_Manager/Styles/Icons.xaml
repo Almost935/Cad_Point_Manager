@@ -265,13 +265,13 @@
                      Canvas.Top="2"
                      Width="28"
                      Height="28"
-                     Stroke="Red"
+                     Stroke="{TemplateBinding Foreground}"
                      StrokeThickness="1" />
             <Line X1="10"
                   Y1="10"
                   X2="22"
                   Y2="22"
-                  Stroke="Red"
+                  Stroke="{TemplateBinding Foreground}"
                   StrokeThickness="1"
                   StrokeStartLineCap="Round"
                   StrokeEndLineCap="Round" />
@@ -279,7 +279,7 @@
                   Y1="22"
                   X2="22"
                   Y2="10"
-                  Stroke="Red"
+                  Stroke="{TemplateBinding Foreground}"
                   StrokeThickness="1"
                   StrokeStartLineCap="Round"
                   StrokeEndLineCap="Round" />

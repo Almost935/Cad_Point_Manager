@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
@@ -52,6 +53,7 @@ namespace Cad_Point_Manager.Common.Collections
                 foreach (var i in items) { Add(i); }
             }
         }
+
 
         public void ReplaceWith(IEnumerable<T> items)
         {

@@ -8,6 +8,7 @@ using Cad_Point_Manager.Models;
 using Cad_Point_Manager.Models.DrawingObjects3D;
 using Cad_Point_Manager.Models.HitTesting;
 using Cad_Point_Manager.Models.PointRendering;
+using Cad_Point_Manager.Models.Printing;
 using SharpDX;
 using SharpDX.D3DCompiler;
 using SharpDX.Direct3D;
@@ -339,6 +340,18 @@ namespace Cad_Point_Manager.Controls.D3DControl
             typeof(D3dDxfControl),
             new PropertyMetadata(new Camera(new ViewportF(), 1.15f, new Rect(0, 0, 0, 0))));
 
+        public BatchableObservableCollection<View> Views
+        {
+            get { return (BatchableObservableCollection<View>)GetValue(ViewsProperty); }
+            set { SetValue(ViewsProperty, value); }
+        }
+        public static readonly DependencyProperty ViewsProperty =
+            DependencyProperty.Register(
+            nameof(Views),
+            typeof(BatchableObservableCollection<View>),
+            typeof(D3dDxfControl),
+            new PropertyMetadata(new BatchableObservableCollection<View>()));
+
         public static readonly DependencyProperty LayersProperty =
             DependencyProperty.Register(
                 nameof(Layers),
@@ -495,7 +508,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             if (!_leaderLineShadersLoaded) { InitializeLeaderLineShaders(); }
 
             if (!ConstantBuffersInitialized) { InitializeConstantBuffers(); }
-            if (ConstantBuffersDirty) { UpdateConstantBuffers(); }
+            if (ConstantBuffersDirty || Camera.IsDirty) { UpdateConstantBuffers(); }
 
             if (!_hitTestIsRunning)
             {
@@ -801,6 +814,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
         {
             if (_lineVertexBuffer is null || CadManager3D is null) { return; }
 
+            Debug.WriteLine($"UpdateLineVertices");
+
             var context = _resCache.DeviceContext;
             var vertexSpan = CadManager3D.UpdateLineVerticesList(_ids);
             _stateBufs.EnsureObjectCapacity(_ids.ObjectCount);
@@ -817,6 +832,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 _textVerticesDirty = false;
                 return;
             }
+
+            Debug.WriteLine($"UpdateTextVertices");
 
             var context = _resCache.DeviceContext;
             var vertexSpan = CadManager3D.UpdateTextVerticesList(_resCache, _ids);
@@ -918,6 +935,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private void UpdatePointCircleVertices()
         {
             if (_pointCircleVertexBuffer is null) { return; }
+
+            Debug.WriteLine($"UpdatePointCircleVertices");
 
             var context = _resCache.DeviceContext;
             var vertexSpan = CadManager3D.UpdatePointCircleVerticesList(_ids);
@@ -1199,7 +1218,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     new InputElement("RADIUS",   0, Format.R32_Float,       12, 0),
                     new InputElement("LABEL_ID", 0, Format.R32_UInt,        16, 0),
                     new InputElement("POINT_ID", 0, Format.R32_UInt,        20, 0),
-                    new InputElement("GROUP_ID", 0, Format.R32_UInt,        24, 0)
                 });
 
             string glyphMeshShaderPath = Path.Combine(path, @"Controls\D3DControl\Shaders\GlyphMeshShader.hlsl");
@@ -1220,7 +1238,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     new InputElement("YSIGN",         0, Format.R32_Float,          16, 1, InputClassification.PerInstanceData, 1),
                     new InputElement("LABEL_ID",      0, Format.R32_UInt,           20, 1, InputClassification.PerInstanceData, 1),
                     new InputElement("POINT_ID",      0, Format.R32_UInt,           24, 1, InputClassification.PerInstanceData, 1),
-                    new InputElement("GROUP_ID",      0, Format.R32_UInt,           28, 1, InputClassification.PerInstanceData, 1)
                 });
             _glyphInstanceBuffer = new ResizableBuffer<GlyphInstance>(_resCache.Device, initialCapacity: 256);
 
@@ -1352,7 +1369,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     // stream 1
                     new InputElement("TEXCOORD", 0, Format.R32G32_Float, 0, 1, InputClassification.PerInstanceData, 1), // Center (float2) @ offset 0
                     new InputElement("POINT_ID", 0, Format.R32_UInt,      8, 1, InputClassification.PerInstanceData, 1), // PointId  @ offset 8
-                    new InputElement("GROUP_ID", 0, Format.R32_UInt,     12, 1, InputClassification.PerInstanceData, 1), // GroupId  @ offset 12
                 });
 
             // Dedicated unit quad for this shader
@@ -1397,7 +1413,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 new InputElement("POSITION", 0, Format.R32G32_Float,     0, 0), // A
                 new InputElement("END", 0, Format.R32G32_Float,          8, 0), // BBase
                 new InputElement("POINT_ID", 0, Format.R32_UInt,         16, 0), // PointId
-                new InputElement("GROUP_ID", 0, Format.R32_UInt,         20, 0), // GroupId
             });
 
             _leaderLineShadersLoaded = true;
@@ -1622,6 +1637,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _resCache.DeviceContext.UpdateSubresource(ref toggleSettings, _toggleSettingsBuffer);
 
             ConstantBuffersDirty = false;
+            Camera.IsDirty = false;
             _dxfDirty = true;
         }
 
@@ -1649,7 +1665,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     PenDU = penDU,
                     YSign = ySign,
                     LabelId = labelId,
-                    GroupId = groupId,
                     PointId = pointId,
                 };
 
@@ -1695,7 +1710,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             var c = p.Position;
             p.EllipseBounds = new Rect(c.X - rW, c.Y - rW, 2 * rW, 2 * rW);
 
-            p.UpdateBounds();            
+            p.UpdateBounds();
         }
         private Rect MeasureLineRect(string s, Vector2 baseOrigin, Vector2 labelOffset, float baseGroupXoffset,
                                         float duToWorldBase, float duToWorld, float ySign, float groupScale)
@@ -1884,6 +1899,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
         protected override void OnMouseLeftButtonUp(MouseButtonEventArgs e)
         {
+            Stopwatch stopwatch = Stopwatch.StartNew();
+
             if (_cogoPointTextBeingMoved)
             {
                 RecomputeCogoPointBoundsFast(_pressedToggleButtonPoint);
@@ -1924,8 +1941,12 @@ namespace Cad_Point_Manager.Controls.D3DControl
                                 else { SelectObject(g); }
                             }
                         }
+                        SelectedGeometries.DeferNotifications();
                         SelectedGeometries.AddRange(newSel);
+                        SelectedGeometries.EndDefer();
+
                         geometryVerticesDirty = true;
+
                         break;
                     }
 
@@ -1995,6 +2016,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             _suspendHitTesting = false;
             UpdateDragRect();
+
+            stopwatch.Stop();
+            Debug.WriteLine($"MouseLeftButtonUp processing time: {stopwatch.ElapsedMilliseconds} ms");
         }
         protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
         {
@@ -2725,6 +2749,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 {
                     if (obj is DrawingGeometry3D geometry)
                     {
+                        if (geometry.IsSelected) { return; }
                         geometry.Select();
                         _stateCtl.SetObjectSelected(geometry, true);
                     }
@@ -2752,8 +2777,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 {
                     if (obj is DrawingGeometry3D geometry)
                     {
-                        geometry.Deselect();
-                        _stateCtl.SetObjectSelected(geometry, false);
+                        if (geometry.IsSelected)
+                        {
+                            geometry.Deselect();
+                            _stateCtl.SetObjectSelected(geometry, false);
+                        }
                     }
                 }
                 if (hitTestableObject is CogoPoint dxfPoint)
@@ -2773,6 +2801,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
         public void ResetSelectedObjects()
         {
+            Stopwatch stopwatch = Stopwatch.StartNew();
+            Debug.WriteLine($"SelectedGeometries.Count: {SelectedGeometries.Count}");
+
             var listCopy = SelectedGeometries.ToList();
             foreach (var obj in listCopy) { DeselectObject(obj); }
             SelectedGeometries.Clear();
@@ -2787,7 +2818,10 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             _stateCtl.FlushPointUpdates();
             _stateCtl.FlushObjectUpdates();
-            _lineVerticesDirty = _textVerticesDirty = _dxfDirty = _interactiveDirty = true;
+            _dxfDirty = _interactiveDirty = true;
+
+            stopwatch.Stop();
+            Debug.WriteLine($"ResetSelectedObjects Time: {stopwatch.ElapsedMilliseconds} ms");
         }
         public void EndDrag()
         {
@@ -2913,18 +2947,18 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     _textVerticesDirty = true;
                 }
             }
-            if (e.PropertyName == nameof(CadManager3D.PointTextVerticesDirty))
+            if (e.PropertyName == nameof(CadManager3D.CogoPointTextVerticesDirty))
             {
-                if (CadManager3D.PointTextVerticesDirty)
+                if (CadManager3D.CogoPointTextVerticesDirty)
                 {
                     _glyphVerticesDirty = true;
                     _leaderLineVerticesDirty = true;
                     _anchorVerticesDirty = true;
                 }
             }
-            if (e.PropertyName == nameof(CadManager3D.PointCircleVerticesDirty))
+            if (e.PropertyName == nameof(CadManager3D.CogoPointCircleVerticesDirty))
             {
-                if (CadManager3D.PointCircleVerticesDirty)
+                if (CadManager3D.CogoPointCircleVerticesDirty)
                 {
                     _pointCircleVerticesDirty = true;
                 }
@@ -2956,6 +2990,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 foreach (KeyValuePair<string, PointGroup> keyValue in e.NewItems)
                 {
                     var pg = keyValue.Value;
+
                     pg.PropertyChanged -= PointGroup_PropertyChanged;
                     pg.PropertyChanged += PointGroup_PropertyChanged;
 
@@ -2973,6 +3008,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 }
             }
         }
+
         private void CogoPoints_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
         {
             CogoPoints = CadManager3D?.CogoPointManager?.CogoPoints;
@@ -2985,7 +3021,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     cp.PropertyChanged += CogoPoint_PropertyChanged;
 
                     uint pId = _ids.GetOrAddPointId(cp);
-                    _stateBufs.InitializePointState(_ids.PointCount, cp, pId);
+                    uint gId = _ids.GetOrAddGroupId(cp.PointGroup);
+                    _stateBufs.InitializePointState(_ids.PointCount, cp, pId, gId);
 
                     uint idPN = _ids.GetOrAddLabelId(cp, 0);
                     _stateBufs.InitializeLabelState(_ids.MaxLabelCount, cp.PointNumberOffset, idPN);
@@ -3087,13 +3124,12 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 }
                 if (e.PropertyName == nameof(PointGroup.Color) || e.PropertyName == nameof(PointGroup.PointScale))
                 {
+                    pg.UpdatePointInfoBaseXoffset();
                     _stateCtl.SetGroupScaleColorBaseOffset(pg, pg.PointScale.ToFloat(), pg.Color.ToSharpDXVector4(), pg.PointInfoBaseXoffset);
                     _stateCtl.FlushGroupUpdates();
 
                     if (e.PropertyName == nameof(PointGroup.PointScale))
                     {
-                        pg.UpdatePointInfoBaseXoffset();
-
                         bool labelsNeedUpdate = false;
                         foreach (var point in pg.Points)
                         {
@@ -3129,24 +3165,31 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
         private void CogoPoint_PropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
-            if (e.PropertyName == nameof(CogoPoint.Easting) || e.PropertyName == nameof(CogoPoint.Northing) ||
-                e.PropertyName == nameof(CogoPoint.Elevation) || e.PropertyName == nameof(CogoPoint.Description))
+            if (e.PropertyName == nameof(CogoPoint.Easting) || e.PropertyName == nameof(CogoPoint.Northing))
             {
                 if (sender is CogoPoint cp)
                 {
                     _stateCtl.SetPointOffset(cp, cp.Position.ToSharpDXVector2());
                     _stateCtl.FlushPointUpdates();
                     RecomputeCogoPointBoundsFast(cp);
-                    _dxfDirty = true;
-                    _interactiveDirty = true;
+                    _dxfDirty = true; _interactiveDirty = true;
                 }
             }
             if (e.PropertyName == nameof(CogoPoint.PointGroup))
             {
                 if (sender is CogoPoint cp)
                 {
-
+                    _stateCtl.SetPointGroupId(cp, _ids.GetOrAddGroupId(cp.PointGroup));
+                    _stateCtl.FlushPointUpdates();
+                    RecomputeCogoPointBoundsFast(cp);
+                    _dxfDirty = true; _interactiveDirty = true;
                 }
+            }
+            if (e.PropertyName == nameof(CogoPoint.PointNumber) ||
+                e.PropertyName == nameof(CogoPoint.Elevation) ||
+                e.PropertyName == nameof(CogoPoint.Description))
+            {
+                _glyphVerticesDirty = true;
             }
         }
 

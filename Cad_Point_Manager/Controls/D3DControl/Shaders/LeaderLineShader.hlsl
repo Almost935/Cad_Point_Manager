@@ -15,13 +15,11 @@ cbuffer LeaderLineSettings : register(b1)
     float4 SelectedColor; // rgba
 }
 
-// Must match your C# instance (PointList)
 struct VSIn
 {
     float2 A : POSITION; // world: ellipse center
     float2 BBase : END; // world: text base (UN-offset)
     uint PointId : POINT_ID; // index into PointSRV
-    uint GroupId : GROUP_ID; // index into GroupSRV
 };
 
 struct VSOut
@@ -31,7 +29,6 @@ struct VSOut
     float2 aWorld : TEXCOORD2;  // world A
     float2 bWorld : TEXCOORD3;  // world BBase
     uint pointId : TEXCOORD4;   // index into PointSRV
-    uint groupId : TEXCOORD5;   // index into GroupSRV
     float4 pos : SV_POSITION;   // dummy (IA = PointList)
 };
 
@@ -39,8 +36,9 @@ struct PointState
 {
     float2 Offset; // world-space drag delta
     float2 PointInfoOffset; // Text info offset in world units
+    uint GroupId; // index into GroupState buffer
     uint Flags; // bit0: visible bit1: selected, bit2: mouseOver, bit3: hasLeaderLine, bit4: mouseOverAnchor, bit5: anchorPressed, bit6: isFlippedY, bit7: isFlippedX
-    float3 _padLS; // keep 16B stride
+    float2 _padLS; // keep 16B stride
 };
 struct GroupState
 {
@@ -69,7 +67,6 @@ VSOut VSMain(VSIn v)
     o.aClip = mul(float4(v.A, 0, 1), ViewProj);
     o.bClip = mul(float4(v.BBase, 0, 1), ViewProj);
     o.pointId = v.PointId;
-    o.groupId = v.GroupId;
     o.pos = o.aClip; // not used; required output
     return o;
 }
@@ -87,7 +84,7 @@ void GSMain(point VSOut vin[1], inout TriangleStream<GSOut> tri)
 
     // Look up state
     PointState ps = PointSRV[i.pointId];
-    GroupState gs = GroupSRV[i.groupId];
+    GroupState gs = GroupSRV[ps.GroupId];
 
     // Visibility (same rules as glyphs/circles)
     if (((gs.Flags & GROUP_VISIBLE) == 0u) || ((ps.Flags & POINT_VISIBLE) == 0u) || ((ps.Flags & POINT_HAS_LEADER) == 0u))

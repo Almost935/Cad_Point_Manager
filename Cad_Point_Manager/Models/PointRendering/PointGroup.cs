@@ -1,4 +1,5 @@
-﻿using Cad_Point_Manager.Controls.D3DControl;
+﻿using Cad_Point_Manager.Common.Collections;
+using Cad_Point_Manager.Controls.D3DControl;
 using SharpDX;
 using SharpDX.DirectWrite;
 using System.Collections.ObjectModel;
@@ -16,7 +17,7 @@ namespace Cad_Point_Manager.Models.PointRendering
         private string _name;
         private Color _color = Colors.Black;
         private bool _isVisible = true;
-        private ObservableCollection<CogoPoint> _points = [];
+        private BatchableObservableCollection<CogoPoint> _points = [];
         private CogoPointManager _cogoPointManager;
         private double _pointScale = 1;
         private float _pointInfoBaseXoffset = 0;
@@ -59,7 +60,7 @@ namespace Cad_Point_Manager.Models.PointRendering
                 }
             }
         }
-        public ObservableCollection<CogoPoint> Points
+        public BatchableObservableCollection<CogoPoint> Points
         {
             get => _points;
             set
@@ -122,9 +123,11 @@ namespace Cad_Point_Manager.Models.PointRendering
             PointScale = pointScale;
             UpdatePointInfoBaseXoffset();
         }
+        public PointGroup() { }
         #endregion
 
         #region Methods
+
         public bool DeletePoint(CogoPoint point)
         {
             if (point != null)

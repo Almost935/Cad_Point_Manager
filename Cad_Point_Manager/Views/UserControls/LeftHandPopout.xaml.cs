@@ -1,4 +1,5 @@
 ﻿using Cad_Point_Manager.Common.Collections;
+using Cad_Point_Manager.Controls.D3DControl;
 using Cad_Point_Manager.Models;
 using Cad_Point_Manager.Models.PointRendering;
 using Cad_Point_Manager.Services;
@@ -7,6 +8,8 @@ using Cad_Point_Manager.Views.ValidationRules;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
+using System.Diagnostics;
+using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
@@ -45,6 +48,8 @@ namespace Cad_Point_Manager.Views.UserControls
         private double _pointsTabOpacity = 0;
         private bool _propertiesTabVisible = true;
         private double _propertiesTabOpacity = 0;
+        private bool _viewsTabVisible = true;
+        private double _viewsTabOpacity = 0;
         private CogoPointSelectionViewModel _cogoPointSelectionViewModel;
         #endregion
 
@@ -60,10 +65,10 @@ namespace Cad_Point_Manager.Views.UserControls
         }
         public double PointsTabOpacity
         {
-            get { return _propertiesTabOpacity; }
+            get { return _pointsTabOpacity; }
             set
             {
-                _propertiesTabOpacity = value;
+                _pointsTabOpacity = value;
                 OnPropertyChanged(nameof(PointsTabOpacity));
             }
         }
@@ -83,6 +88,24 @@ namespace Cad_Point_Manager.Views.UserControls
             {
                 _propertiesTabOpacity = value;
                 OnPropertyChanged(nameof(PropertiesTabOpacity));
+            }
+        }
+        public bool ViewsTabVisible
+        {
+            get { return _viewsTabVisible; }
+            set
+            {
+                _viewsTabVisible = value;
+                OnPropertyChanged(nameof(ViewsTabVisible));
+            }
+        }
+        public double ViewsTabOpacity
+        {
+            get { return _viewsTabOpacity; }
+            set
+            {
+                _viewsTabOpacity = value;
+                OnPropertyChanged(nameof(ViewsTabOpacity));
             }
         }
         public CogoPointSelectionViewModel CogoPointSelectionViewModel
@@ -115,7 +138,6 @@ namespace Cad_Point_Manager.Views.UserControls
             get { return (CadManager3D)GetValue(CadManagerProperty); }
             set { SetValue(CadManagerProperty, value); }
         }
-
         public static readonly DependencyProperty CadManagerProperty =
         DependencyProperty.Register(
             nameof(CadManager),
@@ -123,18 +145,17 @@ namespace Cad_Point_Manager.Views.UserControls
             typeof(LeftHandPopout),
             new PropertyMetadata(null, OnCadManagerChanged));
 
-        public ICollectionView PointsCollectionView
+        public Camera Camera
         {
-            get { return (ICollectionView)GetValue(PointsCollectionViewProperty); }
-            set { SetValue(PointsCollectionViewProperty, value); }
+            get { return (Camera)GetValue(CameraProperty); }
+            set { SetValue(CameraProperty, value); }
         }
-
-        public static readonly DependencyProperty PointsCollectionViewProperty =
+        public static readonly DependencyProperty CameraProperty =
         DependencyProperty.Register(
-            nameof(PointsCollectionView),
-            typeof(ICollectionView),
+            nameof(Camera),
+            typeof(Camera),
             typeof(LeftHandPopout),
-            new PropertyMetadata(null));
+            new PropertyMetadata(null, OnCadManagerChanged));
 
         public static readonly DependencyProperty SelectedCogoPointsProperty =
             DependencyProperty.Register(
@@ -218,7 +239,6 @@ namespace Cad_Point_Manager.Views.UserControls
             }
         }
 
-
         private void HideTimer_Tick(object sender, EventArgs e)
         {
             _hideTimer.Stop();
@@ -252,8 +272,6 @@ namespace Cad_Point_Manager.Views.UserControls
         }
         private void HideControl()
         {
-            PointsTabVisible = false;
-
             DoubleAnimation slideOut = new DoubleAnimation
             {
                 To = 0,
@@ -303,6 +321,8 @@ namespace Cad_Point_Manager.Views.UserControls
             PointsTabOpacity = 1;
             PropertiesTabVisible = false;
             PropertiesTabOpacity = 0;
+            ViewsTabVisible = false;
+            ViewsTabOpacity = 0;
         }
 
         private void PropertiesBorder_MouseEnter(object sender, MouseEventArgs e)
@@ -311,6 +331,27 @@ namespace Cad_Point_Manager.Views.UserControls
             PointsTabOpacity = 0;
             PropertiesTabVisible = true;
             PropertiesTabOpacity = 1;
+            ViewsTabOpacity = 0;
+            ViewsTabVisible = false;
+        }
+
+        // Views list
+        private void ViewsListView_Loaded(object sender, RoutedEventArgs e)
+        {
+
+        }
+        private void ViewsListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+
+        }
+        private void ViewsBorder_MouseEnter(object sender, MouseEventArgs e)
+        {
+            PointsTabVisible = false;
+            PointsTabOpacity = 0;
+            PropertiesTabVisible = false;
+            PropertiesTabOpacity = 0;
+            ViewsTabVisible = true;
+            ViewsTabOpacity = 1;
         }
 
         // Point Number Editing
@@ -1066,13 +1107,15 @@ namespace Cad_Point_Manager.Views.UserControls
         {
             if (sender is not TextBox tb) { return; }
 
-            var text = tb.Text;
-            bool isValid = double.TryParse(text, out _);
-            if (!isValid)
+            var rule = new NoIllegalCharactersRule();
+            var result = rule.Validate(tb.Text, CultureInfo.CurrentCulture);
+            bool isValid = result.IsValid;
+            //Debug.WriteLine($"tb.Text: {tb.Text} isValid {isValid}");
+            if (!result.IsValid)
             {
                 Validation.MarkInvalid(
                     BindingOperations.GetBindingExpression(tb, TextBox.TextProperty),
-                    new ValidationError(new DoubleValidationRule(), tb.GetBindingExpression(TextBox.TextProperty), "Elevation must be a valid number", null));
+                    new ValidationError(rule, tb.GetBindingExpression(TextBox.TextProperty), "", null));
             }
             else
             {
@@ -1085,10 +1128,11 @@ namespace Cad_Point_Manager.Views.UserControls
 
             if (e.Key == Key.Enter)
             {
-                var text = textbox.Text;
-                bool isValid = double.TryParse(text, out _);
+                var rule = new NoIllegalCharactersRule();
+                var result = rule.Validate(textbox.Text, CultureInfo.CurrentCulture);
                 var binding = textbox.GetBindingExpression(TextBox.TextProperty);
-                if (isValid)
+                
+                if (result.IsValid)
                 {
                     binding?.UpdateSource();
                     Validation.ClearInvalid(binding);

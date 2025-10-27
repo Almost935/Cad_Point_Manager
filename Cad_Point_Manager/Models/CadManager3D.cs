@@ -31,8 +31,8 @@ namespace Cad_Point_Manager.Models
         private bool _dxfLoaded = false;
         private bool _lineVerticesDirty = false;
         private bool _textVerticesDirty = false;
-        private bool _dxfPointTextVerticesDirty = false;
-        private bool _dxfPointCircleVerticesDirty = false;
+        private bool _cogoPointTextVerticesDirty = false;
+        private bool _cogoPointCircleVerticesDirty = false;
         private bool _drawingObjectTreeDirty = false;
         private bool _dxfNeedsReload = false;
         private Rect _extents = RectExtensions.Zero;
@@ -80,22 +80,22 @@ namespace Cad_Point_Manager.Models
                 OnPropertyChanged(nameof(TextVerticesDirty));
             }
         }
-        public bool PointTextVerticesDirty
+        public bool CogoPointTextVerticesDirty
         {
-            get => _dxfPointTextVerticesDirty;
+            get => _cogoPointTextVerticesDirty;
             set
             {
-                _dxfPointTextVerticesDirty = value;
-                OnPropertyChanged(nameof(PointTextVerticesDirty));
+                _cogoPointTextVerticesDirty = value;
+                OnPropertyChanged(nameof(CogoPointTextVerticesDirty));
             }
         }
-        public bool PointCircleVerticesDirty
+        public bool CogoPointCircleVerticesDirty
         {
-            get => _dxfPointCircleVerticesDirty;
+            get => _cogoPointCircleVerticesDirty;
             set
             {
-                _dxfPointCircleVerticesDirty = value;
-                OnPropertyChanged(nameof(PointCircleVerticesDirty));
+                _cogoPointCircleVerticesDirty = value;
+                OnPropertyChanged(nameof(CogoPointCircleVerticesDirty));
             }
         }
         public bool HitTestableObjectTreeDirty
@@ -261,8 +261,8 @@ namespace Cad_Point_Manager.Models
             DxfLoaded = true;
             LineVerticesDirty = true;
             TextVerticesDirty = true;
-            PointTextVerticesDirty = true;
-            PointCircleVerticesDirty = true;
+            CogoPointTextVerticesDirty = true;
+            CogoPointCircleVerticesDirty = true;
             HitTestableObjectTreeDirty = true;
             DxfNeedsReload = true;
         }
@@ -440,8 +440,8 @@ namespace Cad_Point_Manager.Models
             _cachedPointTextVertices.Clear();
             _cachedPointMarkerVertices.Clear();
 
-            PointTextVerticesDirty = true;
-            PointCircleVerticesDirty = true;
+            CogoPointTextVerticesDirty = true;
+            CogoPointCircleVerticesDirty = true;
         }
 
         public void ZoomToExtents()
@@ -563,11 +563,10 @@ namespace Cad_Point_Manager.Models
                         Position = Vector3.Zero,
                         Radius = GlobalHelperProperties.CogoPointCirclePixelRadius,
                         PointId = pid,
-                        GroupId = gid
                     });
                 }
             }
-            PointCircleVerticesDirty = false;
+            CogoPointCircleVerticesDirty = false;
             return CollectionsMarshal.AsSpan(_cachedPointMarkerVertices);
         }
 
@@ -603,9 +602,8 @@ namespace Cad_Point_Manager.Models
                 }
             }
 
-            CogoPointManager.UpdateCogoPointsList();
-            PointTextVerticesDirty = true;
-            PointCircleVerticesDirty = true;
+            CogoPointTextVerticesDirty = true;
+            CogoPointCircleVerticesDirty = true;
         }
 
         public void UpdateHitTestableObjectTree()

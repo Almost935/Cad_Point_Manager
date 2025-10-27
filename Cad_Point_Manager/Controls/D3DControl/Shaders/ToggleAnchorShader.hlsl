@@ -27,7 +27,6 @@ struct VSInst
 {
     float2 center : TEXCOORD0; // world center
     uint pointId : POINT_ID; // index into PointStates
-    uint groupId : GROUP_ID; // index into GroupStates
 };
 
 struct VSOut
@@ -44,8 +43,9 @@ struct PointState
 {
     float2 Offset; // world-space drag delta
     float2 PointInfoOffset; // Text info offset in world units
+    uint GroupId; // index into GroupState buffer
     uint Flags; // bit0: visible bit1: selected, bit2: mouseOver, bit3: hasLeaderLine, bit4: mouseOverAnchor, bit5: anchorPressed, bit6: isFlippedY, bit7: isFlippedX
-    float3 _padLS; // keep 16B stride
+    float2 _padLS; // keep 16B stride
 };
 struct GroupState
 {
@@ -72,7 +72,7 @@ VSOut VSMain(VSQuadIn v, VSInst i)
     VSOut o;
 
     PointState ps = PointStates[i.pointId];
-    GroupState gs = GroupStates[i.groupId];
+    GroupState gs = GroupStates[ps.GroupId];
 
     const float visPt   = ((ps.Flags & POINT_VISIBLE) != 0u) ? 1.0f : 0.0f;
     const float visGrp  = ((gs.Flags & GROUP_VISIBLE) != 0u) ? 1.0f : 0.0f;

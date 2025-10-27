@@ -92,9 +92,22 @@ namespace Cad_Point_Manager.Models
             while (PointNumberExists(num)){ num++; }
             return num;
         }
-        private bool PointNumberExists(int num)
+        public bool PointNumberExists(int num)
         {
             return PointGroups.SelectMany(pg => pg.Value.Points).Any(p => p.PointNumber == num);
+        }
+
+        public string GetTempPointGroupName()
+        {
+            string baseName = "New Group";
+            int counter = 1;
+            string groupName = baseName + $" {counter}";
+            while (PointGroupNameExists(groupName))
+            {
+                groupName = $"{baseName} {counter}";
+                counter++;
+            }
+            return groupName;
         }
 
         public bool TrySetActivePointGroup(string groupName)
@@ -144,11 +157,15 @@ namespace Cad_Point_Manager.Models
 
             return true;
         }
-
         public void AddPoint(CogoPoint cogoPoint)
         {
             CogoPoints.Add(cogoPoint);
             cogoPoint.PointGroup.Points.Add(cogoPoint);
+        }
+        public void RemovePoint(CogoPoint cogoPoint)
+        {
+            CogoPoints.Remove(cogoPoint);
+            cogoPoint.PointGroup.Points.Remove(cogoPoint);
         }
 
         public bool TryCreatePointGroup(string groupName, Color color, double pointScale, out PointGroup pointGroup)
@@ -167,6 +184,26 @@ namespace Cad_Point_Manager.Models
             pointGroup = new(groupName, color, this, CadManager.PointBaseScale);
             PointGroups.Add(new KeyValuePair<string, PointGroup>(groupName, pointGroup));
             return true;
+        }
+
+        public void DeletePointGroup(PointGroup pg)
+        {
+            if (pg.Points.Count > 0)
+            {
+                var result = MessageBox.Show(
+                    "This will delete all points associated with this group. Continue?", 
+                    "Warning", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No);
+
+                if (result != MessageBoxResult.Yes)
+                {
+                    foreach (var p in pg.Points)
+                    {
+                        CogoPoints.Remove(p);
+                    }
+                }
+                else { return; }
+            }
+            PointGroups.Remove(PointGroups.FirstOrDefault(p => p.Value == pg));
         }
 
         public bool TryGetPointGroup(string groupName, out PointGroup pointGroup)
@@ -236,6 +273,32 @@ namespace Cad_Point_Manager.Models
             }
 
             return true;
+        }
+        public bool PointGroupNameExists(string name)
+        {
+            return PointGroups.Any(pg => pg.Key.Equals(name, StringComparison.OrdinalIgnoreCase));
+        }
+
+        public void IsValidPointScale(string input, out bool isValid, out string? errorMessage)
+        {
+            isValid = false;
+            errorMessage = null;
+            if (string.IsNullOrWhiteSpace(input))
+            {
+                errorMessage = "Point scale cannot be empty.";
+                return;
+            }
+            if (!double.TryParse(input, out double scale))
+            {
+                errorMessage = "Point scale must be a valid number.";
+                return;
+            }
+            if (scale <= 0)
+            {
+                errorMessage = "Point scale must be greater than zero.";
+                return;
+            }
+            isValid = true;
         }
 
         public void MergePointGroups(List<PointGroup> mergePGs, PointGroup destinationPG)

@@ -13,7 +13,7 @@ using Point = System.Windows.Point;
 
 namespace Cad_Point_Manager.Models.PointRendering
 {
-    public class CogoPoint : HitTestableObject, IEquatable<CogoPoint>
+    public class CogoPoint : HitTestableObject
     {
         #region Fields
         private const float _textLineSpacingFactor = 1.0f;
@@ -303,17 +303,17 @@ namespace Cad_Point_Manager.Models.PointRendering
         #endregion
 
         #region IEquatable Implementation
-        public bool Equals(CogoPoint other) =>
-        other is not null && PointNumber == other.PointNumber;
+        //public bool Equals(CogoPoint other) =>
+        //other is not null && PointNumber == other.PointNumber;
 
-        public override bool Equals(object obj) =>
-            obj is CogoPoint other && Equals(other);
+        //public override bool Equals(object obj) =>
+        //    obj is CogoPoint other && Equals(other);
 
-        public override int GetHashCode() => PointNumber; // int is fine
+        //public override int GetHashCode() => PointNumber; // int is fine
 
-        public static bool operator ==(CogoPoint a, CogoPoint b) =>
-            EqualityComparer<CogoPoint>.Default.Equals(a, b);
-        public static bool operator !=(CogoPoint a, CogoPoint b) => !(a == b);
+        //public static bool operator ==(CogoPoint a, CogoPoint b) =>
+        //    EqualityComparer<CogoPoint>.Default.Equals(a, b);
+        //public static bool operator !=(CogoPoint a, CogoPoint b) => !(a == b);
         #endregion
     }
 }

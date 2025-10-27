@@ -7,6 +7,7 @@ namespace Cad_Point_Manager.Models.Printing
     {
         #region Fields
         private string _name = string.Empty;
+        private Matrix _viewMatrix = Matrix.Identity;
         #endregion
 
         #region Properties
@@ -22,8 +23,18 @@ namespace Cad_Point_Manager.Models.Printing
                 }
             }
         }
-
-        public Matrix ViewMatrix { get; set; } = Matrix.Identity;
+        public Matrix ViewMatrix
+        {
+            get => _viewMatrix;
+            set
+            {
+                if (_viewMatrix != value)
+                {
+                    _viewMatrix = value;
+                    OnPropertyChanged(nameof(ViewMatrix));
+                }
+            }
+        }
         #endregion
 
         #region Constructors

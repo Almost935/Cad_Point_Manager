@@ -107,6 +107,14 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
             }
             _dirtyPoints.Add(pid);
         }
+        public void SetPointGroupId(CogoPoint cp, uint gId)
+        {
+            if (!_ids.TryGetPointId(cp, out var pid)) { return; }
+
+            ref var s = ref _bufs.PointSpan[(int)pid];
+            s.GroupId = gId;
+            _dirtyPoints.Add(pid);
+        }
 
         public void SetGroupVisibility(PointGroup pg, bool visible)
         {

@@ -104,18 +104,24 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
 
             LabelSpan[(int)lId] = new LabelState { Offset = offset, Flags = baseFlags };
         }
-        public void InitializePointState(int count, CogoPoint CP, uint pId)
+        public void InitializePointState(int count, CogoPoint cp, uint pId, uint gId)
         {
             EnsurePointCapacity(count);
 
             uint baseFlags = 0;
             baseFlags |= (uint)CogoPointFlags.Visible;
-            if (CP.IsSelected) { baseFlags |= (uint)CogoPointFlags.Selected; }
-            if (CP.IsMouseOver) { baseFlags |= (uint)CogoPointFlags.MouseOver; }
-            if (CP.HasLeaderLine) { baseFlags |= (uint)CogoPointFlags.HasLeaderLine; }
-            if (CP.IsFlippedY) { baseFlags |= (uint)CogoPointFlags.IsFlippedY; }
-            if (CP.IsFlippedX) { baseFlags |= (uint)CogoPointFlags.IsFlippedX; }
-            PointSpan[(int)pId] = new PointState { Flags = baseFlags, Offset = CP.Position.ToSharpDXVector2(), PointInfoOffset = Vector2.Zero };
+            if (cp.IsSelected) { baseFlags |= (uint)CogoPointFlags.Selected; }
+            if (cp.IsMouseOver) { baseFlags |= (uint)CogoPointFlags.MouseOver; }
+            if (cp.HasLeaderLine) { baseFlags |= (uint)CogoPointFlags.HasLeaderLine; }
+            if (cp.IsFlippedY) { baseFlags |= (uint)CogoPointFlags.IsFlippedY; }
+            if (cp.IsFlippedX) { baseFlags |= (uint)CogoPointFlags.IsFlippedX; }
+            PointSpan[(int)pId] = new PointState
+            {
+                Offset = cp.Position.ToSharpDXVector2(),
+                PointInfoOffset = Vector2.Zero,
+                GroupId = gId,
+                Flags = baseFlags
+            };
         }
         public void InitializeGroupState(int count, PointGroup pg, uint gId)
         {
@@ -123,12 +129,12 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
 
             uint baseFlags = 0;
             if (pg.IsVisible) { baseFlags |= (uint)PointGroupFlags.Visible; }
-            GroupSpan[(int)gId] = new GroupState 
-            { 
-                Color = pg.Color.ToSharpDXVector4(), 
-                Scale = (float)pg.PointScale, 
-                Flags = baseFlags, 
-                TextInfoBaseXoffset = pg.PointInfoBaseXoffset 
+            GroupSpan[(int)gId] = new GroupState
+            {
+                Color = pg.Color.ToSharpDXVector4(),
+                Scale = (float)pg.PointScale,
+                Flags = baseFlags,
+                TextInfoBaseXoffset = pg.PointInfoBaseXoffset
             };
         }
         public void InitializeLayerState(int count, ObjectLayer3D layer, uint lId)
@@ -141,7 +147,7 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
         public void InitializeObjectState(int count, DrawingObject3D obj, uint oId)
         {
             EnsureObjectCapacity(count);
-            
+
             uint baseFlags = 0;
             baseFlags |= (uint)ObjectFlags.Visible;
             if (obj.IsSelected) { baseFlags |= (uint)ObjectFlags.Selected; }
