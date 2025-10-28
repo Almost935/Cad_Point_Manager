@@ -28,7 +28,7 @@ namespace Cad_Point_Manager.ViewModels
     {
         #region Fields
         private readonly ValidationService _validationService = new();
-        private readonly SelectionConnectivityService _service = new();
+        private readonly NewSelectionConnectivityService _service = new();
 
         private readonly Dictionary<string, List<string>> _errors = [];
 
@@ -604,13 +604,8 @@ namespace Cad_Point_Manager.ViewModels
         }
         public void RebuildChains()
         {
-            Stopwatch stopwatch = Stopwatch.StartNew();
-
             var directed = _service.BuildChainsFromSelection(SelectedGeometries, VertexSnapTolerance);
             ChainPaths = directed;
-
-            stopwatch.Stop();
-            Debug.WriteLine($"Chain rebuild time: {stopwatch.ElapsedMilliseconds} ms DateTime.Now: {DateTime.Now}");
         }
 
         // Key up event handling

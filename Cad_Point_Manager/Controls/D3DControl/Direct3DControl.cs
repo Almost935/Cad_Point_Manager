@@ -220,8 +220,24 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             _d3DSurface.SetRenderTarget(null);
 
-            Disposer.SafeDispose(ref _texture2D);
+            // 2) Dispose ALL old RTs & textures (not just the on-screen pair)
+            Disposer.SafeDispose(ref _interactiveRenderTargetView);
+            Disposer.SafeDispose(ref _dxfRenderTargetView);
             Disposer.SafeDispose(ref _renderTargetView);
+
+            Disposer.SafeDispose(ref _interactiveTexture);
+            Disposer.SafeDispose(ref _dxfTexture);
+            Disposer.SafeDispose(ref _texture2D);
+
+            //// 3) Dispose old D2D/DWrite objects *before* making new ones
+            //Disposer.SafeDispose(ref _resCache.D2DDeviceContext);
+            //Disposer.SafeDispose(ref _resCache.D2DDevice);
+            //Disposer.SafeDispose(ref _resCache.D2dFactory);
+
+            //// 4) If your GlyphAtlas/AdvanceWidthCache/Tessellator/FontFace implement IDisposable, dispose them, too.
+            //// e.g.:
+            //Disposer.SafeDispose(ref _resCache.AsciiGlyphAtlas);
+            //Disposer.SafeDispose(ref _resCache.GlyphTessellator);
 
             var width = Math.Max((int)ActualWidth, 100);
             var height = Math.Max((int)ActualHeight, 100);

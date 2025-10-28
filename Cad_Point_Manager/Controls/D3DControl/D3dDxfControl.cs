@@ -814,8 +814,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
         {
             if (_lineVertexBuffer is null || CadManager3D is null) { return; }
 
-            Debug.WriteLine($"UpdateLineVertices");
-
             var context = _resCache.DeviceContext;
             var vertexSpan = CadManager3D.UpdateLineVerticesList(_ids);
             _stateBufs.EnsureObjectCapacity(_ids.ObjectCount);
@@ -832,8 +830,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 _textVerticesDirty = false;
                 return;
             }
-
-            Debug.WriteLine($"UpdateTextVertices");
 
             var context = _resCache.DeviceContext;
             var vertexSpan = CadManager3D.UpdateTextVerticesList(_resCache, _ids);
@@ -936,8 +932,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
         {
             if (_pointCircleVertexBuffer is null) { return; }
 
-            Debug.WriteLine($"UpdatePointCircleVertices");
-
             var context = _resCache.DeviceContext;
             var vertexSpan = CadManager3D.UpdatePointCircleVerticesList(_ids);
             _pointCircleVertexBuffer.Update(context, vertexSpan);
@@ -969,8 +963,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             var rt = new Vector3((float)r.Right, (float)r.Top, 1);
             var rb = new Vector3((float)r.Right, (float)r.Bottom, 1);
             var lb = new Vector3((float)r.Left, (float)r.Bottom, 1);
-
-            //Debug.WriteLine($"{lt} {rt} {rb} {lb}");
 
             // fill color (ARGB #3300FFFF like your XAML)
             var fill = new Vector4(0f, 1f, 1f, 0.2f); // DeepSkyBlue-ish with alpha
@@ -1899,8 +1891,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
         protected override void OnMouseLeftButtonUp(MouseButtonEventArgs e)
         {
-            Stopwatch stopwatch = Stopwatch.StartNew();
-
             if (_cogoPointTextBeingMoved)
             {
                 RecomputeCogoPointBoundsFast(_pressedToggleButtonPoint);
@@ -1923,6 +1913,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             {
                 case Common.Enums.SelectionMode.Geometries:
                     {
+                        SelectedGeometries.DeferNotifications();
                         var newSel = new HashSet<DrawingGeometry3D>(_mouseOverHitTestableObjects.OfType<DrawingGeometry3D>());
                         if (IsDragging)
                         {
@@ -1937,15 +1928,16 @@ namespace Cad_Point_Manager.Controls.D3DControl
                             var oldSel = new HashSet<DrawingGeometry3D>(SelectedGeometries);
                             foreach (var g in newSel.Except(oldSel))
                             {
-                                if (IsShiftPressed || g.IsSelected) { DeselectObject(g); }
+                                if (IsShiftPressed) { DeselectObject(g); }
                                 else { SelectObject(g); }
                             }
                         }
-                        SelectedGeometries.DeferNotifications();
-                        SelectedGeometries.AddRange(newSel);
                         SelectedGeometries.EndDefer();
 
+                        hoverVerticesDirty = true;
                         geometryVerticesDirty = true;
+
+                        _stateCtl.FlushObjectUpdates();
 
                         break;
                     }
@@ -2008,17 +2000,15 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     }
             }
 
-            if (geometryVerticesDirty) { _dxfDirty = true; }
+            EndDrag();
+            UpdateDragRect();
+            ResetHoverObjects();
+
+            if (geometryVerticesDirty) { _dxfDirty = true; _interactiveDirty = true; }
             if (hoverVerticesDirty) { _hoverVerticesDirty = true; }
             if (cogoPointVerticesDirty) { _interactiveDirty = true; _dxfDirty = true; }
 
-            EndDrag();
-
             _suspendHitTesting = false;
-            UpdateDragRect();
-
-            stopwatch.Stop();
-            Debug.WriteLine($"MouseLeftButtonUp processing time: {stopwatch.ElapsedMilliseconds} ms");
         }
         protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
         {
@@ -2596,8 +2586,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             if (!CadManager3D.DxfLoaded) { return; }
             if (_lastQueriedDxfRect == DragRect) { return; }
 
-            //Stopwatch stopwatch = Stopwatch.StartNew();
-
             var addedRegions = GetDragDelta(_lastQueriedDxfRect, DragRect);
             var removedRegions = GetDragDelta(DragRect, _lastQueriedDxfRect);
             if (_lastQueriedDxfRect.IsEmpty || _lastQueriedDxfRect == new Rect(0, 0, 0, 0))
@@ -2621,6 +2609,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     }
                 }
             }
+
             foreach (var region in removedRegions)
             {
                 var possiblyRemoved = CadManager3D.HitTestDragGeometries(region).Distinct();
@@ -2642,9 +2631,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 _stateCtl.FlushObjectUpdates();
                 _dxfDirty = true;
             }
-
-            //stopwatch.Stop();
-            //Debug.WriteLine($"stopwatch.ElapsedMilliseconds: {stopwatch.ElapsedMilliseconds}");
         }
         public void CancelHitTesting()
         {
@@ -2752,6 +2738,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                         if (geometry.IsSelected) { return; }
                         geometry.Select();
                         _stateCtl.SetObjectSelected(geometry, true);
+                        SelectedGeometries.Add(geometry);
                     }
                 }
                 if (hitTestableObject is CogoPoint dxfPoint)
@@ -2781,6 +2768,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                         {
                             geometry.Deselect();
                             _stateCtl.SetObjectSelected(geometry, false);
+                            SelectedGeometries.Remove(geometry);
                         }
                     }
                 }
@@ -2801,11 +2789,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
         public void ResetSelectedObjects()
         {
-            Stopwatch stopwatch = Stopwatch.StartNew();
-            Debug.WriteLine($"SelectedGeometries.Count: {SelectedGeometries.Count}");
-
             var listCopy = SelectedGeometries.ToList();
-            foreach (var obj in listCopy) { DeselectObject(obj); }
+            foreach (var obj in listCopy) { obj.Deselect(); _stateCtl.SetObjectSelected(obj, false); }
             SelectedGeometries.Clear();
 
             var sigPointsCopy = SelectedHitTestablePoints.ToList();
@@ -2819,9 +2804,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _stateCtl.FlushPointUpdates();
             _stateCtl.FlushObjectUpdates();
             _dxfDirty = _interactiveDirty = true;
-
-            stopwatch.Stop();
-            Debug.WriteLine($"ResetSelectedObjects Time: {stopwatch.ElapsedMilliseconds} ms");
         }
         public void EndDrag()
         {

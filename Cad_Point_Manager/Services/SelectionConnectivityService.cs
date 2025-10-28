@@ -56,7 +56,7 @@ namespace Cad_Point_Manager.Services
                             var edge = new EdgeInput(a, a, SegmentKind.Arc, arcData);
 
                             var nodes = new List<Pt> { a, a };
-                            var steps = new List<EdgeUse> { new EdgeUse(edge, true) };
+                            var steps = new List<EdgeUse> { new(edge, true) };
                             circleChains.Add(new ChainPath(nodes, steps));
                             break;
                         }

@@ -533,7 +533,8 @@
                                                    Margin="{StaticResource RowItemMargin}"
                                                    ItemsSource="{Binding DisplayedPointGroupsName}"
                                                    IsEnabled="{Binding IsPointGroupEditable}"
-                                                   SelectedItem="{Binding PointGroup}" />
+                                                   SelectedItem="{Binding PointGroup}"
+                                                   SelectionChanged="PropertiesPointGroupComboBox_SelectionChanged" />
                     </Grid>
                 </StackPanel>
             </Grid>

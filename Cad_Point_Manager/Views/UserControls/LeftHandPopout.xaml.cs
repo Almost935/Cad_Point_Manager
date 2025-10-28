@@ -1109,8 +1109,7 @@ namespace Cad_Point_Manager.Views.UserControls
 
             var rule = new NoIllegalCharactersRule();
             var result = rule.Validate(tb.Text, CultureInfo.CurrentCulture);
-            bool isValid = result.IsValid;
-            //Debug.WriteLine($"tb.Text: {tb.Text} isValid {isValid}");
+            
             if (!result.IsValid)
             {
                 Validation.MarkInvalid(
@@ -1147,6 +1146,22 @@ namespace Cad_Point_Manager.Views.UserControls
                 var binding = textbox.GetBindingExpression(TextBox.TextProperty);
                 binding?.UpdateTarget();
                 Validation.ClearInvalid(binding);
+            }
+        }
+
+        // Point Group Properties
+        private void PropertiesPointGroupComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            bool found = CadManager.CogoPointManager.TryGetPointGroup(CogoPointSelectionViewModel.PointGroup, out PointGroup? pg);
+            if (found)
+            {
+                foreach (var point in CogoPointSelectionViewModel.SelectedPoints)
+                {
+                    if (point.PointGroup.Name != CogoPointSelectionViewModel.PointGroup)
+                    {
+                        point.PointGroup = found ? pg : null;
+                    }
+                }
             }
         }
         #endregion
