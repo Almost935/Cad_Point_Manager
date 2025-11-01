@@ -7,8 +7,8 @@ cbuffer TransformationBuffer : register(b0)
 cbuffer CircleGlowSettingsBuffer : register(b1)
 {
     float glowOffset;
-    float glowTransparency;
-    float padding;
+    float3 padding;
+    float4 hoverColor;
     float4 selectedColor;
     float4 selectedMouseOverColor;
 };
@@ -55,17 +55,11 @@ void GSMain(point VS_INPUT input[1], inout TriangleStream<GS_OUTPUT> output)
     float4 position = mul(float4(input[0].position, 1), transformationMatrix);
     float radiusX = input[0].radius * transformationMatrix._11;
     float radiusY = input[0].radius * transformationMatrix._22;
-    float4 color = float4(0, 0, 0, glowTransparency);
-    
-    if (input[0].isSelected > 0.5)
-    {
-        color = float4(selectedColor.rgb, glowTransparency);
-    }
 
-    EmitCorner(input[0], float4(position.x - radiusX, position.y + radiusY, 0, 1), float2(-1, 1), color, output); // TL
-    EmitCorner(input[0], float4(position.x - radiusX, position.y - radiusY, 0, 1), float2(-1, -1), color, output); // BL
-    EmitCorner(input[0], float4(position.x + radiusX, position.y + radiusY, 0, 1), float2(1, 1), color, output); // TR
-    EmitCorner(input[0], float4(position.x + radiusX, position.y - radiusY, 0, 1), float2(1, -1), color, output); // BR
+    EmitCorner(input[0], float4(position.x - radiusX, position.y + radiusY, 0, 1), float2(-1, 1), hoverColor, output); // TL
+    EmitCorner(input[0], float4(position.x - radiusX, position.y - radiusY, 0, 1), float2(-1, -1), hoverColor, output); // BL
+    EmitCorner(input[0], float4(position.x + radiusX, position.y + radiusY, 0, 1), float2(1, 1), hoverColor, output); // TR
+    EmitCorner(input[0], float4(position.x + radiusX, position.y - radiusY, 0, 1), float2(1, -1), hoverColor, output); // BR
 }
 
 // =======================

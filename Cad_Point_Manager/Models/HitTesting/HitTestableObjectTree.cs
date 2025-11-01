@@ -75,7 +75,7 @@ namespace Cad_Point_Manager.Models.HitTesting
             }
             foreach (var keyValue in _cadManager.CogoPointManager.PointGroups)
             {
-                HitTestableObjects.AddRange(keyValue.Value.Points);
+                HitTestableObjects.AddRange(keyValue.Points);
             }
         }
         public List<HitTestableObjectNode> GetIntersectingNodes(Rect view)

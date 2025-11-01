@@ -76,6 +76,14 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
             else { s.Flags &= ~(uint)CogoPointFlags.Selected; }
             _dirtyPoints.Add(pid);
         }
+        public void SetPointMouseOver(CogoPoint cp, bool mouseOver)
+        {
+            if (!_ids.TryGetPointId(cp, out var pid)) { return; }
+            ref var s = ref _bufs.PointSpan[(int)pid];
+            if (mouseOver) { s.Flags |= (uint)CogoPointFlags.MouseOver; }
+            else { s.Flags &= ~(uint)CogoPointFlags.MouseOver; }
+            _dirtyPoints.Add(pid);
+        }
         public void SetPointOffset(CogoPoint cp, Vector2 offset)
         {
             if (!_ids.TryGetPointId(cp, out var pid)) { return; }

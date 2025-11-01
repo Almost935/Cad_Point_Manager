@@ -58,8 +58,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Remove="Controls\D3DControl\Shaders\CircleGlowShader.hlsl" />
     <None Remove="Controls\D3DControl\Shaders\PointTextShader.hlsl" />
+    <None Remove="Controls\D3DControl\Shaders\SigPointShader.hlsl" />
     <None Remove="Controls\D3DControl\Shaders\TestShader.hlsl" />
+    <None Remove="Controls\D3DControl\Shaders\TextGlowShader.hlsl" />
   </ItemGroup>
 
   <ItemGroup>

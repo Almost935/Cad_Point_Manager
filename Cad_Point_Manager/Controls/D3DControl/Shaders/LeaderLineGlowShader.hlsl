@@ -1,7 +1,4 @@
 ﻿// LeaderLineShader.hlsl
-// One POINT per line: (A, BBase, LabelId, GroupId) -> GS extrudes pixel-width quad.
-// Uses LabelSRV/GroupSRV for visibility, selection, color; adds LabelSRV.Offset so it follows drag.
-
 cbuffer TransformBuffer : register(b0) // same as your other passes
 {
     row_major float4x4 ViewProj; // world -> clip
@@ -24,12 +21,12 @@ struct VSIn
 
 struct VSOut
 {
-    float4 aClip : TEXCOORD0;   // clip-space A
-    float4 bClip : TEXCOORD1;   // clip-space BBase
-    float2 aWorld : TEXCOORD2;  // world A
-    float2 bWorld : TEXCOORD3;  // world BBase
-    uint pointId : TEXCOORD4;   // index into PointSRV
-    float4 pos : SV_POSITION;   // dummy (IA = PointList)
+    float4 aClip : TEXCOORD0; // clip-space A
+    float4 bClip : TEXCOORD1; // clip-space BBase
+    float2 aWorld : TEXCOORD2; // world A
+    float2 bWorld : TEXCOORD3; // world BBase
+    uint pointId : TEXCOORD4; // index into PointSRV
+    float4 pos : SV_POSITION; // dummy (IA = PointList)
 };
 
 struct PointState
@@ -55,7 +52,7 @@ StructuredBuffer<GroupState> GroupSRV : register(t1);
 static const uint POINT_VISIBLE = 1u << 0;
 static const uint POINT_SELECTED = 1u << 1;
 static const uint POINT_MOUSE_OVER = 1u << 2;
-static const uint POINT_HAS_LEADER = 1u << 3; 
+static const uint POINT_HAS_LEADER = 1u << 3;
 
 static const uint GROUP_VISIBLE = 1u << 0;
 
@@ -87,7 +84,10 @@ void GSMain(point VSOut vin[1], inout TriangleStream<GSOut> tri)
     GroupState gs = GroupSRV[ps.GroupId];
 
     // Visibility (same rules as glyphs/circles)
-    if (((gs.Flags & GROUP_VISIBLE) == 0u) || ((ps.Flags & POINT_VISIBLE) == 0u) || ((ps.Flags & POINT_HAS_LEADER) == 0u))
+    if (((gs.Flags & GROUP_VISIBLE) == 0u) || 
+        ((ps.Flags & POINT_VISIBLE) == 0u) || 
+        ((ps.Flags & POINT_HAS_LEADER) == 0u) ||
+        ((ps.Flags & POINT_MOUSE_OVER) == 0u))
         return;
 
     // Live endpoint B = BBase + label offset
@@ -104,8 +104,7 @@ void GSMain(point VSOut vin[1], inout TriangleStream<GSOut> tri)
     // Direction in NDC
     float2 dir = bN - aN;
     float len = length(dir);
-    if (len < 1e-6)
-        return;
+    if (len < 1e-6) { return; }
     dir /= len;
 
     // Perp in NDC; convert desired pixel thickness to NDC using InvViewport (NDC range = 2)
@@ -127,8 +126,7 @@ void GSMain(point VSOut vin[1], inout TriangleStream<GSOut> tri)
 
     // Color from group; override if selected
     float4 col = gs.Color;
-    if ((ps.Flags & POINT_SELECTED) != 0u)
-        col = SelectedColor;
+    //if ((ps.Flags & POINT_SELECTED) != 0u) { col = SelectedColor; }
 
     // Emit strip
     GSOut o;

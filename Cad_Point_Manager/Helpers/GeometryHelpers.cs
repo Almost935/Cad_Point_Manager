@@ -54,7 +54,6 @@ namespace Cad_Point_Manager.Helpers
             return allPoints.ToList();
         }
 
-
         public static Vector GetNearestPointOnGeometry(DrawingGeometry3D geometry, Vector point)
         {
             return geometry switch

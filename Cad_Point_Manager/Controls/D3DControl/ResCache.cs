@@ -163,9 +163,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         public int MaxSize { get; set; }
         public BlendState BaseBlendState { get; set; }
+        public BlendState MaxBlendState { get; set; }
         public GlyphAtlas AsciiGlyphAtlas { get; set; }
         public DWriteGlyphTessellator GlyphTessellator { get; set; }
         public AdvanceWidthCache AdvanceWidthCache { get; set; }
+
         public FontFace CogoPointFontFace { get; set; }
         public ConcurrentDictionary<(string fontName, FontWeight fontWeight, FontStretch fontStretch, FontStyle fontStyle), FontFace> FontFaceDict = [];
         #endregion
@@ -182,12 +184,13 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 throw new InvalidOperationException("WriteFactory is not initialized.");
             }
 
-            if (FontFaceDict.TryGetValue((fontName, fontWeight, fontStretch, fontStyle), out FontFace fontFace))
+            if (FontFaceDict.TryGetValue((fontName, fontWeight, fontStretch, fontStyle), out FontFace fontFace) &&
+                !fontFace.IsDisposed)
             {
                 return fontFace;
             }
             else
-            { 
+            {
                 FontCollection fontCollection = WriteFactory.GetSystemFontCollection(false);
                 bool exists = fontCollection.FindFamilyName(fontName, out int fontIndex);
                 if (!exists) fontIndex = 0; // Fallback to the first font if not found

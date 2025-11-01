@@ -59,7 +59,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         public override void UpdateBounds()
         {
             Bounds = Rect.Empty;
-
             Bounds = Rect.Union(Bounds, new System.Windows.Point(Start.X, Start.Y));
             Bounds = Rect.Union(Bounds, new System.Windows.Point(End.X, End.Y));
         }

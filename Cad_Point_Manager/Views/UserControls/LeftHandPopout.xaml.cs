@@ -201,9 +201,9 @@ namespace Cad_Point_Manager.Views.UserControls
                 control.CogoPointSelectionViewModel?.Refresh();
 
                 // Subscribe to PointGroups collection changes
-                if (cadManager?.CogoPointManager?.PointGroups is ObservableCollection<KeyValuePair<string, PointGroup>> pg)
+                if (cadManager?.CogoPointManager?.PointGroups is ObservableCollection<PointGroup> pgs)
                 {
-                    pg.CollectionChanged += control.PointGroups_CollectionChanged;
+                    pgs.CollectionChanged += control.PointGroups_CollectionChanged;
                 }
             }
         }

@@ -13,6 +13,7 @@
              xmlns:validation="clr-namespace:Cad_Point_Manager.Views.ValidationRules"
              xmlns:fa="http://schemas.fontawesome.io/icons/"
              xmlns:sys="clr-namespace:System;assembly=mscorlib"
+             xmlns:behaviors="clr-namespace:Cad_Point_Manager.Behavior"
              mc:Ignorable="d"
              d:DesignHeight="400"
              d:DesignWidth="400">
@@ -168,10 +169,10 @@
                                                          Style="{StaticResource EditableTextBox}"
                                                          IsReadOnly="True"
                                                          LostFocus="PointGroupNameTextbox_LostFocus"
-                                                         PreviewKeyDown="PointGroupNameTextbox_PreviewKeyDown"
+                                                         PreviewKeyUp="PointGroupNameTextbox_PreviewKeyUp"
                                                          ToolTipService.ShowOnDisabled="True">
                                                     <TextBox.Text>
-                                                        <Binding Path="Value.Name"
+                                                        <Binding Path="Name"
                                                                  UpdateSourceTrigger="Explicit"
                                                                  Mode="TwoWay"
                                                                  ValidatesOnDataErrors="True"
@@ -196,7 +197,7 @@
                                     <GridViewColumn.CellTemplate>
                                         <DataTemplate>
                                             <colorpicker:PortableColorPicker Style="{StaticResource DefaultColorPickerStyle}"
-                                                                             SelectedColor="{Binding Value.Color, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
+                                                                             SelectedColor="{Binding Color, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
                                                                              ToggleButtonWidth="20"
                                                                              ToggleButtonHeight="15"
                                                                              ToggleButtonMargin="0 2 0 2"
@@ -218,7 +219,7 @@
                                     <GridViewColumn.CellTemplate>
                                         <DataTemplate>
                                             <Border>
-                                                <CheckBox IsChecked="{Binding Path=Value.IsVisible, Mode=TwoWay}"
+                                                <CheckBox IsChecked="{Binding Path=IsVisible, Mode=TwoWay}"
                                                           HorizontalAlignment="Left"
                                                           HorizontalContentAlignment="Center"
                                                           VerticalAlignment="Center"
@@ -242,7 +243,8 @@
                                                     BorderBrush="Transparent"
                                                     Background="Transparent"
                                                     HorizontalAlignment="Stretch">
-                                                <TextBox Style="{StaticResource EditableTextBox}"
+                                                <TextBox x:Name="PointScaleTextbox" 
+                                                         Style="{StaticResource EditableTextBox}"
                                                          IsReadOnly="true"
                                                          FontSize="{StaticResource ListViewFontSize}"
                                                          HorizontalAlignment="Left"
@@ -250,7 +252,7 @@
                                                          PreviewKeyDown="PointScaleTextbox_PreviewKeyUp"
                                                          Opacity="{Binding ElementName=root, Path=PointGroupListOpacity}">
                                                     <TextBox.Text>
-                                                        <Binding Path="Value.PointScale"
+                                                        <Binding Path="PointScale"
                                                                  StringFormat="N3"
                                                                  UpdateSourceTrigger="Explicit"
                                                                  Mode="TwoWay"

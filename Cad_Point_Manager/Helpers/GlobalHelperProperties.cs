@@ -9,8 +9,8 @@ namespace Cad_Point_Manager.Helpers
     {
         public const float ZoomFactor = 1.3f;
 
-        public const float LineGlowTransparency = 0.4f;
-        public static readonly Vector4 LineGlowColor = new(0, 0, 0, LineGlowTransparency);
+        public const float HoverTransparency = 0.4f;
+        public static readonly Vector4 HoverColor = new(0, 0, 0, HoverTransparency);
         public const float LineGlowPixelWidth = 5;
 
         public const float TextHeightToGlowOffsetFactor = 0.05f;
@@ -26,12 +26,13 @@ namespace Cad_Point_Manager.Helpers
 
         public static readonly Vector4 SelectedObjectColor = new(59.0f / 255.0f, 255.0f / 255.0f, 62.0f / 255.0f, 1);
         public static readonly Vector4 SelectedMouseOverObjectColor = new(127.0f / 255.0f, 1.0f, 116.0f / 255.0f, 1);
-        public static readonly Vector4 SelectedMouseOverGlowColor = new(170.0f / 255.0f, 252.0f / 255.0f, 235.0f / 255.0f, 1);
+        public static readonly Vector4 SelectedMouseOverGlowColor = new(127.0f / 255.0f, 1.0f, 116.0f / 255.0f, 0.5f);
 
         public static readonly float DxfPointToExtentsBaseFactor = 0.05f;
 
         public const float CogoPointCirclePixelRadius = 0.4f;
         public const float CogoPointCircleMouseOverPixelRadius = 0.6f;
+        public const float CogoPointLeaderLinePixelWidth = 1;
 
         public static readonly Color MouseOverCogoPointColor = Color.FromArgb(255, 8, 230, 238);
         public static readonly SolidColorBrush MouseOverCogoPointBrush = new(MouseOverCogoPointColor);

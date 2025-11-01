@@ -18,14 +18,14 @@ namespace Cad_Point_Manager.Models
         #region Fields
         private const string _fontName = "Arial";
 
-        private BatchableObservableCollection<KeyValuePair<string, PointGroup>> _pointGroups = [];
+        private BatchableObservableCollection<PointGroup> _pointGroups = [];
         private PointGroup _activePointGroup;
         private CadManager3D _cadManager;
         private BatchableObservableCollection<CogoPoint> _cogoPoints = [];
         #endregion
 
         #region Properties
-        public BatchableObservableCollection<KeyValuePair<string, PointGroup>> PointGroups
+        public BatchableObservableCollection<PointGroup> PointGroups
         {
             get => _pointGroups;
             private set
@@ -74,8 +74,8 @@ namespace Cad_Point_Manager.Models
         public Rect Extents { get; set; } = Rect.Empty;
         public Matrix CurrentlyAppliedMatrix { get; set; } = Matrix.Identity;
 
-        public List<int> UsedPointNumbers => PointGroups.SelectMany(pg => pg.Value.Points).Select(p => p.PointNumber).ToList();
-        public bool PointExists(int pointNumber) => PointGroups.SelectMany(pg => pg.Value.Points).Any(p => p.PointNumber == pointNumber);
+        public List<int> UsedPointNumbers => PointGroups.SelectMany(pg => pg.Points).Select(p => p.PointNumber).ToList();
+        public bool PointExists(int pointNumber) => PointGroups.SelectMany(pg => pg.Points).Any(p => p.PointNumber == pointNumber);
         #endregion
 
         #region Constructor
@@ -94,7 +94,7 @@ namespace Cad_Point_Manager.Models
         }
         public bool PointNumberExists(int num)
         {
-            return PointGroups.SelectMany(pg => pg.Value.Points).Any(p => p.PointNumber == num);
+            return PointGroups.SelectMany(pg => pg.Points).Any(p => p.PointNumber == num);
         }
 
         public string GetTempPointGroupName()
@@ -175,14 +175,14 @@ namespace Cad_Point_Manager.Models
                 pointGroup = null;
                 return false;
             }
-            if (PointGroups.Any(pg => pg.Key.Equals(groupName, StringComparison.OrdinalIgnoreCase)))
+            if (PointGroups.Any(pg => pg.Name.Equals(groupName, StringComparison.OrdinalIgnoreCase)))
             {
                 pointGroup = null;
                 return false;
             }
 
             pointGroup = new(groupName, color, this, CadManager.PointBaseScale);
-            PointGroups.Add(new KeyValuePair<string, PointGroup>(groupName, pointGroup));
+            PointGroups.Add(pointGroup);
             return true;
         }
 
@@ -203,24 +203,21 @@ namespace Cad_Point_Manager.Models
                 }
                 else { return; }
             }
-            PointGroups.Remove(PointGroups.FirstOrDefault(p => p.Value == pg));
+            PointGroups.Remove(pg);
         }
 
         public bool TryGetPointGroup(string groupName, out PointGroup pointGroup)
         {
-            var pair = PointGroups.FirstOrDefault(pg => pg.Key.Equals(groupName, StringComparison.OrdinalIgnoreCase));
-            if (pair.Equals(default(KeyValuePair<string, PointGroup>)))
+            pointGroup = PointGroups.FirstOrDefault(pg => pg.Name.Equals(groupName, StringComparison.OrdinalIgnoreCase));
+            if (pointGroup is null)
             {
-                pointGroup = null;
                 return false;
             }
-
-            pointGroup = pair.Value;
             return true;
         }
         public bool PointGroupExists(PointGroup pg)
         {
-            return PointGroups.Any(p => p.Value == pg);
+            return PointGroups.Any(p => p == pg);
         }
 
         public bool DeletePoint(CogoPoint point)
@@ -266,7 +263,7 @@ namespace Cad_Point_Manager.Models
             }
 
             // Verify uniqueness
-            if (PointGroups.Any(pg => pg.Key.Equals(name, StringComparison.OrdinalIgnoreCase)))
+            if (PointGroups.Any(pg => pg.Name.Equals(name, StringComparison.OrdinalIgnoreCase)))
             {
                 errorMessage = "A point group with this name already exists.";
                 return false;
@@ -276,29 +273,28 @@ namespace Cad_Point_Manager.Models
         }
         public bool PointGroupNameExists(string name)
         {
-            return PointGroups.Any(pg => pg.Key.Equals(name, StringComparison.OrdinalIgnoreCase));
+            return PointGroups.Any(pg => pg.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
         }
 
-        public void IsValidPointScale(string input, out bool isValid, out string? errorMessage)
+        public bool IsValidPointScale(string input, out string? errorMessage)
         {
-            isValid = false;
             errorMessage = null;
             if (string.IsNullOrWhiteSpace(input))
             {
                 errorMessage = "Point scale cannot be empty.";
-                return;
+                return false;
             }
             if (!double.TryParse(input, out double scale))
             {
                 errorMessage = "Point scale must be a valid number.";
-                return;
+                return false;
             }
             if (scale <= 0)
             {
                 errorMessage = "Point scale must be greater than zero.";
-                return;
+                return false;
             }
-            isValid = true;
+            return true;
         }
 
         public void MergePointGroups(List<PointGroup> mergePGs, PointGroup destinationPG)
@@ -306,7 +302,7 @@ namespace Cad_Point_Manager.Models
             var copy = mergePGs.ToList();
             foreach (var pg in copy) // Enumerate a copy
             {
-                bool removed = PointGroups.Remove(PointGroups.FirstOrDefault(p => p.Value == pg));
+                bool removed = PointGroups.Remove(pg);
                 if (removed)
                 {
                     pg.MergeToPointGroup(destinationPG);
@@ -328,7 +324,7 @@ namespace Cad_Point_Manager.Models
                 // Use stride to balance uneven group sizes
                 for (int g = i; g < PointGroups.Count; g += processorCount)
                 {
-                    var group = PointGroups[g].Value;
+                    var group = PointGroups[g];
                     if (group?.Points == null) { continue; }
 
                     foreach (var point in group.Points)
@@ -359,7 +355,7 @@ namespace Cad_Point_Manager.Models
             CogoPoints.Clear();
             foreach (var pointGroup in PointGroups)
             {
-                foreach (var point in pointGroup.Value.Points)
+                foreach (var point in pointGroup.Points)
                 {
                     CogoPoints.Add(point);
                 }

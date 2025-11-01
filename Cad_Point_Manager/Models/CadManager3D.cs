@@ -297,11 +297,11 @@ namespace Cad_Point_Manager.Models
 
             PointGroupsView = new ListCollectionView(CogoPointManager.PointGroups);
             PointGroupsView.SortDescriptions.Clear();
-            PointGroupsView.SortDescriptions.Add(new SortDescription("Key", ListSortDirection.Ascending));
+            PointGroupsView.SortDescriptions.Add(new SortDescription("Name", ListSortDirection.Ascending));
 
             PointsView = new ListCollectionView(CogoPointManager.CogoPoints);
             PointsView.GroupDescriptions.Clear();
-            PointsView.GroupDescriptions.Add(new PropertyGroupDescription("PointGroup.Name"));
+            PointsView.GroupDescriptions.Add(new PropertyGroupDescription("PointGroup"));
         }
 
         public List<(double distance, HitTestablePoint point)> HitTestSignficantPoints(Point p, float tolerance)
@@ -549,9 +549,8 @@ namespace Cad_Point_Manager.Models
         {
             _cachedPointMarkerVertices.Clear();
 
-            foreach (var keyValuePair in CogoPointManager.PointGroups)
+            foreach (var pg in CogoPointManager.PointGroups)
             {
-                var pg = keyValuePair.Value;
                 if (!pg.IsVisible || pg is null) { continue; }
                 uint gid = sceneIdMap.GetOrAddGroupId(pg);
 

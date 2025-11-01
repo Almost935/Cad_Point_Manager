@@ -87,10 +87,7 @@ void GSMain(point VS_INPUT input[1], inout TriangleStream<GS_OUTPUT> output)
     bool over = (ps.Flags & POINT_MOUSEOVR) != 0u;
     bool sel = (ps.Flags & POINT_SELECTED) != 0u;
 
-    if (sel)
-    {
-        color = over ? selectedMouseOverColor : selectedColor;
-    }
+    if (sel) { color = over ? selectedMouseOverColor : selectedColor; }
 
     // Scale radius by group scale (Option A)
     float radiusWorld = input[0].radius * gs.Scale;

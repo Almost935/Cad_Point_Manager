@@ -92,11 +92,11 @@ namespace Cad_Point_Manager.ViewModels
                 if (string.IsNullOrEmpty(value) || value == _variesString) { return; }
 
                 var group = _selectedPoints.FirstOrDefault()?.CogoPointManager?.PointGroups
-                    .FirstOrDefault(pg => pg.Value.Name == value);
+                    .FirstOrDefault(pg => pg.Name == value);
 
                 if (group != null)
                 {
-                    foreach (var p in _selectedPoints) { p.UpdatePointGroup(group.Value.Value); }
+                    foreach (var p in _selectedPoints) { p.UpdatePointGroup(group); }
                     OnPropertyChanged(nameof(PointGroup));
                 }
             }
@@ -183,11 +183,11 @@ namespace Cad_Point_Manager.ViewModels
         {
             DisplayedPointGroupsName.Clear();
 
-            foreach (var keyValuePair in _cadManager.CogoPointManager.PointGroups)
+            foreach (var pg in _cadManager.CogoPointManager.PointGroups)
             {
-                if (keyValuePair.Value != null && !string.IsNullOrEmpty(keyValuePair.Value.Name))
+                if (pg != null && !string.IsNullOrEmpty(pg.Name))
                 {
-                    DisplayedPointGroupsName.Add(keyValuePair.Key);
+                    DisplayedPointGroupsName.Add(pg.Name);
                 }
             }
 

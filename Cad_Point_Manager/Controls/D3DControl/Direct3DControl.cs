@@ -23,6 +23,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private RenderTargetView _dxfRenderTargetView;
         private RenderTargetView _interactiveRenderTargetView;
         private Dx11ImageSource _d3DSurface;
+        private SharpDX.Direct2D1.Factory2 _d2dFactory;
+        private SharpDX.Direct2D1.Device1 _d2dDevice;
+        private SharpDX.Direct2D1.DeviceContext1 _d2dDeviceContext;
 
         private readonly Stopwatch _renderTimer = new();
 
@@ -185,6 +188,21 @@ namespace Cad_Point_Manager.Controls.D3DControl
             var baseBlendState = new BlendState(_device, baseBlendDesc);
             _resCache.BaseBlendState = baseBlendState;
 
+            // Create the max blend state for hover objects to avoid additive alpha
+            var maxDesc = new BlendStateDescription();
+            var rt = maxDesc.RenderTarget[0];
+            rt.IsBlendEnabled = true;
+            // Color channels: One + One with MAX op -> per-pixel maximum
+            rt.SourceBlend = BlendOption.One;
+            rt.DestinationBlend = BlendOption.One;
+            rt.BlendOperation = BlendOperation.Maximum;
+            // Alpha channels mirror color (we store alpha in the mask too)
+            rt.SourceAlphaBlend = BlendOption.One;
+            rt.DestinationAlphaBlend = BlendOption.One;
+            rt.AlphaBlendOperation = BlendOperation.Maximum;
+            rt.RenderTargetWriteMask = ColorWriteMaskFlags.All;
+            _resCache.MaxBlendState = new BlendState(_device, maxDesc);
+
             _deviceContext.OutputMerger.SetBlendState(_resCache.BaseBlendState);
 
             _d3DSurface = new Dx11ImageSource();
@@ -209,6 +227,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
             Disposer.SafeDispose(ref _interactiveRenderTargetView);
             Disposer.SafeDispose(ref _dxfTexture);
             Disposer.SafeDispose(ref _interactiveTexture);
+            Disposer.SafeDispose(ref _d2dFactory);
+            Disposer.SafeDispose(ref _d2dDevice);
+            Disposer.SafeDispose(ref _d2dDeviceContext);
         }
 
         private void CreateAndBindTargets()
@@ -229,15 +250,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
             Disposer.SafeDispose(ref _dxfTexture);
             Disposer.SafeDispose(ref _texture2D);
 
-            //// 3) Dispose old D2D/DWrite objects *before* making new ones
-            //Disposer.SafeDispose(ref _resCache.D2DDeviceContext);
-            //Disposer.SafeDispose(ref _resCache.D2DDevice);
-            //Disposer.SafeDispose(ref _resCache.D2dFactory);
-
-            //// 4) If your GlyphAtlas/AdvanceWidthCache/Tessellator/FontFace implement IDisposable, dispose them, too.
-            //// e.g.:
-            //Disposer.SafeDispose(ref _resCache.AsciiGlyphAtlas);
-            //Disposer.SafeDispose(ref _resCache.GlyphTessellator);
+            Disposer.SafeDispose(ref _d2dFactory);
+            Disposer.SafeDispose(ref _d2dDevice);
+            Disposer.SafeDispose(ref _d2dDeviceContext);
 
             var width = Math.Max((int)ActualWidth, 100);
             var height = Math.Max((int)ActualHeight, 100);
@@ -270,6 +285,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 CpuAccessFlags = CpuAccessFlags.None,
                 ArraySize = 1
             };
+            
             _dxfTexture = new Texture2D(_device, offscreenRenderDesc);
             _resCache.DxfTexture = _dxfTexture;
             _interactiveTexture = new(_device, offscreenRenderDesc);
@@ -305,16 +321,22 @@ namespace Cad_Point_Manager.Controls.D3DControl
         {
             using (var dxgiDevice = _device.QueryInterface<SharpDX.DXGI.Device>())
             {
-                _resCache.D2dFactory = new SharpDX.Direct2D1.Factory2();
-                _resCache.D2DDevice = new(_resCache.D2dFactory, dxgiDevice);
-                _resCache.D2DDeviceContext = new(_resCache.D2DDevice, SharpDX.Direct2D1.DeviceContextOptions.EnableMultithreadedOptimizations);
+                _d2dFactory = new SharpDX.Direct2D1.Factory2();
+                _resCache.D2dFactory = _d2dFactory;
+                _d2dDevice = new(_d2dFactory, dxgiDevice);
+                _resCache.D2DDevice = _d2dDevice;
+                _d2dDeviceContext = new(_resCache.D2DDevice, SharpDX.Direct2D1.DeviceContextOptions.EnableMultithreadedOptimizations);
+                _resCache.D2DDeviceContext = _d2dDeviceContext;
             }
         }
 
         private void InitializeGlyphAtlas()
         {
+            _resCache.GlyphTessellator?.Dispose();
             _resCache.GlyphTessellator = new DWriteGlyphTessellator(_resCache.D2dFactory);
+            _resCache.CogoPointFontFace?.Dispose();
             _resCache.CogoPointFontFace = _resCache.GetFontFace("Arial", SharpDX.DirectWrite.FontWeight.Normal, SharpDX.DirectWrite.FontStretch.Normal, SharpDX.DirectWrite.FontStyle.Normal);
+            _resCache.AsciiGlyphAtlas?.Dispose();
             _resCache.AsciiGlyphAtlas = GlyphAtlas.CreateForAscii(_resCache.Device, _resCache.CogoPointFontFace, _resCache.GlyphTessellator);
             _resCache.AdvanceWidthCache = AdvanceWidthCache.CreateForAscii(_resCache.CogoPointFontFace);
         }

@@ -176,6 +176,10 @@ namespace Cad_Point_Manager.Models.PointRendering
             {
                 return 0.0;
             }
+            else if (HasLeaderLine)
+            { 
+                return MathHelpers.PointToLineDistance(p, Position, Point.Add(Position, TextInfoOffset.ToVector()));
+            }
             else
             {
                 if (IsSelected)

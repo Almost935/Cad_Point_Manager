@@ -283,8 +283,7 @@
                           Height="{StaticResource CogoCreationTextBoxHeight}"
                           MinWidth="{StaticResource CogoCreationTextBoxWidth}"
                           ItemsSource="{Binding JobFileManager.CadManager3D.PointGroupsView}"
-                          DisplayMemberPath="Key"
-                          SelectedValuePath="Value"
+                          DisplayMemberPath="Name"
                           Margin="{StaticResource CogoPointCreationTextBoxMargin}"
                           SelectedValue="{Binding NewCogoPointsPointGroup}" />
             </Grid>

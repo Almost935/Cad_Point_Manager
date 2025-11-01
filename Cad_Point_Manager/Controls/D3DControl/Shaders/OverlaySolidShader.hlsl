@@ -1,4 +1,6 @@
-﻿cbuffer TransformationBuffer : register(b0)
+﻿// OverlaySolidShader.hlsl
+
+cbuffer TransformationBuffer : register(b0)
 {
     row_major matrix transformationMatrix; // 2D transformation matrix
 };

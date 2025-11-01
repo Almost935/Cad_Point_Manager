@@ -184,6 +184,39 @@ namespace Cad_Point_Manager.Models.PointRendering
         }
         #endregion
 
+        #region Equality
+        public override bool Equals(object? obj)
+        {
+            return Equals(obj as PointGroup);
+        }
+
+        public bool Equals(PointGroup? other)
+        {
+            if (other is null)
+                return false;
+
+            // Compare only by Name (case-insensitive is common for names)
+            return string.Equals(Name, other.Name, StringComparison.OrdinalIgnoreCase);
+        }
+
+        public override int GetHashCode()
+        {
+            // Use a consistent hash for the Name
+            return StringComparer.OrdinalIgnoreCase.GetHashCode(Name ?? string.Empty);
+        }
+
+        public static bool operator ==(PointGroup? left, PointGroup? right)
+        {
+            return EqualityComparer<PointGroup>.Default.Equals(left, right);
+        }
+
+        public static bool operator !=(PointGroup? left, PointGroup? right)
+        {
+            return !(left == right);
+        }
+
+        #endregion
+
         #region INotifyPropertyChanged
         public event PropertyChangedEventHandler PropertyChanged;
 

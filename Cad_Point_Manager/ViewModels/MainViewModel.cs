@@ -40,7 +40,7 @@ namespace Cad_Point_Manager.ViewModels
         private Size _viewportSize = Size.Empty;
         private Camera _camera;
         private BatchableObservableCollection<KeyValuePair<string, ObjectLayer3D>> _layers = [];
-        private BatchableObservableCollection<KeyValuePair<string, PointGroup>> _pointGroups = [];
+        private BatchableObservableCollection<PointGroup> _pointGroups = [];
         private BatchableObservableCollection<CogoPoint> _cogoPoints = [];
         private BatchableObservableCollection<CogoPoint> _selectedCogoPoints = [];
         private HitTestablePoint _snappedHitTestablePoint;
@@ -135,7 +135,7 @@ namespace Cad_Point_Manager.ViewModels
                 OnPropertyChanged(nameof(Layers));
             }
         }
-        public BatchableObservableCollection<KeyValuePair<string, PointGroup>> PointGroups
+        public BatchableObservableCollection<PointGroup> PointGroups
         {
             get => _pointGroups;
             set

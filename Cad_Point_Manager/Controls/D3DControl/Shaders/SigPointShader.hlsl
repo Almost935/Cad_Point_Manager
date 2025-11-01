@@ -1,4 +1,4 @@
-﻿// CircleShader.hlsl
+﻿// SigPointShader.hlsl
 
 // Constant buffer for 2D transformation matrix
 cbuffer TransformationBuffer : register(b0)

@@ -27,7 +27,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public Vector4 BorderColor;    // 32..47
     }
 
-
     [StructLayout(LayoutKind.Sequential)]
     struct RoundedHoverRectInstance
     {
@@ -47,8 +46,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
     public struct CircleHoverSettingsBuffer
     {
         public float GlowOffset;
-        public float GlowTransparency;
-        private Vector2 Padding;
+        private Vector3 Padding;
+        public Vector4 HoverColor;
         public Vector4 SelectedColor;
     }
 
@@ -105,6 +104,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public float _pad;   // 16B stride
     }
 
+    [StructLayout(LayoutKind.Sequential)]
     public struct PointMarkerInstance
     {
         public Vector3 Position;
@@ -112,7 +112,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public uint LabelId;
         public uint PointId;
     }
-
 
     [StructLayout(LayoutKind.Sequential)]
     public struct LeaderLineSettings
@@ -129,6 +128,15 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public Vector2 End;     // world: text base *before* drag; shader adds LabelSRV.Offset
         public uint PointId;    // Point index
         public uint GroupId;    // PointGroup index
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct LeaderLineGlowSettings
+    {
+        public Vector2 InvViewport;
+        public float PixelThickness;
+        public float _pad;
+        public Vector4 HoverColor;
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -157,7 +165,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public readonly CogoPoint Point;
         public AnchorDraw(Vector2 c, Vector2 h, CogoPoint p) { Center = c; Half = h; Point = p; }
     }
-
 
     [StructLayout(LayoutKind.Sequential)]
     public struct LayerState
@@ -212,11 +219,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public Vector4 SelectedMouseOverColor;
     }
     [StructLayout(LayoutKind.Sequential)]
-    public struct CircleGlowSettingsBuffer
+    public struct CogoPointGlowSettingsBuffer
     {
         public float GlowOffset;
-        public float GlowTransparency;
-        private Vector2 Padding;
+        private Vector3 Padding;
+        public Vector4 HoverColor;
         public Vector4 SelectedColor;
         public Vector4 SelectedMouseOverColor;
     }
