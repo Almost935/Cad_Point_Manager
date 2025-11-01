@@ -1,13 +1,7 @@
 ﻿using SharpDX;
 using SharpDX.Direct2D1;
 using SharpDX.DirectWrite;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using static Cad_Point_Manager.Controls.D3DControl.Rendering.Text.GlyphMeshCache;
-using static Cad_Point_Manager.Helpers.TextRenderingHelpers;
 using Factory = SharpDX.Direct2D1.Factory;
 
 namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text

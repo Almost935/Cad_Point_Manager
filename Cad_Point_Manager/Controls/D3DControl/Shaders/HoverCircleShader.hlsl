@@ -4,7 +4,7 @@ cbuffer TransformationBuffer : register(b0)
 {
     row_major matrix transformationMatrix; // 2D transformation matrix
 };
-cbuffer CircleGlowSettingsBuffer : register(b1)
+cbuffer CogoPointGlowSettingsBuffer : register(b1)
 {
     float glowOffset;
     float3 padding;

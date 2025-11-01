@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
+﻿namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
 {
     public readonly struct FontBoxMetrics
     {

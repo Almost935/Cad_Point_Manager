@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using Cad_Point_Manager.Models.DrawingObjects3D;
+﻿using Cad_Point_Manager.Models.DrawingObjects3D;
 
 namespace Cad_Point_Manager.Services
 {

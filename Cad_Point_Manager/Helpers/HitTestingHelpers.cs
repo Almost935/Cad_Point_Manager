@@ -1,7 +1,6 @@
 ﻿using Cad_Point_Manager.Models.DrawingObjects3D;
 using Cad_Point_Manager.Models.HitTesting;
 using Cad_Point_Manager.Models.PointRendering;
-using System.Windows;
 
 namespace Cad_Point_Manager.Helpers
 {

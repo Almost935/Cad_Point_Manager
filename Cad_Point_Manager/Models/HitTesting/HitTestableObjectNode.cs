@@ -5,7 +5,6 @@ using Cad_Point_Manager.Models.DrawingObjects3D;
 using Cad_Point_Manager.Models.PointRendering;
 using SharpDX;
 using System.Collections.Concurrent;
-using System.Diagnostics;
 using System.Windows;
 
 using Point = System.Windows.Point;

@@ -9,7 +9,7 @@ cbuffer LeaderLineSettings : register(b1)
     float2 InvViewport; // (1/width, 1/height) in pixels
     float PixelThickness; // e.g., 1.5
     float _pad0;
-    float4 SelectedColor; // rgba
+    float4 HoverColor; // rgba
 }
 
 struct VSIn
@@ -125,8 +125,7 @@ void GSMain(point VSOut vin[1], inout TriangleStream<GSOut> tri)
     float4 vB1 = float4(bN1 * bC.w, bC.z, bC.w);
 
     // Color from group; override if selected
-    float4 col = gs.Color;
-    //if ((ps.Flags & POINT_SELECTED) != 0u) { col = SelectedColor; }
+    float4 col = HoverColor;
 
     // Emit strip
     GSOut o;

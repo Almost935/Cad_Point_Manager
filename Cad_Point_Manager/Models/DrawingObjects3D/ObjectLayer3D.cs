@@ -1,7 +1,6 @@
 ﻿using Cad_Point_Manager.Common.Collections;
 using netDxf.Tables;
 using SharpDX;
-using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 

@@ -10,14 +10,12 @@ using Cad_Point_Manager.Models.PointRendering;
 using Cad_Point_Manager.Services;
 using netDxf;
 using System.Collections;
-using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
-using System.Windows.Media;
+
 using Point = System.Windows.Point;
 using TextBox = System.Windows.Controls.TextBox;
 

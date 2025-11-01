@@ -1,11 +1,5 @@
-﻿using Cad_Point_Manager.Controls.D3DControl;
-using SharpDX;
-using SharpDX.Direct3D11;
+﻿using SharpDX;
 using SharpDX.DirectWrite;
-using System.Collections.Generic;
-using static Cad_Point_Manager.Helpers.TextRenderingHelpers;
-
-using Buffer = SharpDX.Direct3D11.Buffer;
 
 namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
 {

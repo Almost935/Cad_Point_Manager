@@ -1,6 +1,5 @@
 ﻿using Cad_Point_Manager.Models.DrawingObjects3D;
 using Cad_Point_Manager.Models.PointRendering;
-using System.Collections.Generic;
 
 namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
 {

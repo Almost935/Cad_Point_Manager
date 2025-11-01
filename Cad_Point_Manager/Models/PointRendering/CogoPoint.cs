@@ -1,14 +1,9 @@
-﻿using Cad_Point_Manager.Controls.D3DControl;
-using Cad_Point_Manager.Extensions;
+﻿using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Helpers;
 using Cad_Point_Manager.Models.HitTesting;
-using Cad_Point_Manager.Views;
 using SharpDX;
-using SharpDX.DirectWrite;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Windows;
-using Matrix = System.Windows.Media.Matrix;
 using Point = System.Windows.Point;
 
 namespace Cad_Point_Manager.Models.PointRendering

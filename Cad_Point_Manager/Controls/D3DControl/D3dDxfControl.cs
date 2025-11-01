@@ -29,7 +29,6 @@ using System.Windows.Threading;
 
 using Buffer = SharpDX.Direct3D11.Buffer;
 using InputElement = SharpDX.Direct3D11.InputElement;
-using MapFlags = SharpDX.Direct3D11.MapFlags;
 using Matrix = SharpDX.Matrix;
 using Point = System.Windows.Point;
 using RectangleGeometry = System.Windows.Media.RectangleGeometry;
@@ -41,7 +40,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
         #region Fields
         private const float HoverTextPadPx = 3f;     // grow the text rect by this many pixels
         private const float HoverEllipsePadPx = 2f;  // extra pixels over the point radius
-        private static readonly Vector4 HoverShadowColor = new(0f, 0f, 0f, 0.2f); // translucent black
 
         // CogoPoint ToggleButton Fields
         // Ensure these fields exist on D3dDxfControl (names are suggestions)
@@ -125,7 +123,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         // Point circle shader related fields
         private ResizableBuffer<PointMarkerInstance> _pointCircleVertexBuffer;
-        private Buffer _pointCircleSettingsBuffer;
+        private Buffer _pointCircleSettings;
         private InputLayout _pointCircleInputLayout;
         private VertexShader _pointCircleVS;
         private PixelShader _pointCirclePS;
@@ -142,13 +140,13 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private ResizableBuffer<LeaderLineInstance> _leaderLineBuffer;
         private int _leaderLineInstanceCount = 0;
         private bool _leaderLineVerticesDirty = false;
-        private Buffer _leaderLineSettingsBuffer;
+        private Buffer _leaderLineSettings;
 
         // Cogo point leader line glow rendering fields
         private VertexShader _leaderLineGlowVS;
         private PixelShader _leaderLineGlowPS;
         private GeometryShader _leaderLineGlowGS;
-        private Buffer _leaderLineGlowSettingsBuffer;
+        private Buffer _leaderLineGlowSettings;
 
         // --- Per-label & per-group indirection state ---
         private SceneIdMap _ids;
@@ -547,16 +545,16 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     DrawCogoPointHover(ctx);
                 }
 
-                if (_anchorVerticesCount > 0)
-                {
-                    ctx.OutputMerger.SetRenderTargets(_resCache.InteractiveRenderTargetView);
-                    DrawCogoPointAnchors(ctx);
-                }
-
                 if (_leaderLineInstanceCount > 0)
                 {
                     ctx.OutputMerger.SetRenderTargets(_resCache.InteractiveRenderTargetView);
                     DrawLeaderLines(ctx);
+                }
+
+                if (_anchorVerticesCount > 0)
+                {
+                    ctx.OutputMerger.SetRenderTargets(_resCache.InteractiveRenderTargetView);
+                    DrawCogoPointAnchors(ctx);
                 }
 
                 ctx.CopyResource(_resCache.InteractionTexture, _resCache.Texture2D);
@@ -687,7 +685,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             ctx.InputAssembler.InputLayout = _pointCircleInputLayout;
             ctx.VertexShader.SetConstantBuffer(0, _transformationBuffer);
             ctx.GeometryShader.SetConstantBuffer(0, _transformationBuffer);
-            ctx.GeometryShader.SetConstantBuffer(1, _pointCircleSettingsBuffer);
+            ctx.GeometryShader.SetConstantBuffer(1, _pointCircleSettings);
 
             // NEW: bind state buffers
             ctx.VertexShader.SetShaderResource(0, _stateBufs.PointSRV);
@@ -742,7 +740,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             ctx.PixelShader.Set(_leaderLineGlowPS);
             ctx.VertexShader.SetConstantBuffer(0, _transformationBuffer);
             ctx.GeometryShader.SetConstantBuffer(0, _transformationBuffer);
-            ctx.GeometryShader.SetConstantBuffer(1, _leaderLineGlowSettingsBuffer);
+            ctx.GeometryShader.SetConstantBuffer(1, _leaderLineGlowSettings);
             ctx.GeometryShader.SetShaderResource(0, _stateBufs.PointSRV);
             ctx.GeometryShader.SetShaderResource(1, _stateBufs.GroupSRV);
             ctx.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding(_leaderLineBuffer.Buffer, _leaderLineBuffer.Stride, 0));
@@ -753,7 +751,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             ctx.PixelShader.Set(_leaderLinePS);
             ctx.VertexShader.SetConstantBuffer(0, _transformationBuffer);
             ctx.GeometryShader.SetConstantBuffer(0, _transformationBuffer);
-            ctx.GeometryShader.SetConstantBuffer(1, _leaderLineSettingsBuffer);
+            ctx.GeometryShader.SetConstantBuffer(1, _leaderLineSettings);
             ctx.GeometryShader.SetShaderResource(0, _stateBufs.PointSRV);
             ctx.GeometryShader.SetShaderResource(1, _stateBufs.GroupSRV);
             ctx.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding(_leaderLineBuffer.Buffer, _leaderLineBuffer.Stride, 0));
@@ -1010,14 +1008,14 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     Center = pointNumCenter,
                     HalfSize = pointNumHalfSize,
                     RadiusFeather = radiusFeathering,
-                    Color = HoverShadowColor
+                    Color = GlobalHelperProperties.HoverColor
                 });
                 rectInstances.Add(new RoundedHoverRectInstance
                 {
                     Center = elevCenter,
                     HalfSize = elevHalfSize,
                     RadiusFeather = radiusFeathering,
-                    Color = HoverShadowColor
+                    Color = GlobalHelperProperties.HoverColor
                 });
 
                 if (!string.IsNullOrEmpty(cp.Description) && !cp.DescriptionBounds.IsEmpty)
@@ -1030,7 +1028,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                         Center = descCenter,
                         HalfSize = descHalfSize,
                         RadiusFeather = radiusFeathering,
-                        Color = HoverShadowColor
+                        Color = GlobalHelperProperties.HoverColor
                     });
                 }
 
@@ -1510,7 +1508,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 CpuAccessFlags = CpuAccessFlags.None,
                 OptionFlags = ResourceOptionFlags.None
             };
-            _pointCircleSettingsBuffer = new Buffer(_resCache.Device, circleBufferDesc);
+            _pointCircleSettings = new Buffer(_resCache.Device, circleBufferDesc);
 
             var hoverCircleBufferDesc = new BufferDescription
             {
@@ -1530,17 +1528,17 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 CpuAccessFlags = CpuAccessFlags.None,
                 OptionFlags = ResourceOptionFlags.None
             };
-            _leaderLineSettingsBuffer = new Buffer(_resCache.Device, leaderLineBufferDesc);
+            _leaderLineSettings = new Buffer(_resCache.Device, leaderLineBufferDesc);
 
             var leaderLineGlowBufferDesc = new BufferDescription
             {
                 Usage = ResourceUsage.Default,
-                SizeInBytes = Utilities.SizeOf<LeaderLineSettings>(),
+                SizeInBytes = Utilities.SizeOf<LeaderLineGlowSettings>(),
                 BindFlags = BindFlags.ConstantBuffer,
                 CpuAccessFlags = CpuAccessFlags.None,
                 OptionFlags = ResourceOptionFlags.None
             };
-            _leaderLineGlowSettingsBuffer = new Buffer(_resCache.Device, leaderLineGlowBufferDesc);
+            _leaderLineGlowSettings = new Buffer(_resCache.Device, leaderLineGlowBufferDesc);
 
             var toggleAnchorBufferDesc = new BufferDescription
             {
@@ -1618,7 +1616,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 SelectedColor = GlobalHelperProperties.SelectedObjectColor,
                 SelectedMouseOverColor = GlobalHelperProperties.SelectedMouseOverGlowColor
             };
-            _resCache.DeviceContext.UpdateSubresource(ref circleSettings, _pointCircleSettingsBuffer);
+            _resCache.DeviceContext.UpdateSubresource(ref circleSettings, _pointCircleSettings);
 
             var cogoPointGlowSettingsBuffer = new CogoPointGlowSettingsBuffer
             {
@@ -1635,15 +1633,15 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 PixelThickness = GlobalHelperProperties.CogoPointLeaderLinePixelWidth,
                 SelectedColor = GlobalHelperProperties.SelectedObjectColor,
             };
-            _resCache.DeviceContext.UpdateSubresource(ref leaderLineSettings, _leaderLineSettingsBuffer);
+            _resCache.DeviceContext.UpdateSubresource(ref leaderLineSettings, _leaderLineSettings);
 
-            var leaderLineGlowSettings = new LeaderLineSettings
+            var leaderLineGlowSettings = new LeaderLineGlowSettings
             {
                 InvViewport = new(1 / Viewport.Width, 1 / Viewport.Height),
                 PixelThickness = GlobalHelperProperties.CogoPointLeaderLinePixelWidth * 10,
-                SelectedColor = GlobalHelperProperties.HoverColor
+                HoverColor = GlobalHelperProperties.HoverColor,
             };
-            _resCache.DeviceContext.UpdateSubresource(ref leaderLineGlowSettings, _leaderLineGlowSettingsBuffer);
+            _resCache.DeviceContext.UpdateSubresource(ref leaderLineGlowSettings, _leaderLineGlowSettings);
 
             var toggleSettings = new ToggleAnchorSettingsBuffer
             {
@@ -1909,9 +1907,12 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             if (_mouseOverCogoPoints.Count > 0 || _mouseOverHitTestableObjects.Count > 0)
             {
-                ResetHoverObjects();
-                _lineVerticesDirty = true;
-                _hoverVerticesDirty = true;
+                if (!IsDragging)
+                {
+                    ResetHoverObjects();
+                    _lineVerticesDirty = true;
+                    _hoverVerticesDirty = true;
+                }
             }
         }
         protected override void OnMouseLeftButtonUp(MouseButtonEventArgs e)
@@ -3311,12 +3312,12 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     _leaderLinePS?.Dispose(); _leaderLinePS = null;
                     _leaderLineVS?.Dispose(); _leaderLineVS = null;
                     _leaderLineInputLayout?.Dispose(); _leaderLineInputLayout = null;
-                    _leaderLineSettingsBuffer?.Dispose(); _leaderLineSettingsBuffer = null;
+                    _leaderLineSettings?.Dispose(); _leaderLineSettings = null;
 
                     _leaderLineGlowGS?.Dispose(); _leaderLineGlowGS = null;
                     _leaderLineGlowPS?.Dispose(); _leaderLineGlowPS = null;
                     _leaderLineGlowVS?.Dispose(); _leaderLineGlowVS = null;
-                    _leaderLineGlowSettingsBuffer?.Dispose(); _leaderLineGlowSettingsBuffer = null;
+                    _leaderLineGlowSettings?.Dispose(); _leaderLineGlowSettings = null;
 
                     _toggleLayout?.Dispose(); _toggleLayout = null;
                     _toggleQuadVB?.Dispose(); _toggleQuadVB = null;

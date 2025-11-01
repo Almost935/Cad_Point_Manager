@@ -5,7 +5,6 @@ using Cad_Point_Manager.Models.PointRendering;
 using ColorPicker;
 using SharpDX;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;

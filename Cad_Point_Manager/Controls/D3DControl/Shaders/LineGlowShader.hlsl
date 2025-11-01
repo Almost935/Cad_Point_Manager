@@ -65,10 +65,7 @@ void GSMain(line VSInput input[2], inout TriangleStream<GSInput> triStream)
     float isSelected = ((os.Flags & OBJ_SELECTED) != 0u) ? 1.0f : 0.0f;
     float isMouseOver = ((os.Flags & OBJ_MOUSEOVER) != 0u) ? 1.0f : 0.0f;
     
-    if (!visLayer || !isMouseOver)
-    {
-        return;
-    }
+    if (!visLayer || !isMouseOver) { return; }
 
     float halfGlowOffset = glowOffset / 2;
     

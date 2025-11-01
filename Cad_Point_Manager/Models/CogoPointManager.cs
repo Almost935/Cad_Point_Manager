@@ -1,13 +1,9 @@
 ﻿using Cad_Point_Manager.Common.Collections;
-using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Models.PointRendering;
 using SharpDX;
-using SharpDX.DirectWrite;
-using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
 using System.Windows;
-using System.Windows.Media;
 using Color = System.Windows.Media.Color;
 using Matrix = System.Windows.Media.Matrix;
 

@@ -1,8 +1,6 @@
 ﻿using Cad_Point_Manager.Common.Collections;
 using Cad_Point_Manager.Controls.D3DControl;
 using SharpDX;
-using SharpDX.DirectWrite;
-using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Windows.Media;
 using Color = System.Windows.Media.Color;

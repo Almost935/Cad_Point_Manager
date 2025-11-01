@@ -602,7 +602,7 @@ namespace Cad_Point_Manager.Models
             }
 
             CogoPointTextVerticesDirty = true;
-            CogoPointCircleVerticesDirty = true;
+            //CogoPointCircleVerticesDirty = true;
         }
 
         public void UpdateHitTestableObjectTree()
