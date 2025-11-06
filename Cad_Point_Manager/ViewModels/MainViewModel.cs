@@ -527,6 +527,12 @@ namespace Cad_Point_Manager.ViewModels
 
                         ResetSelectionRequested?.Invoke(this, EventArgs.Empty);
                         JobFileManager.CadManager3D.UpdateHitTestableObjectTree();
+
+                        ClearErrors(NewCogoPointsStartNumberText);
+                        ClearErrors(NewCogoPointsElevationText);
+                        ClearErrors(NewCogoPointsDescriptionText);
+                        ClearErrors(nameof(NewCogoPointsPointGroup));
+                        ClearErrors(NewCogoPointsIntermediatePointsCountText);
                     }
                 }
             }
@@ -572,6 +578,12 @@ namespace Cad_Point_Manager.ViewModels
 
                         ResetSelectionRequested?.Invoke(this, EventArgs.Empty);
                         JobFileManager.CadManager3D.UpdateHitTestableObjectTree();
+
+                        ClearErrors(NewCogoPointsStartNumberText);
+                        ClearErrors(NewCogoPointsElevationText);
+                        ClearErrors(NewCogoPointsDescriptionText);
+                        ClearErrors(nameof(NewCogoPointsPointGroup));
+                        ClearErrors(NewCogoPointsIntermediatePointsCountText);
                     }
                 }
             }

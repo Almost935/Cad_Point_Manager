@@ -824,6 +824,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _lineVertexBuffer.Update(context, vertexSpan);
             _lineVertexCount = vertexSpan.Length;
 
+            _stateBufs.FlushAll();
             _lineVerticesDirty = false;
             _dxfDirty = true;
         }
@@ -840,6 +841,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _textVertexBuffer.Update(context, vertexSpan);
             _textVertexCount = vertexSpan.Length;
 
+            _stateBufs.FlushAll();
             _textVerticesDirty = false;
             _dxfDirty = true;
         }
@@ -918,7 +920,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             }
 
             _stateBufs.FlushAll();
-
             HitTestableObjectTreeDirty = true;
             _glyphVerticesDirty = false;
             _dxfDirty = true;
@@ -935,6 +936,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _pointCircleVertexBuffer.Update(context, vertexSpan);
             _pointCircleVertexCount = vertexSpan.Length;
 
+            _stateBufs.FlushAll();
             _pointCircleVerticesDirty = false;
             _dxfDirty = true;
         }
@@ -1072,6 +1074,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 }
             }
 
+            _stateBufs.FlushAll();
             _anchorInstanceBuffer.Update(ctx, CollectionsMarshal.AsSpan(inst));
             _anchorVerticesCount = inst.Count;
             _anchorVerticesDirty = false;
@@ -1100,6 +1103,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     list.Add(vertex);
                 }
             }
+
+            _stateBufs.FlushAll();
             _leaderLineInstanceCount = list.Count;
             _leaderLineBuffer.Update(_resCache.DeviceContext, CollectionsMarshal.AsSpan(list));
             _leaderLineVerticesDirty = false;
@@ -1952,7 +1957,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                         else
                         {
                             var oldSel = new HashSet<DrawingGeometry3D>(SelectedGeometries);
-                            foreach (var g in newSel.Except(oldSel))
+                            foreach (var g in newSel)
                             {
                                 if (IsShiftPressed) { DeselectObject(g); }
                                 else { SelectObject(g); }
@@ -2080,11 +2085,10 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 if (CadManager3D.SnapSelectionMode == Common.Enums.SelectionMode.CogoPoints &&
                     SelectedCogoPoints.Count > 0)
                 {
-                    foreach (var cogoPoint in SelectedCogoPoints.ToList())
-                    {
-                        CadManager3D.CogoPointManager.DeletePoint(cogoPoint);
-                        SelectedCogoPoints.Remove(cogoPoint);
-                    }
+                    DeleteCogoPoints(SelectedCogoPoints.ToList());
+                    CompactStateBuffersIfUnder25Pct();
+                    _dxfDirty = true;
+                    _interactiveDirty = true;
                     e.Handled = true;
                 }
             }
@@ -2912,6 +2916,60 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _pressedToggleButtonPoint?.IsToggleButtonPressed = false;
             _pressedToggleButtonPoint = null;
         }
+
+        public void DeleteCogoPoints(List<CogoPoint> cps)
+        {
+            foreach (var cp in cps)
+            {
+                _stateCtl.SetPointVisible(cp, false);
+                _stateCtl.SetLabelVisible(cp, 0, false);
+                _stateCtl.SetLabelVisible(cp, 1, false);
+                _stateCtl.SetLabelVisible(cp, 2, false);
+
+                _ids.TryRemoveLabelId(cp, 0);
+                _ids.TryRemoveLabelId(cp, 1);
+                _ids.TryRemoveLabelId(cp, 2);
+                _ids.TryRemovePointId(cp);
+
+                CadManager3D.CogoPointManager.DeletePoint(cp);
+            }
+
+            // 2) Push the visibility changes to the GPU (subset updates)
+            _stateCtl.FlushPointUpdates();
+            _stateCtl.FlushLabelUpdates();
+
+            CadManager3D.HitTestableObjectTreeDirty = true;
+            //_pointCircleVerticesDirty = true;
+        }
+        // D3dDxfControl.cs (inside class)
+        private void UnbindAllStateSrvs(DeviceContext ctx)
+        {
+            ctx.VertexShader.SetShaderResource(0, null);
+            ctx.VertexShader.SetShaderResource(1, null);
+            ctx.GeometryShader.SetShaderResource(0, null);
+            ctx.GeometryShader.SetShaderResource(1, null);
+            ctx.PixelShader.SetShaderResource(0, null);
+            ctx.PixelShader.SetShaderResource(1, null);
+        }
+        public void CompactStateBuffersIfUnder25Pct()
+        {
+            if (_stateBufs is null || CadManager3D is null) return;
+
+            // Current live counts
+            int groups = CadManager3D.CogoPointManager.PointGroups.Count;
+            int points = CadManager3D.CogoPointManager.PointGroups.SelectMany(pg => pg.Points).Count();
+            int labelsPerPoint = 3;              // adjust if you render fewer/more lines
+            int labels = points * labelsPerPoint;
+            int layers = _ids?.LayerCount ?? 0;
+            int objects = _ids?.ObjectCount ?? 0;
+
+            _stateBufs.MaybeShrinkAllTo25PctOrLess(labels, points, groups, layers, objects, UnbindAllStateSrvs);
+
+            // Re-upload CPU shadow arrays (if needed)
+            // (Most of your state is already kept in _stateBufs.*Span; call your normal upload)
+            // Example: _stateBufs.FlushAll();
+        }
+
 
         private void ClearDxf()
         {

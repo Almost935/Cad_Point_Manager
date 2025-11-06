@@ -164,7 +164,7 @@ namespace Cad_Point_Manager.Models
             cogoPoint.PointGroup.Points.Remove(cogoPoint);
         }
 
-        public bool TryCreatePointGroup(string groupName, Color color, double pointScale, out PointGroup pointGroup)
+        public bool TryCreatePointGroup(string groupName, Color color, out PointGroup pointGroup)
         {
             if (string.IsNullOrWhiteSpace(groupName))
             {

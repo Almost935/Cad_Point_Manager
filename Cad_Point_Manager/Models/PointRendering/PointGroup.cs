@@ -128,12 +128,7 @@ namespace Cad_Point_Manager.Models.PointRendering
 
         public bool DeletePoint(CogoPoint point)
         {
-            if (point != null)
-            {
-                Points.Remove(point);
-                return true;
-            }
-            return false;
+            return Points.Remove(point);
         }
 
         public CogoPoint AddPoint(int pointNum, Vector3 position, float elevation = 0, string description = "")

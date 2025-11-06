@@ -450,7 +450,7 @@ namespace Cad_Point_Manager.Views.UserControls
             var color = Colors.Black;
             double scale = CadManager?.PointBaseScale ?? 1.0;
 
-            if (!CadManager.CogoPointManager.TryCreatePointGroup(tempName, color, scale, out var pg) || pg == null)
+            if (!CadManager.CogoPointManager.TryCreatePointGroup(tempName, color, out var pg) || pg == null)
                 return;
 
             pg = CadManager.CogoPointManager.PointGroups.LastOrDefault(p => p.Name.Equals(tempName, StringComparison.OrdinalIgnoreCase));

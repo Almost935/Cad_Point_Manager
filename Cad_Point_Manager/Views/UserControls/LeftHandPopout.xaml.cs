@@ -8,6 +8,7 @@ using Cad_Point_Manager.Views.ValidationRules;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Windows;
@@ -313,6 +314,8 @@ namespace Cad_Point_Manager.Views.UserControls
                     }
                 }
             }
+
+            Debug.WriteLine($"Realized ListViewItems: {CountRealizedItems(pointsListView)}");
         }
         private void PointsBorder_MouseEnter(object sender, MouseEventArgs e)
         {
@@ -1162,6 +1165,23 @@ namespace Cad_Point_Manager.Views.UserControls
                     }
                 }
             }
+        }
+
+
+        // Testing
+        public int CountRealizedItems(DependencyObject root)
+        {
+            int count = 0;
+            var stack = new Stack<DependencyObject>();
+            stack.Push(root);
+            while (stack.Count > 0)
+            {
+                var d = stack.Pop();
+                if (d is ListViewItem) count++;
+                int n = VisualTreeHelper.GetChildrenCount(d);
+                for (int i = 0; i < n; i++) stack.Push(VisualTreeHelper.GetChild(d, i));
+            }
+            return count;
         }
         #endregion
 

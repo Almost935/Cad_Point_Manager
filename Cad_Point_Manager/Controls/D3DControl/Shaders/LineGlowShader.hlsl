@@ -86,7 +86,7 @@ void GSMain(line VSInput input[2], inout TriangleStream<GSInput> triStream)
     float4 color;
     if (isSelected > 0.5)
     {
-        color = float4(selectedMouseOverColor.rgb, 1);
+        color = selectedMouseOverColor;
     }
     else
     {

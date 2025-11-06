@@ -279,33 +279,48 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
 
         public void FlushAll()
         {
-            if (_groupBuf is null || _labelBuf is null || _pointBuf is null) { return; }
+            //if (_groupBuf is null || _labelBuf is null || _pointBuf is null) { return; }
             DataStream s;
 
-            // layers (few): discard whole
-            _ctx.MapSubresource(_layerBuf, 0, MapMode.WriteDiscard, MapFlags.None, out s);
-            s.WriteRange(_layerCpu, 0, _layerCap);
-            _ctx.UnmapSubresource(_layerBuf, 0);
+            if (_layerBuf is not null)
+            {
+                // layers (few): discard whole
+                _ctx.MapSubresource(_layerBuf, 0, MapMode.WriteDiscard, MapFlags.None, out s);
+                s.WriteRange(_layerCpu, 0, _layerCap);
+                _ctx.UnmapSubresource(_layerBuf, 0);
+            }
 
-            // objects (many): discard whole on full rebuild
-            _ctx.MapSubresource(_objectBuf, 0, MapMode.WriteDiscard, MapFlags.None, out s);
-            s.WriteRange(_objectCpu, 0, _objectCap);
-            _ctx.UnmapSubresource(_objectBuf, 0);
+            if (_objectBuf is not null)
+            {
+                // objects (many): discard whole on full rebuild
+                _ctx.MapSubresource(_objectBuf, 0, MapMode.WriteDiscard, MapFlags.None, out s);
+                s.WriteRange(_objectCpu, 0, _objectCap);
+                _ctx.UnmapSubresource(_objectBuf, 0);
+            }
 
-            // groups (few): discard whole
-            _ctx.MapSubresource(_groupBuf, 0, MapMode.WriteDiscard, MapFlags.None, out s);
-            s.WriteRange(_groupCpu, 0, _groupCap);
-            _ctx.UnmapSubresource(_groupBuf, 0);
+            if (_groupBuf is not null)
+            {
+                // groups (few): discard whole
+                _ctx.MapSubresource(_groupBuf, 0, MapMode.WriteDiscard, MapFlags.None, out s);
+                s.WriteRange(_groupCpu, 0, _groupCap);
+                _ctx.UnmapSubresource(_groupBuf, 0);
+            }
 
-            // points (many): discard whole on full rebuild
-            _ctx.MapSubresource(_pointBuf, 0, MapMode.WriteDiscard, MapFlags.None, out s);
-            s.WriteRange(_pointCpu, 0, _pointCap);
-            _ctx.UnmapSubresource(_pointBuf, 0);
+            if (_pointBuf is not null)
+            {
+                // points (many): discard whole on full rebuild
+                _ctx.MapSubresource(_pointBuf, 0, MapMode.WriteDiscard, MapFlags.None, out s);
+                s.WriteRange(_pointCpu, 0, _pointCap);
+                _ctx.UnmapSubresource(_pointBuf, 0);
+            }
 
-            // labels (many): discard whole on full rebuild
-            _ctx.MapSubresource(_labelBuf, 0, MapMode.WriteDiscard, MapFlags.None, out s);
-            s.WriteRange(_labelCpu, 0, _labelCap);
-            _ctx.UnmapSubresource(_labelBuf, 0);
+            if (_labelBuf is not null)
+            {
+                // labels (many): discard whole on full rebuild
+                _ctx.MapSubresource(_labelBuf, 0, MapMode.WriteDiscard, MapFlags.None, out s);
+                s.WriteRange(_labelCpu, 0, _labelCap);
+                _ctx.UnmapSubresource(_labelBuf, 0);
+            }
         }
 
         public void FlushLayerSubset(HashSet<uint> dirty)
@@ -382,6 +397,169 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
             }
             _ctx.UnmapSubresource(_labelBuf, 0);
         }
+
+        // D3dStateBuffers.cs  (inside class)
+        public void MaybeShrinkAllTo25PctOrLess(
+            int labelUsed, int pointUsed, int groupUsed, int layerUsed, int objectUsed,
+            Action<DeviceContext> unbindAllSrvs)
+        {
+            // We need SRVs unbound before recreating to avoid D3D warnings.
+            unbindAllSrvs?.Invoke(_ctx);
+
+            const float THRESH = 0.25f;
+
+            if (_labelCap > 0 && labelUsed < _labelCap * THRESH) RecreateLabelCap(ToPow2AtLeast(labelUsed));
+            if (_pointCap > 0 && pointUsed < _pointCap * THRESH) RecreatePointCap(ToPow2AtLeast(pointUsed));
+            if (_groupCap > 0 && groupUsed < _groupCap * THRESH) RecreateGroupCap(ToPow2AtLeast(groupUsed));
+            if (_layerCap > 0 && layerUsed < _layerCap * THRESH) RecreateLayerCap(ToPow2AtLeast(layerUsed));
+            if (_objectCap > 0 && objectUsed < _objectCap * THRESH) RecreateObjectCap(ToPow2AtLeast(objectUsed));
+        }
+        private static int ToPow2AtLeast(int n)
+        {
+            if (n <= 0) return 0;
+            int p = 1; while (p < n) p <<= 1; return p;
+        }
+        private void RecreateLabelCap(int newCap)
+        {
+            if (newCap == _labelCap) return;
+            _labelSrv?.Dispose(); _labelSrv = null;
+            _labelBuf?.Dispose(); _labelBuf = null;
+
+            _labelCap = newCap;
+            Array.Resize(ref _labelCpu, _labelCap);
+
+            if (_labelCap == 0) return;
+
+            var desc = new BufferDescription
+            {
+                SizeInBytes = Utilities.SizeOf<LabelState>() * _labelCap,
+                Usage = ResourceUsage.Dynamic,
+                BindFlags = BindFlags.ShaderResource,
+                CpuAccessFlags = CpuAccessFlags.Write,
+                OptionFlags = ResourceOptionFlags.BufferStructured,
+                StructureByteStride = Utilities.SizeOf<LabelState>()
+            };
+            _labelBuf = new Buffer(_device, desc);
+            _labelSrv = new ShaderResourceView(_device, _labelBuf, new ShaderResourceViewDescription
+            {
+                Format = Format.Unknown,
+                Dimension = ShaderResourceViewDimension.ExtendedBuffer,
+                BufferEx = new ShaderResourceViewDescription.ExtendedBufferResource { FirstElement = 0, ElementCount = _labelCap }
+            });
+        }
+        private void RecreatePointCap(int newCap)
+        {
+            if (newCap == _pointCap) return;
+            _pointSrv?.Dispose(); _pointSrv = null;
+            _pointBuf?.Dispose(); _pointBuf = null;
+
+            _pointCap = newCap;
+            Array.Resize(ref _pointCpu, _pointCap);
+
+            if (_pointCap == 0) return;
+
+            var desc = new BufferDescription
+            {
+                SizeInBytes = Utilities.SizeOf<PointState>() * _pointCap,
+                Usage = ResourceUsage.Dynamic,
+                BindFlags = BindFlags.ShaderResource,
+                CpuAccessFlags = CpuAccessFlags.Write,
+                OptionFlags = ResourceOptionFlags.BufferStructured,
+                StructureByteStride = Utilities.SizeOf<PointState>()
+            };
+            _pointBuf = new Buffer(_device, desc);
+            _pointSrv = new ShaderResourceView(_device, _pointBuf, new ShaderResourceViewDescription
+            {
+                Format = Format.Unknown,
+                Dimension = ShaderResourceViewDimension.ExtendedBuffer,
+                BufferEx = new ShaderResourceViewDescription.ExtendedBufferResource { FirstElement = 0, ElementCount = _pointCap }
+            });
+        }
+        private void RecreateGroupCap(int newCap) 
+        {
+            if (newCap == _groupCap) return;
+            _groupSrv?.Dispose(); _groupSrv = null;
+            _groupBuf?.Dispose(); _groupBuf = null;
+
+            _groupCap = newCap;
+            Array.Resize(ref _groupCpu, _groupCap);
+
+            if (_groupCap == 0) return;
+
+            var desc = new BufferDescription
+            {
+                SizeInBytes = Utilities.SizeOf<GroupState>() * _groupCap,
+                Usage = ResourceUsage.Dynamic,
+                BindFlags = BindFlags.ShaderResource,
+                CpuAccessFlags = CpuAccessFlags.Write,
+                OptionFlags = ResourceOptionFlags.BufferStructured,
+                StructureByteStride = Utilities.SizeOf<GroupState>()
+            };
+            _groupBuf = new Buffer(_device, desc);
+            _groupSrv = new ShaderResourceView(_device, _groupBuf, new ShaderResourceViewDescription
+            {
+                Format = Format.Unknown,
+                Dimension = ShaderResourceViewDimension.ExtendedBuffer,
+                BufferEx = new ShaderResourceViewDescription.ExtendedBufferResource { FirstElement = 0, ElementCount = _groupCap }
+            });
+        }
+        private void RecreateLayerCap(int newCap)
+        {
+            if (newCap == _layerCap) return;
+            _layerSrv?.Dispose(); _layerSrv = null;
+            _layerBuf?.Dispose(); _layerBuf = null;
+
+            _layerCap = newCap;
+            Array.Resize(ref _layerCpu, _layerCap);
+
+            if (_layerCap == 0) return;
+
+            var desc = new BufferDescription
+            {
+                SizeInBytes = Utilities.SizeOf<LayerState>() * _layerCap,
+                Usage = ResourceUsage.Dynamic,
+                BindFlags = BindFlags.ShaderResource,
+                CpuAccessFlags = CpuAccessFlags.Write,
+                OptionFlags = ResourceOptionFlags.BufferStructured,
+                StructureByteStride = Utilities.SizeOf<LayerState>()
+            };
+            _layerBuf = new Buffer(_device, desc);
+            _layerSrv = new ShaderResourceView(_device, _layerBuf, new ShaderResourceViewDescription
+            {
+                Format = Format.Unknown,
+                Dimension = ShaderResourceViewDimension.ExtendedBuffer,
+                BufferEx = new ShaderResourceViewDescription.ExtendedBufferResource { FirstElement = 0, ElementCount = _layerCap }
+            });
+        }
+        private void RecreateObjectCap(int newCap)
+        {
+            if (newCap == _objectCap) return;
+            _objectSrv?.Dispose(); _objectSrv = null;
+            _objectBuf?.Dispose(); _objectBuf = null;
+
+            _objectCap = newCap;
+            Array.Resize(ref _objectCpu, _objectCap);
+
+            if (_objectCap == 0) return;
+
+            var desc = new BufferDescription
+            {
+                SizeInBytes = Utilities.SizeOf<ObjectState>() * _objectCap,
+                Usage = ResourceUsage.Dynamic,
+                BindFlags = BindFlags.ShaderResource,
+                CpuAccessFlags = CpuAccessFlags.Write,
+                OptionFlags = ResourceOptionFlags.BufferStructured,
+                StructureByteStride = Utilities.SizeOf<ObjectState>()
+            };
+            _objectBuf = new Buffer(_device, desc);
+            _objectSrv = new ShaderResourceView(_device, _objectBuf, new ShaderResourceViewDescription
+            {
+                Format = Format.Unknown,
+                Dimension = ShaderResourceViewDimension.ExtendedBuffer,
+                BufferEx = new ShaderResourceViewDescription.ExtendedBufferResource { FirstElement = 0, ElementCount = _objectCap }
+            });
+        }
+
 
         public void Dispose()
         {

@@ -29,6 +29,7 @@ namespace Cad_Point_Manager.Models
         private const float _pointSizeToExtentsFactor = 0.001f;
 
         private bool _dxfLoaded = false;
+        //private bool 
         private bool _lineVerticesDirty = false;
         private bool _textVerticesDirty = false;
         private bool _cogoPointTextVerticesDirty = false;
@@ -239,7 +240,7 @@ namespace Cad_Point_Manager.Models
             GetPointScale();
 
             // Testing
-            GetTestDxfPoints();
+            //GetTestDxfPoints();
 
             CogoPointManager.UpdatePointExtents();
 
@@ -584,7 +585,7 @@ namespace Cad_Point_Manager.Models
             for (int i = 0; i < rows; i++)
             {
                 string pointGroupName = $"TestGroup {i + 1}";
-                bool created = CogoPointManager.TryCreatePointGroup(pointGroupName, Colors.Red, _pointBaseScale, out var pointGroup);
+                bool created = CogoPointManager.TryCreatePointGroup(pointGroupName, Colors.Red, out var pointGroup);
                 if (created)
                 {
                     var groupActivated = CogoPointManager.TrySetActivePointGroup(pointGroup);
@@ -601,7 +602,7 @@ namespace Cad_Point_Manager.Models
                 }
             }
 
-            CogoPointTextVerticesDirty = true;
+            //CogoPointTextVerticesDirty = true;
             //CogoPointCircleVerticesDirty = true;
         }
 

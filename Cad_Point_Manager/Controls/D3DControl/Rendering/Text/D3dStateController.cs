@@ -121,6 +121,14 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
             s.GroupId = gId;
             _dirtyPoints.Add(pid);
         }
+        public void SetPointVisible(CogoPoint cp, bool visible)
+        {
+            if (!_ids.TryGetPointId(cp, out var pid)) return;
+            ref var s = ref _bufs.PointSpan[(int)pid];
+            if (visible) s.Flags |= (uint)CogoPointFlags.Visible;
+            else s.Flags &= ~(uint)CogoPointFlags.Visible;
+            _dirtyPoints.Add(pid);
+        }
 
         public void SetGroupVisibility(PointGroup pg, bool visible)
         {
@@ -153,6 +161,14 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
             }
             Set(0); Set(1);
             if (!string.IsNullOrEmpty(cp.Description)) Set(2);
+        }
+        public void SetLabelVisible(CogoPoint cp, int line, bool visible)
+        {
+            if (!_ids.TryGetLabelId(cp, line, out var lid)) return;
+            ref var ls = ref _bufs.LabelSpan[(int)lid];
+            if (visible) ls.Flags |= 1u;   // LabelFlags.Visible
+            else ls.Flags &= ~1u;
+            _dirtyLabels.Add(lid);
         }
 
         public void FlushObjectUpdates()
