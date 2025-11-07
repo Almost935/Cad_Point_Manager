@@ -25,34 +25,29 @@
                         <GridViewHeaderRowPresenter Grid.Row="0"
                                                     Grid.ColumnSpan="3"
                                                     Columns="{Binding Path=TemplatedParent.View.Columns,
-                            RelativeSource={RelativeSource TemplatedParent}}"
+                            RelativeSource={RelativeSource AncestorType=ListView}}"
                                                     ColumnHeaderContainerStyle="{Binding
                             Path=TemplatedParent.View.ColumnHeaderContainerStyle,
-                            RelativeSource={RelativeSource TemplatedParent}}"
+                            RelativeSource={RelativeSource AncestorType=ListView}}"
                                                     ColumnHeaderTemplate="{Binding
                             Path=TemplatedParent.View.ColumnHeaderTemplate,
-                            RelativeSource={RelativeSource TemplatedParent}}"
+                            RelativeSource={RelativeSource AncestorType=ListView}}"
                                                     ColumnHeaderTemplateSelector="{Binding 
                             Path=TemplatedParent.View.ColumnHeaderTemplateSelector,
-                            RelativeSource={RelativeSource TemplatedParent}}"
+                            RelativeSource={RelativeSource AncestorType=ListView}}"
                                                     AllowsColumnReorder="False"
                                                     ColumnHeaderContextMenu="{Binding
                             Path=TemplatedParent.View.ColumnHeaderContextMenu,
-                            RelativeSource={RelativeSource TemplatedParent}}"
+                            RelativeSource={RelativeSource AncestorType=ListView}}"
                                                     ColumnHeaderToolTip="{Binding
                             Path=TemplatedParent.View.ColumnHeaderToolTip,
-                            RelativeSource={RelativeSource TemplatedParent}}"
+                            RelativeSource={RelativeSource AncestorType=ListView}}"
                                                     SnapsToDevicePixels="{TemplateBinding
                             SnapsToDevicePixels}" />
 
                         <DockPanel Background="Transparent"
                                    Grid.Row="1"
                                    Margin="0">
-                            <ScrollViewer DockPanel.Dock="Top"
-                                          Grid.Row="1"
-                                          HorizontalScrollBarVisibility="Hidden"
-                                          Margin="0"
-                                          Padding="0" />
 
                             <ScrollContentPresenter Name="PART_ScrollContentPresenter"
                                                     KeyboardNavigation.DirectionalNavigation="Local" />
@@ -279,16 +274,12 @@
                             BorderThickness="{TemplateBinding BorderThickness}"
                             Background="{TemplateBinding Background}"
                             BorderBrush="{DynamicResource ListView.Static.Border}">
-                        <ScrollViewer Style="{StaticResource LayersListViewScrollviewer}">
+                        <ScrollViewer Style="{StaticResource LayersListViewScrollviewer}"
+                                      CanContentScroll="True">
                             <ItemsPresenter HorizontalAlignment="Left" />
                         </ScrollViewer>
                     </Border>
                     <ControlTemplate.Triggers>
-                        <Trigger Property="IsGrouping"
-                                 Value="true">
-                            <Setter Property="ScrollViewer.CanContentScroll"
-                                    Value="false" />
-                        </Trigger>
                         <Trigger Property="IsEnabled"
                                  Value="false">
                             <Setter TargetName="Border"

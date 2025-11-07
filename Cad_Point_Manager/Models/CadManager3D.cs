@@ -574,10 +574,10 @@ namespace Cad_Point_Manager.Models
         {
             CogoPointManager.PointGroups.Clear();
 
-            float rows = 10;
-            float cols = 10;
-            float yIncrement = Extents.Height.ToFloat() / (rows - 1);
-            float xIncrement = Extents.Width.ToFloat() / (cols - 1);
+            float rows = 15;
+            float cols = 15;
+            float yIncrement = (Extents.Height.ToFloat() * 1.5f) / (rows - 1);
+            float xIncrement = (Extents.Width.ToFloat() * 1.5f) / (cols - 1);
             int pointNum = 1;
             float elevation = 0;
             string description = "Test Point";
@@ -596,7 +596,7 @@ namespace Cad_Point_Manager.Models
                     for (int j = 0; j < cols; j++)
                     {
                         float x = Extents.Left.ToFloat() + (xIncrement * j);
-                        var pointCreated = CogoPointManager.TryAddPointToActiveGroup(pointNum, new Vector3(x, y, 0), out var point, elevation, description);
+                        var pointCreated = CogoPointManager.TryAddPointToActiveGroup(pointNum, new Vector3(x, y, 0), out _, elevation, description);
                         if (pointCreated) { pointNum++; continue; }
                     }
                 }

@@ -16,6 +16,7 @@
                 <ResourceDictionary Source="Resources/AssortedResources.xaml" />
                 <ResourceDictionary Source="Styles/MenuStyles.xaml" />
                 <ResourceDictionary Source="Styles/ListViewStyle.xaml" />
+                <ResourceDictionary Source="/Styles/UpdatedListViewStyle.xaml" />
                 <ResourceDictionary Source="Styles/Icons.xaml" />
                 <ResourceDictionary Source="Styles/EditableTextBox.xaml" />
                 <ResourceDictionary Source="Styles/ValidationTemplate.xaml" />

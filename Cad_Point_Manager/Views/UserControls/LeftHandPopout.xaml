@@ -131,22 +131,22 @@
                 <RowDefinition Height="27*" />
             </Grid.RowDefinitions>
             <ListView x:Name="pointsListView"
-                                    ItemsSource="{Binding ElementName=root, Path=CadManager.PointsView}"
-                                    Style="{StaticResource LayersListViewStyle}"
-                                    Opacity="{Binding ElementName=root, Path=PointsTabOpacity}"
-                                    IsHitTestVisible="{Binding ElementName=root, Path=PointsTabVisible}"
-                                    SelectionMode="Extended"
-                                    Loaded="PointsListView_Loaded"
-                                    SelectionChanged="PointsListView_SelectionChanged"
-                                    Background="{StaticResource PopoutMenuBackgroundBrush}"
-                                    VirtualizingPanel.IsVirtualizingWhenGrouping="True"
-                                    VirtualizingPanel.ScrollUnit="Pixel"
-                                    ScrollViewer.CanContentScroll="True"
-                                    VirtualizingStackPanel.IsVirtualizing="True"
-                                    VirtualizingStackPanel.VirtualizationMode="Recycling"
-                                    VirtualizingStackPanel.IsContainerVirtualizable="True"
-                                    VirtualizingPanel.CacheLength="0,0"
-                                    Grid.RowSpan="2">
+                      ItemsSource="{Binding ElementName=root, Path=CadManager.PointsView}"
+                      Style="{StaticResource UpdatedListViewStyle}"
+                      Opacity="{Binding ElementName=root, Path=PointsTabOpacity}"
+                      IsHitTestVisible="{Binding ElementName=root, Path=PointsTabVisible}"
+                      SelectionMode="Extended"
+                      Loaded="PointsListView_Loaded"
+                      SelectionChanged="PointsListView_SelectionChanged"
+                      Background="{StaticResource PopoutMenuBackgroundBrush}"
+                      VirtualizingPanel.IsVirtualizingWhenGrouping="True"
+                      VirtualizingPanel.ScrollUnit="Pixel"
+                      ScrollViewer.CanContentScroll="True"
+                      VirtualizingStackPanel.IsVirtualizing="True"
+                      VirtualizingStackPanel.VirtualizationMode="Recycling"
+                      VirtualizingStackPanel.IsContainerVirtualizable="True"
+                      VirtualizingPanel.CacheLength="0,0"
+                      Grid.RowSpan="2">
                 <ListView.ItemsPanel>
                     <ItemsPanelTemplate>
                         <VirtualizingStackPanel VirtualizingPanel.IsVirtualizing="True"
@@ -364,8 +364,8 @@
                                 <VirtualizingStackPanel VirtualizingPanel.IsVirtualizing="True"
                                                         VirtualizingPanel.VirtualizationMode="Recycling"
                                                         VirtualizingPanel.IsVirtualizingWhenGrouping="True"
-                                                        VirtualizingPanel.ScrollUnit="Pixel" 
-                                                        VirtualizingPanel.CacheLength="0 0"/>
+                                                        VirtualizingPanel.ScrollUnit="Pixel"
+                                                        VirtualizingPanel.CacheLength="0 0" />
                             </ItemsPanelTemplate>
                         </GroupStyle.Panel>
                         <GroupStyle.ContainerStyle>
