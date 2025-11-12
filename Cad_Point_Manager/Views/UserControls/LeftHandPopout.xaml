@@ -10,6 +10,7 @@
              xmlns:viewModels="clr-namespace:Cad_Point_Manager.ViewModels"
              xmlns:colorpicker="clr-namespace:ColorPicker;assembly=ColorPicker"
              xmlns:validation="clr-namespace:Cad_Point_Manager.Views.ValidationRules"
+             xmlns:viewsAssorted="clr-namespace:Cad_Point_Manager.Views.Assorted"
              xmlns:sys="clr-namespace:System;assembly=mscorlib"
              mc:Ignorable="d"
              d:DesignHeight="400"
@@ -38,6 +39,7 @@
     </UserControl.Resources>
 
     <Grid x:Name="overallGrid"
+          Margin="2"
           MouseLeave="OverallGrid_MouseLeave"
           MouseEnter="OverallGrid_MouseEnter">
         <Grid.ColumnDefinitions>
@@ -46,7 +48,8 @@
         </Grid.ColumnDefinitions>
 
         <Border x:Name="tab"
-                Grid.Column="0">
+                Grid.Column="0"
+                Margin="0 0 1 0">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="*" />
@@ -56,7 +59,7 @@
                 <Border  x:Name="pointsBorder"
                          Style="{StaticResource tabBorderStyle}"
                          Grid.Row="0"
-                         Margin="0 1 0 1"
+                         Margin="0 0 0 1"
                          MouseEnter="PointsBorder_MouseEnter">
                     <TextBlock Text="Points"
                                Style="{StaticResource TabFontStyle}"
@@ -64,8 +67,8 @@
                                VerticalAlignment="Center"
                                TextAlignment="Center"
                                RenderTransformOrigin="0.5, 0.5"
-                               ClipToBounds="False"
-                               Margin="3 0 3 0">
+                               Margin="3 0 3 0"
+                               ClipToBounds="False">
                         <TextBlock.LayoutTransform>
                             <TransformGroup>
                                 <RotateTransform Angle="90" />
@@ -86,8 +89,8 @@
                                VerticalAlignment="Center"
                                TextAlignment="Center"
                                RenderTransformOrigin="0.5, 0.5"
-                               ClipToBounds="False"
-                               Margin="3 0 3 0">
+                               Margin="3 0 3 0"
+                               ClipToBounds="False">
                         <TextBlock.LayoutTransform>
                             <TransformGroup>
                                 <RotateTransform Angle="90" />
@@ -100,7 +103,7 @@
                 <Border  x:Name="viewsBorder"
                          Style="{StaticResource tabBorderStyle}"
                          Grid.Row="2"
-                         Margin="0 1 0 1"
+                         Margin="0 1 0 0"
                          MouseEnter="ViewsBorder_MouseEnter">
                     <TextBlock Text="Views"
                                Style="{StaticResource TabFontStyle}"
@@ -125,11 +128,8 @@
         <Grid x:Name="mainPanel"
               HorizontalAlignment="Stretch"
               Grid.Column="1"
+              Margin="1 0 0 0"
               RenderTransformOrigin="0, 1">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="73*" />
-                <RowDefinition Height="27*" />
-            </Grid.RowDefinitions>
             <ListView x:Name="pointsListView"
                       ItemsSource="{Binding ElementName=root, Path=CadManager.PointsView}"
                       Style="{StaticResource UpdatedListViewStyle}"
@@ -145,8 +145,18 @@
                       VirtualizingStackPanel.IsVirtualizing="True"
                       VirtualizingStackPanel.VirtualizationMode="Recycling"
                       VirtualizingStackPanel.IsContainerVirtualizable="True"
-                      VirtualizingPanel.CacheLength="0,0"
-                      Grid.RowSpan="2">
+                      VirtualizingPanel.CacheLength="0,0">
+                <ListView.Resources>
+                    <Style x:Key="InlineEditBoxStyle"
+                           TargetType="TextBox"
+                           BasedOn="{StaticResource EditableTextBox}">
+                        <EventSetter Event="PreviewKeyDown"
+                                     Handler="InlineEditBox_PreviewKeyDown" />
+                        <EventSetter Event="LostFocus"
+                                     Handler="InlineEditBox_LostFocus" />
+                    </Style>
+
+                </ListView.Resources>
                 <ListView.ItemsPanel>
                     <ItemsPanelTemplate>
                         <VirtualizingStackPanel VirtualizingPanel.IsVirtualizing="True"
@@ -158,200 +168,164 @@
                 </ListView.ItemsPanel>
                 <ListView.View>
                     <GridView>
-                        <GridViewColumn Width="20">
-                            <GridViewColumn.Header>
-                                <TextBlock Text="Name"
-                                           FontSize="{StaticResource ListViewHeaderFontSize}" />
-                            </GridViewColumn.Header>
+                        <GridViewColumn Header="No."
+                                        Width="100">
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
-                                    <Border x:Name="PointNumberBorder"
-                                            PreviewMouseLeftButtonDown="PointNumberBorder_PreviewMouseLeftButtonDown"
-                                            Focusable="False"
-                                            BorderBrush="Transparent"
-                                            BorderThickness="1"
-                                            Background="Transparent">
-                                        <TextBox x:Name="PointNumberTextbox"
-                                                 FontSize="{StaticResource ListViewFontSize}"
-                                                 Style="{StaticResource EditableTextBox}"
-                                                 HorizontalAlignment="Stretch"
-                                                 VerticalAlignment="Stretch"
-                                                 IsReadOnly="True"
-                                                 LostFocus="PointNumberTextbox_LostFocus"
-                                                 PreviewKeyDown="PointNumberTextbox_PreviewKeyDown"
-                                                 ToolTipService.ShowOnDisabled="True">
-                                            <TextBox.Text>
-                                                <Binding Path="PointNumber"
-                                                         UpdateSourceTrigger="Explicit"
-                                                         Mode="TwoWay"
-                                                         ValidatesOnDataErrors="True"
-                                                         NotifyOnValidationError="True"
-                                                         ValidatesOnExceptions="True"
-                                                         ValidatesOnNotifyDataErrors="True">
-                                                    <Binding.ValidationRules>
-                                                        <validation:PointNumberValidationRule />
-                                                    </Binding.ValidationRules>
-                                                </Binding>
-                                            </TextBox.Text>
-                                        </TextBox>
-                                    </Border>
+                                    <Grid x:Name="pointNumber">
+                                        <!-- Display -->
+                                        <TextBlock x:Name="tbDisplay"
+                                                   Text="{Binding PointNumber}"
+                                                   Padding="2"
+                                                   MouseDown="CellDisplay_MouseDown" />
+                                        <!-- Edit -->
+                                        <TextBox x:Name="tbEdit"
+                                                 Text="{Binding PointNumber, UpdateSourceTrigger=Explicit}"
+                                                 Style="{StaticResource InlineEditBoxStyle}"
+                                                 Visibility="Collapsed" />
+                                        <!--<Grid.ToolTip>
+                                            <TextBlock Text="{Binding PointNumber}" />
+                                        </Grid.ToolTip>-->
+                                    </Grid>
+                                    <DataTemplate.Triggers>
+                                        <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ListViewItem}, Path=(viewsAssorted:InlineEdit.EditingField)}"
+                                                     Value="PointNumber">
+                                            <Setter TargetName="tbDisplay"
+                                                    Property="Visibility"
+                                                    Value="Collapsed" />
+                                            <Setter TargetName="tbEdit"
+                                                    Property="Visibility"
+                                                    Value="Visible" />
+                                        </DataTrigger>
+                                    </DataTemplate.Triggers>
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
-                        <GridViewColumn Width="20">
-                            <GridViewColumn.Header>
-                                <TextBlock Text="Northing"
-                                           FontSize="{StaticResource ListViewHeaderFontSize}" />
-                            </GridViewColumn.Header>
+
+                        <GridViewColumn Header="Northing"
+                                        Width="140">
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
-                                    <Border x:Name="PointNorthingBorder"
-                                            PreviewMouseLeftButtonDown="PointNorthingBorder_PreviewMouseLeftButtonDown"
-                                            Focusable="False"
-                                            BorderBrush="Transparent"
-                                            BorderThickness="1"
-                                            Background="Transparent">
-                                        <TextBox x:Name="PointNorthingTextbox"
-                                                 FontSize="{StaticResource ListViewFontSize}"
-                                                 Style="{StaticResource EditableTextBox}"
-                                                 HorizontalAlignment="Stretch"
-                                                 VerticalAlignment="Stretch"
-                                                 IsReadOnly="True"
-                                                 LostFocus="PointNorthingTextbox_LostFocus"
-                                                 PreviewKeyDown="PointNorthingTextbox_PreviewKeyDown"
-                                                 ToolTipService.ShowOnDisabled="True">
-                                            <TextBox.Text>
-                                                <Binding Path="Northing"
-                                                         StringFormat="N3"
-                                                         UpdateSourceTrigger="Explicit"
-                                                         Mode="TwoWay"
-                                                         ValidatesOnDataErrors="True"
-                                                         NotifyOnValidationError="True"
-                                                         ValidatesOnExceptions="True"
-                                                         ValidatesOnNotifyDataErrors="True">
-                                                    <Binding.ValidationRules>
-                                                        <validation:DoubleValidationRule />
-                                                    </Binding.ValidationRules>
-                                                </Binding>
-                                            </TextBox.Text>
-                                        </TextBox>
-                                    </Border>
+                                    <Grid x:Name="northing">
+                                        <TextBlock x:Name="tbDisplay"
+                                                   Text="{Binding Northing,StringFormat=N3}"
+                                                   Padding="2"
+                                                   MouseDown="CellDisplay_MouseDown" />
+                                        <TextBox x:Name="tbEdit"
+                                                 Text="{Binding Northing, UpdateSourceTrigger=Explicit, StringFormat=N3}"
+                                                 Style="{StaticResource InlineEditBoxStyle}"
+                                                 Visibility="Collapsed" />
+                                        <!--<Grid.ToolTip>
+                                            <TextBlock Text="{Binding Northing, StringFormat=N3}" />
+                                        </Grid.ToolTip>-->
+                                    </Grid>
+                                    <DataTemplate.Triggers>
+                                        <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ListViewItem}, Path=(viewsAssorted:InlineEdit.EditingField)}"
+                                                     Value="Northing">
+                                            <Setter TargetName="tbDisplay"
+                                                    Property="Visibility"
+                                                    Value="Collapsed" />
+                                            <Setter TargetName="tbEdit"
+                                                    Property="Visibility"
+                                                    Value="Visible" />
+                                        </DataTrigger>
+                                    </DataTemplate.Triggers>
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
-                        <GridViewColumn Width="20">
-                            <GridViewColumn.Header>
-                                <TextBlock Text="Easting"
-                                           FontSize="{StaticResource ListViewHeaderFontSize}" />
-                            </GridViewColumn.Header>
+
+                        <GridViewColumn Header="Easting"
+                                        Width="140">
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
-                                    <Border x:Name="PointEastingBorder"
-                                            PreviewMouseLeftButtonDown="PointEastingBorder_PreviewMouseLeftButtonDown"
-                                            Focusable="False"
-                                            BorderBrush="Transparent"
-                                            BorderThickness="1"
-                                            Background="Transparent">
-                                        <TextBox x:Name="PointEastingTextbox"
-                                                 FontSize="{StaticResource ListViewFontSize}"
-                                                 Style="{StaticResource EditableTextBox}"
-                                                 HorizontalAlignment="Stretch"
-                                                 VerticalAlignment="Stretch"
-                                                 IsReadOnly="True"
-                                                 LostFocus="PointEastingTextbox_LostFocus"
-                                                 PreviewKeyDown="PointEastingTextbox_PreviewKeyDown"
-                                                 ToolTipService.ShowOnDisabled="True"
-                                                 ToolTipService.InitialShowDelay="100"
-                                                 ToolTipService.BetweenShowDelay="100">
-                                            <TextBox.Text>
-                                                <Binding Path="Easting"
-                                                         StringFormat="N3"
-                                                         UpdateSourceTrigger="Explicit"
-                                                         Mode="TwoWay"
-                                                         ValidatesOnDataErrors="True"
-                                                         NotifyOnValidationError="True"
-                                                         ValidatesOnExceptions="True"
-                                                         ValidatesOnNotifyDataErrors="True">
-                                                    <Binding.ValidationRules>
-                                                        <validation:DoubleValidationRule />
-                                                    </Binding.ValidationRules>
-                                                </Binding>
-                                            </TextBox.Text>
-                                        </TextBox>
-                                    </Border>
+                                    <Grid x:Name="easting">
+                                        <TextBlock x:Name="tbDisplay"
+                                                   Text="{Binding Easting, StringFormat=N3}"
+                                                   Padding="2"
+                                                   MouseDown="CellDisplay_MouseDown" />
+                                        <TextBox x:Name="tbEdit"
+                                                 Text="{Binding Easting, UpdateSourceTrigger=Explicit, StringFormat=N3}"
+                                                 Style="{StaticResource InlineEditBoxStyle}"
+                                                 Visibility="Collapsed" />
+                                        <!--<Grid.ToolTip>
+                                            <TextBlock Text="{Binding Easting, StringFormat=N3}" />
+                                        </Grid.ToolTip>-->
+                                    </Grid>
+                                    <DataTemplate.Triggers>
+                                        <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ListViewItem}, Path=(viewsAssorted:InlineEdit.EditingField)}"
+                                                     Value="Easting">
+                                            <Setter TargetName="tbDisplay"
+                                                    Property="Visibility"
+                                                    Value="Collapsed" />
+                                            <Setter TargetName="tbEdit"
+                                                    Property="Visibility"
+                                                    Value="Visible" />
+                                        </DataTrigger>
+                                    </DataTemplate.Triggers>
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
-                        <GridViewColumn Width="20">
-                            <GridViewColumn.Header>
-                                <TextBlock Text="Elevation"
-                                           FontSize="{StaticResource ListViewHeaderFontSize}" />
-                            </GridViewColumn.Header>
+
+                        <GridViewColumn Header="Elevation"
+                                        Width="140">
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
-                                    <Border x:Name="PointElevationBorder"
-                                            PreviewMouseLeftButtonDown="PointElevationBorder_PreviewMouseLeftButtonDown"
-                                            Focusable="False"
-                                            BorderBrush="Transparent"
-                                            BorderThickness="1"
-                                            Background="Transparent">
-                                        <TextBox x:Name="PointElevationTextbox"
-                                                 FontSize="{StaticResource ListViewFontSize}"
-                                                 Style="{StaticResource EditableTextBox}"
-                                                 HorizontalAlignment="Stretch"
-                                                 VerticalAlignment="Stretch"
-                                                 IsReadOnly="True"
-                                                 LostFocus="PointElevationTextbox_LostFocus"
-                                                 PreviewKeyDown="PointElevationTextbox_PreviewKeyDown"
-                                                 ToolTipService.ShowOnDisabled="True"
-                                                 ToolTipService.InitialShowDelay="100"
-                                                 ToolTipService.BetweenShowDelay="100">
-                                            <TextBox.Text>
-                                                <Binding Path="Elevation"
-                                                         StringFormat="N3"
-                                                         UpdateSourceTrigger="Explicit"
-                                                         Mode="TwoWay"
-                                                         ValidatesOnDataErrors="True"
-                                                         NotifyOnValidationError="True"
-                                                         ValidatesOnExceptions="True"
-                                                         ValidatesOnNotifyDataErrors="True">
-                                                    <Binding.ValidationRules>
-                                                        <validation:DoubleValidationRule />
-                                                    </Binding.ValidationRules>
-                                                </Binding>
-                                            </TextBox.Text>
-                                        </TextBox>
-                                    </Border>
+                                    <Grid x:Name="elevation">
+                                        <TextBlock x:Name="tbDisplay"
+                                                   Text="{Binding Elevation, StringFormat=N3}"
+                                                   Padding="2"
+                                                   MouseDown="CellDisplay_MouseDown" />
+                                        <TextBox x:Name="tbEdit"
+                                                 Text="{Binding Elevation, UpdateSourceTrigger=Explicit, StringFormat=N3}"
+                                                 Style="{StaticResource InlineEditBoxStyle}"
+                                                 Visibility="Collapsed" />
+                                        <!--<Grid.ToolTip>
+                                            <TextBlock Text="{Binding Elevation, StringFormat=N3}" />
+                                        </Grid.ToolTip>-->
+                                    </Grid>
+                                    <DataTemplate.Triggers>
+                                        <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ListViewItem}, Path=(viewsAssorted:InlineEdit.EditingField)}"
+                                                     Value="Elevation">
+                                            <Setter TargetName="tbDisplay"
+                                                    Property="Visibility"
+                                                    Value="Collapsed" />
+                                            <Setter TargetName="tbEdit"
+                                                    Property="Visibility"
+                                                    Value="Visible" />
+                                        </DataTrigger>
+                                    </DataTemplate.Triggers>
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
-                        <GridViewColumn Width="20">
-                            <GridViewColumn.Header>
-                                <TextBlock Text="Desc."
-                                           FontSize="{StaticResource ListViewHeaderFontSize}" />
-                            </GridViewColumn.Header>
+
+                        <GridViewColumn Header="Description"
+                                        Width="220">
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
-                                    <Border x:Name="PointDescriptionBorder"
-                                            PreviewMouseLeftButtonDown="PointDescriptionBorder_PreviewMouseLeftButtonDown"
-                                            Focusable="False"
-                                            BorderBrush="Transparent"
-                                            BorderThickness="1"
-                                            Background="Transparent">
-                                        <TextBox x:Name="PointDescriptionTextbox"
-                                                 Text="{Binding Description}"
-                                                 FontSize="{StaticResource ListViewFontSize}"
-                                                 Style="{StaticResource EditableTextBox}"
-                                                 HorizontalAlignment="Stretch"
-                                                 VerticalAlignment="Stretch"
-                                                 IsReadOnly="True"
-                                                 LostFocus="PointDescriptionTextbox_LostFocus"
-                                                 PreviewKeyDown="PointDescriptionTextbox_PreviewKeyDown"
-                                                 ToolTipService.ShowOnDisabled="True"
-                                                 ToolTipService.InitialShowDelay="100"
-                                                 ToolTipService.BetweenShowDelay="100">
-                                        </TextBox>
-                                    </Border>
+                                    <Grid x:Name="description">
+                                        <TextBlock x:Name="tbDisplay"
+                                                   Text="{Binding Description}"
+                                                   Padding="2"
+                                                   MouseDown="CellDisplay_MouseDown" />
+                                        <TextBox x:Name="tbEdit"
+                                                 Text="{Binding Description, UpdateSourceTrigger=Explicit}"
+                                                 Style="{StaticResource InlineEditBoxStyle}"
+                                                 Visibility="Collapsed" />
+                                        <!--<Grid.ToolTip>
+                                            <TextBlock Text="{Binding Description}" />
+                                        </Grid.ToolTip>-->
+                                    </Grid>
+                                    <DataTemplate.Triggers>
+                                        <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ListViewItem}, Path=(viewsAssorted:InlineEdit.EditingField)}"
+                                                     Value="Description">
+                                            <Setter TargetName="tbDisplay"
+                                                    Property="Visibility"
+                                                    Value="Collapsed" />
+                                            <Setter TargetName="tbEdit"
+                                                    Property="Visibility"
+                                                    Value="Visible" />
+                                        </DataTrigger>
+                                    </DataTemplate.Triggers>
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
@@ -400,8 +374,7 @@
                   Opacity="{Binding ElementName=root, Path=PropertiesTabOpacity}"
                   IsHitTestVisible="{Binding ElementName=root, Path=PropertiesTabVisible}"
                   Background="{StaticResource PopoutMenuBackgroundBrush}"
-                  DataContext="{Binding ElementName=root, Path=CogoPointSelectionViewModel}"
-                  Grid.RowSpan="2">
+                  DataContext="{Binding ElementName=root, Path=CogoPointSelectionViewModel}">
                 <Grid.Resources>
                     <Thickness x:Key="RowMargin">10 0 10 0</Thickness>
                     <Thickness x:Key="RowItemMargin">2</Thickness>
@@ -571,7 +544,6 @@
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
                                     <Border x:Name="PointNumberBorder"
-                                            PreviewMouseLeftButtonDown="PointNumberBorder_PreviewMouseLeftButtonDown"
                                             Focusable="False"
                                             BorderBrush="Transparent"
                                             BorderThickness="1"

@@ -40,20 +40,20 @@
 
     <Grid x:Name="overallGrid"
           MouseLeave="OverallGrid_MouseLeave"
-          MouseEnter="OverallGrid_MouseEnter">
+          MouseEnter="OverallGrid_MouseEnter"
+          Margin="2">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*" />
             <ColumnDefinition Width="Auto" />
         </Grid.ColumnDefinitions>
-
         <Grid x:Name="mainPanel"
               HorizontalAlignment="Stretch"
               Grid.Column="0"
-              RenderTransformOrigin="1, 1"
-              Margin="2 0 2 0">
+              Margin="0 0 1 0"
+              RenderTransformOrigin="1, 1">
             <ListView x:Name="layersListView"
                       ItemsSource="{Binding ElementName=root, Path=CadManager.LayersView}"
-                      Style="{StaticResource LayersListViewStyle}"
+                      Style="{StaticResource UpdatedListViewStyle}"
                       Opacity="{Binding ElementName=root, Path=LayerListOpacity}"
                       IsHitTestVisible="{Binding ElementName=root, Path=LayerListVisible}"
                       SelectionMode="Extended"
@@ -138,7 +138,7 @@
                     <ListView x:Name="pointGroupsListView"
                               Grid.Row="0"
                               ItemsSource="{Binding ElementName=root, Path=CadManager.PointGroupsView}"
-                              Style="{StaticResource LayersListViewStyle}"
+                              Style="{StaticResource UpdatedListViewStyle}"
                               IsHitTestVisible="{Binding ElementName=root, Path=PointGroupListVisible}"
                               SelectionMode="Extended"
                               Focusable="True"
@@ -147,8 +147,7 @@
                               PreviewKeyUp="PointGroupsListView_PreviewKeyDownOrUp"
                               Background="{StaticResource PopoutMenuBackgroundBrush}"
                               BorderThickness="0"
-                              Loaded="PointGroupsListView_Loaded"
-                              Padding="0">
+                              Loaded="PointGroupsListView_Loaded">
                         <ListView.View>
                             <GridView>
                                 <GridViewColumn>
@@ -204,7 +203,9 @@
                                                                              IsPopupOpen="{Binding ElementName=root, Path=PointGroupListColorPickerOpen, Mode=OneWayToSource}"
                                                                              Focusable="True"
                                                                              HorizontalAlignment="Center"
-                                                                             IsPopupOpenChanged="PointGroupsPortableColorPicker_IsPopupOpenChanged" />
+                                                                             IsPopupOpenChanged="PointGroupsPortableColorPicker_IsPopupOpenChanged" 
+                                                                             PreviewMouseLeftButtonDown="PortableColorPicker_PreviewMouseLeftButtonDown"
+                                                                             PreviewKeyDown="PortableColorPicker_PreviewKeyDown"/>
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
                                 </GridViewColumn>
@@ -224,8 +225,9 @@
                                                           HorizontalContentAlignment="Center"
                                                           VerticalAlignment="Center"
                                                           VerticalContentAlignment="Center"
-                                                          Unchecked="PointGroupsCheckBox_Unchecked"
-                                                          Checked="PointGroupsCheckBox_Checked" />
+                                                          Unchecked="PointGroupsVisibilityCheckBox_Unchecked"
+                                                          Checked="PointGroupsVisibilityCheckBox_Checked"
+                                                          PreviewMouseLeftButtonDown="PointGroupsVisibilityCheckBox_PreviewMouseLeftButtonDown"/>
                                             </Border>
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
@@ -243,7 +245,7 @@
                                                     BorderBrush="Transparent"
                                                     Background="Transparent"
                                                     HorizontalAlignment="Stretch">
-                                                <TextBox x:Name="PointScaleTextbox" 
+                                                <TextBox x:Name="PointScaleTextbox"
                                                          Style="{StaticResource EditableTextBox}"
                                                          IsReadOnly="true"
                                                          FontSize="{StaticResource ListViewFontSize}"
@@ -276,7 +278,7 @@
                     <Grid  Grid.Row="1"
                            Background="{Binding ElementName=pointGroupsListView, Path=Background}">
                         <WrapPanel HorizontalAlignment="Center">
-                            <Button x:Name="NewNewPointGroupButton" 
+                            <Button x:Name="NewNewPointGroupButton"
                                     Style="{StaticResource BorderWidgetsButton}"
                                     Width="40"
                                     Height="40"
@@ -373,7 +375,8 @@
         </Grid>
 
         <Border x:Name="tab"
-                Grid.Column="1">
+                Grid.Column="1"
+                Margin="1 0 0 0">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="*" />
@@ -382,7 +385,7 @@
                 <Border  x:Name="layersBorder"
                          Style="{StaticResource tabBorderStyle}"
                          Grid.Row="0"
-                         Margin="0 1 0 1"
+                         Margin="0 0 0 1"
                          MouseEnter="LayersBorder_MouseEnter">
                     <TextBlock Text="Layers"
                                Style="{StaticResource TabFontStyle}"
@@ -391,7 +394,8 @@
                                TextAlignment="Center"
                                RenderTransformOrigin="0.5, 0.5"
                                ClipToBounds="False"
-                               Margin="3 0 3 0">
+                               Margin="3 0 3 0"
+                               Grid.Row="0">
                         <TextBlock.LayoutTransform>
                             <TransformGroup>
                                 <RotateTransform Angle="90" />
@@ -403,8 +407,8 @@
                 </Border>
                 <Border x:Name="pointGroupsBorder"
                         Style="{StaticResource tabBorderStyle}"
-                        Grid.Row="1"
-                        Margin="0 1 0 1"
+                        Grid.Row="2"
+                        Margin="0 1 0 0"
                         MouseEnter="PointGroupsBorder_MouseEnter">
                     <TextBlock Text="Point Groups"
                                Style="{StaticResource TabFontStyle}"

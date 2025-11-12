@@ -31,9 +31,7 @@
                      Color="#7F08E6EE" />
 
     <SolidColorBrush x:Key="MouseOverHitTestablePointBrush"
-                     Color="#CC08E6EE" />
-    <SolidColorBrush x:Key="SelectedHitTestablePointBrush"
-                     Color="#CC3BFF3E" />
+                     Color="#7F08E6EE" />
 
     <SolidColorBrush x:Key="testBrush"
                      Color="#D812161A" />

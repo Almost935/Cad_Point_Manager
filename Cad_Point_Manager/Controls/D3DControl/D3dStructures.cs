@@ -6,6 +6,20 @@ using Matrix = SharpDX.Matrix;
 namespace Cad_Point_Manager.Controls.D3DControl
 {
     [StructLayout(LayoutKind.Sequential)]
+    public struct SignificantPointVertex
+    {
+        public Vector3 Position;
+    }
+    [StructLayout(LayoutKind.Sequential)]
+    public struct SignificantPointSettingsBuffer
+    {
+        public Vector4 Color;
+        public Vector2 ViewPortSize;
+        public float RadiusPx;
+        private float _pad;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
     struct OverlayQuadVertex
     {
         public Vector2 Local;      // -1..1

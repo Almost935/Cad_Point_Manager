@@ -28,6 +28,9 @@ namespace Cad_Point_Manager.Helpers
         public static readonly Vector4 SelectedMouseOverObjectColor = new(127.0f / 255.0f, 1.0f, 116.0f / 255.0f, 1);
         public static readonly Vector4 SelectedMouseOverGlowColor = new(127.0f / 255.0f, 1.0f, 116.0f / 255.0f, 0.4f);
 
+        public const float SignificantPointPixelRadius = 6.0f;
+        public static readonly Vector4 SelectedSigPointColor = new(59.0f / 255.0f, 255.0f / 255.0f, 62.0f / 255.0f, 0.5f);
+
         public static readonly float DxfPointToExtentsBaseFactor = 0.05f;
 
         public const float CogoPointCirclePixelRadius = 0.4f;

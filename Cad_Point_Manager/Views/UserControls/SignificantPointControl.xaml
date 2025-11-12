@@ -9,7 +9,8 @@
              DataContext="{Binding Mode=OneWay, RelativeSource={RelativeSource Self}}">
     <UserControl.Resources>
         <converters:SignificantPointColorConverter x:Key="SignificantPointColorConverter" />
-        
+        <converters:MultiplicationConverter x:Key="MultiplicationConverter" />
+
         <Style x:Key="SnapIconStyle"
                TargetType="ContentControl">
             <!-- Default: no template -->
@@ -47,7 +48,7 @@
             </Style.Triggers>
         </Style>
 
-        <Style x:Key="EllipseStyle"
+        <!--<Style x:Key="EllipseStyle"
                TargetType="Ellipse">
             <Style.Triggers>
                 <DataTrigger Binding="{Binding HitTestablePoint.IsSelected}"
@@ -56,16 +57,20 @@
                             Value="{StaticResource MouseOverHitTestablePointBrush}" />
                 </DataTrigger>
             </Style.Triggers>
-        </Style>
+        </Style>-->
     </UserControl.Resources>
 
-    <Grid Width="3.5"
-          Height="3.5">
+    <Grid Height="{StaticResource SignificantPointPixelDiameter}"
+          Width="{StaticResource SignificantPointPixelDiameter}">
         <Ellipse x:Name="pointEllipse"
-                 Height="7"
-                 Width="7"
-                 Margin="-3.5 -3.5 0 0"
-                 Fill="{StaticResource MouseOverHitTestablePointBrush}" />
+                 Height="{StaticResource SignificantPointPixelDiameter}"
+                 Width="{StaticResource SignificantPointPixelDiameter}"
+                 Fill="{StaticResource MouseOverHitTestablePointBrush}">
+            <Ellipse.RenderTransform>
+                <TranslateTransform X="{Binding Source={StaticResource SignificantPointPixelDiameter}, Converter={StaticResource MultiplicationConverter}, ConverterParameter=-0.5}"
+                                    Y="{Binding Source={StaticResource SignificantPointPixelDiameter}, Converter={StaticResource MultiplicationConverter}, ConverterParameter=-0.5}" />
+            </Ellipse.RenderTransform>
+        </Ellipse>
         <ContentControl Margin="20 -40 0 0"
                         Style="{StaticResource SnapIconStyle}" />
     </Grid>

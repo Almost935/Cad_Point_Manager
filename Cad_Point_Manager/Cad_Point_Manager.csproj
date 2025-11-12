@@ -34,6 +34,7 @@
     <Compile Remove="Controls\D3DControl\Rendering\Text\TextLayoutCache.cs" />
     <Compile Remove="Controls\D3DControl\Rendering\Text\TextMeshBuilder.cs" />
     <Compile Remove="Controls\Direct2DDxfControl.cs" />
+    <Compile Remove="Converters\CenterTranslationConverter.cs" />
     <Compile Remove="Converters\CogoPointColorConverter.cs" />
     <Compile Remove="Converters\CogoPointScaleConverter.cs" />
     <Compile Remove="Converters\CogoPointToggleButtonConverter.cs" />
@@ -42,6 +43,7 @@
     <Compile Remove="Converters\Matrix3x2ToScaleConverter .cs" />
     <Compile Remove="Converters\Matrix3x2ToWindowsMatrixConverter.cs" />
     <Compile Remove="Converters\PointCenteringConverter.cs" />
+    <Compile Remove="Converters\PointMatrixTransformationConverter.cs" />
     <Compile Remove="Converters\PointTransformer.cs" />
     <Compile Remove="Converters\SelectionModeEnumConverter.cs" />
     <Compile Remove="Converters\SelectionModeEnumToBooleanConverter.cs" />

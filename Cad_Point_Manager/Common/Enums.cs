@@ -19,11 +19,17 @@
             CogoPoints
         }
 
+        /// <summary>
+        /// Represents the type of significant point on the CAD geometry. Midpoint represents midway along a geometry between two endpoints, 
+        /// EndPoint represents the end of a geometry, Intersection represents the point where two geometries cross, and MousePosition 
+        /// represents the current position of the mouse cursor when no other significant point is within range.
+        /// </summary>
         public enum SignificantPointType
         {
             MidPoint,
             EndPoint,
-            Intersection
+            Intersection,
+            MousePosition
         }
 
         public enum DrawingObjectType

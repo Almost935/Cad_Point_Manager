@@ -30,5 +30,30 @@ namespace Cad_Point_Manager.Helpers
             }
             return null;
         }
+
+        public static T FindAncestor<T>(DependencyObject start) where T : DependencyObject
+        {
+            var d = start;
+            while (d != null)
+            {
+                if (d is T t) { return t; }
+                d = VisualTreeHelper.GetParent(d);
+            }
+            return null;
+        }
+
+        public static T FindDescendantByName<T>(DependencyObject root, string name) where T : FrameworkElement
+        {
+            if (root == null) return null;
+            int count = VisualTreeHelper.GetChildrenCount(root);
+            for (int i = 0; i < count; i++)
+            {
+                var child = VisualTreeHelper.GetChild(root, i);
+                if (child is T fe && fe.Name == name) return fe;
+                var match = FindDescendantByName<T>(child, name);
+                if (match != null) return match;
+            }
+            return null;
+        }
     }
 }

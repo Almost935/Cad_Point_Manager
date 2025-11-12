@@ -5,6 +5,7 @@ using Cad_Point_Manager.Models.PointRendering;
 using ColorPicker;
 using SharpDX;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
@@ -28,6 +29,8 @@ namespace Cad_Point_Manager.Views.UserControls
 
         private readonly List<ObjectLayer3D> _selectedLayers = [];
         private readonly List<PointGroup> _selectedPointGroups = [];
+
+        private int _pointGroupAnchorIndex = -1; // where SHIFT ranges start
 
         private bool _layerListVisible = true;
         private double _layerListOpacity = 0;
@@ -376,10 +379,27 @@ namespace Cad_Point_Manager.Views.UserControls
         }
         private void PointGroupsListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (sender is not ListView listView) { return; }
+            if (sender is not ListView lv) return;
+
+            // Maintain anchor unless we are actively doing a SHIFT range
+            if (!Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
+            {
+                if (lv.SelectedItem != null)
+                {
+                    _pointGroupAnchorIndex = lv.Items.IndexOf(lv.SelectedItem);
+                }
+                else if (lv.SelectedItems.Count > 0)
+                {
+                    _pointGroupAnchorIndex = lv.Items.IndexOf(lv.SelectedItems[lv.SelectedItems.Count - 1]);
+                }
+                else
+                {
+                    _pointGroupAnchorIndex = -1;
+                }
+            }
 
             _selectedPointGroups.Clear();
-            var selectedItems = listView.SelectedItems;
+            var selectedItems = lv.SelectedItems;
 
             foreach (PointGroup pg in selectedItems)
             {
@@ -387,20 +407,6 @@ namespace Cad_Point_Manager.Views.UserControls
             }
 
             AvailableMergePointGroups.Refresh();
-        }
-        private void PointGroupsCheckBox_Checked(object sender, RoutedEventArgs e)
-        {
-            foreach (var pg in _selectedPointGroups)
-            {
-                pg.IsVisible = true;
-            }
-        }
-        private void PointGroupsCheckBox_Unchecked(object sender, RoutedEventArgs e)
-        {
-            foreach (var pg in _selectedPointGroups)
-            {
-                pg.IsVisible = false;
-            }
         }
         private void PointGroupsListView_Loaded(object sender, RoutedEventArgs e)
         {
@@ -429,16 +435,165 @@ namespace Cad_Point_Manager.Views.UserControls
         {
             //var origin = (DependencyObject)e.OriginalSource;
             //var item = ItemsControl.ContainerFromElement(pointGroupsListView, origin) as ListViewItem;
-            //if (item == null) return;
+            //if (item == null) { return; }
 
-            //if (!item.IsSelected)
+            //if (item.IsSelected)
             //{
-            //    if ((Keyboard.Modifiers & (ModifierKeys.Control | ModifierKeys.Shift)) == ModifierKeys.None)
+            //    bool shift = Keyboard.Modifiers.HasFlag(ModifierKeys.Shift);
+            //    bool ctrl = Keyboard.Modifiers.HasFlag(ModifierKeys.Control);
+
+            //    if (!shift && !ctrl)
+            //    {
+            //        pointGroupsListView.SelectedItems.Clear();
+            //        item.IsSelected = true;
+            //        item.Focus();
+            //    }
+            //}
+            //else
+            //{
+            //    bool shift = Keyboard.Modifiers.HasFlag(ModifierKeys.Shift);
+            //    bool ctrl = Keyboard.Modifiers.HasFlag(ModifierKeys.Control);
+
+            //    if (shift)
+            //    {
+            //        var anchor = _pointGroupAnchorIndex;
+            //        var index = pointGroupsListView.ItemContainerGenerator.IndexFromContainer(item);
+            //        if (anchor < 0)
+            //        {
+            //            anchor = index;
+            //            _pointGroupAnchorIndex = anchor;
+            //        }
+            //        int start = Math.Min(anchor, index);
+            //        int end = Math.Max(anchor, index);
+
+            //        pointGroupsListView.SelectedItems.Clear();
+            //    }
+            //    else if (ctrl)
+            //    {
+            //        item.IsSelected = true;
+            //        item.Focus();
+            //    }
+            //    else
+            //    {
             //        pointGroupsListView.SelectedItems.Clear();
 
-            //    item.IsSelected = true;
-            //    item.Focus();
+            //        item.IsSelected = true;
+            //        item.Focus();
+            //    }
             //}
+        }
+
+        // PointGroups listview visibily checkbox methods
+        private void PointGroupsVisibilityCheckBox_Checked(object sender, RoutedEventArgs e)
+        {
+            foreach (var pg in _selectedPointGroups)
+            {
+                pg.IsVisible = true;
+            }
+        }
+        private void PointGroupsVisibilityCheckBox_Unchecked(object sender, RoutedEventArgs e)
+        {
+            foreach (var pg in _selectedPointGroups)
+            {
+                pg.IsVisible = false;
+            }
+        }
+        private void PointGroupsVisibilityCheckBox_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+
+        }
+
+        // PointGroups listview color picker methods
+        private void PortableColorPicker_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (PointGroupListColorPickerOpen) { return; }
+
+            if (sender is not PortableColorPicker cp ||
+                VisualTreeHelpers.FindAncestor<ListViewItem>(cp) is not ListViewItem lvi ||
+                ItemsControl.ItemsControlFromItemContainer(lvi) is not ListView lv) { return; }
+
+            int clicked = lv.ItemContainerGenerator.IndexFromContainer(lvi);
+            bool shift = Keyboard.Modifiers.HasFlag(ModifierKeys.Shift);
+            bool ctrl = Keyboard.Modifiers.HasFlag(ModifierKeys.Control);
+
+            if (shift)
+            {
+                int anchor = _pointGroupAnchorIndex;
+                if (anchor < 0)
+                {
+                    anchor = lv.SelectedItem != null
+                        ? lv.Items.IndexOf(lv.SelectedItem)
+                        : clicked;
+                    _pointGroupAnchorIndex = anchor; // establish one if needed
+                }
+
+                int start = Math.Min(anchor, clicked);
+                int end = Math.Max(anchor, clicked);
+
+                lv.SelectedItems.Clear();
+                for (int i = start; i <= end; i++) { lv.SelectedItems.Add(lv.Items[i]); }
+
+                lvi.Focus();
+
+                return;
+            }
+
+            if (lvi.IsSelected) { return; } // If the item is already selected and shift is not pressed, do nothing
+
+            if (ctrl)
+            {
+                // Toggle or just add; toggle feels more Windows-like:
+                lvi.IsSelected = !lvi.IsSelected;
+
+                // Use this as the next SHIFT anchor
+                _pointGroupAnchorIndex = clicked;
+                lvi.Focus();
+                return;
+            }
+
+            // Plain click: single select
+            lv.SelectedItems.Clear();
+            lvi.IsSelected = true;
+            _pointGroupAnchorIndex = clicked;
+            lvi.Focus();
+        }
+        private void PointGroupsPortableColorPicker_IsPopupOpenChanged(object sender, bool isOpen)
+        {
+            if (isOpen) { return; }
+
+            PortableColorPicker colorpicker = sender as PortableColorPicker;
+            if (colorpicker is not null)
+            {
+                var color = colorpicker.SelectedColor;
+                foreach (var pg in _selectedPointGroups)
+                {
+                    pg.Color = color;
+                }
+            }
+        }
+        private void PortableColorPicker_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Escape)
+            {
+                if (sender is PortableColorPicker colorpicker)
+                {
+                    foreach (var pg in _selectedPointGroups)
+                    {
+                        // Revert to previous color
+                        colorpicker.SelectedColor = pg.Color;
+                    }
+                    colorpicker.IsPopupOpen = false;
+                    e.Handled = true;
+                }
+            }
+            if (e.Key == Key.Enter)
+            {
+                if (sender is PortableColorPicker colorpicker)
+                {
+                    colorpicker.IsPopupOpen = false;
+                    e.Handled = true;
+                }
+            }
         }
 
         // New Point Group Creation
@@ -772,22 +927,6 @@ namespace Cad_Point_Manager.Views.UserControls
                     null
                 );
                 Validation.ClearInvalid(binding);
-            }
-        }
-
-        // Point Group Color Picker
-        private void PointGroupsPortableColorPicker_IsPopupOpenChanged(object sender, bool isOpen)
-        {
-            if (isOpen) { return; }
-
-            PortableColorPicker colorpicker = sender as PortableColorPicker;
-            if (colorpicker is not null)
-            {
-                var color = colorpicker.SelectedColor;
-                foreach (var pg in _selectedPointGroups)
-                {
-                    pg.Color = color;
-                }
             }
         }
 

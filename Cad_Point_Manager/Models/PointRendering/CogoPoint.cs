@@ -27,6 +27,7 @@ namespace Cad_Point_Manager.Models.PointRendering
         private PointGroup _pointGroup;
         private string _description;
         private CogoPointManager _cogoPointManager;
+        private bool _isEditing = false;
         #endregion
 
         #region Properties
@@ -110,6 +111,18 @@ namespace Cad_Point_Manager.Models.PointRendering
                 {
                     _cogoPointManager = value;
                     OnPropertyChanged(nameof(CogoPointManager));
+                }
+            }
+        }
+        public bool IsEditing
+        {
+            get { return _isEditing; }
+            set
+            {
+                if (_isEditing != value)
+                {
+                    _isEditing = value;
+                    OnPropertyChanged(nameof(IsEditing));
                 }
             }
         }

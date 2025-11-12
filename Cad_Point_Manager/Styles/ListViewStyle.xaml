@@ -110,7 +110,7 @@
         </Setter>
     </Style>
 
-    <Style x:Key="{x:Type GridViewColumnHeader}"
+    <!--<Style x:Key="{x:Type GridViewColumnHeader}"
            TargetType="GridViewColumnHeader">
         <Style.Resources>
             <SolidColorBrush x:Key="HeaderTextBrush"
@@ -186,7 +186,7 @@
                 </Setter>
             </Trigger>
         </Style.Triggers>
-    </Style>
+    </Style>-->
 
     <Style  x:Key="LayersListViewItemStyle"
             TargetType="ListViewItem">

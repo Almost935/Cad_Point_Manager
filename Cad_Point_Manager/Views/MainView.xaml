@@ -37,9 +37,8 @@
         <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"
                                               CollapseWhenFalse="True"
                                               Invert="False" />
-        <converters:CenterTranslationConverter x:Key="CenterTranslationConverter" />
         <converters:SnapToggleEnumToBoolConverter x:Key="SnapToggleEnumToBoolConverter" />
-        <converters:PointMatrixTransformationConverter x:Key="PointMatrixTransformationConverter" />
+        <converters:SelectionModeToVisibilityConverter x:Key="SelectionModeToVisibilityConverter" />
 
         <Thickness x:Key="ToggleButtonMargin">0,5,0,5</Thickness>
 
@@ -396,7 +395,6 @@
                                 CadManager="{Binding JobFileManager.CadManager3D}"
                                 LayerCollectionView="{Binding JobFileManager.CadManager3D.LayersView}"
                                 PointGroupCollectionView="{Binding JobFileManager.CadManager3D.PointGroupsView}"
-                                Margin="0,-2,0,2"
                                 Grid.Column="1" />
             <uc:LeftHandPopout x:Name="LeftSidePopout"
                                Panel.ZIndex="1"
@@ -452,7 +450,8 @@
                 <Canvas x:Name="BackgroundCanvas">
                     <uc:SignificantPointControl HitTestablePoint="{Binding DataContext.SnappedHitTestablePoint, RelativeSource={RelativeSource AncestorType=Page}}"
                                                 Focusable="False"
-                                                IsHitTestVisible="False">
+                                                IsHitTestVisible="False"
+                                                Visibility="{Binding Path=DataContext.JobFileManager.CadManager3D.SnapSelectionMode, RelativeSource={RelativeSource AncestorType=Page},Converter={StaticResource SelectionModeToVisibilityConverter}, ConverterParameter=Points}">
                         <uc:SignificantPointControl.RenderTransform>
                             <TransformGroup>
                                 <TranslateTransform>
