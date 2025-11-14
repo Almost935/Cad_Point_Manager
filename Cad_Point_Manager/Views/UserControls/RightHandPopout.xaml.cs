@@ -14,6 +14,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Threading;
+using Xceed.Wpf.Toolkit;
 using Color = System.Windows.Media.Color;
 using TextBox = System.Windows.Controls.TextBox;
 
@@ -38,6 +39,8 @@ namespace Cad_Point_Manager.Views.UserControls
         private bool _pointGroupListVisible = true;
         private double _pointGroupListOpacity = 0;
         private bool _pointGroupListColorPickerOpen = false;
+        private PointGroup _openColorPickerPG;
+        private Color _prevPointGroupColor;
 
         private string _newPointGroupName = "";
         private Color _newPointGroupColor = Colors.Black;
@@ -45,6 +48,7 @@ namespace Cad_Point_Manager.Views.UserControls
         private bool _newPointColorPickerToggleOpen = false;
         private ICollectionView _availableMergePointGroups;
         private PointGroup _mergePointGroup = null;
+        private bool _ignorePGListViewSelectionChanged = false;
 
         private bool _pointGroupNameBeingEdited = false;
         private bool _pointGroupScaleBeingEdited = false;
@@ -227,8 +231,8 @@ namespace Cad_Point_Manager.Views.UserControls
         {
             InitializeComponent();
 
-            pointGroupsListView.AddHandler(UIElement.PreviewMouseLeftButtonDownEvent,
-                new MouseButtonEventHandler(PointGroupsListView_PreviewMouseLeftButtonDown), handledEventsToo: true);
+            //pointGroupsListView.AddHandler(UIElement.PreviewMouseLeftButtonDownEvent,
+            //    new MouseButtonEventHandler(PointGroupsListView_PreviewMouseLeftButtonDown), handledEventsToo: true);
             layersListView.AddHandler(UIElement.PreviewMouseLeftButtonDownEvent,
                 new MouseButtonEventHandler(LayersListView_PreviewMouseLeftButtonDown),
                 handledEventsToo: true);
@@ -379,7 +383,8 @@ namespace Cad_Point_Manager.Views.UserControls
         }
         private void PointGroupsListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (sender is not ListView lv) return;
+            if (sender is not ListView lv
+                || _ignorePGListViewSelectionChanged) { return; }
 
             // Maintain anchor unless we are actively doing a SHIFT range
             if (!Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
@@ -424,64 +429,6 @@ namespace Cad_Point_Manager.Views.UserControls
                 pointGroupGridView.Columns[3].Width = pointGroupColumnWidth * 1;
             }
         }
-        private void PointGroupsListView_PreviewKeyDownOrUp(object sender, KeyEventArgs e)
-        {
-            if (e.Key == Key.Enter)
-            {
-                return;
-            }
-        }
-        private void PointGroupsListView_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-        {
-            //var origin = (DependencyObject)e.OriginalSource;
-            //var item = ItemsControl.ContainerFromElement(pointGroupsListView, origin) as ListViewItem;
-            //if (item == null) { return; }
-
-            //if (item.IsSelected)
-            //{
-            //    bool shift = Keyboard.Modifiers.HasFlag(ModifierKeys.Shift);
-            //    bool ctrl = Keyboard.Modifiers.HasFlag(ModifierKeys.Control);
-
-            //    if (!shift && !ctrl)
-            //    {
-            //        pointGroupsListView.SelectedItems.Clear();
-            //        item.IsSelected = true;
-            //        item.Focus();
-            //    }
-            //}
-            //else
-            //{
-            //    bool shift = Keyboard.Modifiers.HasFlag(ModifierKeys.Shift);
-            //    bool ctrl = Keyboard.Modifiers.HasFlag(ModifierKeys.Control);
-
-            //    if (shift)
-            //    {
-            //        var anchor = _pointGroupAnchorIndex;
-            //        var index = pointGroupsListView.ItemContainerGenerator.IndexFromContainer(item);
-            //        if (anchor < 0)
-            //        {
-            //            anchor = index;
-            //            _pointGroupAnchorIndex = anchor;
-            //        }
-            //        int start = Math.Min(anchor, index);
-            //        int end = Math.Max(anchor, index);
-
-            //        pointGroupsListView.SelectedItems.Clear();
-            //    }
-            //    else if (ctrl)
-            //    {
-            //        item.IsSelected = true;
-            //        item.Focus();
-            //    }
-            //    else
-            //    {
-            //        pointGroupsListView.SelectedItems.Clear();
-
-            //        item.IsSelected = true;
-            //        item.Focus();
-            //    }
-            //}
-        }
 
         // PointGroups listview visibily checkbox methods
         private void PointGroupsVisibilityCheckBox_Checked(object sender, RoutedEventArgs e)
@@ -500,11 +447,60 @@ namespace Cad_Point_Manager.Views.UserControls
         }
         private void PointGroupsVisibilityCheckBox_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
+            if (PointGroupListColorPickerOpen) { return; }
 
+            if (sender is not CheckBox cbox ||
+                VisualTreeHelpers.FindAncestor<ListViewItem>(cbox) is not ListViewItem lvi ||
+                ItemsControl.ItemsControlFromItemContainer(lvi) is not ListView lv) { return; }
+
+            int clicked = lv.ItemContainerGenerator.IndexFromContainer(lvi);
+            bool shift = Keyboard.Modifiers.HasFlag(ModifierKeys.Shift);
+            bool ctrl = Keyboard.Modifiers.HasFlag(ModifierKeys.Control);
+
+            if (shift)
+            {
+                int anchor = _pointGroupAnchorIndex;
+                if (anchor < 0)
+                {
+                    anchor = lv.SelectedItem != null
+                        ? lv.Items.IndexOf(lv.SelectedItem)
+                        : clicked;
+                    _pointGroupAnchorIndex = anchor; // establish one if needed
+                }
+
+                int start = Math.Min(anchor, clicked);
+                int end = Math.Max(anchor, clicked);
+
+                lv.SelectedItems.Clear();
+                for (int i = start; i <= end; i++) { lv.SelectedItems.Add(lv.Items[i]); }
+
+                lvi.Focus();
+
+                return;
+            }
+
+            if (lvi.IsSelected) { return; } // If the item is already selected and shift is not pressed, do nothing
+
+            if (ctrl)
+            {
+                // Toggle or just add; toggle feels more Windows-like:
+                lvi.IsSelected = !lvi.IsSelected;
+
+                // Use this as the next SHIFT anchor
+                _pointGroupAnchorIndex = clicked;
+                lvi.Focus();
+                return;
+            }
+
+            // Plain click: single select
+            lv.SelectedItems.Clear();
+            lvi.IsSelected = true;
+            _pointGroupAnchorIndex = clicked;
+            lvi.Focus();
         }
 
         // PointGroups listview color picker methods
-        private void PortableColorPicker_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        private void PointGroupsColorPicker_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             if (PointGroupListColorPickerOpen) { return; }
 
@@ -557,31 +553,30 @@ namespace Cad_Point_Manager.Views.UserControls
             _pointGroupAnchorIndex = clicked;
             lvi.Focus();
         }
-        private void PointGroupsPortableColorPicker_IsPopupOpenChanged(object sender, bool isOpen)
+        private void PointGroupsColorPicker_IsPopupOpenChanged(object sender, bool isOpen)
         {
-            if (isOpen) { return; }
+            if (sender is not PortableColorPicker colorpicker ||
+                colorpicker.DataContext is not PointGroup openPG) { return; }
 
-            PortableColorPicker colorpicker = sender as PortableColorPicker;
-            if (colorpicker is not null)
+            if (isOpen)
             {
-                var color = colorpicker.SelectedColor;
-                foreach (var pg in _selectedPointGroups)
-                {
-                    pg.Color = color;
-                }
+                _openColorPickerPG = openPG;
+                _prevPointGroupColor = openPG.Color;
+
+                return;
             }
         }
-        private void PortableColorPicker_PreviewKeyDown(object sender, KeyEventArgs e)
+        private void PointGroupsColorPicker_PreviewKeyDown(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.Escape)
             {
                 if (sender is PortableColorPicker colorpicker)
                 {
-                    foreach (var pg in _selectedPointGroups)
-                    {
-                        // Revert to previous color
-                        colorpicker.SelectedColor = pg.Color;
-                    }
+                    if (_openColorPickerPG is null) { return; }
+
+                    _openColorPickerPG.Color = _prevPointGroupColor;
+                    //colorpicker.SelectedColor = _openColorPickerPG.Color;
+                    _openColorPickerPG = null;
                     colorpicker.IsPopupOpen = false;
                     e.Handled = true;
                 }
@@ -590,10 +585,151 @@ namespace Cad_Point_Manager.Views.UserControls
             {
                 if (sender is PortableColorPicker colorpicker)
                 {
+                    var color = colorpicker.SelectedColor;
+
+                    foreach (var pg in _selectedPointGroups)
+                    {
+                        pg.Color = color;
+                    }
+                    //colorpicker.SelectedColor = color;
+                    _openColorPickerPG.Color = color;
+                    _openColorPickerPG = null;
                     colorpicker.IsPopupOpen = false;
                     e.Handled = true;
                 }
             }
+        }
+
+        // Point Group Scale
+        private void PointGroupScaleBorder_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (sender is Border border &&
+                    border.Child is TextBox textbox &&
+                    textbox.DataContext is PointGroup pg)
+            {
+                if (e.ClickCount > 1)
+                {
+                    _pointGroupScaleBeingEdited = true;
+                    _previousPointGroupScale = pg.PointScale;
+                    _editPointGroup = pg;
+                    textbox.IsReadOnly = false;
+
+                    e.Handled = true;
+
+                    textbox.Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        textbox.Focus();
+                        textbox.SelectAll();
+                    }), DispatcherPriority.Input);
+                }
+                else
+                {
+                    // Swallow click event if _selectedPointGroups is more than 1 so that the selection isn't messed up.
+                    if (_selectedPointGroups.Contains(pg)) { e.Handled = true; }
+                }
+            }
+        }
+        private void PointScaleTextbox_LostFocus(object sender, RoutedEventArgs e)
+        {
+            if (sender is TextBox textBox && textBox.DataContext is PointGroup)
+            {
+                e.Handled = true;
+
+                if (_pointGroupScaleBeingEdited)
+                {
+                    EndPointGroupScaleEditMode(textBox);
+                    _pointGroupScaleBeingEdited = false;
+                    _editPointGroup = null;
+                }
+                textBox.IsReadOnly = true;
+            }
+        }
+        private void PointScaleTextbox_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter)
+            {
+                if (sender is TextBox textBox && textBox.DataContext is PointGroup)
+                {
+                    e.Handled = true;
+
+                    if (_pointGroupScaleBeingEdited)
+                    {
+                        var copy = _selectedPointGroups.ToList();
+                        bool isValid = EndPointGroupScaleEditMode(textBox);
+
+                        if (isValid)
+                        {
+                            foreach (var pg in copy)
+                            {
+                                pg.PointScale = _editPointGroup.PointScale;
+                            }
+                            RefreshPointGroupTextBoxes("PointScaleTextbox", copy);
+
+                            _ignorePGListViewSelectionChanged = true;
+                            var copyLocal = copy.ToList();
+
+                            Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() =>
+                            {
+                                pointGroupsListView.SelectedItems.Clear();
+                                foreach (var pg in copyLocal)
+                                {
+                                    pointGroupsListView.SelectedItems.Add(pg);
+                                }
+
+                                // Keep our backing list in sync
+                                _selectedPointGroups.Clear();
+                                foreach (var pg in copyLocal)
+                                {
+                                    _selectedPointGroups.Add(pg);
+                                }
+                                _ignorePGListViewSelectionChanged = false;
+                            }));
+                        }
+
+                        _pointGroupScaleBeingEdited = false;
+                        _editPointGroup = null;
+                    }
+                    textBox.IsReadOnly = true;
+                }
+            }
+            if (e.Key == Key.Escape)
+            {
+                if (sender is TextBox textbox && textbox.DataContext is PointGroup)
+                {
+                    e.Handled = true;
+
+                    if (_pointGroupScaleBeingEdited)
+                    {
+                        _editPointGroup.PointScale = _previousPointGroupScale;
+                        _pointGroupScaleBeingEdited = false;
+                        var binding = textbox.GetBindingExpression(TextBox.TextProperty);
+                        binding.UpdateTarget();
+                        _editPointGroup = null;
+                    }
+                    textbox.IsReadOnly = true;
+                }
+            }
+        }
+        private bool EndPointGroupScaleEditMode(TextBox textBox)
+        {
+            if (textBox.DataContext is PointGroup)
+            {
+                bool isValid = CadManager.CogoPointManager.IsValidPointScale(textBox.Text, out string errorMessage);
+                var binding = textBox.GetBindingExpression(TextBox.TextProperty);
+
+                if (!isValid)
+                {
+                    binding.UpdateTarget();
+                }
+                else
+                {
+                    binding?.UpdateSource();
+                }
+
+                textBox.IsReadOnly = true;
+                return isValid;
+            }
+            return false;
         }
 
         // New Point Group Creation
@@ -646,117 +782,6 @@ namespace Cad_Point_Manager.Views.UserControls
                 nameTb.Focus();
                 nameTb.SelectAll();
             }
-        }
-
-        // Point Group Scale
-        private void PointGroupScaleBorder_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-        {
-            if (sender is Border border &&
-                    border.Child is TextBox textbox &&
-                    textbox.DataContext is PointGroup pg)
-            {
-                if (e.ClickCount > 1)
-                {
-                    _pointGroupScaleBeingEdited = true;
-                    _previousPointGroupScale = pg.PointScale;
-                    _editPointGroup = pg;
-                    textbox.IsReadOnly = false;
-
-                    e.Handled = true;
-
-                    textbox.Dispatcher.BeginInvoke(new Action(() =>
-                    {
-                        textbox.Focus();
-                        textbox.SelectAll();
-                    }), DispatcherPriority.Input);
-                }
-                else
-                {
-                    // Swallow click event if _selectedPointGroups is more than 1 so that the selection isn't messed up.
-                    if (_selectedPointGroups.Contains(pg)) { e.Handled = true; }
-                }
-            }
-        }
-        private void PointScaleTextbox_LostFocus(object sender, RoutedEventArgs e)
-        {
-            if (sender is TextBox textBox && textBox.DataContext is PointGroup)
-            {
-                e.Handled = true;
-
-                if (_pointGroupScaleBeingEdited)
-                {
-                    EndPointGroupScaleEditMode(textBox);
-                    _pointGroupScaleBeingEdited = false;
-                    _editPointGroup = null;
-                }
-                textBox.IsReadOnly = true;
-            }
-        }
-        private void PointScaleTextbox_PreviewKeyUp(object sender, KeyEventArgs e)
-        {
-            if (e.Key == Key.Enter)
-            {
-                if (sender is TextBox textBox && textBox.DataContext is PointGroup)
-                {
-                    e.Handled = true;
-
-                    if (_pointGroupScaleBeingEdited)
-                    {
-                        bool isValid = EndPointGroupScaleEditMode(textBox);
-
-                        if (isValid)
-                        {
-                            foreach (var pg in _selectedPointGroups)
-                            {
-                                pg.PointScale = _editPointGroup.PointScale;
-                            }
-                            RefreshPointGroupTextBoxes("PointScaleTextbox", _selectedPointGroups);
-                        }
-
-                        _pointGroupScaleBeingEdited = false;
-                        _editPointGroup = null;
-                    }
-                    textBox.IsReadOnly = true;
-                }
-            }
-            if (e.Key == Key.Escape)
-            {
-                if (sender is TextBox textbox && textbox.DataContext is PointGroup)
-                {
-                    e.Handled = true;
-
-                    if (_pointGroupScaleBeingEdited)
-                    {
-                        _editPointGroup.PointScale = _previousPointGroupScale;
-                        _pointGroupScaleBeingEdited = false;
-                        var binding = textbox.GetBindingExpression(TextBox.TextProperty);
-                        binding.UpdateTarget();
-                        _editPointGroup = null;
-                    }
-                    textbox.IsReadOnly = true;
-                }
-            }
-        }
-        private bool EndPointGroupScaleEditMode(TextBox textBox)
-        {
-            if (textBox.DataContext is PointGroup)
-            {
-                bool isValid = CadManager.CogoPointManager.IsValidPointScale(textBox.Text, out string errorMessage);
-                var binding = textBox.GetBindingExpression(TextBox.TextProperty);
-
-                if (!isValid)
-                {
-                    binding.UpdateTarget();
-                }
-                else
-                {
-                    binding?.UpdateSource();
-                }
-
-                textBox.IsReadOnly = true;
-                return isValid;
-            }
-            return false;
         }
 
         // Point Group Name

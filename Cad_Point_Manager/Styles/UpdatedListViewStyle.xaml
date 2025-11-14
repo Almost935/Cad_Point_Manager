@@ -88,119 +88,29 @@
                     <Border Padding="{TemplateBinding Padding}"
                             Background="Transparent">
                         <Rectangle HorizontalAlignment="Center"
-                                   Width="1"
                                    Fill="{TemplateBinding Background}" />
                     </Border>
                 </ControlTemplate>
-            </Setter.Value>
-        </Setter>
-        <Setter Property="BorderBrush">
-            <Setter.Value>
-                <LinearGradientBrush StartPoint="0.5,0"
-                                     EndPoint="0.5,1">
-                    <GradientStop Color="Black"
-                                  Offset="0" />
-                    <GradientStop Color="White"
-                                  Offset="1" />
-                </LinearGradientBrush>
             </Setter.Value>
         </Setter>
     </Style>
 
     <!-- GridView column header -->
     <Style x:Key="{x:Type GridViewColumnHeader}"
-       TargetType="GridViewColumnHeader">
-    <Style.Resources>
-        <SolidColorBrush x:Key="HeaderTextBrush"
-                         Color="White" />
-        <SolidColorBrush x:Key="HeaderBackgroundBrush"
-                         Color="#FF747781" />
-
-        <Color x:Key="ControlMouseOverColor">#CCCCCC</Color>
-    </Style.Resources>
-    <Setter Property="Foreground"
-            Value="{DynamicResource HeaderTextBrush}" />
-    <Setter Property="IsHitTestVisible"
-            Value="False" />
-    <Setter Property="FontSize"
-            Value="11" />
-    <Setter Property="Template">
-        <Setter.Value>
-            <ControlTemplate TargetType="GridViewColumnHeader">
-                <Grid>
-                    <VisualStateManager.VisualStateGroups>
-                        <VisualStateGroup x:Name="CommonStates">
-                            <VisualState x:Name="Normal" />
-                            <VisualState x:Name="MouseOver">
-                                <Storyboard>
-                                    <ColorAnimationUsingKeyFrames Storyboard.TargetProperty="(Panel.Background).(GradientBrush.GradientStops)[1].(GradientStop.Color)"
-                                                                  Storyboard.TargetName="HeaderBorder">
-                                        <EasingColorKeyFrame KeyTime="0"
-                                                             Value="{DynamicResource ControlMouseOverColor}" />
-                                    </ColorAnimationUsingKeyFrames>
-                                </Storyboard>
-                            </VisualState>
-                            <VisualState x:Name="Pressed" />
-                            <VisualState x:Name="Disabled" />
-                        </VisualStateGroup>
-                    </VisualStateManager.VisualStateGroups>
-                    <Border x:Name="HeaderBorder"
-                            Margin="0"
-                            Background="{DynamicResource HeaderBackgroundBrush}"
-                            BorderBrush="{DynamicResource HeaderBackgroundBrush}"
-                            BorderThickness="1">
-
-                        <ContentPresenter x:Name="HeaderContent"
-                                          RecognizesAccessKey="True"
-                                          VerticalAlignment="Center"
-                                          HorizontalAlignment="Left"
-                                          Margin="5 0 5 0"
-                                          SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
-                    </Border>
-                    <Thumb x:Name="PART_HeaderGripper"
-                           HorizontalAlignment="Right"
-                           Margin="0,0,0,0"
-                           Background="{DynamicResource HeaderBackgroundBrush}"
-                           Style="{StaticResource LayersListViewHeaderGripper}" />
-                </Grid>
-            </ControlTemplate>
-        </Setter.Value>
-    </Setter>
-    <Style.Triggers>
-        <Trigger Property="Role"
-                 Value="Floating">
-            <Setter Property="Opacity"
-                    Value="0.7" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="GridViewColumnHeader">
-                        <Canvas Name="PART_FloatingHeaderCanvas">
-                            <Rectangle Fill="#60000000"
-                                       Width="{TemplateBinding ActualWidth}"
-                                       Height="{TemplateBinding ActualHeight}" />
-                        </Canvas>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Trigger>
-    </Style.Triggers>
-</Style>
-
-    <!--<Style TargetType="{x:Type GridViewColumnHeader}"
-           x:Key="{x:Type GridViewColumnHeader}">
+           TargetType="GridViewColumnHeader">
         <Style.Resources>
             <SolidColorBrush x:Key="HeaderTextBrush"
-                             Color="Red" />
+                             Color="White" />
             <SolidColorBrush x:Key="HeaderBackgroundBrush"
                              Color="#FF747781" />
             <Color x:Key="ControlMouseOverColor">#CCCCCC</Color>
         </Style.Resources>
-        <Setter Property="HorizontalContentAlignment"
-                Value="Center" />
-        <Setter Property="VerticalContentAlignment"
-                Value="Center" />
         <Setter Property="Foreground"
                 Value="{DynamicResource HeaderTextBrush}" />
+        <Setter Property="IsHitTestVisible"
+                Value="False" />
+        <Setter Property="FontSize"
+                Value="11" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="GridViewColumnHeader">
@@ -210,8 +120,8 @@
                                 <VisualState x:Name="Normal" />
                                 <VisualState x:Name="MouseOver">
                                     <Storyboard>
-                                        <ColorAnimationUsingKeyFrames Storyboard.TargetName="HeaderBorder"
-                                                                      Storyboard.TargetProperty="(Panel.Background).(GradientBrush.GradientStops)[1].(GradientStop.Color)">
+                                        <ColorAnimationUsingKeyFrames Storyboard.TargetProperty="(Panel.Background).(GradientBrush.GradientStops)[1].(GradientStop.Color)"
+                                                                      Storyboard.TargetName="HeaderBorder">
                                             <EasingColorKeyFrame KeyTime="0"
                                                                  Value="{DynamicResource ControlMouseOverColor}" />
                                         </ColorAnimationUsingKeyFrames>
@@ -221,45 +131,28 @@
                                 <VisualState x:Name="Disabled" />
                             </VisualStateGroup>
                         </VisualStateManager.VisualStateGroups>
-
                         <Border x:Name="HeaderBorder"
-                                BorderThickness="0,1,0,1"
-                                Padding="2,0,2,0">
-                            <Border.BorderBrush>
-                                <LinearGradientBrush StartPoint="0,0"
-                                                     EndPoint="0,1">
-                                    <GradientStop Color="{DynamicResource BorderLightColor}"
-                                                  Offset="0.0" />
-                                    <GradientStop Color="{DynamicResource BorderDarkColor}"
-                                                  Offset="1.0" />
-                                </LinearGradientBrush>
-                            </Border.BorderBrush>
-                            <Border.Background>
-                                <LinearGradientBrush StartPoint="0,0"
-                                                     EndPoint="0,1">
-                                    <GradientStop Color="{DynamicResource ControlLightColor}"
-                                                  Offset="0.0" />
-                                    <GradientStop Color="{DynamicResource ControlMediumColor}"
-                                                  Offset="1.0" />
-                                </LinearGradientBrush>
-                            </Border.Background>
+                                Margin="0"
+                                Background="{DynamicResource HeaderBackgroundBrush}"
+                                BorderBrush="{DynamicResource HeaderBackgroundBrush}"
+                                BorderThickness="0">
+
                             <ContentPresenter x:Name="HeaderContent"
-                                              Margin="0,0,0,1"
                                               RecognizesAccessKey="True"
-                                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
-                                              HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                              VerticalAlignment="Center"
+                                              HorizontalAlignment="Left"
+                                              Margin="5 0 5 0"
                                               SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
                         </Border>
-
                         <Thumb x:Name="PART_HeaderGripper"
                                HorizontalAlignment="Right"
-                               Margin="0,0,-9,0"
+                               Margin="0,0,0,0"
+                               Background="{DynamicResource HeaderBackgroundBrush}"
                                Style="{StaticResource GridViewColumnHeaderGripper}" />
                     </Grid>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
-
         <Style.Triggers>
             <Trigger Property="Role"
                      Value="Floating">
@@ -268,7 +161,7 @@
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate TargetType="GridViewColumnHeader">
-                            <Canvas x:Name="PART_FloatingHeaderCanvas">
+                            <Canvas Name="PART_FloatingHeaderCanvas">
                                 <Rectangle Fill="#60000000"
                                            Width="{TemplateBinding ActualWidth}"
                                            Height="{TemplateBinding ActualHeight}" />
@@ -277,33 +170,8 @@
                     </Setter.Value>
                 </Setter>
             </Trigger>
-
-            <Trigger Property="Role"
-                     Value="Padding">
-                <Setter Property="Template">
-                    <Setter.Value>
-                        <ControlTemplate TargetType="GridViewColumnHeader">
-                            <Border x:Name="HeaderBorder"
-                                    BorderThickness="0,1,0,1">
-                                <Border.Background>
-                                    <SolidColorBrush Color="{DynamicResource ControlLightColor}" />
-                                </Border.Background>
-                                <Border.BorderBrush>
-                                    <LinearGradientBrush StartPoint="0,0"
-                                                         EndPoint="0,1">
-                                        <GradientStop Color="{DynamicResource BorderLightColor}"
-                                                      Offset="0.0" />
-                                        <GradientStop Color="{DynamicResource BorderDarkColor}"
-                                                      Offset="1.0" />
-                                    </LinearGradientBrush>
-                                </Border.BorderBrush>
-                            </Border>
-                        </ControlTemplate>
-                    </Setter.Value>
-                </Setter>
-            </Trigger>
         </Style.Triggers>
-    </Style>-->
+    </Style>
 
     <!-- ListViewItem -->
     <Style  x:Key="UpdatedListViewItemStyle"

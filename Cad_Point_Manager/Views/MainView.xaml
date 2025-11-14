@@ -399,7 +399,6 @@
             <uc:LeftHandPopout x:Name="LeftSidePopout"
                                Panel.ZIndex="1"
                                Width="400"
-                               Height="900"
                                HorizontalAlignment="Left"
                                ClipToBounds="False"
                                CadManager="{Binding JobFileManager.CadManager3D}"

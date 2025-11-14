@@ -141,10 +141,9 @@
                               Style="{StaticResource UpdatedListViewStyle}"
                               IsHitTestVisible="{Binding ElementName=root, Path=PointGroupListVisible}"
                               SelectionMode="Extended"
+                              IsSynchronizedWithCurrentItem="False"
                               Focusable="True"
                               SelectionChanged="PointGroupsListView_SelectionChanged"
-                              PreviewKeyDown="PointGroupsListView_PreviewKeyDownOrUp"
-                              PreviewKeyUp="PointGroupsListView_PreviewKeyDownOrUp"
                               Background="{StaticResource PopoutMenuBackgroundBrush}"
                               BorderThickness="0"
                               Loaded="PointGroupsListView_Loaded">
@@ -195,17 +194,18 @@
                                     </GridViewColumn.Header>
                                     <GridViewColumn.CellTemplate>
                                         <DataTemplate>
-                                            <colorpicker:PortableColorPicker Style="{StaticResource DefaultColorPickerStyle}"
-                                                                             SelectedColor="{Binding Color, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
+                                            <colorpicker:PortableColorPicker x:Name="PointGroupsColorPicker" 
+                                                                             Style="{StaticResource DefaultColorPickerStyle}"
+                                                                             SelectedColor="{Binding Color, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                                                              ToggleButtonWidth="20"
                                                                              ToggleButtonHeight="15"
                                                                              ToggleButtonMargin="0 2 0 2"
                                                                              IsPopupOpen="{Binding ElementName=root, Path=PointGroupListColorPickerOpen, Mode=OneWayToSource}"
                                                                              Focusable="True"
                                                                              HorizontalAlignment="Center"
-                                                                             IsPopupOpenChanged="PointGroupsPortableColorPicker_IsPopupOpenChanged" 
-                                                                             PreviewMouseLeftButtonDown="PortableColorPicker_PreviewMouseLeftButtonDown"
-                                                                             PreviewKeyDown="PortableColorPicker_PreviewKeyDown"/>
+                                                                             IsPopupOpenChanged="PointGroupsColorPicker_IsPopupOpenChanged" 
+                                                                             PreviewMouseLeftButtonDown="PointGroupsColorPicker_PreviewMouseLeftButtonDown"
+                                                                             PreviewKeyDown="PointGroupsColorPicker_PreviewKeyDown" />
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
                                 </GridViewColumn>
@@ -251,7 +251,7 @@
                                                          FontSize="{StaticResource ListViewFontSize}"
                                                          HorizontalAlignment="Left"
                                                          LostFocus="PointScaleTextbox_LostFocus"
-                                                         PreviewKeyDown="PointScaleTextbox_PreviewKeyUp"
+                                                         PreviewKeyDown="PointScaleTextbox_PreviewKeyDown"
                                                          Opacity="{Binding ElementName=root, Path=PointGroupListOpacity}">
                                                     <TextBox.Text>
                                                         <Binding Path="PointScale"
