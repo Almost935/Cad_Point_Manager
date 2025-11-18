@@ -9,7 +9,6 @@ namespace Cad_Point_Manager.Views.Assorted
 {
     public static class InlineEdit
     {
-        // Holds which field is in edit mode on a ListViewItem: "PointNumber", "Northing", etc.
         public static readonly DependencyProperty EditingFieldProperty =
             DependencyProperty.RegisterAttached(
                 "EditingField",

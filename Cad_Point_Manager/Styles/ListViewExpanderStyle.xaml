@@ -5,22 +5,15 @@
            x:Key="ListViewExpanderStyle">
         <Style.Resources>
             <SolidColorBrush x:Key="Expander.Static.Arrow.Stroke"
-                             Color="{StaticResource TabColor}" />
+                             Color="#FF6C6C6C" />
             <SolidColorBrush x:Key="Expander.Static.Arrow.Fill"
                              Color="Transparent" />
             <SolidColorBrush x:Key="Expander.MouseOver.Arrow.Stroke"
-                             Color="{StaticResource TabMouseOverColor}" />
+                             Color="#FF4B4B4B" />
             <SolidColorBrush x:Key="Expander.MouseOver.Arrow.Fill"
-                             Color="{StaticResource TabMouseOverColor}" />
-            <SolidColorBrush x:Key="Expander.Pressed.Arrow.Stroke"
-                             Color="{StaticResource TabColor}" />
-            <SolidColorBrush x:Key="Expander.Pressed.Arrow.Fill"
-                             Color="{StaticResource TabColor}" />
+                             Color="#FF4B4B4B" />
             <SolidColorBrush x:Key="Expander.Disabled.Arrow.Stroke"
-                             Color="{StaticResource TabColor}" />
-
-            <SolidColorBrush x:Key="Border.MouseOver.Background"
-                             Color="#4C5D5D5D" />
+                             Color="#FF4B4B4B" />
         </Style.Resources>
         <Setter Property="SnapsToDevicePixels"
                 Value="True" />
@@ -42,32 +35,28 @@
                                       Content="{TemplateBinding Header}">
                             <ToggleButton.Template>
                                 <ControlTemplate TargetType="ToggleButton">
-                                    <Border>
-                                        <StackPanel Orientation="Horizontal">
-                                            <Border x:Name="ToggleBorder"
-                                                    CornerRadius="1">
-                                                <Path x:Name="Arrow"
-                                                      Width="15"
-                                                      Height="15"
-                                                      Stroke="{DynamicResource Expander.Pressed.Arrow.Stroke}"
-                                                      Fill="{DynamicResource Expander.Pressed.Arrow.Fill}"
-                                                      Stretch="Uniform"
-                                                      HorizontalAlignment="Left"
-                                                      Data="M 0 0 L 10 0 L 5 5 Z"
-                                                      RenderTransformOrigin="0.5,0.5">
-                                                    <Path.RenderTransform>
-                                                        <RotateTransform Angle="0" />
-                                                    </Path.RenderTransform>
-                                                </Path>
-                                            </Border>
-                                            <ContentPresenter VerticalAlignment="Center"
-                                                              RecognizesAccessKey="True"
-                                                              Margin="2 0 0 0" />
-                                        </StackPanel>
-                                    </Border>
+                                    <StackPanel x:Name="stackPanel"
+                                                Orientation="Horizontal">
+                                        <Border CornerRadius="1">
+                                            <Path x:Name="Arrow"
+                                                  Width="15"
+                                                  Height="15"
+                                                  Stroke="{DynamicResource Expander.Static.Arrow.Stroke}"
+                                                  Fill="{DynamicResource Expander.Static.Arrow.Fill}"
+                                                  Stretch="Uniform"
+                                                  HorizontalAlignment="Left"
+                                                  Data="M 0 0 L 10 0 L 5 5 Z"
+                                                  RenderTransformOrigin="0.5,0.5">
+                                            </Path>
+                                        </Border>
+                                        <ContentPresenter x:Name="content"
+                                                          VerticalAlignment="Center"
+                                                          RecognizesAccessKey="True"
+                                                          Margin="5 0 0 0" />
+                                    </StackPanel>
                                     <ControlTemplate.Triggers>
                                         <Trigger Property="IsChecked"
-                                                 Value="False">
+                                                 Value="True">
                                             <Setter TargetName="Arrow"
                                                     Property="RenderTransform">
                                                 <Setter.Value>
@@ -76,10 +65,10 @@
                                             </Setter>
                                             <Setter TargetName="Arrow"
                                                     Property="Stroke"
-                                                    Value="{DynamicResource Expander.Static.Arrow.Stroke}" />
+                                                    Value="{DynamicResource Expander.MouseOver.Arrow.Stroke}" />
                                             <Setter TargetName="Arrow"
                                                     Property="Fill"
-                                                    Value="{DynamicResource Expander.Static.Arrow.Fill}" />
+                                                    Value="{DynamicResource Expander.MouseOver.Arrow.Fill}" />
                                         </Trigger>
                                         <Trigger Property="IsMouseOver"
                                                  Value="True">
@@ -89,13 +78,13 @@
                                             <Setter TargetName="Arrow"
                                                     Property="Fill"
                                                     Value="{DynamicResource Expander.MouseOver.Arrow.Fill}" />
-                                            <Setter TargetName="Arrow"
+                                            <Setter TargetName="stackPanel"
                                                     Property="Effect">
                                                 <Setter.Value>
-                                                    <DropShadowEffect Color="#CC000000"
-                                                                      BlurRadius="10"
-                                                                      ShadowDepth="0"
-                                                                      Opacity="1" />
+                                                    <DropShadowEffect Color="{Binding Source={StaticResource Expander.MouseOver.Arrow.Stroke}, Path=Color}"
+                                                                      BlurRadius="7"
+                                                                      ShadowDepth="3"
+                                                                      Opacity="0.7" />
                                                 </Setter.Value>
                                             </Setter>
                                         </Trigger>

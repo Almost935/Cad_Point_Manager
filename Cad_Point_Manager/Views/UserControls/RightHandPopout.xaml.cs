@@ -338,12 +338,19 @@ namespace Cad_Point_Manager.Views.UserControls
                 layer.IsVisible = false;
             }
         }
-        private void LayersBorder_MouseEnter(object sender, MouseEventArgs e)
+        private async void LayersBorder_MouseEnter(object sender, MouseEventArgs e)
         {
-            PointGroupListVisible = false;
-            LayerListVisible = true;
-            PointGroupListOpacity = 0;
-            LayerListOpacity = 1;
+            if (PointGroupListVisible)
+            {
+                await Task.Delay(GlobalHelperProperties.PopOutCloseDelay);
+            }
+            if (layersBorder.IsMouseOver)
+            {
+                PointGroupListVisible = false;
+                LayerListVisible = true;
+                PointGroupListOpacity = 0;
+                LayerListOpacity = 1;
+            }
         }
         private void LayersPortableColorPicker_IsPopupOpenChanged(object sender, bool isOpen)
         {
@@ -374,12 +381,19 @@ namespace Cad_Point_Manager.Views.UserControls
             }
         }
 
-        private void PointGroupsBorder_MouseEnter(object sender, MouseEventArgs e)
+        private async void PointGroupsBorder_MouseEnter(object sender, MouseEventArgs e)
         {
-            LayerListVisible = false;
-            PointGroupListVisible = true;
-            LayerListOpacity = 0;
-            PointGroupListOpacity = 1;
+            if (LayerListVisible)
+            {
+                await Task.Delay(GlobalHelperProperties.PopOutCloseDelay);
+            }
+            if (pointGroupsBorder.IsMouseOver)
+            {
+                LayerListVisible = false;
+                PointGroupListVisible = true;
+                LayerListOpacity = 0;
+                PointGroupListOpacity = 1;
+            }
         }
         private void PointGroupsListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {

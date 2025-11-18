@@ -37,14 +37,6 @@ namespace Cad_Point_Manager.Views.UserControls
         private ScaleTransform _mainPanelTransform = new();
         private ValidationService _validationService = new();
 
-        // DxfPoint editing fields
-        private int _previousPointNumber;
-        private double _previousPointNorthing;
-        private double _previousPointEasting;
-        private double _previousPointElevation;
-        private string _previousPointDescription;
-        private bool _pointBeingEdited = false;
-
         private readonly List<CogoPoint> _selectedPoints = [];
         private bool _pointsTabVisible = true;
         private double _pointsTabOpacity = 0;
@@ -317,24 +309,38 @@ namespace Cad_Point_Manager.Views.UserControls
                 }
             }
         }
-        private void PointsBorder_MouseEnter(object sender, MouseEventArgs e)
+        private async void PointsBorder_MouseEnter(object sender, MouseEventArgs e)
         {
-            PointsTabVisible = true;
-            PointsTabOpacity = 1;
-            PropertiesTabVisible = false;
-            PropertiesTabOpacity = 0;
-            ViewsTabVisible = false;
-            ViewsTabOpacity = 0;
+            if (PropertiesTabVisible || ViewsTabVisible)
+            {
+                await Task.Delay(GlobalHelperProperties.PopOutCloseDelay);
+            }
+            if (pointsBorder.IsMouseOver)
+            {
+                PointsTabVisible = true;
+                PointsTabOpacity = 1;
+                PropertiesTabVisible = false;
+                PropertiesTabOpacity = 0;
+                ViewsTabVisible = false;
+                ViewsTabOpacity = 0;
+            }
         }
 
-        private void PropertiesBorder_MouseEnter(object sender, MouseEventArgs e)
+        private async void PropertiesBorder_MouseEnter(object sender, MouseEventArgs e)
         {
-            PointsTabVisible = false;
-            PointsTabOpacity = 0;
-            PropertiesTabVisible = true;
-            PropertiesTabOpacity = 1;
-            ViewsTabOpacity = 0;
-            ViewsTabVisible = false;
+            if (ViewsTabVisible || PointsTabVisible)
+            {
+                await Task.Delay(GlobalHelperProperties.PopOutCloseDelay);
+            }
+            if (propertiesBorder.IsMouseOver)
+            {
+                PointsTabVisible = false;
+                PointsTabOpacity = 0;
+                PropertiesTabVisible = true;
+                PropertiesTabOpacity = 1;
+                ViewsTabOpacity = 0;
+                ViewsTabVisible = false;
+            }
         }
 
         // Views list
@@ -346,14 +352,21 @@ namespace Cad_Point_Manager.Views.UserControls
         {
 
         }
-        private void ViewsBorder_MouseEnter(object sender, MouseEventArgs e)
+        private async void ViewsBorder_MouseEnter(object sender, MouseEventArgs e)
         {
-            PointsTabVisible = false;
-            PointsTabOpacity = 0;
-            PropertiesTabVisible = false;
-            PropertiesTabOpacity = 0;
-            ViewsTabVisible = true;
-            ViewsTabOpacity = 1;
+            if (PropertiesTabVisible || PointsTabVisible)
+            {
+                await Task.Delay(GlobalHelperProperties.PopOutCloseDelay);
+            }
+            if (viewsBorder.IsMouseOver)
+            {
+                PointsTabVisible = false;
+                PointsTabOpacity = 0;
+                PropertiesTabVisible = false;
+                PropertiesTabOpacity = 0;
+                ViewsTabVisible = true;
+                ViewsTabOpacity = 1;
+            }
         }
 
 
@@ -406,18 +419,16 @@ namespace Cad_Point_Manager.Views.UserControls
         // ----------  COMMIT/CANCEL/EXIT EDIT ----------
         private void InlineEditBox_PreviewKeyDown(object sender, KeyEventArgs e)
         {
-            if (sender is not TextBox tb) return;
+            if (sender is not TextBox tb) { return; }
 
             var lvi = VisualTreeHelpers.FindAncestor<ListViewItem>(tb);
-            if (lvi == null) return;
-
+            if (lvi == null) { return; }
+            string field = InlineEdit.GetEditingField(lvi);
             var binding = tb.GetBindingExpression(TextBox.TextProperty);
 
             if (e.Key == Key.Enter)
             {
-                // Validate via existing rules (you already use UpdateSourceTrigger=Explicit)
                 binding?.UpdateSource();
-                // If invalid, WPF will keep the error—stay in edit
                 if (Validation.GetHasError(tb)) { e.Handled = true; return; }
 
                 // leave edit mode
@@ -833,21 +844,12 @@ namespace Cad_Point_Manager.Views.UserControls
             }
         }
 
-
-        // Testing
-        public int CountRealizedItems(DependencyObject root)
+        // View Related Items
+        private void NewSceneButton_Click(object sender, RoutedEventArgs e)
         {
-            int count = 0;
-            var stack = new Stack<DependencyObject>();
-            stack.Push(root);
-            while (stack.Count > 0)
-            {
-                var d = stack.Pop();
-                if (d is ListViewItem) count++;
-                int n = VisualTreeHelper.GetChildrenCount(d);
-                for (int i = 0; i < n; i++) stack.Push(VisualTreeHelper.GetChild(d, i));
-            }
-            return count;
+            if (Camera is null) { return; }
+
+            //var scene = Camera.
         }
         #endregion
 

@@ -17,7 +17,7 @@
              d:DesignWidth="400">
 
     <UserControl.Resources>
-        <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" />
+        <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" CollapseWhenFalse="True" />
         <validation:PointNumberValidationRule x:Key="PointNumberValidationRule" />
         <validation:DoubleValidationRule x:Key="DoubleValidationRule" />
 
@@ -130,15 +130,26 @@
               Grid.Column="1"
               Margin="1 0 0 0"
               RenderTransformOrigin="0, 1">
+            <Grid.Resources>
+                <Style x:Key="InlineEditBoxStyle"
+                       TargetType="TextBox"
+                       BasedOn="{StaticResource EditableTextBox}">
+                    <EventSetter Event="PreviewKeyDown"
+                                 Handler="InlineEditBox_PreviewKeyDown" />
+                    <EventSetter Event="LostFocus"
+                                 Handler="InlineEditBox_LostFocus" />
+                </Style>
+            </Grid.Resources>
             <ListView x:Name="pointsListView"
+                      Grid.Row="0"
+                      Background="{StaticResource PopoutMenuBackgroundBrush}"
+                      Opacity="{Binding ElementName=root, Path=PointsTabOpacity}"
                       ItemsSource="{Binding ElementName=root, Path=CadManager.PointsView}"
                       Style="{StaticResource UpdatedListViewStyle}"
-                      Opacity="{Binding ElementName=root, Path=PointsTabOpacity}"
-                      IsHitTestVisible="{Binding ElementName=root, Path=PointsTabVisible}"
+                      Visibility="{Binding ElementName=root, Path=PointsTabVisible, Converter={StaticResource BoolToVisibilityConverter}}"
                       SelectionMode="Extended"
                       Loaded="PointsListView_Loaded"
                       SelectionChanged="PointsListView_SelectionChanged"
-                      Background="{StaticResource PopoutMenuBackgroundBrush}"
                       VirtualizingPanel.IsVirtualizingWhenGrouping="True"
                       VirtualizingPanel.ScrollUnit="Pixel"
                       ScrollViewer.CanContentScroll="True"
@@ -146,17 +157,6 @@
                       VirtualizingStackPanel.VirtualizationMode="Recycling"
                       VirtualizingStackPanel.IsContainerVirtualizable="True"
                       VirtualizingPanel.CacheLength="0,0">
-                <ListView.Resources>
-                    <Style x:Key="InlineEditBoxStyle"
-                           TargetType="TextBox"
-                           BasedOn="{StaticResource EditableTextBox}">
-                        <EventSetter Event="PreviewKeyDown"
-                                     Handler="InlineEditBox_PreviewKeyDown" />
-                        <EventSetter Event="LostFocus"
-                                     Handler="InlineEditBox_LostFocus" />
-                    </Style>
-
-                </ListView.Resources>
                 <ListView.ItemsPanel>
                     <ItemsPanelTemplate>
                         <VirtualizingStackPanel VirtualizingPanel.IsVirtualizing="True"
@@ -184,8 +184,8 @@
                                                  Style="{StaticResource InlineEditBoxStyle}"
                                                  Visibility="Collapsed" />
                                         <!--<Grid.ToolTip>
-                                            <TextBlock Text="{Binding PointNumber}" />
-                                        </Grid.ToolTip>-->
+                                <TextBlock Text="{Binding PointNumber}" />
+                            </Grid.ToolTip>-->
                                     </Grid>
                                     <DataTemplate.Triggers>
                                         <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ListViewItem}, Path=(viewsAssorted:InlineEdit.EditingField)}"
@@ -216,8 +216,8 @@
                                                  Style="{StaticResource InlineEditBoxStyle}"
                                                  Visibility="Collapsed" />
                                         <!--<Grid.ToolTip>
-                                            <TextBlock Text="{Binding Northing, StringFormat=N3}" />
-                                        </Grid.ToolTip>-->
+                                <TextBlock Text="{Binding Northing, StringFormat=N3}" />
+                            </Grid.ToolTip>-->
                                     </Grid>
                                     <DataTemplate.Triggers>
                                         <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ListViewItem}, Path=(viewsAssorted:InlineEdit.EditingField)}"
@@ -248,8 +248,8 @@
                                                  Style="{StaticResource InlineEditBoxStyle}"
                                                  Visibility="Collapsed" />
                                         <!--<Grid.ToolTip>
-                                            <TextBlock Text="{Binding Easting, StringFormat=N3}" />
-                                        </Grid.ToolTip>-->
+                                <TextBlock Text="{Binding Easting, StringFormat=N3}" />
+                            </Grid.ToolTip>-->
                                     </Grid>
                                     <DataTemplate.Triggers>
                                         <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ListViewItem}, Path=(viewsAssorted:InlineEdit.EditingField)}"
@@ -280,8 +280,8 @@
                                                  Style="{StaticResource InlineEditBoxStyle}"
                                                  Visibility="Collapsed" />
                                         <!--<Grid.ToolTip>
-                                            <TextBlock Text="{Binding Elevation, StringFormat=N3}" />
-                                        </Grid.ToolTip>-->
+                                <TextBlock Text="{Binding Elevation, StringFormat=N3}" />
+                            </Grid.ToolTip>-->
                                     </Grid>
                                     <DataTemplate.Triggers>
                                         <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ListViewItem}, Path=(viewsAssorted:InlineEdit.EditingField)}"
@@ -312,8 +312,8 @@
                                                  Style="{StaticResource InlineEditBoxStyle}"
                                                  Visibility="Collapsed" />
                                         <!--<Grid.ToolTip>
-                                            <TextBlock Text="{Binding Description}" />
-                                        </Grid.ToolTip>-->
+                                <TextBlock Text="{Binding Description}" />
+                            </Grid.ToolTip>-->
                                     </Grid>
                                     <DataTemplate.Triggers>
                                         <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ListViewItem}, Path=(viewsAssorted:InlineEdit.EditingField)}"
@@ -350,14 +350,16 @@
                                             <Expander IsExpanded="False"
                                                       Style="{StaticResource ListViewExpanderStyle}"
                                                       Margin="0 1 0 1"
-                                                      HorizontalAlignment="Left">
-                                                <Expander.Header>
+                                                      HorizontalAlignment="Left"
+                                                      Header="{Binding Name.Name}"
+                                                      FontSize="{StaticResource ListViewHeaderFontSize}">
+                                                <!--<Expander.Header>
                                                     <TextBlock Text="{Binding Name.Name}"
                                                                FontSize="{StaticResource ListViewHeaderFontSize}"
                                                                VerticalAlignment="Center"
                                                                Margin="0"
                                                                Padding="0" />
-                                                </Expander.Header>
+                                                </Expander.Header>-->
                                                 <ItemsPresenter SnapsToDevicePixels="True"
                                                                 UseLayoutRounding="True"
                                                                 Margin="0" />
@@ -372,7 +374,7 @@
             </ListView>
             <Grid x:Name="PropertiesGrid"
                   Opacity="{Binding ElementName=root, Path=PropertiesTabOpacity}"
-                  IsHitTestVisible="{Binding ElementName=root, Path=PropertiesTabVisible}"
+                  Visibility="{Binding ElementName=root, Path=PropertiesTabVisible, Converter={StaticResource BoolToVisibilityConverter}}"
                   Background="{StaticResource PopoutMenuBackgroundBrush}"
                   DataContext="{Binding ElementName=root, Path=CogoPointSelectionViewModel}">
                 <Grid.Resources>
@@ -380,18 +382,32 @@
                     <Thickness x:Key="RowItemMargin">2</Thickness>
                     <sys:Double x:Key="PropertiesTabTextSize">12</sys:Double>
                 </Grid.Resources>
-                <StackPanel Margin="5 20 5 20">
+                <StackPanel Margin="5 10 5 10">
                     <Grid Margin="{StaticResource RowItemMargin}">
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="89*" />
-                            <ColumnDefinition Width="93*" />
-                            <ColumnDefinition Width="182*" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Selection Count:"
+                                   VerticalAlignment="Center"
+                                   FontSize="{StaticResource PropertiesTabTextSize}"
+                                   Margin="2,0,2,0" />
+                        <TextBlock x:Name="PropertiesSelectionCountTextBlock"
+                                   Text="{Binding SelectedPoints.Count}"
+                                   Grid.Column="1"
+                                   Height="20"
+                                   FontSize="{StaticResource PropertiesTabTextSize}"
+                                   Margin="2,2,2,2" />
+                    </Grid>
+                    <Grid Margin="{StaticResource RowItemMargin}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
                         <TextBlock Text="Point Number:"
                                    VerticalAlignment="Center"
                                    FontSize="{StaticResource PropertiesTabTextSize}"
-                                   Margin="2,0,2,0"
-                                   Grid.ColumnSpan="2" />
+                                   Margin="2,0,2,0" />
                         <TextBox x:Name="PropertiesPointNumberTextBox"
                                  Text="{Binding Path=PointNumber, Mode=TwoWay, UpdateSourceTrigger=Explicit}"
                                  Style="{StaticResource ValidationTextBox}"
@@ -520,99 +536,96 @@
                     </Grid>
                 </StackPanel>
             </Grid>
-            <ListView x:Name="viewsListView"
-                      ItemsSource="{Binding ElementName=root, Path=Camera.Views}"
-                      Style="{StaticResource LayersListViewStyle}"
-                      Opacity="{Binding ElementName=root, Path=ViewsTabOpacity}"
-                      IsHitTestVisible="{Binding ElementName=root, Path=ViewsTabVisible}"
-                      SelectionMode="Extended"
-                      Background="{StaticResource PopoutMenuBackgroundBrush}"
-                      VirtualizingPanel.IsVirtualizing="True"
-                      VirtualizingPanel.VirtualizationMode="Recycling"
-                      VirtualizingPanel.IsVirtualizingWhenGrouping="True"
-                      VirtualizingPanel.ScrollUnit="Pixel"
-                      Loaded="ViewsListView_Loaded"
-                      SelectionChanged="ViewsListView_SelectionChanged"
-                      Grid.RowSpan="2">
-                <ListView.View>
-                    <GridView>
-                        <GridViewColumn>
-                            <GridViewColumn.Header>
-                                <TextBlock Text="Name"
-                                           FontSize="{StaticResource ListViewHeaderFontSize}" />
-                            </GridViewColumn.Header>
-                            <GridViewColumn.CellTemplate>
-                                <DataTemplate>
-                                    <Border x:Name="PointNumberBorder"
-                                            Focusable="False"
-                                            BorderBrush="Transparent"
-                                            BorderThickness="1"
-                                            Background="Transparent">
-                                        <TextBox x:Name="PointNumberTextbox"
-                                                 FontSize="{StaticResource ListViewFontSize}"
-                                                 Style="{StaticResource EditableTextBox}"
-                                                 HorizontalAlignment="Stretch"
-                                                 VerticalAlignment="Stretch"
-                                                 IsReadOnly="True"
-                                                 ToolTipService.ShowOnDisabled="True">
-                                            <TextBox.Text>
-                                                <Binding Path="Name"
-                                                         UpdateSourceTrigger="Explicit"
-                                                         Mode="TwoWay"
-                                                         ValidatesOnDataErrors="True"
-                                                         NotifyOnValidationError="True"
-                                                         ValidatesOnExceptions="True"
-                                                         ValidatesOnNotifyDataErrors="True">
-                                                    <Binding.ValidationRules>
-                                                        <validation:NoIllegalCharactersRule />
-                                                    </Binding.ValidationRules>
-                                                </Binding>
-                                            </TextBox.Text>
-                                        </TextBox>
-                                    </Border>
-                                </DataTemplate>
-                            </GridViewColumn.CellTemplate>
-                        </GridViewColumn>
-                    </GridView>
-                </ListView.View>
-                <ListView.GroupStyle>
-                    <GroupStyle>
-                        <GroupStyle.Panel>
-                            <ItemsPanelTemplate>
-                                <VirtualizingStackPanel VirtualizingPanel.IsVirtualizing="True"
-                                                        VirtualizingPanel.VirtualizationMode="Recycling"
-                                                        VirtualizingPanel.IsVirtualizingWhenGrouping="True"
-                                                        VirtualizingPanel.ScrollUnit="Pixel" />
-                            </ItemsPanelTemplate>
-                        </GroupStyle.Panel>
-                        <GroupStyle.ContainerStyle>
-                            <Style TargetType="{x:Type GroupItem}">
-                                <Setter Property="Template">
-                                    <Setter.Value>
-                                        <ControlTemplate TargetType="GroupItem">
-                                            <Expander IsExpanded="False"
-                                                      Style="{StaticResource ListViewExpanderStyle}"
-                                                      Margin="0 1 0 1"
-                                                      HorizontalAlignment="Left">
-                                                <Expander.Header>
-                                                    <TextBlock Text="{Binding Name}"
-                                                               FontSize="{StaticResource ListViewHeaderFontSize}"
-                                                               VerticalAlignment="Center"
-                                                               Margin="0"
-                                                               Padding="0" />
-                                                </Expander.Header>
-                                                <ItemsPresenter SnapsToDevicePixels="True"
-                                                                UseLayoutRounding="True"
-                                                                Margin="0" />
-                                            </Expander>
-                                        </ControlTemplate>
-                                    </Setter.Value>
-                                </Setter>
-                            </Style>
-                        </GroupStyle.ContainerStyle>
-                    </GroupStyle>
-                </ListView.GroupStyle>
-            </ListView>
+            <Grid Background="{StaticResource PopoutMenuBackgroundBrush}"
+                  Opacity="{Binding ElementName=root, Path=ViewsTabOpacity}"
+                  Visibility="{Binding ElementName=root, Path=ViewsTabVisible, Converter={StaticResource BoolToVisibilityConverter}}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <ListView x:Name="viewsListView"
+                          ItemsSource="{Binding ElementName=root, Path=Camera.Scenes}"
+                          Style="{StaticResource LayersListViewStyle}"
+                          SelectionMode="Extended"
+                          VirtualizingPanel.IsVirtualizing="True"
+                          VirtualizingPanel.VirtualizationMode="Recycling"
+                          VirtualizingPanel.IsVirtualizingWhenGrouping="True"
+                          VirtualizingPanel.ScrollUnit="Pixel"
+                          Loaded="ViewsListView_Loaded"
+                          SelectionChanged="ViewsListView_SelectionChanged"
+                          Grid.RowSpan="2">
+                    <ListView.View>
+                        <GridView>
+                            <GridViewColumn Header="Name"
+                                            Width="100">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Grid x:Name="pointNumber">
+                                            <!-- Display -->
+                                            <TextBlock x:Name="tbDisplay"
+                                                       Text="{Binding Name}"
+                                                       Padding="2"
+                                                       MouseDown="CellDisplay_MouseDown" />
+                                            <!-- Edit -->
+                                            <TextBox x:Name="tbEdit"
+                                                     Text="{Binding Name, UpdateSourceTrigger=Explicit}"
+                                                     Style="{StaticResource InlineEditBoxStyle}"
+                                                     Visibility="Collapsed" />
+                                        </Grid>
+                                        <DataTemplate.Triggers>
+                                            <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ListViewItem}, Path=(viewsAssorted:InlineEdit.EditingField)}"
+                                                         Value="Name">
+                                                <Setter TargetName="tbDisplay"
+                                                        Property="Visibility"
+                                                        Value="Collapsed" />
+                                                <Setter TargetName="tbEdit"
+                                                        Property="Visibility"
+                                                        Value="Visible" />
+                                            </DataTrigger>
+                                        </DataTemplate.Triggers>
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+                        </GridView>
+                    </ListView.View>
+                </ListView>
+                <WrapPanel HorizontalAlignment="Center"
+                           Grid.Row="1">
+                    <Button x:Name="NewViewButton"
+                            Style="{StaticResource BorderWidgetsButton}"
+                            Width="40"
+                            Height="40"
+                            Margin="5 2 5 2"
+                            Click="NewSceneButton_Click">
+                        <Button.Content>
+                            <ContentControl Template="{StaticResource PlusIcon}" />
+                        </Button.Content>
+                        <Button.LayoutTransform>
+                            <ScaleTransform ScaleX="0.7"
+                                            ScaleY="0.7" />
+                        </Button.LayoutTransform>
+                        <Button.ToolTip>
+                            <TextBlock Text="Add New Point Group" />
+                        </Button.ToolTip>
+                    </Button>
+                    <Button Style="{StaticResource BorderWidgetsButton}"
+                            Width="40"
+                            Height="40"
+                            Margin="5 2 5 2">
+                        <Button.Content>
+                            <ContentControl Template="{StaticResource CancelIcon}"
+                                            Foreground="White" />
+                        </Button.Content>
+                        <Button.LayoutTransform>
+                            <ScaleTransform ScaleX="0.7"
+                                            ScaleY="0.7" />
+                        </Button.LayoutTransform>
+                        <Button.ToolTip>
+                            <TextBlock Text="Add New Point Group" />
+                        </Button.ToolTip>
+                    </Button>
+                </WrapPanel>
+            </Grid>
         </Grid>
 
     </Grid>

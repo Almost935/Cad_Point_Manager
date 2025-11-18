@@ -2,6 +2,7 @@
 using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Models.Printing;
 using SharpDX;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows;
@@ -18,7 +19,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private Matrix3x2 _d2dMatrix = Matrix3x2.Identity;
         private System.Windows.Media.Matrix _windowsMatrix = System.Windows.Media.Matrix.Identity;
         private bool _isDirty = true;
-        private BatchableObservableCollection<View> _views;
+        private ObservableCollection<Scene> _scenes = [];
         #endregion
 
         #region Properties
@@ -58,15 +59,15 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 }
             }
         }
-        public BatchableObservableCollection<View> Views
+        public ObservableCollection<Scene> Scenes
         {
-            get => _views;
+            get => _scenes;
             set
             {
-                if (_views != value)
+                if (_scenes != value)
                 {
-                    _views = value;
-                    OnPropertyChanged(nameof(Views));
+                    _scenes = value;
+                    OnPropertyChanged(nameof(Scenes));
                 }
             }
         }
@@ -90,6 +91,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
             Viewport = viewport;
             _zoomFactor = zoomFactor;
             Extents = extents;
+
+            Scenes.Add(new Scene() { Name = "Default", ZoomStep = 0, Translation = Vector2.Zero });
 
             ResetToDefaults();
         }
@@ -153,9 +156,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
             Update2DTransformationMatrix();
         }
         public void ResetToDefaults()
-        { 
+        {
             CurrentZoomStep = 0;
-            
+
             UpdateProjection();
             UpdateView();
             UpdateViewProjection();
@@ -296,6 +299,29 @@ namespace Cad_Point_Manager.Controls.D3DControl
             return worldUnitsPerPixel;
         }
 
+        public bool TrySaveScene(string sceneName, out Scene scene)
+        {
+            if (Scenes.Any(s => s.Name == sceneName)) 
+            {
+                scene = null;
+                return false; 
+            }
+            scene = new Scene() { Name = sceneName, ZoomStep = CurrentZoomStep, Translation = Translate };
+            return true;
+        }
+        public bool TryGetScene(string sceneName, out Scene scene)
+        {
+            scene = Scenes.FirstOrDefault(s => s.Name == sceneName);
+            return scene != null;
+        }
+
+        public void LoadScene(Scene scene)
+        {
+            CurrentZoomStep = scene.ZoomStep;
+            Translate = scene.Translation;
+            UpdateView();
+            UpdateViewProjection();
+        }
         #endregion
 
         #region INotifyPropertyChanged Implementation

@@ -7,6 +7,8 @@ namespace Cad_Point_Manager.Helpers
 {
     public static class GlobalHelperProperties
     {
+        public static readonly int PopOutCloseDelay = 700;
+
         public const float ZoomFactor = 1.3f;
 
         public const float HoverTransparency = 0.4f;

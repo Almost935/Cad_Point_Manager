@@ -3,11 +3,10 @@ using SharpDX;
 
 namespace Cad_Point_Manager.Models.Printing
 {
-    public class View : INotifyPropertyChanged
+    public class Scene : INotifyPropertyChanged
     {
         #region Fields
         private string _name = string.Empty;
-        private Matrix _viewMatrix = Matrix.Identity;
         #endregion
 
         #region Properties
@@ -23,22 +22,9 @@ namespace Cad_Point_Manager.Models.Printing
                 }
             }
         }
-        public Matrix ViewMatrix
-        {
-            get => _viewMatrix;
-            set
-            {
-                if (_viewMatrix != value)
-                {
-                    _viewMatrix = value;
-                    OnPropertyChanged(nameof(ViewMatrix));
-                }
-            }
-        }
-        #endregion
 
-        #region Constructors
-        public View() { }
+        public int ZoomStep { get; set; } = 0;
+        public Vector2 Translation { get; set; } = Vector2.Zero;
         #endregion
 
         #region Methods

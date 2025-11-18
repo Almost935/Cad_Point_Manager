@@ -355,17 +355,17 @@ namespace Cad_Point_Manager.Controls.D3DControl
             typeof(D3dDxfControl),
             new PropertyMetadata(new Camera(new ViewportF(), 1.15f, new Rect(0, 0, 0, 0))));
 
-        public BatchableObservableCollection<View> Views
+        public BatchableObservableCollection<Scene> Views
         {
-            get { return (BatchableObservableCollection<View>)GetValue(ViewsProperty); }
+            get { return (BatchableObservableCollection<Scene>)GetValue(ViewsProperty); }
             set { SetValue(ViewsProperty, value); }
         }
         public static readonly DependencyProperty ViewsProperty =
             DependencyProperty.Register(
             nameof(Views),
-            typeof(BatchableObservableCollection<View>),
+            typeof(BatchableObservableCollection<Scene>),
             typeof(D3dDxfControl),
-            new PropertyMetadata(new BatchableObservableCollection<View>()));
+            new PropertyMetadata(new BatchableObservableCollection<Scene>()));
 
         public static readonly DependencyProperty LayersProperty =
             DependencyProperty.Register(
