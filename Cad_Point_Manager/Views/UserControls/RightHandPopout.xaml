@@ -195,7 +195,7 @@
                                     </GridViewColumn.Header>
                                     <GridViewColumn.CellTemplate>
                                         <DataTemplate>
-                                            <colorpicker:PortableColorPicker x:Name="PointGroupsColorPicker" 
+                                            <colorpicker:PortableColorPicker x:Name="PointGroupsColorPicker"
                                                                              Style="{StaticResource DefaultColorPickerStyle}"
                                                                              SelectedColor="{Binding Color, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                                                              ToggleButtonWidth="20"
@@ -204,7 +204,7 @@
                                                                              IsPopupOpen="{Binding ElementName=root, Path=PointGroupListColorPickerOpen, Mode=OneWayToSource}"
                                                                              Focusable="True"
                                                                              HorizontalAlignment="Center"
-                                                                             IsPopupOpenChanged="PointGroupsColorPicker_IsPopupOpenChanged" 
+                                                                             IsPopupOpenChanged="PointGroupsColorPicker_IsPopupOpenChanged"
                                                                              PreviewMouseLeftButtonDown="PointGroupsColorPicker_PreviewMouseLeftButtonDown"
                                                                              PreviewKeyDown="PointGroupsColorPicker_PreviewKeyDown" />
                                         </DataTemplate>
@@ -228,7 +228,7 @@
                                                           VerticalContentAlignment="Center"
                                                           Unchecked="PointGroupsVisibilityCheckBox_Unchecked"
                                                           Checked="PointGroupsVisibilityCheckBox_Checked"
-                                                          PreviewMouseLeftButtonDown="PointGroupsVisibilityCheckBox_PreviewMouseLeftButtonDown"/>
+                                                          PreviewMouseLeftButtonDown="PointGroupsVisibilityCheckBox_PreviewMouseLeftButtonDown" />
                                             </Border>
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
@@ -276,42 +276,44 @@
                             </GridView>
                         </ListView.View>
                     </ListView>
-                        <WrapPanel HorizontalAlignment="Center"
-                                   Grid.Row="1">
-                            <Button x:Name="NewNewPointGroupButton"
-                                    Style="{StaticResource BorderWidgetsButton}"
-                                    Width="40"
-                                    Height="40"
-                                    Margin="5 2 5 2"
-                                    Click="NewPointGroupButton_Click">
-                                <Button.Content>
-                                    <ContentControl Template="{StaticResource PlusIcon}" />
-                                </Button.Content>
-                                <Button.LayoutTransform>
-                                    <ScaleTransform ScaleX="0.7"
-                                                    ScaleY="0.7" />
-                                </Button.LayoutTransform>
-                                <Button.ToolTip>
-                                    <TextBlock Text="Add New Point Group" />
-                                </Button.ToolTip>
-                            </Button>
-                            <Button Style="{StaticResource BorderWidgetsButton}"
-                                    Width="40"
-                                    Height="40"
-                                    Margin="5 2 5 2">
-                                <Button.Content>
-                                    <ContentControl Template="{StaticResource CancelIcon}"
-                                                    Foreground="White" />
-                                </Button.Content>
-                                <Button.LayoutTransform>
-                                    <ScaleTransform ScaleX="0.7"
-                                                    ScaleY="0.7" />
-                                </Button.LayoutTransform>
-                                <Button.ToolTip>
-                                    <TextBlock Text="Add New Point Group" />
-                                </Button.ToolTip>
-                            </Button>
-                        </WrapPanel>
+                    <WrapPanel HorizontalAlignment="Center"
+                               Grid.Row="1">
+                        <Button x:Name="NewPointGroupButton"
+                                Style="{StaticResource BorderWidgetsButton}"
+                                Width="40"
+                                Height="40"
+                                Margin="5 2 5 2"
+                                Click="NewPointGroupButton_Click">
+                            <Button.Content>
+                                <ContentControl Template="{StaticResource PlusIcon}" />
+                            </Button.Content>
+                            <Button.LayoutTransform>
+                                <ScaleTransform ScaleX="0.7"
+                                                ScaleY="0.7" />
+                            </Button.LayoutTransform>
+                            <Button.ToolTip>
+                                <TextBlock Text="Add New Point Group" />
+                            </Button.ToolTip>
+                        </Button>
+                        <Button x:Name="DeletePointGroupButton"
+                                Style="{StaticResource BorderWidgetsButton}"
+                                Width="40"
+                                Height="40"
+                                Margin="5 2 5 2"
+                                Click="DeletePointGroupButton_Click">
+                            <Button.Content>
+                                <ContentControl Template="{StaticResource CancelIcon}"
+                                                Foreground="White" />
+                            </Button.Content>
+                            <Button.LayoutTransform>
+                                <ScaleTransform ScaleX="0.7"
+                                                ScaleY="0.7" />
+                            </Button.LayoutTransform>
+                            <Button.ToolTip>
+                                <TextBlock Text="Add New Point Group" />
+                            </Button.ToolTip>
+                        </Button>
+                    </WrapPanel>
                 </Grid>
                 <Grid Grid.Row="2"
                       HorizontalAlignment="Stretch"

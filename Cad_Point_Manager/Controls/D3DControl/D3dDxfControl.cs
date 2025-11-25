@@ -492,7 +492,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             if (Camera is null)
             {
                 GetInitialMatrix();
-                Camera = new(Viewport, GlobalHelperProperties.ZoomFactor, CadManager3D.Extents);
+                Camera = new(Viewport, GlobalHelperProperties.ZoomFactor, new Rect(0, 0, Viewport.Width, Viewport.Height));
             }
             if (DxfNeedsReload)
             {
@@ -1975,6 +1975,16 @@ namespace Cad_Point_Manager.Controls.D3DControl
         {
             base.OnMouseEnter(e);
 
+            if (IsDragging)
+            {
+                if (Mouse.LeftButton != MouseButtonState.Pressed)
+                {
+                    EndDrag();
+                    UpdateDragRect();
+                    _interactiveDirty = true;
+                }
+            }
+
             _isMouseInside = true;
             _hitTestCancellationTokenSource = new CancellationTokenSource();
             _ = RunHitTestingAsync();
@@ -2006,6 +2016,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
         protected override void OnMouseLeftButtonUp(MouseButtonEventArgs e)
         {
+            EndDrag();
+            UpdateDragRect();
+
             if (_cogoPointTextBeingMoved)
             {
                 RecomputeCogoPointBoundsFast(_pressedToggleButtonPoint);
@@ -2124,8 +2137,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     }
             }
 
-            EndDrag();
-            UpdateDragRect();
             ResetHoverObjects();
 
             if (sigPointsVerticesDirty) { _sigPointVerticesDirty = true; }
@@ -2159,6 +2170,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 return;
             }
         }
+
         private void Window_KeyUp(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.Escape)
@@ -2327,6 +2339,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
         public void UpdateDragRect()
         {
+            Debug.WriteLine($"{DragStart}");
             double width = Math.Abs(_dragStart.X - DxfCoords.X);
             double height = Math.Abs(_dragStart.Y - DxfCoords.Y);
             double left = Math.Min(_dragStart.X, DxfCoords.X);

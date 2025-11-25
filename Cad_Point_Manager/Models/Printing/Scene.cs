@@ -7,6 +7,7 @@ namespace Cad_Point_Manager.Models.Printing
     {
         #region Fields
         private string _name = string.Empty;
+        private RectangleF _bounds = RectangleF.Empty;    
         #endregion
 
         #region Properties
@@ -22,9 +23,35 @@ namespace Cad_Point_Manager.Models.Printing
                 }
             }
         }
+        public RectangleF Bounds
+        {
+            get => _bounds;
+            set
+            {
+                if (_bounds != value)
+                {
+                    _bounds = value;
+                    OnPropertyChanged(nameof(Bounds));
+
+                    OnPropertyChanged(nameof(BoundsLeft));
+                    OnPropertyChanged(nameof(BoundsTop));
+                    OnPropertyChanged(nameof(BoundsRight));
+                    OnPropertyChanged(nameof(BoundsBottom));
+                    OnPropertyChanged(nameof(BoundsWidth));
+                    OnPropertyChanged(nameof(BoundsHeight));
+                }
+            }
+        }
 
         public int ZoomStep { get; set; } = 0;
         public Vector2 Translation { get; set; } = Vector2.Zero;
+
+        public float BoundsLeft => _bounds.X;
+        public float BoundsTop => _bounds.Y;
+        public float BoundsRight => _bounds.X + _bounds.Width;
+        public float BoundsBottom => _bounds.Y + _bounds.Height;
+        public float BoundsWidth => _bounds.Width;
+        public float BoundsHeight => _bounds.Height;
         #endregion
 
         #region Methods

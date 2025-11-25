@@ -7,20 +7,18 @@ namespace Cad_Point_Manager.Services
     {
         private static readonly char[] IllegalGroupNameChars = ['@', '#', '%', '^', '&', '*'];
 
-        public bool ValidatePointNumber(string input, CogoPointManager cogoPointManager, out string errorMessage)
+        public bool ValidateNewPointNumber(string input, CogoPointManager cogoPointManager, out string errorMessage)
         {
             if (!int.TryParse(input, out int pointNumber))
             {
                 errorMessage = "Point number must be a valid integer.";
                 return false;
             }
-
             if (pointNumber <= 0)
             {
                 errorMessage = "Point number must be greater than zero.";
                 return false;
             }
-
             if (cogoPointManager.PointExists(pointNumber))
             {
                 errorMessage = $"Point number {pointNumber} is already in use.";
@@ -31,17 +29,22 @@ namespace Cad_Point_Manager.Services
             return true;
         }
 
-        public bool ValidatePointNumber(int pointNumber, CogoPointManager cogoPointManager, out string errorMessage)
+        public bool ValidatePointNumberChange(string input, CogoPoint editPoint, CogoPointManager cogoPointManager, out string errorMessage)
         {
-            if (pointNumber <= 0)
+            var isInt = int.TryParse(input, out int newNum);
+            if (!isInt)
+            {
+                errorMessage = "Point number must be a valid integer.";
+                return false;
+            }
+            if (newNum <= 0)
             {
                 errorMessage = "Point number must be greater than zero.";
                 return false;
             }
-
-            if (cogoPointManager.PointExists(pointNumber))
+            if (!cogoPointManager.ValidatePointNameChange(newNum, editPoint, out string cpmError))
             {
-                errorMessage = $"Point number {pointNumber} is already in use.";
+                errorMessage = cpmError;
                 return false;
             }
 

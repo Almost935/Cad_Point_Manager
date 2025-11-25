@@ -17,7 +17,8 @@
              d:DesignWidth="400">
 
     <UserControl.Resources>
-        <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" CollapseWhenFalse="True" />
+        <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"
+                                              CollapseWhenFalse="True" />
         <validation:PointNumberValidationRule x:Key="PointNumberValidationRule" />
         <validation:DoubleValidationRule x:Key="DoubleValidationRule" />
 
@@ -104,7 +105,7 @@
                          Style="{StaticResource tabBorderStyle}"
                          Grid.Row="2"
                          Margin="0 1 0 0"
-                         MouseEnter="ViewsBorder_MouseEnter">
+                         MouseEnter="ScenesBorder_MouseEnter">
                     <TextBlock Text="Views"
                                Style="{StaticResource TabFontStyle}"
                                HorizontalAlignment="Center"
@@ -157,6 +158,16 @@
                       VirtualizingStackPanel.VirtualizationMode="Recycling"
                       VirtualizingStackPanel.IsContainerVirtualizable="True"
                       VirtualizingPanel.CacheLength="0,0">
+                <ListView.ContextMenu>
+                    <ContextMenu x:Name="pgListViewContextMenu"
+                                 ContextMenuClosing="PointsListView_ContextMenuClosing"
+                                 Closed="pgListViewContextMenu_Closed">
+                        <MenuItem Header="Edit"
+                                  Click="PointsListViewEditPoint_Click" />
+                        <MenuItem Header="Delete"
+                                  Click="PointsListViewDeletePoint_Click" />
+                    </ContextMenu>
+                </ListView.ContextMenu>
                 <ListView.ItemsPanel>
                     <ItemsPanelTemplate>
                         <VirtualizingStackPanel VirtualizingPanel.IsVirtualizing="True"
@@ -168,19 +179,20 @@
                 </ListView.ItemsPanel>
                 <ListView.View>
                     <GridView>
-                        <GridViewColumn Header="No."
-                                        Width="100">
+                        <GridViewColumn Header="No.">
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
                                     <Grid x:Name="pointNumber">
                                         <!-- Display -->
                                         <TextBlock x:Name="tbDisplay"
                                                    Text="{Binding PointNumber}"
+                                                   FontSize="{StaticResource ListViewFontSize}"
                                                    Padding="2"
                                                    MouseDown="CellDisplay_MouseDown" />
                                         <!-- Edit -->
                                         <TextBox x:Name="tbEdit"
                                                  Text="{Binding PointNumber, UpdateSourceTrigger=Explicit}"
+                                                 FontSize="{StaticResource ListViewFontSize}"
                                                  Style="{StaticResource InlineEditBoxStyle}"
                                                  Visibility="Collapsed" />
                                         <!--<Grid.ToolTip>
@@ -201,18 +213,18 @@
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
-
-                        <GridViewColumn Header="Northing"
-                                        Width="140">
+                        <GridViewColumn Header="Northing">
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
                                     <Grid x:Name="northing">
                                         <TextBlock x:Name="tbDisplay"
                                                    Text="{Binding Northing,StringFormat=N3}"
+                                                   FontSize="{StaticResource ListViewFontSize}"
                                                    Padding="2"
                                                    MouseDown="CellDisplay_MouseDown" />
                                         <TextBox x:Name="tbEdit"
                                                  Text="{Binding Northing, UpdateSourceTrigger=Explicit, StringFormat=N3}"
+                                                 FontSize="{StaticResource ListViewFontSize}"
                                                  Style="{StaticResource InlineEditBoxStyle}"
                                                  Visibility="Collapsed" />
                                         <!--<Grid.ToolTip>
@@ -233,18 +245,18 @@
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
-
-                        <GridViewColumn Header="Easting"
-                                        Width="140">
+                        <GridViewColumn Header="Easting">
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
                                     <Grid x:Name="easting">
                                         <TextBlock x:Name="tbDisplay"
                                                    Text="{Binding Easting, StringFormat=N3}"
+                                                   FontSize="{StaticResource ListViewFontSize}"
                                                    Padding="2"
                                                    MouseDown="CellDisplay_MouseDown" />
                                         <TextBox x:Name="tbEdit"
                                                  Text="{Binding Easting, UpdateSourceTrigger=Explicit, StringFormat=N3}"
+                                                 FontSize="{StaticResource ListViewFontSize}"
                                                  Style="{StaticResource InlineEditBoxStyle}"
                                                  Visibility="Collapsed" />
                                         <!--<Grid.ToolTip>
@@ -265,18 +277,18 @@
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
-
-                        <GridViewColumn Header="Elevation"
-                                        Width="140">
+                        <GridViewColumn Header="Elevation">
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
                                     <Grid x:Name="elevation">
                                         <TextBlock x:Name="tbDisplay"
                                                    Text="{Binding Elevation, StringFormat=N3}"
+                                                   FontSize="{StaticResource ListViewFontSize}"
                                                    Padding="2"
                                                    MouseDown="CellDisplay_MouseDown" />
                                         <TextBox x:Name="tbEdit"
                                                  Text="{Binding Elevation, UpdateSourceTrigger=Explicit, StringFormat=N3}"
+                                                 FontSize="{StaticResource ListViewFontSize}"
                                                  Style="{StaticResource InlineEditBoxStyle}"
                                                  Visibility="Collapsed" />
                                         <!--<Grid.ToolTip>
@@ -297,18 +309,18 @@
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
-
-                        <GridViewColumn Header="Description"
-                                        Width="220">
+                        <GridViewColumn Header="Description">
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
                                     <Grid x:Name="description">
                                         <TextBlock x:Name="tbDisplay"
                                                    Text="{Binding Description}"
+                                                   FontSize="{StaticResource ListViewFontSize}"
                                                    Padding="2"
                                                    MouseDown="CellDisplay_MouseDown" />
                                         <TextBox x:Name="tbEdit"
                                                  Text="{Binding Description, UpdateSourceTrigger=Explicit}"
+                                                 FontSize="{StaticResource ListViewFontSize}"
                                                  Style="{StaticResource InlineEditBoxStyle}"
                                                  Visibility="Collapsed" />
                                         <!--<Grid.ToolTip>
@@ -543,16 +555,16 @@
                     <RowDefinition Height="*" />
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
-                <ListView x:Name="viewsListView"
+                <ListView x:Name="scenesListView"
                           ItemsSource="{Binding ElementName=root, Path=Camera.Scenes}"
-                          Style="{StaticResource LayersListViewStyle}"
+                          Style="{StaticResource UpdatedListViewStyle}"
                           SelectionMode="Extended"
                           VirtualizingPanel.IsVirtualizing="True"
                           VirtualizingPanel.VirtualizationMode="Recycling"
                           VirtualizingPanel.IsVirtualizingWhenGrouping="True"
                           VirtualizingPanel.ScrollUnit="Pixel"
-                          Loaded="ViewsListView_Loaded"
-                          SelectionChanged="ViewsListView_SelectionChanged"
+                          Loaded="ScenesListView_Loaded"
+                          SelectionChanged="ScenesListView_SelectionChanged"
                           Grid.RowSpan="2">
                     <ListView.View>
                         <GridView>
@@ -560,13 +572,11 @@
                                             Width="100">
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
-                                        <Grid x:Name="pointNumber">
-                                            <!-- Display -->
+                                        <Grid>
                                             <TextBlock x:Name="tbDisplay"
                                                        Text="{Binding Name}"
                                                        Padding="2"
                                                        MouseDown="CellDisplay_MouseDown" />
-                                            <!-- Edit -->
                                             <TextBox x:Name="tbEdit"
                                                      Text="{Binding Name, UpdateSourceTrigger=Explicit}"
                                                      Style="{StaticResource InlineEditBoxStyle}"
@@ -586,12 +596,52 @@
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>
+                            <GridViewColumn Header="Left">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Grid>
+                                            <TextBlock Text="{Binding BoundsLeft, StringFormat=N3}"
+                                                       Padding="2" />
+                                        </Grid>
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+                            <GridViewColumn Header="Right">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Grid>
+                                            <TextBlock Text="{Binding BoundsRight, StringFormat=N3}"
+                                                       Padding="2" />
+                                        </Grid>
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+                            <GridViewColumn Header="Bottom">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Grid>
+                                            <TextBlock Text="{Binding BoundsTop, StringFormat=N3}"
+                                                       Padding="2" />
+                                        </Grid>
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+                            <GridViewColumn Header="Top">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Grid>
+                                            <TextBlock Text="{Binding BoundsBottom, StringFormat=N3}"
+                                                       Padding="2" />
+                                        </Grid>
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
                         </GridView>
                     </ListView.View>
                 </ListView>
                 <WrapPanel HorizontalAlignment="Center"
                            Grid.Row="1">
-                    <Button x:Name="NewViewButton"
+                    <Button x:Name="NewSceneButton"
                             Style="{StaticResource BorderWidgetsButton}"
                             Width="40"
                             Height="40"
@@ -605,13 +655,15 @@
                                             ScaleY="0.7" />
                         </Button.LayoutTransform>
                         <Button.ToolTip>
-                            <TextBlock Text="Add New Point Group" />
+                            <TextBlock Text="Add Scene" />
                         </Button.ToolTip>
                     </Button>
-                    <Button Style="{StaticResource BorderWidgetsButton}"
+                    <Button x:Name="DeleteSceneButton"
+                            Style="{StaticResource BorderWidgetsButton}"
                             Width="40"
                             Height="40"
-                            Margin="5 2 5 2">
+                            Margin="5 2 5 2"
+                            Click="DeleteSceneButton_Click">
                         <Button.Content>
                             <ContentControl Template="{StaticResource CancelIcon}"
                                             Foreground="White" />
@@ -621,7 +673,7 @@
                                             ScaleY="0.7" />
                         </Button.LayoutTransform>
                         <Button.ToolTip>
-                            <TextBlock Text="Add New Point Group" />
+                            <TextBlock Text="Delete Scene" />
                         </Button.ToolTip>
                     </Button>
                 </WrapPanel>

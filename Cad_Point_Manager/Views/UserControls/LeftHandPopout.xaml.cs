@@ -3,6 +3,7 @@ using Cad_Point_Manager.Controls.D3DControl;
 using Cad_Point_Manager.Helpers;
 using Cad_Point_Manager.Models;
 using Cad_Point_Manager.Models.PointRendering;
+using Cad_Point_Manager.Models.Printing;
 using Cad_Point_Manager.Services;
 using Cad_Point_Manager.ViewModels;
 using Cad_Point_Manager.Views.Assorted;
@@ -36,6 +37,11 @@ namespace Cad_Point_Manager.Views.UserControls
         private bool _isMouseOverPanel = false;
         private ScaleTransform _mainPanelTransform = new();
         private ValidationService _validationService = new();
+
+        // Views related fields
+        private bool _newSceneBeingEdited = false;
+        private Scene _newScene = null;
+        private string _previousViewName;
 
         private readonly List<CogoPoint> _selectedPoints = [];
         private bool _pointsTabVisible = true;
@@ -244,6 +250,7 @@ namespace Cad_Point_Manager.Views.UserControls
 
         private void OverallGrid_MouseLeave(object sender, MouseEventArgs e)
         {
+            if (pgListViewContextMenu.IsOpen){ return; }
             _isMouseOverPanel = false;
             _hideTimer.Start();
         }
@@ -273,7 +280,12 @@ namespace Cad_Point_Manager.Views.UserControls
                 FillBehavior = FillBehavior.HoldEnd
             };
             _mainPanelTransform.BeginAnimation(ScaleTransform.ScaleXProperty, slideOut);
-
+            PointsTabVisible = false;
+            PointsTabOpacity = 0;
+            PropertiesTabVisible = false;
+            PropertiesTabOpacity = 0;
+            ViewsTabVisible = false;
+            ViewsTabOpacity = 0;
         }
 
         private void PointsListView_Loaded(object sender, RoutedEventArgs e)
@@ -282,7 +294,7 @@ namespace Cad_Point_Manager.Views.UserControls
 
             // Set column widths on each gridview
             GridView pointsGridView = listview.View as GridView;
-            double pointsListTotalWidth = listview.ActualWidth;
+            double pointsListTotalWidth = mainPanel.ActualWidth;
             double pointsListColumnWidth = pointsListTotalWidth / pointsGridView.Columns.Count;
             if (pointsListColumnWidth > 0)
             {
@@ -325,6 +337,14 @@ namespace Cad_Point_Manager.Views.UserControls
                 ViewsTabOpacity = 0;
             }
         }
+        private void PointsListViewEditPoint_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
+        private void PointsListViewDeletePoint_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
 
         private async void PropertiesBorder_MouseEnter(object sender, MouseEventArgs e)
         {
@@ -342,17 +362,46 @@ namespace Cad_Point_Manager.Views.UserControls
                 ViewsTabVisible = false;
             }
         }
+        private void PointsListView_ContextMenuClosing(object sender, ContextMenuEventArgs e)
+        {
+            if (!mainPanel.IsMouseOver)
+            {
+                _isMouseOverPanel = false;
+                _hideTimer.Start();
+            }
+        }
+        private void pgListViewContextMenu_Closed(object sender, RoutedEventArgs e)
+        {
+            if (!mainPanel.IsMouseOver)
+            {
+                _isMouseOverPanel = false;
+                _hideTimer.Start();
+            }
+        }
 
-        // Views list
-        private void ViewsListView_Loaded(object sender, RoutedEventArgs e)
+        // Scenes list
+        private void ScenesListView_Loaded(object sender, RoutedEventArgs e)
+        {
+            ListView listview = sender as ListView;
+
+            // Set column widths on each gridview
+            GridView viewsGridView = listview.View as GridView;
+            double viewsGridViewTotalWidth = mainPanel.ActualWidth;
+            double viewsGridViewColumnWidth = viewsGridViewTotalWidth / viewsGridView.Columns.Count;
+            if (viewsGridViewColumnWidth > 0)
+            {
+                viewsGridView.Columns[0].Width = viewsGridViewColumnWidth * 1.0;
+                viewsGridView.Columns[1].Width = viewsGridViewColumnWidth * 1.0;
+                viewsGridView.Columns[2].Width = viewsGridViewColumnWidth * 1.0;
+                viewsGridView.Columns[3].Width = viewsGridViewColumnWidth * 1.0;
+                viewsGridView.Columns[4].Width = viewsGridViewColumnWidth * 1.0;
+            }
+        }
+        private void ScenesListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
 
         }
-        private void ViewsListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-
-        }
-        private async void ViewsBorder_MouseEnter(object sender, MouseEventArgs e)
+        private async void ScenesBorder_MouseEnter(object sender, MouseEventArgs e)
         {
             if (PropertiesTabVisible || PointsTabVisible)
             {
@@ -368,7 +417,53 @@ namespace Cad_Point_Manager.Views.UserControls
                 ViewsTabOpacity = 1;
             }
         }
+        private void NewSceneButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (Camera is null) { return; }
 
+            string tempViewName = Camera.GetTempSceneName();
+            if (!Camera.TrySaveScene(tempViewName, out var newScene) || newScene == null) { return; }
+
+            _newSceneBeingEdited = true;
+            _newScene = newScene;
+            _previousViewName = _newScene.Name;
+
+            scenesListView.SelectedItem = _newScene;
+            scenesListView.UpdateLayout();
+            scenesListView.ScrollIntoView(_newScene);
+
+            Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() =>
+            {
+                var container = scenesListView.ItemContainerGenerator.ContainerFromItem(_newScene) as ListViewItem;
+                if (container == null)
+                {
+                    // try again once more if virtualization delayed it
+                    Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() =>
+                    {
+                        if (scenesListView.ItemContainerGenerator.ContainerFromItem(_newScene) is ListViewItem li) { StartRowEdit(li); }
+                    }));
+                }
+                else
+                {
+                    StartRowEdit(container);
+                }
+            }));
+        }
+        private void DeleteSceneButton_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
+        private void StartRowEdit(ListViewItem row)
+        {
+            // Name TextBox
+            var nameTb = VisualTreeHelpers.FindByName(row, "PointGroupNameTextBox") as TextBox;
+            if (nameTb != null)
+            {
+                nameTb.IsReadOnly = false;
+                nameTb.Focus();
+                nameTb.SelectAll();
+            }
+        }
 
         // ----------  DOUBLE-CLICK TO ENTER EDIT ----------
         private void CellDisplay_MouseDown(object sender, MouseButtonEventArgs e)
@@ -382,7 +477,7 @@ namespace Cad_Point_Manager.Views.UserControls
 
             var lvi = VisualTreeHelpers.FindAncestor<ListViewItem>(fe);
             if (lvi == null) { return; }
-            
+
             InlineEdit.SetEditingField(lvi, field);
 
             fe.Dispatcher.BeginInvoke(new Action(() =>
@@ -423,21 +518,92 @@ namespace Cad_Point_Manager.Views.UserControls
 
             var lvi = VisualTreeHelpers.FindAncestor<ListViewItem>(tb);
             if (lvi == null) { return; }
+            if (lvi.DataContext is not CogoPoint cp) { return;}
+
+            // Which field are we currently editing? (set earlier in CellDisplay_MouseDown)
             string field = InlineEdit.GetEditingField(lvi);
             var binding = tb.GetBindingExpression(TextBox.TextProperty);
 
             if (e.Key == Key.Enter)
             {
-                binding?.UpdateSource();
-                if (Validation.GetHasError(tb)) { e.Handled = true; return; }
+                string text = tb.Text;
+                string? errorMessage = null;
 
-                // leave edit mode
-                InlineEdit.SetEditingField(lvi, null);
-                e.Handled = true;
+                switch (field)
+                {
+                    // ---- POINT NUMBER: non-negative int, must NOT already exist ----
+                    case "PointNumber":
+                        {
+                            if (!_validationService.ValidatePointNumberChange(text, cp, CadManager.CogoPointManager, out string svcError))
+                            {
+                                errorMessage = svcError;
+                            }
+                            break;
+                        }
 
-                // move focus to next cell
-                (tb as UIElement)?.MoveFocus(new TraversalRequest(FocusNavigationDirection.Next));
-                return;
+                    // ---- NORTHING / EASTING / ELEVATION: valid double ----
+                    case "Northing":
+                    case "Easting":
+                    case "Elevation":
+                        {
+                            if (!double.TryParse(text, out _))
+                            {
+                                errorMessage = $"{field} must be a valid number.";
+                            }
+                            break;
+                        }
+
+                    // ---- DESCRIPTION: must NOT contain illegal characters ----
+                    case "Description":
+                        {
+                            if (!_validationService.ValidateString(text, out string svcError))
+                            {
+                                errorMessage = svcError;
+                            }
+                            break;
+                        }
+
+                    // Unknown / fallback – just accept
+                    default:
+                        {
+                            break;
+                        }
+                }
+
+                if (errorMessage != null)
+                {
+                    // Mark invalid and KEEP focus in the textbox
+                    if (binding != null)
+                    {
+                        Validation.MarkInvalid(
+                            binding,
+                            new ValidationError(
+                                new DataErrorValidationRule(),  // or a specific rule type
+                                binding,
+                                errorMessage,
+                                null));
+                    }
+
+                    e.Handled = true;
+                    return;
+                }
+                else
+                {
+                    // Valid – clear any old errors and commit the value
+                    if (binding != null)
+                    {
+                        Validation.ClearInvalid(binding);
+                        binding.UpdateSource();
+                    }
+
+                    // leave edit mode
+                    InlineEdit.SetEditingField(lvi, null);
+                    e.Handled = true;
+
+                    // move focus to next cell
+                    (tb as UIElement)?.MoveFocus(new TraversalRequest(FocusNavigationDirection.Next));
+                    return;
+                }
             }
             if (e.Key == Key.Escape)
             {
@@ -462,7 +628,6 @@ namespace Cad_Point_Manager.Views.UserControls
             InlineEdit.SetEditingField(lvi, null);
         }
 
-        
         private void PropertiesTextBox_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             var textBox = sender as TextBox;
@@ -521,7 +686,7 @@ namespace Cad_Point_Manager.Views.UserControls
         private void PropertiesPointNumberTextBox_PreviewKeyUp(object sender, KeyEventArgs e)
         {
             if (sender is not TextBox textbox) { return; }
-            
+
             if (e.Key == Key.Enter)
             {
                 if (textbox.Text == CogoPointSelectionViewModel.PointNumber)
@@ -537,15 +702,7 @@ namespace Cad_Point_Manager.Views.UserControls
                     return;
                 }
 
-                bool isInt = int.TryParse(textbox.Text, out int pointNum);
-                if (!isInt)
-                {
-                    Validation.MarkInvalid(BindingOperations.GetBindingExpression(textbox, TextBox.TextProperty),
-                            new ValidationError(new DataErrorValidationRule(), textbox.GetBindingExpression(TextBox.TextProperty), "Point number must be a valid integer.", null));
-                }
-
-                var isValid = _validationService.ValidatePointNumber(pointNum, CadManager.CogoPointManager, out string errorMessage);
-
+                var isValid = _validationService.ValidateNewPointNumber(textbox.Text, CadManager.CogoPointManager, out string errorMessage);
                 if (!isValid)
                 {
                     Validation.MarkInvalid(BindingOperations.GetBindingExpression(textbox, TextBox.TextProperty),
@@ -788,7 +945,7 @@ namespace Cad_Point_Manager.Views.UserControls
 
             var rule = new NoIllegalCharactersRule();
             var result = rule.Validate(tb.Text, CultureInfo.CurrentCulture);
-            
+
             if (!result.IsValid)
             {
                 Validation.MarkInvalid(
@@ -809,7 +966,7 @@ namespace Cad_Point_Manager.Views.UserControls
                 var rule = new NoIllegalCharactersRule();
                 var result = rule.Validate(textbox.Text, CultureInfo.CurrentCulture);
                 var binding = textbox.GetBindingExpression(TextBox.TextProperty);
-                
+
                 if (result.IsValid)
                 {
                     binding?.UpdateSource();
@@ -842,14 +999,6 @@ namespace Cad_Point_Manager.Views.UserControls
                     }
                 }
             }
-        }
-
-        // View Related Items
-        private void NewSceneButton_Click(object sender, RoutedEventArgs e)
-        {
-            if (Camera is null) { return; }
-
-            //var scene = Camera.
         }
         #endregion
 

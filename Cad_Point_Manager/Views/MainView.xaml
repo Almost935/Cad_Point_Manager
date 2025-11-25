@@ -386,7 +386,8 @@
         <Grid x:Name="PopoutsGrid"
               Grid.Row="2"
               ClipToBounds="False"
-              Panel.ZIndex="1">
+              Panel.ZIndex="1"
+              PreviewMouseLeftButtonUp="PopoutsGrid_PreviewMouseLeftButtonUp">
             <uc:RightHandPopout x:Name="RightSidePopout"
                                 Panel.ZIndex="1"
                                 Width="400"

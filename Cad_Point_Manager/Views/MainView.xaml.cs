@@ -1,5 +1,6 @@
 ﻿using Cad_Point_Manager.Helpers;
 using Cad_Point_Manager.ViewModels;
+using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -99,6 +100,20 @@ namespace Cad_Point_Manager.Views
                 {
                     textBox.SelectAll();
                 }), DispatcherPriority.Input);
+            }
+        }
+
+        private void PopoutsGrid_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            if (d3dDxfControl != null)
+            {
+                // Forward the move to the D3D control so its OnMouseMove runs
+                var args = new MouseButtonEventArgs(e.MouseDevice, e.Timestamp, MouseButton.Left)
+                {
+                    RoutedEvent = UIElement.MouseLeftButtonUpEvent,
+                    Source = d3dDxfControl
+                };
+                d3dDxfControl.RaiseEvent(args);
             }
         }
     }

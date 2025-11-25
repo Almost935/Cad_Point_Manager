@@ -1,5 +1,6 @@
 ﻿using Cad_Point_Manager.Common.Collections;
 using Cad_Point_Manager.Extensions;
+using Cad_Point_Manager.Models.PointRendering;
 using Cad_Point_Manager.Models.Printing;
 using SharpDX;
 using System.Collections.ObjectModel;
@@ -78,6 +79,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public Matrix ViewProjectionMatrix { get; private set; } = Matrix.Identity;
         public Matrix InverseViewProjectionMatrix { get; private set; } = Matrix.Identity;
         public ViewportF Viewport { get; set; }
+        public RectangleF InitialViewportBounds { get; set; } = RectangleF.Empty;
         public Vector2 Translate { get; set; } = Vector2.Zero;
         public int CurrentZoomStep { get; set; } = 0;
         public float CurrentZoom => (float)Math.Pow(_zoomFactor, CurrentZoomStep);
@@ -91,8 +93,13 @@ namespace Cad_Point_Manager.Controls.D3DControl
             Viewport = viewport;
             _zoomFactor = zoomFactor;
             Extents = extents;
+            InitialViewportBounds = new(
+                Extents.Center().X.ToFloat() - viewport.Width / 2,
+                Extents.Center().Y.ToFloat() - viewport.Height / 2,
+                viewport.Width,
+                viewport.Height);
 
-            Scenes.Add(new Scene() { Name = "Default", ZoomStep = 0, Translation = Vector2.Zero });
+            Scenes.Add(new Scene() { Name = "Default", ZoomStep = 0, Translation = Vector2.Zero, Bounds = GetCurrentViewportBounds() });
 
             ResetToDefaults();
         }
@@ -128,9 +135,17 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             Extents = newExtents;
             InitialViewMatrix = newInitialView;
-
             UpdateProjection();
             UpdateViewProjection();
+
+            var width = Viewport.Width / D2dMatrix.M11;
+            var height = Viewport.Height / Math.Abs(D2dMatrix.M22);
+            InitialViewportBounds = new(
+                Extents.Center().X.ToFloat() - width / 2,
+                Extents.Center().Y.ToFloat() - height / 2,
+                width,
+                height);
+            UpdateDefaultScene();
         }
         public void ZeroViews()
         {
@@ -267,7 +282,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public Vector3 Unproject(Vector2 ndc)
         {
             // Add Z = 0 (near plane) and W = 1 for the unprojection calculation
-            Vector4 ndcVec = new Vector4(ndc.X, ndc.Y, 0, 1);
+            Vector4 ndcVec = new(ndc.X, ndc.Y, 0, 1);
+
+            var testMatrix = Matrix.Invert(ViewProjectionMatrix);
 
             // Transform NDC to world space using the inverse of the view-projection matrix
             Vector4 worldVec = Vector4.Transform(ndcVec, InverseViewProjectionMatrix);
@@ -301,12 +318,15 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         public bool TrySaveScene(string sceneName, out Scene scene)
         {
-            if (Scenes.Any(s => s.Name == sceneName)) 
+            if (Scenes.Any(s => s.Name == sceneName))
             {
                 scene = null;
-                return false; 
+                return false;
             }
-            scene = new Scene() { Name = sceneName, ZoomStep = CurrentZoomStep, Translation = Translate };
+
+            scene = new Scene() { Name = sceneName, ZoomStep = CurrentZoomStep, Translation = Translate, Bounds = GetCurrentViewportBounds() };
+            Scenes.Add(scene);
+
             return true;
         }
         public bool TryGetScene(string sceneName, out Scene scene)
@@ -314,7 +334,16 @@ namespace Cad_Point_Manager.Controls.D3DControl
             scene = Scenes.FirstOrDefault(s => s.Name == sceneName);
             return scene != null;
         }
-
+        public bool TryDeleteScene(string sceneName)
+        {
+            var scene = Scenes.FirstOrDefault(s => s.Name == sceneName);
+            if (scene != null)
+            {
+                Scenes.Remove(scene);
+                return true;
+            }
+            return false;
+        }
         public void LoadScene(Scene scene)
         {
             CurrentZoomStep = scene.ZoomStep;
@@ -322,8 +351,60 @@ namespace Cad_Point_Manager.Controls.D3DControl
             UpdateView();
             UpdateViewProjection();
         }
-        #endregion
+        public string GetTempSceneName()
+        { 
+            string baseName = "New Scene"; 
+            int counter = 1; 
+            string sceneName = baseName + $" {counter}"; 
+            while (SceneNameExists(sceneName)) 
+            { 
+                sceneName = $"{baseName} {counter}"; counter++; 
+            } 
+            return sceneName; 
+        }
+        public bool SceneNameExists(string name)
+        { 
+            return Scenes.Any(pg => pg.Name.Equals(name, StringComparison.OrdinalIgnoreCase)); 
+        }
+        public RectangleF GetCurrentViewportBounds()
+        {
+            if (!HasValidViewport)
+                return RectangleF.Empty;
 
+            // If we effectively have no camera (VP = Identity),
+            // just return viewport in "world == screen" space.
+            if (ViewProjectionMatrix == Matrix.Identity)
+                return new RectangleF(0, 0, Viewport.Width, Viewport.Height);
+
+            // Normal path:
+            Vector2 screenTL = new(0, 0);
+            Vector2 screenTR = new(Viewport.Width, 0);
+            Vector2 screenBR = new(Viewport.Width, Viewport.Height);
+            Vector2 screenBL = new(0, Viewport.Height);
+
+            Vector2 worldTL = ScreenToWorld(screenTL);
+            Vector2 worldTR = ScreenToWorld(screenTR);
+            Vector2 worldBR = ScreenToWorld(screenBR);
+            Vector2 worldBL = ScreenToWorld(screenBL);
+
+            float minX = Math.Min(Math.Min(worldTL.X, worldTR.X), Math.Min(worldBL.X, worldBR.X));
+            float maxX = Math.Max(Math.Max(worldTL.X, worldTR.X), Math.Max(worldBL.X, worldBR.X));
+            float minY = Math.Min(Math.Min(worldTL.Y, worldTR.Y), Math.Min(worldBL.Y, worldBR.Y));
+            float maxY = Math.Max(Math.Max(worldTL.Y, worldTR.Y), Math.Max(worldBL.Y, worldBR.Y));
+
+            return new RectangleF(minX, minY, maxX - minX, maxY - minY);
+        }
+        private void UpdateDefaultScene()
+        {
+            var defaultScene = Scenes.FirstOrDefault(s => s.Name == "Default");
+            if (defaultScene != null)
+            {
+                defaultScene.ZoomStep = 0;
+                defaultScene.Translation = Vector2.Zero;
+                defaultScene.Bounds = GetCurrentViewportBounds();
+            }
+        }
+        #endregion
         #region INotifyPropertyChanged Implementation
         public event PropertyChangedEventHandler PropertyChanged;
         protected void OnPropertyChanged([CallerMemberName] string propertyName = null)

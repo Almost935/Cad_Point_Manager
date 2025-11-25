@@ -381,6 +381,8 @@ namespace Cad_Point_Manager.Views.UserControls
             }
         }
 
+
+        // Point group related methods
         private async void PointGroupsBorder_MouseEnter(object sender, MouseEventArgs e)
         {
             if (LayerListVisible)
@@ -442,6 +444,10 @@ namespace Cad_Point_Manager.Views.UserControls
                 pointGroupGridView.Columns[2].Width = pointGroupColumnWidth * 1;
                 pointGroupGridView.Columns[3].Width = pointGroupColumnWidth * 1;
             }
+        }
+        private void DeletePointGroupButton_Click(object sender, RoutedEventArgs e)
+        {
+
         }
 
         // PointGroups listview visibily checkbox methods
@@ -757,9 +763,6 @@ namespace Cad_Point_Manager.Views.UserControls
 
             if (!CadManager.CogoPointManager.TryCreatePointGroup(tempName, color, out var pg) || pg == null)
                 return;
-
-            pg = CadManager.CogoPointManager.PointGroups.LastOrDefault(p => p.Name.Equals(tempName, StringComparison.OrdinalIgnoreCase));
-            if (pg.Equals(default(KeyValuePair<string, PointGroup>))) return;
 
             _newPointGroupBeingEdited = true;
             _newPointGroup = pg;

@@ -92,6 +92,19 @@ namespace Cad_Point_Manager.Models
         {
             return PointGroups.SelectMany(pg => pg.Points).Any(p => p.PointNumber == num);
         }
+        public bool ValidatePointNameChange(int pointNumber, CogoPoint p, out string? errorMessage)
+        {
+            errorMessage = null;
+
+            if (pointNumber == p.PointNumber) { return true; }
+
+            if (CogoPoints.Any(x => x.PointNumber == pointNumber))
+            {
+                errorMessage = $"Point number {pointNumber} already exists.";
+                return false;
+            }
+            return true;
+        }
 
         public string GetTempPointGroupName()
         {
