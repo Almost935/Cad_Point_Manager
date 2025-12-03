@@ -1,9 +1,9 @@
-﻿using netDxf;
+﻿using Cad_Point_Manager.Models.DrawingObjects3D;
+using netDxf;
 using netDxf.Entities;
 using netDxf.Header;
 using System.Windows;
 using Vector3 = netDxf.Vector3;
-using Cad_Point_Manager.Models.DrawingObjects3D;
 
 namespace Cad_Point_Manager.Helpers
 {

@@ -16,7 +16,7 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
         public bool TryGetPointId(CogoPoint p, out uint id) => _pointOf.TryGetValue(p, out id);
         public bool TryGetGroupId(PointGroup pg, out uint id) => _groupOf.TryGetValue(pg, out id);
         public bool TryGetLayerId(ObjectLayer3D layer, out uint id) => _layerOf.TryGetValue(layer, out id);
-        public bool TryGetObjectId(DrawingObject3D obj, out uint id) => _objectOf.TryGetValue(obj, out id);   
+        public bool TryGetObjectId(DrawingObject3D obj, out uint id) => _objectOf.TryGetValue(obj, out id);
 
         public bool TryRemoveLabelId(CogoPoint cp, int line) => _labelOf.Remove((cp, line));
         public bool TryRemovePointId(CogoPoint cp) => _pointOf.Remove(cp);

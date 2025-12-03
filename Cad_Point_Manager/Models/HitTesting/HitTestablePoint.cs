@@ -49,7 +49,7 @@ namespace Cad_Point_Manager.Models.HitTesting
 
         #region Methods
         public override void MouseEnter()
-        { 
+        {
             this.IsMouseOver = true;
         }
         public override void MouseLeave()
@@ -69,7 +69,7 @@ namespace Cad_Point_Manager.Models.HitTesting
             Bounds = new Rect(
                 Position.X - _boundsSize / 2,
                 Position.Y - _boundsSize / 2,
-                _boundsSize ,
+                _boundsSize,
                 _boundsSize);
         }
         public override double DistanceToPoint(Point p)

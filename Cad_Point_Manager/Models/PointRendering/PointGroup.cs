@@ -109,7 +109,7 @@ namespace Cad_Point_Manager.Models.PointRendering
 
         public double FontBaseSize { get; set; } = 4;
         public double MarkerBaseSize { get; set; } = 0.75;
-        public GroupState PointGroupState { get; set; }        
+        public GroupState PointGroupState { get; set; }
         #endregion
 
         #region Constructors

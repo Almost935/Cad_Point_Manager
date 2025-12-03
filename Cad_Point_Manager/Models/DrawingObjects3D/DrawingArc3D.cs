@@ -173,7 +173,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             if (_dxfArc is not null)
             {
                 foreach (var point in SamplePoints)
-                { 
+                {
                     Bounds = Rect.Union(Bounds, point);
                 }
             }

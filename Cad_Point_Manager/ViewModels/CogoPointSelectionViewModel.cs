@@ -1,9 +1,9 @@
-﻿using Cad_Point_Manager.Models.PointRendering;
-using Cad_Point_Manager.Models;
+﻿using Cad_Point_Manager.Models;
+using Cad_Point_Manager.Models.PointRendering;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using System.Collections.Specialized;
 
 namespace Cad_Point_Manager.ViewModels
 {

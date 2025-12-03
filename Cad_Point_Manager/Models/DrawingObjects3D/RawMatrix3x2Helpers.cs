@@ -1,5 +1,5 @@
-﻿using SharpDX.Mathematics.Interop;
-using SharpDX;
+﻿using SharpDX;
+using SharpDX.Mathematics.Interop;
 
 namespace Cad_Point_Manager.Models.DrawingObjects3D
 {

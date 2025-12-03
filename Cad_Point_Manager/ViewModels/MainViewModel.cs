@@ -565,7 +565,7 @@ namespace Cad_Point_Manager.ViewModels
                             var pts = ChainBuilder.ExpandChainPoints(chainPath, NewCogoPointsIntermediatePointsCount);
                             coords.AddRange(pts.Select(p => new System.Numerics.Vector2((float)p.X, (float)p.Y)).ToList());
                         }
-                        
+
                         for (int i = 0; i < coords.Count; i++)
                         {
                             int pointNum = JobFileManager.CadManager3D.CogoPointManager.GetNextAvailablePointNumber(NewCogoPointsStartNumber);
@@ -621,7 +621,7 @@ namespace Cad_Point_Manager.ViewModels
         // Key up event handling
         public void Window_KeyUp(object sender, KeyEventArgs e)
         {
-            
+
         }
         #endregion
 

@@ -22,7 +22,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         #endregion
 
         #region Static Properties
-        public static TextBox Empty => new TextBox(new Point(0, 0),  new Point(0, 0), new Point(0, 0));
+        public static TextBox Empty => new TextBox(new Point(0, 0), new Point(0, 0), new Point(0, 0));
         #endregion
 
         #region Constructors

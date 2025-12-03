@@ -53,8 +53,8 @@ namespace Cad_Point_Manager.Views.UserControls
         #region Dependency Properties
         public static readonly DependencyProperty SelectedColorProperty =
             DependencyProperty.Register(
-                nameof(SelectedColor), 
-                typeof(Vector4), 
+                nameof(SelectedColor),
+                typeof(Vector4),
                 typeof(ColorToggle),
                 new PropertyMetadata(new Vector4(0, 0, 0, 1), OnSelectedColorChanged));
 
@@ -85,7 +85,7 @@ namespace Cad_Point_Manager.Views.UserControls
                nameof(ToggleButtonMargin),
                typeof(Thickness),
                typeof(ColorToggle),
-               new PropertyMetadata(new Thickness(0,0,0,0)));
+               new PropertyMetadata(new Thickness(0, 0, 0, 0)));
         #endregion
 
         #region Events
@@ -97,7 +97,7 @@ namespace Cad_Point_Manager.Views.UserControls
         public ColorToggle()
         {
             InitializeComponent();
-            
+
             Loaded += (s, e) => ColorCanvas.SelectedColor = Vector4ToColor(SelectedColor);
         }
         #endregion
@@ -116,7 +116,7 @@ namespace Cad_Point_Manager.Views.UserControls
         {
             if (d is FrameworkElement fe && fe.DataContext is PointGroup pg && e.NewValue is Vector4 color)
             {
-               if (d is ColorToggle control)
+                if (d is ColorToggle control)
                 {
                     control.ColorCanvas.SelectedColor = Vector4ToColor(control.SelectedColor);
                     control.OnPropertyChanged(nameof(ColorBrush));
@@ -127,7 +127,7 @@ namespace Cad_Point_Manager.Views.UserControls
 
         private static Color Vector4ToColor(Vector4 vec)
         {
-            return Color.FromScRgb(vec.W, vec.X, vec.Y, vec.Z); 
+            return Color.FromScRgb(vec.W, vec.X, vec.Y, vec.Z);
         }
 
         private static Vector4 ColorToVector4(Color color)

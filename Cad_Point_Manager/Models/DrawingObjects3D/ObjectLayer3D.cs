@@ -12,7 +12,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         private bool _isVisible = true;
         private Vector4 _color;
         #endregion
-         
+
         #region Properties
         public string Name { get; set; }
         public Layer DxfLayer { get; set; }

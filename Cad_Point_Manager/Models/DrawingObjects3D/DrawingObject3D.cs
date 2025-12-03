@@ -15,7 +15,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         public DrawingObject3dColorType DrawingObject3DColorType { get; set; }
         public bool IsPartOfBlock { get; set; } = false;
         public DrawingBlock3D DrawingBlock3D { get; set; }
-        
+
         public bool ColorByLayer => EntityObject.Color.IsByLayer;
         #endregion
 
@@ -30,21 +30,21 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
 
         public void UpdateColor()
         {
-            if (EntityObject.Color.IsByLayer) 
-            { 
+            if (EntityObject.Color.IsByLayer)
+            {
                 DrawingObject3DColorType = DrawingObject3dColorType.ByLayer;
-                Color = Layer.Color; 
+                Color = Layer.Color;
             }
-            else if (EntityObject.Color.IsByBlock) 
+            else if (EntityObject.Color.IsByBlock)
             {
                 DrawingObject3DColorType = DrawingObject3dColorType.ByBlock;
                 if (DrawingBlock3D is not null) { Color = DrawingBlock3D.Color; }
-                else { Color = new(0, 0, 0, 1); } 
+                else { Color = new(0, 0, 0, 1); }
             }
-            else 
+            else
             {
                 DrawingObject3DColorType = DrawingObject3dColorType.ByObject;
-                Color = new(EntityObject.Color.R / 255.0f, EntityObject.Color.G / 255.0f, EntityObject.Color.B / 255.0f, 1); 
+                Color = new(EntityObject.Color.R / 255.0f, EntityObject.Color.G / 255.0f, EntityObject.Color.B / 255.0f, 1);
             }
 
             if (Color.X == 1 && Color.Y == 1 && Color.Z == 1)

@@ -1,9 +1,9 @@
-﻿using System.Globalization;
-using System.Windows.Data;
-using System.Windows;
-using System.Windows.Media;
-using Cad_Point_Manager.Helpers;
+﻿using Cad_Point_Manager.Helpers;
 using Cad_Point_Manager.Models.HitTesting;
+using System.Globalization;
+using System.Windows;
+using System.Windows.Data;
+using System.Windows.Media;
 
 namespace Cad_Point_Manager.Converters
 {
@@ -15,7 +15,9 @@ namespace Cad_Point_Manager.Converters
 
             if (hitTestablePoint.IsSelected)
             {
-                if (hitTestablePoint.IsMouseOver) { return new SolidColorBrush(GlobalHelperProperties.SelectedCogoPointMouseOverColor);
+                if (hitTestablePoint.IsMouseOver)
+                {
+                    return new SolidColorBrush(GlobalHelperProperties.SelectedCogoPointMouseOverColor);
                 }
                 else
                 {
@@ -24,7 +26,7 @@ namespace Cad_Point_Manager.Converters
             }
             else
             {
-                return new SolidColorBrush(GlobalHelperProperties.MouseOverCogoPointColor); 
+                return new SolidColorBrush(GlobalHelperProperties.MouseOverCogoPointColor);
             }
         }
 

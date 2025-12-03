@@ -68,7 +68,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             Layer = layer;
             IsPartOfBlock = isPartOfBlock;
             DrawingBlock3D = block;
-           
+
             UpdateColor();
             UpdateData();
         }
@@ -86,14 +86,14 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             }
             else
             {
-               throw new ArgumentException("entity must be of type Insert");
+                throw new ArgumentException("entity must be of type Insert");
             }
         }
 
         public override void UpdateBounds()
         {
             Bounds = Rect.Empty;
-            
+
             foreach (var drawingObj in DrawingObjects)
             {
                 Bounds = Rect.Union(Bounds, drawingObj.Bounds);

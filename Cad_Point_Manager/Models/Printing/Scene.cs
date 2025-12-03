@@ -1,5 +1,5 @@
-﻿using System.ComponentModel;
-using SharpDX;
+﻿using SharpDX;
+using System.ComponentModel;
 
 namespace Cad_Point_Manager.Models.Printing
 {
@@ -7,7 +7,7 @@ namespace Cad_Point_Manager.Models.Printing
     {
         #region Fields
         private string _name = string.Empty;
-        private RectangleF _bounds = RectangleF.Empty;    
+        private RectangleF _bounds = RectangleF.Empty;
         #endregion
 
         #region Properties

@@ -16,7 +16,7 @@ using Vector3 = SharpDX.Vector3;
 using Vector4 = SharpDX.Vector4;
 
 namespace Cad_Point_Manager.Models.DrawingObjects3D
-{ 
+{
     public class DrawingMtext3D : DrawingText3D
     {
         #region Fields
@@ -39,7 +39,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         public bool IsBold { get; set; }
         public bool IsItalic { get; set; }
         public Enums.TextAttachmentPoint AttachmentPoint { get; set; }
-        public DrawingMtext3DBlock MtextBlock { get; set; } 
+        public DrawingMtext3DBlock MtextBlock { get; set; }
         public Vector3 TextAttachmentOffset { get; set; } = Vector3.Zero;
         #endregion
 
@@ -416,7 +416,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                             var segmentText = segmentTexts[i];
                             bool isNewLine = segmentInfo.IsNewLine;
 
-                            if (i != 0) { isNewLine = false; }   
+                            if (i != 0) { isNewLine = false; }
 
                             var newSegmentInfo = new TextSegmentInformation(segmentText, segmentInfo.Color, segmentInfo.Font, segmentInfo.TextHeight,
                                 segmentInfo.IsBold, segmentInfo.IsItalic, segmentInfo.IsUnderlined, segmentInfo.IsOverstriked, segmentInfo.IsStrikethrough,

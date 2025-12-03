@@ -12,7 +12,7 @@
 
                 <ui:ThemeResources />
                 <ResourceDictionary Source="Resources/Brushes.xaml" />
-                <ResourceDictionary Source="Resources/FontStyles.xaml" />
+                <ResourceDictionary Source="Resources/FontResources.xaml" />
                 <ResourceDictionary Source="Resources/AssortedResources.xaml" />
                 <ResourceDictionary Source="Styles/MenuStyles.xaml" />
                 <ResourceDictionary Source="Styles/ListViewStyle.xaml" />
@@ -28,6 +28,7 @@
                 <ResourceDictionary Source="Styles/RoundedTextBox.xaml" />
                 <ResourceDictionary Source="Styles/ValidationTextBox.xaml" />
                 <ResourceDictionary Source="Styles/ValidationComboBox.xaml" />
+                <ResourceDictionary Source="Styles/ContextMenuStyle.xaml" />
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Application.Resources>

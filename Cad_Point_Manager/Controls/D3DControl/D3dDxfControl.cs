@@ -9,7 +9,6 @@ using Cad_Point_Manager.Models.DrawingObjects3D;
 using Cad_Point_Manager.Models.HitTesting;
 using Cad_Point_Manager.Models.PointRendering;
 using Cad_Point_Manager.Models.Printing;
-using Cad_Point_Manager.Views.UserControls;
 using SharpDX;
 using SharpDX.D3DCompiler;
 using SharpDX.Direct3D;
@@ -288,15 +287,15 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 OnPropertyChanged(nameof(IsDragging));
             }
         }
-        public Point DragStart
-        {
-            get => _dragStart;
-            set
-            {
-                _dragStart = value;
-                OnPropertyChanged(nameof(DragStart));
-            }
-        }
+        //public Point DragStart
+        //{
+        //    get => _dragStart;
+        //    set
+        //    {
+        //        _dragStart = value;
+        //        OnPropertyChanged(nameof(DragStart));
+        //    }
+        //}
         public Rect DragRect
         {
 
@@ -970,9 +969,10 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
         private void UpdateDragOverlayVertices(Rect r)
         {
-            if (r.IsEmpty || r.Width <= 0 || r.Height <= 0)
+            if (r.IsEmpty || r.Width <= 0 || r.Height <= 0 || !IsDragging)
             {
                 _dragFillVertexCount = 0;
+                _interactiveDirty = true;
                 return;
             }
 
@@ -1937,7 +1937,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     if (_isPanning)
                     {
                         var translate = currentMousePos - _prevMousePos;
-                        DragStart = new(DragStart.X + translate.X, DragStart.Y + translate.Y);
+                        _dragStart = new(_dragStart.X + translate.X, _dragStart.Y + translate.Y);
                     }
                     UpdateDragRect();
                 }
@@ -2127,7 +2127,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                                 SelectObject(SnappedHitTestablePoint);
                                 sigPointsVerticesDirty = true;
                             }
-                            else 
+                            else
                             {
                                 DeselectObject(SnappedHitTestablePoint);
                                 sigPointsVerticesDirty = true;
@@ -2149,6 +2149,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
         {
             BeginDrag(e.GetPosition(this));
+            UpdateDragOverlayVertices(DragRect);
 
             if (_mouseOverToggleButtonPoint is not null)
             {
@@ -2337,9 +2338,15 @@ namespace Cad_Point_Manager.Controls.D3DControl
             ResetHoverObjects();
             ConstantBuffersDirty = true;
         }
+
         public void UpdateDragRect()
         {
-            Debug.WriteLine($"{DragStart}");
+            if (!IsDragging)
+            {
+                DragRect = new(0, 0, 0, 0);
+                UpdateDragOverlayVertices(DragRect);
+                return;
+            }
             double width = Math.Abs(_dragStart.X - DxfCoords.X);
             double height = Math.Abs(_dragStart.Y - DxfCoords.Y);
             double left = Math.Min(_dragStart.X, DxfCoords.X);
@@ -2347,6 +2354,20 @@ namespace Cad_Point_Manager.Controls.D3DControl
             DragRect = new(left, top, width, height);
 
             UpdateDragOverlayVertices(DragRect);
+        }
+        public void EndDrag()
+        {
+            IsDragging = false;
+            DragRect = new(0, 0, 0, 0);
+            _lastQueriedDxfRect = Rect.Empty;
+        }
+        public void BeginDrag(Point start)
+        {
+            _dragStartScreen = start;
+            _dragStart = DxfCoords.ToPoint();
+            DragRect = new(0, 0, 0, 0);
+            _dxfDragRectTranslate = new(0, 0);
+            CurrentlyAppliedDragRectMatrix = new();
         }
 
         public async Task RunHitTestingAsync()
@@ -2953,20 +2974,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _stateCtl.FlushObjectUpdates();
             _sigPointVerticesDirty = true;
             _dxfDirty = _interactiveDirty = true;
-        }
-        public void EndDrag()
-        {
-            IsDragging = false;
-            DragRect = new(0, 0, 0, 0);
-            _lastQueriedDxfRect = Rect.Empty;
-        }
-        public void BeginDrag(Point start)
-        {
-            _dragStartScreen = start;
-            _dragStart = DxfCoords.ToPoint();
-            DragRect = new(0, 0, 0, 0);
-            _dxfDragRectTranslate = new(0, 0);
-            CurrentlyAppliedDragRectMatrix = new();
         }
 
         private void MouseOverCogoToggleButton(CogoPoint cogoPoint)

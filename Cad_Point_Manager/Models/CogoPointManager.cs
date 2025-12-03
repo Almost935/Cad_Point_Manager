@@ -85,7 +85,7 @@ namespace Cad_Point_Manager.Models
         public int GetNextAvailablePointNumber(int startCount)
         {
             int num = startCount;
-            while (PointNumberExists(num)){ num++; }
+            while (PointNumberExists(num)) { num++; }
             return num;
         }
         public bool PointNumberExists(int num)
@@ -200,7 +200,7 @@ namespace Cad_Point_Manager.Models
             if (pg.Points.Count > 0)
             {
                 var result = MessageBox.Show(
-                    "This will delete all points associated with this group. Continue?", 
+                    "This will delete all points associated with this group. Continue?",
                     "Warning", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No);
 
                 if (result != MessageBoxResult.Yes)

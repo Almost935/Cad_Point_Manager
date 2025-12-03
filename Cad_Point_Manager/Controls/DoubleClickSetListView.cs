@@ -40,7 +40,7 @@ namespace Cad_Point_Manager.Controls
         {
             DoubleClickSetListViewItem listViewItem = new();
             listViewItem.IsActiveChangedHandler += ListViewItem_IsActiveChangedHandler;
-            
+
             return listViewItem;
         }
 

@@ -144,7 +144,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
 
             return adjustedPos;
         }
- 
+
         public override void UpdateTextVertices(ResCache resCache, uint layerId, uint objectId)
         {
             GetTextFormat(resCache.WriteFactory);
@@ -182,7 +182,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         {
             return 1000;
         }
-        public override void UpdateBounds() 
+        public override void UpdateBounds()
         {
             if (TextVertices.Count == 0)
             {

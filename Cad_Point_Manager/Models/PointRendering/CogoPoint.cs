@@ -15,9 +15,12 @@ namespace Cad_Point_Manager.Models.PointRendering
         private const float _textBaseHeight = 4;
 
         private volatile CogoPointBoundsSnapshot _cogoPointBounds;
-        private static readonly CogoPointBoundsSnapshot _empty = new() 
-        { 
-            Name = Rect.Empty, Elevation = Rect.Empty, Description = Rect.Empty, Ellipse = Rect.Empty
+        private static readonly CogoPointBoundsSnapshot _empty = new()
+        {
+            Name = Rect.Empty,
+            Elevation = Rect.Empty,
+            Description = Rect.Empty,
+            Ellipse = Rect.Empty
         };
 
         private int _pointNumber;
@@ -185,7 +188,7 @@ namespace Cad_Point_Manager.Models.PointRendering
                 return 0.0;
             }
             else if (HasLeaderLine)
-            { 
+            {
                 return MathHelpers.PointToLineDistance(p, Position, Point.Add(Position, TextInfoOffset.ToVector()));
             }
             else

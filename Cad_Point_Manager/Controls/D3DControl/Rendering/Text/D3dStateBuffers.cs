@@ -475,7 +475,7 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
                 BufferEx = new ShaderResourceViewDescription.ExtendedBufferResource { FirstElement = 0, ElementCount = _pointCap }
             });
         }
-        private void RecreateGroupCap(int newCap) 
+        private void RecreateGroupCap(int newCap)
         {
             if (newCap == _groupCap) return;
             _groupSrv?.Dispose(); _groupSrv = null;

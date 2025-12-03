@@ -94,7 +94,7 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
         {
             if (!_ids.TryGetPointId(cp, out var pid)) { return; }
 
-            ref var s = ref _bufs.PointSpan[(int)pid]; 
+            ref var s = ref _bufs.PointSpan[(int)pid];
             s.PointInfoOffset = offset;
             if (hasLeaderLine is not null)
             {

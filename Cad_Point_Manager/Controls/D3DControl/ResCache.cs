@@ -1,13 +1,12 @@
-﻿using System.ComponentModel;
-using SharpDX.Direct3D11;
+﻿using Cad_Point_Manager.Controls.D3DControl.Rendering.Text;
 using SharpDX.Direct2D1;
-using System.Collections.Concurrent;
+using SharpDX.Direct3D11;
 using SharpDX.DirectWrite;
-
+using System.Collections.Concurrent;
+using System.ComponentModel;
 using Device = SharpDX.Direct3D11.Device;
 using DeviceContext = SharpDX.Direct3D11.DeviceContext;
 using Factory2 = SharpDX.Direct2D1.Factory2;
-using Cad_Point_Manager.Controls.D3DControl.Rendering.Text;
 
 namespace Cad_Point_Manager.Controls.D3DControl
 {

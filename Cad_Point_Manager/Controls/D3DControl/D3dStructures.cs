@@ -283,7 +283,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
         public readonly TextVertex Translate(Vector2 offset)
         {
-            return new TextVertex(new Vector3(Position.X + offset.X, Position.Y + offset.Y, Position.Z), LayerId, ObjectId, 
+            return new TextVertex(new Vector3(Position.X + offset.X, Position.Y + offset.Y, Position.Z), LayerId, ObjectId,
                 isMouseOver: IsMouseOver, isSelected: IsSelected);
         }
         public readonly TextVertex Translate(float x, float y, float z)

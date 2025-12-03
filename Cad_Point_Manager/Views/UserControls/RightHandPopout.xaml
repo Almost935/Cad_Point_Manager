@@ -14,6 +14,7 @@
              xmlns:fa="http://schemas.fontawesome.io/icons/"
              xmlns:sys="clr-namespace:System;assembly=mscorlib"
              xmlns:behaviors="clr-namespace:Cad_Point_Manager.Behavior"
+             xmlns:viewsAssorted="clr-namespace:Cad_Point_Manager.Views.Assorted"
              mc:Ignorable="d"
              d:DesignHeight="400"
              d:DesignWidth="400">
@@ -147,7 +148,54 @@
                               SelectionChanged="PointGroupsListView_SelectionChanged"
                               Background="Transparent"
                               BorderThickness="0"
-                              Loaded="PointGroupsListView_Loaded">
+                              Loaded="PointGroupsListView_Loaded"
+                              ContextMenuClosing="PointGroupsListView_ContextMenuClosing"
+                              ContextMenuOpening="PointGroupsListView_ContextMenuOpening">
+                        <ListView.Resources>
+                            <Style x:Key="InlineEditBoxStyle"
+                                   TargetType="TextBox"
+                                   BasedOn="{StaticResource EditableTextBox}">
+                                <EventSetter Event="PreviewKeyDown"
+                                             Handler="InlineEditBox_PreviewKeyDown" />
+                                <EventSetter Event="LostFocus"
+                                             Handler="InlineEditBox_LostFocus" />
+                            </Style>
+                        </ListView.Resources>
+                        <ListView.ContextMenu>
+                            <ContextMenu x:Name="pgListViewContextMenu"
+                                         Style="{StaticResource Win11ContextMenuStyle}"
+                                         HasDropShadow="True">
+                                <MenuItem Header="Edit"
+                                          Click="PGsListViewMenuEdit_Click"
+                                          Style="{StaticResource DefaultContextMenuItemStyle}"
+                                          InputGestureText="F2">
+                                    <MenuItem.Icon>
+                                        <fa:FontAwesome Icon="Edit"
+                                                        Foreground="Black">
+                                            <fa:FontAwesome.LayoutTransform>
+                                                <ScaleTransform ScaleX="1.3"
+                                                                ScaleY="1.3" />
+                                            </fa:FontAwesome.LayoutTransform>
+                                        </fa:FontAwesome>
+                                    </MenuItem.Icon>
+                                </MenuItem>
+                                <MenuItem Header="Delete"
+                                          Click="PGsListViewMenuDelete_Click"
+                                          Style="{StaticResource DefaultContextMenuItemStyle}"
+                                          InputGestureText="Del">
+                                    <MenuItem.Icon>
+                                        <fa:FontAwesome Icon="Trash"
+                                                        RenderTransformOrigin="0.5 0.5"
+                                                        Foreground="Black">
+                                            <fa:FontAwesome.LayoutTransform>
+                                                <ScaleTransform ScaleX="1.3"
+                                                                ScaleY="1.3" />
+                                            </fa:FontAwesome.LayoutTransform>
+                                        </fa:FontAwesome>
+                                    </MenuItem.Icon>
+                                </MenuItem>
+                            </ContextMenu>
+                        </ListView.ContextMenu>
                         <ListView.View>
                             <GridView>
                                 <GridViewColumn>
@@ -156,7 +204,7 @@
                                                    FontSize="{StaticResource ListViewHeaderFontSize}" />
                                     </GridViewColumn.Header>
                                     <GridViewColumn.CellTemplate>
-                                        <DataTemplate>
+                                        <!--<DataTemplate>
                                             <Border x:Name="PointGroupNameBorder"
                                                     PreviewMouseLeftButtonDown="PointGroupNameBorder_PreviewMouseLeftButtonDown"
                                                     Focusable="False"
@@ -185,6 +233,33 @@
                                                     </TextBox.Text>
                                                 </TextBox>
                                             </Border>
+                                        </DataTemplate>-->
+                                        <DataTemplate>
+                                            <Grid x:Name="groupName">
+                                                <!-- Display -->
+                                                <TextBlock x:Name="tbDisplay"
+                                                           Text="{Binding Name}"
+                                                           FontSize="{StaticResource ListViewFontSize}"
+                                                           Padding="2"
+                                                           MouseDown="CellDisplay_MouseDown" />
+                                                <!-- Edit -->
+                                                <TextBox x:Name="tbEdit"
+                                                         Text="{Binding Name, UpdateSourceTrigger=Explicit}"
+                                                         FontSize="{StaticResource ListViewFontSize}"
+                                                         Style="{StaticResource InlineEditBoxStyle}"
+                                                         Visibility="Collapsed" />
+                                            </Grid>
+                                            <DataTemplate.Triggers>
+                                                <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ListViewItem}, Path=(viewsAssorted:InlineEdit.EditingField)}"
+                                                             Value="Name">
+                                                    <Setter TargetName="tbDisplay"
+                                                            Property="Visibility"
+                                                            Value="Collapsed" />
+                                                    <Setter TargetName="tbEdit"
+                                                            Property="Visibility"
+                                                            Value="Visible" />
+                                                </DataTrigger>
+                                            </DataTemplate.Triggers>
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
                                 </GridViewColumn>
@@ -229,6 +304,46 @@
                                                           Unchecked="PointGroupsVisibilityCheckBox_Unchecked"
                                                           Checked="PointGroupsVisibilityCheckBox_Checked"
                                                           PreviewMouseLeftButtonDown="PointGroupsVisibilityCheckBox_PreviewMouseLeftButtonDown" />
+                                            </Border>
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn>
+                                <GridViewColumn>
+                                    <GridViewColumn.Header>
+                                        <TextBlock Text="Scale"
+                                                   FontSize="{StaticResource ListViewHeaderFontSize}" />
+                                    </GridViewColumn.Header>
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Border x:Name="PointGroupScaleBorder"
+                                                    PreviewMouseLeftButtonDown="PointGroupScaleBorder_PreviewMouseLeftButtonDown"
+                                                    Focusable="False"
+                                                    BorderBrush="Transparent"
+                                                    Background="Transparent"
+                                                    HorizontalAlignment="Stretch">
+                                                <TextBox x:Name="PointScaleTextbox"
+                                                         Style="{StaticResource EditableTextBox}"
+                                                         IsReadOnly="true"
+                                                         FontSize="{StaticResource ListViewFontSize}"
+                                                         HorizontalAlignment="Left"
+                                                         LostFocus="PointScaleTextbox_LostFocus"
+                                                         PreviewKeyDown="PointScaleTextbox_PreviewKeyDown"
+                                                         Opacity="{Binding ElementName=root, Path=PointGroupListOpacity}">
+                                                    <TextBox.Text>
+                                                        <Binding Path="PointScale"
+                                                                 StringFormat="N3"
+                                                                 UpdateSourceTrigger="Explicit"
+                                                                 Mode="TwoWay"
+                                                                 ValidatesOnDataErrors="True"
+                                                                 NotifyOnValidationError="True"
+                                                                 ValidatesOnExceptions="True"
+                                                                 ValidatesOnNotifyDataErrors="True">
+                                                            <Binding.ValidationRules>
+                                                                <validation:PositiveDoubleValidationRule />
+                                                            </Binding.ValidationRules>
+                                                        </Binding>
+                                                    </TextBox.Text>
+                                                </TextBox>
                                             </Border>
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
@@ -340,8 +455,7 @@
                                        FontSize="{StaticResource PointGroupCreationTextSize}" />
                             <controls:NoRevertComboBox x:Name="AvailableMergePointGroupsCBox"
                                                        ItemsSource="{Binding ElementName=root, Path=AvailableMergePointGroups}"
-                                                       DisplayMemberPath="Key"
-                                                       SelectedValuePath="Value"
+                                                       DisplayMemberPath="Name"
                                                        Style="{StaticResource ValidationComboBox}"
                                                        SelectedValue="{Binding ElementName=root, Path=MergePointGroup}"
                                                        SelectionChanged="AvailableMergePointGroupsCBox_SelectionChanged"

@@ -15,7 +15,7 @@ namespace Cad_Point_Manager.Views.UserControls
         #region Dependency Properties
         public static readonly DependencyProperty CanvasPositionProperty =
             DependencyProperty.Register(nameof(CanvasPosition), typeof(Point), typeof(CogoPointUserControl),
-                new PropertyMetadata(new Point(0,0), OnPointPositionChanged));
+                new PropertyMetadata(new Point(0, 0), OnPointPositionChanged));
         public Point CanvasPosition
         {
             get => (Point)GetValue(CanvasPositionProperty);
@@ -122,7 +122,7 @@ namespace Cad_Point_Manager.Views.UserControls
         #region Methods
         private static void OnPointPositionChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
-            
+
         }
         public void InitializeTextinfoPosition(Point initialPosition)
         {

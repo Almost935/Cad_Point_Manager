@@ -285,7 +285,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 CpuAccessFlags = CpuAccessFlags.None,
                 ArraySize = 1
             };
-            
+
             _dxfTexture = new Texture2D(_device, offscreenRenderDesc);
             _resCache.DxfTexture = _dxfTexture;
             _interactiveTexture = new(_device, offscreenRenderDesc);
@@ -307,7 +307,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             _deviceContext.OutputMerger.SetRenderTargets(_renderTargetView);
             _resCache.Texture2D = _texture2D;
-            
+
             _d3DSurface.Lock();
             _d3DSurface.SetRenderTarget(_texture2D);
             _d3DSurface.Unlock();

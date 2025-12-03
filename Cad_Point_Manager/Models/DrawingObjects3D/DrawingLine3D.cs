@@ -44,7 +44,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             {
                 Start = new Vector3((float)line.StartPoint.X, (float)line.StartPoint.Y, 0);
                 End = new Vector3((float)line.EndPoint.X, (float)line.EndPoint.Y, 0);
-                Length = Vector3.Distance(Start, End); 
+                Length = Vector3.Distance(Start, End);
                 MidPoint = (Start + End) / 2;
 
                 UpdateBounds();

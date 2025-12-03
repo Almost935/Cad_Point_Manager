@@ -4,7 +4,7 @@ using Vector2 = System.Numerics.Vector2;
 namespace Cad_Point_Manager.Extensions
 {
     public static class Vector2Extensions
-    { 
+    {
         public static Point ToPoint(this Vector2 v)
         {
             return new Point(v.X, v.Y);

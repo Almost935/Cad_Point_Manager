@@ -1,6 +1,5 @@
-﻿using SharpDX.Direct3D11;
-using SharpDX;
-
+﻿using SharpDX;
+using SharpDX.Direct3D11;
 using Buffer = SharpDX.Direct3D11.Buffer;
 
 namespace Cad_Point_Manager.Controls.D3DControl.Buffers

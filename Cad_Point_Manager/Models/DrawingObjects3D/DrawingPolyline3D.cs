@@ -121,8 +121,8 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             {
                 return false;
             }
-            
-           foreach (var geometry in DrawingSegments)
+
+            foreach (var geometry in DrawingSegments)
             {
                 if (!geometry.BoundsInRect(rect))
                 {

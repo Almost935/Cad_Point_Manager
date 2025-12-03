@@ -38,4 +38,7 @@
 
     <SolidColorBrush x:Key="ErrorBrush"
                      Color="Red" />
+
+    <SolidColorBrush x:Key="ContextMenuForegroundBrush"
+                     Color="#FF5A5A5A" />
 </ResourceDictionary>

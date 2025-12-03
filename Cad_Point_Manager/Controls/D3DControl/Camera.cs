@@ -1,6 +1,4 @@
-﻿using Cad_Point_Manager.Common.Collections;
-using Cad_Point_Manager.Extensions;
-using Cad_Point_Manager.Models.PointRendering;
+﻿using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Models.Printing;
 using SharpDX;
 using System.Collections.ObjectModel;
@@ -352,19 +350,19 @@ namespace Cad_Point_Manager.Controls.D3DControl
             UpdateViewProjection();
         }
         public string GetTempSceneName()
-        { 
-            string baseName = "New Scene"; 
-            int counter = 1; 
-            string sceneName = baseName + $" {counter}"; 
-            while (SceneNameExists(sceneName)) 
-            { 
-                sceneName = $"{baseName} {counter}"; counter++; 
-            } 
-            return sceneName; 
+        {
+            string baseName = "New Scene";
+            int counter = 1;
+            string sceneName = baseName + $" {counter}";
+            while (SceneNameExists(sceneName))
+            {
+                sceneName = $"{baseName} {counter}"; counter++;
+            }
+            return sceneName;
         }
         public bool SceneNameExists(string name)
-        { 
-            return Scenes.Any(pg => pg.Name.Equals(name, StringComparison.OrdinalIgnoreCase)); 
+        {
+            return Scenes.Any(pg => pg.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
         }
         public RectangleF GetCurrentViewportBounds()
         {

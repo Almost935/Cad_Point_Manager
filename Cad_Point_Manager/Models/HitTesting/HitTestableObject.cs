@@ -8,7 +8,7 @@ namespace Cad_Point_Manager.Models.HitTesting
     public abstract class HitTestableObject : ValidationBase, INotifyPropertyChanged
     {
         #region Fields
-        
+
         #endregion
 
         #region Properties

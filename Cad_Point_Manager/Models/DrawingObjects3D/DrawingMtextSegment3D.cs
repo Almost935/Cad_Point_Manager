@@ -171,7 +171,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         private void UpdateFontFace(ResCache resCache)
         {
             FontWeight fontWeight = IsBold ? FontWeight.Bold : FontWeight.Normal;
-            FontStyle fontStyle = IsItalic ? FontStyle.Italic : FontStyle.Normal; 
+            FontStyle fontStyle = IsItalic ? FontStyle.Italic : FontStyle.Normal;
             _fontFace = resCache.GetFontFace(FontFamilyName, fontWeight, FontStretch.Normal, fontStyle);
         }
         #endregion

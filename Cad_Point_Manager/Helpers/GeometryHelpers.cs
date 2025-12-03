@@ -20,9 +20,9 @@ namespace Cad_Point_Manager.Helpers
                     switch (segment1)
                     {
                         case DrawingLine3D line:
-                            localList.AddRange(new[] { 
-                                (Enums.SignificantPointType.EndPoint, line.Start.ToVector()), 
-                                (Enums.SignificantPointType.EndPoint, line.End.ToVector()), 
+                            localList.AddRange(new[] {
+                                (Enums.SignificantPointType.EndPoint, line.Start.ToVector()),
+                                (Enums.SignificantPointType.EndPoint, line.End.ToVector()),
                                 (Enums.SignificantPointType.MidPoint, line.MidPoint.ToVector()) });
                             break;
                         case DrawingArc3D arc:
