@@ -213,7 +213,7 @@
                                                            Padding="2"
                                                            MouseDown="CellDisplay_MouseDown" />
                                                 <!-- Edit -->
-                                                <TextBox x:Name="pointGroupNameTB"
+                                                <TextBox x:Name="tbEdit"
                                                          Text="{Binding Name, UpdateSourceTrigger=Explicit}"
                                                          FontSize="{StaticResource ListViewFontSize}"
                                                          Style="{StaticResource InlineEditBoxStyle}"
@@ -225,7 +225,7 @@
                                                     <Setter TargetName="tbDisplay"
                                                             Property="Visibility"
                                                             Value="Collapsed" />
-                                                    <Setter TargetName="pointGroupNameTB"
+                                                    <Setter TargetName="tbEdit"
                                                             Property="Visibility"
                                                             Value="Visible" />
                                                 </DataTrigger>
@@ -328,7 +328,7 @@
                                                 <TextBlock FontSize="{StaticResource ListViewFontSize}"
                                                            HorizontalAlignment="Left"
                                                            Opacity="{Binding ElementName=root, Path=PointGroupListOpacity}"
-                                                           Text="{Binding Points.Count}"/>
+                                                           Text="{Binding Points.Count}" />
                                             </Border>
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>

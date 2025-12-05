@@ -1024,31 +1024,27 @@ namespace Cad_Point_Manager.Views.UserControls
         // Point Group Name
         private void PointGroupNameBorder_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
-            if (sender is Border border &&
-                   border.Child is TextBox textbox && textbox.DataContext is PointGroup pg)
+            if (sender is Grid grid)
             {
-                if (e.ClickCount > 1)
+                var textbox = VisualTreeHelpers.FindDescendantByName<TextBox>(grid, "pointGroupNameTB");
+                if (textbox is not null && textbox.DataContext is PointGroup pg)
                 {
-                    _pointGroupNameBeingEdited = true;
-                    _previousPointGroupName = pg.Name;
-                    _editPointGroup = pg;
-                    e.Handled = true;
-                    textbox.IsReadOnly = false;
-                    textbox.Focus();
-
-                    textbox.Dispatcher.BeginInvoke(new Action(() =>
+                    if (e.ClickCount > 1)
                     {
-                        textbox.SelectAll();
-                    }), DispatcherPriority.Input);
+                        _pointGroupNameBeingEdited = true;
+                        _previousPointGroupName = pg.Name;
+                        _editPointGroup = pg;
+                        e.Handled = true;
+                        textbox.IsReadOnly = false;
+                        Debug.WriteLine($"PointGroupNameBorder_PreviewMouseLeftButtonDown textbox.IsReadOnly: {textbox.IsReadOnly}");
+                        textbox.Focus();
+
+                        textbox.Dispatcher.BeginInvoke(new Action(() =>
+                        {
+                            textbox.SelectAll();
+                        }), DispatcherPriority.Input);
+                    }
                 }
-                //else
-                //{
-                //    // Swallow click event if _selectedPointGroups is more than 1 so that the selection isn't messed up.
-                //    if (_selectedPointGroups.Contains(pg))
-                //    {
-                //        e.Handled = true;
-                //    }
-                //}
             }
         }
         private void PointGroupNameTextbox_LostFocus(object sender, RoutedEventArgs e)
