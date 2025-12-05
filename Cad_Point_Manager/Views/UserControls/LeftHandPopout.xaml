@@ -138,7 +138,7 @@
                        TargetType="TextBox"
                        BasedOn="{StaticResource EditableTextBox}">
                     <EventSetter Event="PreviewKeyDown"
-                                 Handler="InlineEditBox_PreviewKeyDown" />
+                                 Handler="PointsLVInlineEditBox_PreviewKeyDown" />
                     <EventSetter Event="LostFocus"
                                  Handler="InlineEditBox_LostFocus" />
                 </Style>
@@ -161,8 +161,7 @@
                       VirtualizingStackPanel.IsContainerVirtualizable="True"
                       VirtualizingPanel.CacheLength="0,0"
                       ContextMenuOpening="PointsListView_ContextMenuOpening"
-                      ContextMenuClosing="PointsListView_ContextMenuClosing"
-                      PreviewKeyDown="pointsListView_PreviewKeyDown">
+                      ContextMenuClosing="PointsListView_ContextMenuClosing">
                 <ListView.ContextMenu>
                     <ContextMenu x:Name="pointsListViewContextMenu"
                                  Style="{StaticResource Win11ContextMenuStyle}"
@@ -218,7 +217,7 @@
                                                    Text="{Binding PointNumber}"
                                                    FontSize="{StaticResource ListViewFontSize}"
                                                    Padding="2"
-                                                   MouseDown="CellDisplay_MouseDown" />
+                                                   MouseDown="PointsCellDisplay_MouseDown" />
                                         <!-- Edit -->
                                         <TextBox x:Name="tbEdit"
                                                  Text="{Binding PointNumber, UpdateSourceTrigger=Explicit}"
@@ -251,7 +250,7 @@
                                                    Text="{Binding Northing,StringFormat=N3}"
                                                    FontSize="{StaticResource ListViewFontSize}"
                                                    Padding="2"
-                                                   MouseDown="CellDisplay_MouseDown" />
+                                                   MouseDown="PointsCellDisplay_MouseDown" />
                                         <TextBox x:Name="tbEdit"
                                                  Text="{Binding Northing, UpdateSourceTrigger=Explicit, StringFormat=N3}"
                                                  FontSize="{StaticResource ListViewFontSize}"
@@ -283,7 +282,7 @@
                                                    Text="{Binding Easting, StringFormat=N3}"
                                                    FontSize="{StaticResource ListViewFontSize}"
                                                    Padding="2"
-                                                   MouseDown="CellDisplay_MouseDown" />
+                                                   MouseDown="PointsCellDisplay_MouseDown" />
                                         <TextBox x:Name="tbEdit"
                                                  Text="{Binding Easting, UpdateSourceTrigger=Explicit, StringFormat=N3}"
                                                  FontSize="{StaticResource ListViewFontSize}"
@@ -315,7 +314,7 @@
                                                    Text="{Binding Elevation, StringFormat=N3}"
                                                    FontSize="{StaticResource ListViewFontSize}"
                                                    Padding="2"
-                                                   MouseDown="CellDisplay_MouseDown" />
+                                                   MouseDown="PointsCellDisplay_MouseDown" />
                                         <TextBox x:Name="tbEdit"
                                                  Text="{Binding Elevation, UpdateSourceTrigger=Explicit, StringFormat=N3}"
                                                  FontSize="{StaticResource ListViewFontSize}"
@@ -347,7 +346,7 @@
                                                    Text="{Binding Description}"
                                                    FontSize="{StaticResource ListViewFontSize}"
                                                    Padding="2"
-                                                   MouseDown="CellDisplay_MouseDown" />
+                                                   MouseDown="PointsCellDisplay_MouseDown" />
                                         <TextBox x:Name="tbEdit"
                                                  Text="{Binding Description, UpdateSourceTrigger=Explicit}"
                                                  FontSize="{StaticResource ListViewFontSize}"
@@ -596,6 +595,41 @@
                           Loaded="ScenesListView_Loaded"
                           SelectionChanged="ScenesListView_SelectionChanged"
                           Grid.RowSpan="2">
+                    <ListView.ContextMenu>
+                        <ContextMenu x:Name="viewsListViewContextMenu"
+                                     Style="{StaticResource Win11ContextMenuStyle}"
+                                     HasDropShadow="True">
+                            <MenuItem Header="Edit"
+                                      Click="MenuItem_Click"
+                                      Style="{StaticResource DefaultContextMenuItemStyle}"
+                                      InputGestureText="F2">
+                                <MenuItem.Icon>
+                                    <fa:FontAwesome Icon="Edit"
+                                                    Foreground="Black">
+                                        <fa:FontAwesome.LayoutTransform>
+                                            <ScaleTransform ScaleX="1.3"
+                                                            ScaleY="1.3" />
+                                        </fa:FontAwesome.LayoutTransform>
+                                    </fa:FontAwesome>
+                                </MenuItem.Icon>
+                            </MenuItem>
+                            <MenuItem Header="Delete"
+                                      Click="PointsListViewDeletePoint_Click"
+                                      Style="{StaticResource DefaultContextMenuItemStyle}"
+                                      InputGestureText="Del">
+                                <MenuItem.Icon>
+                                    <fa:FontAwesome Icon="Trash"
+                                                    RenderTransformOrigin="0.5 0.5"
+                                                    Foreground="Black">
+                                        <fa:FontAwesome.LayoutTransform>
+                                            <ScaleTransform ScaleX="1.3"
+                                                            ScaleY="1.3" />
+                                        </fa:FontAwesome.LayoutTransform>
+                                    </fa:FontAwesome>
+                                </MenuItem.Icon>
+                            </MenuItem>
+                        </ContextMenu>
+                    </ListView.ContextMenu>
                     <ListView.View>
                         <GridView>
                             <GridViewColumn Header="Name"
@@ -606,7 +640,7 @@
                                             <TextBlock x:Name="tbDisplay"
                                                        Text="{Binding Name}"
                                                        Padding="2"
-                                                       MouseDown="CellDisplay_MouseDown" />
+                                                       MouseDown="PointsCellDisplay_MouseDown" />
                                             <TextBox x:Name="tbEdit"
                                                      Text="{Binding Name, UpdateSourceTrigger=Explicit}"
                                                      Style="{StaticResource InlineEditBoxStyle}"

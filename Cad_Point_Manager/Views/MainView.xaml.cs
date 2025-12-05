@@ -81,12 +81,12 @@ namespace Cad_Point_Manager.Views
             }
         }
 
-        private void dxfGrid_MouseEnter(object sender, MouseEventArgs e)
+        private void DxfGrid_MouseEnter(object sender, MouseEventArgs e)
         {
             Mouse.OverrideCursor = AppCursors.CrosshairCursor;
         }
 
-        private void dxfGrid_MouseLeave(object sender, MouseEventArgs e)
+        private void DxfGrid_MouseLeave(object sender, MouseEventArgs e)
         {
             Mouse.OverrideCursor = null; // Reset the cursor to default
         }
@@ -104,16 +104,16 @@ namespace Cad_Point_Manager.Views
 
         private void PopoutsGrid_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
-            if (d3dDxfControl != null)
-            {
-                // Forward the move to the D3D control so its OnMouseMove runs
-                var args = new MouseButtonEventArgs(e.MouseDevice, e.Timestamp, MouseButton.Left)
-                {
-                    RoutedEvent = UIElement.MouseLeftButtonUpEvent,
-                    Source = d3dDxfControl
-                };
-                d3dDxfControl.RaiseEvent(args);
-            }
+            //if (d3dDxfControl != null)
+            //{
+            //    // Forward the move to the D3D control so its OnMouseMove runs
+            //    var args = new MouseButtonEventArgs(e.MouseDevice, e.Timestamp, MouseButton.Left)
+            //    {
+            //        RoutedEvent = UIElement.MouseLeftButtonUpEvent,
+            //        Source = d3dDxfControl
+            //    };
+            //    d3dDxfControl.RaiseEvent(args);
+            //}
         }
     }
 }

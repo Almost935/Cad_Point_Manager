@@ -156,7 +156,7 @@
                                    TargetType="TextBox"
                                    BasedOn="{StaticResource EditableTextBox}">
                                 <EventSetter Event="PreviewKeyDown"
-                                             Handler="InlineEditBox_PreviewKeyDown" />
+                                             Handler="PGListViewInlineEditBox_PreviewKeyDown" />
                                 <EventSetter Event="LostFocus"
                                              Handler="InlineEditBox_LostFocus" />
                             </Style>
@@ -204,36 +204,6 @@
                                                    FontSize="{StaticResource ListViewHeaderFontSize}" />
                                     </GridViewColumn.Header>
                                     <GridViewColumn.CellTemplate>
-                                        <!--<DataTemplate>
-                                            <Border x:Name="PointGroupNameBorder"
-                                                    PreviewMouseLeftButtonDown="PointGroupNameBorder_PreviewMouseLeftButtonDown"
-                                                    Focusable="False"
-                                                    Margin="0"
-                                                    HorizontalAlignment="Stretch">
-                                                <TextBox x:Name="PointGroupNameTextBox"
-                                                         FontSize="{StaticResource ListViewFontSize}"
-                                                         Foreground="{DynamicResource propertiesFontBrush}"
-                                                         Style="{StaticResource EditableTextBox}"
-                                                         IsReadOnly="True"
-                                                         LostFocus="PointGroupNameTextbox_LostFocus"
-                                                         PreviewKeyUp="PointGroupNameTextbox_PreviewKeyUp"
-                                                         ToolTipService.ShowOnDisabled="True">
-                                                    <TextBox.Text>
-                                                        <Binding Path="Name"
-                                                                 UpdateSourceTrigger="Explicit"
-                                                                 Mode="TwoWay"
-                                                                 ValidatesOnDataErrors="True"
-                                                                 NotifyOnValidationError="True"
-                                                                 ValidatesOnExceptions="True"
-                                                                 ValidatesOnNotifyDataErrors="True">
-                                                            <Binding.ValidationRules>
-                                                                <validation:NoIllegalCharactersRule />
-                                                            </Binding.ValidationRules>
-                                                        </Binding>
-                                                    </TextBox.Text>
-                                                </TextBox>
-                                            </Border>
-                                        </DataTemplate>-->
                                         <DataTemplate>
                                             <Grid x:Name="groupName">
                                                 <!-- Display -->
@@ -243,7 +213,7 @@
                                                            Padding="2"
                                                            MouseDown="CellDisplay_MouseDown" />
                                                 <!-- Edit -->
-                                                <TextBox x:Name="tbEdit"
+                                                <TextBox x:Name="pointGroupNameTB"
                                                          Text="{Binding Name, UpdateSourceTrigger=Explicit}"
                                                          FontSize="{StaticResource ListViewFontSize}"
                                                          Style="{StaticResource InlineEditBoxStyle}"
@@ -255,7 +225,7 @@
                                                     <Setter TargetName="tbDisplay"
                                                             Property="Visibility"
                                                             Value="Collapsed" />
-                                                    <Setter TargetName="tbEdit"
+                                                    <Setter TargetName="pointGroupNameTB"
                                                             Property="Visibility"
                                                             Value="Visible" />
                                                 </DataTrigger>
@@ -315,75 +285,50 @@
                                     </GridViewColumn.Header>
                                     <GridViewColumn.CellTemplate>
                                         <DataTemplate>
-                                            <Border x:Name="PointGroupScaleBorder"
-                                                    PreviewMouseLeftButtonDown="PointGroupScaleBorder_PreviewMouseLeftButtonDown"
-                                                    Focusable="False"
-                                                    BorderBrush="Transparent"
-                                                    Background="Transparent"
-                                                    HorizontalAlignment="Stretch">
-                                                <TextBox x:Name="PointScaleTextbox"
-                                                         Style="{StaticResource EditableTextBox}"
-                                                         IsReadOnly="true"
+                                            <Grid x:Name="groupScale">
+                                                <!-- Display -->
+                                                <TextBlock x:Name="tbDisplay"
+                                                           Text="{Binding PointScale, StringFormat=N3}"
+                                                           FontSize="{StaticResource ListViewFontSize}"
+                                                           Padding="2"
+                                                           MouseDown="CellDisplay_MouseDown" />
+                                                <!-- Edit -->
+                                                <TextBox x:Name="tbEdit"
+                                                         Text="{Binding PointScale, StringFormat=N3, UpdateSourceTrigger=Explicit}"
                                                          FontSize="{StaticResource ListViewFontSize}"
-                                                         HorizontalAlignment="Left"
-                                                         LostFocus="PointScaleTextbox_LostFocus"
-                                                         PreviewKeyDown="PointScaleTextbox_PreviewKeyDown"
-                                                         Opacity="{Binding ElementName=root, Path=PointGroupListOpacity}">
-                                                    <TextBox.Text>
-                                                        <Binding Path="PointScale"
-                                                                 StringFormat="N3"
-                                                                 UpdateSourceTrigger="Explicit"
-                                                                 Mode="TwoWay"
-                                                                 ValidatesOnDataErrors="True"
-                                                                 NotifyOnValidationError="True"
-                                                                 ValidatesOnExceptions="True"
-                                                                 ValidatesOnNotifyDataErrors="True">
-                                                            <Binding.ValidationRules>
-                                                                <validation:PositiveDoubleValidationRule />
-                                                            </Binding.ValidationRules>
-                                                        </Binding>
-                                                    </TextBox.Text>
-                                                </TextBox>
-                                            </Border>
+                                                         Style="{StaticResource InlineEditBoxStyle}"
+                                                         Visibility="Collapsed" />
+                                            </Grid>
+                                            <DataTemplate.Triggers>
+                                                <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ListViewItem}, Path=(viewsAssorted:InlineEdit.EditingField)}"
+                                                             Value="PointScale">
+                                                    <Setter TargetName="tbDisplay"
+                                                            Property="Visibility"
+                                                            Value="Collapsed" />
+                                                    <Setter TargetName="tbEdit"
+                                                            Property="Visibility"
+                                                            Value="Visible" />
+                                                </DataTrigger>
+                                            </DataTemplate.Triggers>
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
                                 </GridViewColumn>
                                 <GridViewColumn>
                                     <GridViewColumn.Header>
-                                        <TextBlock Text="Scale"
+                                        <TextBlock Text="Count"
                                                    FontSize="{StaticResource ListViewHeaderFontSize}" />
                                     </GridViewColumn.Header>
                                     <GridViewColumn.CellTemplate>
                                         <DataTemplate>
-                                            <Border x:Name="PointGroupScaleBorder"
-                                                    PreviewMouseLeftButtonDown="PointGroupScaleBorder_PreviewMouseLeftButtonDown"
+                                            <Border x:Name="PointCountBorder"
                                                     Focusable="False"
                                                     BorderBrush="Transparent"
                                                     Background="Transparent"
                                                     HorizontalAlignment="Stretch">
-                                                <TextBox x:Name="PointScaleTextbox"
-                                                         Style="{StaticResource EditableTextBox}"
-                                                         IsReadOnly="true"
-                                                         FontSize="{StaticResource ListViewFontSize}"
-                                                         HorizontalAlignment="Left"
-                                                         LostFocus="PointScaleTextbox_LostFocus"
-                                                         PreviewKeyDown="PointScaleTextbox_PreviewKeyDown"
-                                                         Opacity="{Binding ElementName=root, Path=PointGroupListOpacity}">
-                                                    <TextBox.Text>
-                                                        <Binding Path="PointScale"
-                                                                 StringFormat="N3"
-                                                                 UpdateSourceTrigger="Explicit"
-                                                                 Mode="TwoWay"
-                                                                 ValidatesOnDataErrors="True"
-                                                                 NotifyOnValidationError="True"
-                                                                 ValidatesOnExceptions="True"
-                                                                 ValidatesOnNotifyDataErrors="True">
-                                                            <Binding.ValidationRules>
-                                                                <validation:PositiveDoubleValidationRule />
-                                                            </Binding.ValidationRules>
-                                                        </Binding>
-                                                    </TextBox.Text>
-                                                </TextBox>
+                                                <TextBlock FontSize="{StaticResource ListViewFontSize}"
+                                                           HorizontalAlignment="Left"
+                                                           Opacity="{Binding ElementName=root, Path=PointGroupListOpacity}"
+                                                           Text="{Binding Points.Count}"/>
                                             </Border>
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>

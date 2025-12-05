@@ -199,6 +199,18 @@ namespace Cad_Point_Manager.Models
         {
             if (pg.Points.Count > 0)
             {
+                var copy = pg.Points.ToList();
+                foreach (var p in copy)
+                {
+                    DeletePoint(p);
+                }
+            }
+            PointGroups.Remove(pg);
+        }
+        public void TryDeletePointGroup(PointGroup pg)
+        {
+            if (pg.Points.Count > 0)
+            {
                 var result = MessageBox.Show(
                     "This will delete all points associated with this group. Continue?",
                     "Warning", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No);
@@ -207,7 +219,7 @@ namespace Cad_Point_Manager.Models
                 {
                     foreach (var p in pg.Points)
                     {
-                        CogoPoints.Remove(p);
+                        DeletePoint(p);
                     }
                 }
                 else { return; }

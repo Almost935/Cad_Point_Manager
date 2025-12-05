@@ -390,7 +390,7 @@ namespace Cad_Point_Manager.Views.UserControls
                                    ?? VisualTreeHelpers.FindAncestor<FrameworkElement>(src);
             if (fe == null) { return; }
 
-            string field = InferFieldNameFromDisplayElement(fe);
+            string field = PointsInferFieldNameFromDisplayElement(fe);
             if (string.IsNullOrEmpty(field)) { return; }
 
             _lastContextField = field;
@@ -404,15 +404,7 @@ namespace Cad_Point_Manager.Views.UserControls
                 _hideTimer.Start();
             }
         }
-        //private void pgListViewContextMenu_Closed(object sender, RoutedEventArgs e)
-        //{
-        //    if (!mainPanel.IsMouseOver)
-        //    {
-        //        _isMouseOverPanel = false;
-        //        _hideTimer.Start();
-        //    }
-        //}
-
+        
         // Scenes list
         private void ScenesListView_Loaded(object sender, RoutedEventArgs e)
         {
@@ -487,6 +479,10 @@ namespace Cad_Point_Manager.Views.UserControls
         {
 
         }
+        private void MenuItem_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
         private void StartRowEdit(ListViewItem row)
         {
             // Name TextBox
@@ -499,18 +495,19 @@ namespace Cad_Point_Manager.Views.UserControls
             }
         }
 
+
         // ----------  DOUBLE-CLICK TO ENTER EDIT ----------
-        private void CellDisplay_MouseDown(object sender, MouseButtonEventArgs e)
+        private void PointsCellDisplay_MouseDown(object sender, MouseButtonEventArgs e)
         {
             if (e.ClickCount < 2) { return; }
             if (sender is not FrameworkElement fe) { return; }
 
-            string field = InferFieldNameFromDisplayElement(fe);
+            string field = PointsInferFieldNameFromDisplayElement(fe);
             if (string.IsNullOrEmpty(field)) { return; }
 
             BeginCellEdit(fe, field);
         }
-        private static string InferFieldNameFromDisplayElement(FrameworkElement fe)
+        private static string PointsInferFieldNameFromDisplayElement(FrameworkElement fe)
         {
             var grid = VisualTreeHelpers.FindAncestor<Grid>(fe);
             if (grid?.Name is string s && !string.IsNullOrWhiteSpace(s))
@@ -530,7 +527,7 @@ namespace Cad_Point_Manager.Views.UserControls
         }
 
         // ----------  COMMIT/CANCEL/EXIT EDIT ----------
-        private void InlineEditBox_PreviewKeyDown(object sender, KeyEventArgs e)
+        private void PointsLVInlineEditBox_PreviewKeyDown(object sender, KeyEventArgs e)
         {
             if (sender is not TextBox tb) { return; }
 
@@ -635,9 +632,9 @@ namespace Cad_Point_Manager.Views.UserControls
         private void InlineEditBox_LostFocus(object sender, RoutedEventArgs e)
         {
             // If focus leaves the edit box, exit edit (commit if valid, otherwise keep error text synced)
-            if (sender is not TextBox tb) return;
+            if (sender is not TextBox tb) { return; }
             var lvi = VisualTreeHelpers.FindAncestor<ListViewItem>(tb);
-            if (lvi == null) return;
+            if (lvi == null) { return; }
 
             var binding = tb.GetBindingExpression(TextBox.TextProperty);
             if (!Validation.GetHasError(tb))
@@ -1048,10 +1045,5 @@ namespace Cad_Point_Manager.Views.UserControls
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
         #endregion
-
-        private void pointsListView_PreviewKeyDown(object sender, KeyEventArgs e)
-        {
-
-        }
     }
 }

@@ -7,6 +7,7 @@ using Cad_Point_Manager.Views.Assorted;
 using ColorPicker;
 using SharpDX;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
@@ -46,6 +47,7 @@ namespace Cad_Point_Manager.Views.UserControls
         private bool _pointGroupListColorPickerOpen = false;
         private PointGroup _openColorPickerPG;
         private Color _prevPointGroupColor;
+        private bool _pointGroupsMessageBoxOpen = false;
 
         //private string _newPointGroupName = "";
         //private Color _newPointGroupColor = Colors.Black;
@@ -255,24 +257,25 @@ namespace Cad_Point_Manager.Views.UserControls
         private void HideTimer_Tick(object sender, EventArgs e)
         {
             _hideTimer.Stop();
-            if (!_isMouseOverPanel && !PointGroupListColorPickerOpen && !NewPointColorPickerToggleOpen && !LayerListColorPickerOpen)
+            if (!_isMouseOverPanel && !PointGroupListColorPickerOpen && !NewPointColorPickerToggleOpen && 
+                !LayerListColorPickerOpen && !_pointGroupsMessageBoxOpen && !pgListViewContextMenu.IsOpen)
             {
                 HideControl();
             }
         }
 
-        private void OverallGrid_MouseLeave(object sender, MouseEventArgs e)
-        {
-            if (pgListViewContextMenu.IsOpen) { return; }
-
-            _isMouseOverPanel = false;
-            _hideTimer.Start();
-        }
         private void OverallGrid_MouseEnter(object sender, MouseEventArgs e)
         {
             _isMouseOverPanel = true;
             _hideTimer.Stop();
             ShowControl();
+        }
+        private void OverallGrid_MouseLeave(object sender, MouseEventArgs e)
+        {
+            //if (pgListViewContextMenu.IsOpen || _pointGroupsMessageBoxOpen) { return; }
+
+            _isMouseOverPanel = false;
+            _hideTimer.Start();
         }
 
         private void ShowControl()
@@ -446,10 +449,11 @@ namespace Cad_Point_Manager.Views.UserControls
             double pointGroupColumnWidth = pointGroupLTotalWidth / pointGroupGridView.Columns.Count;
             if (pointGroupColumnWidth > 0)
             {
-                pointGroupGridView.Columns[0].Width = pointGroupColumnWidth * 1;
-                pointGroupGridView.Columns[1].Width = pointGroupColumnWidth * 1;
-                pointGroupGridView.Columns[2].Width = pointGroupColumnWidth * 1;
+                pointGroupGridView.Columns[0].Width = pointGroupColumnWidth * 1.3;
+                pointGroupGridView.Columns[1].Width = pointGroupColumnWidth * 0.9;
+                pointGroupGridView.Columns[2].Width = pointGroupColumnWidth * 0.9;
                 pointGroupGridView.Columns[3].Width = pointGroupColumnWidth * 1;
+                pointGroupGridView.Columns[4].Width = pointGroupColumnWidth * 0.9;
             }
         }
         private void DeletePointGroupButton_Click(object sender, RoutedEventArgs e)
@@ -475,22 +479,19 @@ namespace Cad_Point_Manager.Views.UserControls
                 return s switch
                 {
                     "groupName" => "Name",
-                    "northing" => "Northing",
-                    "easting" => "Easting",
-                    "elevation" => "Elevation",
-                    "description" => "Description",
+                    "groupScale" => "PointScale",
                     _ => null
                 };
             }
             return null;
         }
-        private void InlineEditBox_PreviewKeyDown(object sender, KeyEventArgs e)
+        private void PGListViewInlineEditBox_PreviewKeyDown(object sender, KeyEventArgs e)
         {
             if (sender is not TextBox tb) { return; }
 
             var lvi = VisualTreeHelpers.FindAncestor<ListViewItem>(tb);
             if (lvi == null) { return; }
-            if (lvi.DataContext is not CogoPoint cp) { return; }
+            if (lvi.DataContext is not PointGroup pg) { return; }
 
             // Which field are we currently editing? (set earlier in CellDisplay_MouseDown)
             string field = InlineEdit.GetEditingField(lvi);
@@ -503,39 +504,24 @@ namespace Cad_Point_Manager.Views.UserControls
 
                 switch (field)
                 {
-                    // ---- POINT NUMBER: non-negative int, must NOT already exist ----
-                    case "PointNumber":
+                    case "Name":
                         {
-                            if (!_validationService.ValidatePointNumberChange(text, cp, CadManager.CogoPointManager, out string svcError))
+                            if (!CadManager.CogoPointManager.IsValidPointGroupName(text, out string svcError))
                             {
                                 errorMessage = svcError;
                             }
                             break;
                         }
 
-                    // ---- NORTHING / EASTING / ELEVATION: valid double ----
-                    case "Northing":
-                    case "Easting":
-                    case "Elevation":
+                    case "PointScale":
                         {
-                            if (!double.TryParse(text, out _))
-                            {
-                                errorMessage = $"{field} must be a valid number.";
-                            }
-                            break;
-                        }
-
-                    // ---- DESCRIPTION: must NOT contain illegal characters ----
-                    case "Description":
-                        {
-                            if (!_validationService.ValidateString(text, out string svcError))
+                            if (!CadManager.CogoPointManager.IsValidPointScale(text, out string svcError))
                             {
                                 errorMessage = svcError;
                             }
                             break;
                         }
 
-                    // Unknown / fallback – just accept
                     default:
                         {
                             break;
@@ -645,8 +631,7 @@ namespace Cad_Point_Manager.Views.UserControls
         }
         private void PGsListViewMenuEdit_Click(object sender, RoutedEventArgs e)
         {
-            if (_lastContextCellElement == null || string.IsNullOrEmpty(_lastContextField))
-                return;
+            if (_lastContextCellElement == null || string.IsNullOrEmpty(_lastContextField)) { return; }
 
             BeginCellEdit(_lastContextCellElement, _lastContextField);
 
@@ -655,13 +640,34 @@ namespace Cad_Point_Manager.Views.UserControls
         }
         private void PGsListViewMenuDelete_Click(object sender, RoutedEventArgs e)
         {
-            if (_lastContextCellElement == null || string.IsNullOrEmpty(_lastContextField))
-                return;
+            //if (_lastContextCellElement == null || string.IsNullOrEmpty(_lastContextField))
+            //    return;
 
-            BeginCellEdit(_lastContextCellElement, _lastContextField);
+            //BeginCellEdit(_lastContextCellElement, _lastContextField);
 
-            // optional: close context menu after choosing Edit
-            pgListViewContextMenu.IsOpen = false;
+            //// optional: close context menu after choosing Edit
+            //pgListViewContextMenu.IsOpen = false;
+
+            if (CadManager is null || CadManager.CogoPointManager is null) { return; }
+
+            var count = _selectedPointGroups.Sum(pg => pg.Points.Count);
+            if (count > 0)
+            {
+                _pointGroupsMessageBoxOpen = true;
+                if (MessageBox.Show($"Deleting the selected point groups will result in the deletion of {count} Cogo Points. Continue?", 
+                    "Delete Points", MessageBoxButton.OKCancel, MessageBoxImage.Warning, MessageBoxResult.Cancel) == MessageBoxResult.Cancel)
+                {
+                    _pointGroupsMessageBoxOpen = false;
+                    return;
+                }
+                _pointGroupsMessageBoxOpen = false;
+            }
+
+            var copy = _selectedPointGroups.ToList();
+            foreach(var pg in copy) { CadManager.CogoPointManager.DeletePointGroup(pg); }
+
+            CadManager.CogoPointCircleVerticesDirty = true;
+            CadManager.CogoPointTextVerticesDirty = true;
         }
 
         // PointGroups listview visibily checkbox methods
@@ -994,19 +1000,19 @@ namespace Cad_Point_Manager.Views.UserControls
                     // try again once more if virtualization delayed it
                     Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() =>
                     {
-                        if (pointGroupsListView.ItemContainerGenerator.ContainerFromItem(pg) is ListViewItem li) { StartRowEdit(li); }
+                        if (pointGroupsListView.ItemContainerGenerator.ContainerFromItem(pg) is ListViewItem li) { PointGroupsStartRowEdit(li); }
                     }));
                 }
                 else
                 {
-                    StartRowEdit(container);
+                    PointGroupsStartRowEdit(container);
                 }
             }));
         }
-        private void StartRowEdit(ListViewItem row)
+        private void PointGroupsStartRowEdit(ListViewItem row)
         {
             // Name TextBox
-            var nameTb = VisualTreeHelpers.FindByName(row, "PointGroupNameTextBox") as TextBox;
+            var nameTb = VisualTreeHelpers.FindByName(row, "pointGroupNameTB") as TextBox;
             if (nameTb != null)
             {
                 nameTb.IsReadOnly = false;
@@ -1018,7 +1024,6 @@ namespace Cad_Point_Manager.Views.UserControls
         // Point Group Name
         private void PointGroupNameBorder_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
-
             if (sender is Border border &&
                    border.Child is TextBox textbox && textbox.DataContext is PointGroup pg)
             {

@@ -411,8 +411,8 @@
             <Grid x:Name="dxfGrid"
                   SizeChanged="dxfGrid_SizeChanged"
                   ClipToBounds="True"
-                  MouseEnter="dxfGrid_MouseEnter"
-                  MouseLeave="dxfGrid_MouseLeave">
+                  MouseEnter="DxfGrid_MouseEnter"
+                  MouseLeave="DxfGrid_MouseLeave">
                 <Grid.Margin>
                     <MultiBinding Converter="{StaticResource LeftRightMarginConverter}">
                         <Binding ElementName="SourceControl"
