@@ -152,20 +152,56 @@
                               ContextMenuClosing="PointGroupsListView_ContextMenuClosing"
                               ContextMenuOpening="PointGroupsListView_ContextMenuOpening">
                         <ListView.Resources>
+                            <Style TargetType="{x:Type TextBlock}">
+                                <Setter Property="VerticalAlignment"
+                                        Value="Center" />
+                            </Style>
                             <Style x:Key="InlineEditBoxStyle"
                                    TargetType="TextBox"
                                    BasedOn="{StaticResource EditableTextBox}">
+                                <Setter Property="VerticalAlignment"
+                                        Value="Center" />
                                 <EventSetter Event="PreviewKeyDown"
                                              Handler="PGListViewInlineEditBox_PreviewKeyDown" />
                                 <EventSetter Event="LostFocus"
-                                             Handler="InlineEditBox_LostFocus" />
+                                             Handler="PointGroupsInlineEditBox_LostFocus" />
                             </Style>
                         </ListView.Resources>
                         <ListView.ContextMenu>
                             <ContextMenu x:Name="pgListViewContextMenu"
                                          Style="{StaticResource Win11ContextMenuStyle}"
                                          HasDropShadow="True">
-                                <MenuItem Header="Edit"
+                                <MenuItem x:Name="newPGMenuItem"
+                                          Header="New"
+                                          Click="NewPointGroupButton_Click"
+                                          Style="{StaticResource DefaultContextMenuItemStyle}"
+                                          InputGestureText="Ctrl+Shift+N">
+                                    <MenuItem.Icon>
+                                        <fa:FontAwesome Icon="Plus"
+                                                        Foreground="Black">
+                                            <fa:FontAwesome.LayoutTransform>
+                                                <ScaleTransform ScaleX="1.3"
+                                                                ScaleY="1.3" />
+                                            </fa:FontAwesome.LayoutTransform>
+                                        </fa:FontAwesome>
+                                    </MenuItem.Icon>
+                                </MenuItem>
+                                <MenuItem x:Name="renamePGMenuItem"
+                                          Header="Rename"
+                                          Click="RenamePGMenuItem_Click"
+                                          Style="{StaticResource DefaultContextMenuItemStyle}"
+                                          InputGestureText="F2">
+                                    <MenuItem.Icon>
+                                        <fa:FontAwesome Icon="ICursor"
+                                                        Foreground="Black">
+                                            <fa:FontAwesome.LayoutTransform>
+                                                <ScaleTransform ScaleX="1.3"
+                                                                ScaleY="1.3" />
+                                            </fa:FontAwesome.LayoutTransform>
+                                        </fa:FontAwesome>
+                                    </MenuItem.Icon>
+                                </MenuItem>
+                                <MenuItem Header="Edit Cell"
                                           Click="PGsListViewMenuEdit_Click"
                                           Style="{StaticResource DefaultContextMenuItemStyle}"
                                           InputGestureText="F2">
@@ -205,13 +241,15 @@
                                     </GridViewColumn.Header>
                                     <GridViewColumn.CellTemplate>
                                         <DataTemplate>
-                                            <Grid x:Name="groupName">
+                                            <Grid x:Name="groupName"
+                                                  HorizontalAlignment="Stretch">
                                                 <!-- Display -->
                                                 <TextBlock x:Name="tbDisplay"
                                                            Text="{Binding Name}"
                                                            FontSize="{StaticResource ListViewFontSize}"
-                                                           Padding="2"
-                                                           MouseDown="CellDisplay_MouseDown" />
+                                                           VerticalAlignment="Center"
+                                                           Padding="3 0 3 0"
+                                                           MouseDown="CellDisplay_MouseDown"/>
                                                 <!-- Edit -->
                                                 <TextBox x:Name="tbEdit"
                                                          Text="{Binding Name, UpdateSourceTrigger=Explicit}"
@@ -250,8 +288,7 @@
                                                                              Focusable="True"
                                                                              HorizontalAlignment="Center"
                                                                              IsPopupOpenChanged="PointGroupsColorPicker_IsPopupOpenChanged"
-                                                                             PreviewMouseLeftButtonDown="PointGroupsColorPicker_PreviewMouseLeftButtonDown"
-                                                                             PreviewKeyDown="PointGroupsColorPicker_PreviewKeyDown" />
+                                                                             PreviewMouseLeftButtonDown="PointGroupsColorPicker_PreviewMouseLeftButtonDown" />
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
                                 </GridViewColumn>

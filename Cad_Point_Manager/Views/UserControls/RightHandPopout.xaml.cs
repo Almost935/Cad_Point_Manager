@@ -32,10 +32,9 @@ namespace Cad_Point_Manager.Views.UserControls
         private readonly List<ObjectLayer3D> _selectedLayers = [];
         private readonly List<PointGroup> _selectedPointGroups = [];
 
-        private ValidationService _validationService = new();
-
-        private FrameworkElement? _lastContextCellElement;
+        //private FrameworkElement? _lastContextCellElement;
         private string? _lastContextField;
+        private ListViewItem? _lastPointGroupListViewItem;
 
         private int _pointGroupAnchorIndex = -1; // where SHIFT ranges start
 
@@ -257,7 +256,7 @@ namespace Cad_Point_Manager.Views.UserControls
         private void HideTimer_Tick(object sender, EventArgs e)
         {
             _hideTimer.Stop();
-            if (!_isMouseOverPanel && !PointGroupListColorPickerOpen && !NewPointColorPickerToggleOpen && 
+            if (!_isMouseOverPanel && !PointGroupListColorPickerOpen && !NewPointColorPickerToggleOpen &&
                 !LayerListColorPickerOpen && !_pointGroupsMessageBoxOpen && !pgListViewContextMenu.IsOpen)
             {
                 HideControl();
@@ -463,14 +462,14 @@ namespace Cad_Point_Manager.Views.UserControls
         private void CellDisplay_MouseDown(object sender, MouseButtonEventArgs e)
         {
             if (e.ClickCount < 2) { return; }
-            if (sender is not FrameworkElement fe) { return; }
+            if (sender is not FrameworkElement fe || VisualTreeHelpers.FindAncestor<ListViewItem>(fe) is not ListViewItem lvi) { return; }
 
-            string field = InferFieldNameFromDisplayElement(fe);
+            string field = InferPGFieldNameFromDisplayElement(fe);
             if (string.IsNullOrEmpty(field)) { return; }
 
-            BeginCellEdit(fe, field);
+            BeginCellEdit(lvi, field);
         }
-        private static string InferFieldNameFromDisplayElement(FrameworkElement fe)
+        private static string InferPGFieldNameFromDisplayElement(FrameworkElement fe)
         {
             var grid = VisualTreeHelpers.FindAncestor<Grid>(fe);
             if (grid?.Name is string s && !string.IsNullOrWhiteSpace(s))
@@ -506,6 +505,11 @@ namespace Cad_Point_Manager.Views.UserControls
                 {
                     case "Name":
                         {
+                            if (text == pg.Name)
+                            {
+                                errorMessage = null;
+                                break;
+                            }
                             if (!CadManager.CogoPointManager.IsValidPointGroupName(text, out string svcError))
                             {
                                 errorMessage = svcError;
@@ -572,38 +576,56 @@ namespace Cad_Point_Manager.Views.UserControls
                 return;
             }
         }
-        private void InlineEditBox_LostFocus(object sender, RoutedEventArgs e)
+        private void PointGroupsInlineEditBox_LostFocus(object sender, RoutedEventArgs e)
         {
             // If focus leaves the edit box, exit edit (commit if valid, otherwise keep error text synced)
-            if (sender is not TextBox tb) return;
+            if (sender is not TextBox tb) { return; }
+
             var lvi = VisualTreeHelpers.FindAncestor<ListViewItem>(tb);
-            if (lvi == null) return;
+            if (lvi == null) { return; }
 
             var binding = tb.GetBindingExpression(TextBox.TextProperty);
-            if (!Validation.GetHasError(tb))
-                binding?.UpdateSource(); // commit if valid
+            if (!Validation.GetHasError(tb)) { binding?.UpdateSource(); } // commit if valid
 
             InlineEdit.SetEditingField(lvi, null);
         }
-        private void BeginCellEdit(FrameworkElement fe, string field)
+        private void BeginCellEdit(ListViewItem lvItem, string field)
         {
-            var lvi = VisualTreeHelpers.FindAncestor<ListViewItem>(fe);
-            if (lvi == null) return;
+            //var nameTb = VisualTreeHelpers.FindByName(fe, "tbEdit") as TextBox;
+            //if (nameTb != null)
+            //{
+                InlineEdit.SetEditingField(lvItem, field);
 
-            // Tell the row which field is being edited
-            InlineEdit.SetEditingField(lvi, field);
-
-            // Focus the TextBox inside that cell
-            fe.Dispatcher.BeginInvoke(new Action(() =>
-            {
-                var root = VisualTreeHelpers.FindAncestor<Grid>(fe) ?? (DependencyObject)fe;
-                var editBox = VisualTreeHelpers.FindDescendantByName<TextBox>(root, "tbEdit");
-                if (editBox != null)
+                // Focus the TextBox inside that cell
+                lvItem.Dispatcher.BeginInvoke(new Action(() =>
                 {
-                    editBox.Focus();
-                    editBox.SelectAll();
-                }
-            }), DispatcherPriority.Input);
+                    if (VisualTreeHelpers.FindByName(lvItem, "tbEdit") is TextBox editBox)
+                    {
+                        editBox.Focus();
+                        editBox.SelectAll();
+                    }
+                }), DispatcherPriority.Input);
+            //}
+
+
+            //var lvi = VisualTreeHelpers.FindAncestor<ListViewItem>(fe);
+            //if (lvi == null) { return; }
+
+            //InlineEdit.SetEditingField(lvi, field);
+            //fe.Dispatcher.BeginInvoke(new Action(() =>
+            //{
+            //    var root = VisualTreeHelpers.FindAncestor<Grid>(fe) ?? (DependencyObject)fe;
+            //    var editBox = VisualTreeHelpers.FindDescendantByName<TextBox>(root, "tbEdit");
+
+            //    Debug.WriteLine($"BeginCellEdit: editBox.Text: {editBox.Text} editBox.Name: {editBox.Name}" +
+            //        $"\nfe.GetType(): {fe.GetType()}");
+
+            //    if (editBox != null)
+            //    {
+            //        editBox.Focus();
+            //        editBox.SelectAll();
+            //    }
+            //}), DispatcherPriority.Input);
         }
         private void PointGroupsListView_ContextMenuClosing(object sender, ContextMenuEventArgs e)
         {
@@ -615,46 +637,45 @@ namespace Cad_Point_Manager.Views.UserControls
         }
         private void PointGroupsListView_ContextMenuOpening(object sender, ContextMenuEventArgs e)
         {
-            // element that was actually right-clicked
             if (e.OriginalSource is not DependencyObject src) { return; }
 
-            // Walk up from the OriginalSource until we find something we can map to a field
             FrameworkElement? fe = src as FrameworkElement
                                    ?? VisualTreeHelpers.FindAncestor<FrameworkElement>(src);
             if (fe == null) { return; }
 
-            string field = InferFieldNameFromDisplayElement(fe);
-            if (string.IsNullOrEmpty(field)) { return; }
-
+            // Optional: field and cell for “Edit Cell”
+            string field = InferPGFieldNameFromDisplayElement(fe);
             _lastContextField = field;
-            _lastContextCellElement = fe;
+            _lastPointGroupListViewItem = VisualTreeHelpers.FindAncestor<ListViewItem>(fe);
+        }
+        private void NewPGMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
+        private void RenamePGMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            if (_lastPointGroupListViewItem == null) { return; }
+
+            //PointGroupsNameStartRowEdit(_lastContextPointGroupItem);
+            BeginCellEdit(_lastPointGroupListViewItem, "Name");
         }
         private void PGsListViewMenuEdit_Click(object sender, RoutedEventArgs e)
         {
-            if (_lastContextCellElement == null || string.IsNullOrEmpty(_lastContextField)) { return; }
+            if (_lastPointGroupListViewItem == null || string.IsNullOrEmpty(_lastContextField)) { return; }
 
-            BeginCellEdit(_lastContextCellElement, _lastContextField);
-
-            // optional: close context menu after choosing Edit
+            BeginCellEdit(_lastPointGroupListViewItem, _lastContextField);
+            Debug.WriteLine($"_lastContextField: {_lastContextField}");
             pgListViewContextMenu.IsOpen = false;
         }
         private void PGsListViewMenuDelete_Click(object sender, RoutedEventArgs e)
         {
-            //if (_lastContextCellElement == null || string.IsNullOrEmpty(_lastContextField))
-            //    return;
-
-            //BeginCellEdit(_lastContextCellElement, _lastContextField);
-
-            //// optional: close context menu after choosing Edit
-            //pgListViewContextMenu.IsOpen = false;
-
             if (CadManager is null || CadManager.CogoPointManager is null) { return; }
 
             var count = _selectedPointGroups.Sum(pg => pg.Points.Count);
             if (count > 0)
             {
                 _pointGroupsMessageBoxOpen = true;
-                if (MessageBox.Show($"Deleting the selected point groups will result in the deletion of {count} Cogo Points. Continue?", 
+                if (MessageBox.Show($"Deleting the selected point groups will result in the deletion of {count} Cogo Points. Continue?",
                     "Delete Points", MessageBoxButton.OKCancel, MessageBoxImage.Warning, MessageBoxResult.Cancel) == MessageBoxResult.Cancel)
                 {
                     _pointGroupsMessageBoxOpen = false;
@@ -664,7 +685,7 @@ namespace Cad_Point_Manager.Views.UserControls
             }
 
             var copy = _selectedPointGroups.ToList();
-            foreach(var pg in copy) { CadManager.CogoPointManager.DeletePointGroup(pg); }
+            foreach (var pg in copy) { CadManager.CogoPointManager.DeletePointGroup(pg); }
 
             CadManager.CogoPointCircleVerticesDirty = true;
             CadManager.CogoPointTextVerticesDirty = true;
@@ -806,7 +827,7 @@ namespace Cad_Point_Manager.Views.UserControls
                 return;
             }
         }
-        private void PointGroupsColorPicker_PreviewKeyDown(object sender, KeyEventArgs e)
+        private void PointGroupsColorPicker_PreviePointGroupNameBorder_PreviewMouseLeftButtonDownwKeyDown(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.Escape)
             {
@@ -840,149 +861,44 @@ namespace Cad_Point_Manager.Views.UserControls
             }
         }
 
-        // Point Group Scale
-        private void PointGroupScaleBorder_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-        {
-            if (sender is Border border &&
-                    border.Child is TextBox textbox &&
-                    textbox.DataContext is PointGroup pg)
-            {
-                if (e.ClickCount > 1)
-                {
-                    _pointGroupScaleBeingEdited = true;
-                    _previousPointGroupScale = pg.PointScale;
-                    _editPointGroup = pg;
-                    textbox.IsReadOnly = false;
-
-                    e.Handled = true;
-
-                    textbox.Dispatcher.BeginInvoke(new Action(() =>
-                    {
-                        textbox.Focus();
-                        textbox.SelectAll();
-                    }), DispatcherPriority.Input);
-                }
-                else
-                {
-                    // Swallow click event if _selectedPointGroups is more than 1 so that the selection isn't messed up.
-                    if (_selectedPointGroups.Contains(pg)) { e.Handled = true; }
-                }
-            }
-        }
-        private void PointScaleTextbox_LostFocus(object sender, RoutedEventArgs e)
-        {
-            if (sender is TextBox textBox && textBox.DataContext is PointGroup)
-            {
-                e.Handled = true;
-
-                if (_pointGroupScaleBeingEdited)
-                {
-                    EndPointGroupScaleEditMode(textBox);
-                    _pointGroupScaleBeingEdited = false;
-                    _editPointGroup = null;
-                }
-                textBox.IsReadOnly = true;
-            }
-        }
-        private void PointScaleTextbox_PreviewKeyDown(object sender, KeyEventArgs e)
-        {
-            if (e.Key == Key.Enter)
-            {
-                if (sender is TextBox textBox && textBox.DataContext is PointGroup)
-                {
-                    e.Handled = true;
-
-                    if (_pointGroupScaleBeingEdited)
-                    {
-                        var copy = _selectedPointGroups.ToList();
-                        bool isValid = EndPointGroupScaleEditMode(textBox);
-
-                        if (isValid)
-                        {
-                            foreach (var pg in copy)
-                            {
-                                pg.PointScale = _editPointGroup.PointScale;
-                            }
-                            RefreshPointGroupTextBoxes("PointScaleTextbox", copy);
-
-                            _ignorePGListViewSelectionChanged = true;
-                            var copyLocal = copy.ToList();
-
-                            Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() =>
-                            {
-                                pointGroupsListView.SelectedItems.Clear();
-                                foreach (var pg in copyLocal)
-                                {
-                                    pointGroupsListView.SelectedItems.Add(pg);
-                                }
-
-                                // Keep our backing list in sync
-                                _selectedPointGroups.Clear();
-                                foreach (var pg in copyLocal)
-                                {
-                                    _selectedPointGroups.Add(pg);
-                                }
-                                _ignorePGListViewSelectionChanged = false;
-                            }));
-                        }
-
-                        _pointGroupScaleBeingEdited = false;
-                        _editPointGroup = null;
-                    }
-                    textBox.IsReadOnly = true;
-                }
-            }
-            if (e.Key == Key.Escape)
-            {
-                if (sender is TextBox textbox && textbox.DataContext is PointGroup)
-                {
-                    e.Handled = true;
-
-                    if (_pointGroupScaleBeingEdited)
-                    {
-                        _editPointGroup.PointScale = _previousPointGroupScale;
-                        _pointGroupScaleBeingEdited = false;
-                        var binding = textbox.GetBindingExpression(TextBox.TextProperty);
-                        binding.UpdateTarget();
-                        _editPointGroup = null;
-                    }
-                    textbox.IsReadOnly = true;
-                }
-            }
-        }
-        private bool EndPointGroupScaleEditMode(TextBox textBox)
-        {
-            if (textBox.DataContext is PointGroup)
-            {
-                bool isValid = CadManager.CogoPointManager.IsValidPointScale(textBox.Text, out string errorMessage);
-                var binding = textBox.GetBindingExpression(TextBox.TextProperty);
-
-                if (!isValid)
-                {
-                    binding.UpdateTarget();
-                }
-                else
-                {
-                    binding?.UpdateSource();
-                }
-
-                textBox.IsReadOnly = true;
-                return isValid;
-            }
-            return false;
-        }
-
         // New Point Group Creation
         private void NewPointGroupButton_Click(object sender, RoutedEventArgs e)
         {
             if (CadManager is null || CadManager.CogoPointManager is null) { return; }
 
-            var tempName = CadManager.CogoPointManager.GetTempPointGroupName();
-            var color = Colors.Black;
-            double scale = CadManager?.PointBaseScale ?? 1.0;
+            bool created = TryCreateNewPointGroup(
+                CadManager.CogoPointManager.GetTempPointGroupName(),
+                Colors.Black,
+                CadManager.PointBaseScale);
+        }
+        private void PointGroupsNameStartRowEdit(ListViewItem row)
+        {
+            var nameTb = VisualTreeHelpers.FindByName(row, "tbEdit") as TextBox;
+            if (nameTb != null)
+            {
+                InlineEdit.SetEditingField(row, "Name");
 
-            if (!CadManager.CogoPointManager.TryCreatePointGroup(tempName, color, out var pg) || pg == null)
-                return;
+                // Focus the TextBox inside that cell
+                row.Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    if (VisualTreeHelpers.FindByName(row, "tbEdit") is TextBox editBox)
+                    {
+                        Debug.WriteLine($"PointGroupsNameStartRowEdit: editBox.Text: {editBox.Text} editBox.Name: {editBox.Name}");
+
+                        editBox.Focus();
+                        editBox.SelectAll();
+                    }
+                }), DispatcherPriority.Input);
+            }
+        }
+        private bool TryCreateNewPointGroup(string name, Color color, double scale)
+        {
+            if (CadManager is null || CadManager.CogoPointManager is null) { return false; }
+
+            if (!CadManager.CogoPointManager.TryCreatePointGroup(name, color, out var pg) || pg == null)
+            {
+                return false;
+            }
 
             _newPointGroupBeingEdited = true;
             _newPointGroup = pg;
@@ -1000,140 +916,20 @@ namespace Cad_Point_Manager.Views.UserControls
                     // try again once more if virtualization delayed it
                     Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() =>
                     {
-                        if (pointGroupsListView.ItemContainerGenerator.ContainerFromItem(pg) is ListViewItem li) { PointGroupsStartRowEdit(li); }
+                        if (pointGroupsListView.ItemContainerGenerator.ContainerFromItem(pg) is ListViewItem li) 
+                        {
+                            BeginCellEdit(li, "Name");
+                        }
                     }));
                 }
                 else
                 {
-                    PointGroupsStartRowEdit(container);
+                    //PointGroupsNameStartRowEdit(container);
+                    BeginCellEdit(container, "Name");
                 }
             }));
-        }
-        private void PointGroupsStartRowEdit(ListViewItem row)
-        {
-            // Name TextBox
-            var nameTb = VisualTreeHelpers.FindByName(row, "pointGroupNameTB") as TextBox;
-            if (nameTb != null)
-            {
-                nameTb.IsReadOnly = false;
-                nameTb.Focus();
-                nameTb.SelectAll();
-            }
-        }
 
-        // Point Group Name
-        private void PointGroupNameBorder_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-        {
-            if (sender is Grid grid)
-            {
-                var textbox = VisualTreeHelpers.FindDescendantByName<TextBox>(grid, "pointGroupNameTB");
-                if (textbox is not null && textbox.DataContext is PointGroup pg)
-                {
-                    if (e.ClickCount > 1)
-                    {
-                        _pointGroupNameBeingEdited = true;
-                        _previousPointGroupName = pg.Name;
-                        _editPointGroup = pg;
-                        e.Handled = true;
-                        textbox.IsReadOnly = false;
-                        Debug.WriteLine($"PointGroupNameBorder_PreviewMouseLeftButtonDown textbox.IsReadOnly: {textbox.IsReadOnly}");
-                        textbox.Focus();
-
-                        textbox.Dispatcher.BeginInvoke(new Action(() =>
-                        {
-                            textbox.SelectAll();
-                        }), DispatcherPriority.Input);
-                    }
-                }
-            }
-        }
-        private void PointGroupNameTextbox_LostFocus(object sender, RoutedEventArgs e)
-        {
-            if (sender is TextBox textBox && textBox.DataContext is PointGroup)
-            {
-                e.Handled = true;
-
-                if (_newPointGroupBeingEdited)
-                {
-                    EndPointGroupNameEditMode(textBox);
-                    _newPointGroupBeingEdited = false;
-                    _newPointGroup = null;
-                }
-                if (_pointGroupNameBeingEdited)
-                {
-                    EndPointGroupNameEditMode(textBox);
-                    _pointGroupNameBeingEdited = false;
-                    _editPointGroup = null;
-                }
-                textBox.IsReadOnly = true;
-            }
-        }
-        private void PointGroupNameTextbox_PreviewKeyUp(object sender, KeyEventArgs e)
-        {
-            if (e.Key == Key.Enter)
-            {
-                if (sender is TextBox textBox && textBox.DataContext is PointGroup pg)
-                {
-                    e.Handled = true;
-
-                    if (_newPointGroupBeingEdited)
-                    {
-                        EndPointGroupNameEditMode(textBox);
-                        _newPointGroupBeingEdited = false;
-                        _newPointGroup = null;
-                    }
-                    if (_pointGroupNameBeingEdited)
-                    {
-                        EndPointGroupNameEditMode(textBox);
-                        _pointGroupNameBeingEdited = false;
-                        _editPointGroup = null;
-                    }
-                    textBox.IsReadOnly = true;
-                }
-            }
-            if (e.Key == Key.Escape)
-            {
-                if (sender is TextBox textBox && textBox.DataContext is PointGroup)
-                {
-                    e.Handled = true;
-
-                    if (_newPointGroupBeingEdited)
-                    {
-                        CadManager.CogoPointManager.DeletePointGroup(_newPointGroup);
-                        _newPointGroupBeingEdited = false;
-                        var binding = textBox.GetBindingExpression(TextBox.TextProperty);
-                        binding.UpdateTarget();
-                        _newPointGroup = null;
-                    }
-                    if (_pointGroupNameBeingEdited)
-                    {
-                        _editPointGroup.Name = _previousPointGroupName;
-                        _pointGroupNameBeingEdited = false;
-                        var binding = textBox.GetBindingExpression(TextBox.TextProperty);
-                        binding.UpdateTarget();
-                        _editPointGroup = null;
-                    }
-                    textBox.IsReadOnly = true;
-                }
-            }
-        }
-        private void EndPointGroupNameEditMode(TextBox textBox)
-        {
-            if (textBox.DataContext is PointGroup)
-            {
-                var binding = textBox.GetBindingExpression(TextBox.TextProperty);
-
-                if (!CadManager.CogoPointManager.IsValidPointGroupName(textBox.Text, out string errorMessage))
-                {
-                    binding.UpdateTarget();
-                }
-                else
-                {
-                    binding?.UpdateSource();
-                }
-
-                textBox.IsReadOnly = true;
-            }
+            return true;
         }
 
         // Point Group Merging
@@ -1184,19 +980,6 @@ namespace Cad_Point_Manager.Views.UserControls
                     null
                 );
                 Validation.ClearInvalid(binding);
-            }
-        }
-
-        private void RefreshPointGroupTextBoxes(string textBoxName, IEnumerable<PointGroup> groups)
-        {
-            foreach (var pg in groups)
-            {
-                var lvi = pointGroupsListView.ItemContainerGenerator.ContainerFromItem(pg) as ListViewItem;
-                if (lvi == null) continue; // not realized (virtualized) -> binding will update next time it's realized
-
-                // You already use a helper like this elsewhere
-                var tb = VisualTreeHelpers.FindByName(lvi, textBoxName) as TextBox;
-                tb?.GetBindingExpression(TextBox.TextProperty)?.UpdateTarget();
             }
         }
         #endregion

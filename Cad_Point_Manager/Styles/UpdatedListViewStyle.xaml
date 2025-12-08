@@ -32,7 +32,7 @@
                                                         AllowsColumnReorder="{Binding View.AllowsColumnReorder, RelativeSource={RelativeSource AncestorType=ListView}}"
                                                         ColumnHeaderContextMenu="{Binding View.ColumnHeaderContextMenu, RelativeSource={RelativeSource AncestorType=ListView}}"
                                                         ColumnHeaderToolTip="{Binding View.ColumnHeaderToolTip, RelativeSource={RelativeSource AncestorType=ListView}}"
-                                                        SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
+                                                        SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
                         </ScrollViewer>
 
                         <!-- Items -->
@@ -120,7 +120,7 @@
                             BorderBrush="{DynamicResource HeaderBorderBrush}"
                             BorderThickness="0.5"
                             VerticalAlignment="Bottom">
-                        <ContentPresenter Margin="5 0 5 0"/>
+                        <ContentPresenter Margin="5 0 5 0" />
                     </Border>
                 </ControlTemplate>
             </Setter.Value>
@@ -164,6 +164,10 @@
                 Value="{x:Null}" />
         <Setter Property="SnapsToDevicePixels"
                 Value="True" />
+        <Setter Property="HorizontalContentAlignment"
+                Value="Stretch" />
+        <Setter Property="VerticalContentAlignment"
+                Value="Stretch" />
         <Setter Property="UseLayoutRounding"
                 Value="True" />
         <Setter Property="Template">
@@ -224,6 +228,8 @@
                 Value="True" />
         <Setter Property="VerticalContentAlignment"
                 Value="Stretch" />
+        <Setter Property="HorizontalContentAlignment"
+                Value="Stretch" />
         <Setter Property="ItemContainerStyle"
                 Value="{StaticResource UpdatedListViewItemStyle}" />
         <Setter Property="Template">
@@ -234,7 +240,7 @@
                             BorderThickness="{TemplateBinding BorderThickness}"
                             Background="{TemplateBinding Background}"
                             Padding="0">
-                        <ScrollViewer Style="{StaticResource UpdatedListViewScrollViewer}" 
+                        <ScrollViewer Style="{StaticResource UpdatedListViewScrollViewer}"
                                       Padding="0">
                             <ItemsPresenter />
                         </ScrollViewer>

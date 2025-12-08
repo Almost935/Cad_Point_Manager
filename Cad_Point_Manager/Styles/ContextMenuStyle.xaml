@@ -29,11 +29,6 @@
                                           VerticalAlignment="Center"
                                           HorizontalAlignment="Left"
                                           Margin="6 0 6 0" />
-                        <!--<ContentPresenter Grid.Column="1"
-                                          ContentSource="Header"
-                                          Margin="4 0 25 0"
-                                          VerticalAlignment="Center"
-                                          HorizontalAlignment="Left" />-->
                         <TextBlock Grid.Column="1"
                                    Text="{TemplateBinding Header}"
                                    Margin="4 0 25 0"
