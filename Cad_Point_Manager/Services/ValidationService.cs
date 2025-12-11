@@ -1,5 +1,8 @@
-﻿using Cad_Point_Manager.Models;
+﻿using Cad_Point_Manager.Controls.D3DControl;
+using Cad_Point_Manager.Models;
 using Cad_Point_Manager.Models.PointRendering;
+using Cad_Point_Manager.Models.Printing;
+using System;
 
 namespace Cad_Point_Manager.Services
 {
@@ -62,7 +65,7 @@ namespace Cad_Point_Manager.Services
 
             if (input.IndexOfAny(IllegalGroupNameChars) >= 0)
             {
-                errorMessage = "Point group name contains illegal characters.";
+                errorMessage = "Point group name must not contain illegal characters.";
                 return false;
             }
 
@@ -100,6 +103,30 @@ namespace Cad_Point_Manager.Services
             }
 
             return isValid;
+        }
+
+        public bool ValidateSceneNameChange(string input, Scene scene, Camera camera, out string errorMessage)
+        {
+            if (string.IsNullOrWhiteSpace(input))
+            {
+                errorMessage = "Scene name is required.";
+                return false;
+            }
+
+            if (input.IndexOfAny(IllegalGroupNameChars) >= 0)
+            {
+                errorMessage = "Scene name must not contain illegal characters.";
+                return false;
+            }
+
+            if (!camera.ValidateSceneNameChange(input, scene, out string cpmError))
+            {
+                errorMessage = cpmError;
+                return false;
+            }
+
+            errorMessage = null;
+            return true;
         }
     }
 }

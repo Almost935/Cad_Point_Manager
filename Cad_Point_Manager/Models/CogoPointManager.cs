@@ -100,7 +100,7 @@ namespace Cad_Point_Manager.Models
 
             if (CogoPoints.Any(x => x.PointNumber == pointNumber))
             {
-                errorMessage = $"Point number {pointNumber} already exists.";
+                errorMessage = $"Point number \"{pointNumber}\" already exists.";
                 return false;
             }
             return true;

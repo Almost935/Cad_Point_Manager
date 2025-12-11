@@ -55,7 +55,7 @@ namespace Cad_Point_Manager.ViewModels
         private string _newCogoPointsElevationText = "0.00";
         private string _newCogoPointsDescription = "";
         private string _newCogoPointsDescriptionText = "";
-        private PointGroup _newCogoPointsActivePointGroup = null;
+        private PointGroup _activePointGroup = null;
         private int _newCogoPointsIntermediatePointsCount = 0;
         private string _newCogoPointsIntermediatePointsCountText = 0.ToString();
         #endregion
@@ -321,13 +321,13 @@ namespace Cad_Point_Manager.ViewModels
                 OnPropertyChanged(nameof(NewCogoPointsDescriptionText));
             }
         }
-        public PointGroup NewCogoPointsPointGroup
+        public PointGroup ActivePointGroup
         {
-            get => _newCogoPointsActivePointGroup;
+            get => _activePointGroup;
             set
             {
-                _newCogoPointsActivePointGroup = value;
-                OnPropertyChanged(nameof(NewCogoPointsPointGroup));
+                _activePointGroup = value;
+                OnPropertyChanged(nameof(ActivePointGroup));
             }
         }
         public int NewCogoPointsIntermediatePointsCount
@@ -504,11 +504,11 @@ namespace Cad_Point_Manager.ViewModels
                     var elevErrors = GetErrors(nameof(NewCogoPointsElevationText));
                     var descErrors = GetErrors(nameof(NewCogoPointsDescriptionText));
 
-                    if (startNumberErrors is not null || elevErrors is not null || descErrors is not null || NewCogoPointsPointGroup is null)
+                    if (startNumberErrors is not null || elevErrors is not null || descErrors is not null || ActivePointGroup is null)
                     {
-                        if (NewCogoPointsPointGroup == null)
+                        if (ActivePointGroup == null)
                         {
-                            AddError(nameof(NewCogoPointsPointGroup), "A point group must be selected.");
+                            AddError(nameof(ActivePointGroup), "A point group must be selected.");
                         }
                         if (startNumberErrors is not null || elevErrors is not null || descErrors is not null)
                         {
@@ -521,7 +521,7 @@ namespace Cad_Point_Manager.ViewModels
                         foreach (var hitPoint in SelectedHitTestablePoints)
                         {
                             int pointNum = JobFileManager.CadManager3D.CogoPointManager.GetNextAvailablePointNumber(NewCogoPointsStartNumber);
-                            JobFileManager.CadManager3D.CogoPointManager.TryAddPoint(pointNum, hitPoint.Position.ToSharpDXVector3(), NewCogoPointsPointGroup,
+                            JobFileManager.CadManager3D.CogoPointManager.TryAddPoint(pointNum, hitPoint.Position.ToSharpDXVector3(), ActivePointGroup,
                                 out var cogoPoint, NewCogoPointsElevation.ToFloat(), NewCogoPointsDescription);
                         }
 
@@ -531,7 +531,7 @@ namespace Cad_Point_Manager.ViewModels
                         ClearErrors(NewCogoPointsStartNumberText);
                         ClearErrors(NewCogoPointsElevationText);
                         ClearErrors(NewCogoPointsDescriptionText);
-                        ClearErrors(nameof(NewCogoPointsPointGroup));
+                        ClearErrors(nameof(ActivePointGroup));
                         ClearErrors(NewCogoPointsIntermediatePointsCountText);
                     }
                 }
@@ -545,11 +545,11 @@ namespace Cad_Point_Manager.ViewModels
                     var descErrors = GetErrors(nameof(NewCogoPointsDescriptionText));
                     var intermediatePointsErrors = GetErrors(nameof(NewCogoPointsIntermediatePointsCountText));
 
-                    if (startNumberErrors is not null || elevErrors is not null || descErrors is not null || intermediatePointsErrors is not null || NewCogoPointsPointGroup is null)
+                    if (startNumberErrors is not null || elevErrors is not null || descErrors is not null || intermediatePointsErrors is not null || ActivePointGroup is null)
                     {
-                        if (NewCogoPointsPointGroup == null)
+                        if (ActivePointGroup == null)
                         {
-                            AddError(nameof(NewCogoPointsPointGroup), "A point group must be selected.");
+                            AddError(nameof(ActivePointGroup), "A point group must be selected.");
                         }
                         if (startNumberErrors is not null || elevErrors is not null || descErrors is not null)
                         {
@@ -569,7 +569,7 @@ namespace Cad_Point_Manager.ViewModels
                         for (int i = 0; i < coords.Count; i++)
                         {
                             int pointNum = JobFileManager.CadManager3D.CogoPointManager.GetNextAvailablePointNumber(NewCogoPointsStartNumber);
-                            JobFileManager.CadManager3D.CogoPointManager.TryAddPoint(pointNum, coords[i].ToSharpDXVector3(), NewCogoPointsPointGroup,
+                            JobFileManager.CadManager3D.CogoPointManager.TryAddPoint(pointNum, coords[i].ToSharpDXVector3(), ActivePointGroup,
                             out var cogoPoint, NewCogoPointsElevation.ToFloat(), NewCogoPointsDescription);
                         }
 
@@ -582,7 +582,7 @@ namespace Cad_Point_Manager.ViewModels
                         ClearErrors(NewCogoPointsStartNumberText);
                         ClearErrors(NewCogoPointsElevationText);
                         ClearErrors(NewCogoPointsDescriptionText);
-                        ClearErrors(nameof(NewCogoPointsPointGroup));
+                        ClearErrors(nameof(ActivePointGroup));
                         ClearErrors(NewCogoPointsIntermediatePointsCountText);
                     }
                 }

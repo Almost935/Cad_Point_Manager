@@ -1,4 +1,5 @@
 ﻿using Cad_Point_Manager.Extensions;
+using Cad_Point_Manager.Models.PointRendering;
 using Cad_Point_Manager.Models.Printing;
 using SharpDX;
 using System.Collections.ObjectModel;
@@ -334,13 +335,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
         public bool TryDeleteScene(string sceneName)
         {
-            var scene = Scenes.FirstOrDefault(s => s.Name == sceneName);
-            if (scene != null)
-            {
-                Scenes.Remove(scene);
-                return true;
-            }
-            return false;
+            return Scenes.Remove(Scenes.FirstOrDefault(s => s.Name == sceneName));
+        }
+        public bool TryDeleteScene(Scene scene)
+        {
+            return Scenes.Remove(scene);
         }
         public void LoadScene(Scene scene)
         {
@@ -363,6 +362,19 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public bool SceneNameExists(string name)
         {
             return Scenes.Any(pg => pg.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+        }
+        public bool ValidateSceneNameChange(string newSceneName, Scene scene, out string? errorMessage)
+        {
+            errorMessage = null;
+
+            if (newSceneName == scene.Name) { return true; }
+
+            if (Scenes.Any(x => x.Name == newSceneName))
+            {
+                errorMessage = $"Scene name \"{newSceneName}\" already exists.";
+                return false;
+            }
+            return true;
         }
         public RectangleF GetCurrentViewportBounds()
         {

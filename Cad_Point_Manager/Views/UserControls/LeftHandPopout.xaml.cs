@@ -9,9 +9,11 @@ using Cad_Point_Manager.Services;
 using Cad_Point_Manager.ViewModels;
 using Cad_Point_Manager.Views.Assorted;
 using Cad_Point_Manager.Views.ValidationRules;
+using SharpDX;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Windows;
@@ -21,6 +23,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Threading;
+using Xceed.Wpf.Toolkit.PropertyGrid.Attributes;
 using TextBox = System.Windows.Controls.TextBox;
 
 namespace Cad_Point_Manager.Views.UserControls
@@ -38,14 +41,7 @@ namespace Cad_Point_Manager.Views.UserControls
         private ScaleTransform _mainPanelTransform = new();
         private ValidationService _validationService = new();
 
-        // Views related fields
-        private bool _newSceneBeingEdited = false;
-        private Scene _newScene = null;
-        private string _previousViewName;
-
-        private FrameworkElement? _lastContextCellElement;
-        private string? _lastContextField;
-
+        // Points related fields
         private readonly List<CogoPoint> _selectedPoints = [];
         private bool _pointsTabVisible = true;
         private double _pointsTabOpacity = 0;
@@ -54,6 +50,19 @@ namespace Cad_Point_Manager.Views.UserControls
         private bool _viewsTabVisible = true;
         private double _viewsTabOpacity = 0;
         private CogoPointSelectionViewModel _cogoPointSelectionViewModel;
+        private int _lastCreatedPointNumber = 1;
+
+        private string? _lastPointsListContextField;
+        private ListViewItem? _lastPointsListItem;
+
+        // Scenes related fields
+        private List<Scene> _selectedScenes = [];
+        private bool _newSceneBeingEdited = false;
+        private Scene _newScene = null;
+        private string _previousViewName;
+
+        private string? _lastScenesListContextField;
+        private ListViewItem? _lastScenesListItem;
         #endregion
 
         #region Properties
@@ -178,6 +187,18 @@ namespace Cad_Point_Manager.Views.UserControls
                 CogoPointSelectionViewModel?.Refresh();
             }
         }
+
+        public PointGroup ActivePointGroup
+        {
+            get { return (PointGroup)GetValue(ActivePointGroupProperty); }
+            set { SetValue(ActivePointGroupProperty, value); }
+        }
+        public static readonly DependencyProperty ActivePointGroupProperty =
+        DependencyProperty.Register(
+            nameof(ActivePointGroup),
+            typeof(PointGroup),
+            typeof(LeftHandPopout),
+            new PropertyMetadata(null));
         #endregion
 
         #region Constructors
@@ -193,8 +214,12 @@ namespace Cad_Point_Manager.Views.UserControls
             _hideTimer.Tick += HideTimer_Tick;
         }
         #endregion
-
-        #region Methods
+        // ------------------------------------------------------------------------
+        // ------------------------------------------------------------------------
+        // ------------------------ GENERAL METHODS -------------------------------
+        // ------------------------------------------------------------------------
+        // ------------------------------------------------------------------------
+        #region General Methods
         private static void OnCadManagerChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             if (d is LeftHandPopout control && e.NewValue is not null && e.NewValue is CadManager3D cadManager)
@@ -292,6 +317,26 @@ namespace Cad_Point_Manager.Views.UserControls
             //ViewsTabOpacity = 0;
         }
 
+        private void InlineEditBox_LostFocus(object sender, RoutedEventArgs e)
+        {
+            // If focus leaves the edit box, exit edit (commit if valid, otherwise keep error text synced)
+            if (sender is not TextBox tb) { return; }
+            var lvi = VisualTreeHelpers.FindAncestor<ListViewItem>(tb);
+            if (lvi == null) { return; }
+
+            var binding = tb.GetBindingExpression(TextBox.TextProperty);
+            if (!Validation.GetHasError(tb)) { binding?.UpdateSource(); } // commit if valid
+
+            InlineEdit.SetEditingField(lvi, null);
+        }
+        #endregion
+
+        // ------------------------------------------------------------------------
+        // ------------------------------------------------------------------------
+        // -------------- POINTS LISTVIEW BEHAVIOR AND CONTEXT MENU ---------------
+        // ------------------------------------------------------------------------
+        // ------------------------------------------------------------------------
+        #region Points ListView Methods
         private void PointsListView_Loaded(object sender, RoutedEventArgs e)
         {
             ListView listview = sender as ListView;
@@ -341,14 +386,29 @@ namespace Cad_Point_Manager.Views.UserControls
                 ViewsTabOpacity = 0;
             }
         }
+        private void PointsListViewNewPoint_Click(object sender, RoutedEventArgs e)
+        {
+            if (CadManager is null || CadManager.CogoPointManager is null) { return; }
+            if (ActivePointGroup is null)
+            {
+                MessageBox.Show("You must select an active point group to create new points.");
+                return;
+            }
+
+            bool created = TryCreateNewPoint(CadManager.CogoPointManager.GetNextAvailablePointNumber(_lastCreatedPointNumber), 
+                new Vector3(0,0,0), ActivePointGroup, 0, "");
+        }
+        private void PointsListViewRenamePoint_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
         private void PointsListViewEditPoint_Click(object sender, RoutedEventArgs e)
         {
-            if (_lastContextCellElement == null || string.IsNullOrEmpty(_lastContextField))
-                return;
+            if (_lastPointsListItem == null || string.IsNullOrEmpty(_lastPointsListContextField))
+            { return; }
 
-            BeginCellEdit(_lastContextCellElement, _lastContextField);
+            BeginPointsListCellEdit(_lastPointsListItem, _lastPointsListContextField);
 
-            // optional: close context menu after choosing Edit
             pointsListViewContextMenu.IsOpen = false;
         }
         private void PointsListViewDeletePoint_Click(object sender, RoutedEventArgs e)
@@ -363,38 +423,21 @@ namespace Cad_Point_Manager.Views.UserControls
             CadManager.CogoPointCircleVerticesDirty = true;
             CadManager.CogoPointTextVerticesDirty = true;
         }
-
-        private async void PropertiesBorder_MouseEnter(object sender, MouseEventArgs e)
-        {
-            if (ViewsTabVisible || PointsTabVisible)
-            {
-                await Task.Delay(GlobalHelperProperties.PopOutCloseDelay);
-            }
-            if (propertiesBorder.IsMouseOver)
-            {
-                PointsTabVisible = false;
-                PointsTabOpacity = 0;
-                PropertiesTabVisible = true;
-                PropertiesTabOpacity = 1;
-                ViewsTabOpacity = 0;
-                ViewsTabVisible = false;
-            }
-        }
         private void PointsListView_ContextMenuOpening(object sender, ContextMenuEventArgs e)
         {
             // element that was actually right-clicked
             if (e.OriginalSource is not DependencyObject src) { return; }
 
             // Walk up from the OriginalSource until we find something we can map to a field
-            FrameworkElement? fe = src as FrameworkElement
-                                   ?? VisualTreeHelpers.FindAncestor<FrameworkElement>(src);
+            ListViewItem? fe = src as ListViewItem
+                                   ?? VisualTreeHelpers.FindAncestor<ListViewItem>(src);
             if (fe == null) { return; }
 
             string field = PointsInferFieldNameFromDisplayElement(fe);
             if (string.IsNullOrEmpty(field)) { return; }
 
-            _lastContextField = field;
-            _lastContextCellElement = fe;
+            _lastPointsListContextField = field;
+            _lastPointsListItem = fe;
         }
         private void PointsListView_ContextMenuClosing(object sender, ContextMenuEventArgs e)
         {
@@ -404,108 +447,15 @@ namespace Cad_Point_Manager.Views.UserControls
                 _hideTimer.Start();
             }
         }
-        
-        // Scenes list
-        private void ScenesListView_Loaded(object sender, RoutedEventArgs e)
-        {
-            ListView listview = sender as ListView;
-
-            // Set column widths on each gridview
-            GridView viewsGridView = listview.View as GridView;
-            double viewsGridViewTotalWidth = mainPanel.ActualWidth;
-            double viewsGridViewColumnWidth = viewsGridViewTotalWidth / viewsGridView.Columns.Count;
-            if (viewsGridViewColumnWidth > 0)
-            {
-                viewsGridView.Columns[0].Width = viewsGridViewColumnWidth * 1.0;
-                viewsGridView.Columns[1].Width = viewsGridViewColumnWidth * 1.0;
-                viewsGridView.Columns[2].Width = viewsGridViewColumnWidth * 1.0;
-                viewsGridView.Columns[3].Width = viewsGridViewColumnWidth * 1.0;
-                viewsGridView.Columns[4].Width = viewsGridViewColumnWidth * 1.0;
-            }
-        }
-        private void ScenesListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-
-        }
-        private async void ScenesBorder_MouseEnter(object sender, MouseEventArgs e)
-        {
-            if (PropertiesTabVisible || PointsTabVisible)
-            {
-                await Task.Delay(GlobalHelperProperties.PopOutCloseDelay);
-            }
-            if (viewsBorder.IsMouseOver)
-            {
-                PointsTabVisible = false;
-                PointsTabOpacity = 0;
-                PropertiesTabVisible = false;
-                PropertiesTabOpacity = 0;
-                ViewsTabVisible = true;
-                ViewsTabOpacity = 1;
-            }
-        }
-        private void NewSceneButton_Click(object sender, RoutedEventArgs e)
-        {
-            if (Camera is null) { return; }
-
-            string tempViewName = Camera.GetTempSceneName();
-            if (!Camera.TrySaveScene(tempViewName, out var newScene) || newScene == null) { return; }
-
-            _newSceneBeingEdited = true;
-            _newScene = newScene;
-            _previousViewName = _newScene.Name;
-
-            scenesListView.SelectedItem = _newScene;
-            scenesListView.UpdateLayout();
-            scenesListView.ScrollIntoView(_newScene);
-
-            Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() =>
-            {
-                var container = scenesListView.ItemContainerGenerator.ContainerFromItem(_newScene) as ListViewItem;
-                if (container == null)
-                {
-                    // try again once more if virtualization delayed it
-                    Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() =>
-                    {
-                        if (scenesListView.ItemContainerGenerator.ContainerFromItem(_newScene) is ListViewItem li) { StartRowEdit(li); }
-                    }));
-                }
-                else
-                {
-                    StartRowEdit(container);
-                }
-            }));
-        }
-        private void DeleteSceneButton_Click(object sender, RoutedEventArgs e)
-        {
-
-        }
-        private void MenuItem_Click(object sender, RoutedEventArgs e)
-        {
-
-        }
-        private void StartRowEdit(ListViewItem row)
-        {
-            // Name TextBox
-            var nameTb = VisualTreeHelpers.FindByName(row, "PointGroupNameTextBox") as TextBox;
-            if (nameTb != null)
-            {
-                nameTb.IsReadOnly = false;
-                nameTb.Focus();
-                nameTb.SelectAll();
-            }
-        }
-
-
-        // ----------  DOUBLE-CLICK TO ENTER EDIT ----------
         private void PointsCellDisplay_MouseDown(object sender, MouseButtonEventArgs e)
         {
             if (e.ClickCount < 2) { return; }
-            if (sender is not FrameworkElement fe) { return; }
+            if (sender is not FrameworkElement fe || VisualTreeHelpers.FindAncestor<ListViewItem>(fe) is not ListViewItem lvi) { return; }
 
             string field = PointsInferFieldNameFromDisplayElement(fe);
             if (string.IsNullOrEmpty(field)) { return; }
 
-            BeginCellEdit(fe, field);
+            BeginPointsListCellEdit(lvi, field);
         }
         private static string PointsInferFieldNameFromDisplayElement(FrameworkElement fe)
         {
@@ -525,9 +475,7 @@ namespace Cad_Point_Manager.Views.UserControls
             }
             return null;
         }
-
-        // ----------  COMMIT/CANCEL/EXIT EDIT ----------
-        private void PointsLVInlineEditBox_PreviewKeyDown(object sender, KeyEventArgs e)
+        private void PointsListInlineEditBox_PreviewKeyDown(object sender, KeyEventArgs e)
         {
             if (sender is not TextBox tb) { return; }
 
@@ -629,41 +577,92 @@ namespace Cad_Point_Manager.Views.UserControls
                 return;
             }
         }
-        private void InlineEditBox_LostFocus(object sender, RoutedEventArgs e)
+        private void BeginPointsListCellEdit(ListViewItem lvi, string field)
         {
-            // If focus leaves the edit box, exit edit (commit if valid, otherwise keep error text synced)
-            if (sender is not TextBox tb) { return; }
-            var lvi = VisualTreeHelpers.FindAncestor<ListViewItem>(tb);
             if (lvi == null) { return; }
 
-            var binding = tb.GetBindingExpression(TextBox.TextProperty);
-            if (!Validation.GetHasError(tb))
-                binding?.UpdateSource(); // commit if valid
-
-            InlineEdit.SetEditingField(lvi, null);
-        }
-
-        private void BeginCellEdit(FrameworkElement fe, string field)
-        {
-            var lvi = VisualTreeHelpers.FindAncestor<ListViewItem>(fe);
-            if (lvi == null) return;
-
-            // Tell the row which field is being edited
             InlineEdit.SetEditingField(lvi, field);
+            string tboxName = GetPointsPropertyFromTBox(field);
+            if (tboxName is null) { return; }
 
-            // Focus the TextBox inside that cell
-            fe.Dispatcher.BeginInvoke(new Action(() =>
+            lvi.Dispatcher.BeginInvoke(new Action(() =>
             {
-                var root = VisualTreeHelpers.FindAncestor<Grid>(fe) ?? (DependencyObject)fe;
-                var editBox = VisualTreeHelpers.FindDescendantByName<TextBox>(root, "tbEdit");
-                if (editBox != null)
+                if (VisualTreeHelpers.FindByName(lvi, tboxName) is TextBox editBox)
                 {
                     editBox.Focus();
                     editBox.SelectAll();
                 }
             }), DispatcherPriority.Input);
         }
+        private string GetPointsPropertyFromTBox(string tboxName)
+        {
+            return tboxName switch
+            {
+                "PointNumber" => "pointNumberEdit",
+                "Northing" => "pointNorthingEdit",
+                "Easting" => "pointEastingEdit",
+                "Elevation" => "pointElevationEdit",
+                "Description" => "pointDescriptionEdit",
+                _ => null
+            };
+        }
+        private bool TryCreateNewPoint(int num, Vector3 pos, PointGroup pg, float elevation, string description)
+        {
+            if (!CadManager.CogoPointManager.TryAddPoint(num, pos, pg, out CogoPoint p, elevation, description)) 
+            { return false; }
 
+            pointsListView.SelectedItem = p;
+            pointsListView.UpdateLayout();
+            pointsListView.ScrollIntoView(pg);
+
+            Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() =>
+            {
+                var container = pointsListView.ItemContainerGenerator.ContainerFromItem(p) as ListViewItem;
+                var parent = container.Parent;
+                Debug.WriteLine(parent);
+                if (container == null)
+                {
+                    // try again once more if virtualization delayed it
+                    Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() =>
+                    {
+                        if (pointsListView.ItemContainerGenerator.ContainerFromItem(p) is ListViewItem li)
+                        {
+                            BeginPointsListCellEdit(li, "Name");
+                        }
+                    }));
+                }
+                else
+                {
+                    BeginPointsListCellEdit(container, "Name");
+                }
+            }));
+
+            return true;
+        }
+        #endregion
+
+        // ------------------------------------------------------------------------
+        // ------------------------------------------------------------------------
+        // ----------  PROPERTIES PANEL TEXTBOXES VALIDATION & BEHAVIOR -----------
+        // ------------------------------------------------------------------------
+        // ------------------------------------------------------------------------
+        #region Properties Panel Methods
+        private async void PropertiesBorder_MouseEnter(object sender, MouseEventArgs e)
+        {
+            if (ViewsTabVisible || PointsTabVisible)
+            {
+                await Task.Delay(GlobalHelperProperties.PopOutCloseDelay);
+            }
+            if (propertiesBorder.IsMouseOver)
+            {
+                PointsTabVisible = false;
+                PointsTabOpacity = 0;
+                PropertiesTabVisible = true;
+                PropertiesTabOpacity = 1;
+                ViewsTabOpacity = 0;
+                ViewsTabVisible = false;
+            }
+        }
         private void PropertiesTextBox_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             var textBox = sender as TextBox;
@@ -1035,6 +1034,251 @@ namespace Cad_Point_Manager.Views.UserControls
                     }
                 }
             }
+        }
+        #endregion
+
+        // ------------------------------------------------------------------------
+        // ------------------------------------------------------------------------
+        // -------------- SCENES LISTVIEW BEHAVIOR AND CONTEXT MENU ---------------
+        // ------------------------------------------------------------------------
+        // ------------------------------------------------------------------------
+        #region Scenes ListView Methods
+        private void ScenesListView_Loaded(object sender, RoutedEventArgs e)
+        {
+            ListView listview = sender as ListView;
+
+            // Set column widths on each gridview
+            GridView viewsGridView = listview.View as GridView;
+            double viewsGridViewTotalWidth = mainPanel.ActualWidth;
+            double viewsGridViewColumnWidth = viewsGridViewTotalWidth / viewsGridView.Columns.Count;
+            if (viewsGridViewColumnWidth > 0)
+            {
+                viewsGridView.Columns[0].Width = viewsGridViewColumnWidth * 1.0;
+                viewsGridView.Columns[1].Width = viewsGridViewColumnWidth * 1.0;
+                viewsGridView.Columns[2].Width = viewsGridViewColumnWidth * 1.0;
+                viewsGridView.Columns[3].Width = viewsGridViewColumnWidth * 1.0;
+                viewsGridView.Columns[4].Width = viewsGridViewColumnWidth * 1.0;
+            }
+        }
+        private void ScenesListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            _selectedScenes.Clear();
+            var selectedItems = (sender as ListView).SelectedItems;
+
+            foreach (Scene scene in selectedItems)
+            {
+                if (scene is not null)
+                {
+                    _selectedScenes.Add(scene);
+                }
+            }
+        }
+        private async void ScenesBorder_MouseEnter(object sender, MouseEventArgs e)
+        {
+            if (PropertiesTabVisible || PointsTabVisible)
+            {
+                await Task.Delay(GlobalHelperProperties.PopOutCloseDelay);
+            }
+            if (viewsBorder.IsMouseOver)
+            {
+                PointsTabVisible = false;
+                PointsTabOpacity = 0;
+                PropertiesTabVisible = false;
+                PropertiesTabOpacity = 0;
+                ViewsTabVisible = true;
+                ViewsTabOpacity = 1;
+            }
+        }
+        private void NewSceneButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (Camera is null) { return; }
+
+            string tempViewName = Camera.GetTempSceneName();
+            if (!Camera.TrySaveScene(tempViewName, out var newScene) || newScene == null) { return; }
+
+            _newSceneBeingEdited = true;
+            _newScene = newScene;
+            _previousViewName = _newScene.Name;
+
+            scenesListView.SelectedItem = _newScene;
+            scenesListView.UpdateLayout();
+            scenesListView.ScrollIntoView(_newScene);
+
+            Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() =>
+            {
+                var container = scenesListView.ItemContainerGenerator.ContainerFromItem(_newScene) as ListViewItem;
+                if (container == null)
+                {
+                    // try again once more if virtualization delayed it
+                    Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() =>
+                    {
+                        if (scenesListView.ItemContainerGenerator.ContainerFromItem(_newScene) is ListViewItem li) { BeginPointsListCellEdit(li, "Name"); }
+                    }));
+                }
+                else
+                {
+                    BeginPointsListCellEdit(container, "Name");
+                }
+            }));
+        }
+        private void ScenesListDeleteMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            if (Camera is null) { return; }
+
+            var scenesToDelete = new List<Scene>(_selectedScenes);
+            foreach (var scene in scenesToDelete)
+            {
+                Camera.TryDeleteScene(scene);
+            }
+        }
+        private void ScenesListRenameMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
+        private void ScenesListView_ContextMenuOpening(object sender, ContextMenuEventArgs e)
+        {
+            // element that was actually right-clicked
+            if (e.OriginalSource is not DependencyObject src) { return; }
+
+            // Walk up from the OriginalSource until we find something we can map to a field
+            ListViewItem? fe = src as ListViewItem
+                                   ?? VisualTreeHelpers.FindAncestor<ListViewItem>(src);
+            if (fe == null) { return; }
+
+            string field = ScenesInferFieldNameFromDisplayElement(fe);
+            if (string.IsNullOrEmpty(field)) { return; }
+
+            _lastScenesListContextField = field;
+            _lastScenesListItem = fe;
+        }
+        private void ScenesListView_ContextMenuClosing(object sender, ContextMenuEventArgs e)
+        {
+            if (!mainPanel.IsMouseOver)
+            {
+                _isMouseOverPanel = false;
+                _hideTimer.Start();
+            }
+        }
+        private void ScenesCellDisplay_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            if (e.ClickCount < 2) { return; }
+            if (sender is not FrameworkElement fe || VisualTreeHelpers.FindAncestor<ListViewItem>(fe) is not ListViewItem lvi) { return; }
+
+            string field = ScenesInferFieldNameFromDisplayElement(fe);
+            if (string.IsNullOrEmpty(field)) { return; }
+
+            BeginScenesListCellEdit(lvi, field);
+        }
+        private static string ScenesInferFieldNameFromDisplayElement(FrameworkElement fe)
+        {
+            var grid = VisualTreeHelpers.FindAncestor<Grid>(fe);
+            if (grid?.Name is string s && !string.IsNullOrWhiteSpace(s))
+            {
+                // Map headers to property names as written in XAML
+                return s switch
+                {
+                    "sceneNameGrid" => "Name",
+                    _ => null
+                };
+            }
+            return null;
+        }
+        private void BeginScenesListCellEdit(ListViewItem lvi, string field)
+        {
+            if (lvi == null) { return; }
+
+            InlineEdit.SetEditingField(lvi, field);
+            string tboxName = GetScenesPropertyFromTBox(field);
+            if (tboxName is null) { return; }
+
+            lvi.Dispatcher.BeginInvoke(new Action(() =>
+            {
+                if (VisualTreeHelpers.FindByName(lvi, tboxName) is TextBox editBox)
+                {
+                    editBox.Focus();
+                    editBox.SelectAll();
+                }
+            }), DispatcherPriority.Input);
+        }
+        private void ScenesListInlineEditBox_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (sender is not TextBox tb) { return; }
+
+            var lvi = VisualTreeHelpers.FindAncestor<ListViewItem>(tb);
+            if (lvi == null) { return; }
+            if (lvi.DataContext is not Scene scene) { return; }
+
+            // Which field are we currently editing? (set earlier in CellDisplay_MouseDown)
+            string field = InlineEdit.GetEditingField(lvi);
+            var binding = tb.GetBindingExpression(TextBox.TextProperty);
+
+            if (e.Key == Key.Enter)
+            {
+                string text = tb.Text;
+                string? errorMessage = null;
+
+                switch (field)
+                {
+                    // ---- POINT NUMBER: non-negative int, must NOT already exist ----
+                    case "Name":
+                        {
+                            if (!_validationService.ValidateSceneNameChange(text, scene, Camera, out string svcError))
+                            {
+                                errorMessage = svcError;
+                            }
+                            break;
+                        }
+
+                    default: break;
+                }
+
+                if (errorMessage != null)
+                {
+                    if (binding != null)
+                    {
+                        Validation.MarkInvalid(
+                            binding,
+                            new ValidationError(
+                                new DataErrorValidationRule(),
+                                binding,
+                                errorMessage,
+                                null));
+                    }
+                    e.Handled = true;
+                    return;
+                }
+                else
+                {
+                    if (binding != null)
+                    {
+                        Validation.ClearInvalid(binding);
+                        binding.UpdateSource();
+                    }
+
+                    InlineEdit.SetEditingField(lvi, null);
+                    e.Handled = true;
+
+                    // move focus to next cell
+                    (tb as UIElement)?.MoveFocus(new TraversalRequest(FocusNavigationDirection.Next));
+                    return;
+                }
+            }
+            if (e.Key == Key.Escape)
+            {
+                // revert UI to source
+                binding?.UpdateTarget();
+                InlineEdit.SetEditingField(lvi, null);
+                e.Handled = true;
+                return;
+            }
+        }
+        private string GetScenesPropertyFromTBox(string tboxName)
+        {
+            return tboxName switch
+            {
+                "Name" => "viewNameEdit",
+                _ => null
+            };
         }
         #endregion
 

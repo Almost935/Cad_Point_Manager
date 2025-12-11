@@ -1,9 +1,9 @@
 ﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:converters="clr-namespace:Cad_Point_Manager.Converters">
-    
+
     <converters:FirstValidationErrorConverter x:Key="FirstValidationErrorConverter" />
-    
+
     <Style TargetType="TextBox"
            x:Key="EditableTextBox">
         <Style.Resources>
@@ -12,7 +12,7 @@
             <SolidColorBrush x:Key="Border.Static.Border"
                              Color="Black" />
         </Style.Resources>
-        
+
         <Setter Property="SnapsToDevicePixels"
                 Value="True" />
         <Setter Property="Focusable"
@@ -36,12 +36,15 @@
                     <Border Name="Border"
                             CornerRadius="2"
                             BorderThickness="1"
+                            Padding="{TemplateBinding Padding}"
+                            Margin="{TemplateBinding Margin}"
                             Background="{DynamicResource Border.Static.Background}"
                             BorderBrush="{DynamicResource Border.Static.Border}"
                             VerticalAlignment="{TemplateBinding VerticalAlignment}"
                             HorizontalAlignment="{TemplateBinding HorizontalAlignment}">
-                        <ScrollViewer Margin="0"
-                                      x:Name="PART_ContentHost" />
+                        <ScrollViewer x:Name="PART_ContentHost"
+                                      Padding="0"
+                                      Margin="0" />
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsReadOnly"
