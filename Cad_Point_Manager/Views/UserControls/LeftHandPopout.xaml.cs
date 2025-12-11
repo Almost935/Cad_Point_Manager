@@ -55,6 +55,19 @@ namespace Cad_Point_Manager.Views.UserControls
         private string? _lastPointsListContextField;
         private ListViewItem? _lastPointsListItem;
 
+        private bool _isCreatingNewPoint = false;
+        private CogoPoint? _newPoint = null;
+        private int _newPointFieldIndex = -1;
+
+        private static readonly string[] _newPointFieldOrder =
+        {
+            "PointNumber",
+            "Northing",
+            "Easting",
+            "Elevation",
+            "Description"
+        };
+
         // Scenes related fields
         private List<Scene> _selectedScenes = [];
         private bool _newSceneBeingEdited = false;
@@ -395,8 +408,8 @@ namespace Cad_Point_Manager.Views.UserControls
                 return;
             }
 
-            bool created = TryCreateNewPoint(CadManager.CogoPointManager.GetNextAvailablePointNumber(_lastCreatedPointNumber), 
-                new Vector3(0,0,0), ActivePointGroup, 0, "");
+            bool created = TryCreateNewPoint(CadManager.CogoPointManager.GetNextAvailablePointNumber(_lastCreatedPointNumber),
+                new Vector3(0, 0, 0), ActivePointGroup, 0, "");
         }
         private void PointsListViewRenamePoint_Click(object sender, RoutedEventArgs e)
         {
@@ -608,37 +621,71 @@ namespace Cad_Point_Manager.Views.UserControls
         }
         private bool TryCreateNewPoint(int num, Vector3 pos, PointGroup pg, float elevation, string description)
         {
-            if (!CadManager.CogoPointManager.TryAddPoint(num, pos, pg, out CogoPoint p, elevation, description)) 
+            if (!CadManager.CogoPointManager.TryAddPoint(num, pos, pg, out CogoPoint p, elevation, description))
             { return false; }
 
             pointsListView.SelectedItem = p;
             pointsListView.UpdateLayout();
-            pointsListView.ScrollIntoView(pg);
+
+            // First scroll attempt: realize the group container
+            pointsListView.ScrollIntoView(p);
 
             Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() =>
             {
-                var container = pointsListView.ItemContainerGenerator.ContainerFromItem(p) as ListViewItem;
-                var parent = container.Parent;
-                Debug.WriteLine(parent);
-                if (container == null)
+                // 1. Find the GroupItem that corresponds to this PointGroup
+                GroupItem targetGroupItem = null;
+
+                foreach (var groupItem in VisualTreeHelpers.FindVisualChildren<GroupItem>(pointsListView))
                 {
-                    // try again once more if virtualization delayed it
-                    Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() =>
+                    if (groupItem.DataContext is CollectionViewGroup cvg &&
+                        ReferenceEquals(cvg.Name, pg))
                     {
-                        if (pointsListView.ItemContainerGenerator.ContainerFromItem(p) is ListViewItem li)
-                        {
-                            BeginPointsListCellEdit(li, "Name");
-                        }
-                    }));
+                        targetGroupItem = groupItem;
+                        break;
+                    }
                 }
-                else
+
+                if (targetGroupItem != null)
                 {
-                    BeginPointsListCellEdit(container, "Name");
+                    var expander = VisualTreeHelpers.FindVisualChildren<Expander>(targetGroupItem).FirstOrDefault();
+                    expander?.IsExpanded = true;
                 }
+
+                // 3. Now the group is expanded; scroll the point again so its row is in view
+                pointsListView.ScrollIntoView(p);
+
+                // 4. On another dispatcher tick, its ListViewItem should exist and we can start editing
+                Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() =>
+                {
+                    if (pointsListView.ItemContainerGenerator.ContainerFromItem(p) is ListViewItem container)
+                    {
+                        // NEW POINT EDIT MODE:
+                        _isCreatingNewPoint = true;
+                        _newPoint = p;
+                        _newPointFieldIndex = 0; // "PointNumber"
+
+                        BeginPointsListCellEdit(container, "PointNumber");
+                    }
+                    else
+                    {
+                        Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() =>
+                        {
+                            if (pointsListView.ItemContainerGenerator.ContainerFromItem(p) is ListViewItem li)
+                            {
+                                _isCreatingNewPoint = true;
+                                _newPoint = p;
+                                _newPointFieldIndex = 0;
+
+                                BeginPointsListCellEdit(li, "PointNumber");
+                            }
+                        }));
+                    }
+                }));
             }));
 
             return true;
         }
+
         #endregion
 
         // ------------------------------------------------------------------------
