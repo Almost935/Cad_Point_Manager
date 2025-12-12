@@ -824,6 +824,8 @@ namespace Cad_Point_Manager.Views.UserControls
             }
             else
             {
+                if (_openColorPickerPG is null) { return; }
+
                 var color = colorpicker.SelectedColor;
                 foreach (var pg in _selectedPointGroups)
                 {
@@ -853,6 +855,8 @@ namespace Cad_Point_Manager.Views.UserControls
             {
                 if (sender is PortableColorPicker colorpicker)
                 {
+                    if (_openColorPickerPG is null) { return; }
+
                     var color = colorpicker.SelectedColor;
                     foreach (var pg in _selectedPointGroups)
                     {

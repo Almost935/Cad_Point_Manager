@@ -240,7 +240,7 @@ namespace Cad_Point_Manager.Models
             GetPointScale();
 
             // Testing
-            GetTestDxfPoints();
+            //GetTestDxfPoints();
 
             CogoPointManager.UpdatePointExtents();
 

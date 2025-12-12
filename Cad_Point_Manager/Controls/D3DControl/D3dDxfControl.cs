@@ -3364,7 +3364,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     _stateCtl.SetPointOffset(cp, cp.Position.ToSharpDXVector2());
                     _stateCtl.FlushPointUpdates();
                     RecomputeCogoPointBoundsFast(cp);
-                    _dxfDirty = true; _interactiveDirty = true;
+                    _pointCircleVerticesDirty = true; _dxfDirty = true; _interactiveDirty = true;
                 }
             }
             if (e.PropertyName == nameof(CogoPoint.PointGroup))

@@ -330,16 +330,35 @@ namespace Cad_Point_Manager.Views.UserControls
             //ViewsTabOpacity = 0;
         }
 
+
         private void InlineEditBox_LostFocus(object sender, RoutedEventArgs e)
         {
-            // If focus leaves the edit box, exit edit (commit if valid, otherwise keep error text synced)
             if (sender is not TextBox tb) { return; }
+
             var lvi = VisualTreeHelpers.FindAncestor<ListViewItem>(tb);
             if (lvi == null) { return; }
 
             var binding = tb.GetBindingExpression(TextBox.TextProperty);
-            if (!Validation.GetHasError(tb)) { binding?.UpdateSource(); } // commit if valid
+            if (!Validation.GetHasError(tb))
+            {
+                binding?.UpdateSource();  // still commit on losing focus
+            }
 
+            // Figure out which field this textbox corresponds to
+            string? currentField = PointsInferFieldNameFromDisplayElement(tb);
+            string? editingField = InlineEdit.GetEditingField(lvi);
+
+            // If EditingField was already changed to a *different* field
+            // (e.g. we moved from PointNumber -> Northing),
+            // don't clear it here or we'll immediately collapse the new editor.
+            if (!string.IsNullOrEmpty(editingField) &&
+                currentField != null &&
+                !string.Equals(editingField, currentField, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            // Normal case: leaving edit for this field / row
             InlineEdit.SetEditingField(lvi, null);
         }
         #endregion
@@ -496,9 +515,11 @@ namespace Cad_Point_Manager.Views.UserControls
             if (lvi == null) { return; }
             if (lvi.DataContext is not CogoPoint cp) { return; }
 
-            // Which field are we currently editing? (set earlier in CellDisplay_MouseDown)
             string field = InlineEdit.GetEditingField(lvi);
             var binding = tb.GetBindingExpression(TextBox.TextProperty);
+
+            // Helper: are we in "new point wizard" mode on this row?
+            bool isNewPointRow = _isCreatingNewPoint && ReferenceEquals(cp, _newPoint);
 
             if (e.Key == Key.Enter)
             {
@@ -507,7 +528,6 @@ namespace Cad_Point_Manager.Views.UserControls
 
                 switch (field)
                 {
-                    // ---- POINT NUMBER: non-negative int, must NOT already exist ----
                     case "PointNumber":
                         {
                             if (!_validationService.ValidatePointNumberChange(text, cp, CadManager.CogoPointManager, out string svcError))
@@ -516,8 +536,6 @@ namespace Cad_Point_Manager.Views.UserControls
                             }
                             break;
                         }
-
-                    // ---- NORTHING / EASTING / ELEVATION: valid double ----
                     case "Northing":
                     case "Easting":
                     case "Elevation":
@@ -528,8 +546,6 @@ namespace Cad_Point_Manager.Views.UserControls
                             }
                             break;
                         }
-
-                    // ---- DESCRIPTION: must NOT contain illegal characters ----
                     case "Description":
                         {
                             if (!_validationService.ValidateString(text, out string svcError))
@@ -538,23 +554,18 @@ namespace Cad_Point_Manager.Views.UserControls
                             }
                             break;
                         }
-
-                    // Unknown / fallback – just accept
                     default:
-                        {
-                            break;
-                        }
+                        break;
                 }
 
                 if (errorMessage != null)
                 {
-                    // Mark invalid and KEEP focus in the textbox
                     if (binding != null)
                     {
                         Validation.MarkInvalid(
                             binding,
                             new ValidationError(
-                                new DataErrorValidationRule(),  // or a specific rule type
+                                new DataErrorValidationRule(),
                                 binding,
                                 errorMessage,
                                 null));
@@ -565,31 +576,97 @@ namespace Cad_Point_Manager.Views.UserControls
                 }
                 else
                 {
-                    // Valid – clear any old errors and commit the value
+                    // Valid: commit the value
                     if (binding != null)
                     {
                         Validation.ClearInvalid(binding);
                         binding.UpdateSource();
                     }
 
-                    // leave edit mode
-                    InlineEdit.SetEditingField(lvi, null);
                     e.Handled = true;
 
-                    // move focus to next cell
-                    (tb as UIElement)?.MoveFocus(new TraversalRequest(FocusNavigationDirection.Next));
+                    if (isNewPointRow)
+                    {
+                        // ------- NEW POINT MODE: go to next field or finish -------
+                        int idx = Array.IndexOf(_newPointFieldOrder, field);
+                        if (idx >= 0 && idx < _newPointFieldOrder.Length - 1)
+                        {
+                            // Next field in the wizard
+                            _newPointFieldIndex = idx + 1;
+                            string nextField = _newPointFieldOrder[_newPointFieldIndex];
+
+                            InlineEdit.SetEditingField(lvi, nextField);
+
+                            lvi.Dispatcher.BeginInvoke(new Action(() =>
+                            {
+                                string tboxName = GetPointsPropertyFromTBox(nextField);
+                                if (tboxName != null &&
+                                    VisualTreeHelpers.FindByName(lvi, tboxName) is TextBox nextTb)
+                                {
+                                    nextTb.Focus();
+                                    nextTb.SelectAll();
+                                }
+                            }), DispatcherPriority.Input);
+                        }
+                        else
+                        {
+                            // Last field ("Description") just finished — end wizard mode
+                            InlineEdit.SetEditingField(lvi, null);
+                            _isCreatingNewPoint = false;
+                            _newPoint = null;
+                            _newPointFieldIndex = -1;
+
+                            CadManager.CogoPointCircleVerticesDirty = true;
+                            CadManager.CogoPointTextVerticesDirty = true;
+                        }
+
+                        return;
+                    }
+                    else
+                    {
+                        // ------- NORMAL EDIT MODE (existing points) -------
+                        InlineEdit.SetEditingField(lvi, null);
+
+                        // Your old behavior: move focus to next control
+                        (tb as UIElement)?.MoveFocus(new TraversalRequest(FocusNavigationDirection.Next));
+                        return;
+                    }
+                }
+            }
+
+            if (e.Key == Key.Escape)
+            {
+                if (isNewPointRow)
+                {
+                    // Cancel creation of this new point completely
+                    if (CadManager?.CogoPointManager != null && _newPoint != null)
+                    {
+                        CadManager.CogoPointManager.DeletePoint(_newPoint);
+                        CadManager.CogoPointCircleVerticesDirty = true;
+                        CadManager.CogoPointTextVerticesDirty = true;
+                    }
+
+                    _isCreatingNewPoint = false;
+                    _newPoint = null;
+                    _newPointFieldIndex = -1;
+
+                    InlineEdit.SetEditingField(lvi, null);
+                    pointsListView.SelectedItem = null;
+
+                    e.Handled = true;
+                    return;
+                }
+                else
+                {
+                    // Existing behavior: revert / exit edit for existing points
+                    binding?.UpdateTarget();
+                    InlineEdit.SetEditingField(lvi, null);
+                    e.Handled = true;
                     return;
                 }
             }
-            if (e.Key == Key.Escape)
-            {
-                // revert UI to source
-                binding?.UpdateTarget();
-                InlineEdit.SetEditingField(lvi, null);
-                e.Handled = true;
-                return;
-            }
         }
+
         private void BeginPointsListCellEdit(ListViewItem lvi, string field)
         {
             if (lvi == null) { return; }
@@ -1137,6 +1214,38 @@ namespace Cad_Point_Manager.Views.UserControls
             }
         }
         private void NewSceneButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (Camera is null) { return; }
+
+            string tempViewName = Camera.GetTempSceneName();
+            if (!Camera.TrySaveScene(tempViewName, out var newScene) || newScene == null) { return; }
+
+            _newSceneBeingEdited = true;
+            _newScene = newScene;
+            _previousViewName = _newScene.Name;
+
+            scenesListView.SelectedItem = _newScene;
+            scenesListView.UpdateLayout();
+            scenesListView.ScrollIntoView(_newScene);
+
+            Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() =>
+            {
+                var container = scenesListView.ItemContainerGenerator.ContainerFromItem(_newScene) as ListViewItem;
+                if (container == null)
+                {
+                    // try again once more if virtualization delayed it
+                    Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() =>
+                    {
+                        if (scenesListView.ItemContainerGenerator.ContainerFromItem(_newScene) is ListViewItem li) { BeginPointsListCellEdit(li, "Name"); }
+                    }));
+                }
+                else
+                {
+                    BeginPointsListCellEdit(container, "Name");
+                }
+            }));
+        }
+        private void ScenesListNewMenuItem_Click(object sender, RoutedEventArgs e)
         {
             if (Camera is null) { return; }
 
