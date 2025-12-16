@@ -253,6 +253,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         /// Determines if the Direct3D control needs to be redrawn. Occurs when the camera is panned or zoomed.
         /// </summary>
         public bool HitTestableObjectTreeDirty { get; set; }
+        public bool CogoPointTreeDirty { get; set; }
         public bool ConstantBuffersInitialized { get; set; }
         public bool ConstantBuffersDirty { get; set; }
         public ViewportF Viewport { get; set; }
@@ -510,6 +511,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             if (_pointCircleVerticesDirty) { UpdatePointCircleVertices(); }
             if (_hoverVerticesDirty) { UpdateCogoHoverVertices(); }
             if (HitTestableObjectTreeDirty) { LoadHitTestableObjectTree(); }
+            if (CogoPointTreeDirty) { LoadCogoPointTree(); }
             if (_anchorVerticesDirty) { UpdateToggleAnchorVertices(); }
             if (_leaderLineVerticesDirty) { UpdateLeaderLineVertices(); }
             if (_sigPointVerticesDirty) { UpdateSignificantPointVertices(); }
@@ -947,7 +949,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             }
 
             _stateBufs.FlushAll();
-            HitTestableObjectTreeDirty = true;
+            CogoPointTreeDirty = true;
             _glyphVerticesDirty = false;
             _dxfDirty = true;
 
@@ -1998,7 +2000,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 pos.X >= 0 && pos.Y >= 0 &&
                 pos.X <= this.ActualWidth &&
                 pos.Y <= this.ActualHeight;
-            if (isInside) { return; }
+            if (isInside && IsDragging) { return; }
 
             _isMouseInside = false;
             _hitTestCancellationTokenSource.Cancel();
@@ -2023,12 +2025,13 @@ namespace Cad_Point_Manager.Controls.D3DControl
             {
                 RecomputeCogoPointBoundsFast(_pressedToggleButtonPoint);
                 EndCogoToggleButtonPress();
+                CadManager3D.CogoPointManager.UpdateCogoPointTree();
 
                 if (IsMouseCaptured) { ReleaseMouseCapture(); }
                 e.Handled = true;
 
                 _interactiveDirty = true;
-                HitTestableObjectTreeDirty = true;
+                CogoPointTreeDirty = true;
                 return;
             }
 
@@ -2817,6 +2820,13 @@ namespace Cad_Point_Manager.Controls.D3DControl
             CadManager3D.UpdateHitTestableObjectTree();
             HitTestableObjectTreeDirty = false;
         }
+        private void LoadCogoPointTree()
+        {
+            if (CadManager3D is null) { return; }
+
+            CadManager3D.UpdateCogoPointTree();
+            CogoPointTreeDirty = false;
+        }
 
         private void HoverObject(HitTestableObject hitTestableObject)
         {
@@ -3160,6 +3170,13 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     HitTestableObjectTreeDirty = true;
                 }
             }
+            if (e.PropertyName == nameof(CadManager3D.CogoPointTreeDirty))
+            {
+                if (CadManager3D.CogoPointTreeDirty)
+                {
+                    CogoPointTreeDirty = true;
+                }
+            }
             if (e.PropertyName == nameof(CadManager3D.DxfLoaded) && !CadManager3D.DxfLoaded)
             {
                 ClearDxf();
@@ -3334,7 +3351,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                             }
                         }
                         if (labelsNeedUpdate) { _stateCtl.FlushLabelUpdates(); }
-                        HitTestableObjectTreeDirty = true;
+                        CogoPointTreeDirty = true;
                     }
 
                     _dxfDirty = true;

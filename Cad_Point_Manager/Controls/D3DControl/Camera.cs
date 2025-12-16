@@ -4,6 +4,7 @@ using Cad_Point_Manager.Models.Printing;
 using SharpDX;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Windows;
 
@@ -16,6 +17,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private bool HasValidViewport => Viewport.Width > 0 && Viewport.Height > 0;
 
         private Matrix _scaledViewMatrix = Matrix.Identity;
+
         private Matrix3x2 _d2dMatrix = Matrix3x2.Identity;
         private System.Windows.Media.Matrix _windowsMatrix = System.Windows.Media.Matrix.Identity;
         private bool _isDirty = true;
@@ -262,10 +264,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         public Vector2 ScreenToWorld(Vector2 screenSpace)
         {
-            // Convert screen coordinates to normalized device coordinates (NDC)
             Vector2 ndc = ScreenToNDC(screenSpace);
-
-            // Unproject the NDC point into world space
             Vector3 world = Unproject(ndc);
 
             return new Vector2(world.X, world.Y);
@@ -315,6 +314,95 @@ namespace Cad_Point_Manager.Controls.D3DControl
             return worldUnitsPerPixel;
         }
 
+        public void ZoomToBounds(Rect bounds)
+        {
+            if (!HasValidViewport) return;
+            if (bounds.IsEmpty || bounds.Width <= 0 || bounds.Height <= 0) return;
+
+            // Optional padding so it's not edge-to-edge
+            const float paddingPct = 0.05f; // 5% padding
+            float padX = (float)bounds.Width * paddingPct;
+            float padY = (float)bounds.Height * paddingPct;
+
+            float targetW = (float)bounds.Width + 2f * padX;
+            float targetH = (float)bounds.Height + 2f * padY;
+
+            // 1) Measure base viewport world size at zoom=1, translate=0
+            int oldStep = CurrentZoomStep;
+            Vector2 oldTranslate = Translate;
+
+            CurrentZoomStep = 0;
+            Translate = Vector2.Zero;
+            UpdateView();
+            UpdateViewProjection();
+
+            RectangleF baseView = GetCurrentViewportBounds();
+            if (baseView.Width <= 0 || baseView.Height <= 0)
+            {
+                // restore and bail
+                CurrentZoomStep = oldStep;
+                Translate = oldTranslate;
+                UpdateView();
+                UpdateViewProjection();
+                return;
+            }
+
+            float baseW = baseView.Width;
+            float baseH = baseView.Height;
+
+            // 2) Compute the continuous zoom that would make bounds fit
+            // zoom > 1 => zoom in (smaller world visible), zoom < 1 => zoom out (larger world visible)
+            float desiredZoom = Math.Min(baseW / targetW, baseH / targetH);
+
+            // Guard against weird values
+            if (float.IsNaN(desiredZoom) || float.IsInfinity(desiredZoom) || desiredZoom <= 0)
+                desiredZoom = 1f;
+
+            // 3) Convert desiredZoom to a zoom step.
+            // IMPORTANT: choose a zoom that does NOT exceed desiredZoom, so the bounds still fits.
+            int step = ZoomStepFloor(desiredZoom);
+
+            CurrentZoomStep = step;
+            UpdateView();
+            UpdateViewProjection();
+
+            // 4) Center using the SAME convention as Pan(): Translate -= worldDelta
+            Vector2 desiredCenter = new(
+                (float)(bounds.X + bounds.Width / 2.0),
+                (float)(bounds.Y + bounds.Height / 2.0));
+
+            Vector2 screenCenter = new(Viewport.Width / 2f, Viewport.Height / 2f);
+            Vector2 currentCenterWorld = ScreenToWorld(screenCenter);
+
+            Vector2 worldDelta = desiredCenter - currentCenterWorld;
+
+            // Pan uses: Translate -= delta; so do the same here
+            Translate -= worldDelta;
+
+            UpdateView();
+            UpdateViewProjection();
+
+        }
+
+        private int ZoomStepFloor(float desiredZoom)
+        {
+            // desiredZoom = zoomFactor^step
+            // step = log(desiredZoom) / log(zoomFactor)
+            // We floor to ensure resulting zoom <= desiredZoom (keeps bounds fitting).
+            double zf = _zoomFactor;
+            if (zf <= 1.0) return 0;
+
+            double raw = Math.Log(desiredZoom) / Math.Log(zf);
+
+            // For negative values, Floor(-2.1) => -3 (more zoom-out), which is still <= desiredZoom, which we want.
+            int step = (int)Math.Floor(raw);
+
+            // Optional clamp (prevents insane zoom steps if bounds is microscopic/huge)
+            step = Math.Clamp(step, -500, 500);
+
+            return step;
+        }
+
         public bool TrySaveScene(string sceneName, out Scene scene)
         {
             if (Scenes.Any(s => s.Name == sceneName))
@@ -324,6 +412,10 @@ namespace Cad_Point_Manager.Controls.D3DControl
             }
 
             scene = new Scene() { Name = sceneName, ZoomStep = CurrentZoomStep, Translation = Translate, Bounds = GetCurrentViewportBounds() };
+
+            Debug.WriteLine($"\nZoomStep: {scene.ZoomStep}, Translation: {scene.Translation} " +
+                $"\nBounds: {scene.Bounds.Left} {scene.Bounds.Right} {scene.Bounds.Top} {scene.Bounds.Bottom}");
+
             Scenes.Add(scene);
 
             return true;
@@ -347,6 +439,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             Translate = scene.Translation;
             UpdateView();
             UpdateViewProjection();
+            IsDirty = true;
         }
         public string GetTempSceneName()
         {
@@ -378,11 +471,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
         public RectangleF GetCurrentViewportBounds()
         {
-            if (!HasValidViewport)
-                return RectangleF.Empty;
+            if (!HasValidViewport) { return RectangleF.Empty; }
 
-            // If we effectively have no camera (VP = Identity),
-            // just return viewport in "world == screen" space.
             if (ViewProjectionMatrix == Matrix.Identity)
                 return new RectangleF(0, 0, Viewport.Width, Viewport.Height);
 

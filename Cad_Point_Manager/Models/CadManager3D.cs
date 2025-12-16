@@ -12,6 +12,7 @@ using netDxf.Entities;
 using netDxf.Tables;
 using SharpDX;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Windows;
@@ -35,6 +36,7 @@ namespace Cad_Point_Manager.Models
         private bool _cogoPointTextVerticesDirty = false;
         private bool _cogoPointCircleVerticesDirty = false;
         private bool _drawingObjectTreeDirty = false;
+        private bool _cogoPointTreeDirty = false;
         private bool _dxfNeedsReload = false;
         private Rect _extents = RectExtensions.Zero;
         private BatchableObservableCollection<KeyValuePair<string, ObjectLayer3D>> _layers = [];
@@ -106,6 +108,15 @@ namespace Cad_Point_Manager.Models
             {
                 _drawingObjectTreeDirty = value;
                 OnPropertyChanged(nameof(HitTestableObjectTreeDirty));
+            }
+        }
+        public bool CogoPointTreeDirty
+        {
+            get => _cogoPointTreeDirty;
+            set
+            {
+                _cogoPointTreeDirty = value;
+                OnPropertyChanged(nameof(CogoPointTreeDirty));
             }
         }
         public bool DxfNeedsReload
@@ -240,9 +251,8 @@ namespace Cad_Point_Manager.Models
             GetPointScale();
 
             // Testing
-            //GetTestDxfPoints();
-
-            CogoPointManager.UpdatePointExtents();
+            GetTestDxfPoints();
+            CogoPointManager.UpdateCogoPointTree();
 
             foreach (var e in DxfDocument.Entities.All)
             {
@@ -266,11 +276,6 @@ namespace Cad_Point_Manager.Models
             CogoPointCircleVerticesDirty = true;
             HitTestableObjectTreeDirty = true;
             DxfNeedsReload = true;
-        }
-
-        public void UpdateExtents()
-        {
-            Extents = Rect.Union(Extents, CogoPointManager.Extents);
         }
 
         public void GetPointScale()
@@ -350,52 +355,37 @@ namespace Cad_Point_Manager.Models
             if (HitTestableObjectTree is null) { return hits; }
 
             Rect rect = new(p.X - tolerance, p.Y - tolerance, tolerance * 2, tolerance * 2);
-            var nodes = HitTestableObjectTree.GetIntersectingNodes(rect);
+            var nodes = CogoPointManager.CogoPointTree.GetIntersectingNodes(rect);
 
             foreach (var node in nodes)
             {
-                hits.AddRange(node.HitTestCogoPoints(p, rect));
+                hits.AddRange(node.HitTestPoint(p, rect));
             }
             hits.Sort((x, y) => x.distance.CompareTo(y.distance));
             return hits;
         }
-        public List<(double distance, HitTestableObject hitTestableObject)> HitTestAll(Point p, float tolerance)
-        {
-            List<(double distance, HitTestableObject hitTestableObject)> hits = [];
-
-            if (HitTestableObjectTree is null) { return hits; }
-
-            Rect rect = new(p.X - tolerance, p.Y - tolerance, tolerance * 2, tolerance * 2);
-            var nodes = HitTestableObjectTree.GetIntersectingNodes(rect);
-
-            foreach (var node in nodes)
-            {
-                hits.AddRange(node.HitTestAll(p, rect));
-            }
-            hits.Sort((x, y) => x.distance.CompareTo(y.distance));
-            return hits;
-        }
-
+        
         public List<CogoPoint> HitTestDragCogoPoints(Rect rect)
         {
             List<CogoPoint> points = [];
 
-            if (HitTestableObjectTree is null) { return points; }
+            if (CogoPointManager.CogoPointTree is null) { return points; }
 
-            var nodes = HitTestableObjectTree.GetIntersectingNodes(rect);
+            var nodes = CogoPointManager.CogoPointTree.GetIntersectingNodes(rect);
 
             foreach (var node in nodes)
             {
                 if (rect.Contains(node.Extents))
                 {
-                    foreach (var obj in node.HitTestableObjects)
+                    foreach (var p in node.CogoPoints)
                     {
-                        if (obj is CogoPoint cogoPoint) { points.Add(cogoPoint); }
+                        if (p.PointGroup.IsVisible) 
+                        { points.Add(p); }
                     }
                 }
                 else
                 {
-                    points.AddRange(node.HitTestCogoPointsInRect(rect));
+                    points.AddRange(node.HitTestRect(rect));
                 }
             }
 
@@ -611,8 +601,36 @@ namespace Cad_Point_Manager.Models
             HitTestableObjectTree = new(this, Extents, 5);
             HitTestableObjectTreeDirty = false;
 
-            //// For Testing
-            //LineVerticesDirty = true;
+            //// DrawingObjectTree Testing
+            //foreach (var node in CogoPointManager.CogoPointTree.BaseLevelNodes)
+            //{
+            //    Vector4 color = new(0, 0, 0, 1);
+            //    var topLeft = new Vector3((float)node.Extents.Left, (float)node.Extents.Top, 0);
+            //    var bottomRight = new Vector3((float)node.Extents.Right, (float)node.Extents.Bottom, 0);
+            //    var bottomLeft = new Vector3((float)node.Extents.Left, (float)node.Extents.Bottom, 0);
+            //    var topRight = new Vector3((float)node.Extents.Right, (float)node.Extents.Top, 0);
+
+            //    LineVertex topLeftVertex = new(topLeft, color);
+            //    LineVertex bottomRightVertex = new(bottomRight, color);
+            //    LineVertex bottomLeftVertex = new(bottomLeft, color);
+            //    LineVertex topRightVertex = new(topRight, color);
+
+            //    _cachedLineVertices.Add(topLeftVertex);
+            //    _cachedLineVertices.Add(topRightVertex);
+
+            //    _cachedLineVertices.Add(bottomLeftVertex);
+            //    _cachedLineVertices.Add(bottomRightVertex);
+
+            //    _cachedLineVertices.Add(topLeftVertex);
+            //    _cachedLineVertices.Add(bottomLeftVertex);
+
+            //    _cachedLineVertices.Add(topRightVertex);
+            //    _cachedLineVertices.Add(bottomRightVertex);
+            //}
+        }
+        public void UpdateCogoPointTree()
+        {
+            CogoPointManager.UpdateCogoPointTree();
         }
         #endregion
     }

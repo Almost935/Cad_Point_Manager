@@ -5,6 +5,7 @@ using Cad_Point_Manager.Models.HitTesting;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -38,7 +39,7 @@ namespace Cad_Point_Manager.Models.PointRendering
         #endregion
 
         #region Methods
-        public List<CogoPointTreeNode> GetIntersectingQuadTreeNodes(Rect view)
+        public List<CogoPointTreeNode>                                                                             GetIntersectingQuadTreeNodes(Rect view)
         {
             List<CogoPointTreeNode> intersectingNodes = [];
 
@@ -85,96 +86,45 @@ namespace Cad_Point_Manager.Models.PointRendering
             return node;
         }
 
-        public (double distance, CogoPoint cogoPoint) HitTestNode(Point p, float tolerance = 2)
+        public List<(double distance, CogoPoint cogoPoint)> HitTestPoint(Point p, Rect hitTestRange)
         {
-            HitTestableObject hitTestableObject = null;
-            double distance = double.MaxValue;
+            List<(double distance, CogoPoint cogoPoint)> hits = [];
 
-            foreach (var cp in CogoPoints)
+            foreach (var potentialHit in CogoPoints)
             {
-                if (cp.PointGroup.IsVisible)
+                if (potentialHit.PointGroup.IsVisible)
                 {
-                    var inflatedBounds = Rect.Inflate(cp.Bounds, tolerance, tolerance);
-
-                    if (inflatedBounds.Contains(p))
+                    if (potentialHit.BoundsInRect(hitTestRange))
                     {
-                        double d = cp.DistanceToPoint(p);
-
-                        if (d < distance)
-                        {
-                            distance = d;
-                            hitTestableObject = drawingObject;
-                        }
-                    }
-                }
-                if (obj is CogoPoint dxfPoint)
-                {
-                    if (dxfPoint.PointGroup.IsVisible)
-                    {
-                        var inflatedBounds = Rect.Inflate(dxfPoint.Bounds, tolerance, tolerance);
-
-                        if (inflatedBounds.Contains(p))
-                        {
-                            double d = dxfPoint.DistanceToPoint(p);
-
-                            if (d < distance)
-                            {
-                                distance = d;
-                                hitTestableObject = dxfPoint;
-                            }
-                        }
+                        double d = potentialHit.DistanceToPoint(p);
+                        hits.Add((d, potentialHit));
                     }
                 }
             }
-            return (distance, hitTestableObject);
-        }
-
-        public List<(double distance, CogoPoint point)> HitTest(Point p, Rect hitTestRange)
-        {
-            List<(double distance, CogoPoint point)> cogoPoints = [];
-
-            foreach (var hitTestableObject in HitTestableObjects)
-            {
-                if (hitTestableObject is CogoPoint point)
-                {
-                    if (point.PointGroup.IsVisible)
-                    {
-                        if (point.BoundsInRect(hitTestRange))
-                        {
-                            double d = point.DistanceToPoint(p);
-                            cogoPoints.Add((d, point));
-                        }
-                    }
-                }
-            }
-            return cogoPoints;
+            return hits;
         }
 
         public List<CogoPoint> HitTestRect(Rect rect)
         {
             List<CogoPoint> cogoPoints = [];
 
-            foreach (var hitTestableObject in HitTestableObjects)
+            foreach (var potentialHit in CogoPoints)
             {
-                if (hitTestableObject is CogoPoint point)
+                if (potentialHit.PointGroup.IsVisible)
                 {
-                    if (point.PointGroup.IsVisible)
-                    {
-                        if (point.CogoPointIntersectsRect(rect)) { cogoPoints.Add(point); }
-                    }
+                    if (potentialHit.CogoPointIntersectsRect(rect)) { cogoPoints.Add(potentialHit); }
                 }
             }
-
             return cogoPoints;
         }
 
         private void Subdivide()
         {
             if (Level <= 0) { return; }
-            if (HitTestableObjects.Count <= Tree.LeafCapacity) { return; }
+            if (CogoPoints.Count <= Tree.LeafCapacity) { return; }
             if (Extents.Width < Tree.MinCellSize || Extents.Height < Tree.MinCellSize) { return; }
 
-            ChildNodes = new HitTestableObjectNode[4];
+            ChildNodes = new CogoPointTreeNode[4];
 
             // Represents which quandrant each of the 1-4 is in
             Point factor1 = new(0, 0);
@@ -189,41 +139,40 @@ namespace Cad_Point_Manager.Models.PointRendering
             Rect extents3 = new(Extents.Left + halfBoundsSize.Width * factor3.X, Extents.Top + halfBoundsSize.Height * factor3.Y, halfBoundsSize.Width, halfBoundsSize.Height);
             Rect extents4 = new(Extents.Left + halfBoundsSize.Width * factor4.X, Extents.Top + halfBoundsSize.Height * factor4.Y, halfBoundsSize.Width, halfBoundsSize.Height);
 
-            List<HitTestableObject> hitTestableObjects1 = [];
-            List<HitTestableObject> hitTestableObjects2 = [];
-            List<HitTestableObject> hitTestableObjects3 = [];
-            List<HitTestableObject> hitTestableObjects4 = [];
+            List<CogoPoint> cogoPoints1 = [];
+            List<CogoPoint> cogoPoints2 = [];
+            List<CogoPoint> cogoPoints3 = [];
+            List<CogoPoint> cogoPoints4 = [];
 
-            foreach (var hitTestableObject in HitTestableObjects)
+            foreach (var cogoPoint in CogoPoints)
             {
-                if (hitTestableObject.Bounds.IsEmpty) { continue; }
+                if (cogoPoint.Bounds.IsEmpty) { continue; }
 
-                var bounds = Rect.Inflate(hitTestableObject.Bounds, 0.5, 0.5);
+                var bounds = Rect.Inflate(cogoPoint.Bounds, 0.5, 0.5);
 
                 if (bounds.IntersectsWith(extents1))
                 {
-                    hitTestableObjects1.Add(hitTestableObject);
+                    cogoPoints1.Add(cogoPoint);
                 }
                 if (bounds.IntersectsWith(extents2))
                 {
-                    hitTestableObjects2.Add(hitTestableObject);
+                    cogoPoints2.Add(cogoPoint);
                 }
                 if (bounds.IntersectsWith(extents3))
                 {
-                    hitTestableObjects3.Add(hitTestableObject);
+                    cogoPoints3.Add(cogoPoint);
                 }
                 if (bounds.IntersectsWith(extents4))
                 {
-                    hitTestableObjects4.Add(hitTestableObject);
+                    cogoPoints4.Add(cogoPoint);
                 }
             }
 
-            ChildNodes[0] = new(hitTestableObjects1, Level - 1, extents1, Tree);
-            ChildNodes[1] = new(hitTestableObjects2, Level - 1, extents2, Tree);
-            ChildNodes[2] = new(hitTestableObjects3, Level - 1, extents3, Tree);
-            ChildNodes[3] = new(hitTestableObjects4, Level - 1, extents4, Tree);
+            ChildNodes[0] = new(cogoPoints1, Level - 1, extents1, Tree);
+            ChildNodes[1] = new(cogoPoints2, Level - 1, extents2, Tree);
+            ChildNodes[2] = new(cogoPoints3, Level - 1, extents3, Tree);
+            ChildNodes[3] = new(cogoPoints4, Level - 1, extents4, Tree);
         }
         #endregion
     }
-}
 }

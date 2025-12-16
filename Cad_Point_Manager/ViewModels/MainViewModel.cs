@@ -526,7 +526,7 @@ namespace Cad_Point_Manager.ViewModels
                         }
 
                         ResetSelectionRequested?.Invoke(this, EventArgs.Empty);
-                        JobFileManager.CadManager3D.UpdateHitTestableObjectTree();
+                        JobFileManager.CadManager3D.UpdateCogoPointTree();
 
                         ClearErrors(NewCogoPointsStartNumberText);
                         ClearErrors(NewCogoPointsElevationText);
@@ -577,7 +577,7 @@ namespace Cad_Point_Manager.ViewModels
                         JobFileManager.CadManager3D.CogoPointCircleVerticesDirty = true;
 
                         ResetSelectionRequested?.Invoke(this, EventArgs.Empty);
-                        JobFileManager.CadManager3D.UpdateHitTestableObjectTree();
+                        JobFileManager.CadManager3D.UpdateCogoPointTree();
 
                         ClearErrors(NewCogoPointsStartNumberText);
                         ClearErrors(NewCogoPointsElevationText);

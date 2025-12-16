@@ -84,96 +84,6 @@ namespace Cad_Point_Manager.Models.HitTesting
             return node;
         }
 
-        /// <summary>
-        /// Gets the closest object to the point p within the tolerance.
-        /// </summary>
-        /// <param name="p">The point n from which the closest objects are found.</param>
-        /// <param name="tolerance">The minimum distance from the point to the object</param>
-        /// <returns></returns>
-        public (double distance, HitTestableObject hitTestableObject) HitTestNode(Point p, float tolerance = 2)
-        {
-            HitTestableObject hitTestableObject = null;
-            double distance = double.MaxValue;
-
-            foreach (var obj in HitTestableObjects)
-            {
-                if (obj is DrawingObject3D drawingObject)
-                {
-                    if (drawingObject.Layer.IsVisible)
-                    {
-                        var inflatedBounds = Rect.Inflate(drawingObject.Bounds, tolerance, tolerance);
-
-                        if (inflatedBounds.Contains(p))
-                        {
-                            double d = drawingObject.DistanceToPoint(p);
-
-                            if (d < distance)
-                            {
-                                distance = d;
-                                hitTestableObject = drawingObject;
-                            }
-                        }
-                    }
-                }
-                if (obj is CogoPoint dxfPoint)
-                {
-                    if (dxfPoint.PointGroup.IsVisible)
-                    {
-                        var inflatedBounds = Rect.Inflate(dxfPoint.Bounds, tolerance, tolerance);
-
-                        if (inflatedBounds.Contains(p))
-                        {
-                            double d = dxfPoint.DistanceToPoint(p);
-
-                            if (d < distance)
-                            {
-                                distance = d;
-                                hitTestableObject = dxfPoint;
-                            }
-                        }
-                    }
-                }
-            }
-            return (distance, hitTestableObject);
-        }
-
-        /// <summary>
-        /// Retunrs a list of objects sorted by distance from the point p.
-        /// </summary>
-        /// <param name="p">The point from which the distance to the objects is determined</param>
-        /// <param name="hitTestRange">The bounds that define the minimum distance from the point that the object can lie.</param>
-        /// <returns></returns>
-        public List<(double distance, HitTestableObject hitTestableObject)> HitTestAll(Point p, Rect hitTestRange)
-        {
-            List<(double distance, HitTestableObject hitTestableObject)> hits = [];
-
-            foreach (var hitTestableObject in HitTestableObjects)
-            {
-                if (hitTestableObject is DrawingObject3D drawingObject)
-                {
-                    if (drawingObject.Layer.IsVisible)
-                    {
-                        if (drawingObject.BoundsInRect(hitTestRange))
-                        {
-                            double d = drawingObject.DistanceToPoint(p);
-                            hits.Add((d, drawingObject));
-                        }
-                    }
-                }
-                if (hitTestableObject is CogoPoint dxfPoint)
-                {
-                    if (dxfPoint.PointGroup.IsVisible)
-                    {
-                        if (dxfPoint.BoundsInRect(hitTestRange))
-                        {
-                            double d = dxfPoint.DistanceToPoint(p);
-                            hits.Add((d, dxfPoint));
-                        }
-                    }
-                }
-            }
-            return hits;
-        }
         public List<(double distance, DrawingGeometry3D geometry)> HitTestGeometries(Point p, Rect hitTestRange)
         {
             List<(double distance, DrawingGeometry3D geometry)> geometries = [];
@@ -193,26 +103,6 @@ namespace Cad_Point_Manager.Models.HitTesting
                 }
             }
             return geometries;
-        }
-        public List<(double distance, CogoPoint point)> HitTestCogoPoints(Point p, Rect hitTestRange)
-        {
-            List<(double distance, CogoPoint point)> cogoPoints = [];
-
-            foreach (var hitTestableObject in HitTestableObjects)
-            {
-                if (hitTestableObject is CogoPoint point)
-                {
-                    if (point.PointGroup.IsVisible)
-                    {
-                        if (point.BoundsInRect(hitTestRange))
-                        {
-                            double d = point.DistanceToPoint(p);
-                            cogoPoints.Add((d, point));
-                        }
-                    }
-                }
-            }
-            return cogoPoints;
         }
         public List<(Enums.SignificantPointType pointType, double distance, Vector2 coordinate)> HitTestSignificantPoints(Point p, Rect hitTestRange)
         {
@@ -284,23 +174,6 @@ namespace Cad_Point_Manager.Models.HitTesting
             return hits.ToList();
         }
 
-        public List<CogoPoint> HitTestCogoPointsInRect(Rect rect)
-        {
-            List<CogoPoint> cogoPoints = [];
-
-            foreach (var hitTestableObject in HitTestableObjects)
-            {
-                if (hitTestableObject is CogoPoint point)
-                {
-                    if (point.PointGroup.IsVisible)
-                    {
-                        if (point.CogoPointIntersectsRect(rect)) { cogoPoints.Add(point); }
-                    }
-                }
-            }
-
-            return cogoPoints;
-        }
         public List<DrawingGeometry3D> HitTestGeometriesInRect(Rect rect)
         {
             List<DrawingGeometry3D> geometries = [];

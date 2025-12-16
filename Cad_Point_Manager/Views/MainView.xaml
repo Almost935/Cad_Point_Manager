@@ -144,6 +144,8 @@
             </Border>
         </Grid>
 
+        <Grid>
+        </Grid>
         <Grid x:Name="CogoPointCreationGrid"
               Grid.Row="1"
               HorizontalAlignment="Center">
@@ -418,7 +420,6 @@
                           SelectedValue="{Binding ActivePointGroup}" />
             </Grid>
         </Grid>
-
         <Grid x:Name="PopoutsGrid"
               Grid.Row="2"
               ClipToBounds="False"
@@ -440,10 +441,9 @@
                                ClipToBounds="False"
                                CadManager="{Binding JobFileManager.CadManager3D}"
                                SelectedCogoPoints="{Binding SelectedCogoPoints}"
-                               Camera="{Binding Camera}" 
-                               ActivePointGroup="{Binding ActivePointGroup}"/>
+                               Camera="{Binding Camera}"
+                               ActivePointGroup="{Binding ActivePointGroup}" />
         </Grid>
-
         <Grid Grid.Row="2">
             <Grid x:Name="dxfGrid"
                   SizeChanged="dxfGrid_SizeChanged"
@@ -519,17 +519,29 @@
         </Grid>
 
         <Grid x:Name="LowerRibbonGrid"
-              Grid.Row="3">
+              Grid.Row="3"
+              Margin="40,0,40,0">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="2*" />
+                <ColumnDefinition Width="657*" />
+                <ColumnDefinition Width="1013*" />
+                <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
-            <TextBlock Margin="40,2,40,2"
-                       Foreground="White"
+            <TextBlock Foreground="White"
                        VerticalAlignment="Center"
                        HorizontalAlignment="Center"
                        TextAlignment="Center"
                        Text="{Binding ElementName=d3dDxfControl, Path=DxfCoordsString}" />
+            <Button Grid.Column="2"
+                    Margin="1013,10,0,10"
+                    Style="{StaticResource BorderWidgetsButton}"
+                    Grid.ColumnSpan="2">
+                <Button.Content>
+                    <TextBlock Text="To Layouts"
+                               VerticalAlignment="Center"
+                               Margin="10 2 10 2" />
+                </Button.Content>
+            </Button>
         </Grid>
     </Grid>
 </Page>

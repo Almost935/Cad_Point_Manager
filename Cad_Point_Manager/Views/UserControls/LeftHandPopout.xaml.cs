@@ -35,9 +35,11 @@ namespace Cad_Point_Manager.Views.UserControls
     {
         #region Fields
         private const double _panelHideTime = 200;
+        private const double _zoomToPointPaddingFactor = 2;
 
         private readonly DispatcherTimer _hideTimer = new();
         private bool _isMouseOverPanel = false;
+        private bool _mainPanelIsVisible = false;
         private ScaleTransform _mainPanelTransform = new();
         private ValidationService _validationService = new();
 
@@ -76,6 +78,7 @@ namespace Cad_Point_Manager.Views.UserControls
 
         private string? _lastScenesListContextField;
         private ListViewItem? _lastScenesListItem;
+        private Scene? _lastRightClickedScene;
         #endregion
 
         #region Properties
@@ -291,7 +294,7 @@ namespace Cad_Point_Manager.Views.UserControls
 
         private void OverallGrid_MouseLeave(object sender, MouseEventArgs e)
         {
-            if (pointsListViewContextMenu.IsOpen) { return; }
+            if (pointsListViewContextMenu.IsOpen || scenesListViewContextMenu.IsOpen) { return; }
             _isMouseOverPanel = false;
             _hideTimer.Start();
         }
@@ -304,6 +307,7 @@ namespace Cad_Point_Manager.Views.UserControls
 
         private void ShowControl()
         {
+            _mainPanelIsVisible = true;
             DoubleAnimation slideIn = new DoubleAnimation
             {
                 To = 1,
@@ -314,6 +318,7 @@ namespace Cad_Point_Manager.Views.UserControls
         }
         private void HideControl()
         {
+            _mainPanelIsVisible = false;
             DoubleAnimation slideOut = new DoubleAnimation
             {
                 To = 0,
@@ -321,15 +326,7 @@ namespace Cad_Point_Manager.Views.UserControls
                 FillBehavior = FillBehavior.HoldEnd
             };
             _mainPanelTransform.BeginAnimation(ScaleTransform.ScaleXProperty, slideOut);
-
-            //PointsTabVisible = false;
-            //PointsTabOpacity = 0;
-            //PropertiesTabVisible = false;
-            //PropertiesTabOpacity = 0;
-            //ViewsTabVisible = false;
-            //ViewsTabOpacity = 0;
         }
-
 
         private void InlineEditBox_LostFocus(object sender, RoutedEventArgs e)
         {
@@ -404,7 +401,7 @@ namespace Cad_Point_Manager.Views.UserControls
         }
         private async void PointsBorder_MouseEnter(object sender, MouseEventArgs e)
         {
-            if (PropertiesTabVisible || ViewsTabVisible)
+            if ((PropertiesTabVisible || ViewsTabVisible) && _mainPanelIsVisible)
             {
                 await Task.Delay(GlobalHelperProperties.PopOutCloseDelay);
             }
@@ -455,21 +452,35 @@ namespace Cad_Point_Manager.Views.UserControls
             CadManager.CogoPointCircleVerticesDirty = true;
             CadManager.CogoPointTextVerticesDirty = true;
         }
+        private void PointsListViewZoomPoint_Click(object sender, RoutedEventArgs e)
+        {
+            if (Camera is null || _lastPointsListItem is null) { return; }
+
+            var p = _lastPointsListItem.DataContext as CogoPoint;
+           
+            double centerX = p.Bounds.Left + (p.Bounds.Width * 0.5);
+            double centerY = p.Bounds.Top + (p.Bounds.Height * 0.5);
+            
+            Camera.ZoomToBounds(new Rect(centerX - (p.Bounds.Width * _zoomToPointPaddingFactor * 0.5), centerY - (p.Bounds.Height * _zoomToPointPaddingFactor * 0.5), 
+                p.Bounds.Width * _zoomToPointPaddingFactor, p.Bounds.Height * _zoomToPointPaddingFactor));
+            Camera.IsDirty = true;
+        }
         private void PointsListView_ContextMenuOpening(object sender, ContextMenuEventArgs e)
         {
             // element that was actually right-clicked
             if (e.OriginalSource is not DependencyObject src) { return; }
+            if (e.OriginalSource is not FrameworkElement fe) { return; }
 
             // Walk up from the OriginalSource until we find something we can map to a field
-            ListViewItem? fe = src as ListViewItem
+            ListViewItem? lvi = src as ListViewItem
                                    ?? VisualTreeHelpers.FindAncestor<ListViewItem>(src);
-            if (fe == null) { return; }
+            if (lvi == null) { return; }
 
             string field = PointsInferFieldNameFromDisplayElement(fe);
             if (string.IsNullOrEmpty(field)) { return; }
 
             _lastPointsListContextField = field;
-            _lastPointsListItem = fe;
+            _lastPointsListItem = lvi;
         }
         private void PointsListView_ContextMenuClosing(object sender, ContextMenuEventArgs e)
         {
@@ -581,6 +592,12 @@ namespace Cad_Point_Manager.Views.UserControls
                     {
                         Validation.ClearInvalid(binding);
                         binding.UpdateSource();
+                    }
+
+                    if (field == "Northing" ||
+                        field == "Easting")
+                    {
+                        CadManager.CogoPointManager.UpdateCogoPointTree();
                     }
 
                     e.Handled = true;
@@ -773,7 +790,7 @@ namespace Cad_Point_Manager.Views.UserControls
         #region Properties Panel Methods
         private async void PropertiesBorder_MouseEnter(object sender, MouseEventArgs e)
         {
-            if (ViewsTabVisible || PointsTabVisible)
+            if ((ViewsTabVisible || PointsTabVisible) && _mainPanelIsVisible)
             {
                 await Task.Delay(GlobalHelperProperties.PopOutCloseDelay);
             }
@@ -898,6 +915,7 @@ namespace Cad_Point_Manager.Views.UserControls
                 {
                     binding?.UpdateSource();
                     Validation.ClearInvalid(binding);
+                    CadManager.CogoPointManager.UpdateCogoPointTree();
                 }
                 else
                 {
@@ -939,6 +957,7 @@ namespace Cad_Point_Manager.Views.UserControls
 
                     var request = new TraversalRequest(FocusNavigationDirection.Next);
                     (sender as UIElement)?.MoveFocus(request);
+                    CadManager.CogoPointManager.UpdateCogoPointTree();
                     e.Handled = true;
                 }
             }
@@ -962,6 +981,7 @@ namespace Cad_Point_Manager.Views.UserControls
                 {
                     binding?.UpdateSource();
                     Validation.ClearInvalid(binding);
+                    CadManager.CogoPointManager.UpdateCogoPointTree();
                 }
                 else
                 {
@@ -1003,6 +1023,7 @@ namespace Cad_Point_Manager.Views.UserControls
 
                     var request = new TraversalRequest(FocusNavigationDirection.Next);
                     (sender as UIElement)?.MoveFocus(request);
+                    CadManager.CogoPointManager.UpdateCogoPointTree();
                     e.Handled = true;
                 }
             }
@@ -1199,7 +1220,7 @@ namespace Cad_Point_Manager.Views.UserControls
         }
         private async void ScenesBorder_MouseEnter(object sender, MouseEventArgs e)
         {
-            if (PropertiesTabVisible || PointsTabVisible)
+            if ((PropertiesTabVisible || PointsTabVisible) && _mainPanelIsVisible)
             {
                 await Task.Delay(GlobalHelperProperties.PopOutCloseDelay);
             }
@@ -1236,12 +1257,15 @@ namespace Cad_Point_Manager.Views.UserControls
                     // try again once more if virtualization delayed it
                     Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() =>
                     {
-                        if (scenesListView.ItemContainerGenerator.ContainerFromItem(_newScene) is ListViewItem li) { BeginPointsListCellEdit(li, "Name"); }
+                        if (scenesListView.ItemContainerGenerator.ContainerFromItem(_newScene) is ListViewItem li) 
+                        {
+                            BeginScenesListCellEdit(li, "Name"); 
+                        }
                     }));
                 }
                 else
                 {
-                    BeginPointsListCellEdit(container, "Name");
+                    BeginScenesListCellEdit(container, "Name");
                 }
             }));
         }
@@ -1268,14 +1292,21 @@ namespace Cad_Point_Manager.Views.UserControls
                     // try again once more if virtualization delayed it
                     Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() =>
                     {
-                        if (scenesListView.ItemContainerGenerator.ContainerFromItem(_newScene) is ListViewItem li) { BeginPointsListCellEdit(li, "Name"); }
+                        if (scenesListView.ItemContainerGenerator.ContainerFromItem(_newScene) is ListViewItem li) 
+                        {
+                            BeginScenesListCellEdit(li, "Name"); 
+                        }
                     }));
                 }
                 else
                 {
-                    BeginPointsListCellEdit(container, "Name");
+                    BeginScenesListCellEdit(container, "Name");
                 }
             }));
+        }
+        private void ScenesListRenameMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+
         }
         private void ScenesListDeleteMenuItem_Click(object sender, RoutedEventArgs e)
         {
@@ -1287,25 +1318,30 @@ namespace Cad_Point_Manager.Views.UserControls
                 Camera.TryDeleteScene(scene);
             }
         }
-        private void ScenesListRenameMenuItem_Click(object sender, RoutedEventArgs e)
+        private void ScenesListZoomMenuItem_Click(object sender, RoutedEventArgs e)
         {
+            if (Camera is null || _lastRightClickedScene is null) { return; }
 
+            Camera.LoadScene(_lastRightClickedScene);
         }
         private void ScenesListView_ContextMenuOpening(object sender, ContextMenuEventArgs e)
         {
             // element that was actually right-clicked
             if (e.OriginalSource is not DependencyObject src) { return; }
+            if (e.OriginalSource is not FrameworkElement fe) { return; }
 
             // Walk up from the OriginalSource until we find something we can map to a field
-            ListViewItem? fe = src as ListViewItem
+            ListViewItem? lvi = src as ListViewItem
                                    ?? VisualTreeHelpers.FindAncestor<ListViewItem>(src);
-            if (fe == null) { return; }
+            if (lvi == null) { return; }
+            if (lvi.DataContext is not Scene scene) { return; }
+            _lastRightClickedScene = scene;
 
             string field = ScenesInferFieldNameFromDisplayElement(fe);
             if (string.IsNullOrEmpty(field)) { return; }
 
             _lastScenesListContextField = field;
-            _lastScenesListItem = fe;
+            _lastScenesListItem = lvi;
         }
         private void ScenesListView_ContextMenuClosing(object sender, ContextMenuEventArgs e)
         {
@@ -1432,7 +1468,7 @@ namespace Cad_Point_Manager.Views.UserControls
         {
             return tboxName switch
             {
-                "Name" => "viewNameEdit",
+                "Name" => "sceneNameEdit",
                 _ => null
             };
         }

@@ -20,7 +20,7 @@ namespace Cad_Point_Manager.Models.PointRendering
 
         public CogoPointTreeNode Root { get; set; }
         public List<CogoPointTreeNode> CurrentlyVisibleNodes { get; set; } = [];
-        public int LeafCapacity { get; set; } = 64;   // 32–128 are common
+        public int LeafCapacity { get; set; } = 10;   // 32–128 are common
         public double MinCellSize { get; set; } = 2;  // world units (≈ a few pixels)
         public int MaxLevels { get; set; } = 12;
         public List<CogoPointTreeNode> LeafNodes { get; set; } = [];
@@ -40,7 +40,7 @@ namespace Cad_Point_Manager.Models.PointRendering
         #region Methods
         private void Initialize()
         {
-            GetDrawingObjects();
+            GetCogoPoints();
             UpdateExtents();
             GetRoot();
         }
@@ -71,35 +71,31 @@ namespace Cad_Point_Manager.Models.PointRendering
         {
             Root = new(CogoPoints, MaxLevels, Extents, this);
         }
-        private void GetDrawingObjects()
+        private void GetCogoPoints()
         {
-            foreach (var keyValue in _cadManager.Layers)
+            foreach (var pg in _cadManager.CogoPointManager.PointGroups)
             {
-                HitTestableObjects.AddRange(keyValue.Value.DrawingObject3Ds);
-            }
-            foreach (var keyValue in _cadManager.CogoPointManager.PointGroups)
-            {
-                HitTestableObjects.AddRange(keyValue.Points);
+                CogoPoints.AddRange(pg.Points);
             }
         }
-        public List<HitTestableObjectNode> GetIntersectingNodes(Rect view)
+        public List<CogoPointTreeNode> GetIntersectingNodes(Rect view)
         {
-            List<HitTestableObjectNode> quadTreeNodes = [];
+            List<CogoPointTreeNode> quadTreeNodes = [];
 
             quadTreeNodes.AddRange(Root.GetIntersectingQuadTreeNodes(view));
 
             return quadTreeNodes;
         }
 
-        public List<HitTestableObjectNode> GetIntersectingNodes(Point p)
+        public List<CogoPointTreeNode> GetIntersectingNodes(Point p)
         {
-            List<HitTestableObjectNode> quadTreeNodes = [];
+            List<CogoPointTreeNode> quadTreeNodes = [];
 
             quadTreeNodes.AddRange(Root.GetNodesAtPoint(p));
 
             return quadTreeNodes;
         }
-        public HitTestableObjectNode GetIntersectingNode(Point p)
+        public CogoPointTreeNode GetIntersectingNode(Point p)
         {
             return Root.GetNodeAtPoint(p);
         }

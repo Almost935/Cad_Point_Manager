@@ -12,8 +12,6 @@ namespace Cad_Point_Manager.Models
     public class CogoPointManager : INotifyPropertyChanged
     {
         #region Fields
-        private const string _fontName = "Arial";
-
         private BatchableObservableCollection<PointGroup> _pointGroups = [];
         private PointGroup _activePointGroup;
         private CadManager3D _cadManager;
@@ -69,6 +67,7 @@ namespace Cad_Point_Manager.Models
 
         public Rect Extents { get; set; } = Rect.Empty;
         public Matrix CurrentlyAppliedMatrix { get; set; } = Matrix.Identity;
+        public CogoPointTree CogoPointTree { get; set; }
 
         public List<int> UsedPointNumbers => PointGroups.SelectMany(pg => pg.Points).Select(p => p.PointNumber).ToList();
         public bool PointExists(int pointNumber) => PointGroups.SelectMany(pg => pg.Points).Any(p => p.PointNumber == pointNumber);
@@ -331,7 +330,7 @@ namespace Cad_Point_Manager.Models
             }
         }
 
-        public void UpdatePointExtents()
+        private void UpdatePointExtents()
         {
             if (PointGroups == null || PointGroups.Count == 0) { Extents = Rect.Empty; }
 
@@ -363,6 +362,12 @@ namespace Cad_Point_Manager.Models
             }
 
             Extents = finalUnion;
+        }
+
+        public void UpdateCogoPointTree()
+        {
+            UpdatePointExtents();
+            CogoPointTree = new(CadManager, Extents, 5);
         }
 
         public void Reset()

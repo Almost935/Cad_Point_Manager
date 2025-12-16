@@ -37,6 +37,7 @@ namespace Cad_Point_Manager.Views.UserControls
 
         private int _pointGroupAnchorIndex = -1; // where SHIFT ranges start
 
+        private bool _mainPanelIsVisible = false;
         private bool _layerListVisible = true;
         private double _layerListOpacity = 0;
         private bool _layerListColorPickerOpen = false;
@@ -270,6 +271,7 @@ namespace Cad_Point_Manager.Views.UserControls
 
         private void ShowControl()
         {
+            _mainPanelIsVisible = true;
             DoubleAnimation slideIn = new DoubleAnimation
             {
                 To = 1,
@@ -280,8 +282,10 @@ namespace Cad_Point_Manager.Views.UserControls
         }
         private void HideControl()
         {
-            LayerListVisible = false;
-            PointGroupListVisible = false;
+            //LayerListVisible = false;
+            //PointGroupListVisible = false;
+
+            _mainPanelIsVisible = false;
 
             DoubleAnimation slideOut = new DoubleAnimation
             {
@@ -304,8 +308,8 @@ namespace Cad_Point_Manager.Views.UserControls
             if (layerListColumnWidth > 0)
             {
                 // Set column with name and visibility checkbox to double that of the color picker col
-                layerListGridView.Columns[0].Width = layerListColumnWidth * 1.4;
-                layerListGridView.Columns[1].Width = layerListColumnWidth * 1.0;
+                layerListGridView.Columns[0].Width = layerListColumnWidth * 1.8;
+                layerListGridView.Columns[1].Width = layerListColumnWidth * 0.6;
                 layerListGridView.Columns[2].Width = layerListColumnWidth * 0.6;
             }
         }
@@ -341,7 +345,7 @@ namespace Cad_Point_Manager.Views.UserControls
         }
         private async void LayersBorder_MouseEnter(object sender, MouseEventArgs e)
         {
-            if (PointGroupListVisible)
+            if (PointGroupListVisible && _mainPanelIsVisible)
             {
                 await Task.Delay(GlobalHelperProperties.PopOutCloseDelay);
             }
@@ -385,7 +389,7 @@ namespace Cad_Point_Manager.Views.UserControls
         // Point group related methods
         private async void PointGroupsBorder_MouseEnter(object sender, MouseEventArgs e)
         {
-            if (LayerListVisible)
+            if (LayerListVisible && _mainPanelIsVisible)
             {
                 await Task.Delay(GlobalHelperProperties.PopOutCloseDelay);
             }

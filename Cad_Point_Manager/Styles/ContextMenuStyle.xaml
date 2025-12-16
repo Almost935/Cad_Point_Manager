@@ -10,38 +10,41 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="MenuItem">
-                    <Grid Margin="2 5 2 5">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"
-                                              SharedSizeGroup="IconCol" />
-                            <ColumnDefinition Width="Auto"
-                                              SharedSizeGroup="HeaderCol" />
-                            <ColumnDefinition Width="Auto"
-                                              SharedSizeGroup="GestureCol" />
-                        </Grid.ColumnDefinitions>
+                    <Border x:Name="HoverBorder"
+                            Background="Transparent"
+                            CornerRadius="2"
+                            Grid.ColumnSpan="3"
+                            Padding="2 3 2 3"
+                            Margin="2 3 2 3">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"
+                                                  SharedSizeGroup="IconCol" />
+                                <ColumnDefinition Width="Auto"
+                                                  SharedSizeGroup="HeaderCol" />
+                                <ColumnDefinition Width="Auto"
+                                                  SharedSizeGroup="GestureCol" />
+                            </Grid.ColumnDefinitions>
 
-                        <Border x:Name="HoverBorder"
-                                Background="Transparent"
-                                CornerRadius="2"
-                                Grid.ColumnSpan="3" />
-                        <ContentPresenter Grid.Column="0" 
-                                          ContentSource="Icon"
-                                          VerticalAlignment="Center"
-                                          HorizontalAlignment="Left"
-                                          Margin="6 0 6 0" />
-                        <TextBlock Grid.Column="1"
-                                   Text="{TemplateBinding Header}"
-                                   Margin="4 0 25 0"
-                                   VerticalAlignment="Center"
-                                   HorizontalAlignment="Left"
-                                   Foreground="Black" />
-                        <TextBlock Grid.Column="2"
-                                   Text="{TemplateBinding InputGestureText}"
-                                   Foreground="{StaticResource ContextMenuForegroundBrush}"
-                                   Margin="6 0 6 0"
-                                   VerticalAlignment="Center"
-                                   HorizontalAlignment="Right" />
-                    </Grid>
+                            <ContentPresenter Grid.Column="0"
+                                              ContentSource="Icon"
+                                              VerticalAlignment="Center"
+                                              HorizontalAlignment="Left"
+                                              Margin="6 0 6 0" />
+                            <TextBlock Grid.Column="1"
+                                       Text="{TemplateBinding Header}"
+                                       Margin="4 0 25 0"
+                                       VerticalAlignment="Center"
+                                       HorizontalAlignment="Left"
+                                       Foreground="Black" />
+                            <TextBlock Grid.Column="2"
+                                       Text="{TemplateBinding InputGestureText}"
+                                       Foreground="{StaticResource ContextMenuForegroundBrush}"
+                                       Margin="6 0 6 0"
+                                       VerticalAlignment="Center"
+                                       HorizontalAlignment="Right" />
+                        </Grid>
+                    </Border>
 
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsHighlighted"
@@ -98,6 +101,22 @@
                                         KeyboardNavigation.DirectionalNavigation="Cycle" />
                         </Border>
                     </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="Win11SeparatorStyle"
+           TargetType="{x:Type Separator}">
+        <Setter Property="Margin"
+                Value="2,3,2,3" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type Separator}">
+                    <Border Height="1"
+                            Background="#22000000"
+                            HorizontalAlignment="Stretch"
+                            SnapsToDevicePixels="True" />
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
