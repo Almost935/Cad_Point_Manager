@@ -15,7 +15,6 @@
                 <ResourceDictionary Source="Resources/FontResources.xaml" />
                 <ResourceDictionary Source="Resources/AssortedResources.xaml" />
                 <ResourceDictionary Source="Styles/MenuStyles.xaml" />
-                <ResourceDictionary Source="Styles/ListViewStyle.xaml" />
                 <ResourceDictionary Source="/Styles/UpdatedListViewStyle.xaml" />
                 <ResourceDictionary Source="Styles/Icons.xaml" />
                 <ResourceDictionary Source="Styles/ValidationTemplate.xaml" />
@@ -27,6 +26,7 @@
                 <ResourceDictionary Source="Styles/ValidationComboBox.xaml" />
                 <ResourceDictionary Source="Styles/ContextMenuStyle.xaml" />
                 <ResourceDictionary Source="Styles/TextBoxStyles.xaml" />
+                <ResourceDictionary Source="Styles/DoubleClickActiveListView.xaml" />
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Application.Resources>

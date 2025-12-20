@@ -57,6 +57,7 @@
     <Compile Remove="Models\OffscreenBitmapManager.cs" />
     <Compile Remove="Models\PointRendering\CogoPointTextVerticesDict.cs" />
     <Compile Remove="Services\DxfService.cs" />
+    <Compile Remove="Views\UserControls\LayoutControl.xaml.cs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -69,6 +70,8 @@
 
   <ItemGroup>
     <Page Remove="Styles\BorderWidgetsRadioButton.xaml" />
+    <Page Remove="Styles\ListViewStyle.xaml" />
+    <Page Remove="Views\UserControls\LayoutControl.xaml" />
   </ItemGroup>
 
   <ItemGroup>

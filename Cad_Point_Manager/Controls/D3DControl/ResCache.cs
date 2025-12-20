@@ -2,11 +2,14 @@
 using SharpDX.Direct2D1;
 using SharpDX.Direct3D11;
 using SharpDX.DirectWrite;
+using SharpDX.DXGI;
 using System.Collections.Concurrent;
 using System.ComponentModel;
+
 using Device = SharpDX.Direct3D11.Device;
 using DeviceContext = SharpDX.Direct3D11.DeviceContext;
 using Factory2 = SharpDX.Direct2D1.Factory2;
+using MapFlags = SharpDX.Direct3D11.MapFlags;
 
 namespace Cad_Point_Manager.Controls.D3DControl
 {
@@ -68,13 +71,13 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 OnPropertyChanged(nameof(DxfTexture));
             }
         }
-        public Texture2D InteractionTexture
+        public Texture2D CombinedTexture
         {
             get { return _interactionTexture; }
             set
             {
                 _interactionTexture = value;
-                OnPropertyChanged(nameof(InteractionTexture));
+                OnPropertyChanged(nameof(CombinedTexture));
             }
         }
         public RenderTargetView RenderTargetView
@@ -220,6 +223,95 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 return newFontFace;
             }
         }
+
+        public System.Windows.Media.Imaging.BitmapSource ReadBackToBitmapSource(Texture2D sourceTexture)
+        {
+            if (sourceTexture == null)
+                throw new ArgumentNullException(nameof(sourceTexture));
+
+            if (Device == null || DeviceContext == null)
+                throw new InvalidOperationException("Device or DeviceContext not initialized.");
+
+            var desc = sourceTexture.Description;
+
+            // We expect BGRA8 for WPF interop
+            if (desc.Format != Format.B8G8R8A8_UNorm &&
+                desc.Format != Format.B8G8R8A8_UNorm_SRgb)
+            {
+                throw new NotSupportedException($"Unsupported texture format: {desc.Format}");
+            }
+
+            // Create staging texture (CPU-readable)
+            var stagingDesc = new Texture2DDescription
+            {
+                Width = desc.Width,
+                Height = desc.Height,
+                MipLevels = 1,
+                ArraySize = 1,
+                Format = desc.Format,
+                SampleDescription = new SampleDescription(1, 0),
+                Usage = ResourceUsage.Staging,
+                BindFlags = BindFlags.None,
+                CpuAccessFlags = CpuAccessFlags.Read,
+                OptionFlags = ResourceOptionFlags.None
+            };
+
+            using var staging = new Texture2D(Device, stagingDesc);
+
+            // GPU → CPU copy
+            DeviceContext.CopyResource(sourceTexture, staging);
+
+            // Map staging texture
+            var dataBox = DeviceContext.MapSubresource(
+                staging,
+                0,
+                MapMode.Read,
+                MapFlags.None);
+
+            try
+            {
+                int width = desc.Width;
+                int height = desc.Height;
+                int bytesPerPixel = 4; // BGRA
+                int stride = width * bytesPerPixel;
+
+                byte[] pixels = new byte[height * stride];
+
+                unsafe
+                {
+                    byte* srcPtr = (byte*)dataBox.DataPointer;
+                    fixed (byte* dstPtr = pixels)
+                    {
+                        for (int y = 0; y < height; y++)
+                        {
+                            System.Buffer.MemoryCopy(
+                                source: srcPtr + (y * dataBox.RowPitch),
+                                destination: dstPtr + (y * stride),
+                                destinationSizeInBytes: stride,
+                                sourceBytesToCopy: stride);
+                        }
+                    }
+                }
+
+                var bitmap = System.Windows.Media.Imaging.BitmapSource.Create(
+                    width,
+                    height,
+                    96,                     // DPI X
+                    96,                     // DPI Y
+                    System.Windows.Media.PixelFormats.Bgra32,    // matches B8G8R8A8
+                    null,
+                    pixels,
+                    stride);
+
+                bitmap.Freeze(); // 🔑 important for cross-thread usage
+                return bitmap;
+            }
+            finally
+            {
+                DeviceContext.UnmapSubresource(staging, 0);
+            }
+        }
+
 
         public void Dispose()
         {

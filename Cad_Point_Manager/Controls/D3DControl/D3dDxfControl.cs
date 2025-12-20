@@ -545,7 +545,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             if (_interactiveDirty)
             {
-                ctx.CopyResource(_resCache.DxfTexture, _resCache.InteractionTexture);
+                ctx.CopyResource(_resCache.DxfTexture, _resCache.CombinedTexture);
 
                 if (IsDragging && _dragFillVertexCount > 0)
                 {
@@ -573,7 +573,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     DrawSignificantPoints(ctx);
                 }
 
-                ctx.CopyResource(_resCache.InteractionTexture, _resCache.Texture2D);
+                ctx.CopyResource(_resCache.CombinedTexture, _resCache.Texture2D);
                 _interactiveDirty = false;
             }
         }
@@ -3406,6 +3406,53 @@ namespace Cad_Point_Manager.Controls.D3DControl
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
+        #endregion
+
+        #region Printing Methods
+        public System.Windows.Media.Imaging.BitmapSource RenderSceneToBitmapSource(Scene scene, int pixelWidth, int pixelHeight)
+        {
+            if (scene == null) throw new ArgumentNullException(nameof(scene));
+            if (_resCache == null) throw new InvalidOperationException("ResCache not initialized.");
+            if (Camera == null) throw new InvalidOperationException("Camera not initialized.");
+
+            // Save current camera/viewport state
+            var oldViewport = Camera.Viewport;
+            var oldZoom = Camera.CurrentZoomStep;
+            var oldTranslate = Camera.Translate;
+
+            try
+            {
+                // 1) Temporarily change viewport size
+                Camera.UpdateViewportSize(new ViewportF(0, 0, pixelWidth, pixelHeight));
+
+                // 2) Frame camera to the scene bounds using your existing camera logic
+                var b = scene.Bounds;
+                var boundsRect = new Rect(b.Left, b.Top, b.Width, b.Height);
+                Camera.ZoomToBounds(boundsRect);
+
+                // 3) Render one frame into InteractionTexture (your pipeline already composites into it)
+                _dxfDirty = true;
+                _interactiveDirty = true;
+                ConstantBuffersDirty = true;
+
+                Render();
+
+                // 4) Read back composited texture to BitmapSource
+                return _resCache.ReadBackToBitmapSource(_resCache.CombinedTexture);
+            }
+            finally
+            {
+                // Restore
+                Camera.CurrentZoomStep = oldZoom;
+                Camera.Translate = oldTranslate;
+                Camera.UpdateViewportSize(oldViewport);
+
+                Camera.UpdateView();
+                // UpdateViewProjection() is private in your Camera; calling UpdateView() + UpdateViewportSize() usually keeps it valid.
+                // If needed, expose a public Camera.RebuildMatrices() that calls UpdateProjection/UpdateViewProjection.
+            }
+        }
+
         #endregion
 
         #region Static Methods

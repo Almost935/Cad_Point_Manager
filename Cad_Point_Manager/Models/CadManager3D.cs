@@ -7,6 +7,7 @@ using Cad_Point_Manager.Helpers;
 using Cad_Point_Manager.Models.DrawingObjects3D;
 using Cad_Point_Manager.Models.HitTesting;
 using Cad_Point_Manager.Models.PointRendering;
+using Cad_Point_Manager.Models.Printing;
 using netDxf;
 using netDxf.Entities;
 using netDxf.Tables;
@@ -48,6 +49,8 @@ namespace Cad_Point_Manager.Models
         private Enums.SelectionMode _snapSelectionMode = Enums.SelectionMode.CogoPoints;
         private double _pointBaseScale = 1;
         private bool _hitTestingEnabled = true;
+        private BatchableObservableCollection<Layout> _layouts = [];
+        private ICollectionView _layoutsView;
 
         private readonly List<LineVertex> _cachedLineVertices = [];
         private readonly List<TextVertex> _cachedTextVertices = [];
@@ -218,6 +221,24 @@ namespace Cad_Point_Manager.Models
                 OnPropertyChanged(nameof(HitTestingEnabled));
             }
         }
+        public BatchableObservableCollection<Layout> Layouts
+        {
+            get => _layouts;
+            set
+            {
+                _layouts = value;
+                OnPropertyChanged(nameof(Layouts));
+            }
+        }
+        public ICollectionView LayoutsView
+        {
+            get => _layoutsView;
+            set
+            {
+                _layoutsView = value;
+                OnPropertyChanged(nameof(LayoutsView));
+            }
+        }
 
         public DxfDocument DxfDocument { get; set; }
         public HitTestableObjectTree HitTestableObjectTree { get; set; }
@@ -234,6 +255,7 @@ namespace Cad_Point_Manager.Models
         public CadManager3D()
         {
             CogoPointManager = new(this);
+            GetCollectionViews();
         }
         #endregion
 
@@ -267,7 +289,6 @@ namespace Cad_Point_Manager.Models
                     layer.AddDrawingObject(drawingObj3d);
                 }
             }
-            GetCollectionViews();
 
             DxfLoaded = true;
             LineVerticesDirty = true;
@@ -308,6 +329,10 @@ namespace Cad_Point_Manager.Models
             PointsView = new ListCollectionView(CogoPointManager.CogoPoints);
             PointsView.GroupDescriptions.Clear();
             PointsView.GroupDescriptions.Add(new PropertyGroupDescription("PointGroup"));
+
+            LayoutsView = new ListCollectionView(Layouts);
+            LayoutsView.SortDescriptions.Clear();
+            LayoutsView.SortDescriptions.Add(new SortDescription("Name", ListSortDirection.Ascending));
         }
 
         public List<(double distance, HitTestablePoint point)> HitTestSignficantPoints(Point p, float tolerance)

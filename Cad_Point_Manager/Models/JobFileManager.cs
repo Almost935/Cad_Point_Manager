@@ -14,7 +14,7 @@ namespace Cad_Point_Manager.Models
         private string _jobFilePath;
         private string _dxfFilePath;
         private DxfDocument _dxfDoc;
-        private CadManager3D _cadManager3D = new();
+        private CadManager3D _cadManager3D;
         private Rect _extents = RectExtensions.Zero;
         #endregion
 
@@ -79,7 +79,10 @@ namespace Cad_Point_Manager.Models
         #endregion
 
         #region Constructors
-        public JobFileManager() { }
+        public JobFileManager() 
+        {
+            CadManager3D = new CadManager3D();
+        }
         #endregion
 
         #region Methods

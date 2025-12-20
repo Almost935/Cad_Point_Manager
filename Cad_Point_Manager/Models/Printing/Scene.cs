@@ -32,7 +32,6 @@ namespace Cad_Point_Manager.Models.Printing
                 {
                     _bounds = value;
                     OnPropertyChanged(nameof(Bounds));
-
                     OnPropertyChanged(nameof(BoundsLeft));
                     OnPropertyChanged(nameof(BoundsTop));
                     OnPropertyChanged(nameof(BoundsRight));
@@ -43,6 +42,7 @@ namespace Cad_Point_Manager.Models.Printing
             }
         }
 
+        public Guid SceneId { get; set; } = Guid.NewGuid();
         public int ZoomStep { get; set; } = 0;
         public Vector2 Translation { get; set; } = Vector2.Zero;
 

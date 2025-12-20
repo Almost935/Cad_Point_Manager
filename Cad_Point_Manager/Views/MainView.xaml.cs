@@ -66,7 +66,6 @@ namespace Cad_Point_Manager.Views
             }
         }
 
-
         private void SelectedPointButtonsItemsControl_PreviewMouseMove(object sender, MouseEventArgs e)
         {
             if (d3dDxfControl != null)

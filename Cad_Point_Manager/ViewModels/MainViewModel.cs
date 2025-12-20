@@ -7,6 +7,7 @@ using Cad_Point_Manager.Models;
 using Cad_Point_Manager.Models.DrawingObjects3D;
 using Cad_Point_Manager.Models.HitTesting;
 using Cad_Point_Manager.Models.PointRendering;
+using Cad_Point_Manager.Models.Printing;
 using Cad_Point_Manager.Services;
 using netDxf;
 using System.Collections;
@@ -58,6 +59,13 @@ namespace Cad_Point_Manager.ViewModels
         private PointGroup _activePointGroup = null;
         private int _newCogoPointsIntermediatePointsCount = 0;
         private string _newCogoPointsIntermediatePointsCountText = 0.ToString();
+
+        // Models + Layouts Mode Fields
+        private bool _layoutsVisible = false;
+        private bool _modelVisible = true;
+        
+        // Layout related fields
+        private Layout _selectedLayout;
         #endregion
 
         #region Properties
@@ -363,6 +371,37 @@ namespace Cad_Point_Manager.ViewModels
                 }
 
                 OnPropertyChanged(nameof(NewCogoPointsIntermediatePointsCountText));
+            }
+        }
+
+        // Models + Layouts Mode Properties
+        public bool LayoutsVisible
+        {
+            get => _layoutsVisible;
+            set
+            {
+                _layoutsVisible = value;
+                OnPropertyChanged(nameof(LayoutsVisible));
+            }
+        }
+        public bool ModelsVisible
+        {
+            get => _modelVisible;
+            set
+            {
+                _modelVisible = value;
+                OnPropertyChanged(nameof(ModelsVisible));
+            }
+        }
+
+        // Layout related properties
+        public Layout SelectedLayout
+        {
+            get => _selectedLayout;
+            set
+            {
+                _selectedLayout = value;
+                OnPropertyChanged(nameof(SelectedLayout));
             }
         }
         #endregion

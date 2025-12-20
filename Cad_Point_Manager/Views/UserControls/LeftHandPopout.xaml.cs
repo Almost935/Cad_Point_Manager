@@ -370,7 +370,6 @@ namespace Cad_Point_Manager.Views.UserControls
         {
             ListView listview = sender as ListView;
 
-            // Set column widths on each gridview
             GridView pointsGridView = listview.View as GridView;
             double pointsListTotalWidth = mainPanel.ActualWidth;
             double pointsListColumnWidth = pointsListTotalWidth / pointsGridView.Columns.Count;

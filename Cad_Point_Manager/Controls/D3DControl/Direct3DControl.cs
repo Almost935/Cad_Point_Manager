@@ -18,10 +18,10 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private DeviceContext _deviceContext;
         private Texture2D _texture2D;
         private Texture2D _dxfTexture;
-        private Texture2D _interactiveTexture;
+        private Texture2D _combinedTexture;
         private RenderTargetView _renderTargetView;
         private RenderTargetView _dxfRenderTargetView;
-        private RenderTargetView _interactiveRenderTargetView;
+        private RenderTargetView _combinedRenderTargetView;
         private Dx11ImageSource _d3DSurface;
         private SharpDX.Direct2D1.Factory2 _d2dFactory;
         private SharpDX.Direct2D1.Device1 _d2dDevice;
@@ -224,9 +224,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
             Disposer.SafeDispose(ref _texture2D);
             Disposer.SafeDispose(ref _renderTargetView);
             Disposer.SafeDispose(ref _dxfRenderTargetView);
-            Disposer.SafeDispose(ref _interactiveRenderTargetView);
+            Disposer.SafeDispose(ref _combinedRenderTargetView);
             Disposer.SafeDispose(ref _dxfTexture);
-            Disposer.SafeDispose(ref _interactiveTexture);
+            Disposer.SafeDispose(ref _combinedTexture);
             Disposer.SafeDispose(ref _d2dFactory);
             Disposer.SafeDispose(ref _d2dDevice);
             Disposer.SafeDispose(ref _d2dDeviceContext);
@@ -242,11 +242,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _d3DSurface.SetRenderTarget(null);
 
             // 2) Dispose ALL old RTs & textures (not just the on-screen pair)
-            Disposer.SafeDispose(ref _interactiveRenderTargetView);
+            Disposer.SafeDispose(ref _combinedRenderTargetView);
             Disposer.SafeDispose(ref _dxfRenderTargetView);
             Disposer.SafeDispose(ref _renderTargetView);
 
-            Disposer.SafeDispose(ref _interactiveTexture);
+            Disposer.SafeDispose(ref _combinedTexture);
             Disposer.SafeDispose(ref _dxfTexture);
             Disposer.SafeDispose(ref _texture2D);
 
@@ -288,8 +288,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             _dxfTexture = new Texture2D(_device, offscreenRenderDesc);
             _resCache.DxfTexture = _dxfTexture;
-            _interactiveTexture = new(_device, offscreenRenderDesc);
-            _resCache.InteractionTexture = _interactiveTexture;
+            _combinedTexture = new(_device, offscreenRenderDesc);
+            _resCache.CombinedTexture = _combinedTexture;
 
             RenderTargetViewDescription rtvDesc = new RenderTargetViewDescription
             {
@@ -302,8 +302,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             _dxfRenderTargetView = new(_device, _dxfTexture, rtvDesc);
             _resCache.DxfRenderTargetView = _dxfRenderTargetView;
-            _interactiveRenderTargetView = new(_device, _interactiveTexture, rtvDesc);
-            _resCache.InteractiveRenderTargetView = _interactiveRenderTargetView;
+            _combinedRenderTargetView = new(_device, _combinedTexture, rtvDesc);
+            _resCache.InteractiveRenderTargetView = _combinedRenderTargetView;
 
             _deviceContext.OutputMerger.SetRenderTargets(_renderTargetView);
             _resCache.Texture2D = _texture2D;

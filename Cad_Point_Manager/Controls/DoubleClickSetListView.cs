@@ -11,26 +11,33 @@ namespace Cad_Point_Manager.Controls
                 "ActiveItem",
                 typeof(DoubleClickSetListViewItem),
                 typeof(DoubleClickSetListView),
-                new PropertyMetadata(OnActiveItemChangedCallBack));
+                new PropertyMetadata(OnActiveItemChanged));
+        public DoubleClickSetListViewItem ActiveItem
+        {
+            get { return (DoubleClickSetListViewItem)GetValue(ActiveItemProperty); }
+            set { SetValue(ActiveItemProperty, value); }
+        }
 
         public static readonly DependencyProperty ActiveObjectProperty =
             DependencyProperty.Register(
                 "ActiveObject",
                 typeof(object),
                 typeof(DoubleClickSetListView),
-                new PropertyMetadata(null));
-
-        public DoubleClickSetListViewItem ActiveItem
-        {
-            get { return (DoubleClickSetListViewItem)GetValue(ActiveItemProperty); }
-            set { SetValue(ActiveItemProperty, value); }
-        }
+                new PropertyMetadata(null, OnActiveObjectChanged));
         public object ActiveObject
         {
             get { return (object)GetValue(ActiveObjectProperty); }
             set { SetValue(ActiveObjectProperty, value); }
         }
 
+        public DoubleClickSetListView()
+        {
+            ItemContainerGenerator.StatusChanged += (_, __) =>
+            {
+                if (ItemContainerGenerator.Status == System.Windows.Controls.Primitives.GeneratorStatus.ContainersGenerated)
+                    ApplyActiveObjectToContainer();
+            };
+        }
 
         protected override bool IsItemItsOwnContainerOverride(object item)
         {
@@ -54,7 +61,6 @@ namespace Cad_Point_Manager.Controls
                     ActiveItem = null;
                     ActiveObject = null;
                 }
-
                 return;
             }
 
@@ -66,9 +72,46 @@ namespace Cad_Point_Manager.Controls
             ActiveItem.IsActive = true;
             ActiveObject = ActiveItem.Content;
         }
-        private static void OnActiveItemChangedCallBack(DependencyObject sender, DependencyPropertyChangedEventArgs e)
+        private static void OnActiveItemChanged(DependencyObject sender, DependencyPropertyChangedEventArgs e)
         {
             DoubleClickSetListViewItem listViewItem = (DoubleClickSetListViewItem)e.NewValue;
+        }
+        private static void OnActiveObjectChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            var lv = (DoubleClickSetListView)d;
+
+            // If the change came from inside the control, don't fight it.
+            if (ReferenceEquals(lv.ActiveItem?.Content, e.NewValue)) { return; }
+
+            lv.ApplyActiveObjectToContainer();
+        }
+
+        private void ApplyActiveObjectToContainer()
+        {
+            if (ActiveObject == null)
+            {
+                if (ActiveItem != null) ActiveItem.IsActive = false;
+                ActiveItem = null;
+                return;
+            }
+
+            // Try to get the container for the data item
+            var container = ItemContainerGenerator.ContainerFromItem(ActiveObject) as DoubleClickSetListViewItem;
+
+            // If virtualization hasn't generated it yet, you can optionally ScrollIntoView to force it:
+            if (container == null)
+            {
+                ScrollIntoView(ActiveObject);
+                container = ItemContainerGenerator.ContainerFromItem(ActiveObject) as DoubleClickSetListViewItem;
+                if (container == null) return; // still not ready
+            }
+
+            // Update active visuals
+            if (ActiveItem != null && ActiveItem != container)
+                ActiveItem.IsActive = false;
+
+            ActiveItem = container;
+            ActiveItem.IsActive = true;
         }
     }
     public class DoubleClickSetListViewItem : ListViewItem
@@ -86,7 +129,6 @@ namespace Cad_Point_Manager.Controls
             typeof(bool),
             typeof(DoubleClickSetListViewItem),
             new PropertyMetadata(false));
-
         public bool IsActive
         {
             get { return (bool)GetValue(IsActiveProperty); }
@@ -111,15 +153,7 @@ namespace Cad_Point_Manager.Controls
 
         protected override void OnMouseDoubleClick(MouseButtonEventArgs e)
         {
-            if (IsActive)
-            {
-                IsActive = false;
-            }
-            else
-            {
-                IsActive = true;
-            }
-
+            IsActive = true;
             ListViewItemActivated();
         }
     }
