@@ -4,7 +4,12 @@ using SharpDX.Direct3D9;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Collections.Specialized;
+using System.ComponentModel;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
@@ -22,7 +27,7 @@ namespace Cad_Point_Manager.Views.UserControls
     /// <summary>
     /// Interaction logic for LayoutPreviewControl.xaml
     /// </summary>
-    public partial class LayoutPreviewControl : UserControl
+    public partial class LayoutPreviewControl : UserControl, INotifyPropertyChanged
     {
         private const double DipsPerInch = 96.0;
 
@@ -72,20 +77,17 @@ namespace Cad_Point_Manager.Views.UserControls
                 typeof(IEnumerable<Scene>),
                 typeof(LayoutPreviewControl),
                 new PropertyMetadata(null, OnLayoutChanged));
-
         public IEnumerable<Scene>? Scenes
         {
             get => (IEnumerable<Scene>?)GetValue(ScenesProperty);
             set => SetValue(ScenesProperty, value);
         }
-
+        #endregion
         private static void OnLayoutChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             if (d is LayoutPreviewControl c)
                 _ = c.RebuildAsync();
         }
-
-        #endregion
 
         public async Task RebuildAsync()
         {
@@ -106,32 +108,81 @@ namespace Cad_Point_Manager.Views.UserControls
             DrawPageOnly();
 
             // 2) Add each viewport frame (border + image)
-            foreach (var vp in Layout.Viewports)
+            //foreach (var vp in Layout.Viewports)
+            //{
+            var vp = Layout.Viewport;
+            Scene? scene = null;
+            if (Scenes.Count() > vp.SceneIndex)
             {
-                Scene scene = Scenes.FirstOrDefault(x => x.SceneId == vp.SceneId);
-                if (scene is null) { continue; }
-                var frame = CreateViewportFrame(vp);
-                RootCanvas.Children.Add(frame);
-
-                // Render preview bitmap sized to the frame at PreviewDpi
-                int pxW = InchesToPixels(vp.LocalRectIn.Width, PreviewDpi);
-                int pxH = InchesToPixels(vp.LocalRectIn.Height, PreviewDpi);
-
-                if (pxW < 1 || pxH < 1) { continue; }
-
-                var bmp = await GetOrRenderAsync(scene, pxW, pxH);
-
-                // Set image
-                if (frame.Child is Image img) { img.Source = bmp; }
+                scene = Scenes.ToList()[vp.SceneIndex];
+                //if (scene is null) { continue; }
             }
+            if (scene is null)
+            {
+                DrawPageOnly();
+                return;
+            }
+
+            var frame = CreateViewportFrame(vp);
+            RootCanvas.Children.Add(frame);
+
+            // Render preview bitmap sized to the frame at PreviewDpi
+            int pxW = InchesToPixels(vp.LocalRectIn.Width, PreviewDpi);
+            int pxH = InchesToPixels(vp.LocalRectIn.Height, PreviewDpi);
+
+            if (pxW < 1 || pxH < 1) { return; }
+
+            var bmp = await GetOrRenderAsync(scene, pxW, pxH);
+
+            // Set image
+            if (frame.Child is Image img) { img.Source = bmp; }
+            //}
+        }
+        public static bool BitmapLooksBlank(BitmapSource bmp)
+        {
+            if (bmp.Format != PixelFormats.Bgra32)
+                bmp = new FormatConvertedBitmap(bmp, PixelFormats.Bgra32, null, 0);
+
+            int w = bmp.PixelWidth;
+            int h = bmp.PixelHeight;
+            int stride = w * 4;
+
+            byte[] pixels = new byte[h * stride];
+            bmp.CopyPixels(pixels, stride, 0);
+
+            for (int i = 0; i < pixels.Length; i += 4)
+            {
+                byte b = pixels[i + 0];
+                byte g = pixels[i + 1];
+                byte r = pixels[i + 2];
+                byte a = pixels[i + 3];
+
+                // detect anything not near-white
+                if (a > 10 && (r < 245 || g < 245 || b < 245))
+                    return false;
+            }
+
+            return true;
+        }
+
+        public static void SaveBitmapToPng(BitmapSource bitmap, string filePath)
+        {
+            if (bitmap == null)
+                throw new ArgumentNullException(nameof(bitmap));
+
+            var encoder = new PngBitmapEncoder();
+            encoder.Frames.Add(BitmapFrame.Create(bitmap));
+
+            using var fs = new FileStream(filePath, FileMode.Create, FileAccess.Write);
+            encoder.Save(fs);
         }
 
         private void DrawPageOnly()
         {
             if (Layout == null) { return; }
 
-            double pageW = Layout.PageWidthIn * DipsPerInch;
-            double pageH = Layout.PageHeightIn * DipsPerInch;
+            double pageW = Layout.PageSize.Width * DipsPerInch;
+            double pageH = Layout.PageSize.Height * DipsPerInch;
 
             RootCanvas.Children.Clear();
 
@@ -176,10 +227,10 @@ namespace Cad_Point_Manager.Views.UserControls
                 Width = w,
                 Height = h,
                 Child = img,
-                BorderThickness = new Thickness(vp.ShowBorder ? 1 : 0),
+                BorderThickness = new Thickness(vp.ShowBorder ? 4 : 0),
                 BorderBrush = Brushes.Black,
                 Background = Brushes.White,
-                ClipToBounds = true   // important so drawings don’t leak outside
+                ClipToBounds = false   // important so drawings don’t leak outside
             };
 
             Canvas.SetLeft(border, x);
@@ -191,11 +242,9 @@ namespace Cad_Point_Manager.Views.UserControls
         private async Task<BitmapSource> GetOrRenderAsync(Scene scene, int pixelW, int pixelH)
         {
             var key = (scene.SceneId, pixelW, pixelH);
-            if (_cache.TryGetValue(key, out var cached))
-                return cached;
+            //if (_cache.TryGetValue(key, out var cached)) { return cached; }
 
-            if (Renderer == null)
-                throw new InvalidOperationException("Renderer is null.");
+            if (Renderer == null) { throw new InvalidOperationException("Renderer is null."); }
 
             // Must render on the renderer's dispatcher (UI thread)
             var bmp = await Renderer.Dispatcher.InvokeAsync(() =>
@@ -207,5 +256,13 @@ namespace Cad_Point_Manager.Views.UserControls
 
         private static int InchesToPixels(double inches, int dpi)
             => (int)Math.Round(inches * dpi);
+
+        #region INotifyPropertyChanged Implementation
+        public event PropertyChangedEventHandler PropertyChanged;
+        protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+        #endregion
     }
 }

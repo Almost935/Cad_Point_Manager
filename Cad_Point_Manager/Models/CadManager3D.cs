@@ -255,6 +255,28 @@ namespace Cad_Point_Manager.Models
         public CadManager3D()
         {
             CogoPointManager = new(this);
+
+            var layout1 = new Layout() { Name = "Layout 1" };
+            layout1.Viewport = new LayoutViewport()
+            {
+                 LocalRectIn = new Rect(2, 2, 32, 20),
+            };
+            Layouts.Add(layout1);
+
+            var layout2 = new Layout() { Name = "Layout 2" };
+            layout2.Viewport = new LayoutViewport()
+            {
+                LocalRectIn = new Rect(2, 2, 32, 20),
+            };
+            Layouts.Add(layout2);
+
+            var layout3 = new Layout() { Name = "Layout 3" };
+            layout3.Viewport = new LayoutViewport()
+            {
+                LocalRectIn = new Rect(2, 2, 32, 20),
+            };
+            Layouts.Add(layout3);
+
             GetCollectionViews();
         }
         #endregion
@@ -297,6 +319,11 @@ namespace Cad_Point_Manager.Models
             CogoPointCircleVerticesDirty = true;
             HitTestableObjectTreeDirty = true;
             DxfNeedsReload = true;
+        }
+
+        public void GetInitialTemplate()
+        {
+
         }
 
         public void GetPointScale()
@@ -591,8 +618,8 @@ namespace Cad_Point_Manager.Models
 
             float rows = 15;
             float cols = 15;
-            float yIncrement = (Extents.Height.ToFloat() * 1.5f) / (rows - 1);
-            float xIncrement = (Extents.Width.ToFloat() * 1.5f) / (cols - 1);
+            float yIncrement = (Extents.Height.ToFloat()) / (rows - 1);
+            float xIncrement = (Extents.Width.ToFloat()) / (cols - 1);
             int pointNum = 1;
             float elevation = 0;
             string description = "Test Point";

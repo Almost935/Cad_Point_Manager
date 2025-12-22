@@ -1,7 +1,10 @@
 ﻿using Cad_Point_Manager.Controls;
 using Cad_Point_Manager.Controls.D3DControl;
+using Cad_Point_Manager.Helpers;
 using Cad_Point_Manager.Models;
 using Cad_Point_Manager.Models.Printing;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -11,8 +14,16 @@ namespace Cad_Point_Manager.Views.UserControls
     /// <summary>
     /// Interaction logic for LayoutsViewControl.xaml
     /// </summary>
-    public partial class LayoutsViewControl : UserControl
+    public partial class LayoutsViewControl : UserControl, INotifyPropertyChanged
     {
+        #region Fields
+        private bool _previewNeedsReload = false;
+        #endregion
+
+        #region Properties
+
+        #endregion
+
         #region Dependency Properties
         public static readonly DependencyProperty CadManagerProperty =
             DependencyProperty.Register(
@@ -71,6 +82,12 @@ namespace Cad_Point_Manager.Views.UserControls
         #endregion
 
         #region Methods
+        // Layout related methods
+        public void ReloadPreview()
+        {
+            LayoutPreviewControl.RebuildAsync();
+        }
+
         private void LayoutsListView_Loaded(object sender, RoutedEventArgs e)
         {
             DoubleClickSetListView listview = sender as DoubleClickSetListView;
@@ -80,9 +97,10 @@ namespace Cad_Point_Manager.Views.UserControls
             double layoutsListColumnWidth = layoutsListTotalWidth / layoutssGridView.Columns.Count;
             if (layoutsListColumnWidth > 0)
             {
-                layoutssGridView.Columns[0].Width = layoutsListColumnWidth * 1.0;
-                layoutssGridView.Columns[1].Width = layoutsListColumnWidth * 1.0;
-                layoutssGridView.Columns[2].Width = layoutsListColumnWidth * 1.0;
+                layoutssGridView.Columns[0].Width = layoutsListColumnWidth * 1.15;
+                layoutssGridView.Columns[1].Width = layoutsListColumnWidth * 0.75;
+                layoutssGridView.Columns[2].Width = layoutsListColumnWidth * 0.75;
+                layoutssGridView.Columns[3].Width = layoutsListColumnWidth * 1.35;
             }
         }
 
@@ -126,6 +144,46 @@ namespace Cad_Point_Manager.Views.UserControls
             {
                 ctrl.LayoutPreviewControl.RebuildAsync();
             }
+        }
+
+        // Scene related methods
+        private void ScenesListView_Loaded(object sender, RoutedEventArgs e)
+        {
+            //ListView listview = sender as ListView;
+
+            //// Set column widths on each gridview
+            //GridView scenesGridView = listview.View as GridView;
+            //double scenesGridViewTotalWidth = scenesListView.ActualWidth;
+            //double scenesGridViewColumnWidth = scenesGridViewTotalWidth / scenesGridView.Columns.Count;
+            //if (scenesGridViewColumnWidth > 0)
+            //{
+            //    scenesGridView.Columns[0].Width = scenesGridViewColumnWidth * 1.0;
+            //    scenesGridView.Columns[1].Width = scenesGridViewColumnWidth * 1.0;
+            //    scenesGridView.Columns[2].Width = scenesGridViewColumnWidth * 1.0;
+            //    scenesGridView.Columns[3].Width = scenesGridViewColumnWidth * 1.0;
+            //    scenesGridView.Columns[4].Width = scenesGridViewColumnWidth * 1.0;
+            //}
+        }
+        private void ScenesListView_ContextMenuOpening(object sender, ContextMenuEventArgs e)
+        {
+           
+        }
+        private void ScenesListView_ContextMenuClosing(object sender, ContextMenuEventArgs e)
+        {
+           
+        }
+
+        private void InsertSceneMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
+        #endregion
+
+        #region INotifyPropertyChanged Implementation
+        public event PropertyChangedEventHandler PropertyChanged;
+        protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
         #endregion
     }

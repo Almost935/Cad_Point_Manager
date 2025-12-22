@@ -98,13 +98,13 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 OnPropertyChanged(nameof(DxfRenderTargetView));
             }
         }
-        public RenderTargetView InteractiveRenderTargetView
+        public RenderTargetView CombinedRenderTargetView
         {
             get { return _interactiveRenderTargetView; }
             set
             {
                 _interactiveRenderTargetView = value;
-                OnPropertyChanged(nameof(InteractiveRenderTargetView));
+                OnPropertyChanged(nameof(CombinedRenderTargetView));
             }
         }
 
@@ -226,11 +226,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         public System.Windows.Media.Imaging.BitmapSource ReadBackToBitmapSource(Texture2D sourceTexture)
         {
-            if (sourceTexture == null)
-                throw new ArgumentNullException(nameof(sourceTexture));
+            if (sourceTexture == null) { throw new ArgumentNullException(nameof(sourceTexture)); }
 
-            if (Device == null || DeviceContext == null)
-                throw new InvalidOperationException("Device or DeviceContext not initialized.");
+            if (Device == null || DeviceContext == null) { throw new InvalidOperationException("Device or DeviceContext not initialized."); }
 
             var desc = sourceTexture.Description;
 

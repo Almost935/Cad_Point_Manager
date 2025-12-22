@@ -549,27 +549,27 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
                 if (IsDragging && _dragFillVertexCount > 0)
                 {
-                    ctx.OutputMerger.SetRenderTargets(_resCache.InteractiveRenderTargetView);
+                    ctx.OutputMerger.SetRenderTargets(_resCache.CombinedRenderTargetView);
                     DrawDragOverlay(ctx);
                 }
                 if (_hoverRectInstanceCount > 0 || _hoverCircleVertices.Count > 0)
                 {
-                    ctx.OutputMerger.SetRenderTargets(_resCache.InteractiveRenderTargetView);
+                    ctx.OutputMerger.SetRenderTargets(_resCache.CombinedRenderTargetView);
                     DrawCogoPointHover(ctx);
                 }
                 if (_leaderLineInstanceCount > 0)
                 {
-                    ctx.OutputMerger.SetRenderTargets(_resCache.InteractiveRenderTargetView);
+                    ctx.OutputMerger.SetRenderTargets(_resCache.CombinedRenderTargetView);
                     DrawLeaderLines(ctx);
                 }
                 if (_anchorVerticesCount > 0)
                 {
-                    ctx.OutputMerger.SetRenderTargets(_resCache.InteractiveRenderTargetView);
+                    ctx.OutputMerger.SetRenderTargets(_resCache.CombinedRenderTargetView);
                     DrawCogoPointAnchors(ctx);
                 }
                 if (_sigPointVertexCount > 0)
                 {
-                    ctx.OutputMerger.SetRenderTargets(_resCache.InteractiveRenderTargetView);
+                    ctx.OutputMerger.SetRenderTargets(_resCache.CombinedRenderTargetView);
                     DrawSignificantPoints(ctx);
                 }
 
@@ -3411,9 +3411,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
         #region Printing Methods
         public System.Windows.Media.Imaging.BitmapSource RenderSceneToBitmapSource(Scene scene, int pixelWidth, int pixelHeight)
         {
-            if (scene == null) throw new ArgumentNullException(nameof(scene));
-            if (_resCache == null) throw new InvalidOperationException("ResCache not initialized.");
-            if (Camera == null) throw new InvalidOperationException("Camera not initialized.");
+            if (scene == null) { throw new ArgumentNullException(nameof(scene)); }
+            if (_resCache == null) { throw new InvalidOperationException("ResCache not initialized."); }
+            if (Camera == null) { throw new InvalidOperationException("Camera not initialized."); }
 
             // Save current camera/viewport state
             var oldViewport = Camera.Viewport;
@@ -3422,23 +3422,27 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             try
             {
-                // 1) Temporarily change viewport size
-                Camera.UpdateViewportSize(new ViewportF(0, 0, pixelWidth, pixelHeight));
+                //1) Temporarily change viewport size
+                //Camera.UpdateViewportSize(new ViewportF(0, 0, pixelWidth, pixelHeight));
 
-                // 2) Frame camera to the scene bounds using your existing camera logic
-                var b = scene.Bounds;
-                var boundsRect = new Rect(b.Left, b.Top, b.Width, b.Height);
-                Camera.ZoomToBounds(boundsRect);
+                //2) Frame camera to the scene bounds using your existing camera logic
+                //var b = scene.Bounds;
+                //var boundsRect = new Rect(b.Left, b.Top, b.Width, b.Height);
+                //Camera.ZoomToBounds(boundsRect);
+                Camera.LoadScene(scene);
 
-                // 3) Render one frame into InteractionTexture (your pipeline already composites into it)
+                //3) Render one frame into InteractionTexture(your pipeline already composites into it)
                 _dxfDirty = true;
                 _interactiveDirty = true;
                 ConstantBuffersDirty = true;
 
+                _resCache.DeviceContext.ClearRenderTargetView(
+                    _resCache.CombinedRenderTargetView,
+                    new RawColor4(1f, 0f, 0f, 1f));
                 Render();
 
                 // 4) Read back composited texture to BitmapSource
-                return _resCache.ReadBackToBitmapSource(_resCache.CombinedTexture);
+                return _resCache.ReadBackToBitmapSource(_resCache.Texture2D);
             }
             finally
             {

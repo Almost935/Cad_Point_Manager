@@ -303,7 +303,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _dxfRenderTargetView = new(_device, _dxfTexture, rtvDesc);
             _resCache.DxfRenderTargetView = _dxfRenderTargetView;
             _combinedRenderTargetView = new(_device, _combinedTexture, rtvDesc);
-            _resCache.InteractiveRenderTargetView = _combinedRenderTargetView;
+            _resCache.CombinedRenderTargetView = _combinedRenderTargetView;
 
             _deviceContext.OutputMerger.SetRenderTargets(_renderTargetView);
             _resCache.Texture2D = _texture2D;

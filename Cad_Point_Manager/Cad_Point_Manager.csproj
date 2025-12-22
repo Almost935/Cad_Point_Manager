@@ -78,6 +78,7 @@
     <PackageReference Include="Extended.Wpf.Toolkit" Version="4.7.25104.5739" />
     <PackageReference Include="FontAwesome.WPF" Version="4.7.0.9" />
     <PackageReference Include="FreeTypeSharp" Version="3.0.0" />
+    <PackageReference Include="MaterialDesignThemes" Version="5.3.0" />
     <PackageReference Include="Microsoft.Windows.Compatibility" Version="9.0.4" />
     <PackageReference Include="Microsoft.Xaml.Behaviors.Wpf" Version="1.1.135" />
     <PackageReference Include="ModernWpfUI" Version="0.9.6" />

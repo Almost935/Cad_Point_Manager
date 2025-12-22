@@ -1192,16 +1192,16 @@ namespace Cad_Point_Manager.Views.UserControls
             ListView listview = sender as ListView;
 
             // Set column widths on each gridview
-            GridView viewsGridView = listview.View as GridView;
-            double viewsGridViewTotalWidth = mainPanel.ActualWidth;
-            double viewsGridViewColumnWidth = viewsGridViewTotalWidth / viewsGridView.Columns.Count;
-            if (viewsGridViewColumnWidth > 0)
+            GridView scenesGridView = listview.View as GridView;
+            double scenesGridViewTotalWidth = mainPanel.ActualWidth;
+            double scenesGridViewColumnWidth = scenesGridViewTotalWidth / scenesGridView.Columns.Count;
+            if (scenesGridViewColumnWidth > 0)
             {
-                viewsGridView.Columns[0].Width = viewsGridViewColumnWidth * 1.0;
-                viewsGridView.Columns[1].Width = viewsGridViewColumnWidth * 1.0;
-                viewsGridView.Columns[2].Width = viewsGridViewColumnWidth * 1.0;
-                viewsGridView.Columns[3].Width = viewsGridViewColumnWidth * 1.0;
-                viewsGridView.Columns[4].Width = viewsGridViewColumnWidth * 1.0;
+                scenesGridView.Columns[0].Width = scenesGridViewColumnWidth * 1.0;
+                scenesGridView.Columns[1].Width = scenesGridViewColumnWidth * 1.0;
+                scenesGridView.Columns[2].Width = scenesGridViewColumnWidth * 1.0;
+                scenesGridView.Columns[3].Width = scenesGridViewColumnWidth * 1.0;
+                scenesGridView.Columns[4].Width = scenesGridViewColumnWidth * 1.0;
             }
         }
         private void ScenesListView_SelectionChanged(object sender, SelectionChangedEventArgs e)

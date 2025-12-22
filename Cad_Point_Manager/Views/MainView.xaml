@@ -150,7 +150,8 @@
               Grid.Row="1"
               Visibility="{Binding LayoutsVisible, Converter={StaticResource BoolToVisibilityConverter}}">
 
-            <uc:LayoutsViewControl CadManager="{Binding DataContext.JobFileManager.CadManager3D, RelativeSource={RelativeSource AncestorType=Page}}"
+            <uc:LayoutsViewControl x:Name="LayoutsViewControl"
+                                   CadManager="{Binding DataContext.JobFileManager.CadManager3D, RelativeSource={RelativeSource AncestorType=Page}}"
                                    Scenes="{Binding DataContext.Camera.Scenes, RelativeSource={RelativeSource AncestorType=Page}}"
                                    Renderer="{Binding ElementName=d3dDxfControl}" />
         </Grid>
@@ -570,7 +571,8 @@
                          Margin="0 5 0 5"
                          Style="{StaticResource BorderWidgetsToggleButton}"
                          IsChecked="{Binding LayoutsVisible, Mode=TwoWay}"
-                         Visibility="{Binding LayoutsVisible, Converter={StaticResource ReverseBoolToVisibilityConverter}}">
+                         Visibility="{Binding LayoutsVisible, Converter={StaticResource ReverseBoolToVisibilityConverter}}"
+                         Click="LayoutsModeRadioButton_Click">
                 <RadioButton.Content>
                     <TextBlock Text="Layouts Mode"
                                VerticalAlignment="Center"

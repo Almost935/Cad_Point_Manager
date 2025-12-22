@@ -114,5 +114,10 @@ namespace Cad_Point_Manager.Views
             //    d3dDxfControl.RaiseEvent(args);
             //}
         }
+
+        private void LayoutsModeRadioButton_Click(object sender, RoutedEventArgs e)
+        {
+            LayoutsViewControl.ReloadPreview();
+        }
     }
 }
