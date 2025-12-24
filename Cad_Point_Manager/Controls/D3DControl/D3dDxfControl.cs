@@ -25,6 +25,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 
 using Buffer = SharpDX.Direct3D11.Buffer;
@@ -343,29 +344,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             typeof(CadManager3D),
             typeof(D3dDxfControl),
             new PropertyMetadata(null, OnCadManager3DChanged));
-        public Camera Camera
-        {
-            get { return (Camera)GetValue(CameraProperty); }
-            set { SetValue(CameraProperty, value); }
-        }
-        public static readonly DependencyProperty CameraProperty =
-            DependencyProperty.Register(
-            nameof(Camera),
-            typeof(Camera),
-            typeof(D3dDxfControl),
-            new PropertyMetadata(new Camera(new ViewportF(), 1.15f, new Rect(0, 0, 0, 0))));
-
-        public BatchableObservableCollection<Scene> Views
-        {
-            get { return (BatchableObservableCollection<Scene>)GetValue(ViewsProperty); }
-            set { SetValue(ViewsProperty, value); }
-        }
-        public static readonly DependencyProperty ViewsProperty =
-            DependencyProperty.Register(
-            nameof(Views),
-            typeof(BatchableObservableCollection<Scene>),
-            typeof(D3dDxfControl),
-            new PropertyMetadata(new BatchableObservableCollection<Scene>()));
 
         public static readonly DependencyProperty LayersProperty =
             DependencyProperty.Register(
@@ -489,15 +467,18 @@ namespace Cad_Point_Manager.Controls.D3DControl
         {
             if (_resCache is null) { return; }
 
-            if (Camera is null)
+            if (CadManager3D.Camera is null)
             {
                 GetInitialMatrix();
-                Camera = new(Viewport, GlobalHelperProperties.ZoomFactor, new Rect(0, 0, Viewport.Width, Viewport.Height));
+                CadManager3D.Camera = new(Viewport, GlobalHelperProperties.ZoomFactor, new Rect(0, 0, Viewport.Width, Viewport.Height));
+                CadManager3D.ResetTemplates();
             }
             if (DxfNeedsReload)
             {
                 GetInitialMatrix();
-                Camera.ResetView(_dxfInitialMatrix, CadManager3D.Extents);
+                CadManager3D.Camera.ResetView(_dxfInitialMatrix, CadManager3D.Extents);
+                CadManager3D.ResetTemplates();
+
                 ConstantBuffersDirty = true;
                 DxfNeedsReload = false;
                 CadManager3D.DxfNeedsReload = false;
@@ -526,7 +507,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             if (!_sigPointShadersLoaded) { InitializeSignificantPointsShaders(); }
 
             if (!ConstantBuffersInitialized) { InitializeConstantBuffers(); }
-            if (ConstantBuffersDirty || Camera.IsDirty) { UpdateConstantBuffers(); }
+            if (ConstantBuffersDirty || CadManager3D.Camera.IsDirty) { UpdateConstantBuffers(); }
 
             if (!_hitTestIsRunning)
             {
@@ -1014,11 +995,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
         private void UpdateCogoHoverVertices()
         {
-            if (_resCache is null || Camera is null) { return; }
+            if (_resCache is null || CadManager3D.Camera is null) { return; }
 
             var ctx = _resCache.DeviceContext;
             _hoverCircleVertices.Clear();
-            var wupp = Camera.GetWorldUnitsPerPixel();
+            var wupp = CadManager3D.Camera.GetWorldUnitsPerPixel();
             var rectInstances = new List<RoundedHoverRectInstance>(16);
 
             foreach (CogoPoint cp in _mouseOverCogoPoints)
@@ -1079,7 +1060,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
         private void UpdateToggleAnchorVertices()
         {
-            if (_resCache is null || Camera is null || _resCache.DeviceContext is null) { return; }
+            if (_resCache is null || CadManager3D.Camera is null || _resCache.DeviceContext is null) { return; }
 
             var ctx = _resCache.DeviceContext;
             var inst = new List<ToggleAnchorInstance>(SelectedCogoPoints.Count);
@@ -1656,7 +1637,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
         private void UpdateConstantBuffers()
         {
-            var transformation = Camera.ViewProjectionMatrix;
+            var transformation = CadManager3D.Camera.ViewProjectionMatrix;
             var transformationBuffer = new TransformationBuffer
             {
                 WorldViewProjection = transformation
@@ -1669,7 +1650,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             };
             _resCache.DeviceContext.UpdateSubresource(ref viewportBuffer, _viewportBuffer);
 
-            var worldUnitsPerPixel = Camera.GetWorldUnitsPerPixel();
+            var worldUnitsPerPixel = CadManager3D.Camera.GetWorldUnitsPerPixel();
 
             var lineSettings = new LineSettingsBuffer
             {
@@ -1746,7 +1727,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _resCache.DeviceContext.UpdateSubresource(ref sigPointSettings, _sigPointSettingsBuffer);
 
             ConstantBuffersDirty = false;
-            Camera.IsDirty = false;
+            CadManager3D.Camera.IsDirty = false;
             _dxfDirty = true;
             _interactiveDirty = true;
         }
@@ -1869,10 +1850,10 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
                 _dxfInitialMatrix = Matrix.Scaling(scale.ToFloat(), scale.ToFloat(), 1) * Matrix.Translation(-CadManager3D.Extents.Left.ToFloat(), -CadManager3D.Extents.Top.ToFloat(), 0);
 
-                if (Camera is not null)
+                if (CadManager3D.Camera is not null)
                 {
-                    Camera.ResetView(_dxfInitialMatrix, CadManager3D.Extents);
-                    _hittestStrokeThickness = 7.0f / (Camera.InitialViewMatrix.M11 * Camera.CurrentZoom);
+                    CadManager3D.Camera.ResetView(_dxfInitialMatrix, CadManager3D.Extents);
+                    _hittestStrokeThickness = 7.0f / (CadManager3D.Camera.InitialViewMatrix.M11 * CadManager3D.Camera.CurrentZoom);
                     UpdateToggleAnchorDimensions();
                     ConstantBuffersDirty = true;
                 }
@@ -1880,7 +1861,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
         private void UpdateDxfCoords(Vector2 mousePos)
         {
-            DxfCoords = Camera.ScreenToWorld(mousePos);
+            DxfCoords = CadManager3D.Camera.ScreenToWorld(mousePos);
             MousePosition = DxfCoords.ToPoint();
             DxfCoordsString = formatVectorString(DxfCoords);
         }
@@ -1907,7 +1888,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             if (_cogoPointTextBeingMoved)
             {
                 var s = e.GetPosition(this);
-                var w = Camera.ScreenToWorld(new Vector2((float)s.X, (float)s.Y));
+                var w = CadManager3D.Camera.ScreenToWorld(new Vector2((float)s.X, (float)s.Y));
 
                 var delta = new Vector2(w.X - _pressedToggleButtonPoint.Position.X.ToFloat(),
                     w.Y - _pressedToggleButtonPoint.Position.Y.ToFloat());
@@ -1946,7 +1927,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
                 if (e.MiddleButton == MouseButtonState.Pressed)
                 {
-                    Camera.Pan(currentMousePos, _prevMousePos);
+                    CadManager3D.Camera.Pan(currentMousePos, _prevMousePos);
                     ConstantBuffersDirty = true;
                     e.Handled = true;
                 }
@@ -1964,8 +1945,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
             CurrentlyAppliedDragRectMatrix = matrix;
             UpdateDragRect();
 
-            Camera.Zoom(zoomStep, new Vector2((float)_pointerCoords.X, (float)_pointerCoords.Y));
-            _hittestStrokeThickness = 7.0f / (Camera.InitialViewMatrix.M11 * Camera.CurrentZoom);
+            CadManager3D.Camera.Zoom(zoomStep, new Vector2((float)_pointerCoords.X, (float)_pointerCoords.Y));
+            _hittestStrokeThickness = 7.0f / (CadManager3D.Camera.InitialViewMatrix.M11 * CadManager3D.Camera.CurrentZoom);
 
             UpdateToggleAnchorDimensions();
 
@@ -2161,7 +2142,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 ResetCogoToggleButtonMouseOver();
 
                 var s = e.GetPosition(this);
-                var w = Camera.ScreenToWorld(new Vector2((float)s.X, (float)s.Y));
+                var w = CadManager3D.Camera.ScreenToWorld(new Vector2((float)s.X, (float)s.Y));
                 var delta = new Vector2(w.X - _pressedToggleButtonPoint.Position.X.ToFloat(),
                     w.Y - _pressedToggleButtonPoint.Position.Y.ToFloat());
                 UpdateCogoPointInfoOffset(_pressedToggleButtonPoint, delta);
@@ -2221,9 +2202,10 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             GetInitialMatrix();
 
-            if (Camera is not null)
+            if (CadManager3D.Camera is not null)
             {
-                Camera.UpdateViewportSize(Viewport);
+                CadManager3D.Camera.UpdateViewportSize(Viewport);
+                CadManager3D.ResetTemplates();
                 ConstantBuffersDirty = true;
             }
 
@@ -2232,9 +2214,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         private void UpdateToggleAnchorDimensions()
         {
-            float wupp = Camera.GetWorldUnitsPerPixel();
+            float wupp = CadManager3D.Camera.GetWorldUnitsPerPixel();
             float desiredHalfWorld = (AnchorPixelSize * 0.5f) * wupp;
-            float drawingShort = (float)Math.Min(Camera.Extents.Width, Camera.Extents.Height);
+            float drawingShort = (float)Math.Min(CadManager3D.Camera.Extents.Width, CadManager3D.Camera.Extents.Height);
             float maxHalfBase = (drawingShort * MaxCogoToggleToDrawingFraction) * 0.5f;
 
             // Cache for settings
@@ -2335,9 +2317,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         public void ZoomToExtents()
         {
-            if (Camera is null) { return; }
+            if (CadManager3D.Camera is null) { return; }
 
-            Camera.ResetView(_dxfInitialMatrix, CadManager3D.Extents);
+            CadManager3D.Camera.ResetView(_dxfInitialMatrix, CadManager3D.Extents);
             ResetHoverObjects();
             ConstantBuffersDirty = true;
         }
@@ -3097,7 +3079,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         private void ClearDxf()
         {
-            Camera.ResetView(Matrix.Identity, CadManager3D.Extents);
+            CadManager3D.Camera.ResetView(Matrix.Identity, CadManager3D.Extents);
             ResetHoverObjects();
             _lineVerticesDirty = _textVerticesDirty = true;
         }
@@ -3409,51 +3391,144 @@ namespace Cad_Point_Manager.Controls.D3DControl
         #endregion
 
         #region Printing Methods
-        public System.Windows.Media.Imaging.BitmapSource RenderSceneToBitmapSource(Scene scene, int pixelWidth, int pixelHeight)
-        {
-            if (scene == null) { throw new ArgumentNullException(nameof(scene)); }
-            if (_resCache == null) { throw new InvalidOperationException("ResCache not initialized."); }
-            if (Camera == null) { throw new InvalidOperationException("Camera not initialized."); }
+        //public System.Windows.Media.Imaging.BitmapSource RenderSceneToBitmapSource(Scene scene, int pixelWidth, int pixelHeight)
+        //{
+        //    if (scene == null) { throw new ArgumentNullException(nameof(scene)); }
+        //    if (_resCache == null) { throw new InvalidOperationException("ResCache not initialized."); }
+        //    if (CadManager3D.Camera == null) { throw new InvalidOperationException("Camera not initialized."); }
 
-            // Save current camera/viewport state
-            var oldViewport = Camera.Viewport;
-            var oldZoom = Camera.CurrentZoomStep;
-            var oldTranslate = Camera.Translate;
+        //    // Save current camera/viewport state
+        //    var oldViewport = CadManager3D.Camera.Viewport;
+        //    var oldZoom = CadManager3D.Camera.CurrentZoomStep;
+        //    var oldTranslate = CadManager3D.Camera.Translate;
+
+        //    try
+        //    {
+        //        //1) Temporarily change viewport size
+        //        //Camera.UpdateViewportSize(new ViewportF(0, 0, pixelWidth, pixelHeight));
+
+        //        //2) Frame camera to the scene bounds using your existing camera logic
+        //        //var b = scene.Bounds;
+        //        //var boundsRect = new Rect(b.Left, b.Top, b.Width, b.Height);
+        //        //Camera.ZoomToBounds(boundsRect);
+        //        CadManager3D.Camera.LoadScene(scene);
+
+        //        //3) Render one frame into InteractionTexture(your pipeline already composites into it)
+        //        _dxfDirty = true;
+        //        _interactiveDirty = true;
+        //        ConstantBuffersDirty = true;
+
+        //        _resCache.DeviceContext.ClearRenderTargetView(
+        //            _resCache.CombinedRenderTargetView,
+        //            new RawColor4(1f, 0f, 0f, 1f));
+        //        Render();
+
+        //        // 4) Read back composited texture to BitmapSource
+        //        return _resCache.ReadBackToBitmapSource(_resCache.Texture2D);
+        //    }
+        //    finally
+        //    {
+        //        // Restore
+        //        CadManager3D.Camera.CurrentZoomStep = oldZoom;
+        //        CadManager3D.Camera.Translate = oldTranslate;
+        //        CadManager3D.Camera.UpdateViewportSize(oldViewport);
+
+        //        CadManager3D.Camera.UpdateView();
+        //        // UpdateViewProjection() is private in your Camera; calling UpdateView() + UpdateViewportSize() usually keeps it valid.
+        //        // If needed, expose a public Camera.RebuildMatrices() that calls UpdateProjection/UpdateViewProjection.
+        //    }
+        //}
+        //public void RenderSceneIntoWriteableBitmap(Scene scene, WriteableBitmap target)
+        //{
+        //    if (scene == null) { throw new ArgumentNullException(nameof(scene)); }
+        //    if (target == null) { throw new ArgumentNullException(nameof(target)); }
+
+        //    var oldViewport = CadManager3D.Camera.Viewport;
+        //    var oldZoom = CadManager3D.Camera.CurrentZoomStep;
+        //    var oldTranslate = CadManager3D.Camera.Translate;
+
+        //    //CadManager3D.Camera.UpdateViewportSize(new ViewportF(0, 0, target.PixelWidth, target.PixelHeight));
+        //    CadManager3D.Camera.LoadScene(scene);
+
+        //    ConstantBuffersDirty = true;
+        //    _dxfDirty = true;
+        //    _interactiveDirty = true;
+
+        //    //_resCache.DeviceContext.ClearRenderTargetView(
+        //    //    _resCache.CombinedRenderTargetView,
+        //    //    new RawColor4(1f, 0f, 0f, 1f));
+
+        //    Render();
+
+        //    //_resCache.DeviceContext.ClearRenderTargetView(
+        //    //    _resCache.RenderTargetView,
+        //    //    new RawColor4(0f, 0f, 1f, 1f));
+
+        //    _resCache.CopyToWriteableBitmap(_resCache.Texture2D, target);
+
+        //    //CadManager3D.Camera.UpdateViewportSize(oldViewport);
+        //}
+
+        public void RenderSceneIntoWriteableBitmap(Scene scene, WriteableBitmap target)
+        {
+            var bounds1 = CadManager3D.Camera.GetCurrentViewportBounds();
+            Debug.WriteLine($"Initial Bounds: {bounds1.TopLeft} {bounds1.BottomRight} Width: {bounds1.Width} Height: {bounds1.Height}");
+
+            EnsurePreviewTargets(target.PixelWidth, target.PixelHeight);
+
+            // Save current targets
+            var oldDxfTex = _resCache.DxfTexture;
+            var oldDxfRTV = _resCache.DxfRenderTargetView;
+            var oldCombTex = _resCache.CombinedTexture;
+            var oldCombRTV = _resCache.CombinedRenderTargetView;
+
+            var oldViewport = Viewport; // <-- important (your constant buffers use Viewport property!)
 
             try
             {
-                //1) Temporarily change viewport size
-                //Camera.UpdateViewportSize(new ViewportF(0, 0, pixelWidth, pixelHeight));
+                // Swap the pipeline to preview targets
+                _resCache.DxfTexture = _resCache.DxfPreviewTexture;
+                _resCache.DxfRenderTargetView = _resCache.DxfPreviewRenderTargetView;
 
-                //2) Frame camera to the scene bounds using your existing camera logic
-                //var b = scene.Bounds;
-                //var boundsRect = new Rect(b.Left, b.Top, b.Width, b.Height);
-                //Camera.ZoomToBounds(boundsRect);
-                Camera.LoadScene(scene);
+                _resCache.CombinedTexture = _resCache.CombinedPreviewTexture;
+                _resCache.CombinedRenderTargetView = _resCache.CombinedPreviewRenderTargetView;
 
-                //3) Render one frame into InteractionTexture(your pipeline already composites into it)
+                // ALSO update the control Viewport property (your UpdateConstantBuffers uses Viewport.Width/Height)
+                Viewport = new ViewportF(0, 0, target.PixelWidth, target.PixelHeight);
+
+                // Set camera to square
+                var b = scene.Bounds;
+                CadManager3D.Camera.UpdateViewportSize(Viewport);
+                CadManager3D.Camera.LoadScene(scene);
+
+                var bounds2 = CadManager3D.Camera.GetCurrentViewportBounds();
+                Debug.WriteLine($"Updated Bounds: {bounds2.TopLeft} {bounds2.BottomRight} Width: {bounds2.Width} Height: {bounds2.Height}");
+                Debug.WriteLine($"Scene Bounds: {b.TopLeft} {b.BottomRight} Width: {b.Width} Height: {b.Height}");
+
                 _dxfDirty = true;
                 _interactiveDirty = true;
                 ConstantBuffersDirty = true;
 
-                _resCache.DeviceContext.ClearRenderTargetView(
-                    _resCache.CombinedRenderTargetView,
-                    new RawColor4(1f, 0f, 0f, 1f));
+                // Ensure rasterizer viewport is correct (Render() never sets it)
+                _resCache.DeviceContext.Rasterizer.SetViewport(Viewport);
+
                 Render();
 
-                // 4) Read back composited texture to BitmapSource
-                return _resCache.ReadBackToBitmapSource(_resCache.Texture2D);
+                // Copy the preview final texture
+                _resCache.CopyToWriteableBitmap(_resCache.CombinedTexture, target);
             }
             finally
             {
                 // Restore
-                Camera.CurrentZoomStep = oldZoom;
-                Camera.Translate = oldTranslate;
-                Camera.UpdateViewportSize(oldViewport);
+                _resCache.DxfTexture = oldDxfTex;
+                _resCache.DxfRenderTargetView = oldDxfRTV;
+                _resCache.CombinedTexture = oldCombTex;
+                _resCache.CombinedRenderTargetView = oldCombRTV;
 
-                Camera.UpdateView();
-                // UpdateViewProjection() is private in your Camera; calling UpdateView() + UpdateViewportSize() usually keeps it valid.
-                // If needed, expose a public Camera.RebuildMatrices() that calls UpdateProjection/UpdateViewProjection.
+                Viewport = oldViewport;
+                CadManager3D.Camera.UpdateViewportSize(oldViewport);
+
+                _resCache.DeviceContext.Rasterizer.SetViewport(oldViewport);
             }
         }
 

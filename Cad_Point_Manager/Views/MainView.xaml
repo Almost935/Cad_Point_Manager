@@ -152,8 +152,9 @@
 
             <uc:LayoutsViewControl x:Name="LayoutsViewControl"
                                    CadManager="{Binding DataContext.JobFileManager.CadManager3D, RelativeSource={RelativeSource AncestorType=Page}}"
-                                   Scenes="{Binding DataContext.Camera.Scenes, RelativeSource={RelativeSource AncestorType=Page}}"
-                                   Renderer="{Binding ElementName=d3dDxfControl}" />
+                                   Scenes="{Binding DataContext.JobFileManager.CadManager3D.Camera.Scenes, RelativeSource={RelativeSource AncestorType=Page}}"
+                                   Renderer="{Binding ElementName=d3dDxfControl}"
+                                   ActiveLayout="{Binding DataContext.SelectedLayout, RelativeSource={RelativeSource AncestorType=Page}}"/>
         </Grid>
 
         <Grid x:Name="modelGrid"
@@ -459,7 +460,7 @@
                                    ClipToBounds="False"
                                    CadManager="{Binding JobFileManager.CadManager3D}"
                                    SelectedCogoPoints="{Binding SelectedCogoPoints}"
-                                   Camera="{Binding Camera}"
+                                   Camera="{Binding JobFileManager.CadManager3D.Camera}"
                                    ActivePointGroup="{Binding ActivePointGroup}" />
             </Grid>
             <Grid Grid.Row="2">
@@ -489,7 +490,6 @@
 
                     <d3D:D3dDxfControl x:Name="d3dDxfControl"
                                        CadManager3D="{Binding JobFileManager.CadManager3D}"
-                                       Camera="{Binding Camera, Mode=TwoWay}"
                                        Layers="{Binding Layers, Mode=TwoWay}"
                                        PointGroups="{Binding PointGroups, Mode=TwoWay}"
                                        CogoPoints="{Binding CogoPoints, Mode=TwoWay}"
@@ -514,7 +514,7 @@
                                                           ConverterParameter="X">
                                                 <Binding Path="DataContext.SnappedHitTestablePoint.Position"
                                                          RelativeSource="{RelativeSource AncestorType=Page}" />
-                                                <Binding Path="DataContext.Camera.WindowsMatrix"
+                                                <Binding Path="DataContext.JobFileManager.CadManager3D.Camera.WindowsMatrix"
                                                          RelativeSource="{RelativeSource AncestorType=Page}" />
                                             </MultiBinding>
                                         </TranslateTransform.X>
@@ -523,7 +523,7 @@
                                                           ConverterParameter="Y">
                                                 <Binding Path="DataContext.SnappedHitTestablePoint.Position"
                                                          RelativeSource="{RelativeSource AncestorType=Page}" />
-                                                <Binding Path="DataContext.Camera.WindowsMatrix"
+                                                <Binding Path="DataContext.JobFileManager.CadManager3D.Camera.WindowsMatrix"
                                                          RelativeSource="{RelativeSource AncestorType=Page}" />
                                             </MultiBinding>
                                         </TranslateTransform.Y>

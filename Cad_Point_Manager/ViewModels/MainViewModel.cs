@@ -37,7 +37,6 @@ namespace Cad_Point_Manager.ViewModels
         private string _dxfFileName;
         private DxfDocument _dxfDocument;
         private Size _viewportSize = Size.Empty;
-        private Camera _camera;
         private BatchableObservableCollection<KeyValuePair<string, ObjectLayer3D>> _layers = [];
         private BatchableObservableCollection<PointGroup> _pointGroups = [];
         private BatchableObservableCollection<CogoPoint> _cogoPoints = [];
@@ -121,15 +120,6 @@ namespace Cad_Point_Manager.ViewModels
             {
                 _viewportSize = value;
                 OnPropertyChanged(nameof(ViewportSize));
-            }
-        }
-        public Camera Camera
-        {
-            get { return _camera; }
-            set
-            {
-                _camera = value;
-                OnPropertyChanged(nameof(Camera));
             }
         }
         public BatchableObservableCollection<KeyValuePair<string, ObjectLayer3D>> Layers

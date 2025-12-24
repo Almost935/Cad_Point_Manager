@@ -12,12 +12,38 @@ namespace Cad_Point_Manager.Models.Printing
     public class LayoutViewport : INotifyPropertyChanged
     {
         #region Fields
+        private Rect _localRectIn;
         private Scene _scene;
         #endregion
 
         #region Properties
+        public Rect LocalRect
+        {
+            get => _localRectIn;
+            set
+            {
+                if (_localRectIn != value)
+                {
+                    _localRectIn = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        public Scene Scene
+        {
+            get => _scene;
+            set
+            {
+                if (_scene != value)
+                {
+                    _scene = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
         public Guid Id { get; init; } = Guid.NewGuid();
-        public int SceneIndex { get; set; } = 0;
         public Rect LocalRectIn { get; set; }
         public bool ShowBorder { get; set; } = true;
         #endregion

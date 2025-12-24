@@ -27,6 +27,12 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private SharpDX.Direct2D1.Device1 _d2dDevice;
         private SharpDX.Direct2D1.DeviceContext1 _d2dDeviceContext;
 
+        private Texture2D _dxfPreviewTexture;
+        private RenderTargetView _dxfPreviewRenderTargetView;
+        private Texture2D _combinedPreviewTexture;
+        private RenderTargetView _combinedPreviewRenderTargetView;
+        private int _previewW, _previewH;
+
         private readonly Stopwatch _renderTimer = new();
 
         protected ResCache _resCache = new();
@@ -230,6 +236,10 @@ namespace Cad_Point_Manager.Controls.D3DControl
             Disposer.SafeDispose(ref _d2dFactory);
             Disposer.SafeDispose(ref _d2dDevice);
             Disposer.SafeDispose(ref _d2dDeviceContext);
+            Disposer.SafeDispose(ref _dxfPreviewTexture);
+            Disposer.SafeDispose(ref _dxfPreviewRenderTargetView);
+            Disposer.SafeDispose(ref _combinedPreviewTexture);
+            Disposer.SafeDispose(ref _combinedPreviewRenderTargetView);
         }
 
         private void CreateAndBindTargets()
@@ -245,10 +255,14 @@ namespace Cad_Point_Manager.Controls.D3DControl
             Disposer.SafeDispose(ref _combinedRenderTargetView);
             Disposer.SafeDispose(ref _dxfRenderTargetView);
             Disposer.SafeDispose(ref _renderTargetView);
+            Disposer.SafeDispose(ref _dxfPreviewRenderTargetView);
+            Disposer.SafeDispose(ref _combinedPreviewRenderTargetView);
 
             Disposer.SafeDispose(ref _combinedTexture);
             Disposer.SafeDispose(ref _dxfTexture);
             Disposer.SafeDispose(ref _texture2D);
+            Disposer.SafeDispose(ref _dxfPreviewTexture);
+            Disposer.SafeDispose(ref _combinedPreviewTexture);
 
             Disposer.SafeDispose(ref _d2dFactory);
             Disposer.SafeDispose(ref _d2dDevice);
@@ -317,6 +331,43 @@ namespace Cad_Point_Manager.Controls.D3DControl
             InitializeDirect2D();
             InitializeGlyphAtlas();
         }
+        public void EnsurePreviewTargets(int w, int h, Format fmt = Format.B8G8R8A8_UNorm)
+        {
+            if (_dxfPreviewTexture is not null && _combinedPreviewTexture is not null
+                && _previewW == w && _previewH == h) { return; }
+
+            Disposer.SafeDispose(ref _dxfPreviewTexture);
+            Disposer.SafeDispose(ref _dxfPreviewRenderTargetView);
+            Disposer.SafeDispose(ref _combinedPreviewTexture);
+            Disposer.SafeDispose(ref _combinedPreviewRenderTargetView);
+
+            _previewW = w; _previewH = h;
+
+            var finalDesc = new Texture2DDescription
+            {
+                BindFlags = BindFlags.RenderTarget | BindFlags.ShaderResource,
+                Format = fmt,
+                Width = w,
+                Height = h,
+                MipLevels = 1,
+                ArraySize = 1,
+                SampleDescription = new SampleDescription(1, 0),
+                Usage = ResourceUsage.Default,
+                CpuAccessFlags = CpuAccessFlags.None,
+                OptionFlags = ResourceOptionFlags.None
+            };
+
+            _dxfPreviewTexture = new Texture2D(_device, finalDesc);
+            _resCache.DxfPreviewTexture = _dxfPreviewTexture;
+            _dxfPreviewRenderTargetView = new RenderTargetView(_device, _dxfPreviewTexture);
+            _resCache.DxfPreviewRenderTargetView = _dxfPreviewRenderTargetView;
+            
+            _combinedPreviewTexture = new Texture2D(_device, finalDesc);
+            _resCache.CombinedPreviewTexture = _combinedPreviewTexture;
+            _combinedPreviewRenderTargetView = new RenderTargetView(_device, _combinedPreviewTexture);
+            _resCache.CombinedPreviewRenderTargetView = _combinedPreviewRenderTargetView;
+        }
+
         private void InitializeDirect2D()
         {
             using (var dxgiDevice = _device.QueryInterface<SharpDX.DXGI.Device>())

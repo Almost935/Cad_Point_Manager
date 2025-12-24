@@ -86,6 +86,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public float CurrentZoom => (float)Math.Pow(_zoomFactor, CurrentZoomStep);
         public bool IsIn3DView { get; set; } = false;
         public Rect Extents { get; set; } = RectExtensions.Zero;
+        public Scene OverviewScene { get; set; }
         #endregion
 
         #region Constructors
@@ -100,7 +101,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 viewport.Width,
                 viewport.Height);
 
-            Scenes.Add(new Scene() { Name = "Default", ZoomStep = 0, Translation = Vector2.Zero, Bounds = GetCurrentViewportBounds() });
+            OverviewScene = new Scene() { Name = "Default", ZoomStep = 0, Translation = Vector2.Zero, Bounds = GetCurrentViewportBounds() };
+            Scenes.Add(OverviewScene);
 
             ResetToDefaults();
         }
@@ -412,10 +414,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             }
 
             scene = new Scene() { Name = sceneName, ZoomStep = CurrentZoomStep, Translation = Translate, Bounds = GetCurrentViewportBounds() };
-
-            Debug.WriteLine($"\nZoomStep: {scene.ZoomStep}, Translation: {scene.Translation} " +
-                $"\nBounds: {scene.Bounds.Left} {scene.Bounds.Right} {scene.Bounds.Top} {scene.Bounds.Bottom}");
-
             Scenes.Add(scene);
 
             return true;
@@ -473,8 +471,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         {
             if (!HasValidViewport) { return RectangleF.Empty; }
 
-            if (ViewProjectionMatrix == Matrix.Identity)
-                return new RectangleF(0, 0, Viewport.Width, Viewport.Height);
+            if (ViewProjectionMatrix == Matrix.Identity) { return new RectangleF(0, 0, Viewport.Width, Viewport.Height); }
 
             // Normal path:
             Vector2 screenTL = new(0, 0);

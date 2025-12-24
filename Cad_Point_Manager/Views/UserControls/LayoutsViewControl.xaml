@@ -193,7 +193,7 @@
                                         <ComboBox Style="{StaticResource ValidationComboBox}"
                                                   ItemsSource="{Binding ElementName=Root, Path=Scenes}"
                                                   DisplayMemberPath="Name"
-                                                  SelectedIndex="{Binding Viewport., Mode=TwoWay}"/>
+                                                  SelectedValue="{Binding Viewport.Scene, Mode=TwoWay}" />
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>

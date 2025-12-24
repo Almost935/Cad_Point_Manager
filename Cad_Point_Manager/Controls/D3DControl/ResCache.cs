@@ -170,6 +170,12 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public DWriteGlyphTessellator GlyphTessellator { get; set; }
         public AdvanceWidthCache AdvanceWidthCache { get; set; }
 
+        // Preview related properties
+        public Texture2D DxfPreviewTexture { get; set; }
+        public RenderTargetView DxfPreviewRenderTargetView { get; set; }
+        public Texture2D CombinedPreviewTexture { get; set; }
+        public RenderTargetView CombinedPreviewRenderTargetView { get; set; }
+
         public FontFace CogoPointFontFace { get; set; }
         public ConcurrentDictionary<(string fontName, FontWeight fontWeight, FontStretch fontStretch, FontStyle fontStyle), FontFace> FontFaceDict = [];
         #endregion
@@ -301,7 +307,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     pixels,
                     stride);
 
-                bitmap.Freeze(); // 🔑 important for cross-thread usage
+                //bitmap.Freeze();
                 return bitmap;
             }
             finally
@@ -309,7 +315,107 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 DeviceContext.UnmapSubresource(staging, 0);
             }
         }
+        //public void CopyToWriteableBitmap(Texture2D source, System.Windows.Media.Imaging.WriteableBitmap target)
+        //{
+        //    var desc = source.Description;
 
+        //    using var staging = new Texture2D(Device, new Texture2DDescription
+        //    {
+        //        Width = desc.Width,
+        //        Height = desc.Height,
+        //        MipLevels = 1,
+        //        ArraySize = 1,
+        //        Format = desc.Format,
+        //        SampleDescription = new SampleDescription(1, 0),
+        //        Usage = ResourceUsage.Staging,
+        //        BindFlags = BindFlags.None,
+        //        CpuAccessFlags = CpuAccessFlags.Read,
+        //    });
+
+        //    DeviceContext.CopyResource(source, staging);
+
+        //    var box = DeviceContext.MapSubresource(staging, 0, MapMode.Read, MapFlags.None);
+
+        //    try
+        //    {
+        //        target.Lock();
+
+        //        unsafe
+        //        {
+        //            System.Buffer.MemoryCopy(
+        //                (void*)box.DataPointer,
+        //                (void*)target.BackBuffer,
+        //                target.BackBufferStride * target.PixelHeight,
+        //                box.RowPitch * desc.Height);
+        //        }
+
+        //        target.AddDirtyRect(new System.Windows.Int32Rect(0, 0, desc.Width, desc.Height));
+        //    }
+        //    finally
+        //    {
+        //        target.Unlock();
+        //        DeviceContext.UnmapSubresource(staging, 0);
+        //    }
+        //}
+        public void CopyToWriteableBitmap(Texture2D source, System.Windows.Media.Imaging.WriteableBitmap target)
+        {
+            var desc = source.Description;
+
+            // sanity: BGRA8 only
+            if (desc.Format != Format.B8G8R8A8_UNorm && desc.Format != Format.B8G8R8A8_UNorm_SRgb)
+            { throw new NotSupportedException($"Format {desc.Format} not supported for WPF Bgra32."); }
+
+            // Copy the overlap region only (prevents overflow if sizes differ)
+            int copyWidth = Math.Min(desc.Width, target.PixelWidth);
+            int copyHeight = Math.Min(desc.Height, target.PixelHeight);
+            int bytesPerPixel = 4;
+            int bytesPerRow = copyWidth * bytesPerPixel;
+
+            using var staging = new Texture2D(Device, new Texture2DDescription
+            {
+                Width = desc.Width,
+                Height = desc.Height,
+                MipLevels = 1,
+                ArraySize = 1,
+                Format = desc.Format,
+                SampleDescription = new SampleDescription(1, 0),
+                Usage = ResourceUsage.Staging,
+                BindFlags = BindFlags.None,
+                CpuAccessFlags = CpuAccessFlags.Read,
+                OptionFlags = ResourceOptionFlags.None
+            });
+
+            DeviceContext.CopyResource(source, staging);
+
+            var box = DeviceContext.MapSubresource(staging, 0, MapMode.Read, MapFlags.None);
+
+            try
+            {
+                target.Lock();
+
+                unsafe
+                {
+                    byte* srcBase = (byte*)box.DataPointer;
+                    byte* dstBase = (byte*)target.BackBuffer;
+
+                    for (int y = 0; y < copyHeight; y++)
+                    {
+                        byte* srcRow = srcBase + y * box.RowPitch;
+                        byte* dstRow = dstBase + y * target.BackBufferStride;
+
+                        System.Buffer.MemoryCopy(srcRow, dstRow, bytesPerRow, bytesPerRow);
+                    }
+                }
+
+                target.AddDirtyRect(new System.Windows.Int32Rect(0, 0, copyWidth, copyHeight));
+            }
+            finally
+            {
+                target.Unlock();
+                DeviceContext.UnmapSubresource(staging, 0);
+            }
+        }
+       
 
         public void Dispose()
         {
@@ -346,6 +452,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     {
                         fontFace.Dispose();
                     }
+
+                    DxfPreviewRenderTargetView?.Dispose();
+                    DxfPreviewTexture?.Dispose();
+                    CombinedPreviewRenderTargetView?.Dispose();
+                    CombinedPreviewTexture?.Dispose();
                 }
 
                 disposed = true;

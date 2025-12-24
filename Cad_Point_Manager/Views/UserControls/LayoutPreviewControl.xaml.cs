@@ -9,6 +9,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Printing;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
@@ -29,18 +30,26 @@ namespace Cad_Point_Manager.Views.UserControls
     /// </summary>
     public partial class LayoutPreviewControl : UserControl, INotifyPropertyChanged
     {
+        #region Fields
         private const double DipsPerInch = 96.0;
 
-        // Preview DPI (not print DPI). Bump if you want sharper previews.
-        public int PreviewDpi { get; set; } = 150;
-
+        private WriteableBitmap? _wb;
+        private int _wbW, _wbH;
         // Cache: (sceneId, pixelW, pixelH) -> bitmap
         private readonly ConcurrentDictionary<(Guid sceneId, int w, int h), BitmapSource> _cache = new();
+        #endregion
 
+        #region Properities
+        // Preview DPI (not print DPI). Bump if you want sharper previews.
+        public int PreviewDpi { get; set; } = 150;
+        #endregion
+
+        #region Constructors
         public LayoutPreviewControl()
         {
             InitializeComponent();
         }
+        #endregion
 
         #region Dependency Properties
 
@@ -83,6 +92,8 @@ namespace Cad_Point_Manager.Views.UserControls
             set => SetValue(ScenesProperty, value);
         }
         #endregion
+
+        #region Methods
         private static void OnLayoutChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             if (d is LayoutPreviewControl c)
@@ -93,7 +104,7 @@ namespace Cad_Point_Manager.Views.UserControls
         {
             RootCanvas.Children.Clear();
 
-            if (Layout == null || Scenes == null) { return; }
+            if (Layout == null) { return; }
 
             if (Renderer == null)
             {
@@ -101,27 +112,10 @@ namespace Cad_Point_Manager.Views.UserControls
                 return;
             }
 
-            // Build lookup
-            var sceneById = Scenes.ToDictionary(s => s.SceneId);
-
-            // 1) Draw page background in DIPs
             DrawPageOnly();
 
-            // 2) Add each viewport frame (border + image)
-            //foreach (var vp in Layout.Viewports)
-            //{
             var vp = Layout.Viewport;
-            Scene? scene = null;
-            if (Scenes.Count() > vp.SceneIndex)
-            {
-                scene = Scenes.ToList()[vp.SceneIndex];
-                //if (scene is null) { continue; }
-            }
-            if (scene is null)
-            {
-                DrawPageOnly();
-                return;
-            }
+            Scene scene = vp.Scene;
 
             var frame = CreateViewportFrame(vp);
             RootCanvas.Children.Add(frame);
@@ -129,52 +123,20 @@ namespace Cad_Point_Manager.Views.UserControls
             // Render preview bitmap sized to the frame at PreviewDpi
             int pxW = InchesToPixels(vp.LocalRectIn.Width, PreviewDpi);
             int pxH = InchesToPixels(vp.LocalRectIn.Height, PreviewDpi);
+            //int pxW = (int)Renderer.Viewport.Width;
+            //int pxH = (int)Renderer.Viewport.Height;
 
             if (pxW < 1 || pxH < 1) { return; }
 
-            var bmp = await GetOrRenderAsync(scene, pxW, pxH);
+            //var bmp = await GetOrRenderAsync(scene, pxW, pxH);
+            //if (frame.Child is Image img) { img.Source = bmp; }
 
-            // Set image
-            if (frame.Child is Image img) { img.Source = bmp; }
-            //}
-        }
-        public static bool BitmapLooksBlank(BitmapSource bmp)
-        {
-            if (bmp.Format != PixelFormats.Bgra32)
-                bmp = new FormatConvertedBitmap(bmp, PixelFormats.Bgra32, null, 0);
-
-            int w = bmp.PixelWidth;
-            int h = bmp.PixelHeight;
-            int stride = w * 4;
-
-            byte[] pixels = new byte[h * stride];
-            bmp.CopyPixels(pixels, stride, 0);
-
-            for (int i = 0; i < pixels.Length; i += 4)
+            var wb = GetOrCreateWriteable(pxW, pxH);
+            await Renderer.Dispatcher.InvokeAsync(() =>
             {
-                byte b = pixels[i + 0];
-                byte g = pixels[i + 1];
-                byte r = pixels[i + 2];
-                byte a = pixels[i + 3];
-
-                // detect anything not near-white
-                if (a > 10 && (r < 245 || g < 245 || b < 245))
-                    return false;
-            }
-
-            return true;
-        }
-
-        public static void SaveBitmapToPng(BitmapSource bitmap, string filePath)
-        {
-            if (bitmap == null)
-                throw new ArgumentNullException(nameof(bitmap));
-
-            var encoder = new PngBitmapEncoder();
-            encoder.Frames.Add(BitmapFrame.Create(bitmap));
-
-            using var fs = new FileStream(filePath, FileMode.Create, FileAccess.Write);
-            encoder.Save(fs);
+                Renderer.RenderSceneIntoWriteableBitmap(scene, wb);
+            });
+            if (frame.Child is Image img) { img.Source = wb; }
         }
 
         private void DrawPageOnly()
@@ -194,11 +156,11 @@ namespace Cad_Point_Manager.Views.UserControls
             {
                 Width = pageW,
                 Height = pageH,
-                Background = Brushes.White,
-                BorderBrush = new SolidColorBrush(Color.FromRgb(160, 160, 160)),
-                BorderThickness = new Thickness(1)
+                Background = new SolidColorBrush(Color.FromArgb(100, 255, 0, 0)),
+                BorderBrush = new SolidColorBrush(Color.FromRgb(0, 255, 0)),
+                BorderThickness = new Thickness(5)
             };
-
+            Canvas.SetZIndex(pageBorder, 2);
             Canvas.SetLeft(pageBorder, 0);
             Canvas.SetTop(pageBorder, 0);
             RootCanvas.Children.Add(pageBorder);
@@ -228,34 +190,45 @@ namespace Cad_Point_Manager.Views.UserControls
                 Height = h,
                 Child = img,
                 BorderThickness = new Thickness(vp.ShowBorder ? 4 : 0),
-                BorderBrush = Brushes.Black,
-                Background = Brushes.White,
-                ClipToBounds = false   // important so drawings don’t leak outside
+                BorderBrush = new SolidColorBrush(Color.FromRgb(255, 255, 255)),
+                Background = new SolidColorBrush(Color.FromArgb(100, 0, 0, 255)),
+                ClipToBounds = true
             };
-
+            Canvas.SetZIndex(border, 3);
             Canvas.SetLeft(border, x);
             Canvas.SetTop(border, y);
 
             return border;
         }
 
-        private async Task<BitmapSource> GetOrRenderAsync(Scene scene, int pixelW, int pixelH)
+        //private async Task<BitmapSource> GetOrRenderAsync(Scene scene, int pixelW, int pixelH)
+        //{
+        //    var key = (scene.SceneId, pixelW, pixelH);
+        //    //if (_cache.TryGetValue(key, out var cached)) { return cached; }
+
+        //    if (Renderer == null) { throw new InvalidOperationException("Renderer is null."); }
+
+        //    // Must render on the renderer's dispatcher (UI thread)
+        //    var bmp = await Renderer.Dispatcher.InvokeAsync(() =>
+        //        Renderer.RenderSceneToBitmapSource(scene, pixelW, pixelH));
+
+        //    //_cache[key] = bmp;
+        //    return bmp;
+        //}
+
+        private static int InchesToPixels(double inches, int dpi) => (int)Math.Round(inches * dpi);
+
+        private WriteableBitmap GetOrCreateWriteable(int w, int h)
         {
-            var key = (scene.SceneId, pixelW, pixelH);
-            //if (_cache.TryGetValue(key, out var cached)) { return cached; }
-
-            if (Renderer == null) { throw new InvalidOperationException("Renderer is null."); }
-
-            // Must render on the renderer's dispatcher (UI thread)
-            var bmp = await Renderer.Dispatcher.InvokeAsync(() =>
-                Renderer.RenderSceneToBitmapSource(scene, pixelW, pixelH));
-
-            _cache[key] = bmp;
-            return bmp;
+            if (_wb == null || _wbW != w || _wbH != h)
+            {
+                _wbW = w; _wbH = h;
+                _wb = new WriteableBitmap(w, h, 96, 96, PixelFormats.Bgra32, null);
+                //_wb.Freeze(); // optional; only if you won't update it from another thread
+            }
+            return _wb;
         }
-
-        private static int InchesToPixels(double inches, int dpi)
-            => (int)Math.Round(inches * dpi);
+        #endregion
 
         #region INotifyPropertyChanged Implementation
         public event PropertyChangedEventHandler PropertyChanged;

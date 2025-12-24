@@ -4,6 +4,7 @@ using Cad_Point_Manager.Helpers;
 using Cad_Point_Manager.Models;
 using Cad_Point_Manager.Models.Printing;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
@@ -119,24 +120,63 @@ namespace Cad_Point_Manager.Views.UserControls
 
         }
 
+        private void Layouts_CollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+        {
+            //foreach (var layout in CadManager.Layouts)
+            //{
+            //    Debug.WriteLine($"layout.Name: {layout.Name}");
+            //}
+            if (CadManager is not null && CadManager.Layouts.Count > 0 && ActiveLayout is null)
+            {
+                layoutsListView.ActiveObject = CadManager.Layouts.First();
+                ActiveLayout = CadManager.Layouts.First();
+            }
+        }
+
         private static void OnCadManagerChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             var ctrl = (LayoutsViewControl)d;
-            var newValue = e.NewValue as CadManager3D;
-            if (newValue is not null && newValue.Layouts.Count > 0)
+            var oldValue = e.OldValue as CadManager3D;
+            if (oldValue is not null)
             {
-                ctrl.layoutsListView.ActiveObject = newValue.Layouts.First();
-                ctrl.ActiveLayout = newValue.Layouts.First();
+                oldValue.Layouts.CollectionChanged -= ctrl.Layouts_CollectionChanged;
+            }
+            var newValue = e.NewValue as CadManager3D;
+            if (newValue is not null)
+            {
+                if (oldValue is not null)
+                {
+                    oldValue.Layouts.CollectionChanged -= ctrl.Layouts_CollectionChanged;
+                }
+                newValue.Layouts.CollectionChanged += ctrl.Layouts_CollectionChanged;
             }
         }
         private static void OnActiveLayoutChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             var ctrl = (LayoutsViewControl)d;
-            if (ctrl is not null)
+            if (ctrl is not null) { ctrl.LayoutPreviewControl.RebuildAsync(); }
+
+            if (e.OldValue is Layout oldLayout) { oldLayout.Viewport.PropertyChanged -= ctrl.ActiveLayoutViewport_PropertyChanged; }
+
+            if (e.NewValue is Layout newLayout) { newLayout.Viewport.PropertyChanged += ctrl.ActiveLayoutViewport_PropertyChanged; }
+        }
+        private async void ActiveLayoutViewport_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(LayoutViewport.Scene) ||
+                e.PropertyName == nameof(LayoutViewport.LocalRect) ||
+                e.PropertyName == nameof(LayoutViewport.ShowBorder))
             {
-                ctrl.LayoutPreviewControl.RebuildAsync();
+                // If PropertyChanged can come from a background thread, marshal to UI thread
+                if (!Dispatcher.CheckAccess())
+                {
+                    await Dispatcher.InvokeAsync(() => LayoutPreviewControl.RebuildAsync());
+                    return;
+                }
+
+                LayoutPreviewControl.RebuildAsync();
             }
         }
+
         private static void OnRendererChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             var ctrl = (LayoutsViewControl)d;
@@ -166,11 +206,11 @@ namespace Cad_Point_Manager.Views.UserControls
         }
         private void ScenesListView_ContextMenuOpening(object sender, ContextMenuEventArgs e)
         {
-           
+
         }
         private void ScenesListView_ContextMenuClosing(object sender, ContextMenuEventArgs e)
         {
-           
+
         }
 
         private void InsertSceneMenuItem_Click(object sender, RoutedEventArgs e)

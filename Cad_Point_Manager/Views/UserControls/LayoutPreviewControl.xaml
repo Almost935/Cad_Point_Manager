@@ -8,11 +8,9 @@
              d:DesignHeight="450"
              d:DesignWidth="800">
     <Grid>
-        <!-- Viewbox scales the page to fit the available space -->
         <Viewbox x:Name="FitViewbox"
-                 Stretch="Uniform"
+                 Stretch="UniformToFill"
                  StretchDirection="DownOnly">
-            <!-- Container holds the page at its "true" DIP size -->
             <Canvas x:Name="RootCanvas" />
         </Viewbox>
     </Grid>

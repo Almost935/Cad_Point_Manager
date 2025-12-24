@@ -51,6 +51,7 @@ namespace Cad_Point_Manager.Models
         private bool _hitTestingEnabled = true;
         private BatchableObservableCollection<Layout> _layouts = [];
         private ICollectionView _layoutsView;
+        private Camera _camera;
 
         private readonly List<LineVertex> _cachedLineVertices = [];
         private readonly List<TextVertex> _cachedTextVertices = [];
@@ -239,6 +240,18 @@ namespace Cad_Point_Manager.Models
                 OnPropertyChanged(nameof(LayoutsView));
             }
         }
+        public Camera Camera
+        {
+            get => _camera;
+            set
+            {
+                if (_camera != value)
+                {
+                    _camera = value;
+                    OnPropertyChanged(nameof(Camera));
+                }
+            }
+        }
 
         public DxfDocument DxfDocument { get; set; }
         public HitTestableObjectTree HitTestableObjectTree { get; set; }
@@ -255,27 +268,6 @@ namespace Cad_Point_Manager.Models
         public CadManager3D()
         {
             CogoPointManager = new(this);
-
-            var layout1 = new Layout() { Name = "Layout 1" };
-            layout1.Viewport = new LayoutViewport()
-            {
-                 LocalRectIn = new Rect(2, 2, 32, 20),
-            };
-            Layouts.Add(layout1);
-
-            var layout2 = new Layout() { Name = "Layout 2" };
-            layout2.Viewport = new LayoutViewport()
-            {
-                LocalRectIn = new Rect(2, 2, 32, 20),
-            };
-            Layouts.Add(layout2);
-
-            var layout3 = new Layout() { Name = "Layout 3" };
-            layout3.Viewport = new LayoutViewport()
-            {
-                LocalRectIn = new Rect(2, 2, 32, 20),
-            };
-            Layouts.Add(layout3);
 
             GetCollectionViews();
         }
@@ -321,9 +313,33 @@ namespace Cad_Point_Manager.Models
             DxfNeedsReload = true;
         }
 
-        public void GetInitialTemplate()
+        public void ResetTemplates()
         {
+            Layouts.Clear();
 
+            var layout1 = new Layout() { Name = "Layout 1" };
+            layout1.Viewport = new LayoutViewport()
+            {
+                LocalRectIn = new Rect(2, 2, 32, 20),
+                Scene = Camera.OverviewScene
+            };
+            Layouts.Add(layout1);
+
+            var layout2 = new Layout() { Name = "Layout 2" };
+            layout2.Viewport = new LayoutViewport()
+            {
+                LocalRectIn = new Rect(2, 2, 32, 20),
+                Scene = Camera.OverviewScene
+            };
+            Layouts.Add(layout2);
+
+            var layout3 = new Layout() { Name = "Layout 3" };
+            layout3.Viewport = new LayoutViewport()
+            {
+                LocalRectIn = new Rect(2, 2, 32, 20),
+                Scene = Camera.OverviewScene
+            };
+            Layouts.Add(layout3);
         }
 
         public void GetPointScale()
