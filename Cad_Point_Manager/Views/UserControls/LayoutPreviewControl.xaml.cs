@@ -123,20 +123,22 @@ namespace Cad_Point_Manager.Views.UserControls
             // Render preview bitmap sized to the frame at PreviewDpi
             int pxW = InchesToPixels(vp.LocalRectIn.Width, PreviewDpi);
             int pxH = InchesToPixels(vp.LocalRectIn.Height, PreviewDpi);
-            //int pxW = (int)Renderer.Viewport.Width;
-            //int pxH = (int)Renderer.Viewport.Height;
 
             if (pxW < 1 || pxH < 1) { return; }
-
-            //var bmp = await GetOrRenderAsync(scene, pxW, pxH);
-            //if (frame.Child is Image img) { img.Source = bmp; }
 
             var wb = GetOrCreateWriteable(pxW, pxH);
             await Renderer.Dispatcher.InvokeAsync(() =>
             {
                 Renderer.RenderSceneIntoWriteableBitmap(scene, wb);
             });
-            if (frame.Child is Image img) { img.Source = wb; }
+            if (frame.Child is Image img)
+            {
+                img.Source = wb;
+                RenderOptions.SetBitmapScalingMode(img, BitmapScalingMode.HighQuality);
+                img.UseLayoutRounding = true;
+                img.SnapsToDevicePixels = true;
+
+            }
         }
 
         private void DrawPageOnly()
@@ -156,13 +158,7 @@ namespace Cad_Point_Manager.Views.UserControls
             {
                 Width = pageW,
                 Height = pageH,
-                Background = new SolidColorBrush(Color.FromArgb(100, 255, 0, 0)),
-                BorderBrush = new SolidColorBrush(Color.FromRgb(0, 255, 0)),
-                BorderThickness = new Thickness(5)
             };
-            Canvas.SetZIndex(pageBorder, 2);
-            Canvas.SetLeft(pageBorder, 0);
-            Canvas.SetTop(pageBorder, 0);
             RootCanvas.Children.Add(pageBorder);
         }
 
@@ -171,7 +167,7 @@ namespace Cad_Point_Manager.Views.UserControls
             if (Layout == null) { throw new InvalidOperationException(); }
 
             // Map local->page
-            Rect pageRectIn = new Rect(
+            Rect pageRectIn = new(
                 vp.LocalRectIn.X,
                 vp.LocalRectIn.Y,
                 vp.LocalRectIn.Width,
@@ -190,31 +186,13 @@ namespace Cad_Point_Manager.Views.UserControls
                 Height = h,
                 Child = img,
                 BorderThickness = new Thickness(vp.ShowBorder ? 4 : 0),
-                BorderBrush = new SolidColorBrush(Color.FromRgb(255, 255, 255)),
-                Background = new SolidColorBrush(Color.FromArgb(100, 0, 0, 255)),
+                BorderBrush = new SolidColorBrush(Color.FromRgb(0, 0, 0)),
                 ClipToBounds = true
             };
-            Canvas.SetZIndex(border, 3);
             Canvas.SetLeft(border, x);
             Canvas.SetTop(border, y);
-
             return border;
         }
-
-        //private async Task<BitmapSource> GetOrRenderAsync(Scene scene, int pixelW, int pixelH)
-        //{
-        //    var key = (scene.SceneId, pixelW, pixelH);
-        //    //if (_cache.TryGetValue(key, out var cached)) { return cached; }
-
-        //    if (Renderer == null) { throw new InvalidOperationException("Renderer is null."); }
-
-        //    // Must render on the renderer's dispatcher (UI thread)
-        //    var bmp = await Renderer.Dispatcher.InvokeAsync(() =>
-        //        Renderer.RenderSceneToBitmapSource(scene, pixelW, pixelH));
-
-        //    //_cache[key] = bmp;
-        //    return bmp;
-        //}
 
         private static int InchesToPixels(double inches, int dpi) => (int)Math.Round(inches * dpi);
 
@@ -224,7 +202,6 @@ namespace Cad_Point_Manager.Views.UserControls
             {
                 _wbW = w; _wbH = h;
                 _wb = new WriteableBitmap(w, h, 96, 96, PixelFormats.Bgra32, null);
-                //_wb.Freeze(); // optional; only if you won't update it from another thread
             }
             return _wb;
         }

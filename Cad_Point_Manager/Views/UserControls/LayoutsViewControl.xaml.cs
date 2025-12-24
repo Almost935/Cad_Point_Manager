@@ -9,6 +9,7 @@ using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 
 namespace Cad_Point_Manager.Views.UserControls
 {
@@ -18,7 +19,15 @@ namespace Cad_Point_Manager.Views.UserControls
     public partial class LayoutsViewControl : UserControl, INotifyPropertyChanged
     {
         #region Fields
-        private bool _previewNeedsReload = false;
+        private Point _panStartMouse;     // mouse position when pan started (in container coords)
+        private Matrix _panStartMatrix;   // matrix at pan start
+        private bool _panning;
+
+        private bool _didInitialFit;
+
+        private const double ZoomStep = 1.1;
+        private const double MinScale = 0.005;
+        private const double MaxScale = 500.0;
         #endregion
 
         #region Properties
@@ -163,7 +172,7 @@ namespace Cad_Point_Manager.Views.UserControls
         private async void ActiveLayoutViewport_PropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
             if (e.PropertyName == nameof(LayoutViewport.Scene) ||
-                e.PropertyName == nameof(LayoutViewport.LocalRect) ||
+                e.PropertyName == nameof(LayoutViewport.LocalRectIn) ||
                 e.PropertyName == nameof(LayoutViewport.ShowBorder))
             {
                 // If PropertyChanged can come from a background thread, marshal to UI thread
@@ -216,6 +225,107 @@ namespace Cad_Point_Manager.Views.UserControls
         private void InsertSceneMenuItem_Click(object sender, RoutedEventArgs e)
         {
 
+        }
+        #endregion
+
+        #region Pan and Zoom Methods
+        private void TransformGrid_MouseButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            // Middle button drag to pan (change to Left if you prefer)
+            if (e.ChangedButton == MouseButton.Middle)
+            {
+                _panning = true;
+                _panStartMouse = e.GetPosition((IInputElement)sender);
+                _panStartMatrix = transform.Matrix;
+                Mouse.Capture((IInputElement)sender);
+                e.Handled = true;
+            }
+        }
+        private void TransformGrid_MouseUp(object sender, MouseButtonEventArgs e)
+        {
+            if (e.ChangedButton == MouseButton.Middle && _panning)
+            {
+                _panning = false;
+                Mouse.Capture(null);
+                e.Handled = true;
+            }
+        }
+        private void TransformGrid_MouseMove(object sender, MouseEventArgs e)
+        {
+            if (!_panning) { return; }
+
+            Point cur = e.GetPosition((IInputElement)sender);
+
+            Vector delta = cur - _panStartMouse;
+
+            Matrix m = _panStartMatrix;
+            m.Translate(delta.X, delta.Y);
+
+            transform.Matrix = m;
+        }
+        private void TransformGrid_MouseWheel(object sender, MouseWheelEventArgs e)
+        {
+            // Mouse position in the content we are transforming (Surface coords)
+            Point p = e.GetPosition(BackgroundGrid);
+
+            Matrix m = transform.Matrix;
+
+            // Current uniform scale (assuming you only do uniform scaling)
+            double currentScale = m.M11;
+            double factor = e.Delta > 0 ? ZoomStep : 1.0 / ZoomStep;
+
+            double newScale = Clamp(currentScale * factor, MinScale, MaxScale);
+            factor = newScale / currentScale; // adjust factor if clamped
+
+            // Zoom around the mouse point: translate(-p), scale, translate(+p)
+            m.Translate(-p.X, -p.Y);
+            m.Scale(factor, factor);
+            m.Translate(p.X, p.Y);
+
+            transform.Matrix = m;
+            e.Handled = true;
+        }
+        private void BackgroundCanvas_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            FitPageToView();
+        }
+
+        private static double Clamp(double v, double min, double max)
+        => v < min ? min : (v > max ? max : v);
+
+        private void FitPageToView()
+        {
+            if (ActiveLayout?.PageSize == null) { return; }
+
+            double viewW = BackgroundGrid.ActualWidth - 20;
+            double viewH = BackgroundGrid.ActualHeight - 20;
+
+            if (viewW <= 0 || viewH <= 0) { return; }
+
+            double pageW = ActiveLayout.PageSize.Width;
+            double pageH = ActiveLayout.PageSize.Height;
+
+            if (pageW <= 0 || pageH <= 0) { return; }
+
+            // Optional padding so it’s not flush against edges
+            const double pad = 20;
+
+            double scaleX = (viewW - pad * 2) / pageW;
+            double scaleY = (viewH - pad * 2) / pageH;
+            double s = Clamp(Math.Min(scaleX, scaleY), MinScale, MaxScale);
+
+            // Center the page in the view
+            double tx = (viewW - pageW * s) * 0.5;
+            double ty = (viewH - pageH * s) * 0.5;
+
+            // Build matrix: scale then translate
+            var m = Matrix.Identity;
+            m.Scale(s, s);
+            m.Translate(tx, ty);
+
+            transform.Matrix = m;
+
+            _didInitialFit = true;
         }
         #endregion
 

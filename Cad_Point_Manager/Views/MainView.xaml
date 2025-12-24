@@ -59,7 +59,8 @@
         </Grid.RowDefinitions>
 
         <Grid x:Name="menuGrid"
-              Grid.Row="0">
+              Grid.Row="0"
+              Panel.ZIndex="5">
             <Border Grid.Row="0"
                     BorderBrush="#7FFFFFFF"
                     BorderThickness="0.25"
@@ -154,7 +155,7 @@
                                    CadManager="{Binding DataContext.JobFileManager.CadManager3D, RelativeSource={RelativeSource AncestorType=Page}}"
                                    Scenes="{Binding DataContext.JobFileManager.CadManager3D.Camera.Scenes, RelativeSource={RelativeSource AncestorType=Page}}"
                                    Renderer="{Binding ElementName=d3dDxfControl}"
-                                   ActiveLayout="{Binding DataContext.SelectedLayout, RelativeSource={RelativeSource AncestorType=Page}}"/>
+                                   ActiveLayout="{Binding DataContext.SelectedLayout, RelativeSource={RelativeSource AncestorType=Page}}" />
         </Grid>
 
         <Grid x:Name="modelGrid"
@@ -463,76 +464,75 @@
                                    Camera="{Binding JobFileManager.CadManager3D.Camera}"
                                    ActivePointGroup="{Binding ActivePointGroup}" />
             </Grid>
-            <Grid Grid.Row="2">
-                <Grid x:Name="dxfGrid"
-                      SizeChanged="dxfGrid_SizeChanged"
-                      ClipToBounds="True"
-                      MouseEnter="DxfGrid_MouseEnter"
-                      MouseLeave="DxfGrid_MouseLeave">
-                    <Grid.Margin>
-                        <MultiBinding Converter="{StaticResource LeftRightMarginConverter}">
-                            <Binding ElementName="SourceControl"
-                                     Path="Value" />
-                            <Binding ElementName="SourceControl"
-                                     Path="Value" />
-                            <Binding>
-                                <Binding.Source>
-                                    <sys:Double>20</sys:Double>
-                                </Binding.Source>
-                            </Binding>
-                            <Binding>
-                                <Binding.Source>
-                                    <sys:Double>10</sys:Double>
-                                </Binding.Source>
-                            </Binding>
-                        </MultiBinding>
-                    </Grid.Margin>
+            <Grid x:Name="dxfGrid"
+                  SizeChanged="dxfGrid_SizeChanged"
+                  ClipToBounds="True"
+                  MouseEnter="DxfGrid_MouseEnter"
+                  MouseLeave="DxfGrid_MouseLeave"
+                  Grid.Row="2">
+                <Grid.Margin>
+                    <MultiBinding Converter="{StaticResource LeftRightMarginConverter}">
+                        <Binding ElementName="SourceControl"
+                                 Path="Value" />
+                        <Binding ElementName="SourceControl"
+                                 Path="Value" />
+                        <Binding>
+                            <Binding.Source>
+                                <sys:Double>20</sys:Double>
+                            </Binding.Source>
+                        </Binding>
+                        <Binding>
+                            <Binding.Source>
+                                <sys:Double>10</sys:Double>
+                            </Binding.Source>
+                        </Binding>
+                    </MultiBinding>
+                </Grid.Margin>
 
-                    <d3D:D3dDxfControl x:Name="d3dDxfControl"
-                                       CadManager3D="{Binding JobFileManager.CadManager3D}"
-                                       Layers="{Binding Layers, Mode=TwoWay}"
-                                       PointGroups="{Binding PointGroups, Mode=TwoWay}"
-                                       CogoPoints="{Binding CogoPoints, Mode=TwoWay}"
-                                       SelectedCogoPoints="{Binding SelectedCogoPoints, Mode=TwoWay}"
-                                       SelectedGeometries="{Binding SelectedGeometries, Mode=TwoWay}"
-                                       Width="{Binding ElementName=dxfGrid, Path=ActualWidth}"
-                                       Height="{Binding ElementName=dxfGrid, Path=ActualHeight}"
-                                       SnappedHitTestablePoint="{Binding SnappedHitTestablePoint, Mode=TwoWay}"
-                                       SelectedHitTestablePoints="{Binding SelectedHitTestablePoints, Mode=TwoWay}"
-                                       Focusable="True"
-                                       MousePosition="{Binding MousePosition, Mode=OneWayToSource}" />
-                    <Canvas x:Name="BackgroundCanvas">
-                        <uc:SignificantPointControl HitTestablePoint="{Binding DataContext.SnappedHitTestablePoint, RelativeSource={RelativeSource AncestorType=Page}}"
-                                                    Focusable="False"
-                                                    IsHitTestVisible="False"
-                                                    Visibility="{Binding Path=DataContext.JobFileManager.CadManager3D.SnapSelectionMode, RelativeSource={RelativeSource AncestorType=Page},Converter={StaticResource SelectionModeToVisibilityConverter}, ConverterParameter=Points}">
-                            <uc:SignificantPointControl.RenderTransform>
-                                <TransformGroup>
-                                    <TranslateTransform>
-                                        <TranslateTransform.X>
-                                            <MultiBinding Converter="{StaticResource PointCoordinateMatrixTransformerConverter}"
-                                                          ConverterParameter="X">
-                                                <Binding Path="DataContext.SnappedHitTestablePoint.Position"
-                                                         RelativeSource="{RelativeSource AncestorType=Page}" />
-                                                <Binding Path="DataContext.JobFileManager.CadManager3D.Camera.WindowsMatrix"
-                                                         RelativeSource="{RelativeSource AncestorType=Page}" />
-                                            </MultiBinding>
-                                        </TranslateTransform.X>
-                                        <TranslateTransform.Y>
-                                            <MultiBinding Converter="{StaticResource PointCoordinateMatrixTransformerConverter}"
-                                                          ConverterParameter="Y">
-                                                <Binding Path="DataContext.SnappedHitTestablePoint.Position"
-                                                         RelativeSource="{RelativeSource AncestorType=Page}" />
-                                                <Binding Path="DataContext.JobFileManager.CadManager3D.Camera.WindowsMatrix"
-                                                         RelativeSource="{RelativeSource AncestorType=Page}" />
-                                            </MultiBinding>
-                                        </TranslateTransform.Y>
-                                    </TranslateTransform>
-                                </TransformGroup>
-                            </uc:SignificantPointControl.RenderTransform>
-                        </uc:SignificantPointControl>
-                    </Canvas>
-                </Grid>
+                <d3D:D3dDxfControl x:Name="d3dDxfControl"
+                                   CadManager3D="{Binding JobFileManager.CadManager3D}"
+                                   Layers="{Binding Layers, Mode=TwoWay}"
+                                   PointGroups="{Binding PointGroups, Mode=TwoWay}"
+                                   CogoPoints="{Binding CogoPoints, Mode=TwoWay}"
+                                   SelectedCogoPoints="{Binding SelectedCogoPoints, Mode=TwoWay}"
+                                   SelectedGeometries="{Binding SelectedGeometries, Mode=TwoWay}"
+                                   Width="{Binding ElementName=dxfGrid, Path=ActualWidth}"
+                                   Height="{Binding ElementName=dxfGrid, Path=ActualHeight}"
+                                   SnappedHitTestablePoint="{Binding SnappedHitTestablePoint, Mode=TwoWay}"
+                                   SelectedHitTestablePoints="{Binding SelectedHitTestablePoints, Mode=TwoWay}"
+                                   Focusable="True"
+                                   MousePosition="{Binding MousePosition, Mode=OneWayToSource}" />
+                <Canvas x:Name="BackgroundCanvas">
+                    <uc:SignificantPointControl HitTestablePoint="{Binding DataContext.SnappedHitTestablePoint, RelativeSource={RelativeSource AncestorType=Page}}"
+                                                Focusable="False"
+                                                IsHitTestVisible="False"
+                                                Visibility="{Binding Path=DataContext.JobFileManager.CadManager3D.SnapSelectionMode, RelativeSource={RelativeSource AncestorType=Page},Converter={StaticResource SelectionModeToVisibilityConverter}, ConverterParameter=Points}">
+                        <uc:SignificantPointControl.RenderTransform>
+                            <TransformGroup>
+                                <TranslateTransform>
+                                    <TranslateTransform.X>
+                                        <MultiBinding Converter="{StaticResource PointCoordinateMatrixTransformerConverter}"
+                                                      ConverterParameter="X">
+                                            <Binding Path="DataContext.SnappedHitTestablePoint.Position"
+                                                     RelativeSource="{RelativeSource AncestorType=Page}" />
+                                            <Binding Path="DataContext.JobFileManager.CadManager3D.Camera.WindowsMatrix"
+                                                     RelativeSource="{RelativeSource AncestorType=Page}" />
+                                        </MultiBinding>
+                                    </TranslateTransform.X>
+                                    <TranslateTransform.Y>
+                                        <MultiBinding Converter="{StaticResource PointCoordinateMatrixTransformerConverter}"
+                                                      ConverterParameter="Y">
+                                            <Binding Path="DataContext.SnappedHitTestablePoint.Position"
+                                                     RelativeSource="{RelativeSource AncestorType=Page}" />
+                                            <Binding Path="DataContext.JobFileManager.CadManager3D.Camera.WindowsMatrix"
+                                                     RelativeSource="{RelativeSource AncestorType=Page}" />
+                                        </MultiBinding>
+                                    </TranslateTransform.Y>
+                                </TranslateTransform>
+                            </TransformGroup>
+                        </uc:SignificantPointControl.RenderTransform>
+                    </uc:SignificantPointControl>
+                </Canvas>
             </Grid>
         </Grid>
 

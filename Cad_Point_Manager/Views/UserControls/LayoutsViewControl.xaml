@@ -13,15 +13,16 @@
              xmlns:viewsAssorted="clr-namespace:Cad_Point_Manager.Views.Assorted"
              d:DesignHeight="600"
              d:DesignWidth="1200"
-             DataContext="{Binding Mode=OneWay, RelativeSource={RelativeSource Self}}">
+             DataContext="{Binding Mode=OneWay, RelativeSource={RelativeSource Self}}"
+             Background="Transparent">
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*" />
-            <ColumnDefinition Width="2*" />
-            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="3*" />
         </Grid.ColumnDefinitions>
         <TabControl Grid.Row="0"
-                    Margin="10">
+                    BorderThickness="0"
+                    Panel.ZIndex="2">
             <TabItem Header="Layouts"
                      Foreground="White">
                 <controls:DoubleClickSetListView x:Name="layoutsListView"
@@ -201,159 +202,28 @@
                     </controls:DoubleClickSetListView.View>
                 </controls:DoubleClickSetListView>
             </TabItem>
-            <TabItem Header="Scenes"
-                     Foreground="White">
-                <!--<ListView x:Name="scenesListView"
-                          ItemsSource="{Binding ElementName=root, Path=Camera.Scenes}"
-                          Style="{StaticResource UpdatedListViewStyle}"
-                          SelectionMode="Extended"
-                          VirtualizingPanel.IsVirtualizing="True"
-                          VirtualizingPanel.VirtualizationMode="Recycling"
-                          VirtualizingPanel.IsVirtualizingWhenGrouping="True"
-                          VirtualizingPanel.ScrollUnit="Pixel"
-                          Loaded="ScenesListView_Loaded"
-                          Grid.RowSpan="2"
-                          ContextMenuOpening="ScenesListView_ContextMenuOpening"
-                          ContextMenuClosing="ScenesListView_ContextMenuClosing">
-                    <ListView.Resources>
-                        <Thickness x:Key="TextboxPadding">0</Thickness>
-                        <Thickness x:Key="TextblockPadding">0</Thickness>
-                        <SolidColorBrush x:Key="HeaderForeground"
-                                         Color="White" />
-                        <SolidColorBrush x:Key="BodyForeground"
-                                         Color="Black" />
-                        <SolidColorBrush x:Key="ReadOnlyBodyForeground"
-                                         Color="#FF545454" />
-                        <Style x:Key="BaseTextBlockStyle"
-                               TargetType="TextBlock">
-                            <Setter Property="VerticalAlignment"
-                                    Value="Center" />
-                            <Setter Property="Margin"
-                                    Value="{StaticResource TextblockPadding}" />
-                            <Setter Property="FontSize"
-                                    Value="{StaticResource ListViewFontSize}" />
-                            <Setter Property="Foreground"
-                                    Value="{StaticResource BodyForeground}" />
-                            <Setter Property="VerticalAlignment"
-                                    Value="Center" />
-                        </Style>
-                        <Style x:Key="HeaderTextBlockStyle"
-                               TargetType="TextBlock">
-                            <Setter Property="VerticalAlignment"
-                                    Value="Center" />
-                            <Setter Property="FontSize"
-                                    Value="{StaticResource ListViewHeaderFontSize}" />
-                            <Setter Property="Foreground"
-                                    Value="{StaticResource HeaderForeground}" />
-                        </Style>
-                    </ListView.Resources>
-                    <ListView.ContextMenu>
-                        <ContextMenu x:Name="scenesListViewContextMenu"
-                                     Style="{StaticResource Win11ContextMenuStyle}"
-                                     HasDropShadow="True">
-                            <MenuItem Header="Insert Scene"
-                                      Click="InsertSceneMenuItem_Click"
-                                      Style="{StaticResource DefaultContextMenuItemStyle}">
-                                <MenuItem.Icon>
-                                    <fa:FontAwesome Icon="PlusSquare"
-                                                    RenderTransformOrigin="0.5 0.5"
-                                                    Foreground="Black">
-                                        <fa:FontAwesome.LayoutTransform>
-                                            <ScaleTransform ScaleX="1.3"
-                                                            ScaleY="1.3" />
-                                        </fa:FontAwesome.LayoutTransform>
-                                    </fa:FontAwesome>
-                                </MenuItem.Icon>
-                            </MenuItem>
-                        </ContextMenu>
-                    </ListView.ContextMenu>
-                    <ListView.View>
-                        <GridView>
-                            <GridViewColumn>
-                                <GridViewColumn.Header>
-                                    <TextBlock Text="Name"
-                                               Style="{StaticResource HeaderTextBlockStyle}" />
-                                </GridViewColumn.Header>
-                                <GridViewColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <Grid x:Name="sceneNameGrid">
-                                            <TextBlock x:Name="sceneNameDisplay"
-                                                       Text="{Binding Name}"
-                                                       Style="{StaticResource BaseTextBlockStyle}" />
-                                        </Grid>
-                                    </DataTemplate>
-                                </GridViewColumn.CellTemplate>
-                            </GridViewColumn>
-                            <GridViewColumn>
-                                <GridViewColumn.Header>
-                                    <TextBlock Text="Left"
-                                               Style="{StaticResource HeaderTextBlockStyle}" />
-                                </GridViewColumn.Header>
-                                <GridViewColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <Grid>
-                                            <TextBlock Text="{Binding BoundsLeft, StringFormat=N3}"
-                                                       Style="{StaticResource BaseTextBlockStyle}" />
-                                        </Grid>
-                                    </DataTemplate>
-                                </GridViewColumn.CellTemplate>
-                            </GridViewColumn>
-                            <GridViewColumn>
-                                <GridViewColumn.Header>
-                                    <TextBlock Text="Right"
-                                               Style="{StaticResource HeaderTextBlockStyle}" />
-                                </GridViewColumn.Header>
-                                <GridViewColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <TextBlock Text="{Binding BoundsRight, StringFormat=N3}"
-                                                   Style="{StaticResource BaseTextBlockStyle}" />
-                                    </DataTemplate>
-                                </GridViewColumn.CellTemplate>
-                            </GridViewColumn>
-                            <GridViewColumn>
-                                <GridViewColumn.Header>
-                                    <TextBlock Text="Bottom"
-                                               Style="{StaticResource HeaderTextBlockStyle}" />
-                                </GridViewColumn.Header>
-                                <GridViewColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <Grid>
-                                            <TextBlock Text="{Binding BoundsTop, StringFormat=N3}"
-                                                       Style="{StaticResource BaseTextBlockStyle}" />
-                                        </Grid>
-                                    </DataTemplate>
-                                </GridViewColumn.CellTemplate>
-                            </GridViewColumn>
-                            <GridViewColumn>
-                                <GridViewColumn.Header>
-                                    <TextBlock Text="Top"
-                                               Style="{StaticResource HeaderTextBlockStyle}" />
-                                </GridViewColumn.Header>
-                                <GridViewColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <Grid>
-                                            <TextBlock Text="{Binding BoundsBottom, StringFormat=N3}"
-                                                       Style="{StaticResource BaseTextBlockStyle}" />
-                                        </Grid>
-                                    </DataTemplate>
-                                </GridViewColumn.CellTemplate>
-                            </GridViewColumn>
-                        </GridView>
-                    </ListView.View>
-                </ListView>-->
-            </TabItem>
         </TabControl>
 
-        <Viewbox Grid.Column="1"
-                 Margin="10 10 10 10">
-            <Grid Background="White"
-                  Height="{Binding ActiveLayout.PageSize.Height}"
-                  Width="{Binding ActiveLayout.PageSize.Width}">
+        <Canvas x:Name="BackgroundGrid"
+                MouseDown="TransformGrid_MouseButtonDown"
+                MouseMove="TransformGrid_MouseMove"
+                MouseUp="TransformGrid_MouseUp"
+                MouseWheel="TransformGrid_MouseWheel"
+                Grid.Column="1"
+                SizeChanged="BackgroundCanvas_SizeChanged"
+                ClipToBounds="False">
+            <Border x:Name="PageHost"
+                    Background="White"
+                    Width="{Binding ActiveLayout.PageSize.Width}"
+                    Height="{Binding ActiveLayout.PageSize.Height}">
+                <Border.RenderTransform>
+                    <MatrixTransform x:Name="transform" />
+                </Border.RenderTransform>
                 <uc:LayoutPreviewControl x:Name="LayoutPreviewControl"
                                          Renderer="{Binding Renderer}"
                                          Layout="{Binding ActiveLayout}"
                                          Scenes="{Binding Scenes}" />
-            </Grid>
-        </Viewbox>
+            </Border>
+        </Canvas>
     </Grid>
 </UserControl>

@@ -18,6 +18,10 @@ namespace Cad_Point_Manager.Controls.D3DControl
         #region Fields
         private bool disposed = false;
 
+        private Texture2D? _readbackStaging;
+        private int _readbackW, _readbackH;
+        private Format _readbackFmt;
+
         private Device _device = null;
         private DeviceContext _deviceContext = null;
         private Texture2D _texture2D = null;
@@ -315,48 +319,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 DeviceContext.UnmapSubresource(staging, 0);
             }
         }
-        //public void CopyToWriteableBitmap(Texture2D source, System.Windows.Media.Imaging.WriteableBitmap target)
-        //{
-        //    var desc = source.Description;
-
-        //    using var staging = new Texture2D(Device, new Texture2DDescription
-        //    {
-        //        Width = desc.Width,
-        //        Height = desc.Height,
-        //        MipLevels = 1,
-        //        ArraySize = 1,
-        //        Format = desc.Format,
-        //        SampleDescription = new SampleDescription(1, 0),
-        //        Usage = ResourceUsage.Staging,
-        //        BindFlags = BindFlags.None,
-        //        CpuAccessFlags = CpuAccessFlags.Read,
-        //    });
-
-        //    DeviceContext.CopyResource(source, staging);
-
-        //    var box = DeviceContext.MapSubresource(staging, 0, MapMode.Read, MapFlags.None);
-
-        //    try
-        //    {
-        //        target.Lock();
-
-        //        unsafe
-        //        {
-        //            System.Buffer.MemoryCopy(
-        //                (void*)box.DataPointer,
-        //                (void*)target.BackBuffer,
-        //                target.BackBufferStride * target.PixelHeight,
-        //                box.RowPitch * desc.Height);
-        //        }
-
-        //        target.AddDirtyRect(new System.Windows.Int32Rect(0, 0, desc.Width, desc.Height));
-        //    }
-        //    finally
-        //    {
-        //        target.Unlock();
-        //        DeviceContext.UnmapSubresource(staging, 0);
-        //    }
-        //}
+       
         public void CopyToWriteableBitmap(Texture2D source, System.Windows.Media.Imaging.WriteableBitmap target)
         {
             var desc = source.Description;
@@ -368,22 +331,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
             // Copy the overlap region only (prevents overflow if sizes differ)
             int copyWidth = Math.Min(desc.Width, target.PixelWidth);
             int copyHeight = Math.Min(desc.Height, target.PixelHeight);
-            int bytesPerPixel = 4;
-            int bytesPerRow = copyWidth * bytesPerPixel;
+            int bytesPerRow = copyWidth * 4;
 
-            using var staging = new Texture2D(Device, new Texture2DDescription
-            {
-                Width = desc.Width,
-                Height = desc.Height,
-                MipLevels = 1,
-                ArraySize = 1,
-                Format = desc.Format,
-                SampleDescription = new SampleDescription(1, 0),
-                Usage = ResourceUsage.Staging,
-                BindFlags = BindFlags.None,
-                CpuAccessFlags = CpuAccessFlags.Read,
-                OptionFlags = ResourceOptionFlags.None
-            });
+            var staging = GetOrCreateReadbackStaging(desc.Width, desc.Height, desc.Format);
 
             DeviceContext.CopyResource(source, staging);
 
@@ -415,7 +365,37 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 DeviceContext.UnmapSubresource(staging, 0);
             }
         }
-       
+        private Texture2D GetOrCreateReadbackStaging(int w, int h, Format fmt)
+        {
+            if (_readbackStaging != null &&
+                !_readbackStaging.IsDisposed &&
+                _readbackW == w && _readbackH == h && _readbackFmt == fmt)
+            {
+                return _readbackStaging;
+            }
+
+            _readbackStaging?.Dispose();
+
+            _readbackW = w;
+            _readbackH = h;
+            _readbackFmt = fmt;
+
+            _readbackStaging = new Texture2D(Device, new Texture2DDescription
+            {
+                Width = w,
+                Height = h,
+                MipLevels = 1,
+                ArraySize = 1,
+                Format = fmt,
+                SampleDescription = new SampleDescription(1, 0),
+                Usage = ResourceUsage.Staging,
+                BindFlags = BindFlags.None,
+                CpuAccessFlags = CpuAccessFlags.Read,
+                OptionFlags = ResourceOptionFlags.None
+            });
+
+            return _readbackStaging;
+        }
 
         public void Dispose()
         {
@@ -457,6 +437,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     DxfPreviewTexture?.Dispose();
                     CombinedPreviewRenderTargetView?.Dispose();
                     CombinedPreviewTexture?.Dispose();
+
+                    _readbackStaging?.Dispose();
+                    _readbackStaging = null;
                 }
 
                 disposed = true;

@@ -17,7 +17,7 @@ namespace Cad_Point_Manager.Models.Printing
         #endregion
 
         #region Properties
-        public Rect LocalRect
+        public Rect LocalRectIn
         {
             get => _localRectIn;
             set
@@ -25,11 +25,10 @@ namespace Cad_Point_Manager.Models.Printing
                 if (_localRectIn != value)
                 {
                     _localRectIn = value;
-                    OnPropertyChanged();
+                    OnPropertyChanged(nameof(LocalRectIn));
                 }
             }
         }
-
         public Scene Scene
         {
             get => _scene;
@@ -44,7 +43,6 @@ namespace Cad_Point_Manager.Models.Printing
         }
 
         public Guid Id { get; init; } = Guid.NewGuid();
-        public Rect LocalRectIn { get; set; }
         public bool ShowBorder { get; set; } = true;
         #endregion
 
