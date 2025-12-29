@@ -25,7 +25,7 @@ namespace Cad_Point_Manager.Views.UserControls
 
         private bool _didInitialFit;
 
-        private const double ZoomStep = 1.1;
+        private const double ZoomStep = 1.25;
         private const double MinScale = 0.005;
         private const double MaxScale = 500.0;
         #endregion
@@ -194,46 +194,16 @@ namespace Cad_Point_Manager.Views.UserControls
                 ctrl.LayoutPreviewControl.RebuildAsync();
             }
         }
-
-        // Scene related methods
-        private void ScenesListView_Loaded(object sender, RoutedEventArgs e)
-        {
-            //ListView listview = sender as ListView;
-
-            //// Set column widths on each gridview
-            //GridView scenesGridView = listview.View as GridView;
-            //double scenesGridViewTotalWidth = scenesListView.ActualWidth;
-            //double scenesGridViewColumnWidth = scenesGridViewTotalWidth / scenesGridView.Columns.Count;
-            //if (scenesGridViewColumnWidth > 0)
-            //{
-            //    scenesGridView.Columns[0].Width = scenesGridViewColumnWidth * 1.0;
-            //    scenesGridView.Columns[1].Width = scenesGridViewColumnWidth * 1.0;
-            //    scenesGridView.Columns[2].Width = scenesGridViewColumnWidth * 1.0;
-            //    scenesGridView.Columns[3].Width = scenesGridViewColumnWidth * 1.0;
-            //    scenesGridView.Columns[4].Width = scenesGridViewColumnWidth * 1.0;
-            //}
-        }
-        private void ScenesListView_ContextMenuOpening(object sender, ContextMenuEventArgs e)
-        {
-
-        }
-        private void ScenesListView_ContextMenuClosing(object sender, ContextMenuEventArgs e)
-        {
-
-        }
-
-        private void InsertSceneMenuItem_Click(object sender, RoutedEventArgs e)
-        {
-
-        }
         #endregion
 
         #region Pan and Zoom Methods
-        private void TransformGrid_MouseButtonDown(object sender, MouseButtonEventArgs e)
+        private void Root_MouseButtonDown(object sender, MouseButtonEventArgs e)
         {
             // Middle button drag to pan (change to Left if you prefer)
             if (e.ChangedButton == MouseButton.Middle)
             {
+                if (tabControl.IsMouseOver) { return; }
+
                 _panning = true;
                 _panStartMouse = e.GetPosition((IInputElement)sender);
                 _panStartMatrix = transform.Matrix;
@@ -241,7 +211,7 @@ namespace Cad_Point_Manager.Views.UserControls
                 e.Handled = true;
             }
         }
-        private void TransformGrid_MouseUp(object sender, MouseButtonEventArgs e)
+        private void Root_MouseUp(object sender, MouseButtonEventArgs e)
         {
             if (e.ChangedButton == MouseButton.Middle && _panning)
             {
@@ -250,7 +220,7 @@ namespace Cad_Point_Manager.Views.UserControls
                 e.Handled = true;
             }
         }
-        private void TransformGrid_MouseMove(object sender, MouseEventArgs e)
+        private void Root_MouseMove(object sender, MouseEventArgs e)
         {
             if (!_panning) { return; }
 
@@ -263,10 +233,12 @@ namespace Cad_Point_Manager.Views.UserControls
 
             transform.Matrix = m;
         }
-        private void TransformGrid_MouseWheel(object sender, MouseWheelEventArgs e)
+        private void Root_MouseWheel(object sender, MouseWheelEventArgs e)
         {
+            if (tabControl.IsMouseOver) { return; }
+
             // Mouse position in the content we are transforming (Surface coords)
-            Point p = e.GetPosition(BackgroundGrid);
+            Point p = e.GetPosition(BackgroundCanvas);
 
             Matrix m = transform.Matrix;
 
@@ -285,6 +257,18 @@ namespace Cad_Point_Manager.Views.UserControls
             transform.Matrix = m;
             e.Handled = true;
         }
+        private void Root_MouseEnter(object sender, MouseEventArgs e)
+        {
+            Mouse.OverrideCursor = AppCursors.CrosshairCursor;
+        }
+        private void Root_MouseLeave(object sender, MouseEventArgs e)
+        {
+            Mouse.OverrideCursor = null;
+        }
+        private void TabControl_MouseEnter(object sender, MouseEventArgs e)
+        {
+            Mouse.OverrideCursor = null;
+        }
         private void BackgroundCanvas_SizeChanged(object sender, SizeChangedEventArgs e)
         {
             FitPageToView();
@@ -297,8 +281,8 @@ namespace Cad_Point_Manager.Views.UserControls
         {
             if (ActiveLayout?.PageSize == null) { return; }
 
-            double viewW = BackgroundGrid.ActualWidth - 20;
-            double viewH = BackgroundGrid.ActualHeight - 20;
+            double viewW = BackgroundCanvas.ActualWidth - 20;
+            double viewH = BackgroundCanvas.ActualHeight - 20;
 
             if (viewW <= 0 || viewH <= 0) { return; }
 

@@ -26,10 +26,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private DeviceContext _deviceContext = null;
         private Texture2D _texture2D = null;
         private Texture2D _dxfTexture = null;
-        private Texture2D _interactionTexture = null;
         private RenderTargetView _renderTargetView = null;
         private RenderTargetView _dxfRenderTargetView = null;
-        private RenderTargetView _interactiveRenderTargetView = null;
         private SharpDX.Direct2D1.Device1 _d2DDevice = null;
         private SharpDX.Direct2D1.DeviceContext1 _d2DDeviceContext = null;
         private RenderTarget _d2dRenderTarget = null;
@@ -75,15 +73,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 OnPropertyChanged(nameof(DxfTexture));
             }
         }
-        public Texture2D CombinedTexture
-        {
-            get { return _interactionTexture; }
-            set
-            {
-                _interactionTexture = value;
-                OnPropertyChanged(nameof(CombinedTexture));
-            }
-        }
         public RenderTargetView RenderTargetView
         {
             get { return _renderTargetView; }
@@ -100,15 +89,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             {
                 _dxfRenderTargetView = value;
                 OnPropertyChanged(nameof(DxfRenderTargetView));
-            }
-        }
-        public RenderTargetView CombinedRenderTargetView
-        {
-            get { return _interactiveRenderTargetView; }
-            set
-            {
-                _interactiveRenderTargetView = value;
-                OnPropertyChanged(nameof(CombinedRenderTargetView));
             }
         }
 
@@ -177,8 +157,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
         // Preview related properties
         public Texture2D DxfPreviewTexture { get; set; }
         public RenderTargetView DxfPreviewRenderTargetView { get; set; }
-        public Texture2D CombinedPreviewTexture { get; set; }
-        public RenderTargetView CombinedPreviewRenderTargetView { get; set; }
+        public Texture2D PreviewTexture { get; set; }
+        public RenderTargetView PreviewRenderTargetView { get; set; }
 
         public FontFace CogoPointFontFace { get; set; }
         public ConcurrentDictionary<(string fontName, FontWeight fontWeight, FontStretch fontStretch, FontStyle fontStyle), FontFace> FontFaceDict = [];
@@ -412,10 +392,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     _deviceContext?.Dispose();
                     _texture2D?.Dispose();
                     _dxfTexture?.Dispose();
-                    _interactionTexture?.Dispose();
                     _renderTargetView?.Dispose();
                     _dxfRenderTargetView?.Dispose(); // Fixed null check
-                    _interactiveRenderTargetView?.Dispose();
                     _d2DDevice?.Dispose();
                     _d2DDeviceContext?.Dispose();
                     _d2DFactory?.Dispose();
@@ -435,8 +413,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
                     DxfPreviewRenderTargetView?.Dispose();
                     DxfPreviewTexture?.Dispose();
-                    CombinedPreviewRenderTargetView?.Dispose();
-                    CombinedPreviewTexture?.Dispose();
+                    PreviewRenderTargetView?.Dispose();
+                    PreviewTexture?.Dispose();
 
                     _readbackStaging?.Dispose();
                     _readbackStaging = null;

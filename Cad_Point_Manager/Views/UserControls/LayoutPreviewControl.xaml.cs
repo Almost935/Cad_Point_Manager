@@ -1,27 +1,12 @@
 ﻿using Cad_Point_Manager.Controls.D3DControl;
 using Cad_Point_Manager.Models.Printing;
-using SharpDX.Direct3D9;
-using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Collections.Specialized;
 using System.ComponentModel;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Printing;
 using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace Cad_Point_Manager.Views.UserControls
 {
@@ -59,7 +44,6 @@ namespace Cad_Point_Manager.Views.UserControls
                 typeof(D3dDxfControl),
                 typeof(LayoutPreviewControl),
                 new PropertyMetadata(null));
-
         public D3dDxfControl? Renderer
         {
             get => (D3dDxfControl?)GetValue(RendererProperty);
@@ -72,7 +56,6 @@ namespace Cad_Point_Manager.Views.UserControls
                 typeof(Layout),
                 typeof(LayoutPreviewControl),
                 new PropertyMetadata(null, OnLayoutChanged));
-
         public Layout? Layout
         {
             get => (Layout?)GetValue(LayoutProperty);
@@ -140,6 +123,26 @@ namespace Cad_Point_Manager.Views.UserControls
 
             }
         }
+        private Image CreateViewportImage()
+        {
+            var vp = Layout.Viewport;
+            int pxW = InchesToPixels(vp.LocalRectIn.Width, PreviewDpi);
+            int pxH = InchesToPixels(vp.LocalRectIn.Height, PreviewDpi);
+
+            if (pxW < 1 || pxH < 1) { return; }
+
+            var wb = GetOrCreateWriteable(pxW, pxH);
+            await Renderer.Dispatcher.InvokeAsync(() =>
+            {
+                Renderer.RenderSceneIntoWriteableBitmap(scene, wb);
+            });
+
+            var img = new Image { Stretch = Stretch.Uniform };
+            img.Source = wb;
+            RenderOptions.SetBitmapScalingMode(img, BitmapScalingMode.HighQuality);
+            img.UseLayoutRounding = true;
+            img.SnapsToDevicePixels = true;
+        }
 
         private void DrawPageOnly()
         {
@@ -159,7 +162,7 @@ namespace Cad_Point_Manager.Views.UserControls
                 Width = pageW,
                 Height = pageH,
             };
-            RootCanvas.Children.Add(pageBorder);
+            //RootCanvas.Children.Add(pageBorder);
         }
 
         private Border CreateViewportFrame(LayoutViewport vp)
@@ -185,12 +188,12 @@ namespace Cad_Point_Manager.Views.UserControls
                 Width = w,
                 Height = h,
                 Child = img,
-                BorderThickness = new Thickness(vp.ShowBorder ? 4 : 0),
-                BorderBrush = new SolidColorBrush(Color.FromRgb(0, 0, 0)),
+                //BorderThickness = new Thickness(vp.ShowBorder ? 4 : 0),
+                //BorderBrush = new SolidColorBrush(Color.FromRgb(0, 0, 0)),
                 ClipToBounds = true
             };
-            Canvas.SetLeft(border, x);
-            Canvas.SetTop(border, y);
+            //Canvas.SetLeft(border, x);
+            //Canvas.SetTop(border, y);
             return border;
         }
 

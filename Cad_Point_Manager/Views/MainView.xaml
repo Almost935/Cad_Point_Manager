@@ -150,7 +150,6 @@
         <Grid x:Name="layoutsGrid"
               Grid.Row="1"
               Visibility="{Binding LayoutsVisible, Converter={StaticResource BoolToVisibilityConverter}}">
-
             <uc:LayoutsViewControl x:Name="LayoutsViewControl"
                                    CadManager="{Binding DataContext.JobFileManager.CadManager3D, RelativeSource={RelativeSource AncestorType=Page}}"
                                    Scenes="{Binding DataContext.JobFileManager.CadManager3D.Camera.Scenes, RelativeSource={RelativeSource AncestorType=Page}}"

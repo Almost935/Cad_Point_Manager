@@ -526,37 +526,21 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             if (_interactiveDirty)
             {
-                ctx.CopyResource(_resCache.DxfTexture, _resCache.CombinedTexture);
+                // 1) Start from cached base
+                ctx.CopyResource(_resCache.DxfTexture, _resCache.Texture2D);
 
-                if (IsDragging && _dragFillVertexCount > 0)
-                {
-                    ctx.OutputMerger.SetRenderTargets(_resCache.CombinedRenderTargetView);
-                    DrawDragOverlay(ctx);
-                }
-                if (_hoverRectInstanceCount > 0 || _hoverCircleVertices.Count > 0)
-                {
-                    ctx.OutputMerger.SetRenderTargets(_resCache.CombinedRenderTargetView);
-                    DrawCogoPointHover(ctx);
-                }
-                if (_leaderLineInstanceCount > 0)
-                {
-                    ctx.OutputMerger.SetRenderTargets(_resCache.CombinedRenderTargetView);
-                    DrawLeaderLines(ctx);
-                }
-                if (_anchorVerticesCount > 0)
-                {
-                    ctx.OutputMerger.SetRenderTargets(_resCache.CombinedRenderTargetView);
-                    DrawCogoPointAnchors(ctx);
-                }
-                if (_sigPointVertexCount > 0)
-                {
-                    ctx.OutputMerger.SetRenderTargets(_resCache.CombinedRenderTargetView);
-                    DrawSignificantPoints(ctx);
-                }
+                // 2) Draw overlays directly onto the shared RT that WPF displays
+                ctx.OutputMerger.SetRenderTargets(_resCache.RenderTargetView);
 
-                ctx.CopyResource(_resCache.CombinedTexture, _resCache.Texture2D);
+                if (IsDragging && _dragFillVertexCount > 0) DrawDragOverlay(ctx);
+                if (_hoverRectInstanceCount > 0 || _hoverCircleVertices.Count > 0) DrawCogoPointHover(ctx);
+                if (_leaderLineInstanceCount > 0) DrawLeaderLines(ctx);
+                if (_anchorVerticesCount > 0) DrawCogoPointAnchors(ctx);
+                if (_sigPointVertexCount > 0) DrawSignificantPoints(ctx);
+
                 _interactiveDirty = false;
             }
+
         }
 
         private void DrawDxf(DeviceContext ctx)
@@ -3401,8 +3385,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
             // Save current targets
             var oldDxfTex = _resCache.DxfTexture;
             var oldDxfRTV = _resCache.DxfRenderTargetView;
-            var oldCombTex = _resCache.CombinedTexture;
-            var oldCombRTV = _resCache.CombinedRenderTargetView;
+            var oldTex = _resCache.Texture2D;
+            var oldRTV = _resCache.RenderTargetView;
 
             var oldViewport = Viewport; // <-- important (your constant buffers use Viewport property!)
             var oldInitialViewMatrix = CadManager3D.Camera.InitialViewMatrix;
@@ -3413,8 +3397,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 _resCache.DxfTexture = _resCache.DxfPreviewTexture;
                 _resCache.DxfRenderTargetView = _resCache.DxfPreviewRenderTargetView;
 
-                _resCache.CombinedTexture = _resCache.CombinedPreviewTexture;
-                _resCache.CombinedRenderTargetView = _resCache.CombinedPreviewRenderTargetView;
+                _resCache.Texture2D = _resCache.PreviewTexture;
+                _resCache.RenderTargetView = _resCache.PreviewRenderTargetView;
 
                 // ALSO update the control Viewport property (your UpdateConstantBuffers uses Viewport.Width/Height)
                 Viewport = new ViewportF(0, 0, target.PixelWidth, target.PixelHeight);
@@ -3432,15 +3416,15 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
                 Render();
 
-                _resCache.CopyToWriteableBitmap(_resCache.CombinedTexture, target);
+                _resCache.CopyToWriteableBitmap(_resCache.Texture2D, target);
             }
             finally
             {
                 // Restore
                 _resCache.DxfTexture = oldDxfTex;
                 _resCache.DxfRenderTargetView = oldDxfRTV;
-                _resCache.CombinedTexture = oldCombTex;
-                _resCache.CombinedRenderTargetView = oldCombRTV;
+                _resCache.Texture2D = oldTex;
+                _resCache.RenderTargetView = oldRTV;
 
                 Viewport = oldViewport;
                 CadManager3D.Camera.InitialViewMatrix = oldInitialViewMatrix;

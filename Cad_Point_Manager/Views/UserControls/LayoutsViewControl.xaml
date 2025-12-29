@@ -14,15 +14,24 @@
              d:DesignHeight="600"
              d:DesignWidth="1200"
              DataContext="{Binding Mode=OneWay, RelativeSource={RelativeSource Self}}"
+             IsHitTestVisible="True"
+             MouseDown="Root_MouseButtonDown"
+             MouseMove="Root_MouseMove"
+             MouseUp="Root_MouseUp"
+             MouseEnter="Root_MouseEnter"
+             MouseLeave="Root_MouseLeave"
+             PreviewMouseWheel="Root_MouseWheel"
              Background="Transparent">
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*" />
             <ColumnDefinition Width="3*" />
         </Grid.ColumnDefinitions>
-        <TabControl Grid.Row="0"
+        <TabControl x:Name="tabControl"
+                    Grid.Row="0"
                     BorderThickness="0"
-                    Panel.ZIndex="2">
+                    Panel.ZIndex="2"
+                    MouseEnter="TabControl_MouseEnter">
             <TabItem Header="Layouts"
                      Foreground="White">
                 <controls:DoubleClickSetListView x:Name="layoutsListView"
@@ -204,11 +213,7 @@
             </TabItem>
         </TabControl>
 
-        <Canvas x:Name="BackgroundGrid"
-                MouseDown="TransformGrid_MouseButtonDown"
-                MouseMove="TransformGrid_MouseMove"
-                MouseUp="TransformGrid_MouseUp"
-                MouseWheel="TransformGrid_MouseWheel"
+        <Canvas x:Name="BackgroundCanvas"
                 Grid.Column="1"
                 SizeChanged="BackgroundCanvas_SizeChanged"
                 ClipToBounds="False">
@@ -219,10 +224,16 @@
                 <Border.RenderTransform>
                     <MatrixTransform x:Name="transform" />
                 </Border.RenderTransform>
-                <uc:LayoutPreviewControl x:Name="LayoutPreviewControl"
-                                         Renderer="{Binding Renderer}"
-                                         Layout="{Binding ActiveLayout}"
-                                         Scenes="{Binding Scenes}" />
+                <Border Width="{Binding ActiveLayout.Viewport.LocalRectIn.Width}"
+                        Height="{Binding ActiveLayout.Viewport.LocalRectIn.Height}"
+                        Background="#66FF0000"
+                        BorderThickness="0.03"
+                        BorderBrush="Black">
+                    <uc:LayoutPreviewControl x:Name="LayoutPreviewControl"
+                                             Renderer="{Binding Renderer}"
+                                             Layout="{Binding ActiveLayout}"
+                                             Scenes="{Binding Scenes}" />
+                </Border>
             </Border>
         </Canvas>
     </Grid>
