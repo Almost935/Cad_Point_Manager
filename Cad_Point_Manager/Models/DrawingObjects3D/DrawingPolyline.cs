@@ -7,19 +7,19 @@ using Vector3 = SharpDX.Vector3;
 
 namespace Cad_Point_Manager.Models.DrawingObjects3D
 {
-    public class DrawingPolyline3D : DrawingGeometry3D
+    public class DrawingPolyline : DrawingGeometry
     {
         #region Properties
         public float Length { get; set; }
         public bool IsClosed { get; set; }
-        public List<DrawingSegment3D> DrawingSegments { get; set; } = [];
+        public List<DrawingSegment> DrawingSegments { get; set; } = [];
         public int NumberOfSegments => DrawingSegments.Count;
         #endregion
 
         #region Constructors
-        private DrawingPolyline3D() { Type = DrawingObject3dType.DrawingPolyline3D; }
+        private DrawingPolyline() { Type = DrawingObject3dType.DrawingPolyline3D; }
 
-        public DrawingPolyline3D(Polyline2D polyline2D, ObjectLayer3D layer, bool isPartOfBlock = false, DrawingBlock3D block = null)
+        public DrawingPolyline(Polyline2D polyline2D, ObjectLayer layer, bool isPartOfBlock = false, DrawingBlock block = null)
         {
             Type = DrawingObject3dType.DrawingPolyline3D;
             Layer = layer;
@@ -31,7 +31,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             UpdateData();
         }
 
-        public DrawingPolyline3D(Polyline3D polyline3D, ObjectLayer3D layer, bool isPartOfBlock = false, DrawingBlock3D block = null)
+        public DrawingPolyline(Polyline3D polyline3D, ObjectLayer layer, bool isPartOfBlock = false, DrawingBlock block = null)
         {
             Type = DrawingObject3dType.DrawingPolyline3D;
             Layer = layer;
@@ -159,7 +159,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                 for (int i = 0; i < vertices.Count - 1; i++)
                 {
                     var segment = DrawingSegments[i];
-                    if (segment is DrawingArc3D arc)
+                    if (segment is DrawingArc arc)
                     {
                         var startArcVertex = arc.Vertices.First().Position;
                         Vector3 dxfStartVertex = new((float)vertices[i].Position.X, (float)vertices[i].Position.Y, 0);
@@ -198,7 +198,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                 for (int i = 0; i < vertices.Count - 1; i++)
                 {
                     var segment = DrawingSegments[i];
-                    if (segment is DrawingArc3D arc)
+                    if (segment is DrawingArc arc)
                     {
                         var startArcVertex = arc.Vertices.First().Position;
                         Vector3 dxfStartVertex = new((float)vertices[i].X, (float)vertices[i].Y, 0);

@@ -5,16 +5,16 @@ using SharpDX.Direct2D1;
 
 namespace Cad_Point_Manager.Models.DrawingObjects3D
 {
-    public abstract class DrawingObject3D : HitTestableObject
+    public abstract class DrawingObject : HitTestableObject
     {
         #region Properties
         public DrawingObject3dType Type { get; set; }
-        public ObjectLayer3D Layer { get; set; }
+        public ObjectLayer Layer { get; set; }
         public EntityObject EntityObject { get; set; }
         public Vector4 Color { get; set; }
         public DrawingObject3dColorType DrawingObject3DColorType { get; set; }
         public bool IsPartOfBlock { get; set; } = false;
-        public DrawingBlock3D DrawingBlock3D { get; set; }
+        public DrawingBlock DrawingBlock3D { get; set; }
 
         public bool ColorByLayer => EntityObject.Color.IsByLayer;
         #endregion

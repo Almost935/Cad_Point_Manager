@@ -19,6 +19,7 @@
       xmlns:views="clr-namespace:Cad_Point_Manager.Views"
       xmlns:validation="clr-namespace:Cad_Point_Manager.Views.ValidationRules"
       xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
+      xmlns:helpers="clr-namespace:Cad_Point_Manager.Helpers"
       d:DataContext="{d:DesignInstance Type=viewModels:MainViewModel}"
       mc:Ignorable="d"
       Title="MainView"
@@ -466,8 +467,6 @@
             <Grid x:Name="dxfGrid"
                   SizeChanged="dxfGrid_SizeChanged"
                   ClipToBounds="True"
-                  MouseEnter="DxfGrid_MouseEnter"
-                  MouseLeave="DxfGrid_MouseLeave"
                   Grid.Row="2">
                 <Grid.Margin>
                     <MultiBinding Converter="{StaticResource LeftRightMarginConverter}">
@@ -487,7 +486,6 @@
                         </Binding>
                     </MultiBinding>
                 </Grid.Margin>
-
                 <d3D:D3dDxfControl x:Name="d3dDxfControl"
                                    CadManager3D="{Binding JobFileManager.CadManager3D}"
                                    Layers="{Binding Layers, Mode=TwoWay}"
@@ -500,7 +498,8 @@
                                    SnappedHitTestablePoint="{Binding SnappedHitTestablePoint, Mode=TwoWay}"
                                    SelectedHitTestablePoints="{Binding SelectedHitTestablePoints, Mode=TwoWay}"
                                    Focusable="True"
-                                   MousePosition="{Binding MousePosition, Mode=OneWayToSource}" />
+                                   MousePosition="{Binding MousePosition, Mode=OneWayToSource}"
+                                   Cursor="{x:Static helpers:AppCursors.CrosshairCursor}" />
                 <Canvas x:Name="BackgroundCanvas">
                     <uc:SignificantPointControl HitTestablePoint="{Binding DataContext.SnappedHitTestablePoint, RelativeSource={RelativeSource AncestorType=Page}}"
                                                 Focusable="False"

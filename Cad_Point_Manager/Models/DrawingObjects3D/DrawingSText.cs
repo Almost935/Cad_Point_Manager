@@ -10,7 +10,7 @@ using Point = System.Windows.Point;
 
 namespace Cad_Point_Manager.Models.DrawingObjects3D
 {
-    public class DrawingSText3D : DrawingText3D
+    public class DrawingSText : DrawingText
     {
         #region Fields
         private const float _flatteningTolerance = 0.001f;
@@ -39,7 +39,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         #endregion
 
         #region Constructor
-        public DrawingSText3D(Text text, ObjectLayer3D layer, bool isPartOfBlock = false, DrawingBlock3D block = null)
+        public DrawingSText(Text text, ObjectLayer layer, bool isPartOfBlock = false, DrawingBlock block = null)
         {
             Type = DrawingObject3dType.DrawingSText3D;
             EntityObject = text;

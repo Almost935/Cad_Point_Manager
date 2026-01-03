@@ -42,29 +42,29 @@ namespace Cad_Point_Manager.Helpers
         }
 
         // DrawingObject3D getters
-        public static DrawingObject3D GetDrawingObject3D(EntityObject e, ObjectLayer3D layer)
+        public static DrawingObject GetDrawingObject3D(EntityObject e, ObjectLayer layer)
         {
             return e switch
             {
-                Line line => new DrawingLine3D(line, layer),
-                Arc arc => new DrawingArc3D(arc, layer),
-                Polyline2D polyline2D => new DrawingPolyline3D(polyline2D, layer),
-                Polyline3D polyline3D => new DrawingPolyline3D(polyline3D, layer),
-                Circle circle => new DrawingCircle3D(circle, layer),
-                Insert block => new DrawingBlock3D(block, layer),
-                MText mtext => new DrawingMtext3D(mtext, layer),
-                Text text => new DrawingSText3D(text, layer),
-                Spline spline => new DrawingSpline3D(spline, layer),
+                Line line => new DrawingLine(line, layer),
+                Arc arc => new DrawingArc(arc, layer),
+                Polyline2D polyline2D => new DrawingPolyline(polyline2D, layer),
+                Polyline3D polyline3D => new DrawingPolyline(polyline3D, layer),
+                Circle circle => new DrawingCircle(circle, layer),
+                Insert block => new DrawingBlock(block, layer),
+                MText mtext => new DrawingMtext(mtext, layer),
+                Text text => new DrawingSText(text, layer),
+                Spline spline => new DrawingSpline(spline, layer),
                 _ => null,
             };
         }
-        public static DrawingSegment3D GetDrawingSegment3D(EntityObject e, ObjectLayer3D layer)
+        public static DrawingSegment GetDrawingSegment3D(EntityObject e, ObjectLayer layer)
         {
             return e switch
             {
-                Line line => new DrawingLine3D(line, layer),
-                Arc arc => new DrawingArc3D(arc, layer),
-                Circle circle => new DrawingCircle3D(circle, layer),
+                Line line => new DrawingLine(line, layer),
+                Arc arc => new DrawingArc(arc, layer),
+                Circle circle => new DrawingCircle(circle, layer),
                 _ => null,
             };
         }

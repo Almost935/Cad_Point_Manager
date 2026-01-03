@@ -4,7 +4,7 @@ using System.Windows;
 
 namespace Cad_Point_Manager.Models.DrawingObjects3D
 {
-    public abstract class DrawingGeometry3D : DrawingObject3D
+    public abstract class DrawingGeometry : DrawingObject
     {
         public Vector3 Start { get; set; }
         public Vector3 End { get; set; }

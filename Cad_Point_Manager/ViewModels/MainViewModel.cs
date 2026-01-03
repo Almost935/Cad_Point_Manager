@@ -37,13 +37,13 @@ namespace Cad_Point_Manager.ViewModels
         private string _dxfFileName;
         private DxfDocument _dxfDocument;
         private Size _viewportSize = Size.Empty;
-        private BatchableObservableCollection<KeyValuePair<string, ObjectLayer3D>> _layers = [];
+        private BatchableObservableCollection<KeyValuePair<string, ObjectLayer>> _layers = [];
         private BatchableObservableCollection<PointGroup> _pointGroups = [];
         private BatchableObservableCollection<CogoPoint> _cogoPoints = [];
         private BatchableObservableCollection<CogoPoint> _selectedCogoPoints = [];
         private HitTestablePoint _snappedHitTestablePoint;
         private BatchableObservableCollection<HitTestablePoint> _selectedHitTestablePoints = [];
-        private BatchableObservableCollection<DrawingGeometry3D> _selectedGeometries = [];
+        private BatchableObservableCollection<DrawingGeometry> _selectedGeometries = [];
         private IReadOnlyList<ChainPath> _chainPaths = [];
         private double _vertexSnapTolerance = 1e-4;
         private Point _mousePosition = new();
@@ -122,7 +122,7 @@ namespace Cad_Point_Manager.ViewModels
                 OnPropertyChanged(nameof(ViewportSize));
             }
         }
-        public BatchableObservableCollection<KeyValuePair<string, ObjectLayer3D>> Layers
+        public BatchableObservableCollection<KeyValuePair<string, ObjectLayer>> Layers
         {
             get => _layers;
             set
@@ -179,7 +179,7 @@ namespace Cad_Point_Manager.ViewModels
                 OnPropertyChanged(nameof(SelectedHitTestablePoints));
             }
         }
-        public BatchableObservableCollection<DrawingGeometry3D> SelectedGeometries
+        public BatchableObservableCollection<DrawingGeometry> SelectedGeometries
         {
             get => _selectedGeometries;
             set

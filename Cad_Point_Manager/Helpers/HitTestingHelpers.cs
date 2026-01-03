@@ -18,7 +18,7 @@ namespace Cad_Point_Manager.Helpers
             return true;
         }
 
-        public static bool TryGetNextDrawingGeometry(int currentIndex, List<(double distance, DrawingGeometry3D geometry)> geometryTups, out (double distance, DrawingGeometry3D geometry) geometryTup)
+        public static bool TryGetNextDrawingGeometry(int currentIndex, List<(double distance, DrawingGeometry geometry)> geometryTups, out (double distance, DrawingGeometry geometry) geometryTup)
         {
             geometryTup = default;
             if (currentIndex > geometryTups.Count) { return false; }

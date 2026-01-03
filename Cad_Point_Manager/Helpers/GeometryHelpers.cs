@@ -8,7 +8,7 @@ namespace Cad_Point_Manager.Helpers
 {
     public static class GeometryHelpers
     {
-        public static List<(Enums.SignificantPointType pointType, Vector position)> GetSignificantPointsList(List<DrawingSegment3D> segments)
+        public static List<(Enums.SignificantPointType pointType, Vector position)> GetSignificantPointsList(List<DrawingSegment> segments)
         {
             var allPoints = new ConcurrentBag<(Enums.SignificantPointType, Vector)>();
 
@@ -19,13 +19,13 @@ namespace Cad_Point_Manager.Helpers
 
                     switch (segment1)
                     {
-                        case DrawingLine3D line:
+                        case DrawingLine line:
                             localList.AddRange(new[] {
                                 (Enums.SignificantPointType.EndPoint, line.Start.ToVector()),
                                 (Enums.SignificantPointType.EndPoint, line.End.ToVector()),
                                 (Enums.SignificantPointType.MidPoint, line.MidPoint.ToVector()) });
                             break;
-                        case DrawingArc3D arc:
+                        case DrawingArc arc:
                             localList.AddRange(new[] {
                                 (Enums.SignificantPointType.EndPoint, arc.Start.ToVector()),
                                 (Enums.SignificantPointType.EndPoint, arc.End.ToVector()),
@@ -54,13 +54,13 @@ namespace Cad_Point_Manager.Helpers
             return allPoints.ToList();
         }
 
-        public static Vector GetNearestPointOnGeometry(DrawingGeometry3D geometry, Vector point)
+        public static Vector GetNearestPointOnGeometry(DrawingGeometry geometry, Vector point)
         {
             return geometry switch
             {
-                DrawingLine3D line => NearestPointOnLine(point, line.Start.ToVector(), line.End.ToVector()),
-                DrawingArc3D arc => NearestPointOnLine(point, arc.Start.ToVector(), arc.End.ToVector()),
-                DrawingCircle3D circle => NearestPointOnCircle(point, circle.RadiusPoint.ToVector(), circle.Radius),
+                DrawingLine line => NearestPointOnLine(point, line.Start.ToVector(), line.End.ToVector()),
+                DrawingArc arc => NearestPointOnLine(point, arc.Start.ToVector(), arc.End.ToVector()),
+                DrawingCircle circle => NearestPointOnCircle(point, circle.RadiusPoint.ToVector(), circle.Radius),
                 _ => throw new NotImplementedException()
             };
         }
@@ -105,13 +105,13 @@ namespace Cad_Point_Manager.Helpers
         }
 
 
-        public static bool IntersectGeometries(DrawingGeometry3D geometry1, DrawingGeometry3D geometry2, out List<Vector> intersections)
+        public static bool IntersectGeometries(DrawingGeometry geometry1, DrawingGeometry geometry2, out List<Vector> intersections)
         {
             intersections = [];
 
-            if (geometry1 is DrawingLine3D line1)
+            if (geometry1 is DrawingLine line1)
             {
-                if (geometry2 is DrawingLine3D line2)
+                if (geometry2 is DrawingLine line2)
                 {
                     if (TryIntersectLineLine(line1, line2, out Vector intersection))
                     {
@@ -120,7 +120,7 @@ namespace Cad_Point_Manager.Helpers
                     }
                     return false;
                 }
-                if (geometry2 is DrawingArc3D arc2)
+                if (geometry2 is DrawingArc arc2)
                 {
                     if (TryIntersectLineArc(line1, arc2, out intersections))
                     {
@@ -128,7 +128,7 @@ namespace Cad_Point_Manager.Helpers
                     }
                     return false;
                 }
-                if (geometry2 is DrawingCircle3D circle2)
+                if (geometry2 is DrawingCircle circle2)
                 {
                     if (TryIntersectLineCircle(line1, circle2, out intersections))
                     {
@@ -138,9 +138,9 @@ namespace Cad_Point_Manager.Helpers
                 }
             }
 
-            if (geometry1 is DrawingArc3D arc1)
+            if (geometry1 is DrawingArc arc1)
             {
-                if (geometry2 is DrawingLine3D line2)
+                if (geometry2 is DrawingLine line2)
                 {
                     if (TryIntersectLineArc(line2, arc1, out intersections))
                     {
@@ -148,7 +148,7 @@ namespace Cad_Point_Manager.Helpers
                     }
                     return false;
                 }
-                if (geometry2 is DrawingArc3D arc2)
+                if (geometry2 is DrawingArc arc2)
                 {
                     if (TryIntersectArcArc(arc1, arc2, out intersections))
                     {
@@ -156,7 +156,7 @@ namespace Cad_Point_Manager.Helpers
                     }
                     return false;
                 }
-                if (geometry2 is DrawingCircle3D circle2)
+                if (geometry2 is DrawingCircle circle2)
                 {
                     if (TryIntersectArcCircle(arc1, circle2, out intersections))
                     {
@@ -166,9 +166,9 @@ namespace Cad_Point_Manager.Helpers
                 }
             }
 
-            if (geometry1 is DrawingCircle3D circle1)
+            if (geometry1 is DrawingCircle circle1)
             {
-                if (geometry2 is DrawingLine3D line2)
+                if (geometry2 is DrawingLine line2)
                 {
                     if (TryIntersectLineCircle(line2, circle1, out intersections))
                     {
@@ -176,7 +176,7 @@ namespace Cad_Point_Manager.Helpers
                     }
                     return false;
                 }
-                if (geometry2 is DrawingArc3D arc2)
+                if (geometry2 is DrawingArc arc2)
                 {
                     if (TryIntersectArcCircle(arc2, circle1, out intersections))
                     {
@@ -184,7 +184,7 @@ namespace Cad_Point_Manager.Helpers
                     }
                     return false;
                 }
-                if (geometry2 is DrawingCircle3D circle2)
+                if (geometry2 is DrawingCircle circle2)
                 {
                     if (TryIntersectCircleCircle(circle1, circle2, out intersections))
                     {
@@ -196,7 +196,7 @@ namespace Cad_Point_Manager.Helpers
 
             return false;
         }
-        public static bool TryIntersectLineLine(DrawingLine3D line1, DrawingLine3D line2, out Vector intersection)
+        public static bool TryIntersectLineLine(DrawingLine line1, DrawingLine line2, out Vector intersection)
         {
             intersection = default;
 
@@ -228,7 +228,7 @@ namespace Cad_Point_Manager.Helpers
             return pointOnSegment1 && pointOnSegment2;
         }
 
-        public static bool TryIntersectLineCircle(DrawingLine3D line, DrawingCircle3D circle, out List<Vector> intersections)
+        public static bool TryIntersectLineCircle(DrawingLine line, DrawingCircle circle, out List<Vector> intersections)
         {
             intersections = [];
 
@@ -264,7 +264,7 @@ namespace Cad_Point_Manager.Helpers
             return found;
         }
 
-        public static bool TryIntersectLineArc(DrawingLine3D line, DrawingArc3D arc, out List<Vector> intersections)
+        public static bool TryIntersectLineArc(DrawingLine line, DrawingArc arc, out List<Vector> intersections)
         {
             intersections = [];
             if (!GetLineCircleIntersection(line.Start.ToVector(), line.End.ToVector(), arc.RadiusPoint.ToVector(), arc.Radius, out var circlePoints))
@@ -286,7 +286,7 @@ namespace Cad_Point_Manager.Helpers
             return intersections.Count > 0;
         }
 
-        public static bool TryIntersectCircleCircle(DrawingCircle3D circle1, DrawingCircle3D circle2, out List<Vector> intersections)
+        public static bool TryIntersectCircleCircle(DrawingCircle circle1, DrawingCircle circle2, out List<Vector> intersections)
         {
             bool intersects = GetCircleCircleIntersection(circle1.RadiusPoint.ToVector(), circle1.Radius, circle2.RadiusPoint.ToVector(),
                 circle2.Radius, out intersections);
@@ -294,7 +294,7 @@ namespace Cad_Point_Manager.Helpers
             return intersects;
         }
 
-        public static bool TryIntersectArcCircle(DrawingArc3D arc, DrawingCircle3D circle, out List<Vector> intersections)
+        public static bool TryIntersectArcCircle(DrawingArc arc, DrawingCircle circle, out List<Vector> intersections)
         {
             intersections = [];
             if (!GetCircleCircleIntersection(arc.RadiusPoint.ToVector(), arc.Radius, circle.RadiusPoint.ToVector(), circle.Radius, out var points))
@@ -314,7 +314,7 @@ namespace Cad_Point_Manager.Helpers
             return intersections.Count > 0;
         }
 
-        public static bool TryIntersectArcArc(DrawingArc3D arc1, DrawingArc3D arc2, out List<Vector> intersections)
+        public static bool TryIntersectArcArc(DrawingArc arc1, DrawingArc arc2, out List<Vector> intersections)
         {
             intersections = [];
             if (!GetCircleCircleIntersection(arc1.RadiusPoint.ToVector(), arc1.Radius, arc2.RadiusPoint.ToVector(), arc2.Radius,

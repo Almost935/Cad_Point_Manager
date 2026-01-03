@@ -58,6 +58,7 @@
     <Compile Remove="Models\PointRendering\CogoPointTextVerticesDict.cs" />
     <Compile Remove="Services\DxfService.cs" />
     <Compile Remove="Views\UserControls\LayoutControl.xaml.cs" />
+    <Compile Remove="Views\UserControls\LayoutsListViewControl.xaml.cs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -72,6 +73,7 @@
     <Page Remove="Styles\BorderWidgetsRadioButton.xaml" />
     <Page Remove="Styles\ListViewStyle.xaml" />
     <Page Remove="Views\UserControls\LayoutControl.xaml" />
+    <Page Remove="Views\UserControls\LayoutsListViewControl.xaml" />
   </ItemGroup>
 
   <ItemGroup>

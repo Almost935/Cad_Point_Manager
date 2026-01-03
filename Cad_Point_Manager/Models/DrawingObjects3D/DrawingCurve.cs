@@ -2,7 +2,7 @@
 
 namespace Cad_Point_Manager.Models.DrawingObjects3D
 {
-    public abstract class DrawingCurve3D : DrawingSegment3D
+    public abstract class DrawingCurve : DrawingSegment
     {
         #region Properties
         public float Radius { get; set; }

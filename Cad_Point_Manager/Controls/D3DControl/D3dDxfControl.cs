@@ -233,7 +233,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private int _lastSnapHitTestIndex = 0;
         private const int _maxSelectableObjects = 5;
         private List<(double distance, HitTestablePoint hitTestablePoint)> _nearestHitTestablePoints = [];
-        private List<(double distance, DrawingGeometry3D geometry)> _nearestHitTestableGeometries = [];
+        private List<(double distance, DrawingGeometry geometry)> _nearestHitTestableGeometries = [];
         private List<(double distance, CogoPoint point)> _nearestHitTestableCogoPoints = [];
         private readonly HashSet<HitTestableObject> _mouseOverHitTestableObjects = [];
         private readonly HashSet<CogoPoint> _mouseOverCogoPoints = new(new CogoPointNumberComparer());
@@ -348,12 +348,12 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public static readonly DependencyProperty LayersProperty =
             DependencyProperty.Register(
                 nameof(Layers),
-                typeof(BatchableObservableCollection<KeyValuePair<string, ObjectLayer3D>>),
+                typeof(BatchableObservableCollection<KeyValuePair<string, ObjectLayer>>),
                 typeof(D3dDxfControl),
-                new FrameworkPropertyMetadata(new BatchableObservableCollection<KeyValuePair<string, ObjectLayer3D>>()));
-        public BatchableObservableCollection<KeyValuePair<string, ObjectLayer3D>> Layers
+                new FrameworkPropertyMetadata(new BatchableObservableCollection<KeyValuePair<string, ObjectLayer>>()));
+        public BatchableObservableCollection<KeyValuePair<string, ObjectLayer>> Layers
         {
-            get => (BatchableObservableCollection<KeyValuePair<string, ObjectLayer3D>>)GetValue(LayersProperty);
+            get => (BatchableObservableCollection<KeyValuePair<string, ObjectLayer>>)GetValue(LayersProperty);
             set => SetValue(LayersProperty, value);
         }
 
@@ -420,12 +420,12 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public static readonly DependencyProperty SelectedGeometriesProperty =
             DependencyProperty.Register(
                 nameof(SelectedGeometries),
-                typeof(BatchableObservableCollection<DrawingGeometry3D>),
+                typeof(BatchableObservableCollection<DrawingGeometry>),
                 typeof(D3dDxfControl),
-                new FrameworkPropertyMetadata(new BatchableObservableCollection<DrawingGeometry3D>(), FrameworkPropertyMetadataOptions.BindsTwoWayByDefault));
-        public BatchableObservableCollection<DrawingGeometry3D> SelectedGeometries
+                new FrameworkPropertyMetadata(new BatchableObservableCollection<DrawingGeometry>(), FrameworkPropertyMetadataOptions.BindsTwoWayByDefault));
+        public BatchableObservableCollection<DrawingGeometry> SelectedGeometries
         {
-            get => (BatchableObservableCollection<DrawingGeometry3D>)GetValue(SelectedGeometriesProperty);
+            get => (BatchableObservableCollection<DrawingGeometry>)GetValue(SelectedGeometriesProperty);
             set => SetValue(SelectedGeometriesProperty, value);
         }
 
@@ -2014,7 +2014,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 case Common.Enums.SelectionMode.Geometries:
                     {
                         SelectedGeometries.DeferNotifications();
-                        var newSel = new HashSet<DrawingGeometry3D>(_mouseOverHitTestableObjects.OfType<DrawingGeometry3D>());
+                        var newSel = new HashSet<DrawingGeometry>(_mouseOverHitTestableObjects.OfType<DrawingGeometry>());
                         if (IsDragging)
                         {
                             foreach (var g in newSel)
@@ -2025,7 +2025,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                         }
                         else
                         {
-                            var oldSel = new HashSet<DrawingGeometry3D>(SelectedGeometries);
+                            var oldSel = new HashSet<DrawingGeometry>(SelectedGeometries);
                             foreach (var g in newSel)
                             {
                                 if (IsShiftPressed) { DeselectObject(g); }
@@ -2801,9 +2801,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
         {
             if (hitTestableObject is not null && !hitTestableObject.IsMouseOver)
             {
-                if (hitTestableObject is DrawingObject3D obj)
+                if (hitTestableObject is DrawingObject obj)
                 {
-                    if (obj is DrawingGeometry3D geometry)
+                    if (obj is DrawingGeometry geometry)
                     {
                         geometry.MouseEnter();
                         _stateCtl.SetObjectMouseOver(geometry, true);
@@ -2827,9 +2827,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
         {
             if (hitTestableObject is not null && hitTestableObject.IsMouseOver)
             {
-                if (hitTestableObject is DrawingObject3D obj)
+                if (hitTestableObject is DrawingObject obj)
                 {
-                    if (obj is DrawingGeometry3D geometry)
+                    if (obj is DrawingGeometry geometry)
                     {
                         geometry.MouseLeave();
                         _stateCtl.SetObjectMouseOver(geometry, false);
@@ -2871,9 +2871,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
         {
             if (hitTestableObject is not null)
             {
-                if (hitTestableObject is DrawingObject3D obj)
+                if (hitTestableObject is DrawingObject obj)
                 {
-                    if (obj is DrawingGeometry3D geometry)
+                    if (obj is DrawingGeometry geometry)
                     {
                         if (geometry.IsSelected) { return; }
                         geometry.Select();
@@ -2903,9 +2903,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
         {
             if (hitTestableObject is not null)
             {
-                if (hitTestableObject is DrawingObject3D obj)
+                if (hitTestableObject is DrawingObject obj)
                 {
-                    if (obj is DrawingGeometry3D geometry)
+                    if (obj is DrawingGeometry geometry)
                     {
                         if (geometry.IsSelected)
                         {
@@ -3220,7 +3220,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             Layers = CadManager3D?.Layers;
             if (e.Action == NotifyCollectionChangedAction.Add)
             {
-                foreach (KeyValuePair<string, ObjectLayer3D> keyValue in e.NewItems)
+                foreach (KeyValuePair<string, ObjectLayer> keyValue in e.NewItems)
                 {
                     var layer = keyValue.Value;
                     if (layer is null) { continue; }
@@ -3236,7 +3236,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             }
             if (e.Action == NotifyCollectionChangedAction.Remove)
             {
-                foreach (KeyValuePair<string, ObjectLayer3D> keyValue in e.OldItems)
+                foreach (KeyValuePair<string, ObjectLayer> keyValue in e.OldItems)
                 {
                     var layer = keyValue.Value;
                     if (layer is null) { continue; }
@@ -3252,7 +3252,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             {
                 foreach (var obj in e.NewItems)
                 {
-                    if (obj is not DrawingObject3D drawingObj) { continue; }
+                    if (obj is not DrawingObject drawingObj) { continue; }
 
                     var oId = _ids.GetOrAddObjectId(drawingObj);
                     _stateBufs.InitializeObjectState(_ids.ObjectCount, drawingObj, oId);
@@ -3266,18 +3266,18 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         private void Layer_PropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
-            if (e.PropertyName == nameof(ObjectLayer3D.IsVisible))
+            if (e.PropertyName == nameof(ObjectLayer.IsVisible))
             {
-                if (sender is ObjectLayer3D layer)
+                if (sender is ObjectLayer layer)
                 {
                     _stateCtl.SetLayerVisibility(layer, layer.IsVisible);
                     _stateCtl.FlushLayerUpdates();
                     _dxfDirty = true;
                 }
             }
-            if (e.PropertyName == nameof(ObjectLayer3D.Color))
+            if (e.PropertyName == nameof(ObjectLayer.Color))
             {
-                if (sender is ObjectLayer3D layer)
+                if (sender is ObjectLayer layer)
                 {
                     _stateCtl.SetLayerColor(layer, layer.Color);
                     _stateCtl.FlushLayerUpdates();
@@ -3388,8 +3388,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
             var oldTex = _resCache.Texture2D;
             var oldRTV = _resCache.RenderTargetView;
 
-            var oldViewport = Viewport; // <-- important (your constant buffers use Viewport property!)
+            var oldViewport = Viewport;
             var oldInitialViewMatrix = CadManager3D.Camera.InitialViewMatrix;
+
+            var pan = CadManager3D.Camera.Translate;
+            var zoom = CadManager3D.Camera.CurrentZoomStep;
 
             try
             {
@@ -3429,6 +3432,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 Viewport = oldViewport;
                 CadManager3D.Camera.InitialViewMatrix = oldInitialViewMatrix;
                 CadManager3D.Camera.UpdateViewportSize(oldViewport);
+                CadManager3D.Camera.SetPanAndZoom(pan, zoom);
                 UpdateConstantBuffers();
                 _resCache.DeviceContext.Rasterizer.SetViewport(oldViewport);
 

@@ -9,8 +9,9 @@
              xmlns:uc="clr-namespace:Cad_Point_Manager.Views.UserControls"
              xmlns:ui="clr-namespace:ModernWpf;assembly=ModernWpf"
              xmlns:fa="clr-namespace:FontAwesome.WPF;assembly=FontAwesome.WPF"
-             mc:Ignorable="d"
              xmlns:viewsAssorted="clr-namespace:Cad_Point_Manager.Views.Assorted"
+             xmlns:helpers="clr-namespace:Cad_Point_Manager.Helpers"
+             mc:Ignorable="d"
              d:DesignHeight="600"
              d:DesignWidth="1200"
              DataContext="{Binding Mode=OneWay, RelativeSource={RelativeSource Self}}"
@@ -18,10 +19,9 @@
              MouseDown="Root_MouseButtonDown"
              MouseMove="Root_MouseMove"
              MouseUp="Root_MouseUp"
-             MouseEnter="Root_MouseEnter"
-             MouseLeave="Root_MouseLeave"
              PreviewMouseWheel="Root_MouseWheel"
-             Background="Transparent">
+             Background="Transparent"
+             Cursor="{x:Static helpers:AppCursors.CrosshairCursor}">
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*" />
@@ -31,7 +31,7 @@
                     Grid.Row="0"
                     BorderThickness="0"
                     Panel.ZIndex="2"
-                    MouseEnter="TabControl_MouseEnter">
+                    Cursor="Arrow">
             <TabItem Header="Layouts"
                      Foreground="White">
                 <controls:DoubleClickSetListView x:Name="layoutsListView"
@@ -39,6 +39,7 @@
                                                  Margin="10 10 10 10"
                                                  Grid.Row="0"
                                                  Background="White"
+                                                 Cursor="Arrow"
                                                  ItemsSource="{Binding CadManager.LayoutsView}"
                                                  Loaded="LayoutsListView_Loaded"
                                                  VirtualizingPanel.IsVirtualizingWhenGrouping="True"
@@ -224,15 +225,20 @@
                 <Border.RenderTransform>
                     <MatrixTransform x:Name="transform" />
                 </Border.RenderTransform>
-                <Border Width="{Binding ActiveLayout.Viewport.LocalRectIn.Width}"
+                <Border x:Name="viewportBorder"
+                        Width="{Binding ActiveLayout.Viewport.LocalRectIn.Width}"
                         Height="{Binding ActiveLayout.Viewport.LocalRectIn.Height}"
-                        Background="#66FF0000"
+                        Canvas.Left="{Binding ActiveLayout.Viewport.LocalRectIn.Left}"
+                        Canvas.Top="{Binding ActiveLayout.Viewport.LocalRectIn.Top}"
                         BorderThickness="0.03"
-                        BorderBrush="Black">
+                        BorderBrush="Black"
+                        Background="Black">
                     <uc:LayoutPreviewControl x:Name="LayoutPreviewControl"
                                              Renderer="{Binding Renderer}"
                                              Layout="{Binding ActiveLayout}"
-                                             Scenes="{Binding Scenes}" />
+                                             Scenes="{Binding Scenes}"
+                                             ViewportWidth="{Binding ElementName=viewportBorder, Path=ActualWidth}"
+                                             ViewportHeight="{Binding ElementName=viewportBorder, Path=ActualHeight}"/>
                 </Border>
             </Border>
         </Canvas>

@@ -275,9 +275,12 @@ namespace Cad_Point_Manager.Controls.D3DControl
             UpdateViewProjection();
         }
 
-        public void Rotate(float deltaX, float deltaY, bool shiftHeld)
+        public void SetPanAndZoom(Vector2 translation, int zoomStep)
         {
-
+            Translate = translation;
+            CurrentZoomStep = zoomStep;
+            UpdateView();
+            UpdateViewProjection();
         }
 
         public void Update2DTransformationMatrix()

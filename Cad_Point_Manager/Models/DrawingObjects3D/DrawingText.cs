@@ -3,7 +3,7 @@ using SharpDX;
 
 namespace Cad_Point_Manager.Models.DrawingObjects3D
 {
-    public abstract class DrawingText3D : DrawingObject3D
+    public abstract class DrawingText : DrawingObject
     {
         #region Properties
         public abstract List<TextVertex> TextVertices { get; set; }

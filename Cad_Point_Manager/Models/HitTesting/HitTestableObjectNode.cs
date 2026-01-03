@@ -84,13 +84,13 @@ namespace Cad_Point_Manager.Models.HitTesting
             return node;
         }
 
-        public List<(double distance, DrawingGeometry3D geometry)> HitTestGeometries(Point p, Rect hitTestRange)
+        public List<(double distance, DrawingGeometry geometry)> HitTestGeometries(Point p, Rect hitTestRange)
         {
-            List<(double distance, DrawingGeometry3D geometry)> geometries = [];
+            List<(double distance, DrawingGeometry geometry)> geometries = [];
 
             foreach (var hitTestableObject in HitTestableObjects)
             {
-                if (hitTestableObject is DrawingGeometry3D drawingGeometry3D)
+                if (hitTestableObject is DrawingGeometry drawingGeometry3D)
                 {
                     if (drawingGeometry3D.Layer.IsVisible)
                     {
@@ -107,17 +107,17 @@ namespace Cad_Point_Manager.Models.HitTesting
         public List<(Enums.SignificantPointType pointType, double distance, Vector2 coordinate)> HitTestSignificantPoints(Point p, Rect hitTestRange)
         {
             Vector2 pos = new((float)p.X, (float)p.Y);
-            ConcurrentBag<DrawingSegment3D> segments = [];
+            ConcurrentBag<DrawingSegment> segments = [];
 
             Parallel.ForEach(HitTestableObjects, hitTestableObject =>
             {
-                if (hitTestableObject is DrawingGeometry3D geometry && geometry.Layer.IsVisible)
+                if (hitTestableObject is DrawingGeometry geometry && geometry.Layer.IsVisible)
                 {
-                    if (geometry is DrawingSegment3D segment && segment.BoundsInRect(hitTestRange))
+                    if (geometry is DrawingSegment segment && segment.BoundsInRect(hitTestRange))
                     {
                         segments.Add(segment);
                     }
-                    else if (geometry is DrawingPolyline3D polyline)
+                    else if (geometry is DrawingPolyline polyline)
                     {
                         foreach (var plineSegment in polyline.DrawingSegments)
                         {
@@ -127,7 +127,7 @@ namespace Cad_Point_Manager.Models.HitTesting
                             }
                         }
                     }
-                    else if (geometry is DrawingSpline3D spline)
+                    else if (geometry is DrawingSpline spline)
                     {
                         foreach (var splineSegment in spline.PolylineApproximation.DrawingSegments)
                         {
@@ -138,15 +138,15 @@ namespace Cad_Point_Manager.Models.HitTesting
                         }
                     }
                 }
-                else if (hitTestableObject is DrawingBlock3D block)
+                else if (hitTestableObject is DrawingBlock block)
                 {
-                    foreach (var blockGeometry in block.DrawingObjects.OfType<DrawingGeometry3D>())
+                    foreach (var blockGeometry in block.DrawingObjects.OfType<DrawingGeometry>())
                     {
-                        if (blockGeometry is DrawingSegment3D segment && segment.BoundsInRect(hitTestRange))
+                        if (blockGeometry is DrawingSegment segment && segment.BoundsInRect(hitTestRange))
                         {
                             segments.Add(segment);
                         }
-                        else if (blockGeometry is DrawingPolyline3D polyline)
+                        else if (blockGeometry is DrawingPolyline polyline)
                         {
                             foreach (var plineSegment in polyline.DrawingSegments)
                             {
@@ -174,13 +174,13 @@ namespace Cad_Point_Manager.Models.HitTesting
             return hits.ToList();
         }
 
-        public List<DrawingGeometry3D> HitTestGeometriesInRect(Rect rect)
+        public List<DrawingGeometry> HitTestGeometriesInRect(Rect rect)
         {
-            List<DrawingGeometry3D> geometries = [];
+            List<DrawingGeometry> geometries = [];
 
             foreach (var hitTestableObject in HitTestableObjects)
             {
-                if (hitTestableObject is DrawingGeometry3D geometry)
+                if (hitTestableObject is DrawingGeometry geometry)
                 {
                     if (geometry.Layer.IsVisible)
                     {

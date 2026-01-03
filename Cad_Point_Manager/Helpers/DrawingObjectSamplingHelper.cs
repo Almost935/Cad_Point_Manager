@@ -6,19 +6,19 @@ namespace Cad_Point_Manager.Helpers
 {
     public static class DrawingObjectSamplingHelper
     {
-        public static IReadOnlyList<Vector2> SampleDrawingObject(DrawingObject3D drawingObject, int intermediates = 0)
+        public static IReadOnlyList<Vector2> SampleDrawingObject(DrawingObject drawingObject, int intermediates = 0)
         {
             return drawingObject switch
             {
-                DrawingLine3D line => SampleDrawingLine(line, intermediates),
-                DrawingArc3D arc => SampleDrawingArc(arc, intermediates),
-                DrawingCircle3D circle => SampleDrawingCircle(circle, intermediates),
-                DrawingPolyline3D polyline => SampleDrawingPolyline(polyline, intermediates),
+                DrawingLine line => SampleDrawingLine(line, intermediates),
+                DrawingArc arc => SampleDrawingArc(arc, intermediates),
+                DrawingCircle circle => SampleDrawingCircle(circle, intermediates),
+                DrawingPolyline polyline => SampleDrawingPolyline(polyline, intermediates),
                 _ => throw new NotSupportedException($"Sampling not supported for {drawingObject.GetType().Name}"),
             };
         }
 
-        public static IReadOnlyList<Vector2> SampleDrawingLine(DrawingLine3D drawingLine, int intermediates)
+        public static IReadOnlyList<Vector2> SampleDrawingLine(DrawingLine drawingLine, int intermediates)
         {
             var pts = new List<Vector2>();
             int total = Math.Max(0, intermediates) + 2;
@@ -35,7 +35,7 @@ namespace Cad_Point_Manager.Helpers
             return pts;
         }
 
-        public static IReadOnlyList<Vector2> SampleDrawingArc(DrawingArc3D drawingArc, int intermediates, bool clockwise = false)
+        public static IReadOnlyList<Vector2> SampleDrawingArc(DrawingArc drawingArc, int intermediates, bool clockwise = false)
         {
             var pts = new List<Vector2>();
             int total = Math.Max(0, intermediates) + 2;
@@ -55,7 +55,7 @@ namespace Cad_Point_Manager.Helpers
 
         // Circles (closed): intermediates = total points around the rim
         // If you prefer "at least 2 points", change Math.Max(0, intermediates) to Math.Max(2, intermediates).
-        public static IReadOnlyList<Vector2> SampleDrawingCircle(DrawingCircle3D drawingCircle, int intermediates)
+        public static IReadOnlyList<Vector2> SampleDrawingCircle(DrawingCircle drawingCircle, int intermediates)
         {
             var count = Math.Max(0, intermediates);
             var pts = new List<Vector2>(count);
@@ -70,7 +70,7 @@ namespace Cad_Point_Manager.Helpers
             return pts;
         }
 
-        public static IReadOnlyList<Vector2> SampleDrawingPolyline(DrawingPolyline3D drawingPolyline, int intermediates)
+        public static IReadOnlyList<Vector2> SampleDrawingPolyline(DrawingPolyline drawingPolyline, int intermediates)
         {
             IReadOnlyList<Vector2> pts = [];
             return pts;

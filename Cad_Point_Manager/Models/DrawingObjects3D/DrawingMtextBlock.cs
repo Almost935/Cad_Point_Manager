@@ -6,16 +6,16 @@ using Point = System.Windows.Point;
 
 namespace Cad_Point_Manager.Models.DrawingObjects3D
 {
-    public class DrawingMtext3DBlock : IDisposable
+    public class DrawingMtextBlock : IDisposable
     {
         #region Fields
         private const float _mtextLineSpacingFactor = 0.15f;
 
-        private readonly List<DrawingMtext3DRow> _drawingMtext3DRows = [];
+        private readonly List<DrawingMtextRow> _drawingMtext3DRows = [];
         #endregion
 
         #region Properties
-        public List<DrawingMtext3DRow> Rows => _drawingMtext3DRows;
+        public List<DrawingMtextRow> Rows => _drawingMtext3DRows;
         public float Height { get; set; } = 0;
         public float Width => _drawingMtext3DRows.Max(row => row.Width);
         public float MaxWidth { get; set; }
@@ -28,7 +28,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         #endregion
 
         #region Constructors
-        public DrawingMtext3DBlock(float maxWidth, Vector3 basePosition, MTextAttachmentPoint attachmentPoint, float rotation)
+        public DrawingMtextBlock(float maxWidth, Vector3 basePosition, MTextAttachmentPoint attachmentPoint, float rotation)
         {
             MaxWidth = maxWidth;
             BasePosition = basePosition;
@@ -38,11 +38,11 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         #endregion
 
         #region Methods
-        public void AddRow(DrawingMtext3DRow row)
+        public void AddRow(DrawingMtextRow row)
         {
             _drawingMtext3DRows.Add(row);
         }
-        public bool RemoveRow(DrawingMtext3DRow row)
+        public bool RemoveRow(DrawingMtextRow row)
         {
             return _drawingMtext3DRows.Remove(row);
         }
@@ -261,8 +261,8 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         {
             float currentYOffset = 0;
             Height = 0;
-            DrawingMtext3DRow currentRow;
-            DrawingMtext3DRow prevRow;
+            DrawingMtextRow currentRow;
+            DrawingMtextRow prevRow;
 
             if (_drawingMtext3DRows.Count == 1)
             {
@@ -313,11 +313,11 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             }
         }
 
-        public void AddSegment(DrawingMtextSegment3D segment)
+        public void AddSegment(DrawingMtextSegment segment)
         {
             if (NumberOfRows == 0)
             {
-                DrawingMtext3DRow newRow = new([segment], segment.TextAlignment, BasePosition, MaxWidth);
+                DrawingMtextRow newRow = new([segment], segment.TextAlignment, BasePosition, MaxWidth);
                 newRow.GetHeight();
                 AddRow(newRow);
             }
@@ -327,7 +327,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
 
                 if (lastRow.Width + segment.SpaceWidth + segment.Bounds.Width > MaxWidth || segment.IsNewLine)
                 {
-                    DrawingMtext3DRow newRow = new([segment], segment.TextAlignment, BasePosition, MaxWidth);
+                    DrawingMtextRow newRow = new([segment], segment.TextAlignment, BasePosition, MaxWidth);
                     newRow.GetHeight();
                     AddRow(newRow);
                 }
@@ -361,7 +361,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         }
 
         // Override a finalizer only if Dispose(bool disposing) above has code to free unmanaged resources.
-        ~DrawingMtext3DBlock()
+        ~DrawingMtextBlock()
         {
             // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
             Dispose(false);

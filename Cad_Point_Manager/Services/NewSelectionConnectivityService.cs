@@ -5,7 +5,7 @@ namespace Cad_Point_Manager.Services
     public sealed class NewSelectionConnectivityService : ISelectionConnectivityService
     {
         // Implements: List<ChainPath> BuildChainsFromSelection(IEnumerable<DrawingObject3D> selected, double eps)
-        public List<ChainPath> BuildChainsFromSelection(IEnumerable<DrawingObject3D> selected, double eps)
+        public List<ChainPath> BuildChainsFromSelection(IEnumerable<DrawingObject> selected, double eps)
         {
             if (selected is null) return new List<ChainPath>();
 
@@ -17,7 +17,7 @@ namespace Cad_Point_Manager.Services
             {
                 switch (g)
                 {
-                    case DrawingLine3D ln:
+                    case DrawingLine ln:
                         {
                             // Lines: use Start/End (Vector3) from your model
                             var a = new Pt(ln.Start.X, ln.Start.Y);
@@ -26,7 +26,7 @@ namespace Cad_Point_Manager.Services
                             break;
                         }
 
-                    case DrawingArc3D arc:
+                    case DrawingArc arc:
                         {
                             // Arcs: center = RadiusPoint, angles in degrees (StartAngle/EndAngle)
                             var cx = arc.RadiusPoint.X; var cy = arc.RadiusPoint.Y;
@@ -42,7 +42,7 @@ namespace Cad_Point_Manager.Services
                             break;
                         }
 
-                    case DrawingCircle3D c:
+                    case DrawingCircle c:
                         {
                             // Full circle -> stand-alone chain with single EdgeUse
                             var center = new Pt(c.RadiusPoint.X, c.RadiusPoint.Y);
@@ -52,18 +52,18 @@ namespace Cad_Point_Manager.Services
                             break;
                         }
 
-                    case DrawingPolyline3D pl:
+                    case DrawingPolyline pl:
                         {
                             // Exploded segments already available
                             foreach (var seg in pl.DrawingSegments)
                             {
-                                if (seg is DrawingLine3D lseg)
+                                if (seg is DrawingLine lseg)
                                 {
                                     var a = new Pt(lseg.Start.X, lseg.Start.Y);
                                     var b = new Pt(lseg.End.X, lseg.End.Y);
                                     raw.Add(new EdgeInput(a, b, SegmentKind.Line, null));
                                 }
-                                else if (seg is DrawingArc3D aseg)
+                                else if (seg is DrawingArc aseg)
                                 {
                                     var cx = aseg.RadiusPoint.X; var cy = aseg.RadiusPoint.Y;
                                     var r = aseg.Radius;

@@ -9,16 +9,16 @@ using Vector3 = SharpDX.Vector3;
 
 namespace Cad_Point_Manager.Models.DrawingObjects3D
 {
-    public class DrawingLine3D : DrawingSegment3D
+    public class DrawingLine : DrawingSegment
     {
         #region Properties
         public Vector3 MidPoint { get; set; }
         #endregion
 
         #region Constructors
-        private DrawingLine3D() { Type = DrawingObject3dType.DrawingLine3D; }
+        private DrawingLine() { Type = DrawingObject3dType.DrawingLine3D; }
 
-        public DrawingLine3D(Line line, ObjectLayer3D layer, bool isPartOfBlock = false, DrawingBlock3D block = null)
+        public DrawingLine(Line line, ObjectLayer layer, bool isPartOfBlock = false, DrawingBlock block = null)
         {
             Type = DrawingObject3dType.DrawingLine3D;
             Layer = layer;

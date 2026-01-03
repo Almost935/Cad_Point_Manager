@@ -7,7 +7,7 @@ using Vector3 = SharpDX.Vector3;
 
 namespace Cad_Point_Manager.Models.DrawingObjects3D
 {
-    public class DrawingArc3D : DrawingCurve3D
+    public class DrawingArc : DrawingCurve
     {
         #region Fields
         private Arc _dxfArc => EntityObject as Arc;
@@ -19,9 +19,9 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         #endregion
 
         #region Constructor
-        private DrawingArc3D() { Type = DrawingObject3dType.DrawingLine3D; }
+        private DrawingArc() { Type = DrawingObject3dType.DrawingLine3D; }
 
-        public DrawingArc3D(Arc arc, ObjectLayer3D layer, bool isPartOfBlock = false, DrawingBlock3D block = null)
+        public DrawingArc(Arc arc, ObjectLayer layer, bool isPartOfBlock = false, DrawingBlock block = null)
         {
             Type = DrawingObject3dType.DrawingArc3D;
             Layer = layer;

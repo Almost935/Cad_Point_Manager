@@ -3,7 +3,7 @@ using SharpDX.Direct2D1;
 
 namespace Cad_Point_Manager.Models.DrawingObjects3D
 {
-    public class DrawingSpline3D : DrawingGeometry3D
+    public class DrawingSpline : DrawingGeometry
     {
         #region Fields
         private int _polylineApproximationPrecision = 1000;
@@ -12,11 +12,11 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         #endregion
 
         #region Properties
-        public DrawingPolyline3D PolylineApproximation { get; set; }
+        public DrawingPolyline PolylineApproximation { get; set; }
         #endregion
 
         #region Constructors
-        public DrawingSpline3D(Spline spline, ObjectLayer3D layer, bool isPartOfBlock = false, DrawingBlock3D block = null)
+        public DrawingSpline(Spline spline, ObjectLayer layer, bool isPartOfBlock = false, DrawingBlock block = null)
         {
             Type = DrawingObject3dType.DrawingSpline3D;
             EntityObject = spline;

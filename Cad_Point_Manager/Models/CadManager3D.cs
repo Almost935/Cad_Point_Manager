@@ -18,6 +18,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Data;
+using System.Windows.Documents;
 using System.Windows.Media;
 using Point = System.Windows.Point;
 using Vector2 = SharpDX.Vector2;
@@ -40,7 +41,7 @@ namespace Cad_Point_Manager.Models
         private bool _cogoPointTreeDirty = false;
         private bool _dxfNeedsReload = false;
         private Rect _extents = RectExtensions.Zero;
-        private BatchableObservableCollection<KeyValuePair<string, ObjectLayer3D>> _layers = [];
+        private BatchableObservableCollection<KeyValuePair<string, ObjectLayer>> _layers = [];
         private ICollectionView _layersView;
         private ICollectionView _pointGroupsView;
         private ICollectionView _pointsView;
@@ -141,7 +142,7 @@ namespace Cad_Point_Manager.Models
                 OnPropertyChanged(nameof(Extents));
             }
         }
-        public BatchableObservableCollection<KeyValuePair<string, ObjectLayer3D>> Layers
+        public BatchableObservableCollection<KeyValuePair<string, ObjectLayer>> Layers
         {
             get => _layers;
             set
@@ -399,9 +400,9 @@ namespace Cad_Point_Manager.Models
             hits.Sort((x, y) => x.distance.CompareTo(y.distance));
             return hits;
         }
-        public List<(double distance, DrawingGeometry3D geometries)> HitTestGeometries(Point p, float tolerance)
+        public List<(double distance, DrawingGeometry geometries)> HitTestGeometries(Point p, float tolerance)
         {
-            List<(double distance, DrawingGeometry3D geometries)> geometries = [];
+            List<(double distance, DrawingGeometry geometries)> geometries = [];
 
             if (HitTestableObjectTree is null) { return geometries; }
 
@@ -432,7 +433,7 @@ namespace Cad_Point_Manager.Models
             hits.Sort((x, y) => x.distance.CompareTo(y.distance));
             return hits;
         }
-        
+
         public List<CogoPoint> HitTestDragCogoPoints(Rect rect)
         {
             List<CogoPoint> points = [];
@@ -447,7 +448,7 @@ namespace Cad_Point_Manager.Models
                 {
                     foreach (var p in node.CogoPoints)
                     {
-                        if (p.PointGroup.IsVisible) 
+                        if (p.PointGroup.IsVisible)
                         { points.Add(p); }
                     }
                 }
@@ -459,9 +460,9 @@ namespace Cad_Point_Manager.Models
 
             return points;
         }
-        public List<DrawingGeometry3D> HitTestDragGeometries(Rect rect)
+        public List<DrawingGeometry> HitTestDragGeometries(Rect rect)
         {
-            List<DrawingGeometry3D> hits = [];
+            List<DrawingGeometry> hits = [];
 
             if (HitTestableObjectTree is null) { return hits; }
 
@@ -471,7 +472,7 @@ namespace Cad_Point_Manager.Models
             {
                 foreach (var obj in node.HitTestableObjects)
                 {
-                    if (obj is DrawingGeometry3D geometry &&
+                    if (obj is DrawingGeometry geometry &&
                         geometry.BoundsInRect(rect))
                     {
                         hits.Add(geometry);
@@ -508,15 +509,15 @@ namespace Cad_Point_Manager.Models
             ZoomToExtentsRequested?.Invoke();
         }
 
-        public ObjectLayer3D GetLayer(Layer dxfLayer)
+        public ObjectLayer GetLayer(Layer dxfLayer)
         {
-            ObjectLayer3D layer = Layers.FirstOrDefault(x => x.Value.Name == dxfLayer.Name).Value;
+            ObjectLayer layer = Layers.FirstOrDefault(x => x.Value.Name == dxfLayer.Name).Value;
 
             if (layer is not null) { return layer; }
             else
             {
                 layer = new(dxfLayer);
-                Layers.Add(new KeyValuePair<string, ObjectLayer3D>(dxfLayer.Name, layer));
+                Layers.Add(new KeyValuePair<string, ObjectLayer>(dxfLayer.Name, layer));
 
                 return layer;
             }
@@ -537,7 +538,7 @@ namespace Cad_Point_Manager.Models
                     {
                         var objectId = sceneIdMap.GetOrAddObjectId(obj);
 
-                        if (obj is DrawingGeometry3D drawingGeometry)
+                        if (obj is DrawingGeometry drawingGeometry)
                         {
                             drawingGeometry.UpdateVertices(lId, objectId);
                             drawingGeometry.StartVertexIndex = _cachedLineVertices.Count;
@@ -545,7 +546,7 @@ namespace Cad_Point_Manager.Models
                             drawingGeometry.EndVertexIndex = _cachedLineVertices.Count - 1;
                         }
 
-                        if (obj is DrawingBlock3D drawingBlock)
+                        if (obj is DrawingBlock drawingBlock)
                         {
                             drawingBlock.UpdateGeometryVertices(lId, objectId);
                             drawingBlock.StartLineVertexIndex = _cachedLineVertices.Count;
@@ -583,14 +584,14 @@ namespace Cad_Point_Manager.Models
                         var objectId = sceneIdMap.GetOrAddObjectId(obj);
                         int start = _cachedTextVertices.Count;
 
-                        if (obj is DrawingText3D text3D)
+                        if (obj is DrawingText text3D)
                         {
                             text3D.UpdateTextVertices(d3DResCache, lid, objectId);
                             text3D.StartVertexIndex = start;
                             _cachedTextVertices.AddRange(text3D.TextVertices);
                             text3D.EndVertexIndex = _cachedTextVertices.Count - 1;
                         }
-                        if (obj is DrawingBlock3D drawingBlock)
+                        if (obj is DrawingBlock drawingBlock)
                         {
                             drawingBlock.UpdateTextVertices(d3DResCache, lid, objectId);
                             drawingBlock.StartTextVertexIndex = start;

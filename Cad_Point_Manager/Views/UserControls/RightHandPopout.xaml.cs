@@ -29,7 +29,7 @@ namespace Cad_Point_Manager.Views.UserControls
         #region Fields
         private const double _panelHideTime = 200;
 
-        private readonly List<ObjectLayer3D> _selectedLayers = [];
+        private readonly List<ObjectLayer> _selectedLayers = [];
         private readonly List<PointGroup> _selectedPointGroups = [];
 
         private string? _lastContextField;
@@ -320,7 +320,7 @@ namespace Cad_Point_Manager.Views.UserControls
 
             foreach (var selectedItem in selectedItems)
             {
-                if (selectedItem is KeyValuePair<string, ObjectLayer3D> selectedLayer)
+                if (selectedItem is KeyValuePair<string, ObjectLayer> selectedLayer)
                 {
                     if (selectedLayer.Value is not null)
                     {

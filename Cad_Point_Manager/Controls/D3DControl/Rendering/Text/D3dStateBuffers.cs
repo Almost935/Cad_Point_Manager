@@ -135,14 +135,14 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
                 TextInfoBaseXoffset = pg.PointInfoBaseXoffset
             };
         }
-        public void InitializeLayerState(int count, ObjectLayer3D layer, uint lId)
+        public void InitializeLayerState(int count, ObjectLayer layer, uint lId)
         {
             EnsureLayerCapacity(count);
             uint baseFlags = 0;
             if (layer.IsVisible) { baseFlags |= (uint)LayerFlags.Visible; }
             LayerSpan[(int)lId] = new LayerState { Color = layer.Color, Flags = baseFlags };
         }
-        public void InitializeObjectState(int count, DrawingObject3D obj, uint oId)
+        public void InitializeObjectState(int count, DrawingObject obj, uint oId)
         {
             EnsureObjectCapacity(count);
 

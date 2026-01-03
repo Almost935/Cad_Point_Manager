@@ -12,7 +12,7 @@ using FontWeight = SharpDX.DirectWrite.FontWeight;
 
 namespace Cad_Point_Manager.Models.DrawingObjects3D
 {
-    public class DrawingMtextSegment3D : IDisposable
+    public class DrawingMtextSegment : IDisposable
     {
         #region Fields
         private const float _flatteningTolerance = 0.001f;
@@ -23,7 +23,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         #endregion
 
         #region Properties
-        public DrawingMtext3D DrawingMtext3D { get; set; }
+        public DrawingMtext DrawingMtext3D { get; set; }
         public string Text { get; set; }
         public Vector4 Color { get; set; }
         public Vector3 Position { get; set; }
@@ -47,7 +47,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         #endregion
 
         #region Constructors
-        public DrawingMtextSegment3D(DrawingMtext3D drawingMtext3D, string text, Vector4 color, Vector3 position, float rotation,
+        public DrawingMtextSegment(DrawingMtext drawingMtext3D, string text, Vector4 color, Vector3 position, float rotation,
             float fontHeight, string fontFamilyName, bool isItalic, bool isBold, bool isUnderlined, bool isStrikethroughed,
             bool isNewLine, int fontRenderingMinimumSize, float maxWidth, Enums.TextAlignment textAlignment = Enums.TextAlignment.Left)
         {

@@ -17,7 +17,7 @@ using Vector4 = SharpDX.Vector4;
 
 namespace Cad_Point_Manager.Models.DrawingObjects3D
 {
-    public class DrawingMtext3D : DrawingText3D
+    public class DrawingMtext : DrawingText
     {
         #region Fields
         private const int _fontRenderingMinimumSize = 50;
@@ -39,12 +39,12 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         public bool IsBold { get; set; }
         public bool IsItalic { get; set; }
         public Enums.TextAttachmentPoint AttachmentPoint { get; set; }
-        public DrawingMtext3DBlock MtextBlock { get; set; }
+        public DrawingMtextBlock MtextBlock { get; set; }
         public Vector3 TextAttachmentOffset { get; set; } = Vector3.Zero;
         #endregion
 
         #region Constructor
-        public DrawingMtext3D(MText mtext, ObjectLayer3D layer, bool isPartOfBlock = false, DrawingBlock3D block = null)
+        public DrawingMtext(MText mtext, ObjectLayer layer, bool isPartOfBlock = false, DrawingBlock block = null)
         {
             Type = DrawingObject3dType.DrawingMtext3D;
             DxfMtext = mtext;
@@ -451,9 +451,9 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             //    TextVertices[i] = TextVertex.RotateAroundPoint(TextVertices[i], new Vector2(Position.X, Position.Y), (float)(MathHelper.DegToRad * Rotation));
             //}
         }
-        private DrawingMtextSegment3D CreateMtextSegment(TextSegmentInformation segmentInfo, ResCache resCache, uint layerId, uint objectId)
+        private DrawingMtextSegment CreateMtextSegment(TextSegmentInformation segmentInfo, ResCache resCache, uint layerId, uint objectId)
         {
-            DrawingMtextSegment3D segment = new(this, segmentInfo.Text, segmentInfo.Color, Vector3.Zero, 0, (float)segmentInfo.TextHeight, segmentInfo.Font,
+            DrawingMtextSegment segment = new(this, segmentInfo.Text, segmentInfo.Color, Vector3.Zero, 0, (float)segmentInfo.TextHeight, segmentInfo.Font,
                 segmentInfo.IsItalic, segmentInfo.IsBold, segmentInfo.IsUnderlined, segmentInfo.IsStrikethrough, segmentInfo.IsNewLine, _fontRenderingMinimumSize, 0, segmentInfo.TextAlignment);
             segment.GetTextLayout(resCache.WriteFactory);
             segment.Tesselate(resCache, layerId, objectId);

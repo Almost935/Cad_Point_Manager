@@ -3,12 +3,12 @@ using SharpDX;
 
 namespace Cad_Point_Manager.Models.DrawingObjects3D
 {
-    public class DrawingMtext3DRow : IDisposable
+    public class DrawingMtextRow : IDisposable
     {
         #region Properties
         public float Height { get; set; } = 0;
         public float MaxWidth { get; set; }
-        public List<DrawingMtextSegment3D> Segments { get; set; } = [];
+        public List<DrawingMtextSegment> Segments { get; set; } = [];
         public Enums.TextAlignment TextAlignment { get; set; } = Enums.TextAlignment.Left;
         public Vector3 BaseRowPosition { get; set; } = Vector3.Zero;
 
@@ -19,9 +19,9 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         #endregion
 
         #region Constructors
-        public DrawingMtext3DRow(float maxWidth) { MaxWidth = maxWidth; }
+        public DrawingMtextRow(float maxWidth) { MaxWidth = maxWidth; }
 
-        public DrawingMtext3DRow(List<DrawingMtextSegment3D> segments, Enums.TextAlignment textAlignment, Vector3 basePosition, float maxWidth)
+        public DrawingMtextRow(List<DrawingMtextSegment> segments, Enums.TextAlignment textAlignment, Vector3 basePosition, float maxWidth)
         {
             Segments = segments;
             TextAlignment = textAlignment;
@@ -29,7 +29,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             MaxWidth = maxWidth;
         }
 
-        public DrawingMtext3DRow(Enums.TextAlignment textAlignment, Vector3 basePosition, float maxWidth)
+        public DrawingMtextRow(Enums.TextAlignment textAlignment, Vector3 basePosition, float maxWidth)
         {
             TextAlignment = textAlignment;
             BaseRowPosition = basePosition;
@@ -38,7 +38,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         #endregion
 
         #region Methods
-        public void AddSegment(DrawingMtextSegment3D segment)
+        public void AddSegment(DrawingMtextSegment segment)
         {
             Segments.Add(segment);
             float rowHeight = segment.TextHeight;
@@ -60,7 +60,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         }
         public void SetTextSegmentsXOffset()
         {
-            DrawingMtextSegment3D prevSegment = null;
+            DrawingMtextSegment prevSegment = null;
             float currentXOffset = 0;
             for (int i = 0; i < Segments.Count; i++)
             {
@@ -112,7 +112,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         }
 
         // Override a finalizer only if Dispose(bool disposing) above has code to free unmanaged resources.
-        ~DrawingMtext3DRow()
+        ~DrawingMtextRow()
         {
             // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
             Dispose(false);

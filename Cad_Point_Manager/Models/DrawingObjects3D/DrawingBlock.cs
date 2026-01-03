@@ -7,17 +7,17 @@ using Vector3 = SharpDX.Vector3;
 
 namespace Cad_Point_Manager.Models.DrawingObjects3D
 {
-    public class DrawingBlock3D : DrawingObject3D
+    public class DrawingBlock : DrawingObject
     {
         #region Fields
-        private List<DrawingObject3D> _drawingObjects = [];
+        private List<DrawingObject> _drawingObjects = [];
         private List<LineVertex> _geometryVertices = [];
         private List<TextVertex> _textVertices = [];
         #endregion
 
         #region Properties
         public Insert DxfInsert { get; set; }
-        public List<DrawingObject3D> DrawingObjects
+        public List<DrawingObject> DrawingObjects
         {
             get => _drawingObjects;
             set
@@ -57,9 +57,9 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         #endregion
 
         #region Constructors
-        private DrawingBlock3D() { Type = DrawingObject3dType.DrawingLine3D; }
+        private DrawingBlock() { Type = DrawingObject3dType.DrawingLine3D; }
 
-        public DrawingBlock3D(Insert insert, ObjectLayer3D layer, bool isPartOfBlock = false, DrawingBlock3D block = null)
+        public DrawingBlock(Insert insert, ObjectLayer layer, bool isPartOfBlock = false, DrawingBlock block = null)
         {
             Type = DrawingObject3dType.DrawingBlock3D;
             DxfInsert = insert;
@@ -168,12 +168,12 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
 
             foreach (var obj in DrawingObjects)
             {
-                if (obj is DrawingBlock3D block)
+                if (obj is DrawingBlock block)
                 {
                     block.UpdateGeometryVertices(layerId, objectId);
                     LineVertices.AddRange(block.LineVertices);
                 }
-                if (obj is DrawingGeometry3D geometry)
+                if (obj is DrawingGeometry geometry)
                 {
                     geometry.UpdateVertices(layerId, objectId);
                     LineVertices.AddRange(geometry.Vertices);
@@ -186,17 +186,17 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
 
             foreach (var obj in DrawingObjects)
             {
-                if (obj is DrawingBlock3D block)
+                if (obj is DrawingBlock block)
                 {
                     block.UpdateTextVertices(resCache, layerId, objectId);
                     TextVertices.AddRange(block.TextVertices);
                 }
-                if (obj is DrawingSText3D text)
+                if (obj is DrawingSText text)
                 {
                     text.UpdateTextVertices(resCache, layerId, objectId);
                     TextVertices.AddRange(text.TextVertices);
                 }
-                if (obj is DrawingMtext3D mtext)
+                if (obj is DrawingMtext mtext)
                 {
                     mtext.UpdateTextVertices(resCache, layerId, objectId);
 

@@ -80,16 +80,6 @@ namespace Cad_Point_Manager.Views
             }
         }
 
-        private void DxfGrid_MouseEnter(object sender, MouseEventArgs e)
-        {
-            Mouse.OverrideCursor = AppCursors.CrosshairCursor;
-        }
-
-        private void DxfGrid_MouseLeave(object sender, MouseEventArgs e)
-        {
-            Mouse.OverrideCursor = null; // Reset the cursor to default
-        }
-
         private void TextBox_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
             if (sender is TextBox textBox)

@@ -131,14 +131,12 @@ namespace Cad_Point_Manager.Views.UserControls
 
         private void Layouts_CollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
         {
-            //foreach (var layout in CadManager.Layouts)
-            //{
-            //    Debug.WriteLine($"layout.Name: {layout.Name}");
-            //}
-            if (CadManager is not null && CadManager.Layouts.Count > 0 && ActiveLayout is null)
+            if (CadManager is not null && CadManager.Layouts.Count > 0)
             {
-                layoutsListView.ActiveObject = CadManager.Layouts.First();
-                ActiveLayout = CadManager.Layouts.First();
+                if (ActiveLayout is null || !CadManager.Layouts.Contains(ActiveLayout))
+                {
+                    ActiveLayout = CadManager.Layouts.First();
+                }
             }
         }
 
@@ -257,18 +255,7 @@ namespace Cad_Point_Manager.Views.UserControls
             transform.Matrix = m;
             e.Handled = true;
         }
-        private void Root_MouseEnter(object sender, MouseEventArgs e)
-        {
-            Mouse.OverrideCursor = AppCursors.CrosshairCursor;
-        }
-        private void Root_MouseLeave(object sender, MouseEventArgs e)
-        {
-            Mouse.OverrideCursor = null;
-        }
-        private void TabControl_MouseEnter(object sender, MouseEventArgs e)
-        {
-            Mouse.OverrideCursor = null;
-        }
+       
         private void BackgroundCanvas_SizeChanged(object sender, SizeChangedEventArgs e)
         {
             FitPageToView();

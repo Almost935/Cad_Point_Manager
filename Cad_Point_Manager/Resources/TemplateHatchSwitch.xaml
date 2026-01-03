@@ -1,0 +1,147 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <DrawingBrush x:Key="TitleBlockHatchStripBrush"
+                  Stretch="Fill"
+                  Viewbox="0,0,6,0.25"
+                  ViewboxUnits="Absolute">
+        <DrawingBrush.Drawing>
+            <DrawingGroup>
+                <!-- Vertical Divider -->
+                <GeometryDrawing Brush="{x:Null}">
+                    <GeometryDrawing.Pen>
+                        <Pen Brush="Black"
+                             Thickness="0.01" />
+                    </GeometryDrawing.Pen>
+                    <GeometryDrawing.Geometry>
+                        <GeometryGroup>
+                            <LineGeometry StartPoint="0,0.125"
+                                          EndPoint="6,0.125" />
+                        </GeometryGroup>
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+
+                <!-- Vertical segmentation lines -->
+                <GeometryDrawing Brush="{x:Null}">
+                    <GeometryDrawing.Pen>
+                        <Pen Brush="Black"
+                             Thickness="0.01" />
+                    </GeometryDrawing.Pen>
+                    <GeometryDrawing.Geometry>
+                        <GeometryGroup>
+                            <!-- Add/remove/move these to match your template -->
+                            <LineGeometry StartPoint="0.336,0"
+                                          EndPoint="0.336,0.25" />
+                            <LineGeometry StartPoint="0.336,0"
+                                          EndPoint="0.336,0.25" />
+                            <LineGeometry StartPoint="0.336,0"
+                                          EndPoint="0.336,0.25" />
+                            <LineGeometry StartPoint="0.336,0"
+                                          EndPoint="0.336,0.25" />
+                            <LineGeometry StartPoint="0.336,0"
+                                          EndPoint="0.336,0.25" />
+                            <LineGeometry StartPoint="0.336,0"
+                                          EndPoint="0.336,0.25" />
+                            <LineGeometry StartPoint="0.336,0"
+                                          EndPoint="0.336,0.25" />
+                            <LineGeometry StartPoint="0.336,0"
+                                          EndPoint="0.336,0.25" />
+                        </GeometryGroup>
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+
+                <!-- Filled "dark" blocks (alternating like the screenshot) -->
+                <GeometryDrawing Brush="Black"
+                                 Pen="{x:Null}">
+                    <GeometryDrawing.Geometry>
+                        <GeometryGroup>
+                            <!--Top row blocks-->
+                            <RectangleGeometry Rect="0,0,0.336,0.125" />
+                            <RectangleGeometry Rect="0.672,0,0.336,0.125" />
+                            <RectangleGeometry Rect="1.631,0,0.623,0.125" />
+                            <RectangleGeometry Rect="2.877,0,0.623,0.125" />
+                            <RectangleGeometry Rect="4.75,0,1.25,0.125" />
+
+                            <!--Bottom row blocks-->
+                            <RectangleGeometry Rect="0.336,0.125,0.336,0.125" />
+                            <RectangleGeometry Rect="1.008,0.125,0.623,0.125" />
+                            <RectangleGeometry Rect="2.254,0.125,0.623,0.125" />
+                            <RectangleGeometry Rect="3.5,0.125,1.25,0.125" />
+                        </GeometryGroup>
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+            </DrawingGroup>
+        </DrawingBrush.Drawing>
+    </DrawingBrush>
+
+    <DrawingImage x:Key="TitleBlockHatchStripImage">
+        <DrawingImage.Drawing>
+            <DrawingGroup>
+                <!-- Vertical Divider -->
+                <GeometryDrawing Brush="{x:Null}">
+                    <GeometryDrawing.Pen>
+                        <Pen Brush="Red"
+                             Thickness="0.01" />
+                    </GeometryDrawing.Pen>
+                    <GeometryDrawing.Geometry>
+                        <GeometryGroup>
+                            <LineGeometry StartPoint="0,0.125"
+                                          EndPoint="6,0.125" />
+                        </GeometryGroup>
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+
+                <!-- Vertical segmentation lines -->
+                <GeometryDrawing Brush="{x:Null}">
+                    <GeometryDrawing.Pen>
+                        <Pen Brush="Black"
+                             Thickness="0.01" />
+                    </GeometryDrawing.Pen>
+                    <GeometryDrawing.Geometry>
+                        <GeometryGroup>
+                            <!-- Add/remove/move these to match your template -->
+                            <LineGeometry StartPoint="0.336,0"
+                                          EndPoint="0.336,0.25" />
+                            <LineGeometry StartPoint="0.336,0"
+                                          EndPoint="0.336,0.25" />
+                            <LineGeometry StartPoint="0.336,0"
+                                          EndPoint="0.336,0.25" />
+                            <LineGeometry StartPoint="0.336,0"
+                                          EndPoint="0.336,0.25" />
+                            <LineGeometry StartPoint="0.336,0"
+                                          EndPoint="0.336,0.25" />
+                            <LineGeometry StartPoint="0.336,0"
+                                          EndPoint="0.336,0.25" />
+                            <LineGeometry StartPoint="0.336,0"
+                                          EndPoint="0.336,0.25" />
+                            <LineGeometry StartPoint="0.336,0"
+                                          EndPoint="0.336,0.25" />
+                        </GeometryGroup>
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+
+                <!-- Filled "dark" blocks (alternating like the screenshot) -->
+                <GeometryDrawing Brush="#FF6F6F6F"
+                                 Pen="{x:Null}">
+                    <GeometryDrawing.Geometry>
+                        <GeometryGroup>
+                            <!--Top row blocks-->
+                            <RectangleGeometry Rect="0,0,0.336,0.125" />
+                            <RectangleGeometry Rect="0.672,0,0.336,0.125" />
+                            <RectangleGeometry Rect="1.631,0,0.623,0.125" />
+                            <RectangleGeometry Rect="2.877,0,0.623,0.125" />
+                            <RectangleGeometry Rect="4.75,0,1.25,0.125" />
+
+                            <!--Bottom row blocks-->
+                            <RectangleGeometry Rect="0.336,0.125,0.336,0.125" />
+                            <RectangleGeometry Rect="1.008,0.125,0.623,0.125" />
+                            <RectangleGeometry Rect="2.254,0.125,0.623,0.125" />
+                            <RectangleGeometry Rect="3.5,0.125,1.25,0.125" />
+                        </GeometryGroup>
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+
+
+            </DrawingGroup>
+        </DrawingImage.Drawing>
+    </DrawingImage>
+</ResourceDictionary>

@@ -26,7 +26,7 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
         #endregion
 
         #region Methods
-        public void SetObjectSelected(DrawingObject3D obj, bool selected)
+        public void SetObjectSelected(DrawingObject obj, bool selected)
         {
             if (!_ids.TryGetObjectId(obj, out var oId)) { return; }
             ref var s = ref _bufs.ObjectSpan[(int)oId];
@@ -34,7 +34,7 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
             else { s.Flags &= ~(uint)ObjectFlags.Selected; }
             _dirtyObjects.Add(oId);
         }
-        public void SetObjectMouseOver(DrawingObject3D obj, bool mouseOver)
+        public void SetObjectMouseOver(DrawingObject obj, bool mouseOver)
         {
             if (!_ids.TryGetObjectId(obj, out var oId)) { return; }
             ref var s = ref _bufs.ObjectSpan[(int)oId];
@@ -43,14 +43,14 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
             _dirtyObjects.Add(oId);
         }
 
-        public void SetLayerVisibility(ObjectLayer3D layer, bool visible)
+        public void SetLayerVisibility(ObjectLayer layer, bool visible)
         {
             if (!_ids.TryGetLayerId(layer, out var lid)) { return; }
             ref var ls = ref _bufs.LayerSpan[(int)lid];
             if (visible) ls.Flags |= 1u; else ls.Flags &= ~1u;
             _dirtyLayers.Add(lid);
         }
-        public void SetLayerColor(ObjectLayer3D layer, Vector4 color)
+        public void SetLayerColor(ObjectLayer layer, Vector4 color)
         {
             if (!_ids.TryGetLayerId(layer, out var lid)) { return; }
             ref var ls = ref _bufs.LayerSpan[(int)lid];

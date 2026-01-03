@@ -7,7 +7,7 @@ using System.Windows;
 
 namespace Cad_Point_Manager.Models.DrawingObjects3D
 {
-    public class DrawingCircle3D : DrawingCurve3D
+    public class DrawingCircle : DrawingCurve
     {
         #region Fields
         private Circle _dxfCircle => EntityObject as Circle;
@@ -18,7 +18,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         #endregion
 
         #region Constructor
-        public DrawingCircle3D(Circle circle, ObjectLayer3D layer, bool isPartOfBlock = false, DrawingBlock3D block = null)
+        public DrawingCircle(Circle circle, ObjectLayer layer, bool isPartOfBlock = false, DrawingBlock block = null)
         {
             Type = DrawingObject3dType.DrawingCircle3D;
             Layer = layer;

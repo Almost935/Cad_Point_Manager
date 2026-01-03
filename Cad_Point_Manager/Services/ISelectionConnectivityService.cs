@@ -4,6 +4,6 @@ namespace Cad_Point_Manager.Services
 {
     public interface ISelectionConnectivityService
     {
-        List<ChainPath> BuildChainsFromSelection(IEnumerable<DrawingObject3D> selected, double eps);
+        List<ChainPath> BuildChainsFromSelection(IEnumerable<DrawingObject> selected, double eps);
     }
 }

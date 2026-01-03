@@ -6,7 +6,7 @@ using System.Runtime.CompilerServices;
 
 namespace Cad_Point_Manager.Models.DrawingObjects3D
 {
-    public class ObjectLayer3D : INotifyPropertyChanged
+    public class ObjectLayer : INotifyPropertyChanged
     {
         #region Fields
         private bool _isVisible = true;
@@ -16,8 +16,8 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         #region Properties
         public string Name { get; set; }
         public Layer DxfLayer { get; set; }
-        public BatchableObservableCollection<DrawingObject3D> DrawingObject3Ds { get; set; } = [];
-        public List<DrawingSText3D> DrawingText3Ds { get; set; } = [];
+        public BatchableObservableCollection<DrawingObject> DrawingObject3Ds { get; set; } = [];
+        public List<DrawingSText> DrawingText3Ds { get; set; } = [];
 
         public bool IsVisible
         {
@@ -40,9 +40,9 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         #endregion
 
         #region Constructors
-        private ObjectLayer3D() { }
+        private ObjectLayer() { }
 
-        public ObjectLayer3D(Layer layer)
+        public ObjectLayer(Layer layer)
         {
             Name = layer.Name;
             Color = new(layer.Color.R / 255.0f, layer.Color.G / 255.0f, layer.Color.B / 255.0f, 1);
@@ -55,21 +55,21 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         #endregion
 
         #region Methods
-        public void AddDrawingObject(DrawingObject3D drawingObject3D)
+        public void AddDrawingObject(DrawingObject drawingObject3D)
         {
             DrawingObject3Ds.Add(drawingObject3D);
 
-            if (drawingObject3D is DrawingBlock3D block)
+            if (drawingObject3D is DrawingBlock block)
             {
                 foreach (var obj in block.DrawingObjects)
                 {
-                    if (obj is DrawingSText3D drawingText)
+                    if (obj is DrawingSText drawingText)
                     {
                         DrawingText3Ds.Add(drawingText);
                     }
                 }
             }
-            if (drawingObject3D is DrawingSText3D text)
+            if (drawingObject3D is DrawingSText text)
             {
                 DrawingText3Ds.Add(text);
             }

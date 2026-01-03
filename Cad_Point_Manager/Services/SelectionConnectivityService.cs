@@ -8,7 +8,7 @@ namespace Cad_Point_Manager.Services
     /// </summary>
     public sealed class SelectionConnectivityService : ISelectionConnectivityService
     {
-        public List<ChainPath> BuildChainsFromSelection(IEnumerable<DrawingObject3D> selected, double eps)
+        public List<ChainPath> BuildChainsFromSelection(IEnumerable<DrawingObject> selected, double eps)
         {
             var inputs = new List<EdgeInput>();
             var circleChains = new List<ChainPath>();
@@ -17,13 +17,13 @@ namespace Cad_Point_Manager.Services
             {
                 switch (obj)
                 {
-                    case DrawingLine3D ln:
+                    case DrawingLine ln:
                         {
                             inputs.Add(new EdgeInput(ToPt(ln.Start), ToPt(ln.End), SegmentKind.Line));
                             break;
                         }
 
-                    case DrawingArc3D arc:
+                    case DrawingArc arc:
                         {
                             var a = ToPt(arc.Start);
                             var b = ToPt(arc.End);
@@ -44,7 +44,7 @@ namespace Cad_Point_Manager.Services
                             break;
                         }
 
-                    case DrawingCircle3D circle:
+                    case DrawingCircle circle:
                         {
                             var c = ToPt(circle.RadiusPoint);
                             double r = circle.Radius;
@@ -61,19 +61,19 @@ namespace Cad_Point_Manager.Services
                             break;
                         }
 
-                    case DrawingPolyline3D polyline:
+                    case DrawingPolyline polyline:
                         {
                             foreach (var seg in polyline.DrawingSegments)
                             {
                                 switch (seg)
                                 {
-                                    case DrawingLine3D lineSeg:
+                                    case DrawingLine lineSeg:
                                         {
                                             inputs.Add(new EdgeInput(ToPt(lineSeg.Start), ToPt(lineSeg.End), SegmentKind.Line));
                                             break;
                                         }
 
-                                    case DrawingArc3D arcSeg:
+                                    case DrawingArc arcSeg:
                                         {
                                             var a = ToPt(arcSeg.Start);
                                             var b = ToPt(arcSeg.End);

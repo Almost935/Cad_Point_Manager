@@ -1,7 +1,7 @@
 ﻿using SharpDX;
 using SharpDX.Mathematics.Interop;
 
-namespace Cad_Point_Manager.Models.DrawingObjects3D
+namespace Cad_Point_Manager.Helpers
 {
     public static class RawMatrix3x2Helpers
     {
