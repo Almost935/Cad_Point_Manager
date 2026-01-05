@@ -330,7 +330,7 @@ namespace Cad_Point_Manager.Models
             }
         }
 
-        private void UpdatePointExtents()
+        public void UpdatePointExtents()
         {
             if (PointGroups == null || PointGroups.Count == 0) { Extents = Rect.Empty; }
 

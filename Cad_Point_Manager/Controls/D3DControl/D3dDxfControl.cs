@@ -469,13 +469,13 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             if (CadManager3D.Camera is null)
             {
-                UpdateInitialMatrix();
+                SetInitialMatrix();
                 CadManager3D.Camera = new(Viewport, GlobalHelperProperties.ZoomFactor, new Rect(0, 0, Viewport.Width, Viewport.Height));
                 CadManager3D.ResetTemplates();
             }
             if (DxfNeedsReload)
             {
-                UpdateInitialMatrix();
+                SetInitialMatrix();
                 CadManager3D.Camera.ResetView(_dxfInitialMatrix, CadManager3D.Extents);
                 CadManager3D.ResetTemplates();
 
@@ -912,6 +912,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     p.UpdateBounds();
                 }
             }
+
+            CadManager3D.CogoPointManager.UpdateCogoPointTree();
+            CadManager3D.UpdateExtents();
+            UpdateInitialMatrix();
+            CadManager3D.LineVerticesDirty = true;
 
             _stateBufs.FlushAll();
             CogoPointTreeDirty = true;
@@ -1825,11 +1830,12 @@ namespace Cad_Point_Manager.Controls.D3DControl
             return new Rect(originWorld.X, y, widthWorld, height);
         }
 
-        private void UpdateInitialMatrix()
+        private void SetInitialMatrix()
         {
             if (!CadManager3D.DxfLoaded) { _dxfInitialMatrix = Matrix.Identity; }
             else
             {
+                CadManager3D.UpdateExtents();
                 _dxfInitialMatrix = GetExtentsFittingMatrix(Viewport, CadManager3D.Extents);
 
                 if (CadManager3D.Camera is not null)
@@ -1840,6 +1846,14 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     ConstantBuffersDirty = true;
                 }
             }
+        }
+        private void UpdateInitialMatrix()
+        {
+            if (CadManager3D is null || !CadManager3D.DxfLoaded || CadManager3D.Camera is null) { return; }
+
+            CadManager3D.UpdateExtents();
+            _dxfInitialMatrix = GetExtentsFittingMatrix(Viewport, CadManager3D.Extents);
+            ConstantBuffersDirty = true;
         }
         private Matrix GetExtentsFittingMatrix(ViewportF viewport, Rect extents)
         {
@@ -2187,7 +2201,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             Viewport = new(0, 0, (float)ActualWidth, (float)ActualHeight);
             CadManager3D.ViewportSize = new((float)ActualWidth, (float)ActualHeight);
 
-            UpdateInitialMatrix();
+            SetInitialMatrix();
 
             if (CadManager3D.Camera is not null)
             {
@@ -3227,8 +3241,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
                     layer.PropertyChanged -= Layer_PropertyChanged;
                     layer.PropertyChanged += Layer_PropertyChanged;
-                    layer.DrawingObject3Ds.CollectionChanged -= DrawingObject3Ds_CollectionChanged;
-                    layer.DrawingObject3Ds.CollectionChanged += DrawingObject3Ds_CollectionChanged;
+                    layer.DrawingObjects.CollectionChanged -= DrawingObject3Ds_CollectionChanged;
+                    layer.DrawingObjects.CollectionChanged += DrawingObject3Ds_CollectionChanged;
 
                     var lid = _ids.GetOrAddLayerId(layer);
                     _stateBufs.InitializeLayerState(_ids.LayerCount, layer, lid);
@@ -3242,7 +3256,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     if (layer is null) { continue; }
 
                     layer.PropertyChanged -= Layer_PropertyChanged;
-                    layer.DrawingObject3Ds.CollectionChanged -= DrawingObject3Ds_CollectionChanged;
+                    layer.DrawingObjects.CollectionChanged -= DrawingObject3Ds_CollectionChanged;
                 }
             }
         }
@@ -3350,6 +3364,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     _stateCtl.SetPointOffset(cp, cp.Position.ToSharpDXVector2());
                     _stateCtl.FlushPointUpdates();
                     RecomputeCogoPointBoundsFast(cp);
+                    UpdateInitialMatrix();
                     _pointCircleVerticesDirty = true; _dxfDirty = true; _interactiveDirty = true;
                 }
             }
@@ -3406,7 +3421,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 // ALSO update the control Viewport property (your UpdateConstantBuffers uses Viewport.Width/Height)
                 Viewport = new ViewportF(0, 0, target.PixelWidth, target.PixelHeight);
 
-                // Set camera to square
                 CadManager3D.Camera.InitialViewMatrix = GetExtentsFittingMatrix(Viewport, CadManager3D.Extents);
                 CadManager3D.Camera.UpdateViewportSize(Viewport);
                 UpdateConstantBuffers();

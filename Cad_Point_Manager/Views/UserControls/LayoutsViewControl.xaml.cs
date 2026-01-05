@@ -19,15 +19,16 @@ namespace Cad_Point_Manager.Views.UserControls
     public partial class LayoutsViewControl : UserControl, INotifyPropertyChanged
     {
         #region Fields
-        private Point _panStartMouse;     // mouse position when pan started (in container coords)
-        private Matrix _panStartMatrix;   // matrix at pan start
-        private bool _panning;
-
-        private bool _didInitialFit;
-
         private const double ZoomStep = 1.25;
         private const double MinScale = 0.005;
         private const double MaxScale = 500.0;
+
+        private Point _panStartMouse;     // mouse position when pan started (in container coords)
+        private Matrix _panStartMatrix;   // matrix at pan start
+        private bool _panning;
+        private bool _didInitialFit;
+
+        private Matrix _initialMatrix;
         #endregion
 
         #region Properties
@@ -92,7 +93,6 @@ namespace Cad_Point_Manager.Views.UserControls
         #endregion
 
         #region Methods
-        // Layout related methods
         public void ReloadPreview()
         {
             LayoutPreviewControl.RebuildAsync();
@@ -294,9 +294,15 @@ namespace Cad_Point_Manager.Views.UserControls
             m.Scale(s, s);
             m.Translate(tx, ty);
 
+            _initialMatrix = m;
             transform.Matrix = m;
 
             _didInitialFit = true;
+        }
+
+        public void ResetView()
+        {
+            transform.Matrix = _initialMatrix;
         }
         #endregion
 

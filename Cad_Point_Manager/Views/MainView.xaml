@@ -465,7 +465,7 @@
                                    ActivePointGroup="{Binding ActivePointGroup}" />
             </Grid>
             <Grid x:Name="dxfGrid"
-                  SizeChanged="dxfGrid_SizeChanged"
+                  SizeChanged="DxfGrid_SizeChanged"
                   ClipToBounds="True"
                   Grid.Row="2">
                 <Grid.Margin>

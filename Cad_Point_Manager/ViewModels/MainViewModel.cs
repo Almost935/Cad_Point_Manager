@@ -418,6 +418,7 @@ namespace Cad_Point_Manager.ViewModels
 
         #region Events
         public event EventHandler? ResetSelectionRequested;
+        public event EventHandler? ResetLayoutsViewRequested;
         #endregion
 
         #region Constructors
@@ -495,7 +496,15 @@ namespace Cad_Point_Manager.ViewModels
 
         public void ZoomToExtents(RoutedEventArgs e)
         {
-            JobFileManager.CadManager3D?.ZoomToExtents();
+            if (LayoutsVisible) 
+            {
+                ResetLayoutsViewRequested?.Invoke(this, EventArgs.Empty);
+                return;
+            }
+            if (ModelsVisible)
+            {
+                JobFileManager.CadManager3D?.ZoomToExtents();
+            }
         }
 
         private void OnSnapTogglePressed(object param)

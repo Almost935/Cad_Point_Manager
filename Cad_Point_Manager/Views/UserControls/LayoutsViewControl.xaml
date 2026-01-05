@@ -6,7 +6,6 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:local="clr-namespace:Cad_Point_Manager.Views.UserControls"
              xmlns:controls="clr-namespace:Cad_Point_Manager.Controls"
-             xmlns:uc="clr-namespace:Cad_Point_Manager.Views.UserControls"
              xmlns:ui="clr-namespace:ModernWpf;assembly=ModernWpf"
              xmlns:fa="clr-namespace:FontAwesome.WPF;assembly=FontAwesome.WPF"
              xmlns:viewsAssorted="clr-namespace:Cad_Point_Manager.Views.Assorted"
@@ -218,29 +217,30 @@
                 Grid.Column="1"
                 SizeChanged="BackgroundCanvas_SizeChanged"
                 ClipToBounds="False">
-            <Border x:Name="PageHost"
+            <Canvas x:Name="PageHost"
                     Background="White"
                     Width="{Binding ActiveLayout.PageSize.Width}"
                     Height="{Binding ActiveLayout.PageSize.Height}">
-                <Border.RenderTransform>
+                <Canvas.RenderTransform>
                     <MatrixTransform x:Name="transform" />
-                </Border.RenderTransform>
+                </Canvas.RenderTransform>
+                <local:BaseTitleblock x:Name="Titleblock"
+                                      HorizontalAlignment="Stretch"
+                                      VerticalAlignment="Stretch" 
+                                      Panel.ZIndex="1"/>
                 <Border x:Name="viewportBorder"
-                        Width="{Binding ActiveLayout.Viewport.LocalRectIn.Width}"
-                        Height="{Binding ActiveLayout.Viewport.LocalRectIn.Height}"
-                        Canvas.Left="{Binding ActiveLayout.Viewport.LocalRectIn.Left}"
-                        Canvas.Top="{Binding ActiveLayout.Viewport.LocalRectIn.Top}"
-                        BorderThickness="0.03"
-                        BorderBrush="Black"
-                        Background="Black">
-                    <uc:LayoutPreviewControl x:Name="LayoutPreviewControl"
-                                             Renderer="{Binding Renderer}"
-                                             Layout="{Binding ActiveLayout}"
-                                             Scenes="{Binding Scenes}"
-                                             ViewportWidth="{Binding ElementName=viewportBorder, Path=ActualWidth}"
-                                             ViewportHeight="{Binding ElementName=viewportBorder, Path=ActualHeight}"/>
+                        Width="{Binding ElementName=Titleblock, Path=ViewportWidth}"
+                        Height="{Binding ElementName=Titleblock, Path=ViewportHeight}"
+                        Canvas.Left="{Binding ElementName=Titleblock, Path=ViewportLeft}"
+                        Canvas.Top="{Binding ElementName=Titleblock, Path=ViewportTop}">
+                    <local:LayoutPreviewControl x:Name="LayoutPreviewControl"
+                                                Renderer="{Binding Renderer}"
+                                                Layout="{Binding ActiveLayout}"
+                                                Scenes="{Binding Scenes}"
+                                                ViewportWidth="{Binding ElementName=Titleblock, Path=ViewportWidth}"
+                                                ViewportHeight="{Binding ElementName=Titleblock, Path=ViewportHeight}" />
                 </Border>
-            </Border>
+            </Canvas>
         </Canvas>
     </Grid>
 </UserControl>

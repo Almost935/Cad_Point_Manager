@@ -80,7 +80,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public Matrix ViewProjectionMatrix { get; private set; } = Matrix.Identity;
         public Matrix InverseViewProjectionMatrix { get; private set; } = Matrix.Identity;
         public ViewportF Viewport { get; set; }
-        //public RectangleF InitialViewportBounds { get; set; } = RectangleF.Empty;
         public Vector2 Translate { get; set; } = Vector2.Zero;
         public int CurrentZoomStep { get; set; } = 0;
         public float CurrentZoom => (float)Math.Pow(_zoomFactor, CurrentZoomStep);
@@ -95,11 +94,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             Viewport = viewport;
             _zoomFactor = zoomFactor;
             Extents = extents;
-            //InitialViewportBounds = new(
-            //    Extents.Center().X.ToFloat() - viewport.Width / 2,
-            //    Extents.Center().Y.ToFloat() - viewport.Height / 2,
-            //    viewport.Width,
-            //    viewport.Height);
 
             OverviewScene = new Scene() { Name = "Default", ZoomStep = 0, Translation = Vector2.Zero, Bounds = GetCurrentViewportBounds() };
             Scenes.Add(OverviewScene);
@@ -132,45 +126,19 @@ namespace Cad_Point_Manager.Controls.D3DControl
             ProjectionMatrix = Matrix.OrthoOffCenterLH(basePoint.X - scaledViewWidth / 2, basePoint.X + scaledViewWidth / 2, basePoint.Y - scaledViewHeight / 2, basePoint.Y + scaledViewHeight / 2, 0.0f, 1000f);
         }
 
-        //public void UpdateProjection()
-        //{
-        //    if (!HasValidViewport)
-        //    {
-        //        ProjectionMatrix = Matrix.Identity;
-        //        return;
-        //    }
-
-        //    var c = Extents.Center();
-        //    float zoom = CurrentZoom;
-
-        //    float worldW = Viewport.Width / zoom;
-        //    float worldH = Viewport.Height / zoom;
-
-        //    ProjectionMatrix = Matrix.OrthoOffCenterLH(
-        //        c.X.ToFloat() - worldW / 2, c.X.ToFloat() + worldW / 2,
-        //        c.Y.ToFloat() - worldH / 2, c.Y.ToFloat() + worldH / 2,
-        //        0.0f, 1000f);
-        //}
-
-
-
-        public void ResetView(Matrix newInitialView, Rect newExtents)
+        public void UpdateInitialView(Matrix newInitialView, Rect newExtents)
         {
-            ZeroViews();
-
             Extents = newExtents;
             InitialViewMatrix = newInitialView;
             UpdateProjection();
             UpdateViewProjection();
-
-            //var width = Viewport.Width / D2dMatrix.M11;
-            //var height = Viewport.Height / Math.Abs(D2dMatrix.M22);
-            //InitialViewportBounds = new(
-            //    Extents.Center().X.ToFloat() - width / 2,
-            //    Extents.Center().Y.ToFloat() - height / 2,
-            //    width,
-            //    height);
             UpdateDefaultScene();
+        }
+
+        public void ResetView(Matrix newInitialView, Rect newExtents)
+        {
+            ZeroViews();
+            UpdateInitialView(newInitialView, newExtents);
         }
         public void ZeroViews()
         {
@@ -532,7 +500,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             return new RectangleF(minX, minY, maxX - minX, maxY - minY);
         }
-        private void UpdateDefaultScene()
+        public void UpdateDefaultScene()
         {
             var defaultScene = Scenes.FirstOrDefault(s => s.Name == "Default");
             if (defaultScene != null)

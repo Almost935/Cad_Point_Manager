@@ -26,7 +26,6 @@ namespace Cad_Point_Manager.Views
                     vm.ResetSelectionRequested += Vm_ResetSelectionRequested;
                 }
             };
-
             Unloaded += (s, e) =>
             {
                 if (DataContext is MainViewModel vm)
@@ -35,6 +34,26 @@ namespace Cad_Point_Manager.Views
                     vm.ResetSelectionRequested -= Vm_ResetSelectionRequested;
                 }
             };
+
+            Loaded += (_, __) =>
+            {
+                if (DataContext is MainViewModel vm)
+                {
+                    vm.ResetLayoutsViewRequested += OnResetLayoutsView;
+                }
+            };
+            Unloaded += (_, __) =>
+            {
+                if (DataContext is MainViewModel vm)
+                {
+                    vm.ResetLayoutsViewRequested -= OnResetLayoutsView;
+                }
+            };
+        }
+
+        private void OnResetLayoutsView(object? sender, EventArgs e)
+        {
+            LayoutsViewControl.ResetView();
         }
 
         private void Vm_ResetSelectionRequested(object? sender, EventArgs e)
@@ -43,7 +62,7 @@ namespace Cad_Point_Manager.Views
             d3dDxfControl?.ResetSelectedObjects();
         }
 
-        private void dxfGrid_SizeChanged(object sender, SizeChangedEventArgs e)
+        private void DxfGrid_SizeChanged(object sender, SizeChangedEventArgs e)
         {
             if (DataContext is MainViewModel mainViewModel)
             {

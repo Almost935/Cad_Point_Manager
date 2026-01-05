@@ -289,7 +289,6 @@ namespace Cad_Point_Manager.Models
 
             // Testing
             GetTestDxfPoints();
-            CogoPointManager.UpdateCogoPointTree();
 
             foreach (var e in DxfDocument.Entities.All)
             {
@@ -312,6 +311,13 @@ namespace Cad_Point_Manager.Models
             CogoPointCircleVerticesDirty = true;
             HitTestableObjectTreeDirty = true;
             DxfNeedsReload = true;
+        }
+
+        public void UpdateExtents()
+        {
+            var dxfExtents = DxfHelpers.GetBoundsFromHeader(DxfDocument);
+            var pointsExtents = CogoPointManager.Extents;
+            Extents = Rect.Union(dxfExtents, pointsExtents);
         }
 
         public void ResetTemplates()
@@ -534,7 +540,7 @@ namespace Cad_Point_Manager.Models
                     var layer = keyValuePair.Value;
                     var lId = sceneIdMap.GetOrAddLayerId(layer);
 
-                    foreach (var obj in layer.DrawingObject3Ds)
+                    foreach (var obj in layer.DrawingObjects)
                     {
                         var objectId = sceneIdMap.GetOrAddObjectId(obj);
 
@@ -555,11 +561,18 @@ namespace Cad_Point_Manager.Models
                         }
                     }
                 }
-
+                
                 LineVerticesDirty = false;
 
-                //// For Testing
-                //AddObjectTreeNodeLayoutVertices();
+                // For Testing
+                var tl = new LineVertex(new Vector3((float)Extents.Left, (float)Extents.Top, 0), 0, 0);
+                var tr = new LineVertex(new Vector3((float)Extents.Right, (float)Extents.Top, 0), 0, 0);
+                var bl = new LineVertex(new Vector3((float)Extents.Left, (float)Extents.Bottom, 0), 0, 0);
+                var br = new LineVertex(new Vector3((float)Extents.Right, (float)Extents.Bottom, 0), 0, 0);
+                _cachedLineVertices.Add(tl); _cachedLineVertices.Add(tr); 
+                _cachedLineVertices.Add(bl); _cachedLineVertices.Add(br);
+                _cachedLineVertices.Add(br); _cachedLineVertices.Add(tr);
+                _cachedLineVertices.Add(bl); _cachedLineVertices.Add(tl);
             }
             return CollectionsMarshal.AsSpan(_cachedLineVertices);
         }
@@ -579,7 +592,7 @@ namespace Cad_Point_Manager.Models
                     var lid = sceneIdMap.GetOrAddLayerId(layer);
                     if (!layer.IsVisible) continue;
 
-                    foreach (var obj in layer.DrawingObject3Ds)
+                    foreach (var obj in layer.DrawingObjects)
                     {
                         var objectId = sceneIdMap.GetOrAddObjectId(obj);
                         int start = _cachedTextVertices.Count;
@@ -633,10 +646,11 @@ namespace Cad_Point_Manager.Models
         {
             CogoPointManager.PointGroups.Clear();
 
+            var inflatedExtents = Rect.Inflate(Extents, Extents.Width * 0.1, Extents.Height * 0.1);
             float rows = 15;
             float cols = 15;
-            float yIncrement = (Extents.Height.ToFloat()) / (rows - 1);
-            float xIncrement = (Extents.Width.ToFloat()) / (cols - 1);
+            float yIncrement = (inflatedExtents.Height / (rows - 1)).ToFloat();
+            float xIncrement = (inflatedExtents.Width / (cols - 1)).ToFloat();
             int pointNum = 1;
             float elevation = 0;
             string description = "Test Point";
@@ -650,11 +664,11 @@ namespace Cad_Point_Manager.Models
                     var groupActivated = CogoPointManager.TrySetActivePointGroup(pointGroup);
                     if (!groupActivated) { continue; }
 
-                    float y = Extents.Top.ToFloat() + (yIncrement * i);
+                    float y = inflatedExtents.Top.ToFloat() + (yIncrement * i);
 
                     for (int j = 0; j < cols; j++)
                     {
-                        float x = Extents.Left.ToFloat() + (xIncrement * j);
+                        float x = inflatedExtents.Left.ToFloat() + (xIncrement * j);
                         var pointCreated = CogoPointManager.TryAddPointToActiveGroup(pointNum, new Vector3(x, y, 0), out _, elevation, description);
                         if (pointCreated) { pointNum++; continue; }
                     }

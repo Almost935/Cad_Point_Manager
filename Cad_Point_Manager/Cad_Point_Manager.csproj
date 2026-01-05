@@ -67,6 +67,7 @@
     <None Remove="Controls\D3DControl\Shaders\SigPointShader.hlsl" />
     <None Remove="Controls\D3DControl\Shaders\TestShader.hlsl" />
     <None Remove="Controls\D3DControl\Shaders\TextGlowShader.hlsl" />
+    <None Remove="Resources\Images\IQ Contracting - Logo %28Square%29.jpg" />
   </ItemGroup>
 
   <ItemGroup>
@@ -105,6 +106,12 @@
     <Reference Include="ColorPicker.Models">
       <HintPath>..\..\ColorPicker\src\ColorPicker.Models\bin\Debug\net8.0\ColorPicker.Models.dll</HintPath>
     </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Resources\Images\IQ Contracting - Logo (Square).jpg">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
   </ItemGroup>
 
   <ItemGroup>

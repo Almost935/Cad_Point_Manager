@@ -1,4 +1,5 @@
-﻿<UserControl x:Class="Cad_Point_Manager.Views.UserControls.Test"
+﻿<UserControl x:Class="Cad_Point_Manager.Views.UserControls.BaseTitleblock"
+             x:Name="Root"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -15,17 +16,9 @@
                     Value="Arial" />
         </Style>
     </UserControl.Resources>
-    <Canvas Background="White"
-            Width="36"
-            Height="24"
-            IsHitTestVisible="False">
-        <Border x:Name="ViewportBorder"
-                Canvas.Left="0.5"
-                Canvas.Top="0.5"
-                Width="28.938"
-                Height="23"
-                Background="#33FF0000">
-        </Border>
+    <Canvas  Width="36"
+             Height="24"
+             IsHitTestVisible="False">
         <Rectangle Width="35.125"
                    Height="23.125"
                    Canvas.Left="0.438"
@@ -54,7 +47,7 @@
                 Canvas.Left="29.5"
                 Canvas.Top="0.5"
                 IsHitTestVisible="False">
-            <Image Source="/Resources/Images/IQ Contracting - Logo (Square).jpg" />
+            <Image Source="pack://application:,,,/Resources/Images/IQ Contracting - Logo (Square).jpg" />
         </Border>
         <Border Width="6"
                 Height="0.573"

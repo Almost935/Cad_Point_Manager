@@ -118,15 +118,10 @@ namespace Cad_Point_Manager.Views.UserControls
             if (Layout == null) { return; }
             if (Renderer == null) { return; }
 
-            var vp = Layout.Viewport;
-            Scene scene = vp.Scene;
+            Scene scene = Layout.Viewport.Scene;
 
-            Debug.WriteLine($"ActualWidth: {ActualWidth} ActualHeight: {ActualHeight}");
-            Debug.WriteLine($"Width: {Width} Height: {Height}");
-            Debug.WriteLine($"vp.LocalRectIn.Width: {vp.LocalRectIn.Width} vp.LocalRectIn.Height: {vp.LocalRectIn.Height}");
-
-            int pxW = InchesToPixels(vp.LocalRectIn.Width, PreviewDpi);
-            int pxH = InchesToPixels(vp.LocalRectIn.Height, PreviewDpi);
+            int pxW = InchesToPixels(ViewportWidth, PreviewDpi);
+            int pxH = InchesToPixels(ViewportHeight, PreviewDpi);
 
             if (pxW < 1 || pxH < 1) { return; }
 

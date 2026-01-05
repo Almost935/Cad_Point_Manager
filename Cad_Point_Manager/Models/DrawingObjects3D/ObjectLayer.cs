@@ -16,7 +16,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         #region Properties
         public string Name { get; set; }
         public Layer DxfLayer { get; set; }
-        public BatchableObservableCollection<DrawingObject> DrawingObject3Ds { get; set; } = [];
+        public BatchableObservableCollection<DrawingObject> DrawingObjects { get; set; } = [];
         public List<DrawingSText> DrawingText3Ds { get; set; } = [];
 
         public bool IsVisible
@@ -57,7 +57,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         #region Methods
         public void AddDrawingObject(DrawingObject drawingObject3D)
         {
-            DrawingObject3Ds.Add(drawingObject3D);
+            DrawingObjects.Add(drawingObject3D);
 
             if (drawingObject3D is DrawingBlock block)
             {

@@ -69,7 +69,7 @@ namespace Cad_Point_Manager.Models.HitTesting
         {
             foreach (var keyValue in _cadManager.Layers)
             {
-                HitTestableObjects.AddRange(keyValue.Value.DrawingObject3Ds);
+                HitTestableObjects.AddRange(keyValue.Value.DrawingObjects);
             }
         }
         public List<HitTestableObjectNode> GetIntersectingNodes(Rect view)
