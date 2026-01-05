@@ -463,6 +463,13 @@ namespace Cad_Point_Manager.Controls.D3DControl
         #endregion
 
         #region Methods
+        protected override void OnFrontBufferRestored()
+        {
+            _dxfDirty = true;
+            _interactiveDirty = true;
+            ConstantBuffersDirty = true;
+        }
+
         public override void Render()
         {
             if (_resCache is null) { return; }

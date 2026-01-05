@@ -129,7 +129,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             Disposer.SafeDispose(ref Dx11ImageSource.D3DContext);
         }
 
-        private static void ResetD3D()
+        internal static void ResetD3D()
         {
             if (Dx11ImageSource.ActiveClients == 0)
             {

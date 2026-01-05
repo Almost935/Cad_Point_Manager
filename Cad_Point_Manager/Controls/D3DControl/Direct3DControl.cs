@@ -94,6 +94,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         public abstract void Render();
 
+        protected abstract void OnFrontBufferRestored();
         // - event handler ---------------------------------------------------------------
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
@@ -145,6 +146,17 @@ namespace Cad_Point_Manager.Controls.D3DControl
         {
             if (_d3DSurface.IsFrontBufferAvailable)
             {
+                //StartRendering();
+
+                // 1) Reset the underlying D3D9Ex device used by D3DImage
+                Dx11ImageSource.ResetD3D();
+
+                // 2) Recreate + rebind the shared D3D11 textures and reattach backbuffer
+                CreateAndBindTargets();
+
+                // 3) Optional but strongly recommended: force a redraw so you re-clear to white
+                OnFrontBufferRestored();
+
                 StartRendering();
             }
             else
