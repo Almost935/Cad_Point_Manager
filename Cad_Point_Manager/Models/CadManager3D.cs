@@ -38,7 +38,6 @@ namespace Cad_Point_Manager.Models
         private bool _cogoPointTextVerticesDirty = false;
         private bool _cogoPointCircleVerticesDirty = false;
         private bool _drawingObjectTreeDirty = false;
-        private bool _cogoPointTreeDirty = false;
         private bool _dxfNeedsReload = false;
         private Rect _extents = RectExtensions.Zero;
         private BatchableObservableCollection<KeyValuePair<string, ObjectLayer>> _layers = [];
@@ -113,15 +112,6 @@ namespace Cad_Point_Manager.Models
             {
                 _drawingObjectTreeDirty = value;
                 OnPropertyChanged(nameof(HitTestableObjectTreeDirty));
-            }
-        }
-        public bool CogoPointTreeDirty
-        {
-            get => _cogoPointTreeDirty;
-            set
-            {
-                _cogoPointTreeDirty = value;
-                OnPropertyChanged(nameof(CogoPointTreeDirty));
             }
         }
         public bool DxfNeedsReload
@@ -564,15 +554,15 @@ namespace Cad_Point_Manager.Models
                 
                 LineVerticesDirty = false;
 
-                // For Testing
-                var tl = new LineVertex(new Vector3((float)Extents.Left, (float)Extents.Top, 0), 0, 0);
-                var tr = new LineVertex(new Vector3((float)Extents.Right, (float)Extents.Top, 0), 0, 0);
-                var bl = new LineVertex(new Vector3((float)Extents.Left, (float)Extents.Bottom, 0), 0, 0);
-                var br = new LineVertex(new Vector3((float)Extents.Right, (float)Extents.Bottom, 0), 0, 0);
-                _cachedLineVertices.Add(tl); _cachedLineVertices.Add(tr); 
-                _cachedLineVertices.Add(bl); _cachedLineVertices.Add(br);
-                _cachedLineVertices.Add(br); _cachedLineVertices.Add(tr);
-                _cachedLineVertices.Add(bl); _cachedLineVertices.Add(tl);
+                //// For Testing
+                //var tl = new LineVertex(new Vector3((float)Extents.Left, (float)Extents.Top, 0), 0, 0);
+                //var tr = new LineVertex(new Vector3((float)Extents.Right, (float)Extents.Top, 0), 0, 0);
+                //var bl = new LineVertex(new Vector3((float)Extents.Left, (float)Extents.Bottom, 0), 0, 0);
+                //var br = new LineVertex(new Vector3((float)Extents.Right, (float)Extents.Bottom, 0), 0, 0);
+                //_cachedLineVertices.Add(tl); _cachedLineVertices.Add(tr);
+                //_cachedLineVertices.Add(bl); _cachedLineVertices.Add(br);
+                //_cachedLineVertices.Add(br); _cachedLineVertices.Add(tr);
+                //_cachedLineVertices.Add(bl); _cachedLineVertices.Add(tl);
             }
             return CollectionsMarshal.AsSpan(_cachedLineVertices);
         }
@@ -674,9 +664,6 @@ namespace Cad_Point_Manager.Models
                     }
                 }
             }
-
-            //CogoPointTextVerticesDirty = true;
-            //CogoPointCircleVerticesDirty = true;
         }
 
         public void UpdateHitTestableObjectTree()

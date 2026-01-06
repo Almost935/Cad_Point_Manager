@@ -56,7 +56,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private static readonly Vector4 AnchorPressedColor = new(0.15f, 0.82f, 0.85f, 1.00f);
 
         private bool _dxfDirty = true;
-        private bool _interactiveDirty = true;
+        private bool _combinedDirty = true;
         private Buffer _transformationBuffer;
         private Buffer _viewportBuffer;
 
@@ -254,7 +254,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
         /// Determines if the Direct3D control needs to be redrawn. Occurs when the camera is panned or zoomed.
         /// </summary>
         public bool HitTestableObjectTreeDirty { get; set; }
-        public bool CogoPointTreeDirty { get; set; }
         public bool ConstantBuffersInitialized { get; set; }
         public bool ConstantBuffersDirty { get; set; }
         public ViewportF Viewport { get; set; }
@@ -466,7 +465,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         protected override void OnFrontBufferRestored()
         {
             _dxfDirty = true;
-            _interactiveDirty = true;
+            _combinedDirty = true;
             ConstantBuffersDirty = true;
         }
 
@@ -499,7 +498,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             if (_pointCircleVerticesDirty) { UpdatePointCircleVertices(); }
             if (_hoverVerticesDirty) { UpdateCogoHoverVertices(); }
             if (HitTestableObjectTreeDirty) { LoadHitTestableObjectTree(); }
-            if (CogoPointTreeDirty) { LoadCogoPointTree(); }
             if (_anchorVerticesDirty) { UpdateToggleAnchorVertices(); }
             if (_leaderLineVerticesDirty) { UpdateLeaderLineVertices(); }
             if (_sigPointVerticesDirty) { UpdateSignificantPointVertices(); }
@@ -528,10 +526,10 @@ namespace Cad_Point_Manager.Controls.D3DControl
             {
                 DrawDxf(ctx);
                 _dxfDirty = false;
-                _interactiveDirty = true;
+                _combinedDirty = true;
             }
 
-            if (_interactiveDirty)
+            if (_combinedDirty)
             {
                 // 1) Start from cached base
                 ctx.CopyResource(_resCache.DxfTexture, _resCache.Texture2D);
@@ -545,7 +543,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 if (_anchorVerticesCount > 0) DrawCogoPointAnchors(ctx);
                 if (_sigPointVertexCount > 0) DrawSignificantPoints(ctx);
 
-                _interactiveDirty = false;
+                _combinedDirty = false;
             }
 
         }
@@ -921,12 +919,14 @@ namespace Cad_Point_Manager.Controls.D3DControl
             }
 
             CadManager3D.CogoPointManager.UpdateCogoPointTree();
-            CadManager3D.UpdateExtents();
-            UpdateInitialMatrix();
-            CadManager3D.LineVerticesDirty = true;
+            // If we are at the initial zoom and translation, reset the view to fit the new extents
+            if (CadManager3D.Camera.CurrentZoomStep == 0 && CadManager3D.Camera.Translate == Vector2.Zero)
+            {
+                SetInitialMatrix();
+            }
+            else { UpdateInitialMatrix(); }
 
             _stateBufs.FlushAll();
-            CogoPointTreeDirty = true;
             _glyphVerticesDirty = false;
             _dxfDirty = true;
 
@@ -951,7 +951,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             if (r.IsEmpty || r.Width <= 0 || r.Height <= 0 || !IsDragging)
             {
                 _dragFillVertexCount = 0;
-                _interactiveDirty = true;
+                _combinedDirty = true;
                 return;
             }
 
@@ -987,7 +987,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _dragFillBuffer.Update(_resCache.DeviceContext, fillVerts);
             _dragFillVertexCount = 6;
 
-            _interactiveDirty = true;
+            _combinedDirty = true;
         }
         private void UpdateCogoHoverVertices()
         {
@@ -1052,7 +1052,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _hoverCircleBuffer.Update(ctx, _hoverCircleVertices.ToArray());
 
             _hoverVerticesDirty = false;
-            _interactiveDirty = true;
+            _combinedDirty = true;
         }
         private void UpdateToggleAnchorVertices()
         {
@@ -1085,7 +1085,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _anchorInstanceBuffer.Update(ctx, CollectionsMarshal.AsSpan(inst));
             _anchorVerticesCount = inst.Count;
             _anchorVerticesDirty = false;
-            _interactiveDirty = true;
+            _combinedDirty = true;
         }
         private void UpdateLeaderLineVertices()
         {
@@ -1114,7 +1114,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _leaderLineInstanceCount = list.Count;
             _leaderLineBuffer.Update(_resCache.DeviceContext, CollectionsMarshal.AsSpan(list));
             _leaderLineVerticesDirty = false;
-            _interactiveDirty = true;
+            _combinedDirty = true;
         }
         private void UpdateSignificantPointVertices()
         {
@@ -1135,7 +1135,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _sigPointVertexBuffer.Update(ctx, CollectionsMarshal.AsSpan(vertices));
 
             _sigPointVerticesDirty = false;
-            _interactiveDirty = true;
+            _combinedDirty = true;
         }
 
         private void InitializeLineShaders()
@@ -1725,7 +1725,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             ConstantBuffersDirty = false;
             CadManager3D.Camera.IsDirty = false;
             _dxfDirty = true;
-            _interactiveDirty = true;
+            _combinedDirty = true;
         }
 
         private void AddCogoTextLabelLine(string s, Vector2 originWorld, float duToWorldBase,
@@ -1972,7 +1972,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 {
                     EndDrag();
                     UpdateDragRect();
-                    _interactiveDirty = true;
+                    _combinedDirty = true;
                 }
             }
 
@@ -2015,12 +2015,13 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 RecomputeCogoPointBoundsFast(_pressedToggleButtonPoint);
                 EndCogoToggleButtonPress();
                 CadManager3D.CogoPointManager.UpdateCogoPointTree();
+                UpdateInitialMatrix();
 
                 if (IsMouseCaptured) { ReleaseMouseCapture(); }
-                e.Handled = true;
+                e.Handled = true;                
 
-                _interactiveDirty = true;
-                CogoPointTreeDirty = true;
+                _combinedDirty = true;
+
                 return;
             }
 
@@ -2132,9 +2133,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
             ResetHoverObjects();
 
             if (sigPointsVerticesDirty) { _sigPointVerticesDirty = true; }
-            if (geometryVerticesDirty) { _dxfDirty = true; _interactiveDirty = true; }
+            if (geometryVerticesDirty) { _dxfDirty = true; _combinedDirty = true; }
             if (hoverVerticesDirty) { _hoverVerticesDirty = true; }
-            if (cogoPointVerticesDirty) { _interactiveDirty = true; _dxfDirty = true; }
+            if (cogoPointVerticesDirty) { _combinedDirty = true; _dxfDirty = true; }
 
             _suspendHitTesting = false;
         }
@@ -2171,7 +2172,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 ResetSelectedObjects();
                 EndDrag();
                 _dxfDirty = true;
-                _interactiveDirty = true;
+                _combinedDirty = true;
             }
             if (e.Key == Key.Tab)
             {
@@ -2187,7 +2188,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     DeleteCogoPoints(SelectedCogoPoints.ToList());
                     CompactStateBuffersIfUnder25Pct();
                     _dxfDirty = true;
-                    _interactiveDirty = true;
+                    _combinedDirty = true;
                     e.Handled = true;
                 }
             }
@@ -2265,7 +2266,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             UpdateToggleAnchorBounds(point);
 
-            _interactiveDirty = true;
+            _combinedDirty = true;
             _dxfDirty = true;
         }
         private bool SetCogoPointLabelQuadrant(CogoPoint point, Vector2 offset)
@@ -2329,6 +2330,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             CadManager3D.Camera.ResetView(_dxfInitialMatrix, CadManager3D.Extents);
             ResetHoverObjects();
+            UpdateToggleAnchorDimensions();
             ConstantBuffersDirty = true;
         }
 
@@ -2810,13 +2812,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             CadManager3D.UpdateHitTestableObjectTree();
             HitTestableObjectTreeDirty = false;
         }
-        private void LoadCogoPointTree()
-        {
-            if (CadManager3D is null) { return; }
-
-            CadManager3D.UpdateCogoPointTree();
-            CogoPointTreeDirty = false;
-        }
 
         private void HoverObject(HitTestableObject hitTestableObject)
         {
@@ -2973,7 +2968,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _stateCtl.FlushPointUpdates();
             _stateCtl.FlushObjectUpdates();
             _sigPointVerticesDirty = true;
-            _dxfDirty = _interactiveDirty = true;
+            _dxfDirty = _combinedDirty = true;
         }
 
         private void MouseOverCogoToggleButton(CogoPoint cogoPoint)
@@ -3050,12 +3045,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 CadManager3D.CogoPointManager.DeletePoint(cp);
             }
 
-            // 2) Push the visibility changes to the GPU (subset updates)
             _stateCtl.FlushPointUpdates();
             _stateCtl.FlushLabelUpdates();
 
-            CadManager3D.HitTestableObjectTreeDirty = true;
-            //_pointCircleVerticesDirty = true;
+            CadManager3D.CogoPointManager.UpdateCogoPointTree();
+            UpdateInitialMatrix();
         }
         private void UnbindAllStateSrvs(DeviceContext ctx)
         {
@@ -3158,13 +3152,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 if (CadManager3D.HitTestableObjectTreeDirty)
                 {
                     HitTestableObjectTreeDirty = true;
-                }
-            }
-            if (e.PropertyName == nameof(CadManager3D.CogoPointTreeDirty))
-            {
-                if (CadManager3D.CogoPointTreeDirty)
-                {
-                    CogoPointTreeDirty = true;
                 }
             }
             if (e.PropertyName == nameof(CadManager3D.DxfLoaded) && !CadManager3D.DxfLoaded)
@@ -3315,7 +3302,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     _stateCtl.SetGroupVisibility(pg, pg.IsVisible);
                     _stateCtl.FlushGroupUpdates();
                     _dxfDirty = true;
-                    _interactiveDirty = true;
+                    _combinedDirty = true;
                 }
                 if (e.PropertyName == nameof(PointGroup.Color) || e.PropertyName == nameof(PointGroup.PointScale))
                 {
@@ -3341,11 +3328,13 @@ namespace Cad_Point_Manager.Controls.D3DControl
                             }
                         }
                         if (labelsNeedUpdate) { _stateCtl.FlushLabelUpdates(); }
-                        CogoPointTreeDirty = true;
+
+                        CadManager3D.CogoPointManager.UpdateCogoPointTree();
+                        UpdateInitialMatrix();
                     }
 
                     _dxfDirty = true;
-                    _interactiveDirty = true;
+                    _combinedDirty = true;
                 }
                 if (e.PropertyName == nameof(PointGroup.PointInfoBaseXoffset))
                 {
@@ -3353,7 +3342,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     {
                         UpdateToggleAnchorBounds(point);
                     }
-                    _interactiveDirty = true;
+                    _combinedDirty = true;
                     _dxfDirty = true;
                 }
                 if (e.PropertyName == nameof(PointGroup.Name))
@@ -3371,8 +3360,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     _stateCtl.SetPointOffset(cp, cp.Position.ToSharpDXVector2());
                     _stateCtl.FlushPointUpdates();
                     RecomputeCogoPointBoundsFast(cp);
+
+                    CadManager3D.CogoPointManager.UpdateCogoPointTree();
                     UpdateInitialMatrix();
-                    _pointCircleVerticesDirty = true; _dxfDirty = true; _interactiveDirty = true;
+                 
+                    _pointCircleVerticesDirty = true; _dxfDirty = true; _combinedDirty = true;
                 }
             }
             if (e.PropertyName == nameof(CogoPoint.PointGroup))
@@ -3382,7 +3374,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     _stateCtl.SetPointGroupId(cp, _ids.GetOrAddGroupId(cp.PointGroup));
                     _stateCtl.FlushPointUpdates();
                     RecomputeCogoPointBoundsFast(cp);
-                    _dxfDirty = true; _interactiveDirty = true;
+                    
+                    CadManager3D.CogoPointManager.UpdateCogoPointTree();
+                    UpdateInitialMatrix();
+                    
+                    _dxfDirty = true; _combinedDirty = true;
                 }
             }
             if (e.PropertyName == nameof(CogoPoint.PointNumber) ||
@@ -3434,7 +3430,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 CadManager3D.Camera.LoadScene(scene);
 
                 _dxfDirty = true;
-                _interactiveDirty = true;
+                _combinedDirty = true;
 
                 _resCache.DeviceContext.Rasterizer.SetViewport(Viewport);
 
@@ -3458,7 +3454,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 _resCache.DeviceContext.Rasterizer.SetViewport(oldViewport);
 
                 _dxfDirty = true;
-                _interactiveDirty = true;
+                _combinedDirty = true;
             }
         }
         #endregion

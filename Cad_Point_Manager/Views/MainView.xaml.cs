@@ -22,7 +22,7 @@ namespace Cad_Point_Manager.Views
             {
                 if (DataContext is MainViewModel vm)
                 {
-                    Application.Current.MainWindow.KeyUp += vm.Window_KeyUp;
+                    //Application.Current.MainWindow.KeyUp += vm.Window_KeyUp;
                     vm.ResetSelectionRequested += Vm_ResetSelectionRequested;
                 }
             };
@@ -30,7 +30,7 @@ namespace Cad_Point_Manager.Views
             {
                 if (DataContext is MainViewModel vm)
                 {
-                    Application.Current.MainWindow.KeyUp -= vm.Window_KeyUp;
+                    //Application.Current.MainWindow.KeyUp -= vm.Window_KeyUp;
                     vm.ResetSelectionRequested -= Vm_ResetSelectionRequested;
                 }
             };

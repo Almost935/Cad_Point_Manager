@@ -657,10 +657,10 @@ namespace Cad_Point_Manager.ViewModels
         }
 
         // Key up event handling
-        public void Window_KeyUp(object sender, KeyEventArgs e)
-        {
+        //public void Window_KeyUp(object sender, KeyEventArgs e)
+        //{
 
-        }
+        //}
         #endregion
 
         #region INotifyDataErrorInfo

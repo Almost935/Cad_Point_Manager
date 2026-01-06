@@ -241,6 +241,10 @@
                                                 ViewportHeight="{Binding ElementName=Titleblock, Path=ViewportHeight}" />
                 </Border>
             </Canvas>
+
+            <Canvas x:Name="EditorOverlay"
+                    Panel.ZIndex="999"
+                    IsHitTestVisible="False" />
         </Canvas>
     </Grid>
 </UserControl>

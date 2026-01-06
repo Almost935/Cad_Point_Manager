@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
@@ -18,8 +20,27 @@ namespace Cad_Point_Manager.Views.UserControls
     /// <summary>
     /// Interaction logic for BaseTitleblock.xaml
     /// </summary>
-    public partial class BaseTitleblock : UserControl
+    public partial class BaseTitleblock : UserControl, INotifyPropertyChanged
     {
+        #region Fields
+        private string _notesText = "notes";
+        #endregion
+
+        #region Properties
+        public string NotesText
+        {
+            get => _notesText;
+            set
+            {
+                if (_notesText != value)
+                {
+                    _notesText = value;
+                    OnPropertyChanged(nameof(NotesText));
+                }
+            }
+        }
+        #endregion
+
         #region Dependency Properties
         public static readonly DependencyProperty ViewportWidthProperty =
             DependencyProperty.Register(
@@ -41,8 +62,8 @@ namespace Cad_Point_Manager.Views.UserControls
                 new PropertyMetadata(23.0));
         public double ViewportHeight
         {
-            get => (double)GetValue(ViewportWidthProperty);
-            set => SetValue(ViewportWidthProperty, value);
+            get => (double)GetValue(ViewportHeightProperty);
+            set => SetValue(ViewportHeightProperty, value);
         }
 
         public static readonly DependencyProperty ViewportLeftProperty =
@@ -68,12 +89,32 @@ namespace Cad_Point_Manager.Views.UserControls
             get => (double)GetValue(ViewportTopProperty);
             set => SetValue(ViewportTopProperty, value);
         }
+
+        //public static readonly DependencyProperty ViewportWidthProperty =
+        //    DependencyProperty.Register(
+        //        nameof(ViewportWidth),
+        //        typeof(double),
+        //        typeof(BaseTitleblock),
+        //        new PropertyMetadata(28.9375));
+        //public double ViewportWidth
+        //{
+        //    get => (double)GetValue(ViewportWidthProperty);
+        //    set => SetValue(ViewportWidthProperty, value);
+        //}
         #endregion
 
         #region Constructors
         public BaseTitleblock()
         {
             InitializeComponent();
+        }
+        #endregion
+
+        #region INotifyPropertyChanged Implementation
+        public event PropertyChangedEventHandler PropertyChanged;
+        protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
         #endregion
     }

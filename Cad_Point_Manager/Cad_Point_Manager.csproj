@@ -57,6 +57,7 @@
     <Compile Remove="Models\OffscreenBitmapManager.cs" />
     <Compile Remove="Models\PointRendering\CogoPointTextVerticesDict.cs" />
     <Compile Remove="Services\DxfService.cs" />
+    <Compile Remove="Views\Assorted\InlineEditingHelper.cs" />
     <Compile Remove="Views\UserControls\LayoutControl.xaml.cs" />
     <Compile Remove="Views\UserControls\LayoutsListViewControl.xaml.cs" />
   </ItemGroup>

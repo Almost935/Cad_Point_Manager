@@ -29,6 +29,8 @@ namespace Cad_Point_Manager.Views.UserControls
         private bool _didInitialFit;
 
         private Matrix _initialMatrix;
+
+        private TextBox? _overlayEditor;
         #endregion
 
         #region Properties

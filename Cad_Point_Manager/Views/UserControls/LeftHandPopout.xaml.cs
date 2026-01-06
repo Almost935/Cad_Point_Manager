@@ -428,7 +428,9 @@ namespace Cad_Point_Manager.Views.UserControls
         }
         private void PointsListViewRenamePoint_Click(object sender, RoutedEventArgs e)
         {
+            if (_lastPointsListItem == null) { return; }
 
+            BeginPointsListCellEdit(_lastPointsListItem, "PointNumber");
         }
         private void PointsListViewEditPoint_Click(object sender, RoutedEventArgs e)
         {
@@ -1197,11 +1199,13 @@ namespace Cad_Point_Manager.Views.UserControls
             double scenesGridViewColumnWidth = scenesGridViewTotalWidth / scenesGridView.Columns.Count;
             if (scenesGridViewColumnWidth > 0)
             {
-                scenesGridView.Columns[0].Width = scenesGridViewColumnWidth * 1.0;
-                scenesGridView.Columns[1].Width = scenesGridViewColumnWidth * 1.0;
-                scenesGridView.Columns[2].Width = scenesGridViewColumnWidth * 1.0;
-                scenesGridView.Columns[3].Width = scenesGridViewColumnWidth * 1.0;
-                scenesGridView.Columns[4].Width = scenesGridViewColumnWidth * 1.0;
+                double nameWidthFactor = 1.4;
+                double dimsWidthFactor = (5 -  nameWidthFactor) / (scenesGridView.Columns.Count - 1);
+                scenesGridView.Columns[0].Width = scenesGridViewColumnWidth * nameWidthFactor;
+                scenesGridView.Columns[1].Width = scenesGridViewColumnWidth * dimsWidthFactor;
+                scenesGridView.Columns[2].Width = scenesGridViewColumnWidth * dimsWidthFactor;
+                scenesGridView.Columns[3].Width = scenesGridViewColumnWidth * dimsWidthFactor;
+                scenesGridView.Columns[4].Width = scenesGridViewColumnWidth * dimsWidthFactor;
             }
         }
         private void ScenesListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -1305,7 +1309,9 @@ namespace Cad_Point_Manager.Views.UserControls
         }
         private void ScenesListRenameMenuItem_Click(object sender, RoutedEventArgs e)
         {
+            if (_lastScenesListItem is null) { return; }
 
+            BeginScenesListCellEdit(_lastScenesListItem, "Name");
         }
         private void ScenesListDeleteMenuItem_Click(object sender, RoutedEventArgs e)
         {
