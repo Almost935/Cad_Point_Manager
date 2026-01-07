@@ -97,6 +97,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="Lib\" />
     <Folder Include="Resources\Testing\" />
   </ItemGroup>
 
