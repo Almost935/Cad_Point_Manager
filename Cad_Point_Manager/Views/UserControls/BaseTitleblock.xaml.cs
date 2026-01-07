@@ -22,25 +22,6 @@ namespace Cad_Point_Manager.Views.UserControls
     /// </summary>
     public partial class BaseTitleblock : UserControl, INotifyPropertyChanged
     {
-        #region Fields
-        private string _notesText = "notes";
-        #endregion
-
-        #region Properties
-        public string NotesText
-        {
-            get => _notesText;
-            set
-            {
-                if (_notesText != value)
-                {
-                    _notesText = value;
-                    OnPropertyChanged(nameof(NotesText));
-                }
-            }
-        }
-        #endregion
-
         #region Dependency Properties
         public static readonly DependencyProperty ViewportWidthProperty =
             DependencyProperty.Register(
@@ -88,6 +69,18 @@ namespace Cad_Point_Manager.Views.UserControls
         {
             get => (double)GetValue(ViewportTopProperty);
             set => SetValue(ViewportTopProperty, value);
+        }
+
+        public static readonly DependencyProperty NotesTextProperty =
+           DependencyProperty.Register(
+               nameof(NotesText),
+               typeof(string),
+               typeof(BaseTitleblock),
+               new PropertyMetadata("Notes"));
+        public string NotesText
+        {
+            get => (string)GetValue(NotesTextProperty);
+            set => SetValue(NotesTextProperty, value);
         }
         #endregion
 

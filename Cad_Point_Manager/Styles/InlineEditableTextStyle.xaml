@@ -32,13 +32,6 @@
                                        FontSize="{Binding FontSize, RelativeSource={RelativeSource TemplatedParent}}"
                                        TextWrapping="Wrap"
                                        Cursor="IBeam" />
-
-                            <Border x:Name="Underline"
-                                    BorderBrush="Black"
-                                    BorderThickness="0,0,0,0.02"
-                                    VerticalAlignment="Bottom"
-                                    Opacity="0.35"
-                                    Margin="0,0,0,-0.02" />
                         </Grid>
                     </Border>
 
@@ -48,9 +41,6 @@
                             <Setter TargetName="RootBorder"
                                     Property="Background"
                                     Value="{StaticResource EditableHoverBrush}" />
-                            <Setter TargetName="Underline"
-                                    Property="Opacity"
-                                    Value="0.8" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>

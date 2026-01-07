@@ -226,9 +226,9 @@ namespace Cad_Point_Manager.Views.UserControls
                 if (tabControl.IsMouseOver) { return; }
 
                 _panning = true;
-                _panStartMouse = e.GetPosition((IInputElement)sender);
+                _panStartMouse = e.GetPosition(BackgroundCanvas);
                 _panStartMatrix = ViewMatrix;
-                Mouse.Capture((IInputElement)sender);
+                Mouse.Capture(BackgroundCanvas);
                 e.Handled = true;
             }
         }
@@ -245,7 +245,7 @@ namespace Cad_Point_Manager.Views.UserControls
         {
             if (!_panning) { return; }
 
-            Point cur = e.GetPosition((IInputElement)sender);
+            Point cur = e.GetPosition(BackgroundCanvas);
 
             Vector delta = cur - _panStartMouse;
 

@@ -1,5 +1,6 @@
 ﻿using Cad_Point_Manager.Helpers;
 using Cad_Point_Manager.Views.UserControls;
+using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -37,13 +38,16 @@ namespace Cad_Point_Manager.Controls
             set => SetValue(IsEditingProperty, value);
         }
 
-        public static readonly DependencyProperty ViewMatrixProperty =
-            DependencyProperty.Register(nameof(ViewMatrix), typeof(Matrix), typeof(TemplateInlineEditableTextControl),
-                new PropertyMetadata(Matrix.Identity));
-        public Matrix ViewMatrix
+        public static readonly DependencyProperty ScaleFontWithViewProperty =
+            DependencyProperty.Register(
+                nameof(ScaleFontWithView),
+                typeof(bool),
+                typeof(TemplateInlineEditableTextControl),
+                new PropertyMetadata(true));
+        public bool ScaleFontWithView
         {
-            get => (Matrix)GetValue(ViewMatrixProperty);
-            set => SetValue(ViewMatrixProperty, value);
+            get => (bool)GetValue(ScaleFontWithViewProperty);
+            set => SetValue(ScaleFontWithViewProperty, value);
         }
         #endregion
 
@@ -56,73 +60,66 @@ namespace Cad_Point_Manager.Controls
         #endregion
 
         #region Methods
-        public override void OnApplyTemplate()
+        //public override void OnApplyTemplate()
+        //{
+        //    base.OnApplyTemplate();
+
+        //    // Wire textbox events (template part names must match)
+        //    if (GetTemplateChild("EditView") is TextBox tb)
+        //    {
+        //        tb.LostKeyboardFocus += (_, __) => EndEdit(commit: true);
+        //        tb.PreviewKeyDown += (s, e) =>
+        //        {
+        //            if (e.Key == Key.Enter && (Keyboard.Modifiers & ModifierKeys.Shift) == 0)
+        //            {
+        //                EndEdit(commit: true);
+        //                e.Handled = true;
+        //            }
+        //            else if (e.Key == Key.Escape)
+        //            {
+        //                EndEdit(commit: false);
+        //                e.Handled = true;
+        //            }
+        //        };
+
+        //        MouseDoubleClick += (s, e) =>
+        //        {
+        //            BeginEdit();
+        //            e.Handled = true;
+        //        };
+        //    }
+        //}
+
+        protected override void OnPreviewMouseLeftButtonUp(MouseButtonEventArgs e)
         {
-            base.OnApplyTemplate();
+            Debug.WriteLine($"OnPreviewMouseLeftButtonUp");
+            base.OnPreviewMouseLeftButtonUp(e);
 
-            // Wire textbox events (template part names must match)
-            if (GetTemplateChild("EditView") is TextBox tb)
-            {
-                tb.LostKeyboardFocus += (_, __) => EndEdit(commit: true);
-                tb.PreviewKeyDown += (s, e) =>
-                {
-                    if (e.Key == Key.Enter && (Keyboard.Modifiers & ModifierKeys.Shift) == 0)
-                    {
-                        EndEdit(commit: true);
-                        e.Handled = true;
-                    }
-                    else if (e.Key == Key.Escape)
-                    {
-                        EndEdit(commit: false);
-                        e.Handled = true;
-                    }
-                };
-
-                MouseDoubleClick += (s, e) =>
-                {
-                    BeginEdit();
-                    e.Handled = true;
-                };
-            }
+            BeginEdit();
+            e.Handled = true;
         }
 
         private void BeginEdit()
         {
-            // The element you want to edit (usually the TextBlock area inside the titleblock)
-            var target = this; // or a named element inside your control
+            if (_overlayEditor is not null) { return; }
 
-            var layoutsView = VisualTreeHelpers.FindAncestor<LayoutsViewControl>(target);
-            if (layoutsView == null) { return; }
+            _host = FindAncestor<LayoutsViewControl>(this);
+            if (_host == null) { return; }
 
-            var overlay = layoutsView.EditorOverlay;
-            var background = layoutsView.BackgroundCanvas;
+            _originalText = Text;
 
-            // Get target bounds in BackgroundCanvas coordinates
-            var t = target.TransformToAncestor(background);
-            Rect bounds = t.TransformBounds(new Rect(new Size(target.ActualWidth, target.ActualHeight)));
-            
             _overlayEditor = new TextBox
             {
-                Width = Math.Max(1, bounds.Width),
-                Height = Math.Max(1, bounds.Height),
-                FontFamily = this.FontFamily,
-                FontSize = 12,
-                Padding = new Thickness(2),
                 AcceptsReturn = true,
                 TextWrapping = TextWrapping.Wrap,
                 VerticalContentAlignment = VerticalAlignment.Top,
-                Background = new SolidColorBrush(Color.FromArgb(64, 255, 0, 0)),
+                Padding = new Thickness(0),
+                BorderThickness = new Thickness(0),
+                Background = Brushes.White,
                 Foreground = Brushes.Black
             };
 
-            // Put it on overlay (NOT scaled)
-            Canvas.SetLeft(_overlayEditor, bounds.Left);
-            Canvas.SetTop(_overlayEditor, bounds.Top);
-
-            // Make overlay interactive while editor is active
-            overlay.IsHitTestVisible = true;
-
-            // Bind to same Text DP
+            // Bind overlay editor text to this control
             _overlayEditor.SetBinding(TextBox.TextProperty, new Binding(nameof(Text))
             {
                 Source = this,
@@ -130,26 +127,117 @@ namespace Cad_Point_Manager.Controls
                 UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged
             });
 
-            _overlayEditor.LostFocus += (_, __) => EndEdit(commit: true);
-            _overlayEditor.PreviewKeyDown += (s, e) =>
-            {
-                if (e.Key == Key.Enter && Keyboard.Modifiers == ModifierKeys.None) { EndEdit(true); e.Handled = true; }
-                else if (e.Key == Key.Escape) { EndEdit(false); e.Handled = true; }
-            };
+            _overlayEditor.LostKeyboardFocus += OverlayEditor_LostKeyboardFocus;
+            _overlayEditor.PreviewKeyDown += OverlayEditor_PreviewKeyDown;
 
-            overlay.Children.Add(_overlayEditor);
+            // Add to overlay layer (NOT scaled)
+            _host.EditorOverlay.IsHitTestVisible = true;
+            _host.EditorOverlay.Children.Add(_overlayEditor);
+
+            // Keep in sync with pan/zoom
+            _host.ViewMatrixChanged += Host_ViewMatrixChanged;
+
+            // Initial placement
+            UpdateOverlayEditorRect();
+
             _overlayEditor.Focus();
             _overlayEditor.SelectAll();
         }
 
         private void EndEdit(bool commit)
         {
-            if (!IsEditing) { return; }
+            if (_overlayEditor == null) { return; }
 
             if (!commit && _originalText != null) { Text = _originalText; }
 
-            IsEditing = false;
+            // Unhook from host + remove overlay editor
+            if (_host != null)
+            {
+                _host.ViewMatrixChanged -= Host_ViewMatrixChanged;
+                _host.EditorOverlay.Children.Remove(_overlayEditor);
+                _host.EditorOverlay.IsHitTestVisible = false;
+            }
+
+            _overlayEditor.LostKeyboardFocus -= OverlayEditor_LostKeyboardFocus;
+            _overlayEditor.PreviewKeyDown -= OverlayEditor_PreviewKeyDown;
+
+            _overlayEditor = null;
             _originalText = null;
+            _host = null;
+            _overlayUpdatePending = false;
+        }
+        private void OverlayEditor_LostKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
+        {
+            EndEdit(commit: true);
+        }
+
+        private void OverlayEditor_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Escape)
+            {
+                EndEdit(commit: false);
+                e.Handled = true;
+                return;
+            }
+
+            if (e.Key == Key.Enter && (Keyboard.Modifiers & ModifierKeys.Control) != 0)
+            {
+                EndEdit(commit: true);
+                e.Handled = true;
+                return;
+            }
+        }
+
+        private void Host_ViewMatrixChanged(object? sender, EventArgs e)
+        {
+            // Throttle updates to render priority so panning stays smooth.
+            if (_overlayUpdatePending) { return; }
+
+            _overlayUpdatePending = true;
+
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                _overlayUpdatePending = false;
+                UpdateOverlayEditorRect();
+            }), DispatcherPriority.Render);
+        }
+
+        private void UpdateOverlayEditorRect()
+        {
+            if (_overlayEditor == null || _host == null) { return; }
+
+            // Transform THIS control’s bounds into BackgroundCanvas coords.
+            // This automatically reflects PageHost's RenderTransform (matrix).
+            var t = TransformToAncestor(_host.BackgroundCanvas);
+            Rect bounds = t.TransformBounds(new Rect(new Size(ActualWidth, ActualHeight)));
+
+            Canvas.SetLeft(_overlayEditor, bounds.Left);
+            Canvas.SetTop(_overlayEditor, bounds.Top);
+            _overlayEditor.Width = Math.Max(1, bounds.Width);
+            _overlayEditor.Height = Math.Max(1, bounds.Height);
+
+            // Font sizing:
+            // Your control's FontSize is in "page units". We multiply by view scale
+            // so it visually matches the zoomed content.
+            _overlayEditor.FontFamily = FontFamily;
+
+            double s = _host.ViewMatrix.M11; // uniform scale assumption
+            _overlayEditor.FontSize = ScaleFontWithView
+                ? Math.Max(1, FontSize * s)
+                : Math.Max(1, FontSize * 12); // adjust if you want a different baseline
+        }
+
+        private static T? FindAncestor<T>(DependencyObject d) where T : DependencyObject
+        {
+            DependencyObject? cur = d;
+            while (cur != null)
+            {
+                if (cur is T match)
+                    return match;
+
+                cur = VisualTreeHelper.GetParent(cur);
+            }
+            return null;
         }
         #endregion
     }
