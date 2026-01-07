@@ -1,12 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Cad_Point_Manager.Helpers;
+using Cad_Point_Manager.Views.UserControls;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
 using System.Windows.Input;
+using System.Windows.Media;
 using System.Windows.Threading;
 
 namespace Cad_Point_Manager.Controls
@@ -15,6 +13,9 @@ namespace Cad_Point_Manager.Controls
     {
         #region Fields
         private string? _originalText;
+        private TextBox? _overlayEditor;
+        private LayoutsViewControl? _host;
+        private bool _overlayUpdatePending;
         #endregion
 
         #region Dependency Properties
@@ -34,6 +35,15 @@ namespace Cad_Point_Manager.Controls
         {
             get => (bool)GetValue(IsEditingProperty);
             set => SetValue(IsEditingProperty, value);
+        }
+
+        public static readonly DependencyProperty ViewMatrixProperty =
+            DependencyProperty.Register(nameof(ViewMatrix), typeof(Matrix), typeof(TemplateInlineEditableTextControl),
+                new PropertyMetadata(Matrix.Identity));
+        public Matrix ViewMatrix
+        {
+            get => (Matrix)GetValue(ViewMatrixProperty);
+            set => SetValue(ViewMatrixProperty, value);
         }
         #endregion
 
@@ -78,33 +88,58 @@ namespace Cad_Point_Manager.Controls
 
         private void BeginEdit()
         {
-            if (IsEditing) { return; }
+            // The element you want to edit (usually the TextBlock area inside the titleblock)
+            var target = this; // or a named element inside your control
 
-            _originalText = Text;
-            IsEditing = true;
+            var layoutsView = VisualTreeHelpers.FindAncestor<LayoutsViewControl>(target);
+            if (layoutsView == null) { return; }
 
-            Dispatcher.BeginInvoke(DispatcherPriority.Input, new Action(() =>
+            var overlay = layoutsView.EditorOverlay;
+            var background = layoutsView.BackgroundCanvas;
+
+            // Get target bounds in BackgroundCanvas coordinates
+            var t = target.TransformToAncestor(background);
+            Rect bounds = t.TransformBounds(new Rect(new Size(target.ActualWidth, target.ActualHeight)));
+            
+            _overlayEditor = new TextBox
             {
-                if (GetTemplateChild("EditView") is TextBox tb)
-                {
-                    tb.Focus();
-                    Keyboard.Focus(tb);
-                    Dispatcher.BeginInvoke(DispatcherPriority.Input, new Action(() =>
-                    {
-                        if (GetTemplateChild("EditView") is TextBox tb)
-                        {
-                            tb.Focus();
-                            Keyboard.Focus(tb);
+                Width = Math.Max(1, bounds.Width),
+                Height = Math.Max(1, bounds.Height),
+                FontFamily = this.FontFamily,
+                FontSize = 12,
+                Padding = new Thickness(2),
+                AcceptsReturn = true,
+                TextWrapping = TextWrapping.Wrap,
+                VerticalContentAlignment = VerticalAlignment.Top,
+                Background = new SolidColorBrush(Color.FromArgb(64, 255, 0, 0)),
+                Foreground = Brushes.Black
+            };
 
-                            Debug.WriteLine("FocusedElement = " + Keyboard.FocusedElement);
-                            Debug.WriteLine("tb.IsKeyboardFocusWithin = " + tb.IsKeyboardFocusWithin);
-                            Debug.WriteLine("tb.IsFocused = " + tb.IsFocused);
-                        }
-                    }));
+            // Put it on overlay (NOT scaled)
+            Canvas.SetLeft(_overlayEditor, bounds.Left);
+            Canvas.SetTop(_overlayEditor, bounds.Top);
 
-                    tb.SelectAll();
-                }
-            }));
+            // Make overlay interactive while editor is active
+            overlay.IsHitTestVisible = true;
+
+            // Bind to same Text DP
+            _overlayEditor.SetBinding(TextBox.TextProperty, new Binding(nameof(Text))
+            {
+                Source = this,
+                Mode = BindingMode.TwoWay,
+                UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged
+            });
+
+            _overlayEditor.LostFocus += (_, __) => EndEdit(commit: true);
+            _overlayEditor.PreviewKeyDown += (s, e) =>
+            {
+                if (e.Key == Key.Enter && Keyboard.Modifiers == ModifierKeys.None) { EndEdit(true); e.Handled = true; }
+                else if (e.Key == Key.Escape) { EndEdit(false); e.Handled = true; }
+            };
+
+            overlay.Children.Add(_overlayEditor);
+            _overlayEditor.Focus();
+            _overlayEditor.SelectAll();
         }
 
         private void EndEdit(bool commit)

@@ -222,7 +222,7 @@
                     Width="{Binding ActiveLayout.PageSize.Width}"
                     Height="{Binding ActiveLayout.PageSize.Height}">
                 <Canvas.RenderTransform>
-                    <MatrixTransform x:Name="transform" />
+                    <MatrixTransform Matrix="{Binding ElementName=Root, Path=ViewMatrix}" />
                 </Canvas.RenderTransform>
                 <local:BaseTitleblock x:Name="Titleblock"
                                       HorizontalAlignment="Stretch"

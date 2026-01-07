@@ -29,8 +29,6 @@ namespace Cad_Point_Manager.Views.UserControls
         private bool _didInitialFit;
 
         private Matrix _initialMatrix;
-
-        private TextBox? _overlayEditor;
         #endregion
 
         #region Properties
@@ -85,6 +83,19 @@ namespace Cad_Point_Manager.Views.UserControls
             get => (IEnumerable<Scene>?)GetValue(ScenesProperty);
             set => SetValue(ScenesProperty, value);
         }
+
+        public static readonly DependencyProperty ViewMatrixProperty =
+        DependencyProperty.Register(
+            nameof(ViewMatrix),
+            typeof(Matrix),
+            typeof(LayoutsViewControl),
+            new PropertyMetadata(Matrix.Identity));
+        public Matrix ViewMatrix
+        {
+            get => (Matrix)GetValue(ViewMatrixProperty);
+            private set => SetValue(ViewMatrixProperty, value);
+        }
+
         #endregion
 
         #region Constructors
@@ -94,7 +105,17 @@ namespace Cad_Point_Manager.Views.UserControls
         }
         #endregion
 
+        #region Events
+        public event EventHandler? ViewMatrixChanged;
+        #endregion
+
         #region Methods
+        private void SetViewMatrix(Matrix m)
+        {
+            ViewMatrix = m;
+            ViewMatrixChanged?.Invoke(this, EventArgs.Empty);
+        }
+
         public void ReloadPreview()
         {
             LayoutPreviewControl.RebuildAsync();
@@ -206,7 +227,7 @@ namespace Cad_Point_Manager.Views.UserControls
 
                 _panning = true;
                 _panStartMouse = e.GetPosition((IInputElement)sender);
-                _panStartMatrix = transform.Matrix;
+                _panStartMatrix = ViewMatrix;
                 Mouse.Capture((IInputElement)sender);
                 e.Handled = true;
             }
@@ -231,7 +252,7 @@ namespace Cad_Point_Manager.Views.UserControls
             Matrix m = _panStartMatrix;
             m.Translate(delta.X, delta.Y);
 
-            transform.Matrix = m;
+            SetViewMatrix(m);
         }
         private void Root_MouseWheel(object sender, MouseWheelEventArgs e)
         {
@@ -240,7 +261,7 @@ namespace Cad_Point_Manager.Views.UserControls
             // Mouse position in the content we are transforming (Surface coords)
             Point p = e.GetPosition(BackgroundCanvas);
 
-            Matrix m = transform.Matrix;
+            Matrix m = ViewMatrix;
 
             // Current uniform scale (assuming you only do uniform scaling)
             double currentScale = m.M11;
@@ -254,10 +275,10 @@ namespace Cad_Point_Manager.Views.UserControls
             m.Scale(factor, factor);
             m.Translate(p.X, p.Y);
 
-            transform.Matrix = m;
+            SetViewMatrix(m);
             e.Handled = true;
         }
-       
+
         private void BackgroundCanvas_SizeChanged(object sender, SizeChangedEventArgs e)
         {
             FitPageToView();
@@ -297,14 +318,14 @@ namespace Cad_Point_Manager.Views.UserControls
             m.Translate(tx, ty);
 
             _initialMatrix = m;
-            transform.Matrix = m;
+            SetViewMatrix(m);
 
             _didInitialFit = true;
         }
 
         public void ResetView()
         {
-            transform.Matrix = _initialMatrix;
+            SetViewMatrix(_initialMatrix);
         }
         #endregion
 

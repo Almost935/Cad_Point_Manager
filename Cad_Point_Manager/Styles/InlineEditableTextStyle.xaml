@@ -26,7 +26,6 @@
                             CornerRadius="0.10"
                             SnapsToDevicePixels="True">
                         <Grid>
-                            <!-- Read view -->
                             <TextBlock x:Name="ReadView"
                                        Text="{Binding Text, RelativeSource={RelativeSource TemplatedParent}}"
                                        FontFamily="Arial"
@@ -34,31 +33,16 @@
                                        TextWrapping="Wrap"
                                        Cursor="IBeam" />
 
-                            <!-- Small underline cue (optional) -->
                             <Border x:Name="Underline"
                                     BorderBrush="Black"
                                     BorderThickness="0,0,0,0.02"
                                     VerticalAlignment="Bottom"
                                     Opacity="0.35"
                                     Margin="0,0,0,-0.02" />
-
-                            <!-- Edit view -->
-                            <TextBox x:Name="EditView"
-                                     Visibility="Collapsed"
-                                     Text="{Binding Text, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                     FontFamily="Arial"
-                                     FontSize="{Binding FontSize, RelativeSource={RelativeSource TemplatedParent}}"
-                                     TextWrapping="Wrap"
-                                     AcceptsReturn="True"
-                                     BorderThickness="0"
-                                     Background="Transparent"
-                                     Padding="0"
-                                     VerticalContentAlignment="Top" />
                         </Grid>
                     </Border>
 
                     <ControlTemplate.Triggers>
-                        <!-- Hover cue -->
                         <Trigger Property="IsMouseOver"
                                  Value="True">
                             <Setter TargetName="RootBorder"
@@ -68,23 +52,10 @@
                                     Property="Opacity"
                                     Value="0.8" />
                         </Trigger>
-
-                        <!-- Editing state -->
-                        <Trigger Property="IsEditing"
-                                 Value="True">
-                            <Setter TargetName="ReadView"
-                                    Property="Visibility"
-                                    Value="Collapsed" />
-                            <Setter TargetName="Underline"
-                                    Property="Visibility"
-                                    Value="Collapsed" />
-                            <Setter TargetName="EditView"
-                                    Property="Visibility"
-                                    Value="Visible" />
-                        </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
     </Style>
+
 </ResourceDictionary>

@@ -89,18 +89,6 @@ namespace Cad_Point_Manager.Views.UserControls
             get => (double)GetValue(ViewportTopProperty);
             set => SetValue(ViewportTopProperty, value);
         }
-
-        //public static readonly DependencyProperty ViewportWidthProperty =
-        //    DependencyProperty.Register(
-        //        nameof(ViewportWidth),
-        //        typeof(double),
-        //        typeof(BaseTitleblock),
-        //        new PropertyMetadata(28.9375));
-        //public double ViewportWidth
-        //{
-        //    get => (double)GetValue(ViewportWidthProperty);
-        //    set => SetValue(ViewportWidthProperty, value);
-        //}
         #endregion
 
         #region Constructors
