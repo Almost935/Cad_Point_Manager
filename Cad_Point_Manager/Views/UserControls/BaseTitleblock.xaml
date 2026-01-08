@@ -7,10 +7,19 @@
              xmlns:local="clr-namespace:Cad_Point_Manager.Views.UserControls"
              xmlns:system="clr-namespace:System;assembly=mscorlib"
              xmlns:controls="clr-namespace:Cad_Point_Manager.Controls"
-             mc:Ignorable="d">
+             mc:Ignorable="d"
+             d:Background="White">
     <UserControl.Resources>
-        <system:Double x:Key="strokeThickness">0.03</system:Double>
-        <Thickness x:Key="borderThickness">0.03</Thickness>
+        <system:Double x:Key="strokeThickness">0.01</system:Double>
+        <Thickness x:Key="borderThickness">0.01</Thickness>
+
+        <system:Double x:Key="drawingsListFontSize">0.25</system:Double>
+        <Thickness x:Key="drawingDescMargin">0.1,0,0,0</Thickness>
+        <Thickness x:Key="drawingDateMargin">0</Thickness>
+        <HorizontalAlignment x:Key="drawingDescHA">Left</HorizontalAlignment>
+        <HorizontalAlignment x:Key="drawingDateHA">Center</HorizontalAlignment>
+        <VerticalAlignment x:Key="drawingsListVA">Center</VerticalAlignment>
+
         <Style TargetType="{x:Type TextBlock}"
                x:Key="BaseTextblockStyle">
             <Setter Property="FontFamily"
@@ -48,7 +57,7 @@
         <Border Width="6"
                 Height="0.573"
                 BorderBrush="Black"
-                BorderThickness="0.03 0 0.03 0.0"
+                BorderThickness="0.01 0 0.01 0.0"
                 Canvas.Left="29.5"
                 Canvas.Top="6.685">
             <TextBlock Text="NOTES"
@@ -61,111 +70,403 @@
         <Border Width="6"
                 Height="5.5085"
                 BorderBrush="Black"
-                BorderThickness="{StaticResource borderThickness}"
+                BorderThickness="0 0.01 0 0.0"
                 Canvas.Left="29.5"
                 Canvas.Top="7.2585">
             <controls:TemplateInlineEditableTextControl Style="{StaticResource InlineEditableTextStyle}"
                                                         Text="{Binding NotesText, Mode=TwoWay, ElementName=Root}"
                                                         FontSize="0.2"
-                                                        ScaleFontWithView="True" />
+                                                        ScaleFontWithView="True"
+                                                        Margin="0.1" />
         </Border>
         <Border Width="6"
                 Height="0.25"
                 BorderBrush="Black"
-                BorderThickness="0.03 0.03 0.03 0.03"
+                BorderThickness="0.01 0.01 0.01 0.01"
                 Canvas.Left="29.5"
-                Canvas.Top="12.767">
+                Canvas.Top="12.767"
+                IsHitTestVisible="False">
             <Rectangle Fill="{StaticResource TitleBlockHatchStripBrush}" />
         </Border>
-        <Line X1="29.5"
-              Y1="13.767"
-              X2="35.5"
-              Y2="13.767"
-              Stroke="Black"
-              StrokeThickness="{StaticResource strokeThickness}" />
-        <Line X1="29.5"
-              Y1="14.267"
-              X2="35.5"
-              Y2="14.267"
-              Stroke="Black"
-              StrokeThickness="{StaticResource strokeThickness}" />
-        <Line X1="29.5"
-              Y1="15.017"
-              X2="35.5"
-              Y2="15.017"
-              Stroke="Black"
-              StrokeThickness="{StaticResource strokeThickness}" />
-        <Line X1="29.5"
-              Y1="15.767"
-              X2="35.5"
-              Y2="15.767"
-              Stroke="Black"
-              StrokeThickness="{StaticResource strokeThickness}" />
-        <Line X1="29.5"
-              Y1="16.517"
-              X2="35.5"
-              Y2="16.517"
-              Stroke="Black"
-              StrokeThickness="{StaticResource strokeThickness}" />
-        <Line X1="29.5"
-              Y1="17.267"
-              X2="35.5"
-              Y2="17.267"
-              Stroke="Black"
-              StrokeThickness="{StaticResource strokeThickness}" />
-        <Line X1="29.5"
-              Y1="18.017"
-              X2="35.5"
-              Y2="18.017"
-              Stroke="Black"
-              StrokeThickness="{StaticResource strokeThickness}" />
-        <Line X1="29.5"
-              Y1="18.767"
-              X2="35.5"
-              Y2="18.767"
-              Stroke="Black"
-              StrokeThickness="{StaticResource strokeThickness}" />
-        <Line X1="29.5"
-              Y1="18.892"
-              X2="35.5"
-              Y2="18.892"
-              Stroke="Black"
-              StrokeThickness="{StaticResource strokeThickness}" />
-        <Line X1="29.5"
-              Y1="19.017"
-              X2="35.5"
-              Y2="19.017"
-              Stroke="Black"
-              StrokeThickness="{StaticResource strokeThickness}" />
-        <Line X1="29.5"
-              Y1="19.517"
-              X2="35.5"
-              Y2="19.517"
-              Stroke="Black"
-              StrokeThickness="{StaticResource strokeThickness}" />
-        <Line X1="29.5"
-              Y1="20.017"
-              X2="35.5"
-              Y2="20.017"
-              Stroke="Black"
-              StrokeThickness="{StaticResource strokeThickness}" />
-        <Line X1="29.5"
-              Y1="21.017"
-              X2="35.5"
-              Y2="21.017"
-              Stroke="Black"
-              StrokeThickness="{StaticResource strokeThickness}" />
-        <Line X1="29.5"
-              Y1="22.017"
-              X2="35.5"
-              Y2="22.017"
-              Stroke="Black"
-              StrokeThickness="{StaticResource strokeThickness}" />
-        <Line X1="29.5"
-              Y1="23.017"
-              X2="35.5"
-              Y2="23.017"
-              Stroke="Black"
-              StrokeThickness="{StaticResource strokeThickness}" />
+
+        <Border Width="6"
+                Height="0.7508"
+                BorderBrush="Black"
+                BorderThickness="0.0 0.0 0.0 0.01"
+                Canvas.Left="29.5"
+                Canvas.Top="13.0162"
+                IsHitTestVisible="False">
+            <TextBlock Text="DRAWINGS BASED ON:"
+                       Style="{StaticResource BaseTextblockStyle}"
+                       FontSize="0.35"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center"
+                       TextAlignment="Center" />
+
+        </Border>
+        <Border Width="4.75500"
+                Height="0.50053"
+                BorderBrush="Black"
+                BorderThickness="0.0 0.0 0.01 0.01"
+                Canvas.Left="29.5"
+                Canvas.Top="13.7665"
+                IsHitTestVisible="False">
+            <TextBlock Text="DRAWING DESCRIPTION"
+                       Style="{StaticResource BaseTextblockStyle}"
+                       FontSize="0.25"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center"
+                       TextAlignment="Center" />
+        </Border>
+        <Border Width="1.25132"
+                Height="0.50053"
+                BorderBrush="Black"
+                BorderThickness="0.0 0.0 0.0 0.01"
+                Canvas.Left="34.255"
+                Canvas.Top="13.7665"
+                IsHitTestVisible="False">
+            <TextBlock Text="DATE"
+                       Style="{StaticResource BaseTextblockStyle}"
+                       FontSize="0.25"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center"
+                       TextAlignment="Center" />
+        </Border>
+        <Border Width="4.75500"
+                Height="0.75079"
+                BorderBrush="Black"
+                BorderThickness="0.0 0.0 0.01 0.01"
+                Canvas.Left="29.5"
+                Canvas.Top="14.267"
+                IsHitTestVisible="True">
+            <controls:TemplateInlineEditableTextControl Style="{StaticResource InlineEditableTextStyle}"
+                                                        Text="{Binding DrawingDesc1, Mode=TwoWay, ElementName=Root, FallbackValue=DrawingDesc1}"
+                                                        VerticalAlignment="{StaticResource drawingsListVA}"
+                                                        HorizontalAlignment="{StaticResource drawingDescHA}"
+                                                        FontSize="{StaticResource drawingsListFontSize}"
+                                                        ScaleFontWithView="True"
+                                                        Margin="{StaticResource drawingDescMargin}" />
+        </Border>
+        <Border Width="1.25132"
+                Height="0.75079"
+                BorderBrush="Black"
+                BorderThickness="0.0 0.0 0.0 0.01"
+                Canvas.Left="34.255"
+                Canvas.Top="14.267"
+                IsHitTestVisible="True"
+                ClipToBounds="False">
+            <controls:TemplateInlineEditableTextControl Style="{StaticResource InlineEditableTextStyle}"
+                                                        Text="{Binding DrawingDate1, Mode=TwoWay, ElementName=Root, FallbackValue=DrawingDate1}"
+                                                        VerticalAlignment="{StaticResource drawingsListVA}"
+                                                        HorizontalAlignment="{StaticResource drawingDateHA}"
+                                                        FontSize="{StaticResource drawingsListFontSize}"
+                                                        ScaleFontWithView="True"
+                                                        Margin="{StaticResource drawingDateMargin}"
+                                                        ClipToBounds="False"/>
+        </Border>
+
+        
+        
+        <Border Width="4.75500"
+                Height="0.75079"
+                BorderBrush="Black"
+                BorderThickness="0.0 0.0 0.01 0.01"
+                Canvas.Left="29.5"
+                Canvas.Top="15.0178"
+                IsHitTestVisible="True">
+            <controls:TemplateInlineEditableTextControl Style="{StaticResource InlineEditableTextStyle}"
+                                                        Text="{Binding DrawingDesc2, Mode=TwoWay, ElementName=Root, FallbackValue=DrawingDesc2}"
+                                                        VerticalAlignment="{StaticResource drawingsListVA}"
+                                                        HorizontalAlignment="{StaticResource drawingDescHA}"
+                                                        FontSize="{StaticResource drawingsListFontSize}"
+                                                        ScaleFontWithView="True"
+                                                        Margin="{StaticResource drawingDescMargin}" />
+        </Border>
+        <Border Width="1.25132"
+                Height="0.75079"
+                BorderBrush="Black"
+                BorderThickness="0.0 0.0 0.0 0.01"
+                Canvas.Left="34.255"
+                Canvas.Top="15.0178"
+                IsHitTestVisible="True">
+            <controls:TemplateInlineEditableTextControl Style="{StaticResource InlineEditableTextStyle}"
+                                                        Text="{Binding DrawingDate2, Mode=TwoWay, ElementName=Root, FallbackValue=DrawingDate2}"
+                                                        VerticalAlignment="{StaticResource drawingsListVA}"
+                                                        HorizontalAlignment="{StaticResource drawingDateHA}"
+                                                        FontSize="{StaticResource drawingsListFontSize}"
+                                                        ScaleFontWithView="True"
+                                                        Margin="{StaticResource drawingDateMargin}" />
+        </Border>
+
+        <Border Width="4.75500"
+                Height="0.75079"
+                BorderBrush="Black"
+                BorderThickness="0.0 0.0 0.01 0.01"
+                Canvas.Left="29.5"
+                Canvas.Top="15.7686"
+                IsHitTestVisible="True">
+            <controls:TemplateInlineEditableTextControl Style="{StaticResource InlineEditableTextStyle}"
+                                                        Text="{Binding DrawingDesc3, Mode=TwoWay, ElementName=Root, FallbackValue=DrawingDesc3}"
+                                                        VerticalAlignment="{StaticResource drawingsListVA}"
+                                                        HorizontalAlignment="{StaticResource drawingDescHA}"
+                                                        FontSize="{StaticResource drawingsListFontSize}"
+                                                        ScaleFontWithView="True"
+                                                        Margin="{StaticResource drawingDescMargin}" />
+        </Border>
+        <Border Width="1.25132"
+                Height="0.75079"
+                BorderBrush="Black"
+                BorderThickness="0.0 0.0 0.0 0.01"
+                Canvas.Left="34.255"
+                Canvas.Top="15.7686"
+                IsHitTestVisible="True">
+            <controls:TemplateInlineEditableTextControl Style="{StaticResource InlineEditableTextStyle}"
+                                                        Text="{Binding DrawingDate3, Mode=TwoWay, ElementName=Root, FallbackValue=DrawingDate3}"
+                                                        VerticalAlignment="{StaticResource drawingsListVA}"
+                                                        HorizontalAlignment="{StaticResource drawingDateHA}"
+                                                        FontSize="{StaticResource drawingsListFontSize}"
+                                                        ScaleFontWithView="True"
+                                                        Margin="{StaticResource drawingDateMargin}" />
+        </Border>
+
+        <Border Width="4.75500"
+                Height="0.75079"
+                BorderBrush="Black"
+                BorderThickness="0.0 0.0 0.01 0.01"
+                Canvas.Left="29.5"
+                Canvas.Top="16.5194"
+                IsHitTestVisible="True">
+            <controls:TemplateInlineEditableTextControl Style="{StaticResource InlineEditableTextStyle}"
+                                                        Text="{Binding DrawingDesc4, Mode=TwoWay, ElementName=Root, FallbackValue=DrawingDesc4}"
+                                                        VerticalAlignment="Center"
+                                                        FontSize="{StaticResource drawingsListFontSize}"
+                                                        ScaleFontWithView="True"
+                                                        Margin="{StaticResource drawingDescMargin}" />
+        </Border>
+        <Border Width="1.25132"
+                Height="0.75079"
+                BorderBrush="Black"
+                BorderThickness="0.0 0.0 0.0 0.01"
+                Canvas.Left="34.255"
+                Canvas.Top="16.5194"
+                IsHitTestVisible="True">
+            <controls:TemplateInlineEditableTextControl Style="{StaticResource InlineEditableTextStyle}"
+                                                        Text="{Binding DrawingDate4, Mode=TwoWay, ElementName=Root, FallbackValue=DrawingDate4}"
+                                                        VerticalAlignment="{StaticResource drawingsListVA}"
+                                                        HorizontalAlignment="{StaticResource drawingDateHA}"
+                                                        FontSize="{StaticResource drawingsListFontSize}"
+                                                        ScaleFontWithView="True"
+                                                        Margin="{StaticResource drawingDateMargin}" />
+        </Border>
+
+        <Border Width="4.75500"
+                Height="0.75079"
+                BorderBrush="Black"
+                BorderThickness="0.0 0.0 0.01 0.01"
+                Canvas.Left="29.5"
+                Canvas.Top="17.2702"
+                IsHitTestVisible="True">
+            <controls:TemplateInlineEditableTextControl Style="{StaticResource InlineEditableTextStyle}"
+                                                        Text="{Binding DrawingDesc5, Mode=TwoWay, ElementName=Root, FallbackValue=DrawingDesc5}"
+                                                        VerticalAlignment="{StaticResource drawingsListVA}"
+                                                        HorizontalAlignment="{StaticResource drawingDescHA}"
+                                                        FontSize="{StaticResource drawingsListFontSize}"
+                                                        ScaleFontWithView="True"
+                                                        Margin="{StaticResource drawingDescMargin}" />
+        </Border>
+        <Border Width="1.25132"
+                Height="0.75079"
+                BorderBrush="Black"
+                BorderThickness="0.0 0.0 0.0 0.01"
+                Canvas.Left="34.255"
+                Canvas.Top="17.2702"
+                IsHitTestVisible="True">
+            <controls:TemplateInlineEditableTextControl Style="{StaticResource InlineEditableTextStyle}"
+                                                        Text="{Binding DrawingDate5, Mode=TwoWay, ElementName=Root, FallbackValue=DrawingDate5}"
+                                                        VerticalAlignment="{StaticResource drawingsListVA}"
+                                                        HorizontalAlignment="{StaticResource drawingDateHA}"
+                                                        FontSize="{StaticResource drawingsListFontSize}"
+                                                        ScaleFontWithView="True"
+                                                        Margin="{StaticResource drawingDateMargin}" />
+        </Border>
+
+        <Border Width="4.75500"
+                Height="0.75079"
+                BorderBrush="Black"
+                BorderThickness="0.0 0.0 0.01 0.01"
+                Canvas.Left="29.5"
+                Canvas.Top="18.021"
+                IsHitTestVisible="True">
+            <controls:TemplateInlineEditableTextControl Style="{StaticResource InlineEditableTextStyle}"
+                                                        Text="{Binding DrawingDesc6, Mode=TwoWay, ElementName=Root, FallbackValue=DrawingDesc6}"
+                                                        VerticalAlignment="{StaticResource drawingsListVA}"
+                                                        HorizontalAlignment="{StaticResource drawingDescHA}"
+                                                        FontSize="{StaticResource drawingsListFontSize}"
+                                                        ScaleFontWithView="True"
+                                                        Margin="{StaticResource drawingDescMargin}" />
+        </Border>
+        <Border Width="1.25132"
+                Height="0.75079"
+                BorderBrush="Black"
+                BorderThickness="0.0 0.0 0.0 0.01"
+                Canvas.Left="34.255"
+                Canvas.Top="18.021"
+                IsHitTestVisible="True">
+            <controls:TemplateInlineEditableTextControl Style="{StaticResource InlineEditableTextStyle}"
+                                                        Text="{Binding DrawingDate6, Mode=TwoWay, ElementName=Root, FallbackValue=DrawingDate6}"
+                                                        VerticalAlignment="{StaticResource drawingsListVA}"
+                                                        HorizontalAlignment="{StaticResource drawingDateHA}"
+                                                        FontSize="{StaticResource drawingsListFontSize}"
+                                                        ScaleFontWithView="True"
+                                                        Margin="{StaticResource drawingDateMargin}" />
+        </Border>
+
+        <Border Width="6"
+                Height="0.25"
+                BorderBrush="Black"
+                BorderThickness="0.01 0.01 0.01 0.01"
+                Canvas.Left="29.5"
+                Canvas.Top="18.7718"
+                IsHitTestVisible="False">
+            <Rectangle Fill="{StaticResource TitleBlockHatchStripBrush}" />
+        </Border>
+
+        <Border Width="1.6884"
+                Height="0.5"
+                BorderBrush="Black"
+                BorderThickness="0.0 0.0 0.01 0.01"
+                Canvas.Left="29.5"
+                Canvas.Top="19.0218"
+                IsHitTestVisible="False">
+            <TextBlock Text="DRAWN BY:"
+                       Style="{StaticResource BaseTextblockStyle}"
+                       FontSize="0.25"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center"
+                       TextAlignment="Center" />
+        </Border>
+        <Border Width="4.3116"
+                Height="0.5"
+                BorderBrush="Black"
+                BorderThickness="0.0 0.0 0.0 0.01"
+                Canvas.Left="31.1884"
+                Canvas.Top="19.0218"
+                IsHitTestVisible="True">
+            <controls:TemplateInlineEditableTextControl Style="{StaticResource InlineEditableTextStyle}"
+                                                        Text="{Binding DrawnBy, Mode=TwoWay, ElementName=Root, FallbackValue=Drawn By}"
+                                                        VerticalAlignment="{StaticResource drawingsListVA}"
+                                                        HorizontalAlignment="{StaticResource drawingDateHA}"
+                                                        FontSize="{StaticResource drawingsListFontSize}"
+                                                        ScaleFontWithView="True"
+                                                        Margin="0" />
+        </Border>
+
+        <Border Width="1.6884"
+                Height="0.5"
+                BorderBrush="Black"
+                BorderThickness="0.0 0.0 0.01 0.01"
+                Canvas.Left="29.5"
+                Canvas.Top="19.5218"
+                IsHitTestVisible="False">
+            <TextBlock Text="DATE:"
+                       Style="{StaticResource BaseTextblockStyle}"
+                       FontSize="0.25"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center"
+                       TextAlignment="Center" />
+        </Border>
+        <Border Width="4.3116"
+                Height="0.5"
+                BorderBrush="Black"
+                BorderThickness="0.0 0.0 0.0 0.01"
+                Canvas.Left="31.1884"
+                Canvas.Top="19.5218"
+                IsHitTestVisible="True">
+            <controls:TemplateInlineEditableTextControl Style="{StaticResource InlineEditableTextStyle}"
+                                                        Text="{Binding DateDrawn, Mode=TwoWay, ElementName=Root, FallbackValue=Date Drawn}"
+                                                        VerticalAlignment="{StaticResource drawingsListVA}"
+                                                        HorizontalAlignment="{StaticResource drawingDateHA}"
+                                                        FontSize="{StaticResource drawingsListFontSize}"
+                                                        ScaleFontWithView="True"
+                                                        Margin="0" />
+        </Border>
+        
+        <Border Width="1.6884"
+                Height="1.0"
+                BorderBrush="Black"
+                BorderThickness="0.0 0.0 0.01 0.01"
+                Canvas.Left="29.5"
+                Canvas.Top="20.0218"
+                IsHitTestVisible="False">
+            <TextBlock Text="PROJECT:"
+                       Style="{StaticResource BaseTextblockStyle}"
+                       FontSize="0.25"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center"
+                       TextAlignment="Center" />
+        </Border>
+        <Border Width="4.3116"
+                Height="1.0"
+                BorderBrush="Black"
+                BorderThickness="0.0 0.0 0.0 0.01"
+                Canvas.Left="31.1884"
+                Canvas.Top="20.0218"
+                IsHitTestVisible="True">
+            <controls:TemplateInlineEditableTextControl Style="{StaticResource InlineEditableTextStyle}"
+                                                        Text="{Binding ProjectName, Mode=TwoWay, ElementName=Root, FallbackValue=Project Name}"
+                                                        VerticalAlignment="{StaticResource drawingsListVA}"
+                                                        HorizontalAlignment="{StaticResource drawingDateHA}"
+                                                        FontSize="{StaticResource drawingsListFontSize}"
+                                                        ScaleFontWithView="True"
+                                                        Margin="0" />
+        </Border>
+        
+        <Border Width="6"
+                Height="1.0"
+                BorderBrush="Black"
+                BorderThickness="0.0 0.0 0.0 0.01"
+                Canvas.Left="29.5"
+                Canvas.Top="21.0218"
+                IsHitTestVisible="True">
+            <controls:TemplateInlineEditableTextControl Style="{StaticResource InlineEditableTextStyle}"
+                                                        Text="{Binding PageTitle, Mode=TwoWay, ElementName=Root, FallbackValue=Page Title}"
+                                                        VerticalAlignment="{StaticResource drawingsListVA}"
+                                                        HorizontalAlignment="{StaticResource drawingDateHA}"
+                                                        FontSize="{StaticResource drawingsListFontSize}"
+                                                        ScaleFontWithView="True"
+                                                        Margin="0" />
+        </Border>
+        
+        <Border Width="6"
+                Height="1.0"
+                BorderBrush="Black"
+                BorderThickness="0.0 0.0 0.0 0.01"
+                Canvas.Left="29.5"
+                Canvas.Top="22.0218"
+                IsHitTestVisible="True">
+            <controls:TemplateInlineEditableTextControl Style="{StaticResource InlineEditableTextStyle}"
+                                                        Text="{Binding PageNumber, Mode=TwoWay, ElementName=Root, FallbackValue=Page Number}"
+                                                        VerticalAlignment="{StaticResource drawingsListVA}"
+                                                        HorizontalAlignment="{StaticResource drawingDateHA}"
+                                                        FontSize="0.5"
+                                                        ScaleFontWithView="True"
+                                                        Margin="0" />
+        </Border>
+
+        <Border Width="6"
+                Height="0.4830"
+                BorderBrush="Black"
+                BorderThickness="0.0 0.0 0.0 0.01"
+                Canvas.Left="29.5"
+                Canvas.Top="23.0218"
+                IsHitTestVisible="True">
+            <controls:TemplateInlineEditableTextControl Style="{StaticResource InlineEditableTextStyle}"
+                                                        Text="{Binding PageNumber, Mode=TwoWay, ElementName=Root, FallbackValue=Page Number}"
+                                                        VerticalAlignment="{StaticResource drawingsListVA}"
+                                                        HorizontalAlignment="{StaticResource drawingDateHA}"
+                                                        FontSize="{StaticResource drawingsListFontSize}"
+                                                        ScaleFontWithView="True"
+                                                        Margin="0" />
+        </Border>
     </Canvas>
 </UserControl>

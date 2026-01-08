@@ -78,7 +78,7 @@ namespace Cad_Point_Manager.Controls
         {
             if (_overlayEditor is not null) { return; }
 
-            _host = FindAncestor<LayoutsViewControl>(this);
+            _host = VisualTreeHelpers.FindAncestor<LayoutsViewControl>(this);
             if (_host == null) { return; }
 
             _originalText = Text;
@@ -88,10 +88,12 @@ namespace Cad_Point_Manager.Controls
                 AcceptsReturn = true,
                 TextWrapping = TextWrapping.Wrap,
                 VerticalContentAlignment = VerticalAlignment.Top,
-                Padding = new Thickness(0),
                 BorderThickness = new Thickness(0),
                 Background = Brushes.White,
-                Foreground = Brushes.Black
+                Foreground = Brushes.Black,
+                Margin = new Thickness(0),
+                Padding = new Thickness(0),
+                MinHeight = 0,
             };
 
             _hostPreviewMouseDownHandler = Host_PreviewMouseDown;
@@ -225,19 +227,6 @@ namespace Cad_Point_Manager.Controls
             _overlayEditor.FontSize = ScaleFontWithView
                 ? Math.Max(1, FontSize * s)
                 : Math.Max(1, FontSize * 12); // adjust if you want a different baseline
-        }
-
-        private static T? FindAncestor<T>(DependencyObject d) where T : DependencyObject
-        {
-            DependencyObject? cur = d;
-            while (cur != null)
-            {
-                if (cur is T match)
-                    return match;
-
-                cur = VisualTreeHelper.GetParent(cur);
-            }
-            return null;
         }
         #endregion
     }
