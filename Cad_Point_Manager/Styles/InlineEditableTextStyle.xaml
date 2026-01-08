@@ -23,7 +23,6 @@
                     <Border x:Name="RootBorder"
                             Background="Transparent"
                             Padding="0.10"
-                            CornerRadius="0.10"
                             SnapsToDevicePixels="True">
                         <Grid>
                             <TextBlock x:Name="ReadView"
@@ -34,7 +33,6 @@
                                        Cursor="IBeam" />
                         </Grid>
                     </Border>
-
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver"
                                  Value="True">

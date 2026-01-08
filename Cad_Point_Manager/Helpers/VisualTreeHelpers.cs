@@ -69,5 +69,16 @@ namespace Cad_Point_Manager.Helpers
             }
             return null;
         }
+
+        public static bool IsDescendantOf(DependencyObject ancestor, DependencyObject node)
+        {
+            DependencyObject? cur = node;
+            while (cur != null)
+            {
+                if (cur == ancestor) return true;
+                cur = VisualTreeHelper.GetParent(cur);
+            }
+            return false;
+        }
     }
 }

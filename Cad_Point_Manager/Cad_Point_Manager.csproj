@@ -12,15 +12,19 @@
 
   <ItemGroup>
     <Compile Remove="Controls\D2DControl\**" />
+    <Compile Remove="Lib\**" />
     <Compile Remove="Models\DrawingObjects\**" />
     <Compile Remove="Resources\Shaders\**" />
     <EmbeddedResource Remove="Controls\D2DControl\**" />
+    <EmbeddedResource Remove="Lib\**" />
     <EmbeddedResource Remove="Models\DrawingObjects\**" />
     <EmbeddedResource Remove="Resources\Shaders\**" />
     <None Remove="Controls\D2DControl\**" />
+    <None Remove="Lib\**" />
     <None Remove="Models\DrawingObjects\**" />
     <None Remove="Resources\Shaders\**" />
     <Page Remove="Controls\D2DControl\**" />
+    <Page Remove="Lib\**" />
     <Page Remove="Models\DrawingObjects\**" />
     <Page Remove="Resources\Shaders\**" />
   </ItemGroup>
@@ -97,17 +101,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Lib\" />
     <Folder Include="Resources\Testing\" />
   </ItemGroup>
 
   <ItemGroup>
-    <Reference Include="ColorPicker">
-      <HintPath>..\..\ColorPicker\src\ColorPicker\obj\Debug\net8.0-windows\ColorPicker.dll</HintPath>
-    </Reference>
-    <Reference Include="ColorPicker.Models">
-      <HintPath>..\..\ColorPicker\src\ColorPicker.Models\bin\Debug\net8.0\ColorPicker.Models.dll</HintPath>
-    </Reference>
+    <ProjectReference Include="..\..\ColorPicker\ColorPicker\ColorPicker.csproj" />
   </ItemGroup>
 
   <ItemGroup>

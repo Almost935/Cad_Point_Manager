@@ -17,6 +17,7 @@ namespace Cad_Point_Manager.Controls
         private TextBox? _overlayEditor;
         private LayoutsViewControl? _host;
         private bool _overlayUpdatePending;
+        private MouseButtonEventHandler? _hostPreviewMouseDownHandler;
         #endregion
 
         #region Dependency Properties
@@ -60,36 +61,6 @@ namespace Cad_Point_Manager.Controls
         #endregion
 
         #region Methods
-        //public override void OnApplyTemplate()
-        //{
-        //    base.OnApplyTemplate();
-
-        //    // Wire textbox events (template part names must match)
-        //    if (GetTemplateChild("EditView") is TextBox tb)
-        //    {
-        //        tb.LostKeyboardFocus += (_, __) => EndEdit(commit: true);
-        //        tb.PreviewKeyDown += (s, e) =>
-        //        {
-        //            if (e.Key == Key.Enter && (Keyboard.Modifiers & ModifierKeys.Shift) == 0)
-        //            {
-        //                EndEdit(commit: true);
-        //                e.Handled = true;
-        //            }
-        //            else if (e.Key == Key.Escape)
-        //            {
-        //                EndEdit(commit: false);
-        //                e.Handled = true;
-        //            }
-        //        };
-
-        //        MouseDoubleClick += (s, e) =>
-        //        {
-        //            BeginEdit();
-        //            e.Handled = true;
-        //        };
-        //    }
-        //}
-
         protected override void OnPreviewMouseLeftButtonUp(MouseButtonEventArgs e)
         {
             Debug.WriteLine($"OnPreviewMouseLeftButtonUp");
@@ -97,6 +68,10 @@ namespace Cad_Point_Manager.Controls
 
             BeginEdit();
             e.Handled = true;
+        }
+        protected override void OnLostFocus(RoutedEventArgs e)
+        {
+            base.OnLostFocus(e);
         }
 
         private void BeginEdit()
@@ -118,6 +93,10 @@ namespace Cad_Point_Manager.Controls
                 Background = Brushes.White,
                 Foreground = Brushes.Black
             };
+
+            _hostPreviewMouseDownHandler = Host_PreviewMouseDown;
+            _host.AddHandler(UIElement.PreviewMouseDownEvent, _hostPreviewMouseDownHandler, handledEventsToo: true);
+
 
             // Bind overlay editor text to this control
             _overlayEditor.SetBinding(TextBox.TextProperty, new Binding(nameof(Text))
@@ -151,8 +130,14 @@ namespace Cad_Point_Manager.Controls
             if (!commit && _originalText != null) { Text = _originalText; }
 
             // Unhook from host + remove overlay editor
-            if (_host != null)
+            if (_host is not null)
             {
+                if (_hostPreviewMouseDownHandler is not null)
+                {
+                    _host.RemoveHandler(UIElement.PreviewMouseDownEvent, _hostPreviewMouseDownHandler);
+                    _hostPreviewMouseDownHandler = null;
+                }
+
                 _host.ViewMatrixChanged -= Host_ViewMatrixChanged;
                 _host.EditorOverlay.Children.Remove(_overlayEditor);
                 _host.EditorOverlay.IsHitTestVisible = false;
@@ -166,6 +151,21 @@ namespace Cad_Point_Manager.Controls
             _host = null;
             _overlayUpdatePending = false;
         }
+
+        private void Host_PreviewMouseDown(object sender, MouseButtonEventArgs e)
+        {
+            if (_overlayEditor == null) { return; }
+
+            // If click happened inside the overlay editor, do nothing
+            if (e.OriginalSource is DependencyObject d)
+            {
+                if (_overlayEditor == d || VisualTreeHelpers.IsDescendantOf(_overlayEditor, d)) { return; }
+            }
+
+            // Click was outside -> commit and close
+            EndEdit(commit: true);
+        }
+
         private void OverlayEditor_LostKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
         {
             EndEdit(commit: true);
