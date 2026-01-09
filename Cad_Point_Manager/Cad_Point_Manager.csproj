@@ -42,7 +42,6 @@
     <Compile Remove="Converters\CogoPointColorConverter.cs" />
     <Compile Remove="Converters\CogoPointScaleConverter.cs" />
     <Compile Remove="Converters\CogoPointToggleButtonConverter.cs" />
-    <Compile Remove="Converters\ColorToBrushConverter.cs" />
     <Compile Remove="Converters\KeyValueToValueConverter.cs" />
     <Compile Remove="Converters\Matrix3x2ToScaleConverter .cs" />
     <Compile Remove="Converters\Matrix3x2ToWindowsMatrixConverter.cs" />

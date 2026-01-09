@@ -89,16 +89,16 @@ namespace Cad_Point_Manager.Controls
                 TextWrapping = TextWrapping.Wrap,
                 VerticalContentAlignment = VerticalAlignment.Top,
                 BorderThickness = new Thickness(0),
-                Background = Brushes.White,
-                Foreground = Brushes.Black,
                 Margin = new Thickness(0),
                 Padding = new Thickness(0),
                 MinHeight = 0,
             };
+            _overlayEditor.SetBinding(TextBox.ForegroundProperty, new Binding(nameof(Foreground)) { Source = this });
+            _overlayEditor.SetBinding(TextBox.BackgroundProperty, new Binding(nameof(Background)) { Source = this });
+            _overlayEditor.SetBinding(TextBox.FontFamilyProperty, new Binding(nameof(FontFamily)) { Source = this });
 
             _hostPreviewMouseDownHandler = Host_PreviewMouseDown;
             _host.AddHandler(UIElement.PreviewMouseDownEvent, _hostPreviewMouseDownHandler, handledEventsToo: true);
-
 
             // Bind overlay editor text to this control
             _overlayEditor.SetBinding(TextBox.TextProperty, new Binding(nameof(Text))

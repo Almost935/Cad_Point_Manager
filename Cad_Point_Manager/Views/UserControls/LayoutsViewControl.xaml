@@ -20,7 +20,7 @@
              MouseUp="Root_MouseUp"
              PreviewMouseWheel="Root_MouseWheel"
              Background="Transparent"
-             Cursor="{x:Static helpers:AppCursors.CrosshairCursor}">
+             Cursor="{x:Static helpers:AppCursors.LightCrosshairCursor}">
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*" />
@@ -211,6 +211,9 @@
                     </controls:DoubleClickSetListView.View>
                 </controls:DoubleClickSetListView>
             </TabItem>
+            <TabItem Header="Settings">
+                
+            </TabItem>
         </TabControl>
 
         <Canvas x:Name="BackgroundCanvas"
@@ -220,7 +223,8 @@
             <Canvas x:Name="PageHost"
                     Background="White"
                     Width="{Binding ActiveLayout.PageSize.Width}"
-                    Height="{Binding ActiveLayout.PageSize.Height}">
+                    Height="{Binding ActiveLayout.PageSize.Height}"
+                    Cursor="{x:Static helpers:AppCursors.DarkCrosshairCursor}">
                 <Canvas.RenderTransform>
                     <MatrixTransform Matrix="{Binding ElementName=Root, Path=ViewMatrix}" />
                 </Canvas.RenderTransform>

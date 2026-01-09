@@ -1,4 +1,5 @@
-﻿using SharpDX.Direct2D1.Effects;
+﻿using Cad_Point_Manager.Models.Printing;
+using SharpDX.Direct2D1.Effects;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -302,12 +303,27 @@ namespace Cad_Point_Manager.Views.UserControls
             get => (string)GetValue(ScaleProperty);
             set => SetValue(ScaleProperty, value);
         }
+
+
+        public static readonly DependencyProperty AttributesProperty =
+            DependencyProperty.Register(
+                nameof(Attributes),
+                typeof(TitleblockAttributes),
+                typeof(BaseTitleblock),
+                new PropertyMetadata(null));
+
+        public TitleblockAttributes Attributes
+        {
+            get => (TitleblockAttributes)GetValue(AttributesProperty);
+            set => SetValue(AttributesProperty, value);
+        }
         #endregion
 
         #region Constructors
         public BaseTitleblock()
         {
             InitializeComponent();
+            Attributes ??= new TitleblockAttributes();
         }
         #endregion
 

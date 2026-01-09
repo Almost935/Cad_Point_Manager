@@ -7,6 +7,7 @@
              xmlns:local="clr-namespace:Cad_Point_Manager.Views.UserControls"
              xmlns:system="clr-namespace:System;assembly=mscorlib"
              xmlns:controls="clr-namespace:Cad_Point_Manager.Controls"
+             xmlns:converters="clr-namespace:Cad_Point_Manager.Converters"
              mc:Ignorable="d"
              d:Background="White">
     <UserControl.Resources>
@@ -25,7 +26,10 @@
             <Setter Property="FontFamily"
                     Value="Arial" />
         </Style>
+
+        <converters:ColorToBrushConverter x:Key="ColorToBrush" />
     </UserControl.Resources>
+    
     <Canvas  Width="36"
              Height="24">
         <Rectangle Width="35.125"
@@ -74,8 +78,10 @@
                 Canvas.Left="29.5"
                 Canvas.Top="7.2585">
             <controls:TemplateInlineEditableTextControl Style="{StaticResource InlineEditableTextStyle}"
-                                                        Text="{Binding NotesText, Mode=TwoWay, ElementName=Root}"
-                                                        FontSize="0.2"
+                                                        DataContext="{Binding Attributes.Notes, ElementName=Root}"
+                                                        Text="{Binding Text, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                        FontSize="{Binding FontSize}"
+                                                        Foreground="{Binding FontColor, Converter={StaticResource ColorToBrush}}"
                                                         ScaleFontWithView="True"
                                                         Margin="0.1" />
         </Border>
@@ -461,7 +467,7 @@
                 Canvas.Top="23.0218"
                 IsHitTestVisible="True">
             <controls:TemplateInlineEditableTextControl Style="{StaticResource InlineEditableTextStyle}"
-                                                        Text="{Binding PageNumber, Mode=TwoWay, ElementName=Root, FallbackValue=Page Number}"
+                                                        Text="{Binding Scale, Mode=TwoWay, ElementName=Root, FallbackValue=Scale}"
                                                         VerticalAlignment="{StaticResource drawingsListVA}"
                                                         HorizontalAlignment="{StaticResource drawingDateHA}"
                                                         FontSize="{StaticResource drawingsListFontSize}"
