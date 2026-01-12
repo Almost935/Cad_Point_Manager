@@ -96,6 +96,14 @@
                                 <fa:FontAwesome Icon="Close" />
                             </MenuItem.Icon>
                         </MenuItem>
+                        <Separator Style="{StaticResource MenuItemSeparatorStyle1}" />
+                        <MenuItem Header="Print"
+                                  Command="{Binding PrintJobCommand}"
+                                  Style="{StaticResource MenuItemStyle1}">
+                            <MenuItem.Icon>
+                                <fa:FontAwesome Icon="Print" />
+                            </MenuItem.Icon>
+                        </MenuItem>
                     </MenuItem>
                     <MenuItem Header="Insert"
                               Style="{StaticResource MenuItemStyle1}">
@@ -155,7 +163,7 @@
                                    CadManager="{Binding DataContext.JobFileManager.CadManager3D, RelativeSource={RelativeSource AncestorType=Page}}"
                                    Scenes="{Binding DataContext.JobFileManager.CadManager3D.Camera.Scenes, RelativeSource={RelativeSource AncestorType=Page}}"
                                    Renderer="{Binding ElementName=d3dDxfControl}"
-                                   ActiveLayout="{Binding DataContext.SelectedLayout, RelativeSource={RelativeSource AncestorType=Page}}" />
+                                   ActiveLayout="{Binding DataContext.ActiveLayout, RelativeSource={RelativeSource AncestorType=Page}}" />
         </Grid>
 
         <Grid x:Name="modelGrid"

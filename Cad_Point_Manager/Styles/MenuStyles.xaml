@@ -747,4 +747,20 @@
             </Trigger>
         </Style.Triggers>
     </Style>
+
+    <Style x:Key="MenuItemSeparatorStyle1"
+           TargetType="{x:Type Separator}">
+        <Setter Property="Margin"
+                Value="2,3,2,3" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type Separator}">
+                    <Border Height="1"
+                            Background="White"
+                            HorizontalAlignment="Stretch"
+                            SnapsToDevicePixels="True" />
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
 </ResourceDictionary>

@@ -1,4 +1,5 @@
 ﻿using Cad_Point_Manager.Helpers;
+using Cad_Point_Manager.Services;
 using Cad_Point_Manager.ViewModels;
 using System.Windows;
 using System.Windows.Controls;
@@ -24,6 +25,8 @@ namespace Cad_Point_Manager.Views
                 {
                     //Application.Current.MainWindow.KeyUp += vm.Window_KeyUp;
                     vm.ResetSelectionRequested += Vm_ResetSelectionRequested;
+                    vm.ResetLayoutsViewRequested += OnResetLayoutsView;
+                    vm.RenderHost = new D3dDxfRenderHost(d3dDxfControl);
                 }
             };
             Unloaded += (s, e) =>
@@ -32,23 +35,24 @@ namespace Cad_Point_Manager.Views
                 {
                     //Application.Current.MainWindow.KeyUp -= vm.Window_KeyUp;
                     vm.ResetSelectionRequested -= Vm_ResetSelectionRequested;
-                }
-            };
-
-            Loaded += (_, __) =>
-            {
-                if (DataContext is MainViewModel vm)
-                {
-                    vm.ResetLayoutsViewRequested += OnResetLayoutsView;
-                }
-            };
-            Unloaded += (_, __) =>
-            {
-                if (DataContext is MainViewModel vm)
-                {
                     vm.ResetLayoutsViewRequested -= OnResetLayoutsView;
                 }
             };
+
+            //Loaded += (_, __) =>
+            //{
+            //    if (DataContext is MainViewModel vm)
+            //    {
+            //        vm.ResetLayoutsViewRequested += OnResetLayoutsView;
+            //    }
+            //};
+            //Unloaded += (_, __) =>
+            //{
+            //    if (DataContext is MainViewModel vm)
+            //    {
+            //        vm.ResetLayoutsViewRequested -= OnResetLayoutsView;
+            //    }
+            //};
         }
 
         private void OnResetLayoutsView(object? sender, EventArgs e)

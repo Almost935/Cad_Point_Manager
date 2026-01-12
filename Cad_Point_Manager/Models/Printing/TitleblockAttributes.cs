@@ -10,7 +10,7 @@ namespace Cad_Point_Manager.Models.Printing
 {
     public class TitleblockAttributes : INotifyPropertyChanged
     {
-        public Attribute Notes { get; } = new() { Text = "Notes", FontSize = 0.2, FontColor = Colors.Red };
+        public Attribute Notes { get; } = new() { Text = "Notes", FontSize = 0.2 };
 
         public Attribute DrawingDesc1 { get; } = new() { Text = "Drawing Description 1", FontSize = 0.25 };
         public Attribute DrawingDesc2 { get; } = new() { Text = "Drawing Description 2", FontSize = 0.25 };

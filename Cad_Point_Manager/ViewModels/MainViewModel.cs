@@ -31,6 +31,7 @@ namespace Cad_Point_Manager.ViewModels
 
         private readonly Dictionary<string, List<string>> _errors = [];
 
+        private ILayoutRenderHost? _renderHost;
         private JobFileManager _jobFileManager = new();
         private bool _jobFileLoaded = false;
         private string _dxfFilePath;
@@ -64,10 +65,19 @@ namespace Cad_Point_Manager.ViewModels
         private bool _modelVisible = true;
         
         // Layout related fields
-        private Layout _selectedLayout;
+        private Layout _activeLayout;
         #endregion
 
         #region Properties
+        public ILayoutRenderHost? RenderHost
+        {
+            get { return _renderHost; }
+            set
+            {
+                _renderHost = value;
+                OnPropertyChanged(nameof(RenderHost));
+            }
+        }
         public JobFileManager JobFileManager
         {
             get { return _jobFileManager; }
@@ -385,13 +395,13 @@ namespace Cad_Point_Manager.ViewModels
         }
 
         // Layout related properties
-        public Layout SelectedLayout
+        public Layout ActiveLayout
         {
-            get => _selectedLayout;
+            get => _activeLayout;
             set
             {
-                _selectedLayout = value;
-                OnPropertyChanged(nameof(SelectedLayout));
+                _activeLayout = value;
+                OnPropertyChanged(nameof(ActiveLayout));
             }
         }
         #endregion
@@ -402,6 +412,7 @@ namespace Cad_Point_Manager.ViewModels
         public ICommand AttachDxfFileCommand { get; set; }
         public ICommand SaveJobCommand { get; set; }
         public ICommand SaveAsJobCommand { get; set; }
+        public ICommand PrintJobCommand { get; set; }
         public ICommand ZoomToExtentsCommand { get; set; }
 
         public ICommand SnapToggleCommand => new RelayCommand<object>(OnSnapTogglePressed);
@@ -429,6 +440,7 @@ namespace Cad_Point_Manager.ViewModels
             AttachDxfFileCommand = new RelayCommand<RoutedEventArgs>(AttachDxfFile);
             SaveJobCommand = new RelayCommand<RoutedEventArgs>(SaveJob);
             SaveAsJobCommand = new RelayCommand<RoutedEventArgs>(SaveJobAs);
+            PrintJobCommand = new RelayCommand<RoutedEventArgs>(PrintJob);
 
             ZoomToExtentsCommand = new RelayCommand<RoutedEventArgs>(ZoomToExtents);
 
@@ -492,6 +504,10 @@ namespace Cad_Point_Manager.ViewModels
         public void SaveJobAs(RoutedEventArgs e)
         {
 
+        }
+        public async void PrintJob(RoutedEventArgs e)
+        {
+            await ExportActiveLayoutAsync();
         }
 
         public void ZoomToExtents(RoutedEventArgs e)
@@ -656,11 +672,18 @@ namespace Cad_Point_Manager.ViewModels
             ChainPaths = directed;
         }
 
-        // Key up event handling
-        //public void Window_KeyUp(object sender, KeyEventArgs e)
-        //{
+        // Printing Methods
+        public async Task ExportActiveLayoutAsync()
+        {
+            if (ActiveLayout == null || RenderHost is null) { return; }
 
-        //}
+            var path = "C:\\Users\\jclem\\source\\repos\\Cad_Point_Manager\\Cad_Point_Manager\\Resources\\";
+            await LayoutPdfExporter.ExportLayoutToPdfAsync(
+                ActiveLayout,
+                RenderHost,
+                path,
+                dpi: 300);
+        }
         #endregion
 
         #region INotifyDataErrorInfo

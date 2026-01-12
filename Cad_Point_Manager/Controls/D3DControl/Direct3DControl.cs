@@ -96,6 +96,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         protected abstract void OnFrontBufferRestored();
         // - event handler ---------------------------------------------------------------
+        public int MaxTextureSize => _resCache?.MaxSize ?? 8192;
+
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {

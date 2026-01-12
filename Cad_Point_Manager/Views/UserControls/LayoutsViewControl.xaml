@@ -27,6 +27,7 @@
             <ColumnDefinition Width="3*" />
         </Grid.ColumnDefinitions>
         <TabControl x:Name="tabControl"
+                    Background="Wheat"
                     Grid.Row="0"
                     BorderThickness="0"
                     Panel.ZIndex="2"
@@ -211,7 +212,8 @@
                     </controls:DoubleClickSetListView.View>
                 </controls:DoubleClickSetListView>
             </TabItem>
-            <TabItem Header="Settings">
+            <TabItem Header="Settings"
+                     Foreground="White">
                 
             </TabItem>
         </TabControl>

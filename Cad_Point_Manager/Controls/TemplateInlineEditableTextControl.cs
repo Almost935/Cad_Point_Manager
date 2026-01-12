@@ -3,6 +3,7 @@ using Cad_Point_Manager.Views.UserControls;
 using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -18,6 +19,7 @@ namespace Cad_Point_Manager.Controls
         private LayoutsViewControl? _host;
         private bool _overlayUpdatePending;
         private MouseButtonEventHandler? _hostPreviewMouseDownHandler;
+        private TextBlock? _readView;
         #endregion
 
         #region Dependency Properties
@@ -50,6 +52,15 @@ namespace Cad_Point_Manager.Controls
             get => (bool)GetValue(ScaleFontWithViewProperty);
             set => SetValue(ScaleFontWithViewProperty, value);
         }
+
+        public static readonly DependencyProperty TextAlignmentProperty =
+            DependencyProperty.Register(nameof(TextAlignment), typeof(TextAlignment),
+                typeof(TemplateInlineEditableTextControl), new PropertyMetadata(TextAlignment.Left));
+        public TextAlignment TextAlignment
+        {
+            get => (TextAlignment)GetValue(TextAlignmentProperty);
+            set => SetValue(TextAlignmentProperty, value);
+        }
         #endregion
 
         #region Constructors
@@ -61,9 +72,13 @@ namespace Cad_Point_Manager.Controls
         #endregion
 
         #region Methods
+        public override void OnApplyTemplate()
+        {
+            base.OnApplyTemplate();
+            _readView = GetTemplateChild("ReadView") as TextBlock;
+        }
         protected override void OnPreviewMouseLeftButtonUp(MouseButtonEventArgs e)
         {
-            Debug.WriteLine($"OnPreviewMouseLeftButtonUp");
             base.OnPreviewMouseLeftButtonUp(e);
 
             BeginEdit();
@@ -81,6 +96,9 @@ namespace Cad_Point_Manager.Controls
             _host = VisualTreeHelpers.FindAncestor<LayoutsViewControl>(this);
             if (_host == null) { return; }
 
+            ApplyTemplate();
+            _readView?.UpdateLayout();
+
             _originalText = Text;
 
             _overlayEditor = new TextBox
@@ -89,36 +107,34 @@ namespace Cad_Point_Manager.Controls
                 TextWrapping = TextWrapping.Wrap,
                 VerticalContentAlignment = VerticalAlignment.Top,
                 BorderThickness = new Thickness(0),
-                Margin = new Thickness(0),
+                Margin = new Thickness(0, 0, 0, 0),
                 Padding = new Thickness(0),
                 MinHeight = 0,
+                Background = Brushes.White
             };
-            _overlayEditor.SetBinding(TextBox.ForegroundProperty, new Binding(nameof(Foreground)) { Source = this });
-            _overlayEditor.SetBinding(TextBox.BackgroundProperty, new Binding(nameof(Background)) { Source = this });
             _overlayEditor.SetBinding(TextBox.FontFamilyProperty, new Binding(nameof(FontFamily)) { Source = this });
+            _overlayEditor.SetBinding(TextBox.FontStyleProperty, new Binding(nameof(FontStyle)) { Source = this });
+            _overlayEditor.SetBinding(TextBox.FontWeightProperty, new Binding(nameof(FontWeight)) { Source = this });
+            _overlayEditor.SetBinding(TextBox.FontStretchProperty, new Binding(nameof(FontStretch)) { Source = this });
+            _overlayEditor.SetBinding(TextBox.ForegroundProperty, new Binding(nameof(Foreground)) { Source = this });
 
             _hostPreviewMouseDownHandler = Host_PreviewMouseDown;
             _host.AddHandler(UIElement.PreviewMouseDownEvent, _hostPreviewMouseDownHandler, handledEventsToo: true);
 
-            // Bind overlay editor text to this control
             _overlayEditor.SetBinding(TextBox.TextProperty, new Binding(nameof(Text))
             {
                 Source = this,
                 Mode = BindingMode.TwoWay,
                 UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged
             });
-
             _overlayEditor.LostKeyboardFocus += OverlayEditor_LostKeyboardFocus;
             _overlayEditor.PreviewKeyDown += OverlayEditor_PreviewKeyDown;
 
-            // Add to overlay layer (NOT scaled)
             _host.EditorOverlay.IsHitTestVisible = true;
             _host.EditorOverlay.Children.Add(_overlayEditor);
 
-            // Keep in sync with pan/zoom
             _host.ViewMatrixChanged += Host_ViewMatrixChanged;
 
-            // Initial placement
             UpdateOverlayEditorRect();
 
             _overlayEditor.Focus();
@@ -208,25 +224,26 @@ namespace Cad_Point_Manager.Controls
         {
             if (_overlayEditor == null || _host == null) { return; }
 
-            // Transform THIS control’s bounds into BackgroundCanvas coords.
-            // This automatically reflects PageHost's RenderTransform (matrix).
-            var t = TransformToAncestor(_host.BackgroundCanvas);
-            Rect bounds = t.TransformBounds(new Rect(new Size(ActualWidth, ActualHeight)));
+            FrameworkElement anchor = _readView ?? (FrameworkElement)this;
+
+            var t = anchor.TransformToAncestor(_host.BackgroundCanvas);
+            Rect bounds = t.TransformBounds(new Rect(0, 0, anchor.ActualWidth, anchor.ActualHeight));
 
             Canvas.SetLeft(_overlayEditor, bounds.Left);
             Canvas.SetTop(_overlayEditor, bounds.Top);
             _overlayEditor.Width = Math.Max(1, bounds.Width);
             _overlayEditor.Height = Math.Max(1, bounds.Height);
 
-            // Font sizing:
-            // Your control's FontSize is in "page units". We multiply by view scale
-            // so it visually matches the zoomed content.
             _overlayEditor.FontFamily = FontFamily;
+            _overlayEditor.Foreground = Foreground;
 
-            double s = _host.ViewMatrix.M11; // uniform scale assumption
-            _overlayEditor.FontSize = ScaleFontWithView
-                ? Math.Max(1, FontSize * s)
-                : Math.Max(1, FontSize * 12); // adjust if you want a different baseline
+            if (_readView != null) { _overlayEditor.TextAlignment = _readView.TextAlignment; }
+
+            _overlayEditor.VerticalContentAlignment = _readView?.VerticalAlignment ?? VerticalAlignment.Top;
+            _overlayEditor.HorizontalContentAlignment = _readView?.HorizontalAlignment ?? HorizontalAlignment.Left;
+
+            double s = _host.ViewMatrix.M11;
+            _overlayEditor.FontSize = ScaleFontWithView ? Math.Max(1, FontSize * s) : Math.Max(1, FontSize * 12);
         }
         #endregion
     }
