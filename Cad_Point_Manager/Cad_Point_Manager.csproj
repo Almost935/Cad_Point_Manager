@@ -54,7 +54,6 @@
     <Compile Remove="Helpers\DxfHelper.cs" />
     <Compile Remove="Helpers\Vector2EqualityComparer.cs" />
     <Compile Remove="Helpers\VectorEqualityComparer.cs" />
-    <Compile Remove="Models\CadManager.cs" />
     <Compile Remove="Models\Enums.cs" />
     <Compile Remove="Models\OffscreenBitmap.cs" />
     <Compile Remove="Models\OffscreenBitmapManager.cs" />
@@ -105,7 +104,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\ColorPicker\ColorPicker\ColorPicker.csproj" />
+    <ProjectReference Include="..\..\ColorPicker\src\ColorPicker\ColorPicker.csproj" />
   </ItemGroup>
 
   <ItemGroup>

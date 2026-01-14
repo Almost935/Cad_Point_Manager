@@ -47,7 +47,6 @@ namespace Cad_Point_Manager.Models.Printing
             }
         }
 
-        public Guid LayoutId { get; init; } = Guid.NewGuid();
         public string Name { get; set; } = "Layout 1";
         public ObservableCollection<DrawingObject> DrawingObjects { get; set; } = [];
         #endregion

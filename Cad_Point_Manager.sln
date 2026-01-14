@@ -5,7 +5,7 @@ VisualStudioVersion = 18.3.11312.210
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Cad_Point_Manager", "Cad_Point_Manager\Cad_Point_Manager.csproj", "{5C0BA1B5-7801-4F7C-BAB8-B5E53C13FDA7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ColorPicker", "..\ColorPicker\ColorPicker\ColorPicker.csproj", "{F270D1FA-1BA0-08AD-11FB-6D12AC16BE1D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ColorPicker", "..\ColorPicker\src\ColorPicker\ColorPicker.csproj", "{6BBE1A95-99BD-F92C-2018-A8C50C68C239}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -17,9 +17,9 @@ Global
 		{5C0BA1B5-7801-4F7C-BAB8-B5E53C13FDA7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5C0BA1B5-7801-4F7C-BAB8-B5E53C13FDA7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5C0BA1B5-7801-4F7C-BAB8-B5E53C13FDA7}.Release|Any CPU.Build.0 = Release|Any CPU
-		{F270D1FA-1BA0-08AD-11FB-6D12AC16BE1D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{F270D1FA-1BA0-08AD-11FB-6D12AC16BE1D}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{F270D1FA-1BA0-08AD-11FB-6D12AC16BE1D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6BBE1A95-99BD-F92C-2018-A8C50C68C239}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6BBE1A95-99BD-F92C-2018-A8C50C68C239}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6BBE1A95-99BD-F92C-2018-A8C50C68C239}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -187,15 +187,15 @@ namespace Cad_Point_Manager.Views.UserControls
             typeof(RightHandPopout),
             new PropertyMetadata(20.0));
 
-        public CadManager3D CadManager
+        public CadManager CadManager
         {
-            get { return (CadManager3D)GetValue(CadManagerProperty); }
+            get { return (CadManager)GetValue(CadManagerProperty); }
             set { SetValue(CadManagerProperty, value); }
         }
         public static readonly DependencyProperty CadManagerProperty =
         DependencyProperty.Register(
             nameof(CadManager),
-            typeof(CadManager3D),
+            typeof(CadManager),
             typeof(RightHandPopout),
             new PropertyMetadata(null, (d, e) => ((RightHandPopout)d).InitializeMergeCollectionView()));
 

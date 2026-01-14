@@ -43,8 +43,12 @@ namespace Cad_Point_Manager.Models.Printing
         }
 
         public Guid SceneId { get; set; } = Guid.NewGuid();
-        public int ZoomStep { get; set; } = 0;
+        public int ZoomStep { get; set; } = 1;
+        public float ZoomFactor { get; set; } = 1.0f;
         public Vector2 Translation { get; set; } = Vector2.Zero;
+
+        public float Zoom => (float)Math.Pow(ZoomFactor, ZoomStep);
+        public Matrix3x2 TestMatrix { get; set; } = Matrix.Identity;
 
         public float BoundsLeft => _bounds.X;
         public float BoundsTop => _bounds.Y;

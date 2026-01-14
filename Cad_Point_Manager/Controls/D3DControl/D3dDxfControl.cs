@@ -332,15 +332,15 @@ namespace Cad_Point_Manager.Controls.D3DControl
         #endregion
 
         #region Dependency Properties
-        public CadManager3D CadManager3D
+        public CadManager CadManager3D
         {
-            get { return (CadManager3D)GetValue(CadManager3DProperty); }
+            get { return (CadManager)GetValue(CadManager3DProperty); }
             set { SetValue(CadManager3DProperty, value); }
         }
         public static readonly DependencyProperty CadManager3DProperty =
         DependencyProperty.Register(
             nameof(CadManager3D),
-            typeof(CadManager3D),
+            typeof(CadManager),
             typeof(D3dDxfControl),
             new PropertyMetadata(null, OnCadManager3DChanged));
 
@@ -648,7 +648,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 if (range.VertexCount <= 0) { continue; }
 
                 // Update instance buffer (slot 1)
-                _glyphInstanceBuffer.Update(ctx, CollectionsMarshal.AsSpan(instances)); // .NET 7; or instances.ToArray()
+                _glyphInstanceBuffer.Update(ctx, CollectionsMarshal.AsSpan(instances));
                 var vbInst = new VertexBufferBinding(_glyphInstanceBuffer.Buffer, _glyphInstanceBuffer.Stride, 0);
 
                 ctx.InputAssembler.SetVertexBuffers(0, vbGlyph, vbInst);
@@ -881,7 +881,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     uint idElev = _ids.GetOrAddLabelId(p, 1);
                     uint idDesc = p.HasDescription ? _ids.GetOrAddLabelId(p, 2) : 0xFFFFFFFF;
 
-                    var pos = Vector2.Zero; // zero base position because position is handled in PointState.Offset
+                    var pos = Vector2.Zero;
                     AddCogoTextLabelLine(
                         s: p.PointNumber.ToString(),
                         originWorld: pos,
@@ -919,7 +919,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             }
 
             CadManager3D.CogoPointManager.UpdateCogoPointTree();
-            // If we are at the initial zoom and translation, reset the view to fit the new extents
+
             if (CadManager3D.Camera.CurrentZoomStep == 0 && CadManager3D.Camera.Translate == Vector2.Zero)
             {
                 SetInitialMatrix();
@@ -1737,7 +1737,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             Span<int> cps = stackalloc int[s.Length];
             for (int i = 0; i < s.Length; i++) { cps[i] = s[i]; }
-            var gids = _resCache.CogoPointFontFace.GetGlyphIndices(cps.ToArray()); // or cachedzzza 
+            var gids = _resCache.CogoPointFontFace.GetGlyphIndices(cps.ToArray());
             float penDU = 0f;
 
             for (int i = 0; i < gids.Length; i++)
@@ -1760,7 +1760,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 list.Add(inst);
                 penDU += _resCache.AdvanceWidthCache[gid];
             }
-
             float widthWorld = penDU * duToWorld;
         }
 
@@ -2018,7 +2017,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 UpdateInitialMatrix();
 
                 if (IsMouseCaptured) { ReleaseMouseCapture(); }
-                e.Handled = true;                
+                e.Handled = true;
 
                 _combinedDirty = true;
 
@@ -3090,7 +3089,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         {
             if (d is not D3dDxfControl control) { return; }
 
-            if (e.OldValue is CadManager3D oldCadManager3D)
+            if (e.OldValue is CadManager oldCadManager3D)
             {
                 oldCadManager3D.PropertyChanged -= control.CadManager3D_PropertyChanged;
                 oldCadManager3D.ZoomToExtentsRequested -= control.ZoomToExtents;
@@ -3099,7 +3098,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 oldCadManager3D.Layers.CollectionChanged -= control.Layers_CollectionChanged;
             }
 
-            if (e.NewValue is CadManager3D newCadManager3D)
+            if (e.NewValue is CadManager newCadManager3D)
             {
                 newCadManager3D.PropertyChanged += control.CadManager3D_PropertyChanged;
                 newCadManager3D.ZoomToExtentsRequested += control.ZoomToExtents;
@@ -3363,7 +3362,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
                     CadManager3D.CogoPointManager.UpdateCogoPointTree();
                     UpdateInitialMatrix();
-                 
+
                     _pointCircleVerticesDirty = true; _dxfDirty = true; _combinedDirty = true;
                 }
             }
@@ -3374,10 +3373,10 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     _stateCtl.SetPointGroupId(cp, _ids.GetOrAddGroupId(cp.PointGroup));
                     _stateCtl.FlushPointUpdates();
                     RecomputeCogoPointBoundsFast(cp);
-                    
+
                     CadManager3D.CogoPointManager.UpdateCogoPointTree();
                     UpdateInitialMatrix();
-                    
+
                     _dxfDirty = true; _combinedDirty = true;
                 }
             }
@@ -3428,6 +3427,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 CadManager3D.Camera.UpdateViewportSize(Viewport);
                 UpdateConstantBuffers();
                 CadManager3D.Camera.LoadScene(scene);
+
+                scene.TestMatrix = CadManager3D.Camera.D2dMatrix;
 
                 _dxfDirty = true;
                 _combinedDirty = true;

@@ -158,21 +158,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             ViewMatrix = Matrix.Scaling(zoom, zoom, 1) * Matrix.Translation(Translate.X, Translate.Y, 0);
             _scaledViewMatrix = Matrix.Scaling(zoom, zoom, 1) * Matrix.Translation(Translate.X * ProjectionMatrix.M11 * zoom, Translate.Y * ProjectionMatrix.M22 * zoom, 0);
         }
-        //public void UpdateView()
-        //{
-        //    var zoom = CurrentZoom;
-
-        //    ViewMatrix = Matrix.Scaling(zoom, zoom, 1) * Matrix.Translation(Translate.X, Translate.Y, 0);
-
-        //    // keep projection in sync with zoom/translate
-        //    UpdateProjection();
-
-        //    _scaledViewMatrix =
-        //        Matrix.Scaling(zoom, zoom, 1) *
-        //        Matrix.Translation(Translate.X * ProjectionMatrix.M11 * zoom,
-        //                           Translate.Y * ProjectionMatrix.M22 * zoom, 0);
-        //}
-
 
         private void UpdateViewProjection()
         {
@@ -422,7 +407,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 return false;
             }
 
-            scene = new Scene() { Name = sceneName, ZoomStep = CurrentZoomStep, Translation = Translate, Bounds = GetCurrentViewportBounds() };
+            scene = new Scene() { Name = sceneName, ZoomStep = CurrentZoomStep, ZoomFactor = _zoomFactor, Translation = Translate, Bounds = GetCurrentViewportBounds() };
             Scenes.Add(scene);
 
             return true;

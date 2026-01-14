@@ -161,15 +161,15 @@ namespace Cad_Point_Manager.Views.UserControls
             typeof(LeftHandPopout),
             new PropertyMetadata(20.0));
 
-        public CadManager3D CadManager
+        public CadManager CadManager
         {
-            get { return (CadManager3D)GetValue(CadManagerProperty); }
+            get { return (CadManager)GetValue(CadManagerProperty); }
             set { SetValue(CadManagerProperty, value); }
         }
         public static readonly DependencyProperty CadManagerProperty =
         DependencyProperty.Register(
             nameof(CadManager),
-            typeof(CadManager3D),
+            typeof(CadManager),
             typeof(LeftHandPopout),
             new PropertyMetadata(null, OnCadManagerChanged));
 
@@ -238,7 +238,7 @@ namespace Cad_Point_Manager.Views.UserControls
         #region General Methods
         private static void OnCadManagerChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
-            if (d is LeftHandPopout control && e.NewValue is not null && e.NewValue is CadManager3D cadManager)
+            if (d is LeftHandPopout control && e.NewValue is not null && e.NewValue is CadManager cadManager)
             {
 
                 control.CogoPointSelectionViewModel?.UpdateCadManager(cadManager);

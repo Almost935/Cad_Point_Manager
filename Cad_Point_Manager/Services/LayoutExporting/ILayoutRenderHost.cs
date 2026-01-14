@@ -1,7 +1,7 @@
 ﻿using Cad_Point_Manager.Models.Printing;
 using System.Windows.Media.Imaging;
 
-namespace Cad_Point_Manager.Services
+namespace Cad_Point_Manager.Services.LayoutExporting
 {
     public interface ILayoutRenderHost
     {

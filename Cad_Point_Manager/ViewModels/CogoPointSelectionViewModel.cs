@@ -103,7 +103,7 @@ namespace Cad_Point_Manager.ViewModels
         }
 
         private ObservableCollection<string> _displayedPointGroupsName = [];
-        private CadManager3D _cadManager;
+        private CadManager _cadManager;
         private ObservableCollection<CogoPoint> _selectedPoints;
 
         public ObservableCollection<string> DisplayedPointGroupsName
@@ -115,7 +115,7 @@ namespace Cad_Point_Manager.ViewModels
                 OnPropertyChanged(nameof(DisplayedPointGroupsName));
             }
         }
-        public CadManager3D CadManager
+        public CadManager CadManager
         {
             get => _cadManager;
             set
@@ -137,7 +137,7 @@ namespace Cad_Point_Manager.ViewModels
             }
         }
 
-        public CogoPointSelectionViewModel(CadManager3D cadManager, ObservableCollection<CogoPoint> selectedPoints)
+        public CogoPointSelectionViewModel(CadManager cadManager, ObservableCollection<CogoPoint> selectedPoints)
         {
             CadManager = cadManager;
 
@@ -162,7 +162,7 @@ namespace Cad_Point_Manager.ViewModels
             OnPropertyChanged(nameof(IsPointGroupEditable));
         }
 
-        public void UpdateCadManager(CadManager3D cadManager)
+        public void UpdateCadManager(CadManager cadManager)
         {
             if (CadManager is not null)
             {

@@ -26,7 +26,7 @@ using Vector3 = SharpDX.Vector3;
 
 namespace Cad_Point_Manager.Models
 {
-    public class CadManager3D : INotifyPropertyChanged
+    public class CadManager : INotifyPropertyChanged
     {
         #region Fields
         private const float _pointSizeToExtentsFactor = 0.001f;
@@ -256,7 +256,7 @@ namespace Cad_Point_Manager.Models
         #endregion
 
         #region Constructor
-        public CadManager3D()
+        public CadManager()
         {
             CogoPointManager = new(this);
 

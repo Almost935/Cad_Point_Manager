@@ -9,6 +9,7 @@ using Cad_Point_Manager.Models.HitTesting;
 using Cad_Point_Manager.Models.PointRendering;
 using Cad_Point_Manager.Models.Printing;
 using Cad_Point_Manager.Services;
+using Cad_Point_Manager.Services.LayoutExporting;
 using netDxf;
 using System.Collections;
 using System.ComponentModel;
@@ -30,6 +31,8 @@ namespace Cad_Point_Manager.ViewModels
         private readonly NewSelectionConnectivityService _service = new();
 
         private readonly Dictionary<string, List<string>> _errors = [];
+
+        private readonly LayoutPdfVectorExporter _layoutPdfVectorExporter = new();
 
         private ILayoutRenderHost? _renderHost;
         private JobFileManager _jobFileManager = new();
@@ -677,12 +680,12 @@ namespace Cad_Point_Manager.ViewModels
         {
             if (ActiveLayout == null || RenderHost is null) { return; }
 
-            var path = "C:\\Users\\jclem\\source\\repos\\Cad_Point_Manager\\Cad_Point_Manager\\Resources\\";
-            await LayoutPdfExporter.ExportLayoutToPdfAsync(
+            var path = "C:\\Users\\fcraw\\source\\repos\\Cad_Point_Manager\\Cad_Point_Manager\\Resources\\Testing\\test.pdf";
+            await _layoutPdfVectorExporter.ExportAsync(
                 ActiveLayout,
-                RenderHost,
-                path,
-                dpi: 300);
+                JobFileManager.CadManager3D,
+                ActiveLayout.Viewport.Scene,
+                path);
         }
         #endregion
 

@@ -67,16 +67,13 @@ static const uint OBJ_COLOR_BY_LAYER = 1u << 3;
 // Replace per-vertex snapping with a uniform NDC delta computed once
 float2 ComputeSnapDeltaNdc(float2 viewportSize)
 {
-    // Where does the world origin land on screen this frame?
     float4 originClip = mul(float4(0, 0, 0, 1), transformationMatrix);
     float2 originNdc = originClip.xy / originClip.w;
     float2 originPix = (originNdc * 0.5f + 0.5f) * viewportSize;
 
-    // Offset needed to align to pixel centers
     float2 targetPix = floor(originPix) + 0.5f;
     float2 deltaPix = targetPix - originPix;
 
-    // Convert pixel delta -> NDC delta
     return (deltaPix / viewportSize) * 2.0f;
 }
 
@@ -93,7 +90,6 @@ PSInput VSMain(VSInput input)
     float visObject = ((os.Flags & OBJ_VISIBLE) != 0u) ? 1.0f : 0.0f;
     float colorByLayer = ((os.Flags & OBJ_COLOR_BY_LAYER) != 0u) ? 1.0f : 0.0f;
 
-    // colors (unchanged)
     float4 col;
     if (colorByLayer < 0.5)
     {

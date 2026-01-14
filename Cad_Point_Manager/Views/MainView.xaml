@@ -163,7 +163,7 @@
                                    CadManager="{Binding DataContext.JobFileManager.CadManager3D, RelativeSource={RelativeSource AncestorType=Page}}"
                                    Scenes="{Binding DataContext.JobFileManager.CadManager3D.Camera.Scenes, RelativeSource={RelativeSource AncestorType=Page}}"
                                    Renderer="{Binding ElementName=d3dDxfControl}"
-                                   ActiveLayout="{Binding DataContext.ActiveLayout, RelativeSource={RelativeSource AncestorType=Page}}" />
+                                   ActiveLayout="{Binding DataContext.ActiveLayout, RelativeSource={RelativeSource AncestorType=Page}, Mode=TwoWay}" />
         </Grid>
 
         <Grid x:Name="modelGrid"

@@ -25,6 +25,11 @@ namespace Cad_Point_Manager.Extensions
             return new System.Numerics.Vector2(v.X, v.Y);
         }
 
+        public static System.Numerics.Vector3 ToVector3(this Vector3 v)
+        {
+            return new System.Numerics.Vector3(v.X, v.Y, v.Z);
+        }
+
         public static bool EqualsWithTolerance(this Vector3 v1, Vector3 v2, float tolerance)
         {
             return Math.Abs(v1.X - v2.X) <= tolerance &&

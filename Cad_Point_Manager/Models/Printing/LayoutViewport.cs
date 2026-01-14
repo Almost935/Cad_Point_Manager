@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SharpDX;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
@@ -44,6 +45,7 @@ namespace Cad_Point_Manager.Models.Printing
 
         public Guid Id { get; init; } = Guid.NewGuid();
         public bool ShowBorder { get; set; } = true;
+        public Matrix SceneMatrix { get; set; } = Matrix.Identity; 
         #endregion
 
 

@@ -11,7 +11,7 @@ namespace Cad_Point_Manager.Models.PointRendering
     public class CogoPointTree
     {
         #region Fields
-        private CadManager3D _cadManager;
+        private CadManager _cadManager;
         #endregion
 
         #region Properties
@@ -27,7 +27,7 @@ namespace Cad_Point_Manager.Models.PointRendering
         #endregion
 
         #region Constructors
-        public CogoPointTree(CadManager3D cadManager, Rect extents, int levels)
+        public CogoPointTree(CadManager cadManager, Rect extents, int levels)
         {
             _cadManager = cadManager;
             Extents = extents;

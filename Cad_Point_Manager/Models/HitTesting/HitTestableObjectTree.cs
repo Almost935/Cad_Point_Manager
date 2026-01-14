@@ -5,7 +5,7 @@ namespace Cad_Point_Manager.Models.HitTesting
     public class HitTestableObjectTree
     {
         #region Fields
-        private CadManager3D _cadManager;
+        private CadManager _cadManager;
         #endregion
 
         #region Properties
@@ -21,7 +21,7 @@ namespace Cad_Point_Manager.Models.HitTesting
         #endregion
 
         #region Constructors
-        public HitTestableObjectTree(CadManager3D cadManager, Rect extents, int levels)
+        public HitTestableObjectTree(CadManager cadManager, Rect extents, int levels)
         {
             _cadManager = cadManager;
             Extents = extents;

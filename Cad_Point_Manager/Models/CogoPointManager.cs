@@ -14,7 +14,7 @@ namespace Cad_Point_Manager.Models
         #region Fields
         private BatchableObservableCollection<PointGroup> _pointGroups = [];
         private PointGroup _activePointGroup;
-        private CadManager3D _cadManager;
+        private CadManager _cadManager;
         private BatchableObservableCollection<CogoPoint> _cogoPoints = [];
         #endregion
 
@@ -40,7 +40,7 @@ namespace Cad_Point_Manager.Models
                 }
             }
         }
-        public CadManager3D CadManager
+        public CadManager CadManager
         {
             get => _cadManager;
             set
@@ -74,7 +74,7 @@ namespace Cad_Point_Manager.Models
         #endregion
 
         #region Constructor
-        public CogoPointManager(CadManager3D cadManager)
+        public CogoPointManager(CadManager cadManager)
         {
             _cadManager = cadManager;
         }

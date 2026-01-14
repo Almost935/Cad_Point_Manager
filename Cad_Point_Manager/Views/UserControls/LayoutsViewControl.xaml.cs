@@ -39,12 +39,12 @@ namespace Cad_Point_Manager.Views.UserControls
         public static readonly DependencyProperty CadManagerProperty =
             DependencyProperty.Register(
                 nameof(CadManager),
-                typeof(CadManager3D),
+                typeof(CadManager),
                 typeof(LayoutsViewControl),
                 new PropertyMetadata(null, OnCadManagerChanged));
-        public CadManager3D? CadManager
+        public CadManager? CadManager
         {
-            get => (CadManager3D?)GetValue(CadManagerProperty);
+            get => (CadManager?)GetValue(CadManagerProperty);
             set => SetValue(CadManagerProperty, value);
         }
 
@@ -166,12 +166,12 @@ namespace Cad_Point_Manager.Views.UserControls
         private static void OnCadManagerChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             var ctrl = (LayoutsViewControl)d;
-            var oldValue = e.OldValue as CadManager3D;
+            var oldValue = e.OldValue as CadManager;
             if (oldValue is not null)
             {
                 oldValue.Layouts.CollectionChanged -= ctrl.Layouts_CollectionChanged;
             }
-            var newValue = e.NewValue as CadManager3D;
+            var newValue = e.NewValue as CadManager;
             if (newValue is not null)
             {
                 if (oldValue is not null)
