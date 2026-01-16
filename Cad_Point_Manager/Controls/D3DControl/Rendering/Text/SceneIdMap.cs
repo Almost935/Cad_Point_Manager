@@ -32,14 +32,14 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
         }
         public uint GetOrAddPointId(CogoPoint cp)
         {
-            if (_pointOf.TryGetValue(cp, out var id)) return id;
+            if (_pointOf.TryGetValue(cp, out var id)) { return id; }
             id = (uint)_pointOf.Count;
             _pointOf[cp] = id;
             return id;
         }
         public uint GetOrAddGroupId(PointGroup pg)
         {
-            if (_groupOf.TryGetValue(pg, out var id)) return id;
+            if (_groupOf.TryGetValue(pg, out var id)) { return id; }
             id = (uint)_groupOf.Count;
             _groupOf[pg] = id;
             return id;

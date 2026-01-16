@@ -26,6 +26,48 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
         #endregion
 
         #region Methods
+        public ReadOnlySpan<LabelState> GetLabelStates() => _bufs.LabelSpan;
+        public ReadOnlySpan<PointState> GetPointStates() => _bufs.PointSpan;
+        public ReadOnlySpan<GroupState> GetGroupStates() => _bufs.GroupSpan;
+        public ReadOnlySpan<LayerState> GetLayerStates() => _bufs.LayerSpan;
+        public ReadOnlySpan<ObjectState> GetObjectStates() => _bufs.ObjectSpan;
+
+        public LabelState[] GetLabelStatesSnapshot()
+        {
+            var src = _bufs.LabelSpan;
+            var dst = new LabelState[src.Length];
+            src.CopyTo(dst);
+            return dst;
+        }
+        public PointState[] GetPointStatesSnapshot()
+        {
+            var src = _bufs.PointSpan;
+            var dst = new PointState[src.Length];
+            src.CopyTo(dst);
+            return dst;
+        }
+        public GroupState[] GetGroupStatesSnapshot()
+        {
+            var src = _bufs.GroupSpan;
+            var dst = new GroupState[src.Length];
+            src.CopyTo(dst);
+            return dst;
+        }
+        public LayerState[] GetLayerStatesSnapshot()
+        {
+            var src = _bufs.LayerSpan;
+            var dst = new LayerState[src.Length];
+            src.CopyTo(dst);
+            return dst;
+        }
+        public ObjectState[] GetObjectStatesSnapshot()
+        {
+            var src = _bufs.ObjectSpan;
+            var dst = new ObjectState[src.Length];
+            src.CopyTo(dst);
+            return dst;
+        }
+
         public void SetObjectSelected(DrawingObject obj, bool selected)
         {
             if (!_ids.TryGetObjectId(obj, out var oId)) { return; }

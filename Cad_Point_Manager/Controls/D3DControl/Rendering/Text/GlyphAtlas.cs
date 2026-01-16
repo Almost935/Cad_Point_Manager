@@ -11,10 +11,11 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
         public int VertexStride => Utilities.SizeOf<GlyphVertexDU>();
         public IReadOnlyDictionary<short, GlyphRange> Ranges { get; }
 
-        public GlyphAtlas(Device device,
-                          FontFace fontFace,
-                          IGlyphTessellator tessellator,
-                          IEnumerable<short> glyphIds)
+        public GlyphAtlas(
+            Device device,
+            FontFace fontFace,
+            IGlyphTessellator tessellator,
+            IEnumerable<short> glyphIds)
         {
             var vertices = new List<GlyphVertexDU>();
             var ranges = new Dictionary<short, GlyphRange>();
@@ -34,9 +35,10 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
             Ranges = ranges;
         }
 
-        public static GlyphAtlas CreateForAscii(Device device,
-                                            FontFace fontFace,
-                                            IGlyphTessellator tessellator)
+        public static GlyphAtlas CreateForAscii(
+            Device device,
+            FontFace fontFace,
+            IGlyphTessellator tessellator)
         {
             var glyphIds = GlyphSets.Ascii32To126(fontFace);
             return new GlyphAtlas(device, fontFace, tessellator, glyphIds);

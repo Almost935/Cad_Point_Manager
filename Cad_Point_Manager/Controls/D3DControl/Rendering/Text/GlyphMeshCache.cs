@@ -36,8 +36,8 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
 
         public GlyphMesh Get(short glyphIndex)
         {
-            if (glyphIndex == 0) return GlyphMesh.Empty;
-            if (_cache.TryGetValue(glyphIndex, out var m)) return m;
+            if (glyphIndex == 0) { return GlyphMesh.Empty; }
+            if (_cache.TryGetValue(glyphIndex, out var m)) { return m; }
 
             m = _tess.Build(glyphIndex, _fontFace);
             _cache[glyphIndex] = m;

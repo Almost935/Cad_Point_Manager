@@ -26,8 +26,7 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
 
         public GlyphMesh Build(short glyphIndex, FontFace fontFace)
         {
-            if (glyphIndex == 0 || fontFace == null)
-                return GlyphMesh.Empty;
+            if (glyphIndex == 0 || fontFace == null) { return GlyphMesh.Empty; }
 
             // 1) Build a PathGeometry for this glyph in DESIGN UNITS.
             //    Trick: pass emSize = DesignUnitsPerEm so the outline coords come out in DU.
@@ -53,8 +52,7 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
                 //    Your current sink returns vertices as a triangle list (v0,v1,v2, v3,v4,v5, ...).
                 var vertices = TessellateGeometry(path, _flatteningTolerance, tesselationFactor: 1f);
 
-                if (vertices.Count == 0)
-                    return GlyphMesh.Empty;
+                if (vertices.Count == 0) { return GlyphMesh.Empty; }
 
                 // 3) Build a simple index array (0..N-1), 3 per triangle.
                 var indices = BuildSequentialTriangleIndices(vertices.Count);
@@ -71,18 +69,11 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
             }
         }
 
-        public void Dispose()
-        {
-            if (_disposed) return;
-            _disposed = true;
-            // nothing to dispose here besides the factory which you don't own
-        }
-
         private static int[] BuildSequentialTriangleIndices(int vertexCount)
         {
             // vertexCount should be multiple of 3
             var idx = new int[vertexCount];
-            for (int i = 0; i < vertexCount; i++) idx[i] = i;
+            for (int i = 0; i < vertexCount; i++) { idx[i] = i; }
             return idx;
         }
 
@@ -120,6 +111,13 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
             }
 
             return vertices;
+        }
+
+        public void Dispose()
+        {
+            if (_disposed) return;
+            _disposed = true;
+            // nothing to dispose here besides the factory which you don't own
         }
     }
 }

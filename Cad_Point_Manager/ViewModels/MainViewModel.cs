@@ -2,6 +2,7 @@
 using Cad_Point_Manager.Common;
 using Cad_Point_Manager.Common.Collections;
 using Cad_Point_Manager.Controls.D3DControl;
+using Cad_Point_Manager.Controls.D3DControl.Rendering.Text;
 using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Models;
 using Cad_Point_Manager.Models.DrawingObjects3D;
@@ -51,6 +52,7 @@ namespace Cad_Point_Manager.ViewModels
         private IReadOnlyList<ChainPath> _chainPaths = [];
         private double _vertexSnapTolerance = 1e-4;
         private Point _mousePosition = new();
+        private ResCache _resCache = new ResCache();
 
         // CogoPoint Creation Fields
         private int _newCogoPointsStartCount = 1;
@@ -232,6 +234,11 @@ namespace Cad_Point_Manager.ViewModels
                 OnPropertyChanged(nameof(MousePosition));
             }
         }
+        public ResCache ResCache
+        {
+            get => _resCache;
+            set { _resCache = value; OnPropertyChanged(); }
+        }
 
         // CogoPoint Creation Properties
         public int NewCogoPointsStartNumber
@@ -407,6 +414,9 @@ namespace Cad_Point_Manager.ViewModels
                 OnPropertyChanged(nameof(ActiveLayout));
             }
         }
+
+        public SceneIdMap SceneIdMap { get; set; }
+        public D3dStateController StateController { get; set; }
         #endregion
 
         #region Commands
@@ -685,6 +695,9 @@ namespace Cad_Point_Manager.ViewModels
                 ActiveLayout,
                 JobFileManager.CadManager3D,
                 ActiveLayout.Viewport.Scene,
+                StateController,
+                SceneIdMap,
+                ResCache,
                 path);
         }
         #endregion

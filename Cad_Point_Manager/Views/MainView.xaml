@@ -505,6 +505,9 @@
                                    Height="{Binding ElementName=dxfGrid, Path=ActualHeight}"
                                    SnappedHitTestablePoint="{Binding SnappedHitTestablePoint, Mode=TwoWay}"
                                    SelectedHitTestablePoints="{Binding SelectedHitTestablePoints, Mode=TwoWay}"
+                                   SceneIdMap="{Binding SceneIdMap, Mode=TwoWay}"
+                                   StateController="{Binding StateController, Mode=TwoWay}"
+                                   ResCache="{Binding ResCache}"
                                    Focusable="True"
                                    MousePosition="{Binding MousePosition, Mode=OneWayToSource}"
                                    Cursor="{x:Static helpers:AppCursors.DarkCrosshairCursor}" />
