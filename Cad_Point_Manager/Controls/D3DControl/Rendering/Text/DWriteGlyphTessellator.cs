@@ -63,7 +63,6 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
                 return new GlyphMesh
                 {
                     PositionsDU = vertices.ToArray(),
-                    Indices = indices,
                     BoundsDU = bounds
                 };
             }

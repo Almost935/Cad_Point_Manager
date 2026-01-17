@@ -14,12 +14,10 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
             public static readonly GlyphMesh Empty = new()
             {
                 PositionsDU = [],
-                Indices = [],
                 BoundsDU = RectangleF.Empty
             };
 
             public Vector2[] PositionsDU;   // triangle list in DU: v0,v1,v2, v3,v4,v5 ...
-            public int[] Indices;       // typically sequential (0..N-1)
             public RectangleF BoundsDU;
             public bool IsEmpty => PositionsDU == null || PositionsDU.Length == 0;
         }

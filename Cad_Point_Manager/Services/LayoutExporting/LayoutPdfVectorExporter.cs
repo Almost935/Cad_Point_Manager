@@ -138,6 +138,9 @@ namespace Cad_Point_Manager.Services.LayoutExporting
                 glyphCache);
 
             doc.Save(outputPdfPath);
+
+            glyphCache.Clear();
+            _duGlyphPathCache.Clear();
         }
 
         private static void DrawLine(XGraphics gfx, DrawingLine line, Matrix worldToPdf, XPen pen)
@@ -244,7 +247,7 @@ namespace Cad_Point_Manager.Services.LayoutExporting
                         for (int i = 0; i < gids.Length; i++)
                         {
                             short gid = (short)gids[i];
-                            if (gid <= 0) continue;
+                            if (gid <= 0) { continue; }
 
                             // 1) Get cached DU path for this glyph (tessellates once per gid)
                             var duPath = GetDuGlyphPath(gid, glyphCache);
@@ -417,8 +420,7 @@ namespace Cad_Point_Manager.Services.LayoutExporting
         }
         private static XGraphicsPath GetDuGlyphPath(short gid, GlyphMeshCache cache)
         {
-            if (_duGlyphPathCache.TryGetValue(gid, out var p))
-                return p;
+            if (_duGlyphPathCache.TryGetValue(gid, out var p)) { return p; }
 
             var mesh = cache.Get(gid);
             var path = new XGraphicsPath();

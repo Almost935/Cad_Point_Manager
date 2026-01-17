@@ -25,7 +25,7 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
                 var mesh = tessellator.Build(gid, fontFace); // returns Vector2[] in DU
                 int start = vertices.Count;
                 for (int i = 0; i < mesh.PositionsDU.Length; i++)
-                    vertices.Add(new GlyphVertexDU { PosDU = mesh.PositionsDU[i] });
+                { vertices.Add(new GlyphVertexDU { PosDU = mesh.PositionsDU[i] }); }
                 int count = mesh.PositionsDU.Length;
 
                 ranges[gid] = new GlyphRange { StartVertex = start, VertexCount = count };
