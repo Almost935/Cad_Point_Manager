@@ -73,7 +73,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
     [StructLayout(LayoutKind.Sequential)]
     public struct GlyphInstance
     {
-        public Vector2 Origin;    // world position (baseline origin) of the string/line
         public float DuToWorld; // scale: DU -> world
         public float PenDU;     // accumulated advance in DU for this glyph
         public float YSign;     // typically -1 when world Y is up and font Y is down

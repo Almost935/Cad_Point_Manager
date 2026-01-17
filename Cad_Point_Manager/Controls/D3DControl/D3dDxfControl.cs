@@ -903,10 +903,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     uint idElev = SceneIdMap.GetOrAddLabelId(p, 1);
                     uint idDesc = p.HasDescription ? SceneIdMap.GetOrAddLabelId(p, 2) : 0xFFFFFFFF;
 
-                    var pos = Vector2.Zero;
                     AddCogoTextLabelLine(
                         s: p.PointNumber.ToString(),
-                        originWorld: pos,
                         lineOffset: p.PointNumberOffset,
                         duToWorldBase: duToWorldBase,
                         duToWorld: duToWorld,
@@ -915,7 +913,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
                         labelId: idPN, groupId: gId, pointId: pId);
                     AddCogoTextLabelLine(
                         s: p.Elevation.ToString("F3"),
-                        originWorld: pos,
                         lineOffset: p.ElevationOffset,
                         duToWorldBase: duToWorldBase,
                         duToWorld: duToWorld,
@@ -926,7 +923,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     {
                         AddCogoTextLabelLine(
                             s: p.Description,
-                            originWorld: pos,
                             lineOffset: p.DescriptionOffset,
                             duToWorldBase: duToWorldBase,
                             duToWorld: duToWorld,
@@ -1273,12 +1269,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     new InputElement("POSITION",      0, Format.R32G32_Float,       0, 0, InputClassification.PerVertexData,   0),
 
                     // Slot 1
-                    new InputElement("GLYPH_ORIGIN",  0, Format.R32G32_Float,       0, 1, InputClassification.PerInstanceData, 1),
-                    new InputElement("GLYPH_SCALE",   0, Format.R32_Float,          8, 1, InputClassification.PerInstanceData, 1),
-                    new InputElement("GLYPH_PEN",     0, Format.R32_Float,          12, 1, InputClassification.PerInstanceData, 1),
-                    new InputElement("YSIGN",         0, Format.R32_Float,          16, 1, InputClassification.PerInstanceData, 1),
-                    new InputElement("LABEL_ID",      0, Format.R32_UInt,           20, 1, InputClassification.PerInstanceData, 1),
-                    new InputElement("POINT_ID",      0, Format.R32_UInt,           24, 1, InputClassification.PerInstanceData, 1),
+                    new InputElement("GLYPH_SCALE",   0, Format.R32_Float,          0, 1, InputClassification.PerInstanceData, 1),
+                    new InputElement("GLYPH_PEN",     0, Format.R32_Float,          4, 1, InputClassification.PerInstanceData, 1),
+                    new InputElement("YSIGN",         0, Format.R32_Float,          8, 1, InputClassification.PerInstanceData, 1),
+                    new InputElement("LABEL_ID",      0, Format.R32_UInt,           12, 1, InputClassification.PerInstanceData, 1),
+                    new InputElement("POINT_ID",      0, Format.R32_UInt,           16, 1, InputClassification.PerInstanceData, 1),
                 });
             _glyphInstanceBuffer = new ResizableBuffer<GlyphInstance>(ResCache.Device, initialCapacity: 256);
 
@@ -1750,7 +1745,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _combinedDirty = true;
         }
 
-        private void AddCogoTextLabelLine(string s, Vector2 originWorld, float duToWorldBase,
+        private void AddCogoTextLabelLine(string s, float duToWorldBase,
             float duToWorld, Vector4 color, float isVisible, float isMouseOver,
             float isSelected, float ySign, uint labelId, uint groupId, uint pointId,
             Vector2 lineOffset)
@@ -1769,7 +1764,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
                 var inst = new GlyphInstance
                 {
-                    Origin = originWorld,
                     DuToWorld = duToWorldBase,
                     PenDU = penDU,
                     YSign = ySign,

@@ -55,7 +55,6 @@ struct VSInPerVertex
 // Per-instance stream (slot 1)
 struct VSInPerInstance
 {
-    float2 OriginWorld : GLYPH_ORIGIN; // baseline origin in world units
     float DuToWorld : GLYPH_SCALE; // base worldUnits per design-unit (pre-group scale)
     float PenDU : GLYPH_PEN; // horizontal pen advance in DU
     float YSign : YSIGN; // +1 or -1 (flip Y if needed)
@@ -119,8 +118,8 @@ VSOut VSMain(VSInPerVertex v, VSInPerInstance inst)
     
     // --- Position math ---
     // Apply label drag offset and group scale. Group scale only applicable to label y offset.
-    float x = inst.OriginWorld.x + ls.Offset.x + textInfoOffset + ps.PointInfoOffset.x + ps.Offset.x;
-    float y = inst.OriginWorld.y + (ls.Offset.y * gs.Scale) + ps.PointInfoOffset.y + ps.Offset.y;
+    float x = ls.Offset.x + textInfoOffset + ps.PointInfoOffset.x + ps.Offset.x;
+    float y = (ls.Offset.y * gs.Scale) + ps.PointInfoOffset.y + ps.Offset.y;
     float2 originWorld = float2(x, y);
 
     float duToWorld = inst.DuToWorld * gs.Scale;
