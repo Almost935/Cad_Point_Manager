@@ -75,7 +75,7 @@
                 Canvas.Left="29.5"
                 Canvas.Top="7.2585">
             <controls:TemplateInlineEditableTextControl Style="{StaticResource InlineEditableTextStyle}"
-                                                        DataContext="{Binding Attributes.Notes, ElementName=Root}"
+                                                        DataContext="{Binding ActiveLayout.Attributes.Notes, ElementName=Root}"
                                                         Text="{Binding Text, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, FallbackValue=Notes}"
                                                         FontFamily="{StaticResource DefaultFontFamily}"
                                                         FontWeight="{StaticResource DefaultFontWeight}"
@@ -160,7 +160,7 @@
                     Grid.Row="3"
                     IsHitTestVisible="True">
                 <controls:TemplateInlineEditableTextControl Style="{StaticResource InlineEditableTextStyle}"
-                                                            DataContext="{Binding Attributes.DrawingDesc1, ElementName=Root}"
+                                                            DataContext="{Binding ActiveLayout.Attributes.DrawingDesc1, ElementName=Root}"
                                                             Text="{Binding Text, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, FallbackValue=DrawingDesc1}"
                                                             FontFamily="{StaticResource DefaultFontFamily}"
                                                             FontWeight="{StaticResource DefaultFontWeight}"
@@ -179,7 +179,7 @@
                     IsHitTestVisible="True"
                     ClipToBounds="False">
                 <controls:TemplateInlineEditableTextControl Style="{StaticResource InlineEditableTextStyle}"
-                                                            DataContext="{Binding Attributes.DrawingDate1, ElementName=Root}"
+                                                            DataContext="{Binding ActiveLayout.Attributes.DrawingDate1, ElementName=Root}"
                                                             Text="{Binding Text, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, FallbackValue=DrawingDate1}"
                                                             FontFamily="{StaticResource DefaultFontFamily}"
                                                             FontWeight="{StaticResource DefaultFontWeight}"
@@ -199,7 +199,7 @@
                     Grid.Row="4"
                     IsHitTestVisible="True">
                 <controls:TemplateInlineEditableTextControl Style="{StaticResource InlineEditableTextStyle}"
-                                                            DataContext="{Binding Attributes.DrawingDesc2, ElementName=Root}"
+                                                            DataContext="{Binding ActiveLayout.Attributes.DrawingDesc2, ElementName=Root}"
                                                             Text="{Binding Text, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, FallbackValue=DrawingDesc2}"
                                                             FontFamily="{StaticResource DefaultFontFamily}"
                                                             FontWeight="{StaticResource DefaultFontWeight}"
@@ -217,7 +217,7 @@
                     Grid.Row="4"
                     IsHitTestVisible="True">
                 <controls:TemplateInlineEditableTextControl Style="{StaticResource InlineEditableTextStyle}"
-                                                            DataContext="{Binding Attributes.DrawingDate2, ElementName=Root}"
+                                                            DataContext="{Binding ActiveLayout.Attributes.DrawingDate2, ElementName=Root}"
                                                             Text="{Binding Text, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, FallbackValue=DrawingDate2}"
                                                             FontFamily="{StaticResource DefaultFontFamily}"
                                                             FontWeight="{StaticResource DefaultFontWeight}"
@@ -236,7 +236,7 @@
                     Grid.Row="5"
                     IsHitTestVisible="True">
                 <controls:TemplateInlineEditableTextControl Style="{StaticResource InlineEditableTextStyle}"
-                                                            DataContext="{Binding Attributes.DrawingDesc3, ElementName=Root}"
+                                                            DataContext="{Binding ActiveLayout.Attributes.DrawingDesc3, ElementName=Root}"
                                                             Text="{Binding Text, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, FallbackValue=DrawingDesc3}"
                                                             FontFamily="{StaticResource DefaultFontFamily}"
                                                             FontWeight="{StaticResource DefaultFontWeight}"
@@ -254,7 +254,7 @@
                     Grid.Row="5"
                     IsHitTestVisible="True">
                 <controls:TemplateInlineEditableTextControl Style="{StaticResource InlineEditableTextStyle}"
-                                                            DataContext="{Binding Attributes.DrawingDate3, ElementName=Root}"
+                                                            DataContext="{Binding ActiveLayout.Attributes.DrawingDate3, ElementName=Root}"
                                                             Text="{Binding Text, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, FallbackValue=DrawingDate3}"
                                                             FontFamily="{StaticResource DefaultFontFamily}"
                                                             FontWeight="{StaticResource DefaultFontWeight}"
@@ -273,7 +273,7 @@
                     Grid.Row="6"
                     IsHitTestVisible="True">
                 <controls:TemplateInlineEditableTextControl Style="{StaticResource InlineEditableTextStyle}"
-                                                            DataContext="{Binding Attributes.DrawingDesc4, ElementName=Root}"
+                                                            DataContext="{Binding ActiveLayout.Attributes.DrawingDesc4, ElementName=Root}"
                                                             Text="{Binding Text, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, FallbackValue=DrawingDesc4}"
                                                             FontFamily="{StaticResource DefaultFontFamily}"
                                                             FontWeight="{StaticResource DefaultFontWeight}"
@@ -291,7 +291,7 @@
                     Grid.Row="6"
                     IsHitTestVisible="True">
                 <controls:TemplateInlineEditableTextControl Style="{StaticResource InlineEditableTextStyle}"
-                                                            DataContext="{Binding Attributes.DrawingDate4, ElementName=Root}"
+                                                            DataContext="{Binding ActiveLayout.Attributes.DrawingDate4, ElementName=Root}"
                                                             Text="{Binding Text, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, FallbackValue=DrawingDate4}"
                                                             FontFamily="{StaticResource DefaultFontFamily}"
                                                             FontWeight="{StaticResource DefaultFontWeight}"
@@ -310,7 +310,7 @@
                     Grid.Row="7"
                     IsHitTestVisible="True">
                 <controls:TemplateInlineEditableTextControl Style="{StaticResource InlineEditableTextStyle}"
-                                                            DataContext="{Binding Attributes.DrawingDesc5, ElementName=Root}"
+                                                            DataContext="{Binding ActiveLayout.Attributes.DrawingDesc5, ElementName=Root}"
                                                             Text="{Binding Text, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, FallbackValue=DrawingDesc5}"
                                                             FontFamily="{StaticResource DefaultFontFamily}"
                                                             FontWeight="{StaticResource DefaultFontWeight}"
@@ -328,7 +328,7 @@
                     Grid.Row="7"
                     IsHitTestVisible="True">
                 <controls:TemplateInlineEditableTextControl Style="{StaticResource InlineEditableTextStyle}"
-                                                            DataContext="{Binding Attributes.DrawingDate5, ElementName=Root}"
+                                                            DataContext="{Binding ActiveLayout.Attributes.DrawingDate5, ElementName=Root}"
                                                             Text="{Binding Text, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, FallbackValue=DrawingDate5}"
                                                             FontFamily="{StaticResource DefaultFontFamily}"
                                                             FontWeight="{StaticResource DefaultFontWeight}"
@@ -347,7 +347,7 @@
                     Grid.Row="8"
                     IsHitTestVisible="True">
                 <controls:TemplateInlineEditableTextControl Style="{StaticResource InlineEditableTextStyle}"
-                                                            DataContext="{Binding Attributes.DrawingDesc6, ElementName=Root}"
+                                                            DataContext="{Binding ActiveLayout.Attributes.DrawingDesc6, ElementName=Root}"
                                                             Text="{Binding Text, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, FallbackValue=DrawingDesc6}"
                                                             FontFamily="{StaticResource DefaultFontFamily}"
                                                             FontWeight="{StaticResource DefaultFontWeight}"
@@ -365,7 +365,7 @@
                     Grid.Row="8"
                     IsHitTestVisible="True">
                 <controls:TemplateInlineEditableTextControl Style="{StaticResource InlineEditableTextStyle}"
-                                                            DataContext="{Binding Attributes.DrawingDate6, ElementName=Root}"
+                                                            DataContext="{Binding ActiveLayout.Attributes.DrawingDate6, ElementName=Root}"
                                                             Text="{Binding Text, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, FallbackValue=DrawingDate6}"
                                                             FontFamily="{StaticResource DefaultFontFamily}"
                                                             FontWeight="{StaticResource DefaultFontWeight}"
@@ -421,7 +421,7 @@
                     Grid.Row="0"
                     IsHitTestVisible="True">
                 <controls:TemplateInlineEditableTextControl Style="{StaticResource InlineEditableTextStyle}"
-                                                            DataContext="{Binding Attributes.DrawnBy, ElementName=Root}"
+                                                            DataContext="{Binding ActiveLayout.Attributes.DrawnBy, ElementName=Root}"
                                                             Text="{Binding Text, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, FallbackValue=Author}"
                                                             FontFamily="{StaticResource DefaultFontFamily}"
                                                             FontWeight="{StaticResource DefaultFontWeight}"
@@ -451,7 +451,7 @@
                     Grid.Row="1"
                     IsHitTestVisible="True">
                 <controls:TemplateInlineEditableTextControl Style="{StaticResource InlineEditableTextStyle}"
-                                                            DataContext="{Binding Attributes.DateDrawn, ElementName=Root}"
+                                                            DataContext="{Binding ActiveLayout.Attributes.DateDrawn, ElementName=Root}"
                                                             Text="{Binding Text, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, FallbackValue=Date Drawn}"
                                                             FontFamily="{StaticResource DefaultFontFamily}"
                                                             FontWeight="{StaticResource DefaultFontWeight}"
@@ -481,7 +481,7 @@
                     Grid.Row="2"
                     IsHitTestVisible="True">
                 <controls:TemplateInlineEditableTextControl Style="{StaticResource InlineEditableTextStyle}"
-                                                            DataContext="{Binding Attributes.ProjectName, ElementName=Root}"
+                                                            DataContext="{Binding ActiveLayout.Attributes.ProjectName, ElementName=Root}"
                                                             Text="{Binding Text, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, FallbackValue=Project Name}"
                                                             FontFamily="{StaticResource DefaultFontFamily}"
                                                             FontWeight="{StaticResource DefaultFontWeight}"
@@ -499,7 +499,7 @@
                     Grid.ColumnSpan="2"
                     IsHitTestVisible="True">
                 <controls:TemplateInlineEditableTextControl Style="{StaticResource InlineEditableTextStyle}"
-                                                            DataContext="{Binding Attributes.PageTitle, ElementName=Root}"
+                                                            DataContext="{Binding ActiveLayout.Attributes.PageTitle, ElementName=Root}"
                                                             Text="{Binding Text, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, FallbackValue=Title of Page}"
                                                             FontFamily="{StaticResource DefaultFontFamily}"
                                                             FontWeight="{StaticResource DefaultFontWeight}"
@@ -518,7 +518,7 @@
                     Grid.ColumnSpan="2"
                     IsHitTestVisible="True">
                 <controls:TemplateInlineEditableTextControl Style="{StaticResource InlineEditableTextStyle}"
-                                                            DataContext="{Binding Attributes.PageNumber, ElementName=Root}"
+                                                            DataContext="{Binding ActiveLayout.Attributes.PageNumber, ElementName=Root}"
                                                             Text="{Binding Text, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, FallbackValue=Page Number}"
                                                             FontFamily="{StaticResource DefaultFontFamily}"
                                                             FontWeight="{StaticResource DefaultFontWeight}"
@@ -537,7 +537,7 @@
                     Grid.ColumnSpan="2"
                     IsHitTestVisible="True">
                 <controls:TemplateInlineEditableTextControl Style="{StaticResource InlineEditableTextStyle}"
-                                                            DataContext="{Binding Attributes.Scale, ElementName=Root}"
+                                                            DataContext="{Binding ActiveLayout.Attributes.Scale, ElementName=Root}"
                                                             Text="{Binding Text, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, FallbackValue=Drawing Scale}"
                                                             FontFamily="{StaticResource DefaultFontFamily}"
                                                             FontWeight="{StaticResource DefaultFontWeight}"

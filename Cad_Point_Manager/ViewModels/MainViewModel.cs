@@ -4,6 +4,7 @@ using Cad_Point_Manager.Common.Collections;
 using Cad_Point_Manager.Controls.D3DControl;
 using Cad_Point_Manager.Controls.D3DControl.Rendering.Text;
 using Cad_Point_Manager.Extensions;
+using Cad_Point_Manager.Helpers;
 using Cad_Point_Manager.Models;
 using Cad_Point_Manager.Models.DrawingObjects3D;
 using Cad_Point_Manager.Models.HitTesting;
@@ -35,7 +36,6 @@ namespace Cad_Point_Manager.ViewModels
 
         private readonly LayoutPdfVectorExporter _layoutPdfVectorExporter = new();
 
-        private ILayoutRenderHost? _renderHost;
         private JobFileManager _jobFileManager = new();
         private bool _jobFileLoaded = false;
         private string _dxfFilePath;
@@ -74,15 +74,6 @@ namespace Cad_Point_Manager.ViewModels
         #endregion
 
         #region Properties
-        public ILayoutRenderHost? RenderHost
-        {
-            get { return _renderHost; }
-            set
-            {
-                _renderHost = value;
-                OnPropertyChanged(nameof(RenderHost));
-            }
-        }
         public JobFileManager JobFileManager
         {
             get { return _jobFileManager; }
@@ -688,9 +679,12 @@ namespace Cad_Point_Manager.ViewModels
         // Printing Methods
         public async Task ExportActiveLayoutAsync()
         {
-            if (ActiveLayout == null || RenderHost is null) { return; }
+            if (ActiveLayout == null) { return; }
 
+            var imageUri = ImageHelpers.LoadPackImage("pack://application:,,,/Resources/Images/IQ Contracting - Logo (Square).jpg");
+            var templatePrims = TitleblockPrimitiveBuilder.Build(ActiveLayout, imageUri);
             var path = "C:\\Users\\fcraw\\source\\repos\\Cad_Point_Manager\\Cad_Point_Manager\\Resources\\Testing\\test.pdf";
+
             await _layoutPdfVectorExporter.ExportAsync(
                 ActiveLayout,
                 JobFileManager.CadManager3D,
@@ -698,6 +692,7 @@ namespace Cad_Point_Manager.ViewModels
                 StateController,
                 SceneIdMap,
                 ResCache,
+                templatePrims,
                 path);
         }
         #endregion

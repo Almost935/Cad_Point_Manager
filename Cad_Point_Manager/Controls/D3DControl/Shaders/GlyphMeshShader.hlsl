@@ -4,13 +4,11 @@ cbuffer TransformationBuffer : register(b0)
 {
     row_major float4x4 transformationMatrix; // world*view*proj
 }
-
 cbuffer TextSettingsBuffer : register(b1)
 {
     float4 selectedColor;
     float4 selectedMouseOverColor;
 }
-
 cbuffer ViewportBuffer : register(b2)
 {
     float2 ViewportSize;

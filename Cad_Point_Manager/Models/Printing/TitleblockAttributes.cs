@@ -10,30 +10,153 @@ namespace Cad_Point_Manager.Models.Printing
 {
     public class TitleblockAttributes : INotifyPropertyChanged
     {
-        public Attribute Notes { get; } = new() { Text = "Notes", FontSize = 0.2 };
-
-        public Attribute DrawingDesc1 { get; } = new() { Text = "Drawing Description 1", FontSize = 0.25 };
-        public Attribute DrawingDesc2 { get; } = new() { Text = "Drawing Description 2", FontSize = 0.25 };
-        public Attribute DrawingDesc3 { get; } = new() { Text = "Drawing Description 3", FontSize = 0.25 };
-        public Attribute DrawingDesc4 { get; } = new() { Text = "Drawing Description 4", FontSize = 0.25 };
-        public Attribute DrawingDesc5 { get; } = new() { Text = "Drawing Description 5", FontSize = 0.25 };
-        public Attribute DrawingDesc6 { get; } = new() { Text = "Drawing Description 6", FontSize = 0.25 };
-
-        public Attribute DrawingDate1 { get; } = new() { Text = "Drawing Date 1", FontSize = 0.25 };
-        public Attribute DrawingDate2 { get; } = new() { Text = "Drawing Date 2", FontSize = 0.25 };
-        public Attribute DrawingDate3 { get; } = new() { Text = "Drawing Date 3", FontSize = 0.25 };
-        public Attribute DrawingDate4 { get; } = new() { Text = "Drawing Date 4", FontSize = 0.25 };
-        public Attribute DrawingDate5 { get; } = new() { Text = "Drawing Date 5", FontSize = 0.25 };
-        public Attribute DrawingDate6 { get; } = new() { Text = "Drawing Date 6", FontSize = 0.25 };
-
-        public Attribute DrawnBy { get; } = new() { Text = "Drawn By", FontSize = 0.25 };
-        public Attribute DateDrawn { get; } = new() { Text = "Date Drawn", FontSize = 0.25 };
-        public Attribute ProjectName { get; } = new() { Text = "Project Name", FontSize = 0.25 };
-        public Attribute PageTitle { get; } = new() { Text = "Page Title", FontSize = 0.25 };
-        public Attribute PageNumber { get; } = new() { Text = "Page Number", FontSize = 0.5 };
-        public Attribute Scale { get; } = new() { Text = "No Scale", FontSize = 0.25 };
-
         public event PropertyChangedEventHandler? PropertyChanged;
+
+        private Attribute _notes = new() { Text = "Notes", FontSize = 0.2 };
+        public Attribute Notes
+        {
+            get => _notes;
+            set => SetProperty(ref _notes, value);
+        }
+
+        private Attribute _drawingDesc1 = new() { Text = "Drawing Description 1", FontSize = 0.25 };
+        public Attribute DrawingDesc1
+        {
+            get => _drawingDesc1;
+            set => SetProperty(ref _drawingDesc1, value);
+        }
+
+        private Attribute _drawingDesc2 = new() { Text = "Drawing Description 2", FontSize = 0.25 };
+        public Attribute DrawingDesc2
+        {
+            get => _drawingDesc2;
+            set => SetProperty(ref _drawingDesc2, value);
+        }
+
+        private Attribute _drawingDesc3 = new() { Text = "Drawing Description 3", FontSize = 0.25 };
+        public Attribute DrawingDesc3
+        {
+            get => _drawingDesc3;
+            set => SetProperty(ref _drawingDesc3, value);
+        }
+
+        private Attribute _drawingDesc4 = new() { Text = "Drawing Description 4", FontSize = 0.25 };
+        public Attribute DrawingDesc4
+        {
+            get => _drawingDesc4;
+            set => SetProperty(ref _drawingDesc4, value);
+        }
+
+        private Attribute _drawingDesc5 = new() { Text = "Drawing Description 5", FontSize = 0.25 };
+        public Attribute DrawingDesc5
+        {
+            get => _drawingDesc5;
+            set => SetProperty(ref _drawingDesc5, value);
+        }
+
+        private Attribute _drawingDesc6 = new() { Text = "Drawing Description 6", FontSize = 0.25 };
+        public Attribute DrawingDesc6
+        {
+            get => _drawingDesc6;
+            set => SetProperty(ref _drawingDesc6, value);
+        }
+
+        private Attribute _drawingDate1 = new() { Text = "Drawing Date 1", FontSize = 0.25 };
+        public Attribute DrawingDate1
+        {
+            get => _drawingDate1;
+            set => SetProperty(ref _drawingDate1, value);
+        }
+
+        private Attribute _drawingDate2 = new() { Text = "Drawing Date 2", FontSize = 0.25 };
+        public Attribute DrawingDate2
+        {
+            get => _drawingDate2;
+            set => SetProperty(ref _drawingDate2, value);
+        }
+
+        private Attribute _drawingDate3 = new() { Text = "Drawing Date 3", FontSize = 0.25 };
+        public Attribute DrawingDate3
+        {
+            get => _drawingDate3;
+            set => SetProperty(ref _drawingDate3, value);
+        }
+
+        private Attribute _drawingDate4 = new() { Text = "Drawing Date 4", FontSize = 0.25 };
+        public Attribute DrawingDate4
+        {
+            get => _drawingDate4;
+            set => SetProperty(ref _drawingDate4, value);
+        }
+
+        private Attribute _drawingDate5 = new() { Text = "Drawing Date 5", FontSize = 0.25 };
+        public Attribute DrawingDate5
+        {
+            get => _drawingDate5;
+            set => SetProperty(ref _drawingDate5, value);
+        }
+
+        private Attribute _drawingDate6 = new() { Text = "Drawing Date 6", FontSize = 0.25 };
+        public Attribute DrawingDate6
+        {
+            get => _drawingDate6;
+            set => SetProperty(ref _drawingDate6, value);
+        }
+
+        private Attribute _drawnBy = new() { Text = "Drawn By", FontSize = 0.25 };
+        public Attribute DrawnBy
+        {
+            get => _drawnBy;
+            set => SetProperty(ref _drawnBy, value);
+        }
+
+        private Attribute _dateDrawn = new() { Text = "Date Drawn", FontSize = 0.25 };
+        public Attribute DateDrawn
+        {
+            get => _dateDrawn;
+            set => SetProperty(ref _dateDrawn, value);
+        }
+
+        private Attribute _projectName = new() { Text = "Project Name", FontSize = 0.25 };
+        public Attribute ProjectName
+        {
+            get => _projectName;
+            set => SetProperty(ref _projectName, value);
+        }
+
+        private Attribute _pageTitle = new() { Text = "Page Title", FontSize = 0.25 };
+        public Attribute PageTitle
+        {
+            get => _pageTitle;
+            set => SetProperty(ref _pageTitle, value);
+        }
+
+        private Attribute _pageNumber = new() { Text = "Page Number", FontSize = 0.5 };
+        public Attribute PageNumber
+        {
+            get => _pageNumber;
+            set => SetProperty(ref _pageNumber, value);
+        }
+
+        private Attribute _scale = new() { Text = "No Scale", FontSize = 0.25 };
+        public Attribute Scale
+        {
+            get => _scale;
+            set => SetProperty(ref _scale, value);
+        }
+
+        protected bool SetProperty<T>(
+            ref T field,
+            T value,
+            string? propertyName = null)
+        {
+            if (EqualityComparer<T>.Default.Equals(field, value))
+                return false;
+
+            field = value;
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+            return true;
+        }
     }
 
 }

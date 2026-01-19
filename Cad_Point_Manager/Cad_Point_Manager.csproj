@@ -59,7 +59,10 @@
     <Compile Remove="Models\OffscreenBitmap.cs" />
     <Compile Remove="Models\OffscreenBitmapManager.cs" />
     <Compile Remove="Models\PointRendering\CogoPointTextVerticesDict.cs" />
+    <Compile Remove="Services\D3dDxfRenderHost.cs" />
     <Compile Remove="Services\DxfService.cs" />
+    <Compile Remove="Services\LayoutExporting\ILayoutRenderHost.cs" />
+    <Compile Remove="Services\LayoutExporting\LayoutPdfExporter.cs" />
     <Compile Remove="Views\Assorted\InlineEditingHelper.cs" />
     <Compile Remove="Views\UserControls\LayoutControl.xaml.cs" />
     <Compile Remove="Views\UserControls\LayoutsListViewControl.xaml.cs" />

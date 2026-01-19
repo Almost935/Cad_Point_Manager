@@ -647,7 +647,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             ctx.PixelShader.Set(_glyphPS);
             ctx.InputAssembler.InputLayout = _glyphLayout;
             ctx.VertexShader.SetConstantBuffer(0, _transformationBuffer);
-            ctx.VertexShader.SetConstantBuffer(1, _cogoPointSettingsBuffer); // reuse your TextSettingsBuffer
+            ctx.VertexShader.SetConstantBuffer(1, _cogoPointSettingsBuffer);
             ctx.VertexShader.SetConstantBuffer(2, _viewportBuffer);
             ctx.InputAssembler.PrimitiveTopology = PrimitiveTopology.TriangleList;
 

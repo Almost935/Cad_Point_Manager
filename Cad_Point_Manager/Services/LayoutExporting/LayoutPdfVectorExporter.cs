@@ -7,6 +7,7 @@ using Cad_Point_Manager.Models.DrawingObjects3D;
 using Cad_Point_Manager.Models.PointRendering;
 using Cad_Point_Manager.Models.Printing;
 using PdfSharpCore.Drawing;
+using PdfSharpCore.Drawing.Layout;
 using PdfSharpCore.Pdf;
 using System;
 using System.Collections.Generic;
@@ -21,6 +22,7 @@ namespace Cad_Point_Manager.Services.LayoutExporting
 {
     public class LayoutPdfVectorExporter : ILayoutPdfVectorExporter
     {
+        static double Pt(double inches) => inches * 72.0;
         static readonly Dictionary<short, XGraphicsPath> _duGlyphPathCache = new();
 
         const uint LABEL_VISIBLE = 1u << 0;
@@ -39,6 +41,7 @@ namespace Cad_Point_Manager.Services.LayoutExporting
             D3dStateController stateController,
             SceneIdMap ids,
             ResCache resCache,
+            List<TbPrimitive> templatePrims,
             string outputPath,
             CancellationToken ct = default)
         {
@@ -48,7 +51,7 @@ namespace Cad_Point_Manager.Services.LayoutExporting
                 double pageWpts = layout.PageSize.Width * 72.0;
                 double pageHpts = layout.PageSize.Height * 72.0;
 
-                Rect pdfViewportPts = new Rect(
+                Rect pdfViewportPts = new(
                     layout.Viewport.LocalRectIn.X * 72.0,
                     layout.Viewport.LocalRectIn.Y * 72.0,
                     layout.Viewport.LocalRectIn.Width * 72.0,
@@ -61,6 +64,7 @@ namespace Cad_Point_Manager.Services.LayoutExporting
                     stateController,
                     ids,
                     resCache,
+                    templatePrims,
                     worldToPdf,
                     outputPath);
 
@@ -73,6 +77,7 @@ namespace Cad_Point_Manager.Services.LayoutExporting
             D3dStateController stateController,
             SceneIdMap ids,
             ResCache resCache,
+            List<TbPrimitive> templatePrims,
             Matrix worldToPdf,
             string outputPdfPath)
         {
@@ -137,6 +142,8 @@ namespace Cad_Point_Manager.Services.LayoutExporting
                 labelStates, pointStates, groupStates,
                 glyphCache);
 
+            DrawTitleblockPdf(gfx, templatePrims);
+
             doc.Save(outputPdfPath);
 
             glyphCache.Clear();
@@ -149,7 +156,6 @@ namespace Cad_Point_Manager.Services.LayoutExporting
             var p1 = PdfTransform.WorldToPdf(line.End.ToVector3(), worldToPdf);
             gfx.DrawLine(pen, p0, p1);
         }
-
         private static void DrawPolyline(XGraphics gfx, LineVertex[] verts, Matrix worldToPdf, XPen pen)
         {
             if (verts == null || verts.Length < 2) { return; }
@@ -161,7 +167,6 @@ namespace Cad_Point_Manager.Services.LayoutExporting
                 gfx.DrawLine(pen, a, b);
             }
         }
-
         private static void DrawMtext(XGraphics gfx, DrawingMtext mtext, Matrix worldToPdf)
         {
             var verts = mtext.TextVertices;
@@ -180,7 +185,6 @@ namespace Cad_Point_Manager.Services.LayoutExporting
 
             gfx.DrawPath(brush, path);
         }
-
         private static void DrawCogoPointGlyphs(
             XGraphics gfx,
             CadManager cadManager,
@@ -273,6 +277,122 @@ namespace Cad_Point_Manager.Services.LayoutExporting
                     }
                 }
             }
+        }
+        private static void DrawTitleblockPdf(XGraphics gfx, IEnumerable<TbPrimitive> prims)
+        {
+            foreach (var prim in prims)
+            {
+                switch (prim)
+                {
+                    case TbRect r:
+                        {
+                            var pen = new XPen(XColors.Transparent, Pt(r.StrokeIn));
+
+                            if (r.StrokeColor is TbColor strokeColor) { pen.Color = strokeColor.XColor; }
+                            else { pen.Width = 0; }
+
+                            if (r.FillColor is TbColor color)
+                            {
+                                gfx.DrawRectangle(pen, new XSolidBrush(color.XColor),
+                                    Pt(r.X), Pt(r.Y), Pt(r.W), Pt(r.H));
+                            }
+                            else
+                            {
+                                gfx.DrawRectangle(pen, Pt(r.X), Pt(r.Y), Pt(r.W), Pt(r.H));
+                            }
+                            break;
+                        }
+                    case TbLine l:
+                        {
+                            var pen = new XPen(l.StrokeColor.XColor, Pt(l.StrokeIn));
+                            gfx.DrawLine(pen, Pt(l.X1), Pt(l.Y1), Pt(l.X2), Pt(l.Y2));
+                            break;
+                        }
+                    case TbText t:
+                        {
+                            var style = t.Bold ? XFontStyle.Bold : XFontStyle.Regular;
+                            var font = new XFont(t.FontFamily, Pt(t.FontSizeIn), style);
+
+                            var rect = new XRect(Pt(t.X), Pt(t.Y), Pt(t.W), Pt(t.H));
+
+                            DrawWrappedText(
+                                gfx,
+                                t.Text ?? "",
+                                font,
+                                t.FontColor.XBrush,
+                                rect,
+                                t.Align,
+                                clipToRect: true);
+
+                            break;
+                        }
+                    case TbImage img:
+                        {
+                            using var ms = new MemoryStream(img.ImageBytes);
+                            using var xi = XImage.FromStream(() => ms);
+                            gfx.DrawImage(xi, Pt(img.X), Pt(img.Y), Pt(img.W), Pt(img.H));
+                            break;
+                        }
+                }
+            }
+        }
+        private static void DrawWrappedText(
+            XGraphics gfx,
+            string text,
+            XFont font,
+            XBrush brush,
+            XRect rect,
+            TbAlign align,
+            bool clipToRect = true)
+        {
+            if (clipToRect)
+            {
+                gfx.Save();
+                gfx.IntersectClip(rect);
+            }
+
+            var lines = WrapLinesNoJustify(gfx, font, text ?? "", rect.Width);
+
+            // line height (PdfSharpCore doesn't expose font metrics well; this is a good approximation)
+            double lineH = gfx.MeasureString("Ag", font).Height;
+
+            double textH = lines.Count * lineH;
+
+            // vertical alignment
+            double yStart = align switch
+            {
+                TbAlign.TopLeft or TbAlign.TopCenter or TbAlign.TopRight => rect.Y,
+                TbAlign.MiddleLeft or TbAlign.MiddleCenter or TbAlign.MiddleRight => rect.Y + Math.Max(0, (rect.Height - textH) / 2),
+                TbAlign.BottomLeft or TbAlign.BottomCenter or TbAlign.BottomRight => rect.Y + Math.Max(0, rect.Height - textH),
+                _ => rect.Y
+            };
+
+            for (int i = 0; i < lines.Count; i++)
+            {
+                string line = lines[i];
+
+                // Horizontal alignment: compute x per line
+                double lineW = gfx.MeasureString(line, font).Width;
+
+                double x = align switch
+                {
+                    TbAlign.TopCenter or TbAlign.MiddleCenter or TbAlign.BottomCenter => rect.X + (rect.Width - lineW) / 2,
+                    TbAlign.TopRight or TbAlign.MiddleRight or TbAlign.BottomRight => rect.X + (rect.Width - lineW),
+                    _ => rect.X // left variants
+                };
+
+                double y = yStart + i * lineH;
+
+                // Stop if we run out of vertical space
+                if (y + lineH > rect.Y + rect.Height) break;
+
+                gfx.DrawString(line, font, brush, new XPoint(x, y + lineH));
+                // Note: PdfSharp draws text relative to baseline; this "+ lineH" keeps it inside the box.
+                // If you want tighter control, we can adjust baseline more precisely.
+            }
+
+            if (clipToRect)
+                gfx.Restore();
         }
 
 
@@ -403,7 +523,6 @@ namespace Cad_Point_Manager.Services.LayoutExporting
                 duToWorldM.OffsetY);
         }
 
-
         private static XPoint WorldToPdf(SharpDX.Vector2 w, Matrix worldToPdf)
         {
             var p = worldToPdf.Transform(new System.Windows.Point(w.X, w.Y));
@@ -436,5 +555,55 @@ namespace Cad_Point_Manager.Services.LayoutExporting
             _duGlyphPathCache[gid] = path;
             return path;
         }
+        private static List<string> WrapLinesNoJustify(XGraphics gfx, XFont font, string text, double maxWidthPts)
+        {
+            var lines = new List<string>();
+            if (string.IsNullOrWhiteSpace(text))
+                return lines;
+
+            // normalize newlines + tabs
+            text = text.Replace("\r\n", "\n").Replace("\t", "    ");
+
+            foreach (var paragraph in text.Split('\n'))
+            {
+                // preserve blank lines
+                if (paragraph.Length == 0)
+                {
+                    lines.Add(string.Empty);
+                    continue;
+                }
+
+                var words = paragraph.Split(' ', StringSplitOptions.None); // keep empty entries for multiple spaces
+                var current = new StringBuilder();
+
+                for (int i = 0; i < words.Length; i++)
+                {
+                    // Rebuild the original spacing: each token after the first gets a single space.
+                    // If you truly want to preserve multiple spaces, we can—most titleblocks don’t need it.
+                    var token = words[i];
+                    var candidate = current.Length == 0 ? token : current + " " + token;
+
+                    double w = gfx.MeasureString(candidate, font).Width;
+
+                    if (w <= maxWidthPts || current.Length == 0)
+                    {
+                        current.Clear();
+                        current.Append(candidate);
+                    }
+                    else
+                    {
+                        lines.Add(current.ToString());
+                        current.Clear();
+                        current.Append(token);
+                    }
+                }
+
+                if (current.Length > 0)
+                    lines.Add(current.ToString());
+            }
+
+            return lines;
+        }
+
     }
 }

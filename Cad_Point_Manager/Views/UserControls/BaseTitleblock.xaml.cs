@@ -73,16 +73,16 @@ namespace Cad_Point_Manager.Views.UserControls
             set => SetValue(ViewportTopProperty, value);
         }
 
-        public static readonly DependencyProperty AttributesProperty =
-            DependencyProperty.Register(
-                nameof(Attributes),
-                typeof(TitleblockAttributes),
-                typeof(BaseTitleblock),
-                new PropertyMetadata(null));
-        public TitleblockAttributes Attributes
+        public static readonly DependencyProperty ActiveLayoutProperty =
+           DependencyProperty.Register(
+               nameof(ActiveLayout),
+               typeof(Layout),
+               typeof(BaseTitleblock),
+               new PropertyMetadata(null));
+        public Layout? ActiveLayout
         {
-            get => (TitleblockAttributes)GetValue(AttributesProperty);
-            set => SetValue(AttributesProperty, value);
+            get => (Layout?)GetValue(ActiveLayoutProperty);
+            set => SetValue(ActiveLayoutProperty, value);
         }
         #endregion
 
@@ -90,7 +90,7 @@ namespace Cad_Point_Manager.Views.UserControls
         public BaseTitleblock()
         {
             InitializeComponent();
-            Attributes ??= new TitleblockAttributes();
+            //Attributes ??= new TitleblockAttributes();
         }
         #endregion
 

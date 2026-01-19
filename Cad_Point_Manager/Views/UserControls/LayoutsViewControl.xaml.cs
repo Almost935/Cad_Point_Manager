@@ -95,7 +95,6 @@ namespace Cad_Point_Manager.Views.UserControls
             get => (Matrix)GetValue(ViewMatrixProperty);
             private set => SetValue(ViewMatrixProperty, value);
         }
-
         #endregion
 
         #region Constructors

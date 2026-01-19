@@ -7,6 +7,14 @@ namespace Cad_Point_Manager.Services.LayoutExporting
 {
     public interface ILayoutPdfVectorExporter
     {
-        Task ExportAsync(Layout layout, CadManager cadManager3D, Scene scene, D3dStateController stateController, SceneIdMap ids, ResCache resCache, string outputPath, CancellationToken ct = default);
+        Task ExportAsync(
+            Layout layout, 
+            CadManager cadManager3D, 
+            Scene scene, 
+            D3dStateController stateController, 
+            SceneIdMap ids, ResCache resCache, 
+            List<TbPrimitive> templatePrims, 
+            string outputPath, 
+            CancellationToken ct = default);
     }
 }

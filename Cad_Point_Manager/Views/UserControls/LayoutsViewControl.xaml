@@ -233,7 +233,8 @@
                 <local:BaseTitleblock x:Name="Titleblock"
                                       HorizontalAlignment="Stretch"
                                       VerticalAlignment="Stretch" 
-                                      Panel.ZIndex="1"/>
+                                      Panel.ZIndex="1"
+                                      ActiveLayout="{Binding ActiveLayout}"/>
                 <Border x:Name="viewportBorder"
                         Width="{Binding ElementName=Titleblock, Path=ViewportWidth}"
                         Height="{Binding ElementName=Titleblock, Path=ViewportHeight}"

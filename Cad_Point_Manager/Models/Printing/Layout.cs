@@ -19,6 +19,7 @@ namespace Cad_Point_Manager.Models.Printing
         #region Fields
         private LayoutViewport _viewport;
         private PageSize _pageSize = PageSize.Get36x24;
+        private TitleblockAttributes _attributes = new TitleblockAttributes();
         #endregion
 
         #region Properties
@@ -43,6 +44,18 @@ namespace Cad_Point_Manager.Models.Printing
                 {
                     _pageSize = value;
                     OnPropertyChanged(nameof(PageSize));
+                }
+            }
+        }
+        public TitleblockAttributes Attributes
+        {
+            get { return _attributes; }
+            set
+            {
+                if (_attributes != value)
+                {
+                    _attributes = value;
+                    OnPropertyChanged(nameof(Attributes));
                 }
             }
         }
