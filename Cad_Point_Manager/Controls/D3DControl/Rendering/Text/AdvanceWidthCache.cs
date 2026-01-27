@@ -1,4 +1,5 @@
 ﻿using SharpDX.DirectWrite;
+using System.Diagnostics;
 
 namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
 {
@@ -14,8 +15,7 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
 
             // Metrics come back 1:1 with order of ids[]
             var metrics = fontFace.GetDesignGlyphMetrics(ids, isSideways: false);
-            for (int i = 0; i < ids.Length; i++)
-                _byGlyph[ids[i]] = metrics[i].AdvanceWidth;
+            for (int i = 0; i < ids.Length; i++) { _byGlyph[ids[i]] = metrics[i].AdvanceWidth; Debug.WriteLine(metrics[i].AdvanceHeight); } 
         }
 
         public float this[short glyphId] =>

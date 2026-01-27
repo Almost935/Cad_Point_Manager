@@ -11,6 +11,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Media;
 
 namespace Cad_Point_Manager.Models.Printing
 {
@@ -62,6 +63,7 @@ namespace Cad_Point_Manager.Models.Printing
 
         public string Name { get; set; } = "Layout 1";
         public ObservableCollection<DrawingObject> DrawingObjects { get; set; } = [];
+        public FontFamily FontFamily { get; set; } = new FontFamily("Arial");
         #endregion
 
         #region Constructors

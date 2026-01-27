@@ -2,9 +2,12 @@
 using SixLabors.ImageSharp.Processing;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IdentityModel.Tokens;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Media;
 
 namespace Cad_Point_Manager.Models.Printing
 {
@@ -14,103 +17,160 @@ namespace Cad_Point_Manager.Models.Printing
         public const double PageW = 36;
         public const double PageH = 24;
 
+        private const double _marginLeft = 0.05;
+
         public static List<TbPrimitive> Build(Layout layout, byte[] logoBytes)
         {
             var a = layout.Attributes; // adjust if your model differs
-
+            var layoutFontFamily = layout.FontFamily.Source;
             List<TbPrimitive> p = [];
 
             double borderStrokeThickness = 0.01;
-            TbColor templateHatchFill = new(255, 91, 91, 91);
+            XPen borderPen = new(XColors.Black, borderStrokeThickness);
+            XPen halfBorderPen = new(XColors.Black, borderStrokeThickness / 2);
+            XSolidBrush templateHatchBrush = new(XColor.FromArgb(255, 91, 91, 91));
+            XSolidBrush attributesBrush = new(XColor.FromArgb(255, 0, 0, 0));
 
             // Logo cell border + image
-            //p.Add(new TbRect(29.5, 0.5, 6.0, 6.185, StrokeIn: 0.01));
             p.Add(new TbImage(29.5, 0.5, 6.0, 6.185, logoBytes));
 
             // NOTES header bar
-            //p.Add(new TbRect(29.5, 6.685, 6.0, 0.573, StrokeIn: 0.01));
-            p.Add(new TbText(
-                29.5, 6.685, 6.0, 0.573,
-                "NOTES",
-                "Arial", 0.35, TbColor.Black, 
+            p.Add(new TbText(32.5, 6.9715, 6.0, 0.573,
+                "NOTES", layoutFontFamily, 0.35, attributesBrush,
                 Bold: false, Align: TbAlign.MiddleCenter));
 
             // Notes body box (just draw the text inside; you control wrapping)
-            //p.Add(new TbRect(29.5, 7.2585, 6.0, 5.5085, StrokeIn: 0.01));
             p.Add(new TbText(
                 29.55, 7.3085, 5.9, 5.4085,
                 a?.Notes?.Text ?? "",
-                "Arial", 0.25, TbColor.Black, 
+                layoutFontFamily, 0.25, attributesBrush,
                 Align: TbAlign.TopLeft));
 
-            // --- “Drawings based on” table ---
-            double gx = 29.5;
-            double gy = 12.767;
-
-            // Column widths: 4.75 + 1.25
-            double c0 = 4.75, c1 = 1.25;
-
-            // Row heights (from your XAML rows 0..9)
-            double[] rh = { 0.25, 0.75, 0.5, 0.75, 0.75, 0.75, 0.75, 0.75, 0.75, 0.25 };
-
-            // Helper to sum row offsets
-            double RowTop(int r) { double t = 0; for (int i = 0; i < r; i++) t += rh[i]; return t; }
-
-            // Top hatch strip (draw as filled rect; you can add diagonal hatch later)
-            //p.Add(new TbRect(gx, gy + RowTop(0), c0 + c1, rh[0], StrokeIn: 0.01, FillGray: 0.9));
-
             // Header row text
-            //p.Add(new TbRect(gx, gy + RowTop(1), c0 + c1, rh[1], StrokeIn: 0.01));
-            p.Add(new TbText(gx, gy + RowTop(1), c0 + c1, rh[1],
-                "DRAWINGS BASED ON:", "Arial", 0.35, TbColor.Black, Align: TbAlign.MiddleCenter));
+            p.Add(new TbText(32.5, 13.392, 6, 0.75,
+                "DRAWINGS BASED ON:", layoutFontFamily, 0.35,
+                attributesBrush, Align: TbAlign.MiddleCenter));
 
             // Column header row (row 2)
-            //p.Add(new TbRect(gx, gy + RowTop(2), c0, rh[2], StrokeIn: 0.01));
-            //p.Add(new TbRect(gx + c0, gy + RowTop(2), c1, rh[2], StrokeIn: 0.01));
-            p.Add(new TbText(gx, gy + RowTop(2), c0, rh[2], "DRAWING DESCRIPTION", "Arial", 0.25, TbColor.Black, Align: TbAlign.MiddleCenter));
-            p.Add(new TbText(gx + c0, gy + RowTop(2), c1, rh[2], "DATE", "Arial", 0.25, TbColor.Black, Align: TbAlign.MiddleCenter));
+            p.Add(new TbText(31.875, 14.017, 4.75, 0.75, "DRAWING DESCRIPTION", layoutFontFamily, 0.25, attributesBrush, Align: TbAlign.MiddleCenter));
+            p.Add(new TbText(34.875, 14.017, 1.25, 0.75, "DATE", layoutFontFamily, 0.25, attributesBrush, Align: TbAlign.MiddleCenter));
 
             // Rows 3..8: 6 lines of desc/date
-            (string desc, string date)[] rows =
-            [
+            (string desc, string date)[] rows = [
             (a?.DrawingDesc1?.Text ?? "", a?.DrawingDate1?.Text ?? ""),
             (a?.DrawingDesc2?.Text ?? "", a?.DrawingDate2?.Text ?? ""),
             (a?.DrawingDesc3?.Text ?? "", a?.DrawingDate3?.Text ?? ""),
             (a?.DrawingDesc4?.Text ?? "", a?.DrawingDate4?.Text ?? ""),
             (a?.DrawingDesc5?.Text ?? "", a?.DrawingDate5?.Text ?? ""),
-            (a?.DrawingDesc6?.Text ?? "", a?.DrawingDate6?.Text ?? "")
-            ];
+            (a?.DrawingDesc6?.Text ?? "", a?.DrawingDate6?.Text ?? "")];
 
+            double gx = 29.5; double gy = 14.267;
+            double h = 0.75;
             for (int i = 0; i < 6; i++)
             {
-                int r = 3 + i;
-
-                // slight inset padding
-                p.Add(new TbText(gx + 0.05, gy + RowTop(r) + 0.05, c0 - 0.1, rh[r] - 0.1, rows[i].desc, "Arial", 0.25, TbColor.Black, Align: TbAlign.MiddleLeft));
-                p.Add(new TbText(gx + c0, gy + RowTop(r) + 0.05, c1, rh[r] - 0.1, rows[i].date, "Arial", 0.25, TbColor.Black, Align: TbAlign.MiddleCenter));
+                p.Add(new TbText(gx + _marginLeft, gy + (h / 2) + (h * i), 4.75, h, rows[i].desc, layoutFontFamily, 0.25, attributesBrush, Align: TbAlign.MiddleLeft));
+                p.Add(new TbText(gx + 5.375, gy + (h / 2) + (h * i), 1.25, h, rows[i].date, layoutFontFamily, 0.25, attributesBrush, Align: TbAlign.MiddleCenter));
             }
 
             // Main outer border
-            p.Add(new TbRect(0.438, 0.438, 35.125, 23.125, borderStrokeThickness, TbColor.Black, null));
+            p.Add(new TbRect(0.438, 0.438, 35.125, 23.125, borderPen, null));
 
             // Viewport border
-            p.Add(new TbRect(0.5, 0.5, 28.93, 23, borderStrokeThickness, TbColor.Black, null));
+            p.Add(new TbRect(0.5, 0.5, 28.93, 23, borderPen, null));
 
             // Titleblock information border
-            p.Add(new TbRect(29.5, 0.5, 6, 23, borderStrokeThickness, TbColor.Black, null));
+            p.Add(new TbRect(29.5, 0.5, 6, 23, borderPen, null));
 
             // Image divider
-            p.Add(new TbLine(29.5, 6.685, 35.5, 6.685, borderStrokeThickness, TbColor.Black));
+            p.Add(new TbLine(29.5, 6.685, 35.5, 6.685, borderPen));
 
             // Notes dividers
-            p.Add(new TbLine(29.5, 7.258, 35.5, 7.258, borderStrokeThickness, TbColor.Black));
-            p.Add(new TbLine(29.5, 12.767, 35.5, 12.767, borderStrokeThickness, TbColor.Black));
+            p.Add(new TbLine(29.5, 7.258, 35.5, 7.258, borderPen));
+            p.Add(new TbLine(29.5, 12.767, 35.5, 12.767, borderPen));
 
-            // Hatch strip dividers
-            p.Add(new TbLine(29.5, 12.892, 35.5, 12.892, borderStrokeThickness, TbColor.Black));
-            p.Add(new TbLine(29.5, 13.017, 35.5, 13.017, borderStrokeThickness, TbColor.Black));
+            // Hatch strip #1 dividers
+            p.Add(new TbLine(29.5, 13.017, 35.5, 13.017, borderPen));
 
-            p.Add(new TbRect(12.892, 0.5, 0.336, 0.125, borderStrokeThickness / 2, TbColor.Red, templateHatchFill));
+            double rowYStart = 12.767; double rowXStart = 29.5;
+            p.Add(new TbRect(rowXStart, rowYStart, 0.336, 0.125, halfBorderPen, templateHatchBrush));
+            p.Add(new TbRect(rowXStart + 0.336, rowYStart + 0.125, 0.336, 0.125, halfBorderPen, templateHatchBrush));
+            p.Add(new TbRect(rowXStart + 0.672, rowYStart, 0.336, 0.125, halfBorderPen, templateHatchBrush));
+            p.Add(new TbRect(rowXStart + 1.008, rowYStart + 0.125, 0.623, 0.125, halfBorderPen, templateHatchBrush));
+            p.Add(new TbRect(rowXStart + 1.631, rowYStart, 0.623, 0.125, halfBorderPen, templateHatchBrush));
+            p.Add(new TbRect(rowXStart + 2.254, rowYStart + 0.125, 0.623, 0.125, halfBorderPen, templateHatchBrush));
+            p.Add(new TbRect(rowXStart + 2.877, rowYStart, 0.623, 0.125, halfBorderPen, templateHatchBrush));
+            p.Add(new TbRect(rowXStart + 3.500, rowYStart + 0.125, 1.25, 0.125, halfBorderPen, templateHatchBrush));
+            p.Add(new TbRect(rowXStart + 4.750, rowYStart, 1.25, 0.125, halfBorderPen, templateHatchBrush));
+
+            // Drawings table dividers
+            p.Add(new TbLine(29.5, 13.767, 35.5, 13.767, borderPen));
+            p.Add(new TbLine(29.5, 14.267, 35.5, 14.267, borderPen));
+            p.Add(new TbLine(29.5, 15.017, 35.5, 15.017, borderPen));
+            p.Add(new TbLine(29.5, 15.767, 35.5, 15.767, borderPen));
+            p.Add(new TbLine(29.5, 16.517, 35.5, 16.517, borderPen));
+            p.Add(new TbLine(29.5, 17.267, 35.5, 17.267, borderPen));
+            p.Add(new TbLine(29.5, 18.017, 35.5, 18.017, borderPen));
+            p.Add(new TbLine(29.5, 18.767, 35.5, 18.767, borderPen));
+
+            p.Add(new TbLine(34.25, 13.767, 34.25, 18.767, borderPen));
+
+            // Hatch strip #2 dividers
+            p.Add(new TbLine(29.5, 19.017, 35.5, 19.017, borderPen));
+            rowYStart = 18.767;
+            p.Add(new TbRect(rowXStart, rowYStart, 0.336, 0.125, halfBorderPen, templateHatchBrush));
+            p.Add(new TbRect(rowXStart + 0.336, rowYStart + 0.125, 0.336, 0.125, halfBorderPen, templateHatchBrush));
+            p.Add(new TbRect(rowXStart + 0.672, rowYStart, 0.336, 0.125, halfBorderPen, templateHatchBrush));
+            p.Add(new TbRect(rowXStart + 1.008, rowYStart + 0.125, 0.623, 0.125, halfBorderPen, templateHatchBrush));
+            p.Add(new TbRect(rowXStart + 1.631, rowYStart, 0.623, 0.125, halfBorderPen, templateHatchBrush));
+            p.Add(new TbRect(rowXStart + 2.254, rowYStart + 0.125, 0.623, 0.125, halfBorderPen, templateHatchBrush));
+            p.Add(new TbRect(rowXStart + 2.877, rowYStart, 0.623, 0.125, halfBorderPen, templateHatchBrush));
+            p.Add(new TbRect(rowXStart + 3.500, rowYStart + 0.125, 1.25, 0.125, halfBorderPen, templateHatchBrush));
+            p.Add(new TbRect(rowXStart + 4.750, rowYStart, 1.25, 0.125, halfBorderPen, templateHatchBrush));
+
+            // Bottom section text
+            p.Add(new TbText(30.344, 19.267, 1.688, 0.5,
+                "DRAWN BY:", layoutFontFamily, 0.25,
+                attributesBrush, Align: TbAlign.MiddleCenter));
+            p.Add(new TbText(31.188 + _marginLeft, 19.267, 4.312, 0.5,
+                a?.DrawnBy?.Text ?? "", layoutFontFamily, 0.25,
+                attributesBrush, Align: TbAlign.MiddleLeft));
+
+            p.Add(new TbText(30.344, 19.767, 1.688, 0.5,
+                "DATE:", layoutFontFamily, 0.25,
+                attributesBrush, Align: TbAlign.MiddleCenter));
+            p.Add(new TbText(31.188 + _marginLeft, 19.767, 4.312, 0.5,
+                a?.DateDrawn?.Text ?? "", layoutFontFamily, 0.25,
+                attributesBrush, Align: TbAlign.MiddleLeft));
+
+            p.Add(new TbText(30.344, 20.517, 1.688, 1,
+                "PROJECT:", layoutFontFamily, 0.25,
+                attributesBrush, Align: TbAlign.MiddleCenter));
+            p.Add(new TbText(31.188 + _marginLeft, 20.517, 4.312, 1,
+                a?.ProjectName?.Text ?? "", layoutFontFamily, 0.25,
+                attributesBrush, Align: TbAlign.MiddleLeft));
+
+            p.Add(new TbText(32.5, 21.517, 6, 1,
+                a?.PageTitle?.Text ?? "", layoutFontFamily, 0.25,
+                attributesBrush, Align: TbAlign.MiddleCenter));
+
+            p.Add(new TbText(32.5, 22.517, 6, 1,
+               a?.PageNumber?.Text ?? "", layoutFontFamily, 0.5,
+               attributesBrush, Align: TbAlign.MiddleCenter));
+
+            Debug.WriteLine($"a.PageNumber.Text: {a.PageNumber.Text}");
+
+            p.Add(new TbText(32.5, 23.2585, 6, 1,
+               a?.Scale?.Text ?? "", layoutFontFamily, 0.25,
+               attributesBrush, Align: TbAlign.MiddleCenter));
+
+            // Bottom section dividers
+            p.Add(new TbLine(29.5, 19.517, 35.5, 19.517, borderPen));       // Drawn by divider
+            p.Add(new TbLine(29.5, 20.017, 35.5, 20.017, borderPen));       // Date drawn divider
+            p.Add(new TbLine(29.5, 21.017, 35.5, 21.017, borderPen));       // Project name divider
+            p.Add(new TbLine(29.5, 22.017, 35.5, 22.017, borderPen));       // Page title divider
+            p.Add(new TbLine(29.5, 23.017, 35.5, 23.017, borderPen));       // Page number divider
+            p.Add(new TbLine(29.5, 23.017, 35.5, 23.017, borderPen));       // Vertical divider 1
+            p.Add(new TbLine(31.188, 19.017, 31.188, 21.017, borderPen));   // Vertical divider 2
 
             return p;
         }
@@ -118,24 +178,28 @@ namespace Cad_Point_Manager.Models.Printing
 
     public enum TbAlign
     {
-        TopLeft, TopCenter, TopRight,
-        MiddleLeft, MiddleCenter, MiddleRight,
-        BottomLeft, BottomCenter, BottomRight,
+        TopLeft, 
+        TopCenter, 
+        TopRight,
+        MiddleLeft,
+        MiddleCenter,
+        MiddleRight,
+        BottomLeft,
+        BottomCenter,
+        BottomRight,
     }
 
     public abstract record TbPrimitive;
 
     public record TbRect(
         double X, double Y, double W, double H,
-        double StrokeIn,
-        TbColor? StrokeColor = null,
-        TbColor? FillColor = null
+        XPen? StrokePen = null,
+        XBrush? FillBrush = null
     ) : TbPrimitive;
 
     public record TbLine(
         double X1, double Y1, double X2, double Y2,
-        double StrokeIn,
-        TbColor StrokeColor
+        XPen StrokePen
     ) : TbPrimitive;
 
     public record TbText(
@@ -143,7 +207,7 @@ namespace Cad_Point_Manager.Models.Printing
         string Text,
         string FontFamily,
         double FontSizeIn,
-        TbColor FontColor,
+        XBrush FontBrush,
         bool Bold = false,
         TbAlign Align = TbAlign.BottomLeft
     ) : TbPrimitive;
@@ -152,17 +216,4 @@ namespace Cad_Point_Manager.Models.Printing
         double X, double Y, double W, double H,
         byte[] ImageBytes // already-resolved bytes (jpg/png)
     ) : TbPrimitive;
-
-    public readonly record struct TbColor(byte A, byte R, byte G, byte B)
-    {
-        public static TbColor Black => new(255, 0, 0, 0);
-        public static TbColor White => new(255, 255, 255, 255);
-        public static TbColor Red => new(255, 255, 0, 0);
-        public static TbColor Blue => new(255, 0, 0, 255);
-
-        public bool IsTransparent => A == 0;
-
-        public XColor XColor => XColor.FromArgb(A, R, G, B);
-        public XBrush XBrush => new XSolidBrush(XColor);
-    }
 }

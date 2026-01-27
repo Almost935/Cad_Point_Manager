@@ -9,6 +9,8 @@ using Cad_Point_Manager.Models.Printing;
 using PdfSharpCore.Drawing;
 using PdfSharpCore.Drawing.Layout;
 using PdfSharpCore.Pdf;
+using PdfSharpCore.Pdf.Actions;
+using PdfSharpCore.Pdf.Advanced;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -56,7 +58,8 @@ namespace Cad_Point_Manager.Services.LayoutExporting
                     layout.Viewport.LocalRectIn.Y * 72.0,
                     layout.Viewport.LocalRectIn.Width * 72.0,
                     layout.Viewport.LocalRectIn.Height * 72.0);
-                Matrix worldToPdf = LayoutPdfMatrixBuilder.BuildWorldToPdfContain_YDown(scene.Bounds.ToRect(), pdfViewportPts);
+                //Matrix worldToPdf = LayoutPdfMatrixBuilder.BuildWorldToPdfContain_YDown(scene.Bounds.ToRect(), pdfViewportPts);
+                Matrix worldToPdf = BuildWorldToPdfFromCamera(layout, cadManager3D, scene);
 
                 LayoutPdfVectorExporter.Export(
                     layout,
@@ -93,6 +96,17 @@ namespace Cad_Point_Manager.Services.LayoutExporting
 
             using var gfx = XGraphics.FromPdfPage(page);
             gfx.DrawRectangle(XBrushes.White, 0, 0, pageWpts, pageHpts);
+
+            // --- CLIP TO VIEWPORT FOR CAD ONLY ---
+            var viewportClip = new XRect(
+                layout.Viewport.LocalRectIn.X * 72.0,
+                layout.Viewport.LocalRectIn.Y * 72.0,
+                layout.Viewport.LocalRectIn.Width * 72.0,
+                layout.Viewport.LocalRectIn.Height * 72.0);
+
+            // Capture graphics state *object* so we can restore the exact state.
+            XGraphicsState cadClipState = gfx.Save();
+            gfx.IntersectClip(viewportClip);
 
             foreach (var kv in cadManager.Layers)
             {
@@ -141,6 +155,8 @@ namespace Cad_Point_Manager.Services.LayoutExporting
                 gfx, cadManager, ids, resCache, worldToPdf,
                 labelStates, pointStates, groupStates,
                 glyphCache);
+
+            gfx.Restore(cadClipState);
 
             DrawTitleblockPdf(gfx, templatePrims);
 
@@ -286,26 +302,20 @@ namespace Cad_Point_Manager.Services.LayoutExporting
                 {
                     case TbRect r:
                         {
-                            var pen = new XPen(XColors.Transparent, Pt(r.StrokeIn));
-
-                            if (r.StrokeColor is TbColor strokeColor) { pen.Color = strokeColor.XColor; }
-                            else { pen.Width = 0; }
-
-                            if (r.FillColor is TbColor color)
+                            if (r.FillBrush is not null)
                             {
-                                gfx.DrawRectangle(pen, new XSolidBrush(color.XColor),
+                                gfx.DrawRectangle(r.StrokePen,r.FillBrush,
                                     Pt(r.X), Pt(r.Y), Pt(r.W), Pt(r.H));
                             }
                             else
                             {
-                                gfx.DrawRectangle(pen, Pt(r.X), Pt(r.Y), Pt(r.W), Pt(r.H));
+                                gfx.DrawRectangle(r.StrokePen, Pt(r.X), Pt(r.Y), Pt(r.W), Pt(r.H));
                             }
                             break;
                         }
                     case TbLine l:
                         {
-                            var pen = new XPen(l.StrokeColor.XColor, Pt(l.StrokeIn));
-                            gfx.DrawLine(pen, Pt(l.X1), Pt(l.Y1), Pt(l.X2), Pt(l.Y2));
+                            gfx.DrawLine(l.StrokePen, Pt(l.X1), Pt(l.Y1), Pt(l.X2), Pt(l.Y2));
                             break;
                         }
                     case TbText t:
@@ -313,17 +323,10 @@ namespace Cad_Point_Manager.Services.LayoutExporting
                             var style = t.Bold ? XFontStyle.Bold : XFontStyle.Regular;
                             var font = new XFont(t.FontFamily, Pt(t.FontSizeIn), style);
 
-                            var rect = new XRect(Pt(t.X), Pt(t.Y), Pt(t.W), Pt(t.H));
+                            // IMPORTANT: rect is derived from anchor semantics of Align
+                            var rect = AnchorRect(t.X, t.Y, t.W, t.H, t.Align);
 
-                            DrawWrappedText(
-                                gfx,
-                                t.Text ?? "",
-                                font,
-                                t.FontColor.XBrush,
-                                rect,
-                                t.Align,
-                                clipToRect: true);
-
+                            DrawWrappedText(gfx, t.Text ?? "", font, t.FontBrush, rect, t.Align, clipToRect: true);
                             break;
                         }
                     case TbImage img:
@@ -338,12 +341,12 @@ namespace Cad_Point_Manager.Services.LayoutExporting
         }
         private static void DrawWrappedText(
             XGraphics gfx,
-            string text,
-            XFont font,
-            XBrush brush,
-            XRect rect,
-            TbAlign align,
-            bool clipToRect = true)
+             string text,
+             XFont font,
+             XBrush brush,
+             XRect rect,
+             TbAlign align,
+             bool clipToRect = true)
         {
             if (clipToRect)
             {
@@ -353,12 +356,11 @@ namespace Cad_Point_Manager.Services.LayoutExporting
 
             var lines = WrapLinesNoJustify(gfx, font, text ?? "", rect.Width);
 
-            // line height (PdfSharpCore doesn't expose font metrics well; this is a good approximation)
             double lineH = gfx.MeasureString("Ag", font).Height;
-
+            double ascent = lineH * 0.83; // baseline approximation
             double textH = lines.Count * lineH;
 
-            // vertical alignment
+            // vertical alignment of the BLOCK within rect
             double yStart = align switch
             {
                 TbAlign.TopLeft or TbAlign.TopCenter or TbAlign.TopRight => rect.Y,
@@ -370,29 +372,23 @@ namespace Cad_Point_Manager.Services.LayoutExporting
             for (int i = 0; i < lines.Count; i++)
             {
                 string line = lines[i];
+                double yTop = yStart + i * lineH;
 
-                // Horizontal alignment: compute x per line
+                if (yTop + lineH > rect.Bottom) { break; }
+
                 double lineW = gfx.MeasureString(line, font).Width;
 
                 double x = align switch
                 {
                     TbAlign.TopCenter or TbAlign.MiddleCenter or TbAlign.BottomCenter => rect.X + (rect.Width - lineW) / 2,
                     TbAlign.TopRight or TbAlign.MiddleRight or TbAlign.BottomRight => rect.X + (rect.Width - lineW),
-                    _ => rect.X // left variants
+                    _ => rect.X
                 };
 
-                double y = yStart + i * lineH;
-
-                // Stop if we run out of vertical space
-                if (y + lineH > rect.Y + rect.Height) break;
-
-                gfx.DrawString(line, font, brush, new XPoint(x, y + lineH));
-                // Note: PdfSharp draws text relative to baseline; this "+ lineH" keeps it inside the box.
-                // If you want tighter control, we can adjust baseline more precisely.
+                gfx.DrawString(line, font, brush, new XPoint(x, yTop + ascent));
             }
 
-            if (clipToRect)
-                gfx.Restore();
+            if (clipToRect) gfx.Restore();
         }
 
 
@@ -598,12 +594,128 @@ namespace Cad_Point_Manager.Services.LayoutExporting
                     }
                 }
 
-                if (current.Length > 0)
-                    lines.Add(current.ToString());
+                if (current.Length > 0) { lines.Add(current.ToString()); }
             }
 
             return lines;
         }
+        private static XRect AnchorRect(double xIn, double yIn, double wIn, double hIn, TbAlign align)
+        {
+            double x = Pt(xIn);
+            double y = Pt(yIn);
+            double w = Pt(wIn);
+            double h = Pt(hIn);
 
+            // Convert anchor (x,y) to top-left rect (rx, ry)
+            double rx = x;
+            double ry = y;
+
+            switch (align)
+            {
+                case TbAlign.TopLeft:
+                    // already top-left
+                    break;
+
+                case TbAlign.TopCenter:
+                    rx = x - w / 2;
+                    break;
+
+                case TbAlign.TopRight:
+                    rx = x - w;
+                    break;
+
+                case TbAlign.MiddleLeft:
+                    ry = y - h / 2;
+                    break;
+
+                case TbAlign.MiddleCenter:
+                    rx = x - w / 2;
+                    ry = y - h / 2;
+                    break;
+
+                case TbAlign.MiddleRight:
+                    rx = x - w;
+                    ry = y - h / 2;
+                    break;
+
+                case TbAlign.BottomLeft:
+                    ry = y - h;
+                    break;
+
+                case TbAlign.BottomCenter:
+                    rx = x - w / 2;
+                    ry = y - h;
+                    break;
+
+                case TbAlign.BottomRight:
+                    rx = x - w;
+                    ry = y - h;
+                    break;
+            }
+
+            return new XRect(rx, ry, w, h);
+        }
+
+        private static System.Windows.Media.Matrix BuildWorldToPdfFromCamera(Layout layout, CadManager cadManager, Scene scene)
+        {
+            if (layout is null) throw new ArgumentNullException(nameof(layout));
+            if (cadManager is null) throw new ArgumentNullException(nameof(cadManager));
+            if (scene is null) throw new ArgumentNullException(nameof(scene));
+
+            var cam = cadManager.Camera;
+            if (cam is null) throw new InvalidOperationException("cadManager.Camera is null.");
+
+            // PDF viewport rect in POINTS (page coords, Y-down)
+            var vpIn = layout.Viewport.LocalRectIn;
+            double vpX = vpIn.X * 72.0;
+            double vpY = vpIn.Y * 72.0;
+            double vpW = vpIn.Width * 72.0;
+            double vpH = vpIn.Height * 72.0;
+
+            // Save camera state
+            var oldViewport = cam.Viewport;
+            var oldInitial = cam.InitialViewMatrix;
+            var oldTranslate = cam.Translate;
+            var oldZoomStep = cam.CurrentZoomStep;
+
+            try
+            {
+                // Virtual viewport matching the PDF viewport size.
+                // Only aspect/size matters for the camera math; using points makes it 1:1.
+                var virtualViewport = new SharpDX.ViewportF(0, 0, (float)vpW, (float)vpH);
+
+                // Rebuild the extents-fit matrix for THIS viewport size
+                cam.InitialViewMatrix = GetExtentsFittingMatrix(virtualViewport, cadManager.Extents);
+
+                // Recompute projection/view/windows matrices for this viewport
+                cam.UpdateViewportSize(virtualViewport);
+
+                // Apply the saved scene pan/zoom
+                cam.SetPanAndZoom(scene.Translation, scene.ZoomStep);
+
+                // Camera.WindowsMatrix maps world -> view (top-left origin, Y-down)
+                var worldToView = cam.WindowsMatrix;
+
+                // Shift view coords into the PDF viewport's top-left corner on the page
+                worldToView.Translate(vpX, vpY);
+
+                return worldToView;
+            }
+            finally
+            {
+                // Restore camera state
+                cam.UpdateViewportSize(oldViewport);
+                cam.InitialViewMatrix = oldInitial;
+                cam.SetPanAndZoom(oldTranslate, oldZoomStep);
+            }
+        }
+
+        private static SharpDX.Matrix GetExtentsFittingMatrix(SharpDX.ViewportF viewport, System.Windows.Rect extents)
+        {
+            // same as D3dDxfControl.GetExtentsFittingMatrix :contentReference[oaicite:8]{index=8}
+            double scale = Math.Min(viewport.Width / extents.Width, viewport.Height / extents.Height);
+            return SharpDX.Matrix.Scaling((float)scale, (float)scale, 1f)
+                 * SharpDX.Matrix.Translation((float)-extents.Left, (float)-extents.Top, 0f);
+        }
     }
 }

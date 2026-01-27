@@ -35,6 +35,7 @@
     <Compile Remove="Controls\D3DControl\Rendering\Text\CogoGlyphBatcher.cs" />
     <Compile Remove="Controls\D3DControl\Rendering\Text\CogoPointLabelLayout.cs" />
     <Compile Remove="Controls\D3DControl\Rendering\Text\CogoPointTextAssembler.cs" />
+    <Compile Remove="Controls\D3DControl\Rendering\Text\FontBoxMetrics.cs" />
     <Compile Remove="Controls\D3DControl\Rendering\Text\IRenderStateUpdater.cs" />
     <Compile Remove="Controls\D3DControl\Rendering\Text\TextLayoutCache.cs" />
     <Compile Remove="Controls\D3DControl\Rendering\Text\TextMeshBuilder.cs" />

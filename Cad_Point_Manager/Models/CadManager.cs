@@ -314,10 +314,11 @@ namespace Cad_Point_Manager.Models
         {
             Layouts.Clear();
 
+            Rect viewportBounds = new(0.5, 0.5, 28.938, 23);
             var layout1 = new Layout() { Name = "Layout 1" };
             layout1.Viewport = new LayoutViewport()
             {
-                LocalRectIn = new Rect(2, 2, 32, 20),
+                LocalRectIn = viewportBounds,
                 Scene = Camera.OverviewScene
             };
             Layouts.Add(layout1);
@@ -325,7 +326,7 @@ namespace Cad_Point_Manager.Models
             var layout2 = new Layout() { Name = "Layout 2" };
             layout2.Viewport = new LayoutViewport()
             {
-                LocalRectIn = new Rect(2, 2, 32, 20),
+                LocalRectIn = viewportBounds,
                 Scene = Camera.OverviewScene
             };
             Layouts.Add(layout2);
@@ -333,7 +334,7 @@ namespace Cad_Point_Manager.Models
             var layout3 = new Layout() { Name = "Layout 3" };
             layout3.Viewport = new LayoutViewport()
             {
-                LocalRectIn = new Rect(2, 2, 32, 20),
+                LocalRectIn = viewportBounds,
                 Scene = Camera.OverviewScene
             };
             Layouts.Add(layout3);

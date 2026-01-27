@@ -1,11 +1,14 @@
 ﻿using Cad_Point_Manager.Controls.D3DControl.Rendering.Text;
+using Cad_Point_Manager.Models;
+using Cad_Point_Manager.Models.Printing;
+using SharpDX;
 using SharpDX.Direct3D;
 using SharpDX.Direct3D11;
 using SharpDX.DXGI;
+using System;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Windows;
-
 using FeatureLevel = SharpDX.Direct3D.FeatureLevel;
 
 
