@@ -7,7 +7,7 @@ namespace Cad_Point_Manager.Extensions
     {
         public static string ToPrintableText(this Attribute? a)
         {
-            if (a == null) return string.Empty;
+            if (a == null) { return string.Empty; }
             return a.IsBaseValue ? string.Empty : a.Text;
         }
     }

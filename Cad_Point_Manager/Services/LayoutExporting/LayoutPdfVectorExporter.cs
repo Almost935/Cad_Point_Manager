@@ -58,7 +58,6 @@ namespace Cad_Point_Manager.Services.LayoutExporting
                     layout.Viewport.LocalRectIn.Y * 72.0,
                     layout.Viewport.LocalRectIn.Width * 72.0,
                     layout.Viewport.LocalRectIn.Height * 72.0);
-                //Matrix worldToPdf = LayoutPdfMatrixBuilder.BuildWorldToPdfContain_YDown(scene.Bounds.ToRect(), pdfViewportPts);
                 Matrix worldToPdf = BuildWorldToPdfFromCamera(layout, cadManager3D, scene);
 
                 LayoutPdfVectorExporter.Export(

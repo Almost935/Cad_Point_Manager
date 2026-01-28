@@ -1,4 +1,5 @@
-﻿using PdfSharpCore.Drawing;
+﻿using Cad_Point_Manager.Extensions;
+using PdfSharpCore.Drawing;
 using SixLabors.ImageSharp.Processing;
 using System;
 using System.Collections.Generic;
@@ -42,7 +43,7 @@ namespace Cad_Point_Manager.Models.Printing
             // Notes body box (just draw the text inside; you control wrapping)
             p.Add(new TbText(
                 29.55, 7.3085, 5.9, 5.4085,
-                a?.Notes?.Text ?? "",
+                a?.Notes?.ToPrintableText() ?? "",
                 layoutFontFamily, 0.25, attributesBrush,
                 Align: TbAlign.TopLeft));
 
@@ -57,12 +58,12 @@ namespace Cad_Point_Manager.Models.Printing
 
             // Rows 3..8: 6 lines of desc/date
             (string desc, string date)[] rows = [
-            (a?.DrawingDesc1?.Text ?? "", a?.DrawingDate1?.Text ?? ""),
-            (a?.DrawingDesc2?.Text ?? "", a?.DrawingDate2?.Text ?? ""),
-            (a?.DrawingDesc3?.Text ?? "", a?.DrawingDate3?.Text ?? ""),
-            (a?.DrawingDesc4?.Text ?? "", a?.DrawingDate4?.Text ?? ""),
-            (a?.DrawingDesc5?.Text ?? "", a?.DrawingDate5?.Text ?? ""),
-            (a?.DrawingDesc6?.Text ?? "", a?.DrawingDate6?.Text ?? "")];
+            (a?.DrawingDesc1.ToPrintableText() ?? "", a?.DrawingDate1.ToPrintableText() ?? ""),
+            (a?.DrawingDesc2?.ToPrintableText() ?? "", a?.DrawingDate2.ToPrintableText() ?? ""),
+            (a?.DrawingDesc3?.ToPrintableText() ?? "", a?.DrawingDate3?.ToPrintableText() ?? ""),
+            (a?.DrawingDesc4?.ToPrintableText() ?? "", a?.DrawingDate4?.ToPrintableText() ?? ""),
+            (a?.DrawingDesc5?.ToPrintableText() ?? "", a?.DrawingDate5?.ToPrintableText() ?? ""),
+            (a?.DrawingDesc6?.ToPrintableText() ?? "", a?.DrawingDate6?.ToPrintableText() ?? "")];
 
             double gx = 29.5; double gy = 14.267;
             double h = 0.75;
@@ -132,35 +133,33 @@ namespace Cad_Point_Manager.Models.Printing
                 "DRAWN BY:", layoutFontFamily, 0.25,
                 attributesBrush, Align: TbAlign.MiddleCenter));
             p.Add(new TbText(31.188 + _marginLeft, 19.267, 4.312, 0.5,
-                a?.DrawnBy?.Text ?? "", layoutFontFamily, 0.25,
+                a?.DrawnBy?.ToPrintableText() ?? "", layoutFontFamily, 0.25,
                 attributesBrush, Align: TbAlign.MiddleLeft));
 
             p.Add(new TbText(30.344, 19.767, 1.688, 0.5,
                 "DATE:", layoutFontFamily, 0.25,
                 attributesBrush, Align: TbAlign.MiddleCenter));
             p.Add(new TbText(31.188 + _marginLeft, 19.767, 4.312, 0.5,
-                a?.DateDrawn?.Text ?? "", layoutFontFamily, 0.25,
+                a?.DateDrawn?.ToPrintableText() ?? "", layoutFontFamily, 0.25,
                 attributesBrush, Align: TbAlign.MiddleLeft));
 
             p.Add(new TbText(30.344, 20.517, 1.688, 1,
                 "PROJECT:", layoutFontFamily, 0.25,
                 attributesBrush, Align: TbAlign.MiddleCenter));
             p.Add(new TbText(31.188 + _marginLeft, 20.517, 4.312, 1,
-                a?.ProjectName?.Text ?? "", layoutFontFamily, 0.25,
+                a?.ProjectName?.ToPrintableText() ?? "", layoutFontFamily, 0.25,
                 attributesBrush, Align: TbAlign.MiddleLeft));
 
             p.Add(new TbText(32.5, 21.517, 6, 1,
-                a?.PageTitle?.Text ?? "", layoutFontFamily, 0.25,
+                a?.PageTitle?.ToPrintableText() ?? "", layoutFontFamily, 0.25,
                 attributesBrush, Align: TbAlign.MiddleCenter));
 
             p.Add(new TbText(32.5, 22.517, 6, 1,
-               a?.PageNumber?.Text ?? "", layoutFontFamily, 0.5,
+               a?.PageNumber?.ToPrintableText() ?? "", layoutFontFamily, 0.5,
                attributesBrush, Align: TbAlign.MiddleCenter));
 
-            Debug.WriteLine($"a.PageNumber.Text: {a.PageNumber.Text}");
-
             p.Add(new TbText(32.5, 23.2585, 6, 1,
-               a?.Scale?.Text ?? "", layoutFontFamily, 0.25,
+               a?.Scale?.ToPrintableText() ?? "", layoutFontFamily, 0.25,
                attributesBrush, Align: TbAlign.MiddleCenter));
 
             // Bottom section dividers
