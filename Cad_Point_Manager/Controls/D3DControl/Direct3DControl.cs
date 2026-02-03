@@ -9,6 +9,8 @@ using System;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Windows;
+using System.Windows.Media;
+using System.Windows.Threading;
 using FeatureLevel = SharpDX.Direct3D.FeatureLevel;
 
 
@@ -16,7 +18,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 {
     public abstract class Direct3DControl : System.Windows.Controls.Image
     {
-        // - field -----------------------------------------------------------------------
+        #region Fields
         private SharpDX.Direct3D11.Device _device;
         private DeviceContext _deviceContext;
         private Texture2D _texture2D;
@@ -42,7 +44,13 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private int _frameCountHistTotal = 0;
         private Queue<int> _frameCountHist = new();
 
-        // - property --------------------------------------------------------------------
+        private int _rtPixelW = -1;
+        private int _rtPixelH = -1;
+
+        private DispatcherTimer _resizeTimer;
+        #endregion
+
+        #region Properties
         public static bool IsInDesignMode
         {
             get
@@ -92,9 +100,37 @@ namespace Cad_Point_Manager.Controls.D3DControl
             set { SetValue(ResCacheProperty, value); }
         }
 
-        // - public methods --------------------------------------------------------------
+        protected int RenderPixelWidth => _rtPixelW;
+        protected int RenderPixelHeight => _rtPixelH;
+        #endregion
+
+        #region Methods
         public Direct3DControl()
         {
+            _resizeTimer = new DispatcherTimer
+            {
+                Interval = TimeSpan.FromMilliseconds(120)
+            };
+            _resizeTimer.Tick += (_, __) =>
+            {
+                _resizeTimer.Stop();
+                CreateAndBindTargets();
+                InvalidateVisual();
+            };
+
+            Loaded += (_, __) =>
+            {
+                var w = Window.GetWindow(this);
+                if (w != null)
+                {
+                    w.DpiChanged += (_, __) =>
+                    {
+                        _resizeTimer.Stop();
+                        _resizeTimer.Start();
+                    };
+                }
+            };
+
             base.Loaded += Window_Loaded;
             base.Unloaded += Window_Closing;
 
@@ -149,8 +185,13 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         protected override void OnRenderSizeChanged(SizeChangedInfo sizeInfo)
         {
-            CreateAndBindTargets();
             base.OnRenderSizeChanged(sizeInfo);
+
+            if (IsInDesignMode) return;
+            if (_d3DSurface == null) return;
+
+            _resizeTimer.Stop();
+            _resizeTimer.Start();
         }
 
         private void OnIsFrontBufferAvailableChanged(object sender, DependencyPropertyChangedEventArgs e)
@@ -241,6 +282,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             CreateAndBindTargets();
 
+            InitializeDirect2D();
+            InitializeGlyphAtlas();
+
             base.Source = _d3DSurface;
         }
 
@@ -267,10 +311,15 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         private void CreateAndBindTargets()
         {
-            if (_d3DSurface == null || !_d3DSurface.IsFrontBufferAvailable)
-            {
-                return;
-            }
+            if (_d3DSurface == null || !_d3DSurface.IsFrontBufferAvailable) { return; }
+
+            var (w, h) = GetPixelSize();
+
+            // Guard: do nothing unless the *pixel* size changed
+            if (w == _rtPixelW && h == _rtPixelH) { return; }
+
+            _rtPixelW = w;
+            _rtPixelH = h;
 
             _d3DSurface.SetRenderTarget(null);
 
@@ -285,12 +334,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
             Disposer.SafeDispose(ref _dxfPreviewTexture);
             Disposer.SafeDispose(ref _combinedPreviewTexture);
 
-            Disposer.SafeDispose(ref _d2dFactory);
-            Disposer.SafeDispose(ref _d2dDevice);
-            Disposer.SafeDispose(ref _d2dDeviceContext);
-
-            var width = Math.Max((int)ActualWidth, 100);
-            var height = Math.Max((int)ActualHeight, 100);
+            var width = Math.Max((int)w, 100);
+            var height = Math.Max((int)h, 100);
 
             var texture2DRenderDesc = new Texture2DDescription
             {
@@ -345,8 +390,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             _device.ImmediateContext.Rasterizer.SetViewport(0, 0, width, height, 0.0f, 1.0f);
 
-            InitializeDirect2D();
-            InitializeGlyphAtlas();
+            OnFrontBufferRestored();
         }
         public void EnsurePreviewTargets(int w, int h, Format fmt = Format.B8G8R8A8_UNorm)
         {
@@ -378,7 +422,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             ResCache.DxfPreviewTexture = _dxfPreviewTexture;
             _dxfPreviewRenderTargetView = new RenderTargetView(_device, _dxfPreviewTexture);
             ResCache.DxfPreviewRenderTargetView = _dxfPreviewRenderTargetView;
-            
+
             _combinedPreviewTexture = new Texture2D(_device, finalDesc);
             ResCache.PreviewTexture = _combinedPreviewTexture;
             _combinedPreviewRenderTargetView = new RenderTargetView(_device, _combinedPreviewTexture);
@@ -387,6 +431,10 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         private void InitializeDirect2D()
         {
+            Disposer.SafeDispose(ref _d2dFactory);
+            Disposer.SafeDispose(ref _d2dDevice);
+            Disposer.SafeDispose(ref _d2dDeviceContext);
+
             using (var dxgiDevice = _device.QueryInterface<SharpDX.DXGI.Device>())
             {
                 _d2dFactory = new SharpDX.Direct2D1.Factory2();
@@ -417,7 +465,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             }
 
             IsRendering = true;
-            System.Windows.Media.CompositionTarget.Rendering += OnRendering;
+            CompositionTarget.Rendering += OnRendering;
             _renderTimer.Start();
         }
 
@@ -429,7 +477,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             }
 
             IsRendering = false;
-            System.Windows.Media.CompositionTarget.Rendering -= OnRendering;
+            CompositionTarget.Rendering -= OnRendering;
             _renderTimer.Stop();
         }
 
@@ -479,5 +527,15 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     throw new NotSupportedException("Unsupported feature level");
             }
         }
+
+        private (int w, int h) GetPixelSize()
+        {
+            var dpi = VisualTreeHelper.GetDpi(this);
+            int w = Math.Max((int)Math.Ceiling(ActualWidth * dpi.DpiScaleX), 1);
+            int h = Math.Max((int)Math.Ceiling(ActualHeight * dpi.DpiScaleY), 1);
+            return (w, h);
+        }
+        #endregion
+
     }
 }

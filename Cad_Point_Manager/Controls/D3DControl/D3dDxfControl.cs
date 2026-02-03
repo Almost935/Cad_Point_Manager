@@ -573,7 +573,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private void DrawDxf(DeviceContext ctx)
         {
             ctx.OutputMerger.SetRenderTargets(ResCache.DxfRenderTargetView);
-            ctx.ClearRenderTargetView(ResCache.DxfRenderTargetView, new RawColor4(1, 1, 1, 1));
+            ctx.ClearRenderTargetView(ResCache.DxfRenderTargetView, new RawColor4(1,1,1,1));
 
             DrawLines(ctx);
             DrawText(ctx);
