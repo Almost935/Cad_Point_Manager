@@ -1,6 +1,7 @@
 ﻿using Cad_Point_Manager.ViewModels;
 using Cad_Point_Manager.Views;
 using System.Windows;
+using System.Windows.Threading;
 
 namespace Cad_Point_Manager
 {
@@ -17,6 +18,21 @@ namespace Cad_Point_Manager
 
             InitializeComponent();
             Loaded += MainWindow_Loaded;
+
+
+            LocationChanged += (_, __) =>
+            {
+                if (WindowState == WindowState.Maximized)
+                {
+                    // Force WPF to recompute maximized bounds for the new monitor
+                    Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        var ws = WindowState;
+                        WindowState = WindowState.Normal;
+                        WindowState = ws; // back to Maximized
+                    }), DispatcherPriority.Background);
+                }
+            };
         }
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {

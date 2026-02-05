@@ -391,6 +391,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _device.ImmediateContext.Rasterizer.SetViewport(0, 0, width, height, 0.0f, 1.0f);
 
             OnFrontBufferRestored();
+
+            OnTargetsResized(_rtPixelW, _rtPixelH);
         }
         public void EnsurePreviewTargets(int w, int h, Format fmt = Format.B8G8R8A8_UNorm)
         {
@@ -533,8 +535,16 @@ namespace Cad_Point_Manager.Controls.D3DControl
             var dpi = VisualTreeHelper.GetDpi(this);
             int w = Math.Max((int)Math.Ceiling(ActualWidth * dpi.DpiScaleX), 1);
             int h = Math.Max((int)Math.Ceiling(ActualHeight * dpi.DpiScaleY), 1);
+
+            Debug.WriteLine($"\ndpi.DpiScaleX: {dpi.DpiScaleX} dpi.DpiScaleY: {dpi.DpiScaleY}" +
+                $"\nActualWidth: {ActualWidth} ActualHeight: {ActualHeight}" +
+                $"\nwidth: {w} height: {h}\n");
+
             return (w, h);
         }
+
+
+        protected virtual void OnTargetsResized(int wPx, int hPx) { }
         #endregion
 
     }

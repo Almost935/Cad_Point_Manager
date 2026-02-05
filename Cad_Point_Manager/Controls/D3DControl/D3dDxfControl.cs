@@ -64,7 +64,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private Vector2 _dxfCoords;
         private string _dxfCoordsString = $"X: {0:F3}   Y: {0:F3}";
         private Matrix _dxfInitialMatrix = Matrix.Identity;
-        private bool _clipSet = false;
         private bool _isMouseInside;
         private Window _attachedWindow;
         private volatile bool _suspendHitTesting;
@@ -511,7 +510,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 DxfNeedsReload = false;
                 CadManager3D.DxfNeedsReload = false;
             }
-            if (!_clipSet) { SetClip(); _clipSet = true; }
             if (!_buffersInitialized) { InitializeBuffers(); }
 
             if (_lineVerticesDirty) { UpdateLineVertices(); }
@@ -553,10 +551,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             if (_combinedDirty)
             {
-                // 1) Start from cached base
                 ctx.CopyResource(ResCache.DxfTexture, ResCache.Texture2D);
-
-                // 2) Draw overlays directly onto the shared RT that WPF displays
                 ctx.OutputMerger.SetRenderTargets(ResCache.RenderTargetView);
 
                 if (IsDragging && _dragFillVertexCount > 0) DrawDragOverlay(ctx);
@@ -2217,12 +2212,10 @@ namespace Cad_Point_Manager.Controls.D3DControl
             base.OnPreviewKeyDown(e);
         }
 
-        protected override void OnRenderSizeChanged(SizeChangedInfo sizeInfo)
+        protected override void OnTargetsResized(int wPx, int hPx)
         {
-            base.OnRenderSizeChanged(sizeInfo);
-
-            Viewport = new(0, 0, (float)ActualWidth, (float)ActualHeight);
-            CadManager3D.ViewportSize = new((float)ActualWidth, (float)ActualHeight);
+            Viewport = new(0, 0, wPx, hPx, 0.0f, 1.0f);
+            CadManager3D.ViewportSize = new Size2F(wPx, hPx);
 
             SetInitialMatrix();
 
@@ -2234,6 +2227,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             }
 
             _dxfDirty = true;
+            _combinedDirty = true;
         }
 
         private void UpdateToggleAnchorDimensions()
@@ -2805,21 +2799,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _hitTestCancellationTokenSource?.Cancel();
         }
 
-        private void SetClip()
-        {
-            var parent = VisualTreeHelper.GetParent(this);
-            while (parent is not null)
-            {
-                if (parent is Border border)
-                {
-                    this.Clip = new RectangleGeometry(new Rect(0, 0, border.ActualWidth, border.ActualHeight),
-                        border.CornerRadius.TopRight, border.CornerRadius.TopRight);
-                    _clipSet = true;
-                    break;
-                }
-                parent = VisualTreeHelper.GetParent(parent);
-            }
-        }
         private void LoadHitTestableObjectTree()
         {
             if (CadManager3D is null) { return; }

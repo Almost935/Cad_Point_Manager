@@ -105,6 +105,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
         #region Methods
         public void UpdateViewportSize(ViewportF viewport)
         {
+            Debug.WriteLine($"UpdateViewportSize");
+
             Viewport = viewport;
 
             UpdateProjection();
@@ -275,15 +277,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         public Vector3 Unproject(Vector2 ndc)
         {
-            // Add Z = 0 (near plane) and W = 1 for the unprojection calculation
             Vector4 ndcVec = new(ndc.X, ndc.Y, 0, 1);
-
-            var testMatrix = Matrix.Invert(ViewProjectionMatrix);
-
-            // Transform NDC to world space using the inverse of the view-projection matrix
             Vector4 worldVec = Vector4.Transform(ndcVec, InverseViewProjectionMatrix);
-
-            // Perform perspective divide
             if (worldVec.W != 0)
             {
                 worldVec.X /= worldVec.W;
