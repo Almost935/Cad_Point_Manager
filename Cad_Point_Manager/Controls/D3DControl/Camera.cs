@@ -105,8 +105,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
         #region Methods
         public void UpdateViewportSize(ViewportF viewport)
         {
-            Debug.WriteLine($"UpdateViewportSize");
-
             Viewport = viewport;
 
             UpdateProjection();
@@ -203,21 +201,15 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
         public void Zoom(int zoomStepDelta, Vector2 mousePosition)
         {
-            // Update zoom step and calculate the scale
             CurrentZoomStep += zoomStepDelta;
-
-            // Convert mouse position to NDC space
             Vector2 initialNDC = ScreenToNDC(mousePosition);
 
-            // Unproject NDC to world space for the zoom pivot point
             Vector3 initialWorldPivot3D = Unproject(initialNDC);
             Vector2 initialWorldMousePos = new(initialWorldPivot3D.X, initialWorldPivot3D.Y);
 
-            // Update matrices
             UpdateView();
             UpdateViewProjection();
 
-            // Pan view so that zoom is towards mouse position
             Vector2 finalNDC = ScreenToNDC(mousePosition);
             Vector3 finalWorldPivot3D = Unproject(finalNDC);
             Vector2 finalWorldMousePos = new(finalWorldPivot3D.X, finalWorldPivot3D.Y);
@@ -225,7 +217,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             Translate += worldDelta;
 
-            // Update matrices
             UpdateView();
             UpdateViewProjection();
         }

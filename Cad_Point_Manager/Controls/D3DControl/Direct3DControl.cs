@@ -198,15 +198,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
         {
             if (_d3DSurface.IsFrontBufferAvailable)
             {
-                //StartRendering();
-
-                // 1) Reset the underlying D3D9Ex device used by D3DImage
                 Dx11ImageSource.ResetD3D();
-
-                // 2) Recreate + rebind the shared D3D11 textures and reattach backbuffer
                 CreateAndBindTargets();
-
-                // 3) Optional but strongly recommended: force a redraw so you re-clear to white
                 OnFrontBufferRestored();
 
                 StartRendering();
@@ -392,7 +385,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             OnFrontBufferRestored();
 
-            OnTargetsResized(_rtPixelW, _rtPixelH);
+            OnTargetsResized(width, height);
         }
         public void EnsurePreviewTargets(int w, int h, Format fmt = Format.B8G8R8A8_UNorm)
         {
@@ -535,10 +528,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             var dpi = VisualTreeHelper.GetDpi(this);
             int w = Math.Max((int)Math.Ceiling(ActualWidth * dpi.DpiScaleX), 1);
             int h = Math.Max((int)Math.Ceiling(ActualHeight * dpi.DpiScaleY), 1);
-
-            Debug.WriteLine($"\ndpi.DpiScaleX: {dpi.DpiScaleX} dpi.DpiScaleY: {dpi.DpiScaleY}" +
-                $"\nActualWidth: {ActualWidth} ActualHeight: {ActualHeight}" +
-                $"\nwidth: {w} height: {h}\n");
 
             return (w, h);
         }

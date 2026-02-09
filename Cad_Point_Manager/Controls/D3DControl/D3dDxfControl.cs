@@ -483,13 +483,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
         #endregion
 
         #region Methods
-        protected override void OnFrontBufferRestored()
-        {
-            _dxfDirty = true;
-            _combinedDirty = true;
-            ConstantBuffersDirty = true;
-        }
-
         public override void Render()
         {
             if (ResCache is null) { return; }
@@ -1877,12 +1870,15 @@ namespace Cad_Point_Manager.Controls.D3DControl
             double scale = Math.Min(viewport.Width / extents.Width, viewport.Height / extents.Height);
             return Matrix.Scaling(scale.ToFloat(), scale.ToFloat(), 1) * Matrix.Translation(-extents.Left.ToFloat(), -extents.Top.ToFloat(), 0);
         }
-        private void UpdateDxfCoords(Vector2 mousePos)
+        private void UpdateDxfCoords(Vector2 mousePosDip)
         {
-            DxfCoords = CadManager3D.Camera.ScreenToWorld(mousePos);
+            var mousePx = DipToPixel(mousePosDip);
+
+            DxfCoords = CadManager3D.Camera.ScreenToWorld(mousePx);
             MousePosition = DxfCoords.ToPoint();
             DxfCoordsString = formatVectorString(DxfCoords);
         }
+
 
         protected override void OnMouseDown(MouseButtonEventArgs e)
         {
@@ -1958,12 +1954,14 @@ namespace Cad_Point_Manager.Controls.D3DControl
             if (e.Delta > 0) { zoomStep = 1; }
             else { zoomStep = -1; }
 
+            var mousePixels = GetMousePx(e);
+
             var matrix = CurrentlyAppliedDragRectMatrix;
-            matrix.ScaleAt(Math.Pow(GlobalHelperProperties.ZoomFactor, zoomStep), Math.Pow(GlobalHelperProperties.ZoomFactor, zoomStep), _pointerCoords.X, _pointerCoords.Y);
+            matrix.ScaleAt(Math.Pow(GlobalHelperProperties.ZoomFactor, zoomStep), Math.Pow(GlobalHelperProperties.ZoomFactor, zoomStep), mousePixels.X, mousePixels.Y);
             CurrentlyAppliedDragRectMatrix = matrix;
             UpdateDragRect();
 
-            CadManager3D.Camera.Zoom(zoomStep, new Vector2((float)_pointerCoords.X, (float)_pointerCoords.Y));
+            CadManager3D.Camera.Zoom(zoomStep, mousePixels);
             _hittestStrokeThickness = 7.0f / (CadManager3D.Camera.InitialViewMatrix.M11 * CadManager3D.Camera.CurrentZoom);
 
             UpdateToggleAnchorDimensions();
@@ -2214,6 +2212,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         protected override void OnTargetsResized(int wPx, int hPx)
         {
+            base.OnTargetsResized(wPx, hPx);
             Viewport = new(0, 0, wPx, hPx, 0.0f, 1.0f);
             CadManager3D.ViewportSize = new Size2F(wPx, hPx);
 
@@ -2225,9 +2224,15 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 CadManager3D.ResetTemplates();
                 ConstantBuffersDirty = true;
             }
-
             _dxfDirty = true;
             _combinedDirty = true;
+        }
+
+        protected override void OnFrontBufferRestored()
+        {
+            _dxfDirty = true;
+            _combinedDirty = true;
+            ConstantBuffersDirty = true;
         }
 
         private void UpdateToggleAnchorDimensions()
@@ -3072,6 +3077,25 @@ namespace Cad_Point_Manager.Controls.D3DControl
             // Re-upload CPU shadow arrays (if needed)
             // (Most of your state is already kept in _stateBufs.*Span; call your normal upload)
             // Example: _stateBufs.FlushAll();
+        }
+
+        private Vector2 DipToPixel(Vector2 dip)
+        {
+            var dpi = VisualTreeHelper.GetDpi(this);
+            return new Vector2(
+                dip.X * (float)dpi.DpiScaleX,
+                dip.Y * (float)dpi.DpiScaleY
+            );
+        }
+        private Vector2 GetMousePx(MouseEventArgs e)
+        {
+            var pDip = e.GetPosition(this);
+            var dpi = VisualTreeHelper.GetDpi(this);
+
+            return new Vector2(
+                (float)(pDip.X * dpi.DpiScaleX),
+                (float)(pDip.Y * dpi.DpiScaleY)
+            );
         }
 
         private void ClearDxf()
