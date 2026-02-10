@@ -32,40 +32,39 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
             //    Trick: pass emSize = DesignUnitsPerEm so the outline coords come out in DU.
             var duPerEm = fontFace.Metrics.DesignUnitsPerEm;
 
-            using (var path = new PathGeometry(_d2dFactory))
-            using (var sink = path.Open())
+            using var path = new PathGeometry(_d2dFactory);
+            using var sink = path.Open();
+
+            // One-glyph "run" — advances/offsets not needed for a single glyph outline
+            fontFace.GetGlyphRunOutline(
+                emSize: duPerEm,                 // -> output coords = design units
+                glyphIndices: new short[] { glyphIndex },
+                glyphAdvances: null,
+                glyphOffsets: null,
+                glyphCount: 1,
+                isSideways: false,
+                isRightToLeft: false,
+                geometrySink: sink);
+
+            sink.Close();
+
+            // 2) Tessellate with your code
+            //    Your current sink returns vertices as a triangle list (v0,v1,v2, v3,v4,v5, ...).
+            var vertices = TessellateGeometry(path, _flatteningTolerance, tesselationFactor: 1f);
+
+            if (vertices.Count == 0) { return GlyphMesh.Empty; }
+
+            // 3) Build a simple index array (0..N-1), 3 per triangle.
+            var indices = BuildSequentialTriangleIndices(vertices.Count);
+
+            // 4) (optional) compute DU bounds
+            var bounds = ComputeBounds(vertices);
+
+            return new GlyphMesh
             {
-                // One-glyph "run" — advances/offsets not needed for a single glyph outline
-                fontFace.GetGlyphRunOutline(
-                    emSize: duPerEm,                 // -> output coords = design units
-                    glyphIndices: new short[] { glyphIndex },
-                    glyphAdvances: null,
-                    glyphOffsets: null,
-                    glyphCount: 1,
-                    isSideways: false,
-                    isRightToLeft: false,
-                    geometrySink: sink);
-
-                sink.Close();
-
-                // 2) Tessellate with your code
-                //    Your current sink returns vertices as a triangle list (v0,v1,v2, v3,v4,v5, ...).
-                var vertices = TessellateGeometry(path, _flatteningTolerance, tesselationFactor: 1f);
-
-                if (vertices.Count == 0) { return GlyphMesh.Empty; }
-
-                // 3) Build a simple index array (0..N-1), 3 per triangle.
-                var indices = BuildSequentialTriangleIndices(vertices.Count);
-
-                // 4) (optional) compute DU bounds
-                var bounds = ComputeBounds(vertices);
-
-                return new GlyphMesh
-                {
-                    PositionsDU = vertices.ToArray(),
-                    BoundsDU = bounds
-                };
-            }
+                PositionsDU = vertices.ToArray(),
+                BoundsDU = bounds
+            };
         }
 
         private static int[] BuildSequentialTriangleIndices(int vertexCount)
@@ -88,7 +87,7 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
                 if (p.X > maxX) maxX = p.X;
                 if (p.Y > maxY) maxY = p.Y;
             }
-            if (minX == float.PositiveInfinity) return RectangleF.Empty;
+            if (minX == float.PositiveInfinity) { return RectangleF.Empty; }
             return new RectangleF(minX, minY, maxX - minX, maxY - minY);
         }
 

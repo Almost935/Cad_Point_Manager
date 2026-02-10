@@ -2,12 +2,10 @@
 using Cad_Point_Manager.Models;
 using Cad_Point_Manager.Models.DrawingObjects3D;
 using Cad_Point_Manager.Models.PointRendering;
-using Cad_Point_Manager.Services;
 using Cad_Point_Manager.Views.Assorted;
 using ColorPicker;
 using SharpDX;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;

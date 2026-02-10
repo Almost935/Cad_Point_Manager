@@ -1,5 +1,7 @@
 ﻿using Cad_Point_Manager.Controls.D3DControl;
+using Cad_Point_Manager.Helpers;
 using netDxf.Entities;
+using PdfSharpCore.Drawing;
 using SharpDX;
 using SharpDX.Direct2D1;
 using SharpDX.Mathematics.Interop;
@@ -47,6 +49,50 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             {
                 throw new ArgumentException("entity must be of type Circle");
             }
+        }
+        public override void DrawToD2dDeviceContext(DeviceContext1 deviceContext, Factory2 factory, Brush brush, float thickness, StrokeStyle1 strokeStyle)
+        {
+            PathGeometry pathGeometry = new(factory);
+            using (var geometrySink = pathGeometry.Open())
+            {
+                geometrySink.BeginFigure(new RawVector2(Vertices[0].Position.X, Vertices[0].Position.Y), FigureBegin.Hollow);
+                for (int i = 0; i < Vertices.Length / 2; i++)
+                {
+                    int index = 2 * i + 1;
+                    geometrySink.AddLine(new RawVector2(Vertices[index].Position.X, Vertices[index].Position.Y));
+                }
+                geometrySink.EndFigure(FigureEnd.Open);
+                geometrySink.Close();
+            }
+            deviceContext.DrawGeometry(pathGeometry, brush, thickness, strokeStyle);
+        }
+        public override void DrawToPdf(
+           XGraphics gfx,
+           System.Windows.Media.Matrix worldToPdf,
+           XPen pen)
+        {
+            // Center in world (DXF)
+            var cWorld = new Vector2(RadiusPoint.X, RadiusPoint.Y);
+
+            // Center in PDF (points)
+            var cPdf = PdfDrawingHelpers.WorldToPdf(cWorld, worldToPdf);
+
+            // Compute radius in PDF points by transforming a known radius point.
+            // Pick a point one radius to the +X direction in world.
+            var rWorldPt = new Vector2(RadiusPoint.X + Radius, RadiusPoint.Y);
+            var rPdfPt = PdfDrawingHelpers.WorldToPdf(rWorldPt, worldToPdf);
+
+            double rPts = Math.Sqrt(
+                (rPdfPt.X - cPdf.X) * (rPdfPt.X - cPdf.X) +
+                (rPdfPt.Y - cPdf.Y) * (rPdfPt.Y - cPdf.Y));
+
+            if (rPts <= 1e-6) { return; }
+
+            // Bounding rect for the ellipse/circle in PDF coords
+            var rect = new XRect(cPdf.X - rPts, cPdf.Y - rPts, 2 * rPts, 2 * rPts);
+
+            // Draw a true vector circle (PDF curve, not line segments)
+            gfx.DrawEllipse(pen, rect);
         }
 
         public override void UpdateVertices(uint layerId, uint objectId)
@@ -124,23 +170,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             {
                 return Radius - distanceToCenter;
             }
-        }
-
-        public override void DrawToD2dDeviceContext(DeviceContext1 deviceContext, Factory2 factory, Brush brush, float thickness, StrokeStyle1 strokeStyle)
-        {
-            PathGeometry pathGeometry = new(factory);
-            using (var geometrySink = pathGeometry.Open())
-            {
-                geometrySink.BeginFigure(new RawVector2(Vertices[0].Position.X, Vertices[0].Position.Y), FigureBegin.Hollow);
-                for (int i = 0; i < Vertices.Length / 2; i++)
-                {
-                    int index = 2 * i + 1;
-                    geometrySink.AddLine(new RawVector2(Vertices[index].Position.X, Vertices[index].Position.Y));
-                }
-                geometrySink.EndFigure(FigureEnd.Open);
-                geometrySink.Close();
-            }
-            deviceContext.DrawGeometry(pathGeometry, brush, thickness, strokeStyle);
         }
 
         public override bool GeometryInRect(Rect rect)

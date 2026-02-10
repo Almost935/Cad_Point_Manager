@@ -1,14 +1,5 @@
 ﻿using Cad_Point_Manager.Extensions;
 using PdfSharpCore.Drawing;
-using SixLabors.ImageSharp.Processing;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.IdentityModel.Tokens;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Media;
 
 namespace Cad_Point_Manager.Models.Printing
 {

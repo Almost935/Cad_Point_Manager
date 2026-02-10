@@ -1,5 +1,4 @@
-﻿using Cad_Point_Manager.Models.Printing;
-using Attribute = Cad_Point_Manager.Models.Printing.Attribute;
+﻿using Attribute = Cad_Point_Manager.Models.Printing.Attribute;
 
 namespace Cad_Point_Manager.Extensions
 {

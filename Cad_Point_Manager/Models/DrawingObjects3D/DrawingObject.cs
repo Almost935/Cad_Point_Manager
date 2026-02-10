@@ -1,5 +1,6 @@
 ﻿using Cad_Point_Manager.Models.HitTesting;
 using netDxf.Entities;
+using PdfSharpCore.Drawing;
 using SharpDX;
 using SharpDX.Direct2D1;
 
@@ -27,6 +28,10 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
 
         public abstract void UpdateData();
         public abstract void DrawToD2dDeviceContext(DeviceContext1 deviceContext, Factory2 factory, Brush brush, float thickness, StrokeStyle1 strokeStyle);
+        public abstract void DrawToPdf(
+            XGraphics gfx,
+            System.Windows.Media.Matrix worldToPdf,
+            XPen pen);
 
         public void UpdateColor()
         {

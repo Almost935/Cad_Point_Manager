@@ -1,16 +1,7 @@
 ﻿using Cad_Point_Manager.Models.DrawingObjects3D;
-using netDxf;
-using netDxf.Entities;
-using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Diagnostics;
-using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
 using System.Windows.Media;
 
 namespace Cad_Point_Manager.Models.Printing

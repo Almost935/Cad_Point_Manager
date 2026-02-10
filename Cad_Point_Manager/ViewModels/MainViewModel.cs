@@ -11,6 +11,7 @@ using Cad_Point_Manager.Models.HitTesting;
 using Cad_Point_Manager.Models.PointRendering;
 using Cad_Point_Manager.Models.Printing;
 using Cad_Point_Manager.Services;
+using Cad_Point_Manager.Services.Dialogs;
 using Cad_Point_Manager.Services.LayoutExporting;
 using netDxf;
 using System.Collections;
@@ -68,9 +69,12 @@ namespace Cad_Point_Manager.ViewModels
         // Models + Layouts Mode Fields
         private bool _layoutsVisible = false;
         private bool _modelVisible = true;
-        
-        // Layout related fields
+
+        // Layout fields
         private Layout _activeLayout;
+
+        // File save fields
+        private readonly IFileSaveDialogService _fileSaveDialogService = new FileSaveDialogService();
         #endregion
 
         #region Properties
@@ -511,12 +515,36 @@ namespace Cad_Point_Manager.ViewModels
         }
         public async void PrintJob(RoutedEventArgs e)
         {
-            await ExportActiveLayoutAsync();
+            if (ActiveLayout == null) { return; }
+
+            var jobName = JobFileManager?.JobName;
+            var layoutName = ActiveLayout?.Name ?? "Layout";
+            var safeJob = FileHelpers.MakeSafeFileName(string.IsNullOrWhiteSpace(jobName) ? "Job" : jobName);
+            var safeLayout = FileHelpers.MakeSafeFileName(layoutName);
+            var suggestedFileName = $"{safeJob}_{safeLayout}.pdf";
+
+            var fallbackDir = @"C:\Users\fcraw\source\repos\Cad_Point_Manager\Cad_Point_Manager\Resources\Testing";
+            var initialDir = LastExportPaths.GetInitialDirectoryOrFallback(fallbackDir);
+
+            // 3) Ask user
+            var request = new FileSaveDialogRequest
+            {
+                Title = "Save PDF",
+                Filter = "PDF files (*.pdf)|*.pdf",
+                DefaultExtension = ".pdf",
+                InitialDirectory = initialDir,
+                DefaultFileName = suggestedFileName,
+                OverwritePrompt = true
+            };
+
+            if (!_fileSaveDialogService.TryPickSavePath(request, out var path)) { return; }
+
+            await ExportActiveLayoutAsync(path);
         }
 
         public void ZoomToExtents(RoutedEventArgs e)
         {
-            if (LayoutsVisible) 
+            if (LayoutsVisible)
             {
                 ResetLayoutsViewRequested?.Invoke(this, EventArgs.Empty);
                 return;
@@ -677,13 +705,10 @@ namespace Cad_Point_Manager.ViewModels
         }
 
         // Printing Methods
-        public async Task ExportActiveLayoutAsync()
+        public async Task ExportActiveLayoutAsync(string path)
         {
-            if (ActiveLayout == null) { return; }
-
             var imageUri = ImageHelpers.LoadPackImage("pack://application:,,,/Resources/Images/IQ Contracting - Logo (Square).jpg");
             var templatePrims = TitleblockPrimitiveBuilder.Build(ActiveLayout, imageUri);
-            var path = "C:\\Users\\fcraw\\source\\repos\\Cad_Point_Manager\\Cad_Point_Manager\\Resources\\Testing\\test.pdf";
 
             await _layoutPdfVectorExporter.ExportAsync(
                 ActiveLayout,

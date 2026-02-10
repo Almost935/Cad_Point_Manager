@@ -1,10 +1,4 @@
-﻿using Cad_Point_Manager.Models.HitTesting;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
+﻿using System.Windows;
 
 namespace Cad_Point_Manager.Models.PointRendering
 {

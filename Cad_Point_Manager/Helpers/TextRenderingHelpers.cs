@@ -50,6 +50,29 @@ namespace Cad_Point_Manager.Helpers
                 }
             }
         }
+        public static float GetFontSizeFactor(ResCache resCache, TextLayout textLayout, FontFace fontFace)
+        {
+            bool fontToTextHeightFactorExists = FontSizeFactorDict.TryGetValue(
+                   (textLayout.FontFamilyName, textLayout.FontWeight, textLayout.FontStyle), out float fontToTextHeightFactor);
+
+            if (!fontToTextHeightFactorExists)
+            {
+                TextFormat textFormatForBounds = new(resCache.WriteFactory, textLayout.FontFamilyName, textLayout.FontWeight, textLayout.FontStyle, _dictBaseTextSize);
+                TextLayout textLayoutForBounds = new(resCache.WriteFactory, "I", textFormatForBounds, float.MaxValue, float.MaxValue);
+                var boundsPathGeometry = TextLayoutToGeometry(resCache, textLayoutForBounds, "I", fontFace, 1);
+                var maxHeightBounds = boundsPathGeometry.GetBounds();
+                var actualTextHeight = Math.Abs(maxHeightBounds.Top - maxHeightBounds.Bottom);
+
+                fontToTextHeightFactor = _dictBaseTextSize / actualTextHeight;
+                FontSizeFactorDict.TryAdd((textLayout.FontFamilyName, textLayout.FontWeight, textLayout.FontStyle), fontToTextHeightFactor);
+
+                boundsPathGeometry.Dispose();
+                textFormatForBounds.Dispose();
+                textLayoutForBounds.Dispose();
+            }
+
+            return fontToTextHeightFactor;
+        }
 
         private static PathGeometry TextLayoutToGeometry(ResCache resCache, TextLayout textLayout, string text, FontFace fontFace,
             float scaleFactor)
@@ -92,30 +115,6 @@ namespace Cad_Point_Manager.Helpers
             sink.Close();
 
             return pathGeometry;
-        }
-
-        private static float GetFontSizeFactor(ResCache resCache, TextLayout textLayout, FontFace fontFace)
-        {
-            bool fontToTextHeightFactorExists = FontSizeFactorDict.TryGetValue(
-                   (textLayout.FontFamilyName, textLayout.FontWeight, textLayout.FontStyle), out float fontToTextHeightFactor);
-
-            if (!fontToTextHeightFactorExists)
-            {
-                TextFormat textFormatForBounds = new(resCache.WriteFactory, textLayout.FontFamilyName, textLayout.FontWeight, textLayout.FontStyle, _dictBaseTextSize);
-                TextLayout textLayoutForBounds = new(resCache.WriteFactory, "I", textFormatForBounds, float.MaxValue, float.MaxValue);
-                var boundsPathGeometry = TextLayoutToGeometry(resCache, textLayoutForBounds, "I", fontFace, 1);
-                var maxHeightBounds = boundsPathGeometry.GetBounds();
-                var actualTextHeight = Math.Abs(maxHeightBounds.Top - maxHeightBounds.Bottom);
-
-                fontToTextHeightFactor = _dictBaseTextSize / actualTextHeight;
-                FontSizeFactorDict.TryAdd((textLayout.FontFamilyName, textLayout.FontWeight, textLayout.FontStyle), fontToTextHeightFactor);
-
-                boundsPathGeometry.Dispose();
-                textFormatForBounds.Dispose();
-                textLayoutForBounds.Dispose();
-            }
-
-            return fontToTextHeightFactor;
         }
 
         public static List<Vector2> TessellateGeometry(Geometry geometry, float flatteningTolerance = 0.001f, float tesselationFactor = 1)

@@ -1,8 +1,11 @@
 ﻿using Cad_Point_Manager.Controls.D3DControl;
+using Cad_Point_Manager.Helpers;
 using netDxf.Entities;
+using PdfSharpCore.Drawing;
 using SharpDX.Direct2D1;
 using SharpDX.Mathematics.Interop;
 using System.Windows;
+
 using Vector3 = SharpDX.Vector3;
 
 namespace Cad_Point_Manager.Models.DrawingObjects3D
@@ -56,7 +59,57 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                 throw new ArgumentException("entity must be of type Arc");
             }
         }
+        public override void DrawToD2dDeviceContext(DeviceContext1 deviceContext, Factory2 factory, Brush brush, float thickness, StrokeStyle1 strokeStyle)
+        {
+            PathGeometry pathGeometry = new(factory);
+            using (var geometrySink = pathGeometry.Open())
+            {
+                geometrySink.BeginFigure(new RawVector2(Vertices[0].Position.X, Vertices[0].Position.Y), FigureBegin.Hollow);
+                for (int i = 0; i < Vertices.Length / 2; i++)
+                {
+                    int index = 2 * i + 1;
+                    geometrySink.AddLine(new RawVector2(Vertices[index].Position.X, Vertices[index].Position.Y));
+                }
+                geometrySink.EndFigure(FigureEnd.Open);
+                geometrySink.Close();
+            }
+            deviceContext.DrawGeometry(pathGeometry, brush, thickness, strokeStyle);
+        }
+        public override void DrawToPdf(
+            XGraphics gfx,
+            System.Windows.Media.Matrix worldToPdf,
+            XPen pen)
+        {
+            // 1) Center in PDF coords
+            var cPdf = PdfDrawingHelpers.WorldToPdf(new SharpDX.Vector2(RadiusPoint.X, RadiusPoint.Y), worldToPdf);
 
+            // 2) Radius in PDF "points"
+            //    (compute by transforming one known radius point; this automatically respects your camera scale)
+            var rWorldPt = new SharpDX.Vector2(RadiusPoint.X + Radius, RadiusPoint.Y);
+            var rPdfPt = PdfDrawingHelpers.WorldToPdf(rWorldPt, worldToPdf);
+
+            double rPts = Math.Sqrt(
+                (rPdfPt.X - cPdf.X) * (rPdfPt.X - cPdf.X) +
+                (rPdfPt.Y - cPdf.Y) * (rPdfPt.Y - cPdf.Y));
+
+            if (rPts <= 0.00001) { return; }
+
+            // 3) Bounding rect for the circle in PDF coords
+            var rect = new XRect(cPdf.X - rPts, cPdf.Y - rPts, 2 * rPts, 2 * rPts);
+
+            // 4) Convert DXF (CCW, Y-up) angles to PDF page (Y-down) angles.
+            //    When you flip Y, CCW becomes CW. A simple conversion is:
+            //      start' = 360 - start
+            //      sweep' = -sweep
+            double start = PdfDrawingHelpers.NormalizeDeg(360.0 - StartAngle);
+            double sweep = -Sweep;
+
+            // Optional: if you ever store arcs that cross 0 and Sweep got weird, you can recompute sweep:
+            // double end = NormalizeDeg(360.0 - EndAngle);
+            // double sweep = ComputeSweepCW(start, end);
+
+            gfx.DrawArc(pen, rect, start, sweep);
+        }
         public override void UpdateVertices(uint layerId, uint objectId)
         {
             if (EntityObject is Arc arc)
@@ -90,7 +143,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                 throw new ArgumentException("entity must be of type Arc");
             }
         }
-
         public override double DistanceToPoint(System.Windows.Point point)
         {
             // Convert angles to radians
@@ -129,24 +181,26 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                 return Math.Min(distanceToStart, distanceToEnd);
             }
         }
-
-        public override void DrawToD2dDeviceContext(DeviceContext1 deviceContext, Factory2 factory, Brush brush, float thickness, StrokeStyle1 strokeStyle)
+        public override void UpdateBounds()
         {
-            PathGeometry pathGeometry = new(factory);
-            using (var geometrySink = pathGeometry.Open())
-            {
-                geometrySink.BeginFigure(new RawVector2(Vertices[0].Position.X, Vertices[0].Position.Y), FigureBegin.Hollow);
-                for (int i = 0; i < Vertices.Length / 2; i++)
-                {
-                    int index = 2 * i + 1;
-                    geometrySink.AddLine(new RawVector2(Vertices[index].Position.X, Vertices[index].Position.Y));
-                }
-                geometrySink.EndFigure(FigureEnd.Open);
-                geometrySink.Close();
-            }
-            deviceContext.DrawGeometry(pathGeometry, brush, thickness, strokeStyle);
-        }
+            Bounds = Rect.Empty;
 
+            if (_dxfArc is not null)
+            {
+                foreach (var point in SamplePoints)
+                {
+                    Bounds = Rect.Union(Bounds, point);
+                }
+            }
+        }
+        public override bool GeometryInRect(Rect rect)
+        {
+            if (rect.Contains(Bounds))
+            {
+                return true;
+            }
+            return false;
+        }
 
         public void UpdateArcMidpoint()
         {
@@ -164,28 +218,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             float midZ = startZ + ((endZ - startZ) * (midAngle - StartAngle) / Sweep);
 
             MidPoint = new(midX, midY, midZ);
-        }
-
-        public override void UpdateBounds()
-        {
-            Bounds = Rect.Empty;
-
-            if (_dxfArc is not null)
-            {
-                foreach (var point in SamplePoints)
-                {
-                    Bounds = Rect.Union(Bounds, point);
-                }
-            }
-        }
-
-        public override bool GeometryInRect(Rect rect)
-        {
-            if (rect.Contains(Bounds))
-            {
-                return true;
-            }
-            return false;
         }
         #endregion
     }

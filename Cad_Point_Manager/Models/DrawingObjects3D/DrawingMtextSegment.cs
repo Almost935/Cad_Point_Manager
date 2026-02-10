@@ -23,7 +23,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         #endregion
 
         #region Properties
-        public DrawingMtext DrawingMtext3D { get; set; }
+        public DrawingMtext DrawingMtext { get; set; }
         public string Text { get; set; }
         public Vector4 Color { get; set; }
         public Vector3 Position { get; set; }
@@ -38,12 +38,13 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         public bool IsItalic { get; set; } = false;
         public bool IsBold { get; set; } = false;
         public bool IsUnderlined { get; set; } = false;
-        public bool IsStrikeThroughed { get; set; } = false;
+        public bool IsStrikeOut { get; set; } = false;
         public bool IsNewLine { get; set; } = false;
         public Enums.TextAlignment TextAlignment { get; set; }
         public float SpaceWidth { get; set; }
         public float RowXOffset { get; set; } = 0;
         public float GlowOffset { get; set; }
+        public float FontSizeFactor { get; set; } = 1;
         #endregion
 
         #region Constructors
@@ -51,7 +52,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             float fontHeight, string fontFamilyName, bool isItalic, bool isBold, bool isUnderlined, bool isStrikethroughed,
             bool isNewLine, int fontRenderingMinimumSize, float maxWidth, Enums.TextAlignment textAlignment = Enums.TextAlignment.Left)
         {
-            DrawingMtext3D = drawingMtext3D;
+            DrawingMtext = drawingMtext3D;
             Text = text;
             Color = color;
             Position = position;
@@ -61,7 +62,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             IsItalic = isItalic;
             IsBold = isBold;
             IsUnderlined = isUnderlined;
-            IsStrikeThroughed = isStrikethroughed;
+            IsStrikeOut = isStrikethroughed;
             IsNewLine = isNewLine;
             _fontRenderingMinimumSize = fontRenderingMinimumSize;
             MaxWidth = maxWidth;
@@ -90,7 +91,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         public void Tesselate(ResCache resCache, uint layerId, uint objectId)
         {
             UpdateFontFace(resCache);
-
+            FontSizeFactor = TextRenderingHelpers.GetFontSizeFactor(resCache, TextLayout, _fontFace);
             (List<Vector2> vertices, RawRectangleF bounds) = TextRenderingHelpers.TesselateTextLayout(resCache, TextLayout, Text, _fontFace);
             UpdateBounds(bounds);
             TextVertices = GetVertices(vertices, layerId, objectId);

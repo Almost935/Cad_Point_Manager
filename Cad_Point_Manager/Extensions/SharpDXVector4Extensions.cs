@@ -1,5 +1,4 @@
 ﻿using SharpDX;
-using System.Windows;
 
 namespace Cad_Point_Manager.Extensions
 {

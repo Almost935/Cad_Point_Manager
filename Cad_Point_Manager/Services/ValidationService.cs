@@ -2,7 +2,6 @@
 using Cad_Point_Manager.Models;
 using Cad_Point_Manager.Models.PointRendering;
 using Cad_Point_Manager.Models.Printing;
-using System;
 
 namespace Cad_Point_Manager.Services
 {

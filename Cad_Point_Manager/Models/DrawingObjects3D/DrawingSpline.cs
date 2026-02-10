@@ -1,4 +1,5 @@
 ﻿using netDxf.Entities;
+using PdfSharpCore.Drawing;
 using SharpDX.Direct2D1;
 
 namespace Cad_Point_Manager.Models.DrawingObjects3D
@@ -42,6 +43,17 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                 throw new ArgumentException("entity must be of type Spline");
             }
         }
+        public override void DrawToD2dDeviceContext(DeviceContext1 deviceContext, Factory2 factory, Brush brush, float thickness, StrokeStyle1 strokeStyle)
+        {
+            PolylineApproximation.DrawToD2dDeviceContext(deviceContext, factory, brush, thickness, strokeStyle);
+        }
+        public override void DrawToPdf(
+           XGraphics gfx,
+           System.Windows.Media.Matrix worldToPdf,
+           XPen pen)
+        {
+
+        }
 
         public override void UpdateVertices(uint layerId, uint objectId)
         {
@@ -58,11 +70,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         public override double DistanceToPoint(System.Windows.Point p)
         {
             return PolylineApproximation.DistanceToPoint(p);
-        }
-
-        public override void DrawToD2dDeviceContext(DeviceContext1 deviceContext, Factory2 factory, Brush brush, float thickness, StrokeStyle1 strokeStyle)
-        {
-            PolylineApproximation.DrawToD2dDeviceContext(deviceContext, factory, brush, thickness, strokeStyle);
         }
 
         public override bool GeometryInRect(System.Windows.Rect rect)

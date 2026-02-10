@@ -1,14 +1,4 @@
-﻿using Cad_Point_Manager.Common;
-using Cad_Point_Manager.Helpers;
-using Cad_Point_Manager.Models.DrawingObjects3D;
-using Cad_Point_Manager.Models.HitTesting;
-using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Cad_Point_Manager.Helpers;
 using System.Windows;
 
 namespace Cad_Point_Manager.Models.PointRendering

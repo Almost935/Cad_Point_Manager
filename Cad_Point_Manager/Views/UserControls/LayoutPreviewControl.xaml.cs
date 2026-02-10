@@ -2,7 +2,6 @@
 using Cad_Point_Manager.Models.Printing;
 using System.Collections.Concurrent;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;

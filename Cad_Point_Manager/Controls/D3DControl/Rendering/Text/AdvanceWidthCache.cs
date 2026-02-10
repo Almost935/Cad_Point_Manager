@@ -1,5 +1,4 @@
 ﻿using SharpDX.DirectWrite;
-using System.Diagnostics;
 
 namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
 {

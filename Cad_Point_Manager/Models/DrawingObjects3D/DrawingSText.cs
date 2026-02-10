@@ -1,7 +1,10 @@
 ﻿using Cad_Point_Manager.Common;
 using Cad_Point_Manager.Controls.D3DControl;
+using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Helpers;
+using Cad_Point_Manager.Services.LayoutExporting;
 using netDxf.Entities;
+using PdfSharpCore.Drawing;
 using SharpDX;
 using SharpDX.Direct2D1;
 using SharpDX.DirectWrite;
@@ -33,6 +36,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         public System.Windows.Media.Matrix Transform { get; set; }
         public Enums.TextAttachmentPoint AttachmentPoint { get; set; }
         public TextLayout TextLayout { get; set; }
+        public float FontSizeFactor { get; set; } = 1;
 
         public bool TextFormatCreated => _textFormat != null;
         public bool TextLayoutCreated => TextLayout != null;
@@ -78,7 +82,31 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                 throw new ArgumentException("EntityObject must be of type MText or Text");
             }
         }
+        public override void DrawToD2dDeviceContext(DeviceContext1 deviceContext, SharpDX.Direct2D1.Factory2 factory, Brush brush, float thickness, StrokeStyle1 strokeStyle)
+        {
+            //deviceContext.DrawTextLayout(new RawVector2((float)Position.X, -(float)Position.Y), TextLayout, brush);
+        }
+        public override void DrawToPdf(
+           XGraphics gfx,
+           System.Windows.Media.Matrix worldToPdf,
+           XPen pen)
+        {
+            var verts = TextVertices;
+            if (verts == null || verts.Count < 3) { return; }
 
+            var brush = new XSolidBrush(PdfTransform.ToXColor(Color.ToVector4()));
+            var path = new XGraphicsPath();
+
+            for (int i = 0; i + 2 < verts.Count; i += 3)
+            {
+                var p0 = PdfTransform.WorldToPdf(verts[i].Position.ToVector3(), worldToPdf);
+                var p1 = PdfTransform.WorldToPdf(verts[i + 1].Position.ToVector3(), worldToPdf);
+                var p2 = PdfTransform.WorldToPdf(verts[i + 2].Position.ToVector3(), worldToPdf);
+                path.AddPolygon(new[] { p0, p1, p2 });
+            }
+
+            gfx.DrawPath(brush, path);
+        }
 
         /// <summary>
         /// Gets the upper left point of the MText.
@@ -197,10 +225,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
 
             Bounds = new System.Windows.Rect(minX, minY, maxX - minX, maxY - minY);
         }
-        public override void DrawToD2dDeviceContext(DeviceContext1 deviceContext, SharpDX.Direct2D1.Factory2 factory, Brush brush, float thickness, StrokeStyle1 strokeStyle)
-        {
-            //deviceContext.DrawTextLayout(new RawVector2((float)Position.X, -(float)Position.Y), TextLayout, brush);
-        }
 
         private protected Enums.TextAttachmentPoint GetAttachmentPoint(MTextAttachmentPoint mTextAttachment)
         {
@@ -267,6 +291,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         {
             UpdateFontFace(resCache);
 
+            FontSizeFactor = TextRenderingHelpers.GetFontSizeFactor(resCache, TextLayout, _fontFace);
             (List<Vector2> vertices, RawRectangleF bounds) = TextRenderingHelpers.TesselateTextLayout(resCache, TextLayout, Text, _fontFace);
 
             TextVertices = GetVertices(vertices, layerId, objectId);

@@ -22,7 +22,6 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -32,7 +31,6 @@ using Buffer = SharpDX.Direct3D11.Buffer;
 using InputElement = SharpDX.Direct3D11.InputElement;
 using Matrix = SharpDX.Matrix;
 using Point = System.Windows.Point;
-using RectangleGeometry = System.Windows.Media.RectangleGeometry;
 
 namespace Cad_Point_Manager.Controls.D3DControl
 {
@@ -2210,6 +2208,24 @@ namespace Cad_Point_Manager.Controls.D3DControl
             base.OnPreviewKeyDown(e);
         }
 
+        //protected override void OnRenderSizeChanged(SizeChangedInfo sizeInfo)
+        //{
+        //    base.OnRenderSizeChanged(sizeInfo);
+
+        //    Viewport = new(0, 0, (float)ActualWidth, (float)ActualHeight);
+        //    CadManager3D.ViewportSize = new((float)ActualWidth, (float)ActualHeight);
+
+        //    SetInitialMatrix();
+
+        //    if (CadManager3D.Camera is not null)
+        //    {
+        //        CadManager3D.Camera.UpdateViewportSize(Viewport);
+        //        CadManager3D.ResetTemplates();
+        //        ConstantBuffersDirty = true;
+        //    }
+
+        //    _dxfDirty = true;
+        //}
         protected override void OnTargetsResized(int wPx, int hPx)
         {
             base.OnTargetsResized(wPx, hPx);

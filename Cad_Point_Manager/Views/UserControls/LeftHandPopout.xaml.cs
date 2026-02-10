@@ -1,6 +1,5 @@
 ﻿using Cad_Point_Manager.Common.Collections;
 using Cad_Point_Manager.Controls.D3DControl;
-using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Helpers;
 using Cad_Point_Manager.Models;
 using Cad_Point_Manager.Models.PointRendering;
@@ -13,7 +12,6 @@ using SharpDX;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Windows;
@@ -23,7 +21,6 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Threading;
-using Xceed.Wpf.Toolkit.PropertyGrid.Attributes;
 using TextBox = System.Windows.Controls.TextBox;
 
 namespace Cad_Point_Manager.Views.UserControls

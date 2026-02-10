@@ -1,6 +1,7 @@
 ﻿using Cad_Point_Manager.Controls.D3DControl;
 using Cad_Point_Manager.Helpers;
 using netDxf.Entities;
+using PdfSharpCore.Drawing;
 using SharpDX.Direct2D1;
 using System.Windows;
 using Vector3 = SharpDX.Vector3;
@@ -89,6 +90,23 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                 throw new ArgumentException("entity must be of type Insert");
             }
         }
+        public override void DrawToD2dDeviceContext(DeviceContext1 deviceContext, Factory2 factory, Brush brush, float thickness, StrokeStyle1 strokeStyle)
+        {
+            foreach (var obj in DrawingObjects)
+            {
+                obj.DrawToD2dDeviceContext(deviceContext, factory, brush, thickness, strokeStyle);
+            }
+        }
+        public override void DrawToPdf(
+            XGraphics gfx,
+            System.Windows.Media.Matrix worldToPdf,
+            XPen pen)
+        {
+            foreach (var obj in DrawingObjects)
+            {
+                obj.DrawToPdf(gfx, worldToPdf, pen);
+            }
+        }
 
         public override void UpdateBounds()
         {
@@ -99,7 +117,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                 Bounds = Rect.Union(Bounds, drawingObj.Bounds);
             }
         }
-
         public override double DistanceToPoint(System.Windows.Point point)
         {
             double distance = double.MaxValue;
@@ -115,7 +132,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
 
             return distance;
         }
-
 
         public override void MouseEnter()
         {
@@ -134,15 +150,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         {
             this.IsSelected = false;
         }
-
-        public override void DrawToD2dDeviceContext(DeviceContext1 deviceContext, Factory2 factory, Brush brush, float thickness, StrokeStyle1 strokeStyle)
-        {
-            foreach (var obj in DrawingObjects)
-            {
-                obj.DrawToD2dDeviceContext(deviceContext, factory, brush, thickness, strokeStyle);
-            }
-        }
-
 
         private void UpdateDrawingObjects(EntityObject entity)
         {
