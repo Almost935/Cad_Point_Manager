@@ -52,7 +52,10 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
            System.Windows.Media.Matrix worldToPdf,
            XPen pen)
         {
-
+            foreach (var segment in PolylineApproximation.DrawingSegments)
+            {
+                segment.DrawToPdf(gfx, worldToPdf, pen);
+            }
         }
 
         public override void UpdateVertices(uint layerId, uint objectId)

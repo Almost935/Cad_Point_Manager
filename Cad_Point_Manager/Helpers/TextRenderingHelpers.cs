@@ -40,14 +40,12 @@ namespace Cad_Point_Manager.Helpers
             using (var textFormat = new TextFormat(resCache.WriteFactory, fontFamily, fontSize))
             {
                 // Measure width of "A A" and subtract width of "AA" to get accurate space width.
-                using (var layoutWithSpace = new TextLayout(resCache.WriteFactory, "A A", textFormat, float.MaxValue, float.MaxValue))
-                using (var layoutWithoutSpace = new TextLayout(resCache.WriteFactory, "AA", textFormat, float.MaxValue, float.MaxValue))
-                {
-                    var widthWithSpace = layoutWithSpace.Metrics.Width;
-                    var widthWithoutSpace = layoutWithoutSpace.Metrics.Width;
+                using var layoutWithSpace = new TextLayout(resCache.WriteFactory, "A A", textFormat, float.MaxValue, float.MaxValue);
+                using var layoutWithoutSpace = new TextLayout(resCache.WriteFactory, "AA", textFormat, float.MaxValue, float.MaxValue);
+                var widthWithSpace = layoutWithSpace.Metrics.Width;
+                var widthWithoutSpace = layoutWithoutSpace.Metrics.Width;
 
-                    return widthWithSpace - widthWithoutSpace;
-                }
+                return widthWithSpace - widthWithoutSpace;
             }
         }
         public static float GetFontSizeFactor(ResCache resCache, TextLayout textLayout, FontFace fontFace)

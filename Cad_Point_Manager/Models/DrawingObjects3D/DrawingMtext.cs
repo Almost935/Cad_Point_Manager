@@ -428,8 +428,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             string aciColorPattern = @"\\[C](\d+);";
             string trueTypeColorPattern = @"\\[c](\d+);";
             string fontPattern = @"\\f([^;]+);";
-            string italicPattern = @"\|i(\d+)";
-            string boldPattern = @"\|b(\d+)";
             string heightPattern = @"\\H([\d.]+)x?;";
             string lineBreakPattern = @"\\P";
             string underlineStartPattern = @"\\L";
@@ -445,11 +443,17 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             string alignDistributedPattern = @"\\pxqd;";
             string paragraphIndentPattern = @"\\pi([\d.]+);";
 
-            string pattern = $@"((\\[LOkoK])|{aciColorPattern}|{trueTypeColorPattern}|{fontPattern}|{italicPattern}|{boldPattern}|{heightPattern}|{lineBreakPattern}|{paragraphIndentPattern}|{underlineStartPattern}|{underlineEndPattern}|{overstrikeStartPattern}|{overstrikeEndPattern}|{strikethroughStartPattern}|{strikethroughEndPattern}|{alignLeftPattern}|{alignCenterPattern}|{alignRightPattern}|{alignJustifyPattern}|{alignDistributedPattern}|[^{{}}\\]+)";
+            string pattern = $@"((\\[LOkoK])|{aciColorPattern}|{trueTypeColorPattern}|{fontPattern}|{heightPattern}|{lineBreakPattern}|{paragraphIndentPattern}|{underlineStartPattern}|{underlineEndPattern}|{overstrikeStartPattern}|{overstrikeEndPattern}|{strikethroughStartPattern}|{strikethroughEndPattern}|{alignLeftPattern}|{alignCenterPattern}|{alignRightPattern}|{alignJustifyPattern}|{alignDistributedPattern}|[^{{}}\\]+)";
 
             Enums.TextAlignment baseAlignment;
-            if (AttachmentPoint == Enums.TextAttachmentPoint.TopRight || AttachmentPoint == Enums.TextAttachmentPoint.MiddleRight || AttachmentPoint == Enums.TextAttachmentPoint.BottomRight) { baseAlignment = Enums.TextAlignment.Right; }
-            else if (AttachmentPoint == Enums.TextAttachmentPoint.TopCenter || AttachmentPoint == Enums.TextAttachmentPoint.MiddleCenter || AttachmentPoint == Enums.TextAttachmentPoint.BottomCenter) { baseAlignment = Enums.TextAlignment.Center; }
+            if (AttachmentPoint == Enums.TextAttachmentPoint.TopRight ||
+                AttachmentPoint == Enums.TextAttachmentPoint.MiddleRight ||
+                AttachmentPoint == Enums.TextAttachmentPoint.BottomRight)
+            { baseAlignment = Enums.TextAlignment.Right; }
+            else if (AttachmentPoint == Enums.TextAttachmentPoint.TopCenter ||
+                AttachmentPoint == Enums.TextAttachmentPoint.MiddleCenter ||
+                AttachmentPoint == Enums.TextAttachmentPoint.BottomCenter)
+            { baseAlignment = Enums.TextAlignment.Center; }
             else { baseAlignment = Enums.TextAlignment.Left; }
 
             TextSegmentInformation currentSegment = new("", Color, FontFamilyName, DxfMtext.Height, IsBold, IsItalic, false, false, false, false, baseAlignment);
@@ -501,15 +505,20 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                     }
                     else if (Regex.IsMatch(value, fontPattern))
                     {
-                        currentSegment.Font = Regex.Match(value, fontPattern).Groups[1].Value.Split('|')[0];
-                    }
-                    else if (Regex.IsMatch(value, italicPattern))
-                    {
-                        currentSegment.IsItalic = Regex.Match(value, italicPattern).Groups[1].Value == "1";
-                    }
-                    else if (Regex.IsMatch(value, boldPattern))
-                    {
-                        currentSegment.IsBold = Regex.Match(value, boldPattern).Groups[1].Value == "1";
+                        string fontSpec = Regex.Match(value, fontPattern).Groups[1].Value;
+                        var parts = fontSpec.Split('|', StringSplitOptions.RemoveEmptyEntries);
+                        currentSegment.Font = parts[0];
+
+                        for (int pi = 1; pi < parts.Length; pi++)
+                        {
+                            string p = parts[pi];
+
+                            // bold
+                            if (p.Length >= 2 && p[0] == 'b') { currentSegment.IsBold = p[1] == '1'; }
+
+                            // italic
+                            else if (p.Length >= 2 && p[0] == 'i') { currentSegment.IsItalic = p[1] == '1'; }
+                        }
                     }
                     else if (Regex.IsMatch(value, heightPattern))
                     {
