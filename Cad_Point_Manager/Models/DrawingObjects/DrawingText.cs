@@ -1,7 +1,8 @@
 ﻿using Cad_Point_Manager.Controls.D3DControl;
+using Cad_Point_Manager.Controls.D3DControl.Rendering.Text;
 using SharpDX;
 
-namespace Cad_Point_Manager.Models.DrawingObjects3D
+namespace Cad_Point_Manager.Models.DrawingObjects
 {
     public abstract class DrawingText : DrawingObject
     {
@@ -16,7 +17,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         #endregion
 
         #region Methods
-        public abstract void UpdateTextVertices(ResCache d3DResCache, uint layerId, uint objectId);
+        public abstract void UpdateTextVertices(ResCache d3DResCache, uint layerId, SceneIdMap sceneIdMap, D3dStateBuffers stateBuffers);
         #endregion
     }
 }

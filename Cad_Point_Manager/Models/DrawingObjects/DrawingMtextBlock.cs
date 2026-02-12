@@ -1,23 +1,24 @@
 ﻿using Cad_Point_Manager.Common;
+using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Helpers;
 using netDxf.Entities;
 using SharpDX;
 using Point = System.Windows.Point;
 
-namespace Cad_Point_Manager.Models.DrawingObjects3D
+namespace Cad_Point_Manager.Models.DrawingObjects
 {
     public class DrawingMtextBlock : IDisposable
     {
         #region Fields
         private const float _mtextLineSpacingFactor = 0.15f;
 
-        private readonly List<DrawingMtextRow> _drawingMtext3DRows = [];
+        private readonly List<DrawingMtextRow> _rows = [];
         #endregion
 
         #region Properties
-        public List<DrawingMtextRow> Rows => _drawingMtext3DRows;
+        public List<DrawingMtextRow> Rows => _rows;
         public float Height { get; set; } = 0;
-        public float Width => _drawingMtext3DRows.Max(row => row.Width);
+        public float Width => _rows.Max(row => row.Width);
         public float MaxWidth { get; set; }
         public Vector3 BasePosition { get; set; } = Vector3.Zero;
         public float Rotation { get; set; } = 0;
@@ -40,23 +41,23 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         #region Methods
         public void AddRow(DrawingMtextRow row)
         {
-            _drawingMtext3DRows.Add(row);
+            _rows.Add(row);
         }
         public bool RemoveRow(DrawingMtextRow row)
         {
-            return _drawingMtext3DRows.Remove(row);
+            return _rows.Remove(row);
         }
         public void ClearRows()
         {
-            _drawingMtext3DRows.ForEach(row => row.Dispose());
-            _drawingMtext3DRows.Clear();
+            _rows.ForEach(row => row.Dispose());
+            _rows.Clear();
             Height = 0;
             AttachmentOffset = Vector3.Zero;
         }
 
         public void SetTextPositions()
         {
-            if (_drawingMtext3DRows.Count == 0) { return; } // No rows to set positions for
+            if (_rows.Count == 0) { return; } // No rows to set positions for
 
             SetRowBasePositions(); // Set the base positions for each 
             SetRowYOffsets(); // Calculate the Y offsets for each row based on line spacing
@@ -64,7 +65,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             GetTextBox(Height);
             SetTextAttachmentOffsets(TextBox);
 
-            foreach (var row in _drawingMtext3DRows)
+            foreach (var row in _rows)
             {
                 row.ApplyTranslate(); // Apply the translation to each row's segments based on the current offsets
             }
@@ -74,7 +75,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         {
             if (NumberOfRows > 0)
             {
-                var firstRowHeight = _drawingMtext3DRows.First().Height; // Get the height of the first row to use as a reference for the attachment point calculation
+                var firstRowHeight = _rows.First().Height; // Get the height of the first row to use as a reference for the attachment point calculation
                 float width = (float)textBox.Width; // Get the width of the textbox to use for alignment calculations
 
                 switch (AttachmentPoint)
@@ -83,26 +84,36 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                         {
                             AttachmentOffset = new(0, -firstRowHeight, 0);
 
+                            foreach (var row in _rows)
+                            {
+                                if (row.TextAlignment == Enums.TextAlignment.Right)
+                                {
+                                    row.UpdateTranslate(new Vector3((TextBox.Width - row.Width).ToFloat(), 0, 0));
+                                }
+                            }
                             break;
                         }
-
                     case Enums.TextAttachmentPoint.TopCenter:
                         {
                             AttachmentOffset = new(-width / 2, -firstRowHeight, 0);
-
                             break;
                         }
-
                     case Enums.TextAttachmentPoint.TopRight:
                         {
                             AttachmentOffset = new(-width, -firstRowHeight, 0);
 
+                            foreach (var row in _rows)
+                            {
+                                if (row.TextAlignment == Enums.TextAlignment.Left)
+                                {
+                                    double x = 1;
+                                }
+                            }
                             break;
                         }
-
                     case Enums.TextAttachmentPoint.MiddleLeft:
                         {
-                            if (_drawingMtext3DRows.Count > 1)
+                            if (_rows.Count > 1)
                             {
                                 AttachmentOffset = new(0, firstRowHeight / 2, 0);  // For multiple rows, align to the middle of the first row instead of the top
                             }
@@ -110,13 +121,11 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                             {
                                 AttachmentOffset = new(0, -firstRowHeight / 2, 0); // For single row, keep it centered vertically
                             }
-
                             break;
                         }
-
                     case Enums.TextAttachmentPoint.MiddleCenter:
                         {
-                            if (_drawingMtext3DRows.Count > 1)
+                            if (_rows.Count > 1)
                             {
                                 AttachmentOffset = new(-width / 2, firstRowHeight / 2, 0);  // For multiple rows, align to the middle of the first row instead of the top
                             }
@@ -124,13 +133,11 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                             {
                                 AttachmentOffset = new(-width / 2, -firstRowHeight / 2, 0); // For single row, keep it centered vertically
                             }
-
                             break;
                         }
-
                     case Enums.TextAttachmentPoint.MiddleRight:
                         {
-                            if (_drawingMtext3DRows.Count > 1)
+                            if (_rows.Count > 1)
                             {
                                 AttachmentOffset = new(-width, firstRowHeight / 2, 0);  // For multiple rows, align to the middle of the first row instead of the top
                             }
@@ -138,14 +145,11 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                             {
                                 AttachmentOffset = new(-width, -firstRowHeight / 2, 0); // For single row, keep it centered vertically
                             }
-
-
                             break;
                         }
-
                     case Enums.TextAttachmentPoint.BottomLeft:
                         {
-                            if (_drawingMtext3DRows.Count > 1)
+                            if (_rows.Count > 1)
                             {
                                 AttachmentOffset = new(0, firstRowHeight * 2, 0);  // For multiple rows, align to the middle of the first row instead of the top
                             }
@@ -153,13 +157,11 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                             {
                                 AttachmentOffset = new(0, 0, 0); // For single row, keep it centered vertically
                             }
-
                             break;
                         }
-
                     case Enums.TextAttachmentPoint.BottomCenter:
                         {
-                            if (_drawingMtext3DRows.Count > 1)
+                            if (_rows.Count > 1)
                             {
                                 AttachmentOffset = new(-width / 2, firstRowHeight * 2, 0);  // For multiple rows, align to the middle of the first row instead of the top
                             }
@@ -167,13 +169,11 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                             {
                                 AttachmentOffset = new(-width / 2, 0, 0); // For single row, keep it centered vertically
                             }
-
                             break;
                         }
-
                     case Enums.TextAttachmentPoint.BottomRight:
                         {
-                            if (_drawingMtext3DRows.Count > 1)
+                            if (_rows.Count > 1)
                             {
                                 AttachmentOffset = new(-width, firstRowHeight * 2, 0);  // For multiple rows, align to the middle of the first row instead of the top
                             }
@@ -181,15 +181,13 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                             {
                                 AttachmentOffset = new(-width, 0, 0); // For single row, keep it centered vertically
                             }
-
                             break;
                         }
-
                     default:
                         break;
                 }
 
-                foreach (var row in _drawingMtext3DRows)
+                foreach (var row in _rows)
                 {
                     row.UpdateTranslate(AttachmentOffset);
                 }
@@ -251,10 +249,10 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
 
         private void SetRowBasePositions()
         {
-            foreach (var row in _drawingMtext3DRows)
+            foreach (var row in _rows)
             {
-                row.UpdateTranslate(BasePosition); // Set the base position for the row, this will be used to calculate the final position of each segment in the row.
-                row.UpdateTranslate(AttachmentOffset); // Set the attachment offset for the row, this will be used to calculate the final position of each segment in the row.
+                row.UpdateTranslate(BasePosition);
+                row.UpdateTranslate(AttachmentOffset);
             }
         }
         private void SetRowYOffsets()
@@ -264,30 +262,30 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             DrawingMtextRow currentRow;
             DrawingMtextRow prevRow;
 
-            if (_drawingMtext3DRows.Count == 1)
+            if (_rows.Count == 1)
             {
-                currentRow = _drawingMtext3DRows[0];
+                currentRow = _rows[0];
                 float y = currentRow.Height + 2 * (currentRow.Height * _mtextLineSpacingFactor);
                 Height += y;
 
                 return;
             }
 
-            for (int i = 0; i < _drawingMtext3DRows.Count; i++)
+            for (int i = 0; i < _rows.Count; i++)
             {
                 if (i == 0)
                 {
-                    currentRow = _drawingMtext3DRows[i];
+                    currentRow = _rows[i];
                     float y = currentRow.Height + (currentRow.Height * _mtextLineSpacingFactor);
                     Height += y;
 
                     continue;
                 }
 
-                currentRow = _drawingMtext3DRows[i];
-                prevRow = _drawingMtext3DRows[i - 1];
+                currentRow = _rows[i];
+                prevRow = _rows[i - 1];
 
-                if (i - 1 == _drawingMtext3DRows.Count)
+                if (i - 1 == _rows.Count)
                 {
                     float y = currentRow.Height + (currentRow.Height * _mtextLineSpacingFactor) + (prevRow.Height * _mtextLineSpacingFactor);
                     currentYOffset -= y;
@@ -307,7 +305,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
 
         private void SetRowXOffsets()
         {
-            foreach (var row in _drawingMtext3DRows)
+            foreach (var row in _rows)
             {
                 row.SetTextSegmentsXOffset();
             }
@@ -323,7 +321,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             }
             else
             {
-                var lastRow = _drawingMtext3DRows.Last();
+                var lastRow = _rows.Last();
 
                 if (lastRow.Width + segment.SpaceWidth + segment.Bounds.Width > MaxWidth || segment.IsNewLine)
                 {
@@ -349,7 +347,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             {
                 if (disposing)
                 {
-                    foreach (var row in _drawingMtext3DRows)
+                    foreach (var row in _rows)
                     {
                         row.Dispose();
                     }

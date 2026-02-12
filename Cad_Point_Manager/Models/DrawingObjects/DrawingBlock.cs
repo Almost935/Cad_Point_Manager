@@ -1,12 +1,14 @@
 ﻿using Cad_Point_Manager.Controls.D3DControl;
+using Cad_Point_Manager.Controls.D3DControl.Rendering.Text;
 using Cad_Point_Manager.Helpers;
 using netDxf.Entities;
 using PdfSharpCore.Drawing;
 using SharpDX.Direct2D1;
 using System.Windows;
+using static netDxf.Entities.HatchBoundaryPath;
 using Vector3 = SharpDX.Vector3;
 
-namespace Cad_Point_Manager.Models.DrawingObjects3D
+namespace Cad_Point_Manager.Models.DrawingObjects
 {
     public class DrawingBlock : DrawingObject
     {
@@ -58,17 +60,18 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         #endregion
 
         #region Constructors
-        private DrawingBlock() { Type = DrawingObject3dType.DrawingLine3D; }
+        //private DrawingBlock() { Type = DrawingObject3dType.DrawingLine; }
 
         public DrawingBlock(Insert insert, ObjectLayer layer, bool isPartOfBlock = false, DrawingBlock block = null)
         {
-            Type = DrawingObject3dType.DrawingBlock3D;
+            Type = DrawingObjectType.DrawingBlock;
             DxfInsert = insert;
 
             EntityObject = insert;
             Layer = layer;
             IsPartOfBlock = isPartOfBlock;
             DrawingBlock3D = block;
+            ColorByLayer = EntityObject.Color.IsByLayer;
 
             UpdateColor();
             UpdateData();
@@ -187,7 +190,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                 }
             }
         }
-        public void UpdateTextVertices(ResCache resCache, uint layerId, uint objectId)
+        public void UpdateTextVertices(ResCache resCache, uint layerId, SceneIdMap sceneIdMap, D3dStateBuffers stateBuffers)
         {
             TextVertices.Clear();
 
@@ -195,17 +198,17 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             {
                 if (obj is DrawingBlock block)
                 {
-                    block.UpdateTextVertices(resCache, layerId, objectId);
+                    block.UpdateTextVertices(resCache, layerId, sceneIdMap, stateBuffers);
                     TextVertices.AddRange(block.TextVertices);
                 }
                 if (obj is DrawingSText text)
                 {
-                    text.UpdateTextVertices(resCache, layerId, objectId);
+                    text.UpdateTextVertices(resCache, layerId, sceneIdMap, stateBuffers);
                     TextVertices.AddRange(text.TextVertices);
                 }
                 if (obj is DrawingMtext mtext)
                 {
-                    mtext.UpdateTextVertices(resCache, layerId, objectId);
+                    mtext.UpdateTextVertices(resCache, layerId, sceneIdMap, stateBuffers);
 
                     foreach (var row in mtext.MtextBlock.Rows)
                     {

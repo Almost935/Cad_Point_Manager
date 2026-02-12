@@ -411,6 +411,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
         public void LoadScene(Scene scene)
         {
+            if (scene is null) { return; }
             CurrentZoomStep = scene.ZoomStep;
             Translate = scene.Translation;
             UpdateView();

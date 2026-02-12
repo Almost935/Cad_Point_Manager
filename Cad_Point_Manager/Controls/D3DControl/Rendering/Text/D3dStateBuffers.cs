@@ -1,11 +1,12 @@
 ﻿// Rendering/D3D/D3dStateBuffers.cs
 using Cad_Point_Manager.Extensions;
-using Cad_Point_Manager.Models.DrawingObjects3D;
+using Cad_Point_Manager.Models.DrawingObjects;
 using Cad_Point_Manager.Models.PointRendering;
 using SharpDX;
 using SharpDX.Direct3D;
 using SharpDX.Direct3D11;
 using SharpDX.DXGI;
+using System.Diagnostics;
 using Buffer = SharpDX.Direct3D11.Buffer;
 using Device = SharpDX.Direct3D11.Device;
 using MapFlags = SharpDX.Direct3D11.MapFlags;

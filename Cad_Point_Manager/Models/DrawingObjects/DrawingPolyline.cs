@@ -6,7 +6,7 @@ using SharpDX.Mathematics.Interop;
 using System.Windows;
 using Vector3 = SharpDX.Vector3;
 
-namespace Cad_Point_Manager.Models.DrawingObjects3D
+namespace Cad_Point_Manager.Models.DrawingObjects
 {
     public class DrawingPolyline : DrawingGeometry
     {
@@ -18,15 +18,16 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         #endregion
 
         #region Constructors
-        private DrawingPolyline() { Type = DrawingObject3dType.DrawingPolyline3D; }
+        //private DrawingPolyline() { Type = DrawingObject3dType.DrawingPolyline; }
 
         public DrawingPolyline(Polyline2D polyline2D, ObjectLayer layer, bool isPartOfBlock = false, DrawingBlock block = null)
         {
-            Type = DrawingObject3dType.DrawingPolyline3D;
+            Type = DrawingObjectType.DrawingPolyline;
             Layer = layer;
             IsPartOfBlock = isPartOfBlock;
             DrawingBlock3D = block;
             EntityObject = polyline2D;
+            ColorByLayer = EntityObject.Color.IsByLayer;
 
             UpdateColor();
             UpdateData();
@@ -34,11 +35,12 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
 
         public DrawingPolyline(Polyline3D polyline3D, ObjectLayer layer, bool isPartOfBlock = false, DrawingBlock block = null)
         {
-            Type = DrawingObject3dType.DrawingPolyline3D;
+            Type = DrawingObjectType.DrawingPolyline;
             Layer = layer;
             IsPartOfBlock = isPartOfBlock;
             DrawingBlock3D = block;
             EntityObject = polyline3D;
+            ColorByLayer = EntityObject.Color.IsByLayer;
 
             UpdateColor();
             UpdateData();

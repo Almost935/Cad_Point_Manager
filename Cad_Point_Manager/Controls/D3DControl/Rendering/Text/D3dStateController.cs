@@ -1,5 +1,5 @@
 ﻿// Rendering/D3D/D3dStateController.cs
-using Cad_Point_Manager.Models.DrawingObjects3D;
+using Cad_Point_Manager.Models.DrawingObjects;
 using Cad_Point_Manager.Models.PointRendering;
 using SharpDX;
 

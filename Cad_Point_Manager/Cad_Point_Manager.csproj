@@ -14,19 +14,15 @@
   <ItemGroup>
     <Compile Remove="Controls\D2DControl\**" />
     <Compile Remove="Lib\**" />
-    <Compile Remove="Models\DrawingObjects\**" />
     <Compile Remove="Resources\Shaders\**" />
     <EmbeddedResource Remove="Controls\D2DControl\**" />
     <EmbeddedResource Remove="Lib\**" />
-    <EmbeddedResource Remove="Models\DrawingObjects\**" />
     <EmbeddedResource Remove="Resources\Shaders\**" />
     <None Remove="Controls\D2DControl\**" />
     <None Remove="Lib\**" />
-    <None Remove="Models\DrawingObjects\**" />
     <None Remove="Resources\Shaders\**" />
     <Page Remove="Controls\D2DControl\**" />
     <Page Remove="Lib\**" />
-    <Page Remove="Models\DrawingObjects\**" />
     <Page Remove="Resources\Shaders\**" />
   </ItemGroup>
 

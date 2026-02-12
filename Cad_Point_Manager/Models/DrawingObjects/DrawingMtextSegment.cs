@@ -1,6 +1,7 @@
 ﻿using Cad_Point_Manager.Common;
 using Cad_Point_Manager.Controls.D3DControl;
 using Cad_Point_Manager.Helpers;
+using PdfSharpCore.Drawing;
 using SharpDX;
 using SharpDX.DirectWrite;
 using SharpDX.Mathematics.Interop;
@@ -10,9 +11,9 @@ using FontStretch = SharpDX.DirectWrite.FontStretch;
 using FontStyle = SharpDX.DirectWrite.FontStyle;
 using FontWeight = SharpDX.DirectWrite.FontWeight;
 
-namespace Cad_Point_Manager.Models.DrawingObjects3D
+namespace Cad_Point_Manager.Models.DrawingObjects
 {
-    public class DrawingMtextSegment : IDisposable
+    public class DrawingMtextSegment : DrawingObject, IDisposable
     {
         #region Fields
         private const float _flatteningTolerance = 0.001f;
@@ -25,7 +26,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         #region Properties
         public DrawingMtext DrawingMtext { get; set; }
         public string Text { get; set; }
-        public Vector4 Color { get; set; }
         public Vector3 Position { get; set; }
         public float Rotation { get; set; } = 0;
         public float TextHeight { get; set; }
@@ -34,11 +34,11 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         public TextLayout TextLayout { get; set; }
         public TextVertex[] TextVertices { get; set; } = [];
         public float MaxWidth { get; set; }
-        public Rect Bounds { get; set; }
         public bool IsItalic { get; set; } = false;
         public bool IsBold { get; set; } = false;
         public bool IsUnderlined { get; set; } = false;
         public bool IsStrikeOut { get; set; } = false;
+        public bool IsOverStrike { get; set; } = false;
         public bool IsNewLine { get; set; } = false;
         public Enums.TextAlignment TextAlignment { get; set; }
         public float SpaceWidth { get; set; }
@@ -48,11 +48,14 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         #endregion
 
         #region Constructors
-        public DrawingMtextSegment(DrawingMtext drawingMtext3D, string text, Vector4 color, Vector3 position, float rotation,
-            float fontHeight, string fontFamilyName, bool isItalic, bool isBold, bool isUnderlined, bool isStrikethroughed,
+        public DrawingMtextSegment(DrawingMtext drawingMtext, string text, Vector4 color, Vector3 position, float rotation,
+            float fontHeight, string fontFamilyName, bool isItalic, bool isBold, bool isUnderlined, bool isStrikeOut, bool isOverStrike,
             bool isNewLine, int fontRenderingMinimumSize, float maxWidth, Enums.TextAlignment textAlignment = Enums.TextAlignment.Left)
         {
-            DrawingMtext = drawingMtext3D;
+            Type = DrawingObjectType.DrawingMtextSegment;
+            DrawingMtext = drawingMtext;
+            EntityObject = drawingMtext.EntityObject;
+            ColorByLayer = EntityObject.Color.IsByLayer;
             Text = text;
             Color = color;
             Position = position;
@@ -62,7 +65,8 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             IsItalic = isItalic;
             IsBold = isBold;
             IsUnderlined = isUnderlined;
-            IsStrikeOut = isStrikethroughed;
+            IsStrikeOut = isStrikeOut;
+            IsOverStrike = isOverStrike;
             IsNewLine = isNewLine;
             _fontRenderingMinimumSize = fontRenderingMinimumSize;
             MaxWidth = maxWidth;
@@ -74,6 +78,68 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         #endregion
 
         #region Methods
+        public override void UpdateData()
+        {
+
+        }
+        public override void DrawToD2dDeviceContext(SharpDX.Direct2D1.DeviceContext1 deviceContext, SharpDX.Direct2D1.Factory2 factory,
+            SharpDX.Direct2D1.Brush brush, float thickness, SharpDX.Direct2D1.StrokeStyle1 strokeStyle)
+        {
+
+        }
+        public override void DrawToPdf(
+            XGraphics gfx,
+            System.Windows.Media.Matrix worldToPdf,
+            XPen pen)
+        { }
+
+        public override void MouseEnter()
+        {
+            this.IsMouseOver = true;
+            SetMouseOver(true);
+        }
+        public override void MouseLeave()
+        {
+            this.IsMouseOver = false;
+            SetMouseOver(false);
+        }
+        private void SetMouseOver(bool isMouseOver)
+        {
+            Span<TextVertex> vertexSpan = TextVertices.AsSpan();
+
+            for (int i = 0; i < vertexSpan.Length; i++)
+            {
+                vertexSpan[i].SetIsMouseOver(isMouseOver);
+            }
+        }
+        public override void Select()
+        {
+            this.IsSelected = true;
+            SetIsSelected(true);
+        }
+        public override void Deselect()
+        {
+            this.IsSelected = false;
+            SetIsSelected(false);
+        }
+        private void SetIsSelected(bool isSelected)
+        {
+            Span<TextVertex> vertexSpan = TextVertices.AsSpan();
+
+            for (int i = 0; i < vertexSpan.Length; i++)
+            {
+                vertexSpan[i].SetIsSelected(isSelected);
+            }
+        }
+        public override double DistanceToPoint(System.Windows.Point p)
+        {
+            return 0;
+        }
+        public override void UpdateBounds()
+        {
+
+        }
+
         public void GetTextLayout(Factory1 factory)
         {
             FontWeight fontWeight;

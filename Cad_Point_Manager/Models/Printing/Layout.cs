@@ -1,4 +1,4 @@
-﻿using Cad_Point_Manager.Models.DrawingObjects3D;
+﻿using Cad_Point_Manager.Models.DrawingObjects;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;

@@ -4,7 +4,7 @@ using SharpDX;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
-namespace Cad_Point_Manager.Models.DrawingObjects3D
+namespace Cad_Point_Manager.Models.DrawingObjects
 {
     public class ObjectLayer : INotifyPropertyChanged
     {
@@ -18,6 +18,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         public Layer DxfLayer { get; set; }
         public BatchableObservableCollection<DrawingObject> DrawingObjects { get; set; } = [];
         public List<DrawingSText> DrawingText3Ds { get; set; } = [];
+        public uint Id { get; set; }
 
         public bool IsVisible
         {

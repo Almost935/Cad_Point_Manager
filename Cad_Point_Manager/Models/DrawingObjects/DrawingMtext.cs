@@ -1,5 +1,6 @@
 ﻿using Cad_Point_Manager.Common;
 using Cad_Point_Manager.Controls.D3DControl;
+using Cad_Point_Manager.Controls.D3DControl.Rendering.Text;
 using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Helpers;
 using Cad_Point_Manager.Services.LayoutExporting;
@@ -7,6 +8,7 @@ using netDxf;
 using netDxf.Entities;
 using PdfSharpCore.Drawing;
 using SharpDX.Direct2D1;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text.RegularExpressions;
 using System.Windows;
@@ -18,23 +20,15 @@ using Vector2 = SharpDX.Vector2;
 using Vector3 = SharpDX.Vector3;
 using Vector4 = SharpDX.Vector4;
 
-namespace Cad_Point_Manager.Models.DrawingObjects3D
+namespace Cad_Point_Manager.Models.DrawingObjects
 {
     public class DrawingMtext : DrawingText
     {
         #region Fields
         private const int _fontRenderingMinimumSize = 50;
-
-        private List<TextVertex> _textVertices;
         #endregion
 
         #region Properties
-        public override List<TextVertex> TextVertices
-        {
-            get => MtextBlock.Rows.SelectMany(r => r.Segments).SelectMany(s => s.TextVertices).ToList();
-            set => _textVertices = value;
-        }
-
         public MText DxfMtext { get; set; }
         public float Rotation { get; set; } = 0;
         public float FontHeight { get; set; }
@@ -44,17 +38,20 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         public Enums.TextAttachmentPoint AttachmentPoint { get; set; }
         public DrawingMtextBlock MtextBlock { get; set; }
         public Vector3 TextAttachmentOffset { get; set; } = Vector3.Zero;
+
+        public override List<TextVertex> TextVertices { get; set; } = [];
         #endregion
 
         #region Constructor
         public DrawingMtext(MText mtext, ObjectLayer layer, bool isPartOfBlock = false, DrawingBlock block = null)
         {
-            Type = DrawingObject3dType.DrawingMtext3D;
+            Type = DrawingObjectType.DrawingMtext;
             DxfMtext = mtext;
             EntityObject = mtext;
             Layer = layer;
             IsPartOfBlock = isPartOfBlock;
             DrawingBlock3D = block;
+            ColorByLayer = EntityObject.Color.IsByLayer;
 
             UpdateColor();
             UpdateData();
@@ -62,15 +59,16 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         #endregion
 
         #region Methods
-        public override void UpdateTextVertices(ResCache resCache, uint layerId, uint objectId)
+        public override void UpdateTextVertices(ResCache resCache, uint layerId, SceneIdMap sceneIdMap, D3dStateBuffers stateBuffers)
         {
             if (DxfMtext is null) { return; }
 
-            UpdateMtextBlock(resCache, layerId, objectId);
+            UpdateMtextBlock(resCache, layerId, sceneIdMap, stateBuffers);
             MtextBlock.SetTextPositions();
             MtextBlock.GetTextBox(MtextBlock.Height);
             SetRotation();
             UpdateBounds();
+            TextVertices = MtextBlock.Rows.SelectMany(r => r.Segments).SelectMany(s => s.TextVertices).ToList();
         }
         public override void MouseEnter()
         {
@@ -97,7 +95,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                 }
             }
         }
-
         public override void Select()
         {
             this.IsSelected = true;
@@ -196,22 +193,14 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         {
             //deviceContext.DrawTextLayout(new RawVector2((float)Position.X, -(float)Position.Y), TextLayout, brush);
         }
-        public override void DrawToPdf(
-            XGraphics gfx,
-            System.Windows.Media.Matrix worldToPdf,
-            XPen pen)
+        public override void DrawToPdf(XGraphics gfx, System.Windows.Media.Matrix worldToPdf, XPen pen)
         {
             if (MtextBlock is null || MtextBlock.Rows.Count == 0) { return; }
 
-            // Scale from world units -> PDF points.
-            // Use X scale (you can switch to Avg if you ever introduce non-uniform scaling).
             double ptsPerWorld = PdfDrawingHelpers.WorldToPdfScale(worldToPdf);
             if (ptsPerWorld <= 0.000001) { return; }
 
-            // DXF rotation is CCW in Y-up; your PDF mapping is Y-down -> flip sign
             double rotDeg = -Rotation;
-
-            // Rotate about the MTEXT base position (matches your D3D rotation pivot)
             var basePdf = PdfDrawingHelpers.WorldToPdf(new Vector2(Position.X, Position.Y), worldToPdf);
 
             var state = gfx.Save();
@@ -223,152 +212,69 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                 {
                     if (string.IsNullOrWhiteSpace(seg.Text)) { continue; }
 
-                    // Choose font family
                     var fontFamily = string.IsNullOrWhiteSpace(seg.FontFamilyName)
                         ? (string.IsNullOrWhiteSpace(FontFamilyName) ? "Arial" : FontFamilyName)
                         : seg.FontFamilyName;
 
-                    // Build style flags
                     XFontStyle style = XFontStyle.Regular;
                     if (seg.IsBold) { style |= XFontStyle.Bold; }
                     if (seg.IsItalic) { style |= XFontStyle.Italic; }
-                    if (seg.IsUnderlined) { style |= XFontStyle.Underline; }
-                    if (seg.IsStrikeOut) { style |= XFontStyle.Strikeout; }
 
-                    var fontSizePts = seg.TextHeight * seg.FontSizeFactor * 3.17;
+                    var fontSizePts = seg.TextHeight * seg.FontSizeFactor * worldToPdf.M11;
                     var font = new XFont(fontFamily, fontSizePts, style);
                     var brush = new XSolidBrush(PdfTransform.ToXColor(seg.Color.ToVector4()));
 
-                    // Segment position is already laid out in world coords by your MtextBlock
                     var pPdf = PdfDrawingHelpers.WorldToPdf(new Vector2(seg.Position.X, seg.Position.Y), worldToPdf);
-
-                    // --- BASELINE SHIFT ---
-                    // Your DirectWrite bounds are typically relative to the segment geometry origin.
-                    // Use bounds.Top to move from "top-left-ish" to PDF baseline.
-                    double baselineShiftPts = (-seg.Bounds.Top) * ptsPerWorld;
-
-                    // --- HORIZONTAL ALIGNMENT ---
-                    double wPts = gfx.MeasureString(seg.Text, font).Width;
+                    var size = gfx.MeasureString(seg.Text, font);
 
                     double x = pPdf.X;
-                    switch (seg.TextAlignment)
-                    {
-                        case Enums.TextAlignment.Center:
-                            x -= wPts * 0.5;
-                            break;
-                        case Enums.TextAlignment.Right:
-                            x -= wPts;
-                            break;
-                    }
+                    double y = pPdf.Y;
 
-                    double y = pPdf.Y + baselineShiftPts;
+                    // Testing
+                    MtextBlock.TextBox.BottomRight.ToSharpDXVector2();
+                    var txtBoxPdfTL = PdfDrawingHelpers.WorldToPdf(MtextBlock.TextBox.TopLeft.ToSharpDXVector2(), worldToPdf);
+                    var txtBoxPdfBR = PdfDrawingHelpers.WorldToPdf(MtextBlock.TextBox.BottomRight.ToSharpDXVector2(), worldToPdf);
+                    var tboxPdfSize = new XSize(txtBoxPdfBR.X - txtBoxPdfTL.X, txtBoxPdfBR.Y - txtBoxPdfTL.Y);
+                    var fillColor = XColor.FromArgb(128, 255, 0, 0);
+                    var testBrush = new XSolidBrush(fillColor);
+                    var testPen = new XPen(XColors.Red, 0.5);
+                    gfx.DrawRectangle(testPen, testBrush, txtBoxPdfTL.X, txtBoxPdfTL.Y, tboxPdfSize.Width, tboxPdfSize.Height);
+                    // End Testing
 
-                    // Draw text as REAL PDF text operators (not triangles)
                     gfx.DrawString(seg.Text, font, brush, new XPoint(x, y));
 
-                    //// Optional underline/strike (still far fewer snap targets than triangles)
-                    //if (seg.IsUnderlined || seg.IsStrikeThroughed)
-                    //{
-                    //    var linePen = new XPen(((XSolidBrush)brush).Color, Math.Max(0.3, fontSizePts * 0.04));
+                    if (seg.IsUnderlined || seg.IsStrikeOut || seg.IsOverStrike)
+                    {
+                        var linePen = new XPen(brush.Color, fontSizePts * 0.02);
 
-                    //    // heuristic offsets relative to baseline
-                    //    double underlineY = y + fontSizePts * 0.10;
-                    //    double strikeY = y - fontSizePts * 0.30;
+                        // heuristic offsets relative to baseline
+                        double underlineY = y + fontSizePts * 0.10;
+                        double strikeY = y - fontSizePts * 0.30;
+                        double overstrikeY = y - fontSizePts * 0.50;
 
-                    //    double yLine = seg.IsUnderlined ? underlineY : strikeY;
-                    //    gfx.DrawLine(linePen, x, yLine, x + wPts, yLine);
-                    //}
+                        //double yLine = seg.IsUnderlined ? underlineY : strikeY;
+                        //gfx.DrawLine(linePen, x, yLine, x + size.Width, yLine);
+
+                        //gfx.DrawRectangle(linePen, x, y, size.Width, size.Height);
+
+                        //if (seg.IsUnderlined)
+                        //{
+                        //    gfx.DrawLine(linePen, x, underlineY, x + size.Width, underlineY);
+                        //}
+                        //if (seg.IsStrikeOut)
+                        //{
+                        //    gfx.DrawLine(linePen, x, strikeY, x + size.Width, strikeY);
+                        //}
+                        //if (seg.IsOverStrike)
+                        //{
+                        //    gfx.DrawLine(linePen, x, overstrikeY, x + size.Width, overstrikeY);
+                        //}
+                    }
                 }
             }
 
             gfx.Restore(state);
         }
-
-        //public override void DrawToPdf(
-        //    XGraphics gfx,
-        //    System.Windows.Media.Matrix worldToPdf,
-        //    XPen pen)
-        //{
-        //    if (MtextBlock is null || MtextBlock.Rows.Count == 0) { return; }
-
-        //    // PDF points per 1 world unit (derived from worldToPdf)
-        //    double scalePtsPerWorld = PdfDrawingHelpers.GetWorldToPdfScale(worldToPdf);
-        //    if (scalePtsPerWorld <= 0) { return; }
-
-        //    // DXF rotation is CCW in Y-up. Your worldToPdf yields Y-down → rotation flips.
-        //    double rotDeg = -Rotation;
-
-        //    // Rotate the whole block about the MTEXT base position (matches your SetRotation pivot)
-        //    var basePdf = PdfDrawingHelpers.WorldToPdf(new Vector2(Position.X, Position.Y), worldToPdf);
-
-        //    var state = gfx.Save();
-        //    if (Math.Abs(rotDeg) > 0.0001) { gfx.RotateAtTransform(rotDeg, basePdf); }
-
-        //    foreach (var row in MtextBlock.Rows)
-        //    {
-        //        foreach (var seg in row.Segments)
-        //        {
-        //            if (string.IsNullOrWhiteSpace(seg.Text)) { continue; }
-
-        //            // Convert your world-height to PDF font size (points)
-        //            double fontSizePts = seg.TextHeight * scalePtsPerWorld;
-        //            if (fontSizePts < 0.1) { continue; }
-
-        //            // Build font style
-        //            XFontStyle style = XFontStyle.Regular;
-        //            if (seg.IsBold) style |= XFontStyle.Bold;
-        //            if (seg.IsItalic) style |= XFontStyle.Italic;
-
-        //            var fontFamily = string.IsNullOrWhiteSpace(seg.FontFamilyName)
-        //                ? (string.IsNullOrWhiteSpace(FontFamilyName) ? "Arial" : FontFamilyName)
-        //                : seg.FontFamilyName;
-
-        //            var font = new XFont(fontFamily, fontSizePts, style);
-
-        //            var brush = new XSolidBrush(PdfTransform.ToXColor(seg.Color.ToVector4()));
-
-        //            // Segment world position already includes your row offsets / spacing / attachment offsets
-        //            var pPdf = PdfDrawingHelpers.WorldToPdf(new Vector2(seg.Position.X, seg.Position.Y), worldToPdf);
-
-        //            // ---- Baseline correction (important!) ----
-        //            // DirectWrite geometry bounds are usually "top-left" oriented, while PDF DrawString uses baseline.
-        //            // Best: use seg.Bounds.Top (world units) from your tessellation step if available.
-        //            // If seg.Bounds.Top is relative to seg.Position as your geometry origin, this is accurate.
-        //            double baselineShiftPts = (-seg.Bounds.Top) * scalePtsPerWorld;
-
-        //            // Horizontal alignment: measure and shift X
-        //            double w = gfx.MeasureString(seg.Text, font).Width;
-
-        //            double x = pPdf.X;
-        //            switch (seg.TextAlignment)
-        //            {
-        //                case Enums.TextAlignment.Center:
-        //                    x -= w * 0.5;
-        //                    break;
-        //                case Enums.TextAlignment.Right:
-        //                    x -= w;
-        //                    break;
-        //            }
-
-        //            double y = pPdf.Y + baselineShiftPts;
-
-        //            gfx.DrawString(seg.Text, font, brush, new XPoint(x, y));
-
-        //            // Optional underline/strike: draw 1 simple line (still far fewer snap targets than triangles)
-        //            if (seg.IsUnderlined || seg.IsStrikeThroughed)
-        //            {
-        //                var linePen = new XPen(((XSolidBrush)brush).Color, Math.Max(0.3, fontSizePts * 0.04));
-        //                double yLine = seg.IsUnderlined
-        //                    ? (y + fontSizePts * 0.10)
-        //                    : (y - fontSizePts * 0.30);
-
-        //                gfx.DrawLine(linePen, x, yLine, x + w, yLine);
-        //            }
-        //        }
-        //    }
-
-        //    gfx.Restore(state);
-        //}
 
         public override void UpdateBounds()
         {
@@ -400,7 +306,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
 
             return textVertices;
         }
-        public void UpdateMtextBlock(ResCache resCache, uint layerId, uint objectId)
+        public void UpdateMtextBlock(ResCache resCache, uint layerId, SceneIdMap sceneIdMap, D3dStateBuffers stateBuffers)
         {
             MtextBlock?.Dispose();
             MtextBlock = new((float)MaxWidth, Position, DxfMtext.AttachmentPoint, Rotation);
@@ -413,10 +319,9 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
 
                 foreach (var text in segmentTexts)
                 {
-                    TextSegmentInformation segmentInfo = new(text, Color, FontFamilyName, DxfMtext.Height, IsBold, IsItalic, false, false, false, false, Enums.TextAlignment.Left);
-                    var textSegment = CreateMtextSegment(segmentInfo, resCache, layerId, objectId);
-                    textSegment.GetTextLayout(resCache.WriteFactory);
-                    textSegment.Tesselate(resCache, layerId, objectId);
+                    TextSegmentInformation segmentInfo = new(text, Color, FontFamilyName, DxfMtext.Height,
+                        IsBold, IsItalic, false, false, false, false, Enums.TextAlignment.Left);
+                    var textSegment = CreateMtextSegment(segmentInfo, resCache, layerId, sceneIdMap, stateBuffers);
                     MtextBlock.AddSegment(textSegment);
                 }
                 return;
@@ -605,13 +510,13 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                             var newSegmentInfo = new TextSegmentInformation(segmentText, segmentInfo.Color, segmentInfo.Font, segmentInfo.TextHeight,
                                 segmentInfo.IsBold, segmentInfo.IsItalic, segmentInfo.IsUnderlined, segmentInfo.IsOverstriked, segmentInfo.IsStrikethrough,
                                 isNewLine, segmentInfo.TextAlignment);
-                            var newSegment = CreateMtextSegment(newSegmentInfo, resCache, layerId, objectId);
+                            var newSegment = CreateMtextSegment(newSegmentInfo, resCache, layerId, sceneIdMap, stateBuffers);
                             MtextBlock.AddSegment(newSegment);
                         }
                     }
                     else
                     {
-                        var segment = CreateMtextSegment(segmentInfo, resCache, layerId, objectId);
+                        var segment = CreateMtextSegment(segmentInfo, resCache, layerId, sceneIdMap, stateBuffers);
                         MtextBlock.AddSegment(segment);
                     }
                 }
@@ -629,16 +534,22 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                     }
                 }
             }
-
-            //for (int i = 0; i < TextVertices.Count(); i++)
-            //{
-            //    TextVertices[i] = TextVertex.RotateAroundPoint(TextVertices[i], new Vector2(Position.X, Position.Y), (float)(MathHelper.DegToRad * Rotation));
-            //}
         }
-        private DrawingMtextSegment CreateMtextSegment(TextSegmentInformation segmentInfo, ResCache resCache, uint layerId, uint objectId)
+        private DrawingMtextSegment CreateMtextSegment(
+            TextSegmentInformation segmentInfo,
+            ResCache resCache,
+            uint layerId,
+            SceneIdMap sceneIdMap,
+            D3dStateBuffers stateBuffers)
         {
-            DrawingMtextSegment segment = new(this, segmentInfo.Text, segmentInfo.Color, Vector3.Zero, 0, (float)segmentInfo.TextHeight, segmentInfo.Font,
-                segmentInfo.IsItalic, segmentInfo.IsBold, segmentInfo.IsUnderlined, segmentInfo.IsStrikethrough, segmentInfo.IsNewLine, _fontRenderingMinimumSize, 0, segmentInfo.TextAlignment);
+            DrawingMtextSegment segment = new(this, segmentInfo.Text, segmentInfo.Color, Vector3.Zero, 0,
+                (float)segmentInfo.TextHeight, segmentInfo.Font, segmentInfo.IsItalic, segmentInfo.IsBold,
+                segmentInfo.IsUnderlined, segmentInfo.IsStrikethrough, segmentInfo.IsOverstriked, segmentInfo.IsNewLine,
+                _fontRenderingMinimumSize, 0, segmentInfo.TextAlignment);
+
+            var objectId = sceneIdMap.GetOrAddObjectId(segment, out bool isNewObj);
+
+            if (isNewObj) { stateBuffers.InitializeObjectState(sceneIdMap.ObjectCount, segment, objectId); }
             segment.GetTextLayout(resCache.WriteFactory);
             segment.Tesselate(resCache, layerId, objectId);
 

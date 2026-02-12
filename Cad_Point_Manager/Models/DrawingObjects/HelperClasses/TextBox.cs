@@ -1,6 +1,6 @@
 ﻿using System.Windows;
 
-namespace Cad_Point_Manager.Models.DrawingObjects3D
+namespace Cad_Point_Manager.Models.DrawingObjects
 {
     public class TextBox
     {

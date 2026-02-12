@@ -1,4 +1,4 @@
-﻿using Cad_Point_Manager.Models.DrawingObjects3D;
+﻿using Cad_Point_Manager.Models.DrawingObjects;
 using Cad_Point_Manager.Models.PointRendering;
 
 namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
@@ -23,39 +23,69 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
         public bool TryRemoveGroupId(PointGroup pg) => _groupOf.Remove(pg);
         public bool TryRemoveLayerId(ObjectLayer layer) => _layerOf.Remove(layer);
 
-        public uint GetOrAddLabelId(CogoPoint cp, int line)
+        public uint GetOrAddLabelId(CogoPoint cp, int line, out bool isNew)
         {
-            if (_labelOf.TryGetValue((cp, line), out var id)) { return id; }
+            if (_labelOf.TryGetValue((cp, line), out var id)) 
+            {
+                isNew = false;
+                return id; 
+            }
             id = _nextLabelId++;
             _labelOf[(cp, line)] = id;
+
+            isNew = true;
             return id;
         }
-        public uint GetOrAddPointId(CogoPoint cp)
+        public uint GetOrAddPointId(CogoPoint cp, out bool isNew)
         {
-            if (_pointOf.TryGetValue(cp, out var id)) { return id; }
+            if (_pointOf.TryGetValue(cp, out var id)) 
+            { 
+                isNew = false;
+                return id; 
+            }
             id = (uint)_pointOf.Count;
             _pointOf[cp] = id;
+
+            isNew = true;
             return id;
         }
-        public uint GetOrAddGroupId(PointGroup pg)
+        public uint GetOrAddGroupId(PointGroup pg, out bool isNew)
         {
-            if (_groupOf.TryGetValue(pg, out var id)) { return id; }
+            if (_groupOf.TryGetValue(pg, out var id)) 
+            {
+                isNew = false;
+                return id; 
+            }
             id = (uint)_groupOf.Count;
             _groupOf[pg] = id;
+
+            isNew = true;
             return id;
         }
-        public uint GetOrAddLayerId(ObjectLayer layer)
+        public uint GetOrAddLayerId(ObjectLayer layer, out bool isNew)
         {
-            if (_layerOf.TryGetValue(layer, out var id)) { return id; }
+            if (_layerOf.TryGetValue(layer, out var id)) 
+            {
+                isNew = false;
+                return id; 
+            }
             id = (uint)_layerOf.Count;
             _layerOf[layer] = id;
+
+            isNew = true;
             return id;
         }
-        public uint GetOrAddObjectId(DrawingObject obj)
+        public uint GetOrAddObjectId(DrawingObject obj, out bool isNew)
         {
-            if (_objectOf.TryGetValue(obj, out var id)) { return id; }
+            if (_objectOf.TryGetValue(obj, out var id)) 
+            {
+                isNew = false;
+                return id; 
+            }
             id = (uint)_objectOf.Count;
             _objectOf[obj] = id;
+
+            isNew = true;
             return id;
         }
 

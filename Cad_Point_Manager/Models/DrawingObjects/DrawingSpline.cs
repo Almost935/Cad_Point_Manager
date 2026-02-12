@@ -2,7 +2,7 @@
 using PdfSharpCore.Drawing;
 using SharpDX.Direct2D1;
 
-namespace Cad_Point_Manager.Models.DrawingObjects3D
+namespace Cad_Point_Manager.Models.DrawingObjects
 {
     public class DrawingSpline : DrawingGeometry
     {
@@ -19,11 +19,12 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         #region Constructors
         public DrawingSpline(Spline spline, ObjectLayer layer, bool isPartOfBlock = false, DrawingBlock block = null)
         {
-            Type = DrawingObject3dType.DrawingSpline3D;
+            Type = DrawingObjectType.DrawingSpline;
             EntityObject = spline;
             Layer = layer;
             IsPartOfBlock = isPartOfBlock;
             DrawingBlock3D = block;
+            ColorByLayer = EntityObject.Color.IsByLayer;
 
             UpdateColor();
             UpdateData();

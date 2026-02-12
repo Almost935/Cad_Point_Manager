@@ -5,16 +5,18 @@ using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Helpers;
 using Cad_Point_Manager.Helpers.EqualityComparers;
 using Cad_Point_Manager.Models;
-using Cad_Point_Manager.Models.DrawingObjects3D;
+using Cad_Point_Manager.Models.DrawingObjects;
 using Cad_Point_Manager.Models.HitTesting;
 using Cad_Point_Manager.Models.PointRendering;
 using Cad_Point_Manager.Models.Printing;
+using netDxf.Entities;
 using SharpDX;
 using SharpDX.D3DCompiler;
 using SharpDX.Direct3D;
 using SharpDX.Direct3D11;
 using SharpDX.DXGI;
 using SharpDX.Mathematics.Interop;
+using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -559,7 +561,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private void DrawDxf(DeviceContext ctx)
         {
             ctx.OutputMerger.SetRenderTargets(ResCache.DxfRenderTargetView);
-            ctx.ClearRenderTargetView(ResCache.DxfRenderTargetView, new RawColor4(1,1,1,1));
+            ctx.ClearRenderTargetView(ResCache.DxfRenderTargetView, new RawColor4(1, 1, 1, 1));
 
             DrawLines(ctx);
             DrawText(ctx);
@@ -615,6 +617,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             ctx.VertexShader.SetConstantBuffer(0, _transformationBuffer);
             ctx.VertexShader.SetConstantBuffer(2, _viewportBuffer);
             ctx.VertexShader.SetShaderResource(0, _stateBufs.LayerSRV);
+            ctx.VertexShader.SetShaderResource(1, _stateBufs.ObjectSRV);
             ctx.InputAssembler.PrimitiveTopology = PrimitiveTopology.TriangleList;
             ctx.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding(
                  _textVertexBuffer.Buffer, _textVertexBuffer.Stride, 0));
@@ -626,7 +629,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
         private void DrawGlyphBatches(DeviceContext ctx, GlyphAtlas atlas, Dictionary<short, List<GlyphInstance>> batches)
         {
-            if (atlas == null || atlas.VertexBuffer == null) return;
+            if (atlas == null || atlas.VertexBuffer == null) { return; }
 
             // Bind shaders + constant buffers
             ctx.VertexShader.Set(_glyphVS);
@@ -826,7 +829,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             if (_lineVertexBuffer is null || CadManager3D is null) { return; }
 
             var context = ResCache.DeviceContext;
-            var vertexSpan = CadManager3D.UpdateLineVerticesList(SceneIdMap);
+            var vertexSpan = CadManager3D.UpdateLineVerticesList(SceneIdMap, _stateBufs);
             _stateBufs.EnsureObjectCapacity(SceneIdMap.ObjectCount);
             _lineVertexBuffer.Update(context, vertexSpan);
             _lineVertexCount = vertexSpan.Length;
@@ -844,7 +847,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             }
 
             var context = ResCache.DeviceContext;
-            var vertexSpan = CadManager3D.UpdateTextVerticesList(ResCache, SceneIdMap);
+            var vertexSpan = CadManager3D.UpdateTextVerticesList(ResCache, SceneIdMap, _stateBufs);
             _textVertexBuffer.Update(context, vertexSpan);
             _textVertexCount = vertexSpan.Length;
 
@@ -871,23 +874,25 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 var color = pg.Color.ToSharpDXVector4();
                 var isGroupVisible = pg.IsVisible ? 1f : 0f;
 
-                uint gId = SceneIdMap.GetOrAddGroupId(pg);
-                _stateBufs.EnsureGroupCapacity(SceneIdMap.GroupCount);
+                uint gId = SceneIdMap.GetOrAddGroupId(pg, out var isNewGroup);
+                if (isNewGroup) { _stateBufs.EnsureGroupCapacity(SceneIdMap.GroupCount); }
 
                 foreach (var p in pg.Points)
                 {
                     if (p == null) { continue; }
 
-                    uint pId = SceneIdMap.GetOrAddPointId(p);
-                    _stateBufs.EnsurePointCapacity(SceneIdMap.PointCount);
+                    uint pId = SceneIdMap.GetOrAddPointId(p, out var isNewPoint);
+                    if (isNewPoint) { _stateBufs.EnsurePointCapacity(SceneIdMap.PointCount); }
 
                     var isMO = p.IsMouseOver ? 1f : 0f;
                     var isSel = p.IsSelected ? 1f : 0f;
                     var ySign = -1f;
 
-                    uint idPN = SceneIdMap.GetOrAddLabelId(p, 0);
-                    uint idElev = SceneIdMap.GetOrAddLabelId(p, 1);
-                    uint idDesc = p.HasDescription ? SceneIdMap.GetOrAddLabelId(p, 2) : 0xFFFFFFFF;
+                    uint idPN = SceneIdMap.GetOrAddLabelId(p, 0, out var isNew);
+                    //if (isNew) { _stateBufs.EnsureLabelCapacity(SceneIdMap.MaxLabelCount); }
+                    uint idElev = SceneIdMap.GetOrAddLabelId(p, 1, out isNew);
+                    //if (isNew) { _stateBufs.EnsureLabelCapacity(SceneIdMap.MaxLabelCount); }
+                    uint idDesc = p.HasDescription ? SceneIdMap.GetOrAddLabelId(p, 2, out isNew) : 0xFFFFFFFF;
 
                     AddCogoTextLabelLine(
                         s: p.PointNumber.ToString(),
@@ -942,7 +947,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             if (_pointCircleVertexBuffer is null) { return; }
 
             var context = ResCache.DeviceContext;
-            var vertexSpan = CadManager3D.UpdatePointCircleVerticesList(SceneIdMap);
+            var vertexSpan = CadManager3D.UpdatePointCircleVerticesList(SceneIdMap, _stateBufs);
             _pointCircleVertexBuffer.Update(context, vertexSpan);
             _pointCircleVertexCount = vertexSpan.Length;
 
@@ -1066,14 +1071,17 @@ namespace Cad_Point_Manager.Controls.D3DControl
             var inst = new List<ToggleAnchorInstance>(SelectedCogoPoints.Count);
             foreach (var pg in PointGroups)
             {
-                var gid = SceneIdMap.GetOrAddGroupId(pg);
-
                 if (pg is null) { continue; }
+
+                var gid = SceneIdMap.GetOrAddGroupId(pg, out var isNewGroup);
+                if (isNewGroup) { _stateBufs.EnsureGroupCapacity(SceneIdMap.GroupCount); }
 
                 foreach (var p in pg.Points)
                 {
                     if (p is null) { continue; }
-                    var pid = SceneIdMap.GetOrAddPointId(p);
+                    var pid = SceneIdMap.GetOrAddPointId(p, out var isNewPoint);
+                    if (isNewPoint) { _stateBufs.EnsurePointCapacity(SceneIdMap.PointCount); }
+
                     var center = Vector2.Zero;
 
                     inst.Add(new()
@@ -1098,11 +1106,14 @@ namespace Cad_Point_Manager.Controls.D3DControl
             {
                 if (pg is null) { continue; }
 
-                uint gid = SceneIdMap.GetOrAddGroupId(pg);
+                uint gid = SceneIdMap.GetOrAddGroupId(pg, out var isNewGroup);
+                if (isNewGroup) { _stateBufs.EnsureGroupCapacity(SceneIdMap.GroupCount); }
+
                 foreach (var p in pg.Points)
                 {
                     if (p is null) { continue; }
-                    uint pid = SceneIdMap.GetOrAddPointId(p);
+                    uint pid = SceneIdMap.GetOrAddPointId(p, out var isNewPoint);
+                    if (isNewPoint) { _stateBufs.EnsurePointCapacity(SceneIdMap.PointCount); }
 
                     var vertex = new LeaderLineInstance
                     {
@@ -3078,7 +3089,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
         public void CompactStateBuffersIfUnder25Pct()
         {
-            if (_stateBufs is null || CadManager3D is null) return;
+            if (_stateBufs is null || CadManager3D is null) { return; }
 
             // Current live counts
             int groups = CadManager3D.CogoPointManager.PointGroups.Count;
@@ -3213,8 +3224,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     pg.PropertyChanged -= PointGroup_PropertyChanged;
                     pg.PropertyChanged += PointGroup_PropertyChanged;
 
-                    var gId = SceneIdMap.GetOrAddGroupId(pg);
-                    _stateBufs.InitializeGroupState(SceneIdMap.GroupCount, pg, gId);
+                    var gId = SceneIdMap.GetOrAddGroupId(pg, out var isNew);
+                    if (isNew) { _stateBufs.InitializeGroupState(SceneIdMap.GroupCount, pg, gId); }
                 }
             }
             if (e.Action == NotifyCollectionChangedAction.Remove)
@@ -3237,16 +3248,19 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     cp.PropertyChanged -= CogoPoint_PropertyChanged;
                     cp.PropertyChanged += CogoPoint_PropertyChanged;
 
-                    uint pId = SceneIdMap.GetOrAddPointId(cp);
-                    uint gId = SceneIdMap.GetOrAddGroupId(cp.PointGroup);
-                    _stateBufs.InitializePointState(SceneIdMap.PointCount, cp, pId, gId);
+                    uint pId = SceneIdMap.GetOrAddPointId(cp, out var isNewPoint);
+                    uint gId = SceneIdMap.GetOrAddGroupId(cp.PointGroup, out var isNewGroup);
+                    if (isNewGroup) { _stateBufs.InitializeGroupState(SceneIdMap.GroupCount, cp.PointGroup, gId); }
+                    if (isNewPoint) { _stateBufs.InitializePointState(SceneIdMap.PointCount, cp, pId, gId); }
 
-                    uint idPN = SceneIdMap.GetOrAddLabelId(cp, 0);
-                    _stateBufs.InitializeLabelState(SceneIdMap.MaxLabelCount, cp.PointNumberOffset, idPN);
-                    uint idElev = SceneIdMap.GetOrAddLabelId(cp, 1);
-                    _stateBufs.InitializeLabelState(SceneIdMap.MaxLabelCount, cp.ElevationOffset, idElev);
-                    uint idDesc = SceneIdMap.GetOrAddLabelId(cp, 2);
-                    _stateBufs.InitializeLabelState(SceneIdMap.MaxLabelCount, cp.DescriptionOffset, idDesc);
+                    uint idPN = SceneIdMap.GetOrAddLabelId(cp, 0, out var isNew);
+                    if (isNew) { _stateBufs.InitializeLabelState(SceneIdMap.MaxLabelCount, cp.PointNumberOffset, idPN); }
+
+                    uint idElev = SceneIdMap.GetOrAddLabelId(cp, 1, out isNew);
+                    if (isNew) { _stateBufs.InitializeLabelState(SceneIdMap.MaxLabelCount, cp.ElevationOffset, idElev); }
+
+                    uint idDesc = SceneIdMap.GetOrAddLabelId(cp, 2, out isNew);
+                    if (isNew) { _stateBufs.InitializeLabelState(SceneIdMap.MaxLabelCount, cp.DescriptionOffset, idDesc); }
                 }
             }
             if (e.Action == NotifyCollectionChangedAction.Remove)
@@ -3270,11 +3284,12 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
                     layer.PropertyChanged -= Layer_PropertyChanged;
                     layer.PropertyChanged += Layer_PropertyChanged;
-                    layer.DrawingObjects.CollectionChanged -= DrawingObject3Ds_CollectionChanged;
-                    layer.DrawingObjects.CollectionChanged += DrawingObject3Ds_CollectionChanged;
+                    layer.DrawingObjects.CollectionChanged -= DrawingObjects_CollectionChanged;
+                    layer.DrawingObjects.CollectionChanged += DrawingObjects_CollectionChanged;
 
-                    var lid = SceneIdMap.GetOrAddLayerId(layer);
-                    _stateBufs.InitializeLayerState(SceneIdMap.LayerCount, layer, lid);
+                    var lid = SceneIdMap.GetOrAddLayerId(layer, out bool isNew);
+                    layer.Id = lid;
+                    if (isNew) { _stateBufs.InitializeLayerState(SceneIdMap.LayerCount, layer, lid); }
                 }
             }
             if (e.Action == NotifyCollectionChangedAction.Remove)
@@ -3285,28 +3300,37 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     if (layer is null) { continue; }
 
                     layer.PropertyChanged -= Layer_PropertyChanged;
-                    layer.DrawingObjects.CollectionChanged -= DrawingObject3Ds_CollectionChanged;
+                    layer.DrawingObjects.CollectionChanged -= DrawingObjects_CollectionChanged;
                 }
             }
         }
-        private void DrawingObject3Ds_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        private void DrawingObjects_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
         {
             if (e.Action == NotifyCollectionChangedAction.Add)
             {
+                bool isNew = true;
                 foreach (var obj in e.NewItems)
                 {
                     if (obj is not DrawingObject drawingObj) { continue; }
 
-                    var oId = SceneIdMap.GetOrAddObjectId(drawingObj);
-                    _stateBufs.InitializeObjectState(SceneIdMap.ObjectCount, drawingObj, oId);
+                    if (obj is DrawingMtext drawingMtext)
+                    {
+                        if (drawingMtext.MtextBlock is null) { drawingMtext.UpdateMtextBlock(ResCache, drawingMtext.Layer.Id, SceneIdMap, _stateBufs); }
+                        foreach (var row in drawingMtext.MtextBlock.Rows)
+                        {
+                            foreach (var seg in row.Segments)
+                            {
+                                var segId = SceneIdMap.GetOrAddObjectId(seg, out isNew);
+                                if (isNew) { _stateBufs.InitializeObjectState(SceneIdMap.ObjectCount, seg, segId); }
+                                continue;
+                            }
+                        }
+                    }
+                    var oId = SceneIdMap.GetOrAddObjectId(drawingObj, out isNew);
+                    if (isNew) { _stateBufs.InitializeObjectState(SceneIdMap.ObjectCount, drawingObj, oId); }
                 }
             }
-            //if (e.Action == NotifyCollectionChangedAction.Remove)
-            //{
-
-            //}
         }
-
         private void Layer_PropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
             if (e.PropertyName == nameof(ObjectLayer.IsVisible))
@@ -3406,8 +3430,12 @@ namespace Cad_Point_Manager.Controls.D3DControl
             {
                 if (sender is CogoPoint cp)
                 {
-                    StateController.SetPointGroupId(cp, SceneIdMap.GetOrAddGroupId(cp.PointGroup));
-                    StateController.FlushPointUpdates();
+                    var id = SceneIdMap.GetOrAddGroupId(cp.PointGroup, out bool isNew);
+                    if (isNew)
+                    {
+                        StateController.SetPointGroupId(cp, id);
+                        StateController.FlushPointUpdates();
+                    }
                     RecomputeCogoPointBoundsFast(cp);
 
                     CadManager3D.CogoPointManager.UpdateCogoPointTree();

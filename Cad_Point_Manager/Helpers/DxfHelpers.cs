@@ -1,4 +1,4 @@
-﻿using Cad_Point_Manager.Models.DrawingObjects3D;
+﻿using Cad_Point_Manager.Models.DrawingObjects;
 using netDxf;
 using netDxf.Entities;
 using netDxf.Header;

@@ -1,7 +1,7 @@
 ﻿using Cad_Point_Manager.Common;
 using SharpDX;
 
-namespace Cad_Point_Manager.Models.DrawingObjects3D
+namespace Cad_Point_Manager.Models.DrawingObjects
 {
     public class DrawingMtextRow : IDisposable
     {
@@ -9,7 +9,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         public float Height { get; set; } = 0;
         public float MaxWidth { get; set; }
         public List<DrawingMtextSegment> Segments { get; set; } = [];
-        public Enums.TextAlignment TextAlignment { get; set; } = Enums.TextAlignment.Left;
+        public Enums.TextAlignment TextAlignment { get; set; }
         public Vector3 BaseRowPosition { get; set; } = Vector3.Zero;
 
         public Vector3 CurrentTranslate { get; private set; } = Vector3.Zero;
@@ -19,18 +19,9 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         #endregion
 
         #region Constructors
-        public DrawingMtextRow(float maxWidth) { MaxWidth = maxWidth; }
-
         public DrawingMtextRow(List<DrawingMtextSegment> segments, Enums.TextAlignment textAlignment, Vector3 basePosition, float maxWidth)
         {
             Segments = segments;
-            TextAlignment = textAlignment;
-            BaseRowPosition = basePosition;
-            MaxWidth = maxWidth;
-        }
-
-        public DrawingMtextRow(Enums.TextAlignment textAlignment, Vector3 basePosition, float maxWidth)
-        {
             TextAlignment = textAlignment;
             BaseRowPosition = basePosition;
             MaxWidth = maxWidth;
@@ -70,7 +61,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
                 var prevSegmentWidth = (float)(prevSegment?.Bounds.Width ?? 0);
                 if (i != 0)
                 {
-                    //currentXOffset += prevSegmentWidth + prevSpaceWidth * 0.5f + segment.SpaceWidth * 0.5f;
                     currentXOffset += prevSegmentWidth + segment.SpaceWidth;
                 }
                 segment.RowXOffset = currentXOffset;

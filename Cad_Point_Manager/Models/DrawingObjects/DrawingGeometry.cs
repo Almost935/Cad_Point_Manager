@@ -2,7 +2,7 @@
 using SharpDX;
 using System.Windows;
 
-namespace Cad_Point_Manager.Models.DrawingObjects3D
+namespace Cad_Point_Manager.Models.DrawingObjects
 {
     public abstract class DrawingGeometry : DrawingObject
     {

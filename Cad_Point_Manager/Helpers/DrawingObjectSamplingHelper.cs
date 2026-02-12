@@ -1,5 +1,5 @@
 ﻿using Cad_Point_Manager.Extensions;
-using Cad_Point_Manager.Models.DrawingObjects3D;
+using Cad_Point_Manager.Models.DrawingObjects;
 using System.Numerics;
 
 namespace Cad_Point_Manager.Helpers

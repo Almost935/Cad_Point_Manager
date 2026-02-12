@@ -1,4 +1,4 @@
-﻿namespace Cad_Point_Manager.Models.DrawingObjects3D
+﻿namespace Cad_Point_Manager.Models.DrawingObjects
 {
     public readonly record struct Pt(double X, double Y);
     public readonly record struct EdgeInput(Pt A, Pt B, SegmentKind Kind, ArcData? Arc = null);

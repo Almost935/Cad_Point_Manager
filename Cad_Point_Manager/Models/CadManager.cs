@@ -4,7 +4,7 @@ using Cad_Point_Manager.Controls.D3DControl;
 using Cad_Point_Manager.Controls.D3DControl.Rendering.Text;
 using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Helpers;
-using Cad_Point_Manager.Models.DrawingObjects3D;
+using Cad_Point_Manager.Models.DrawingObjects;
 using Cad_Point_Manager.Models.HitTesting;
 using Cad_Point_Manager.Models.PointRendering;
 using Cad_Point_Manager.Models.Printing;
@@ -518,7 +518,7 @@ namespace Cad_Point_Manager.Models
             }
         }
 
-        public ReadOnlySpan<LineVertex> UpdateLineVerticesList(SceneIdMap sceneIdMap)
+        public ReadOnlySpan<LineVertex> UpdateLineVerticesList(SceneIdMap sceneIdMap, D3dStateBuffers stateBuffers)
         {
             if (LineVerticesDirty)
             {
@@ -527,11 +527,13 @@ namespace Cad_Point_Manager.Models
                 foreach (var keyValuePair in Layers)
                 {
                     var layer = keyValuePair.Value;
-                    var lId = sceneIdMap.GetOrAddLayerId(layer);
+                    var lId = sceneIdMap.GetOrAddLayerId(layer, out var isNewLayer);
+                    if (isNewLayer) { stateBuffers.InitializeLayerState(sceneIdMap.LayerCount, layer, lId); }
 
                     foreach (var obj in layer.DrawingObjects)
                     {
-                        var objectId = sceneIdMap.GetOrAddObjectId(obj);
+                        var objectId = sceneIdMap.GetOrAddObjectId(obj, out var isNewObj);
+                        if (isNewObj) { stateBuffers.InitializeObjectState(sceneIdMap.ObjectCount, obj, objectId); }
 
                         if (obj is DrawingGeometry drawingGeometry)
                         {
@@ -550,7 +552,7 @@ namespace Cad_Point_Manager.Models
                         }
                     }
                 }
-                
+
                 LineVerticesDirty = false;
 
                 //// For Testing
@@ -565,7 +567,7 @@ namespace Cad_Point_Manager.Models
             }
             return CollectionsMarshal.AsSpan(_cachedLineVertices);
         }
-        public ReadOnlySpan<TextVertex> UpdateTextVerticesList(ResCache d3DResCache, SceneIdMap sceneIdMap)
+        public ReadOnlySpan<TextVertex> UpdateTextVerticesList(ResCache d3DResCache, SceneIdMap sceneIdMap, D3dStateBuffers stateBuffers)
         {
             if (TextVerticesDirty)
             {
@@ -578,25 +580,31 @@ namespace Cad_Point_Manager.Models
                 foreach (var kvp in Layers)
                 {
                     var layer = kvp.Value;
-                    var lid = sceneIdMap.GetOrAddLayerId(layer);
-                    if (!layer.IsVisible) continue;
+                    var lid = sceneIdMap.GetOrAddLayerId(layer, out var isNewLayer);
+                    if (isNewLayer) { stateBuffers.InitializeLayerState(sceneIdMap.LayerCount, layer, lid); }
+
+                    if (!layer.IsVisible) { continue; }
 
                     foreach (var obj in layer.DrawingObjects)
                     {
-                        var objectId = sceneIdMap.GetOrAddObjectId(obj);
-                        int start = _cachedTextVertices.Count;
-
-                        if (obj is DrawingText text3D)
+                        if (obj is DrawingSText text)
                         {
-                            text3D.UpdateTextVertices(d3DResCache, lid, objectId);
-                            text3D.StartVertexIndex = start;
-                            _cachedTextVertices.AddRange(text3D.TextVertices);
-                            text3D.EndVertexIndex = _cachedTextVertices.Count - 1;
+                            text.UpdateTextVertices(d3DResCache, lid, sceneIdMap, stateBuffers);
+                            text.StartVertexIndex = _cachedTextVertices.Count;
+                            _cachedTextVertices.AddRange(text.TextVertices);
+                            text.EndVertexIndex = _cachedTextVertices.Count - 1;
+                        }
+                        if (obj is DrawingMtext mtext)
+                        {
+                            mtext.UpdateTextVertices(d3DResCache, lid, sceneIdMap, stateBuffers);
+                            mtext.StartVertexIndex = _cachedTextVertices.Count;
+                            _cachedTextVertices.AddRange(mtext.TextVertices);
+                            mtext.EndVertexIndex = _cachedTextVertices.Count - 1;
                         }
                         if (obj is DrawingBlock drawingBlock)
                         {
-                            drawingBlock.UpdateTextVertices(d3DResCache, lid, objectId);
-                            drawingBlock.StartTextVertexIndex = start;
+                            drawingBlock.UpdateTextVertices(d3DResCache, lid, sceneIdMap, stateBuffers);
+                            drawingBlock.StartTextVertexIndex = _cachedTextVertices.Count;
                             _cachedTextVertices.AddRange(drawingBlock.TextVertices);
                             drawingBlock.EndTextVertexIndex = _cachedTextVertices.Count - 1;
                         }
@@ -607,18 +615,21 @@ namespace Cad_Point_Manager.Models
 
             return CollectionsMarshal.AsSpan(_cachedTextVertices);
         }
-        public ReadOnlySpan<PointMarkerInstance> UpdatePointCircleVerticesList(SceneIdMap sceneIdMap)
+        public ReadOnlySpan<PointMarkerInstance> UpdatePointCircleVerticesList(SceneIdMap sceneIdMap, D3dStateBuffers stateBuffers)
         {
             _cachedPointMarkerVertices.Clear();
 
             foreach (var pg in CogoPointManager.PointGroups)
             {
                 if (!pg.IsVisible || pg is null) { continue; }
-                uint gid = sceneIdMap.GetOrAddGroupId(pg);
+                uint gid = sceneIdMap.GetOrAddGroupId(pg, out var isNewGroup);
+                if (isNewGroup) { stateBuffers.InitializeGroupState(sceneIdMap.GroupCount, pg, gid); }
 
                 foreach (CogoPoint p in pg.Points)
                 {
-                    uint pid = sceneIdMap.GetOrAddPointId(p);
+                    uint pid = sceneIdMap.GetOrAddPointId(p, out var isNewPoint);
+                    if (isNewPoint) { stateBuffers.InitializePointState(sceneIdMap.PointCount, p, pid, gid); }
+
                     _cachedPointMarkerVertices.Add(new PointMarkerInstance
                     {
                         Position = Vector3.Zero,
@@ -636,8 +647,8 @@ namespace Cad_Point_Manager.Models
             CogoPointManager.PointGroups.Clear();
 
             var inflatedExtents = Rect.Inflate(Extents, Extents.Width * 0.1, Extents.Height * 0.1);
-            float rows = 15;
-            float cols = 15;
+            float rows = 3;
+            float cols = 3;
             float yIncrement = (inflatedExtents.Height / (rows - 1)).ToFloat();
             float xIncrement = (inflatedExtents.Width / (cols - 1)).ToFloat();
             int pointNum = 1;

@@ -9,7 +9,7 @@ using SharpDX.Mathematics.Interop;
 using System.Windows;
 using Vector3 = SharpDX.Vector3;
 
-namespace Cad_Point_Manager.Models.DrawingObjects3D
+namespace Cad_Point_Manager.Models.DrawingObjects
 {
     public class DrawingLine : DrawingSegment
     {
@@ -18,15 +18,16 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         #endregion
 
         #region Constructors
-        private DrawingLine() { Type = DrawingObject3dType.DrawingLine3D; }
+        //private DrawingLine() { Type = DrawingObject3dType.DrawingLine; }
 
         public DrawingLine(Line line, ObjectLayer layer, bool isPartOfBlock = false, DrawingBlock block = null)
         {
-            Type = DrawingObject3dType.DrawingLine3D;
+            Type = DrawingObjectType.DrawingLine;
             Layer = layer;
             IsPartOfBlock = isPartOfBlock;
             DrawingBlock3D = block;
             EntityObject = line;
+            ColorByLayer = EntityObject.Color.IsByLayer;
 
             UpdateData();
             UpdateColor();

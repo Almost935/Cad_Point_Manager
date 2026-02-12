@@ -8,7 +8,7 @@ using System.Windows;
 
 using Vector3 = SharpDX.Vector3;
 
-namespace Cad_Point_Manager.Models.DrawingObjects3D
+namespace Cad_Point_Manager.Models.DrawingObjects
 {
     public class DrawingArc : DrawingCurve
     {
@@ -22,15 +22,16 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         #endregion
 
         #region Constructor
-        private DrawingArc() { Type = DrawingObject3dType.DrawingLine3D; }
+        //private DrawingArc() { Type = DrawingObject3dType.DrawingLine; }
 
         public DrawingArc(Arc arc, ObjectLayer layer, bool isPartOfBlock = false, DrawingBlock block = null)
         {
-            Type = DrawingObject3dType.DrawingArc3D;
+            Type = DrawingObjectType.DrawingArc;
             Layer = layer;
             IsPartOfBlock = isPartOfBlock;
             DrawingBlock3D = block;
             EntityObject = arc;
+            ColorByLayer = EntityObject.Color.IsByLayer;
 
             UpdateColor();
             UpdateData();

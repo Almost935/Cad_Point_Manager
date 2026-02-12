@@ -7,7 +7,7 @@ using SharpDX.Direct2D1;
 using SharpDX.Mathematics.Interop;
 using System.Windows;
 
-namespace Cad_Point_Manager.Models.DrawingObjects3D
+namespace Cad_Point_Manager.Models.DrawingObjects
 {
     public class DrawingCircle : DrawingCurve
     {
@@ -22,11 +22,12 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         #region Constructor
         public DrawingCircle(Circle circle, ObjectLayer layer, bool isPartOfBlock = false, DrawingBlock block = null)
         {
-            Type = DrawingObject3dType.DrawingCircle3D;
+            Type = DrawingObjectType.DrawingCircle;
             Layer = layer;
             IsPartOfBlock = isPartOfBlock;
             DrawingBlock3D = block;
             EntityObject = circle;
+            ColorByLayer = EntityObject.Color.IsByLayer;
 
             UpdateColor();
             UpdateData();

@@ -1,4 +1,4 @@
-﻿namespace Cad_Point_Manager.Models.DrawingObjects3D
+﻿namespace Cad_Point_Manager.Models.DrawingObjects
 {
     public abstract class DrawingSegment : DrawingGeometry
     {

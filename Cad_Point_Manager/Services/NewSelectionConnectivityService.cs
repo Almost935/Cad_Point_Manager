@@ -1,4 +1,4 @@
-﻿using Cad_Point_Manager.Models.DrawingObjects3D;
+﻿using Cad_Point_Manager.Models.DrawingObjects;
 
 namespace Cad_Point_Manager.Services
 {

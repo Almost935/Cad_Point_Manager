@@ -1,5 +1,6 @@
 ﻿using Cad_Point_Manager.Common;
 using Cad_Point_Manager.Controls.D3DControl;
+using Cad_Point_Manager.Controls.D3DControl.Rendering.Text;
 using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Helpers;
 using Cad_Point_Manager.Services.LayoutExporting;
@@ -11,7 +12,7 @@ using SharpDX.DirectWrite;
 using SharpDX.Mathematics.Interop;
 using Point = System.Windows.Point;
 
-namespace Cad_Point_Manager.Models.DrawingObjects3D
+namespace Cad_Point_Manager.Models.DrawingObjects
 {
     public class DrawingSText : DrawingText
     {
@@ -45,12 +46,13 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
         #region Constructor
         public DrawingSText(Text text, ObjectLayer layer, bool isPartOfBlock = false, DrawingBlock block = null)
         {
-            Type = DrawingObject3dType.DrawingSText3D;
+            Type = DrawingObjectType.DrawingSText;
             EntityObject = text;
             DxfText = text;
             Layer = layer;
             IsPartOfBlock = isPartOfBlock;
             DrawingBlock3D = block;
+            ColorByLayer = EntityObject.Color.IsByLayer;
 
             UpdateColor();
             UpdateData();
@@ -173,8 +175,10 @@ namespace Cad_Point_Manager.Models.DrawingObjects3D
             return adjustedPos;
         }
 
-        public override void UpdateTextVertices(ResCache resCache, uint layerId, uint objectId)
+        public override void UpdateTextVertices(ResCache resCache, uint layerId, SceneIdMap sceneIdMap, D3dStateBuffers stateBuffers)
         {
+            var objectId = sceneIdMap.GetOrAddObjectId(this, out var isNewObject);
+            if (isNewObject) { stateBuffers.InitializeObjectState(sceneIdMap.ObjectCount, this, objectId); }
             GetTextFormat(resCache.WriteFactory);
             GetTextLayout(resCache.WriteFactory);
             Tesselate(resCache, layerId, objectId);
