@@ -83,14 +83,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                     case Enums.TextAttachmentPoint.TopLeft:
                         {
                             AttachmentOffset = new(0, -firstRowHeight, 0);
-
-                            foreach (var row in _rows)
-                            {
-                                if (row.TextAlignment == Enums.TextAlignment.Right)
-                                {
-                                    row.UpdateTranslate(new Vector3((TextBox.Width - row.Width).ToFloat(), 0, 0));
-                                }
-                            }
                             break;
                         }
                     case Enums.TextAttachmentPoint.TopCenter:
@@ -101,14 +93,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                     case Enums.TextAttachmentPoint.TopRight:
                         {
                             AttachmentOffset = new(-width, -firstRowHeight, 0);
-
-                            foreach (var row in _rows)
-                            {
-                                if (row.TextAlignment == Enums.TextAlignment.Left)
-                                {
-                                    double x = 1;
-                                }
-                            }
                             break;
                         }
                     case Enums.TextAttachmentPoint.MiddleLeft:
@@ -189,6 +173,14 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
                 foreach (var row in _rows)
                 {
+                    if (row.TextAlignment == Enums.TextAlignment.Right)
+                    {
+                        row.UpdateTranslate(new Vector3((TextBox.Width - row.Width).ToFloat(), 0, 0));
+                    }
+                    if (row.TextAlignment == Enums.TextAlignment.Center)
+                    {
+                        row.UpdateTranslate(new Vector3((TextBox.Width - row.Width).ToFloat() / 2, 0, 0));
+                    }
                     row.UpdateTranslate(AttachmentOffset);
                 }
             }
@@ -315,7 +307,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         {
             if (NumberOfRows == 0)
             {
-                DrawingMtextRow newRow = new([segment], segment.TextAlignment, BasePosition, MaxWidth);
+                DrawingMtextRow newRow = new([segment], BasePosition, MaxWidth);
                 newRow.GetHeight();
                 AddRow(newRow);
             }
@@ -325,7 +317,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
                 if (lastRow.Width + segment.SpaceWidth + segment.Bounds.Width > MaxWidth || segment.IsNewLine)
                 {
-                    DrawingMtextRow newRow = new([segment], segment.TextAlignment, BasePosition, MaxWidth);
+                    DrawingMtextRow newRow = new([segment], BasePosition, MaxWidth);
                     newRow.GetHeight();
                     AddRow(newRow);
                 }

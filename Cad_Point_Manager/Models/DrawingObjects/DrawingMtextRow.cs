@@ -1,28 +1,34 @@
 ﻿using Cad_Point_Manager.Common;
+using Cad_Point_Manager.Extensions;
 using SharpDX;
 
 namespace Cad_Point_Manager.Models.DrawingObjects
 {
     public class DrawingMtextRow : IDisposable
     {
+        #region Fields
+        private List<DrawingMtextSegment> _segments = [];
+        #endregion
+
         #region Properties
         public float Height { get; set; } = 0;
         public float MaxWidth { get; set; }
-        public List<DrawingMtextSegment> Segments { get; set; } = [];
+        //public List<DrawingMtextSegment> Segments { get; set; } = [];
         public Enums.TextAlignment TextAlignment { get; set; }
         public Vector3 BaseRowPosition { get; set; } = Vector3.Zero;
 
+        public List<DrawingMtextSegment> Segments => _segments;
+        public float Width => (float)Segments.Sum(s => s.Bounds.Width) + (Segments.Count > 1 ? Segments.Skip(1).Sum(s => s.SpaceWidth) : 0f);
+
         public Vector3 CurrentTranslate { get; private set; } = Vector3.Zero;
         public Vector3 OverallTranslate { get; private set; } = Vector3.Zero;
-
-        public float Width => (float)Segments.Sum(segment => segment.Bounds.Width);
         #endregion
 
         #region Constructors
-        public DrawingMtextRow(List<DrawingMtextSegment> segments, Enums.TextAlignment textAlignment, Vector3 basePosition, float maxWidth)
+        public DrawingMtextRow(List<DrawingMtextSegment> segments, Vector3 basePosition, float maxWidth)
         {
-            Segments = segments;
-            TextAlignment = textAlignment;
+            _segments = segments;
+            TextAlignment = _segments.First().TextAlignment;
             BaseRowPosition = basePosition;
             MaxWidth = maxWidth;
         }
@@ -35,6 +41,12 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             float rowHeight = segment.TextHeight;
 
             if (rowHeight > Height) { Height = rowHeight; }
+        }
+        public void ClearSegments()
+        {
+            Segments.ForEach(s => s.Dispose());
+            Segments.Clear();
+            Height = 0;
         }
 
         public void GetHeight()
@@ -56,7 +68,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             for (int i = 0; i < Segments.Count; i++)
             {
                 var segment = Segments[i];
-
                 var prevSpaceWidth = prevSegment?.SpaceWidth ?? 0;
                 var prevSegmentWidth = (float)(prevSegment?.Bounds.Width ?? 0);
                 if (i != 0)
@@ -64,7 +75,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                     currentXOffset += prevSegmentWidth + segment.SpaceWidth;
                 }
                 segment.RowXOffset = currentXOffset;
-
                 prevSegment = segment;
             }
         }
@@ -96,7 +106,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                     Segments.ForEach(s => s.Dispose());
                     Segments.Clear();
                 }
-
                 disposedValue = true;
             }
         }

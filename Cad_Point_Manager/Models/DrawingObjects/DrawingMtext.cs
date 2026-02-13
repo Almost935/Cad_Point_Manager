@@ -52,6 +52,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             IsPartOfBlock = isPartOfBlock;
             DrawingBlock3D = block;
             ColorByLayer = EntityObject.Color.IsByLayer;
+            AttachmentPoint = TextRenderingHelpers.GetAttachmentPoint(DxfMtext.AttachmentPoint);
 
             UpdateColor();
             UpdateData();
@@ -105,6 +106,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             this.IsSelected = false;
             SetIsSelected(false);
         }
+
         private void SetIsSelected(bool isSelected)
         {
             foreach (var row in MtextBlock.Rows)
@@ -230,49 +232,37 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                     double x = pPdf.X;
                     double y = pPdf.Y;
 
-                    // Testing
-                    MtextBlock.TextBox.BottomRight.ToSharpDXVector2();
-                    var txtBoxPdfTL = PdfDrawingHelpers.WorldToPdf(MtextBlock.TextBox.TopLeft.ToSharpDXVector2(), worldToPdf);
-                    var txtBoxPdfBR = PdfDrawingHelpers.WorldToPdf(MtextBlock.TextBox.BottomRight.ToSharpDXVector2(), worldToPdf);
-                    var tboxPdfSize = new XSize(txtBoxPdfBR.X - txtBoxPdfTL.X, txtBoxPdfBR.Y - txtBoxPdfTL.Y);
-                    var fillColor = XColor.FromArgb(128, 255, 0, 0);
-                    var testBrush = new XSolidBrush(fillColor);
-                    var testPen = new XPen(XColors.Red, 0.5);
-                    gfx.DrawRectangle(testPen, testBrush, txtBoxPdfTL.X, txtBoxPdfTL.Y, tboxPdfSize.Width, tboxPdfSize.Height);
-                    // End Testing
-
                     gfx.DrawString(seg.Text, font, brush, new XPoint(x, y));
 
                     if (seg.IsUnderlined || seg.IsStrikeOut || seg.IsOverStrike)
                     {
-                        var linePen = new XPen(brush.Color, fontSizePts * 0.02);
+                        var linePen = new XPen(brush.Color, fontSizePts * 0.01);
 
                         // heuristic offsets relative to baseline
                         double underlineY = y + fontSizePts * 0.10;
                         double strikeY = y - fontSizePts * 0.30;
                         double overstrikeY = y - fontSizePts * 0.50;
 
-                        //double yLine = seg.IsUnderlined ? underlineY : strikeY;
-                        //gfx.DrawLine(linePen, x, yLine, x + size.Width, yLine);
+                        double yLine = seg.IsUnderlined ? underlineY : strikeY;
+                        gfx.DrawLine(linePen, x, yLine, x + size.Width, yLine);
 
-                        //gfx.DrawRectangle(linePen, x, y, size.Width, size.Height);
+                        gfx.DrawRectangle(linePen, x, y, size.Width, size.Height);
 
-                        //if (seg.IsUnderlined)
-                        //{
-                        //    gfx.DrawLine(linePen, x, underlineY, x + size.Width, underlineY);
-                        //}
-                        //if (seg.IsStrikeOut)
-                        //{
-                        //    gfx.DrawLine(linePen, x, strikeY, x + size.Width, strikeY);
-                        //}
-                        //if (seg.IsOverStrike)
-                        //{
-                        //    gfx.DrawLine(linePen, x, overstrikeY, x + size.Width, overstrikeY);
-                        //}
+                        if (seg.IsUnderlined)
+                        {
+                            gfx.DrawLine(linePen, x, underlineY, x + size.Width, underlineY);
+                        }
+                        if (seg.IsStrikeOut)
+                        {
+                            gfx.DrawLine(linePen, x, strikeY, x + size.Width, strikeY);
+                        }
+                        if (seg.IsOverStrike)
+                        {
+                            gfx.DrawLine(linePen, x, overstrikeY, x + size.Width, overstrikeY);
+                        }
                     }
                 }
             }
-
             gfx.Restore(state);
         }
 
@@ -319,8 +309,19 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
                 foreach (var text in segmentTexts)
                 {
+                    Enums.TextAlignment alignment;
+                    if (AttachmentPoint == Enums.TextAttachmentPoint.TopRight ||
+                        AttachmentPoint == Enums.TextAttachmentPoint.MiddleRight ||
+                        AttachmentPoint == Enums.TextAttachmentPoint.BottomRight)
+                    { alignment = Enums.TextAlignment.Right; }
+                    else if (AttachmentPoint == Enums.TextAttachmentPoint.TopCenter ||
+                        AttachmentPoint == Enums.TextAttachmentPoint.MiddleCenter ||
+                        AttachmentPoint == Enums.TextAttachmentPoint.BottomCenter)
+                    { alignment = Enums.TextAlignment.Center; }
+                    else { alignment = Enums.TextAlignment.Left; }
+
                     TextSegmentInformation segmentInfo = new(text, Color, FontFamilyName, DxfMtext.Height,
-                        IsBold, IsItalic, false, false, false, false, Enums.TextAlignment.Left);
+                        IsBold, IsItalic, false, false, false, false, alignment);
                     var textSegment = CreateMtextSegment(segmentInfo, resCache, layerId, sceneIdMap, stateBuffers);
                     MtextBlock.AddSegment(textSegment);
                 }
