@@ -647,8 +647,8 @@ namespace Cad_Point_Manager.Models
             CogoPointManager.PointGroups.Clear();
 
             var inflatedExtents = Rect.Inflate(Extents, Extents.Width * 0.1, Extents.Height * 0.1);
-            float rows = 3;
-            float cols = 3;
+            float rows = 15;
+            float cols = 15;
             float yIncrement = (inflatedExtents.Height / (rows - 1)).ToFloat();
             float xIncrement = (inflatedExtents.Width / (cols - 1)).ToFloat();
             int pointNum = 1;

@@ -238,15 +238,20 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                     {
                         var linePen = new XPen(brush.Color, fontSizePts * 0.01);
 
-                        // heuristic offsets relative to baseline
-                        double underlineY = y + fontSizePts * 0.10;
-                        double strikeY = y - fontSizePts * 0.30;
-                        double overstrikeY = y - fontSizePts * 0.50;
+                        var m = font.Metrics;
+                        double em = m.UnitsPerEm;
 
-                        double yLine = seg.IsUnderlined ? underlineY : strikeY;
-                        gfx.DrawLine(linePen, x, yLine, x + size.Width, yLine);
+                        // Convert design-units metrics to points
+                        double ascentPt = fontSizePts * (m.Ascent / em);
+                        double descentPt = fontSizePts * (m.Descent / em);
 
-                        gfx.DrawRectangle(linePen, x, y, size.Width, size.Height);
+                        // If your y is baseline: (common in PDF libs)
+                        double baselineY = y;
+
+                        // Typical positions (tweak constants to match AutoCAD)
+                        double underlineY = baselineY + descentPt * 0.95;      // slightly below baseline
+                        double strikeY = baselineY - ascentPt * 0.35;      // around x-height-ish
+                        double overstrikeY = baselineY - ascentPt * 0.95;      // near top
 
                         if (seg.IsUnderlined)
                         {

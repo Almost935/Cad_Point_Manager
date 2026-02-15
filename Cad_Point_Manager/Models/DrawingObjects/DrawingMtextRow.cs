@@ -54,8 +54,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             for (int i = 0; i < Segments.Count; i++)
             {
                 var segment = Segments[i];
-                //float rowHeight = (float)(segment.FontHeight + segment.FontHeight * _mtextLineSpacingFactor * 
-                //    segment.DrawingMtext3D.DxfMtext.LineSpacingFactor);
                 float rowHeight = segment.TextHeight;
 
                 if (rowHeight > Height) { Height = rowHeight; }
