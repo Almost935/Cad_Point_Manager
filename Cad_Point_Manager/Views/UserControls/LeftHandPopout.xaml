@@ -293,7 +293,7 @@
                     </Style>
                 </ListView.ItemContainerStyle>
                 <ListView.View>
-                    <GridView>
+                    <GridView ColumnHeaderContainerStyle="{StaticResource UpdatedGridViewColumnHeaderStyle}">
                         <GridViewColumn Header="No.">
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
@@ -643,6 +643,7 @@
                 <ListView x:Name="scenesListView"
                           ItemsSource="{Binding ElementName=root, Path=Camera.Scenes}"
                           Style="{StaticResource UpdatedListViewStyle}"
+                          Background="{StaticResource PopoutMenuBackgroundBrush}"
                           SelectionMode="Extended"
                           VirtualizingPanel.IsVirtualizing="True"
                           VirtualizingPanel.VirtualizationMode="Recycling"
@@ -783,7 +784,7 @@
                         </ContextMenu>
                     </ListView.ContextMenu>
                     <ListView.View>
-                        <GridView>
+                        <GridView ColumnHeaderContainerStyle="{StaticResource UpdatedGridViewColumnHeaderStyle}">
                             <GridViewColumn>
                                 <GridViewColumn.Header>
                                     <TextBlock Text="Name"

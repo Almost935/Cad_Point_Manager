@@ -2,43 +2,6 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:controls="clr-namespace:Cad_Point_Manager.Controls">
 
-    <!--<Style x:Key="DoubleClickActiveListView"
-           TargetType="{x:Type controls:DoubleClickSetListView}">
-        <Style.Resources>
-            <Style TargetType="{x:Type controls:DoubleClickSetListViewItem}">
-                <Style.Triggers>
-                    <Trigger Property="IsActive"
-                             Value="True">
-                        <Setter Property="Background"
-                                Value="#FF2D5AA7" />
-                        <Setter Property="BorderBrush"
-                                Value="#FF6AA8FF" />
-                        <Setter Property="Foreground"
-                                Value="White" />
-                    </Trigger>
-
-                    <Trigger Property="IsSelected"
-                             Value="True">
-                        <Setter Property="Background"
-                                Value="#553A3A3A" />
-                    </Trigger>
-
-                    <MultiTrigger>
-                        <MultiTrigger.Conditions>
-                            <Condition Property="IsSelected"
-                                       Value="True" />
-                            <Condition Property="IsActive"
-                                       Value="True" />
-                        </MultiTrigger.Conditions>
-                        <Setter Property="Background"
-                                Value="#FF2D5AA7" />
-                    </MultiTrigger>
-                </Style.Triggers>
-            </Style>
-        </Style.Resources>
-    </Style>-->
-
-    <!-- ScrollViewer template used by the ListView -->
     <Style x:Key="DoubleClickActiveListViewScrollViewer"
            TargetType="ScrollViewer">
         <Setter Property="Template">
@@ -181,37 +144,6 @@
         </Style.Triggers>
     </Style>
 
-    <!--<Style x:Key="DoubleClickActiveListViewStyle"
-           TargetType="{x:Type controls:DoubleClickSetListViewItem}">
-        <Style.Triggers>
-            <Trigger Property="IsActive"
-                     Value="True">
-                <Setter Property="Background"
-                        Value="#FF2D5AA7" />
-                <Setter Property="BorderBrush"
-                        Value="#FF6AA8FF" />
-                <Setter Property="Foreground"
-                        Value="White" />
-            </Trigger>
-
-            <Trigger Property="IsSelected"
-                     Value="True">
-                <Setter Property="Background"
-                        Value="#553A3A3A" />
-            </Trigger>
-
-            <MultiTrigger>
-                <MultiTrigger.Conditions>
-                    <Condition Property="IsSelected"
-                               Value="True" />
-                    <Condition Property="IsActive"
-                               Value="True" />
-                </MultiTrigger.Conditions>
-                <Setter Property="Background"
-                        Value="#FF2D5AA7" />
-            </MultiTrigger>
-        </Style.Triggers>
-    </Style>-->
     <!-- ListViewItem -->
     <Style  x:Key="DoubleClickActiveListViewItem"
             TargetType="{x:Type controls:DoubleClickSetListViewItem}">
@@ -228,7 +160,7 @@
         <Setter Property="SnapsToDevicePixels"
                 Value="true" />
         <Setter Property="OverridesDefaultStyle"
-                Value="true" />
+                Value="False" />
         <Setter Property="Padding"
                 Value="0" />
         <Setter Property="SnapsToDevicePixels"
@@ -312,7 +244,7 @@
         <Setter Property="SnapsToDevicePixels"
                 Value="True" />
         <Setter Property="OverridesDefaultStyle"
-                Value="True" />
+                Value="False" />
         <Setter Property="ScrollViewer.HorizontalScrollBarVisibility"
                 Value="Disabled" />
         <Setter Property="ScrollViewer.VerticalScrollBarVisibility"

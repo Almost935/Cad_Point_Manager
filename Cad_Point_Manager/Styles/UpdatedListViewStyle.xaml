@@ -96,7 +96,7 @@
     </Style>
 
     <!-- GridView column header -->
-    <Style x:Key="{x:Type GridViewColumnHeader}"
+    <Style x:Key="UpdatedGridViewColumnHeaderStyle"
            TargetType="GridViewColumnHeader">
         <Style.Resources>
             <SolidColorBrush x:Key="HeaderTextBrush"
@@ -157,7 +157,7 @@
         <Setter Property="SnapsToDevicePixels"
                 Value="true" />
         <Setter Property="OverridesDefaultStyle"
-                Value="true" />
+                Value="False" />
         <Setter Property="Padding"
                 Value="0" />
         <Setter Property="viewsAssorted:InlineEdit.EditingField"
@@ -219,7 +219,7 @@
         <Setter Property="SnapsToDevicePixels"
                 Value="True" />
         <Setter Property="OverridesDefaultStyle"
-                Value="True" />
+                Value="False" />
         <Setter Property="ScrollViewer.HorizontalScrollBarVisibility"
                 Value="Disabled" />
         <Setter Property="ScrollViewer.VerticalScrollBarVisibility"
@@ -232,6 +232,8 @@
                 Value="Stretch" />
         <Setter Property="ItemContainerStyle"
                 Value="{StaticResource UpdatedListViewItemStyle}" />
+        <Setter Property="GridView.ColumnHeaderContainerStyle"
+                Value="{StaticResource UpdatedGridViewColumnHeaderStyle}" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ListView">

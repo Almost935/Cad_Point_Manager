@@ -157,7 +157,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _scaledViewMatrix = Matrix.Scaling(zoom, zoom, 1) * Matrix.Translation(Translate.X * ProjectionMatrix.M11 * zoom, Translate.Y * ProjectionMatrix.M22 * zoom, 0);
         }
 
-        private void UpdateViewProjection()
+        public void UpdateViewProjection()
         {
             ViewProjectionMatrix = ProjectionMatrix * _scaledViewMatrix;
             InverseViewProjectionMatrix = Matrix.Invert(ViewProjectionMatrix);

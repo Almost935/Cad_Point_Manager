@@ -70,6 +70,7 @@ namespace Cad_Point_Manager.ViewModels
         // Models + Layouts Mode Fields
         private bool _layoutsVisible = false;
         private bool _modelVisible = true;
+        private bool _pointsVisible = false;
 
         // Layout fields
         private Layout _activeLayout;
@@ -397,6 +398,15 @@ namespace Cad_Point_Manager.ViewModels
             {
                 _modelVisible = value;
                 OnPropertyChanged(nameof(ModelsVisible));
+            }
+        }
+        public bool PointsVisible
+        {
+            get => _pointsVisible;
+            set
+            {
+                _pointsVisible = value;
+                OnPropertyChanged(nameof(PointsVisible));
             }
         }
 

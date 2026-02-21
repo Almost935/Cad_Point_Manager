@@ -889,9 +889,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     var ySign = -1f;
 
                     uint idPN = SceneIdMap.GetOrAddLabelId(p, 0, out var isNew);
-                    //if (isNew) { _stateBufs.EnsureLabelCapacity(SceneIdMap.MaxLabelCount); }
                     uint idElev = SceneIdMap.GetOrAddLabelId(p, 1, out isNew);
-                    //if (isNew) { _stateBufs.EnsureLabelCapacity(SceneIdMap.MaxLabelCount); }
                     uint idDesc = p.HasDescription ? SceneIdMap.GetOrAddLabelId(p, 2, out isNew) : 0xFFFFFFFF;
 
                     AddCogoTextLabelLine(
@@ -1684,12 +1682,12 @@ namespace Cad_Point_Manager.Controls.D3DControl
             };
             ResCache.DeviceContext.UpdateSubresource(ref cogoPointTextSettings, _cogoPointSettingsBuffer);
 
-            var circleSettings = new CircleSettingsBuffer
+            var pointCircleSettings = new CircleSettingsBuffer
             {
                 SelectedColor = GlobalHelperProperties.SelectedObjectColor,
                 SelectedMouseOverColor = GlobalHelperProperties.SelectedMouseOverGlowColor
             };
-            ResCache.DeviceContext.UpdateSubresource(ref circleSettings, _pointCircleSettings);
+            ResCache.DeviceContext.UpdateSubresource(ref pointCircleSettings, _pointCircleSettings);
 
             var cogoPointGlowSettingsBuffer = new CogoPointGlowSettingsBuffer
             {
@@ -1888,7 +1886,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             DxfCoordsString = formatVectorString(DxfCoords);
         }
 
-
         protected override void OnMouseDown(MouseButtonEventArgs e)
         {
             if (e.MiddleButton == MouseButtonState.Pressed)
@@ -1910,8 +1907,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             if (_cogoPointTextBeingMoved)
             {
-                var s = e.GetPosition(this);
-                var w = CadManager3D.Camera.ScreenToWorld(new Vector2((float)s.X, (float)s.Y));
+                var mousePx = GetMousePx(e);
+                var w = CadManager3D.Camera.ScreenToWorld(mousePx);
 
                 var delta = new Vector2(w.X - _pressedToggleButtonPoint.Position.X.ToFloat(),
                     w.Y - _pressedToggleButtonPoint.Position.Y.ToFloat());
@@ -2167,8 +2164,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 ResetHoverObjects();
                 ResetCogoToggleButtonMouseOver();
 
-                var s = e.GetPosition(this);
-                var w = CadManager3D.Camera.ScreenToWorld(new Vector2((float)s.X, (float)s.Y));
+                var mousePx = GetMousePx(e);
+                var w = CadManager3D.Camera.ScreenToWorld(mousePx);
+
                 var delta = new Vector2(w.X - _pressedToggleButtonPoint.Position.X.ToFloat(),
                     w.Y - _pressedToggleButtonPoint.Position.Y.ToFloat());
                 UpdateCogoPointInfoOffset(_pressedToggleButtonPoint, delta);
@@ -3470,29 +3468,66 @@ namespace Cad_Point_Manager.Controls.D3DControl
             var oldRTV = ResCache.RenderTargetView;
 
             var oldViewport = Viewport;
-            var oldInitialViewMatrix = CadManager3D.Camera.InitialViewMatrix;
 
-            var pan = CadManager3D.Camera.Translate;
-            var zoom = CadManager3D.Camera.CurrentZoomStep;
+            // Save camera state (MORE than you were saving)
+            var cam = CadManager3D.Camera;
+            var oldInitialViewMatrix = cam.InitialViewMatrix;
+            var oldExtents = cam.Extents;
+            var oldPan = cam.Translate;
+            var oldZoom = cam.CurrentZoomStep;
 
             try
             {
                 // Swap the pipeline to preview targets
                 ResCache.DxfTexture = ResCache.DxfPreviewTexture;
                 ResCache.DxfRenderTargetView = ResCache.DxfPreviewRenderTargetView;
-
                 ResCache.Texture2D = ResCache.PreviewTexture;
                 ResCache.RenderTargetView = ResCache.PreviewRenderTargetView;
 
-                // ALSO update the control Viewport property (your UpdateConstantBuffers uses Viewport.Width/Height)
+                // Preview viewport in PIXELS
                 Viewport = new ViewportF(0, 0, target.PixelWidth, target.PixelHeight);
 
-                CadManager3D.Camera.InitialViewMatrix = GetExtentsFittingMatrix(Viewport, CadManager3D.Extents);
-                CadManager3D.Camera.UpdateViewportSize(Viewport);
-                UpdateConstantBuffers();
-                CadManager3D.Camera.LoadScene(scene);
+                // ---- FIT TO SCENE BOUNDS (this prevents cropping) ----
+                var b = scene?.Bounds ?? SharpDX.RectangleF.Empty;
+                if (b.Width <= 0 || b.Height <= 0)
+                {
+                    // fallback: fit whole drawing if scene bounds are invalid
+                    cam.InitialViewMatrix = GetExtentsFittingMatrix(Viewport, CadManager3D.Extents);
+                    cam.UpdateViewportSize(Viewport);
+                }
+                else
+                {
+                    // Add a small padding so geometry doesn't kiss the border
+                    const float padFrac = 0.00f; // 2%
+                    float padX = b.Width * padFrac;
+                    float padY = b.Height * padFrac;
 
-                scene.TestMatrix = CadManager3D.Camera.D2dMatrix;
+                    var padded = new Rect(
+                        b.X - padX,
+                        b.Y - padY,
+                        b.Width + padX * 2,
+                        b.Height + padY * 2
+                    );
+
+                    // Important: make the camera's projection center on THIS rect
+                    cam.Extents = padded;
+
+                    // Fit scale based on this rect size
+                    cam.InitialViewMatrix = GetExtentsFittingMatrix(Viewport, padded);
+
+                    // Neutralize any model-space zoom/pan so it cannot clip
+                    cam.CurrentZoomStep = 0;
+                    cam.Translate = SharpDX.Vector2.Zero;
+
+                    cam.UpdateViewportSize(Viewport);
+                    cam.UpdateProjection();
+                    cam.UpdateView();
+                }
+
+                cam.UpdateViewProjection();
+                UpdateConstantBuffers();
+
+                scene.TestMatrix = cam.D2dMatrix;
 
                 _dxfDirty = true;
                 _combinedDirty = true;
@@ -3505,16 +3540,25 @@ namespace Cad_Point_Manager.Controls.D3DControl
             }
             finally
             {
-                // Restore
+                // Restore render targets
                 ResCache.DxfTexture = oldDxfTex;
                 ResCache.DxfRenderTargetView = oldDxfRTV;
                 ResCache.Texture2D = oldTex;
                 ResCache.RenderTargetView = oldRTV;
 
+                // Restore viewport
                 Viewport = oldViewport;
-                CadManager3D.Camera.InitialViewMatrix = oldInitialViewMatrix;
-                CadManager3D.Camera.UpdateViewportSize(oldViewport);
-                CadManager3D.Camera.SetPanAndZoom(pan, zoom);
+
+                // Restore camera state (including Extents!)
+                cam.Extents = oldExtents;
+                cam.InitialViewMatrix = oldInitialViewMatrix;
+                cam.UpdateViewportSize(oldViewport);
+                cam.CurrentZoomStep = oldZoom;
+                cam.Translate = oldPan;
+                cam.UpdateProjection();
+                cam.UpdateView();
+                cam.UpdateViewProjection();
+
                 UpdateConstantBuffers();
                 ResCache.DeviceContext.Rasterizer.SetViewport(oldViewport);
 

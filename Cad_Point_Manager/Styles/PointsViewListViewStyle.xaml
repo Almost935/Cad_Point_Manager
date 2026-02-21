@@ -1,0 +1,18 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:helpers="clr-namespace:Cad_Point_Manager.Helpers">
+    <Style x:Key="PointsViewListViewStyle"
+           TargetType="ListView">
+        <Setter Property="helpers:GridViewSort.AutoSort"
+                Value="True" />
+        <Setter Property="helpers:GridViewSort.ShowSortGlyph"
+                Value="True" />
+    </Style>
+
+    <!-- Header style with glyph -->
+    <Style x:Key="SortableGridViewColumnHeader"
+           TargetType="GridViewColumnHeader">
+        <Setter Property="HorizontalContentAlignment"
+                Value="Stretch" />
+    </Style>
+</ResourceDictionary>

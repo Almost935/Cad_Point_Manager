@@ -500,7 +500,7 @@
                                    PointGroups="{Binding PointGroups, Mode=TwoWay}"
                                    CogoPoints="{Binding CogoPoints, Mode=TwoWay}"
                                    SelectedCogoPoints="{Binding SelectedCogoPoints, Mode=TwoWay}"
-                                   SelectedGeometries="{Binding SelectedGeometries, Mode=TwoWay}" 
+                                   SelectedGeometries="{Binding SelectedGeometries, Mode=TwoWay}"
                                    SnappedHitTestablePoint="{Binding SnappedHitTestablePoint, Mode=TwoWay}"
                                    SelectedHitTestablePoints="{Binding SelectedHitTestablePoints, Mode=TwoWay}"
                                    SceneIdMap="{Binding SceneIdMap, Mode=TwoWay}"
@@ -543,6 +543,13 @@
             </Grid>
         </Grid>
 
+        <Grid x:Name="pointsGrid"
+              Grid.Row="1"
+              Visibility="{Binding PointsVisible, Converter={StaticResource BoolToVisibilityConverter}}">
+            <uc:PointsViewControl x:Name="PointsViewControl"
+                                  CadManager="{Binding DataContext.JobFileManager.CadManager3D, RelativeSource={RelativeSource AncestorType=Page}}"/>
+        </Grid>
+
         <Grid x:Name="LowerRibbonGrid"
               Grid.Row="3"
               Margin="40,0,40,0">
@@ -558,34 +565,43 @@
                        Margin="0 5 0 5"
                        Text="{Binding ElementName=d3dDxfControl, Path=DxfCoordsString}"
                        Visibility="{Binding ModelsVisible, Converter={StaticResource BoolToVisibilityConverter}}" />
-
-            <RadioButton x:Name="modelModeRadioButton"
-                         GroupName="ModeRadioButtons"
-                         Grid.Column="2"
-                         Margin="0 5 0 5"
-                         Style="{StaticResource BorderWidgetsToggleButton}"
-                         IsChecked="{Binding ModelsVisible, Mode=TwoWay}"
-                         Visibility="{Binding ModelsVisible, Converter={StaticResource ReverseBoolToVisibilityConverter}}">
-                <RadioButton.Content>
-                    <TextBlock Text="Model Mode"
-                               VerticalAlignment="Center"
-                               Margin="10 2 10 2" />
-                </RadioButton.Content>
-            </RadioButton>
-            <RadioButton x:Name="layoutsModeRadioButton"
-                         GroupName="ModeRadioButtons"
-                         Grid.Column="2"
-                         Margin="0 5 0 5"
-                         Style="{StaticResource BorderWidgetsToggleButton}"
-                         IsChecked="{Binding LayoutsVisible, Mode=TwoWay}"
-                         Visibility="{Binding LayoutsVisible, Converter={StaticResource ReverseBoolToVisibilityConverter}}"
-                         Click="LayoutsModeRadioButton_Click">
-                <RadioButton.Content>
-                    <TextBlock Text="Layouts Mode"
-                               VerticalAlignment="Center"
-                               Margin="10 2 10 2" />
-                </RadioButton.Content>
-            </RadioButton>
+            <WrapPanel Grid.Column="2"
+                  Margin="0 5 0 5">
+                <RadioButton x:Name="modelModeRadioButton"
+                             GroupName="ModeRadioButtons"
+                             Style="{StaticResource BorderWidgetsToggleButton}"
+                             IsChecked="{Binding ModelsVisible, Mode=TwoWay}"
+                             Margin="1 0 1 0">
+                    <RadioButton.Content>
+                        <TextBlock Text="Model Mode"
+                                   VerticalAlignment="Center"
+                                   Margin="10 2 10 2" />
+                    </RadioButton.Content>
+                </RadioButton>
+                <RadioButton x:Name="layoutsModeRadioButton"
+                             GroupName="ModeRadioButtons"
+                             Style="{StaticResource BorderWidgetsToggleButton}"
+                             IsChecked="{Binding LayoutsVisible, Mode=TwoWay}"
+                             Click="LayoutsModeRadioButton_Click"
+                             Margin="1 0 1 0">
+                    <RadioButton.Content>
+                        <TextBlock Text="Layouts Mode"
+                                   VerticalAlignment="Center"
+                                   Margin="10 2 10 2" />
+                    </RadioButton.Content>
+                </RadioButton>
+                <RadioButton x:Name="pointsModeRadioButton"
+                             GroupName="ModeRadioButtons"
+                             Style="{StaticResource BorderWidgetsToggleButton}"
+                             IsChecked="{Binding PointsVisible, Mode=TwoWay}"
+                             Margin="1 0 1 0">
+                    <RadioButton.Content>
+                        <TextBlock Text="Points Mode"
+                                   VerticalAlignment="Center"
+                                   Margin="10 2 10 2" />
+                    </RadioButton.Content>
+                </RadioButton>
+            </WrapPanel>
         </Grid>
     </Grid>
 </Page>

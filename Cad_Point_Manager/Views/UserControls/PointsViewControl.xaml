@@ -1,0 +1,269 @@
+﻿<UserControl x:Class="Cad_Point_Manager.Views.UserControls.PointsViewControl"
+             x:Name="root"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="clr-namespace:Cad_Point_Manager.Views.UserControls"
+             xmlns:system="clr-namespace:System;assembly=mscorlib"
+             xmlns:fa="clr-namespace:FontAwesome.WPF;assembly=FontAwesome.WPF"
+             xmlns:viewsAssorted="clr-namespace:Cad_Point_Manager.Views.Assorted"
+             xmlns:converters="clr-namespace:Cad_Point_Manager.Converters"
+             xmlns:helpers="clr-namespace:Cad_Point_Manager.Helpers"
+             mc:Ignorable="d"
+             d:DesignHeight="600"
+             d:DesignWidth="1200"
+             DataContext="{Binding Mode=OneWay, RelativeSource={RelativeSource Self}}">
+    <UserControl.Resources>
+        <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"
+                                              CollapseWhenFalse="True" />
+    </UserControl.Resources>
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="3*" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+        <ListView x:Name="pointsListView"
+                  Grid.Row="0"
+                  Margin="20"
+                  Background="{StaticResource PopoutMenuBackgroundBrush}"
+                  ItemsSource="{Binding ElementName=root, Path=CadManager.PointsView}"
+                  Style="{StaticResource PointsViewListViewStyle}"
+                  SelectionMode="Extended"
+                  Loaded="PointsListView_Loaded"
+                  VirtualizingPanel.IsVirtualizingWhenGrouping="True"
+                  VirtualizingPanel.ScrollUnit="Pixel"
+                  ScrollViewer.CanContentScroll="True"
+                  VirtualizingStackPanel.IsVirtualizing="True"
+                  VirtualizingStackPanel.VirtualizationMode="Recycling"
+                  VirtualizingStackPanel.IsContainerVirtualizable="True"
+                  VirtualizingPanel.CacheLength="0,0">
+            <ListView.Resources>
+                <system:Double x:Key="ContentFontSize">14</system:Double>
+                <system:Double x:Key="HeaderFontSize">14</system:Double>
+                <Thickness x:Key="TextboxPadding">0 1 0 1</Thickness>
+                <Thickness x:Key="TextblockPadding">3 1 3 2</Thickness>
+                <Thickness x:Key="TextblockHeaderPadding">3 1 3 2</Thickness>
+                <SolidColorBrush x:Key="HeaderForeground"
+                                 Color="White" />
+                <SolidColorBrush x:Key="BodyForeground"
+                                 Color="Black" />
+                <SolidColorBrush x:Key="ReadOnlyBodyForeground"
+                                 Color="#FF545454" />
+                <Style TargetType="{x:Type TextBlock}">
+                    <Setter Property="VerticalAlignment"
+                            Value="Center" />
+                </Style>
+                <Style x:Key="InlineEditBoxStyle"
+                       TargetType="TextBox"
+                       BasedOn="{StaticResource EditableTextBox}">
+                    <Setter Property="VerticalAlignment"
+                            Value="Center" />
+                    <Setter Property="Padding"
+                            Value="{StaticResource TextboxPadding}" />
+                    <Setter Property="FontSize"
+                            Value="{StaticResource ContentFontSize}" />
+                    <Setter Property="Foreground"
+                            Value="{StaticResource BodyForeground}" />
+                    <Setter Property="Visibility"
+                            Value="Collapsed" />
+                    <EventSetter Event="PreviewKeyDown"
+                                 Handler="PointsListInlineEditBox_PreviewKeyDown" />
+                    <EventSetter Event="LostFocus"
+                                 Handler="InlineEditBox_LostFocus" />
+                </Style>
+                <Style x:Key="InlineTextBlockStyle"
+                       TargetType="TextBlock">
+                    <Setter Property="VerticalAlignment"
+                            Value="Center" />
+                    <Setter Property="Margin"
+                            Value="{StaticResource TextblockPadding}" />
+                    <Setter Property="FontSize"
+                            Value="{StaticResource ContentFontSize}" />
+                    <Setter Property="Foreground"
+                            Value="{StaticResource BodyForeground}" />
+                    <EventSetter Event="MouseDown"
+                                 Handler="PointsCellDisplay_MouseDown" />
+                </Style>
+                <Style x:Key="HeaderTextBlockStyle"
+                       TargetType="TextBlock">
+                    <Setter Property="VerticalAlignment"
+                            Value="Center" />
+                    <Setter Property="Margin"
+                            Value="{StaticResource TextblockHeaderPadding}" />
+                    <Setter Property="FontSize"
+                            Value="{StaticResource HeaderFontSize}" />
+                    <Setter Property="Foreground"
+                            Value="{StaticResource BodyForeground}" />
+                </Style>
+            </ListView.Resources>
+            <ListView.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <VirtualizingStackPanel VirtualizingPanel.IsVirtualizing="True"
+                                            VirtualizingPanel.VirtualizationMode="Recycling"
+                                            VirtualizingPanel.IsVirtualizingWhenGrouping="True"
+                                            VirtualizingPanel.ScrollUnit="Pixel"
+                                            VirtualizingPanel.CacheLength="0 0" />
+                </ItemsPanelTemplate>
+            </ListView.ItemsPanel>
+            <ListView.ItemContainerStyle>
+                <Style TargetType="ListViewItem"
+                       BasedOn="{StaticResource UpdatedListViewItemStyle}">
+                    <Setter Property="Height"
+                            Value="22" />
+                    <Setter Property="VerticalContentAlignment"
+                            Value="Stretch" />
+                </Style>
+            </ListView.ItemContainerStyle>
+            <ListView.View>
+                <GridView>
+                    <GridViewColumn helpers:GridViewSort.PropertyName="PointNumber">
+                        <GridViewColumn.Header>
+                            <TextBlock Text="Point Number"
+                                       Style="{StaticResource HeaderTextBlockStyle}" />
+                        </GridViewColumn.Header>
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <Grid x:Name="pointNumber">
+                                    <TextBlock x:Name="tbDisplay"
+                                               Text="{Binding PointNumber}"
+                                               Style="{StaticResource InlineTextBlockStyle}" />
+                                    <TextBox x:Name="pointNumberEdit"
+                                             Text="{Binding PointNumber, UpdateSourceTrigger=Explicit}"
+                                             Style="{StaticResource InlineEditBoxStyle}" />
+                                </Grid>
+                                <DataTemplate.Triggers>
+                                    <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ListViewItem}, Path=(viewsAssorted:InlineEdit.EditingField)}"
+                                                 Value="PointNumber">
+                                        <Setter TargetName="tbDisplay"
+                                                Property="Visibility"
+                                                Value="Collapsed" />
+                                        <Setter TargetName="pointNumberEdit"
+                                                Property="Visibility"
+                                                Value="Visible" />
+                                    </DataTrigger>
+                                </DataTemplate.Triggers>
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                    <GridViewColumn helpers:GridViewSort.PropertyName="Northing">
+                        <GridViewColumn.Header>
+                            <TextBlock Text="Northing"
+                                       Style="{StaticResource HeaderTextBlockStyle}" />
+                        </GridViewColumn.Header>
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <Grid x:Name="northing">
+                                    <TextBlock x:Name="tbDisplay"
+                                               Text="{Binding Northing,StringFormat=N3}"
+                                               Style="{StaticResource InlineTextBlockStyle}" />
+                                    <TextBox x:Name="pointNorthingEdit"
+                                             Text="{Binding Northing, UpdateSourceTrigger=Explicit, StringFormat=N3}"
+                                             Style="{StaticResource InlineEditBoxStyle}" />
+                                </Grid>
+                                <DataTemplate.Triggers>
+                                    <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ListViewItem}, Path=(viewsAssorted:InlineEdit.EditingField)}"
+                                                 Value="Northing">
+                                        <Setter TargetName="tbDisplay"
+                                                Property="Visibility"
+                                                Value="Collapsed" />
+                                        <Setter TargetName="pointNorthingEdit"
+                                                Property="Visibility"
+                                                Value="Visible" />
+                                    </DataTrigger>
+                                </DataTemplate.Triggers>
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                    <GridViewColumn helpers:GridViewSort.PropertyName="Easting">
+                        <GridViewColumn.Header>
+                            <TextBlock Text="Easting"
+                                       Style="{StaticResource HeaderTextBlockStyle}" />
+                        </GridViewColumn.Header>
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <Grid x:Name="easting">
+                                    <TextBlock x:Name="tbDisplay"
+                                               Text="{Binding Easting, StringFormat=N3}"
+                                               Style="{StaticResource InlineTextBlockStyle}" />
+                                    <TextBox x:Name="pointEastingEdit"
+                                             Text="{Binding Easting, UpdateSourceTrigger=Explicit, StringFormat=N3}"
+                                             Style="{StaticResource InlineEditBoxStyle}" />
+                                </Grid>
+                                <DataTemplate.Triggers>
+                                    <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ListViewItem}, Path=(viewsAssorted:InlineEdit.EditingField)}"
+                                                 Value="Easting">
+                                        <Setter TargetName="tbDisplay"
+                                                Property="Visibility"
+                                                Value="Collapsed" />
+                                        <Setter TargetName="pointEastingEdit"
+                                                Property="Visibility"
+                                                Value="Visible" />
+                                    </DataTrigger>
+                                </DataTemplate.Triggers>
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                    <GridViewColumn helpers:GridViewSort.PropertyName="Elevation">
+                        <GridViewColumn.Header>
+                            <TextBlock Text="Elevation"
+                                       Style="{StaticResource HeaderTextBlockStyle}" />
+                        </GridViewColumn.Header>
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <Grid x:Name="elevation">
+                                    <TextBlock x:Name="tbDisplay"
+                                               Text="{Binding Elevation, StringFormat=N3}"
+                                               Style="{StaticResource InlineTextBlockStyle}" />
+                                    <TextBox x:Name="pointElevationEdit"
+                                             Text="{Binding Elevation, UpdateSourceTrigger=Explicit, StringFormat=N3}"
+                                             Style="{StaticResource InlineEditBoxStyle}" />
+                                </Grid>
+                                <DataTemplate.Triggers>
+                                    <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ListViewItem}, Path=(viewsAssorted:InlineEdit.EditingField)}"
+                                                 Value="Elevation">
+                                        <Setter TargetName="tbDisplay"
+                                                Property="Visibility"
+                                                Value="Collapsed" />
+                                        <Setter TargetName="pointElevationEdit"
+                                                Property="Visibility"
+                                                Value="Visible" />
+                                    </DataTrigger>
+                                </DataTemplate.Triggers>
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                    <GridViewColumn helpers:GridViewSort.PropertyName="Description">
+                        <GridViewColumn.Header>
+                            <TextBlock Text="Description"
+                                       Style="{StaticResource HeaderTextBlockStyle}" />
+                        </GridViewColumn.Header>
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <Grid x:Name="description">
+                                    <TextBlock x:Name="tbDisplay"
+                                               Text="{Binding Description}"
+                                               Style="{StaticResource InlineTextBlockStyle}" />
+                                    <TextBox x:Name="pointDescriptionEdit"
+                                             Text="{Binding Description, UpdateSourceTrigger=Explicit}"
+                                             Style="{StaticResource InlineEditBoxStyle}" />
+                                </Grid>
+                                <DataTemplate.Triggers>
+                                    <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ListViewItem}, Path=(viewsAssorted:InlineEdit.EditingField)}"
+                                                 Value="Description">
+                                        <Setter TargetName="tbDisplay"
+                                                Property="Visibility"
+                                                Value="Collapsed" />
+                                        <Setter TargetName="pointDescriptionEdit"
+                                                Property="Visibility"
+                                                Value="Visible" />
+                                    </DataTrigger>
+                                </DataTemplate.Triggers>
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                </GridView>
+            </ListView.View>
+        </ListView>
+    </Grid>
+</UserControl>

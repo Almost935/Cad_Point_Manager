@@ -102,7 +102,7 @@
                     </Style>
                 </ListView.Resources>
                 <ListView.View>
-                    <GridView>
+                    <GridView ColumnHeaderContainerStyle="{StaticResource UpdatedGridViewColumnHeaderStyle}">
                         <GridViewColumn>
                             <GridViewColumn.Header>
                                 <TextBlock Text="Name"
@@ -288,7 +288,7 @@
                             </ContextMenu>
                         </ListView.ContextMenu>
                         <ListView.View>
-                            <GridView>
+                            <GridView ColumnHeaderContainerStyle="{StaticResource UpdatedGridViewColumnHeaderStyle}">
                                 <GridViewColumn>
                                     <GridViewColumn.Header>
                                         <TextBlock Text="Name"
