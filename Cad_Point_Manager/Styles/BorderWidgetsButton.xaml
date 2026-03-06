@@ -18,12 +18,6 @@
                              Color="Gray" />
             <SolidColorBrush x:Key="Button.Pressed.MouseOver.Border"
                              Color="#FF888888" />
-            <SolidColorBrush x:Key="Button.Disabled.Foreground"
-                             Color="#FFC7C7C7" />
-            <SolidColorBrush x:Key="Button.Disabled.Background"
-                             Color="#333" />
-            <SolidColorBrush x:Key="Button.Disabled.Border"
-                             Color="#777" />
         </Style.Resources>
         <Setter Property="Foreground"
                 Value="{DynamicResource Button.Static.Foreground}" />
@@ -79,25 +73,10 @@
                                     Property="BorderBrush"
                                     Value="{DynamicResource Button.Pressed.MouseOver.Border}" />
                         </MultiTrigger>
-                        <!--<Trigger Property="IsMouseOver"
-                                 Value="True">
-                            <Setter TargetName="border"
-                                    Property="Background"
-                                    Value="{DynamicResource Button.MouseOver.Background}" />
-                            <Setter TargetName="border"
-                                    Property="BorderBrush"
-                                    Value="{DynamicResource Button.MouseOver.Border}" />
-                        </Trigger>-->
-                        
                         <Trigger Property="IsEnabled"
                                  Value="False">
-                            <Setter Property="Foreground"
-                                    Value="{DynamicResource Button.Disabled.Foreground}" />
-                            <Setter TargetName="border"
-                                    Property="Background"
-                                    Value="{DynamicResource Button.Disabled.Background}" />
-                            <Setter Property="Foreground"
-                                    Value="{DynamicResource Button.Disabled.Foreground}" />
+                            <Setter Property="Opacity"
+                                    Value="0.3" /> 
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>

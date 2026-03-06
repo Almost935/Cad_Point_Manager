@@ -77,16 +77,17 @@
                                  Handler="CellDisplay_MouseDown" />
                 </Style>
             </Grid.Resources>
-            <ListView x:Name="layersListView"
-                      ItemsSource="{Binding ElementName=root, Path=CadManager.LayersView}"
-                      Style="{StaticResource UpdatedListViewStyle}"
-                      Opacity="{Binding ElementName=root, Path=LayerListOpacity}"
-                      IsHitTestVisible="{Binding ElementName=root, Path=LayerListVisible}"
-                      SelectionMode="Extended"
-                      Loaded="LayersListView_Loaded"
-                      SelectionChanged="LayersListView_SelectionChanged"
-                      Background="{StaticResource PopoutMenuBackgroundBrush}">
-                <ListView.Resources>
+            <controls:SortableListView x:Name="layersListView"
+                                       ItemsSource="{Binding ElementName=root, Path=CadManager.LayersView}"
+                                       Style="{StaticResource UpdatedListViewStyle}"
+                                       Opacity="{Binding ElementName=root, Path=LayerListOpacity}"
+                                       IsHitTestVisible="{Binding ElementName=root, Path=LayerListVisible}"
+                                       IsColumnHeaderHitTestVisible="False"
+                                       SelectionMode="Extended"
+                                       Loaded="LayersListView_Loaded"
+                                       SelectionChanged="LayersListView_SelectionChanged"
+                                       Background="{StaticResource PopoutMenuBackgroundBrush}">
+                <controls:SortableListView.Resources>
                     <Style x:Key="TextBlockStyle"
                            TargetType="TextBlock">
                         <Setter Property="VerticalAlignment"
@@ -100,8 +101,8 @@
                         <Setter Property="VerticalAlignment"
                                 Value="Center" />
                     </Style>
-                </ListView.Resources>
-                <ListView.View>
+                </controls:SortableListView.Resources>
+                <controls:SortableListView.View>
                     <GridView ColumnHeaderContainerStyle="{StaticResource UpdatedGridViewColumnHeaderStyle}">
                         <GridViewColumn>
                             <GridViewColumn.Header>
@@ -156,8 +157,8 @@
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
                     </GridView>
-                </ListView.View>
-            </ListView>
+                </controls:SortableListView.View>
+            </controls:SortableListView>
             <Grid x:Name="pointGroupListViewGrid"
                   Opacity="{Binding ElementName=root, Path=PointGroupListOpacity}"
                   HorizontalAlignment="Stretch"
@@ -173,21 +174,22 @@
                         <RowDefinition Height="*" />
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
-                    <ListView x:Name="pointGroupsListView"
-                              Grid.Row="0"
-                              ItemsSource="{Binding ElementName=root, Path=CadManager.PointGroupsView}"
-                              Style="{StaticResource UpdatedListViewStyle}"
-                              IsHitTestVisible="{Binding ElementName=root, Path=PointGroupListVisible}"
-                              SelectionMode="Extended"
-                              IsSynchronizedWithCurrentItem="False"
-                              Focusable="True"
-                              SelectionChanged="PointGroupsListView_SelectionChanged"
-                              Background="Transparent"
-                              BorderThickness="0"
-                              Loaded="PointGroupsListView_Loaded"
-                              ContextMenuClosing="PointGroupsListView_ContextMenuClosing"
-                              ContextMenuOpening="PointGroupsListView_ContextMenuOpening">
-                        <ListView.Resources>
+                    <controls:SortableListView x:Name="pointGroupsListView"
+                                               Grid.Row="0"
+                                               ItemsSource="{Binding ElementName=root, Path=CadManager.PointGroupsView}"
+                                               Style="{StaticResource UpdatedListViewStyle}"
+                                               IsHitTestVisible="{Binding ElementName=root, Path=PointGroupListVisible}"
+                                               IsColumnHeaderHitTestVisible="False"
+                                               SelectionMode="Extended"
+                                               IsSynchronizedWithCurrentItem="False"
+                                               Focusable="True"
+                                               SelectionChanged="PointGroupsListView_SelectionChanged"
+                                               Background="Transparent"
+                                               BorderThickness="0"
+                                               Loaded="PointGroupsListView_Loaded"
+                                               ContextMenuClosing="PointGroupsListView_ContextMenuClosing"
+                                               ContextMenuOpening="PointGroupsListView_ContextMenuOpening">
+                        <controls:SortableListView.Resources>
                             <Style x:Key="InlineEditBoxStyle"
                                    TargetType="TextBox"
                                    BasedOn="{StaticResource EditableTextBox}">
@@ -221,8 +223,8 @@
                                 <EventSetter Event="MouseDown"
                                              Handler="CellDisplay_MouseDown" />
                             </Style>
-                        </ListView.Resources>
-                        <ListView.ContextMenu>
+                        </controls:SortableListView.Resources>
+                        <controls:SortableListView.ContextMenu>
                             <ContextMenu x:Name="pgListViewContextMenu"
                                          Style="{StaticResource Win11ContextMenuStyle}"
                                          HasDropShadow="True">
@@ -286,8 +288,8 @@
                                     </MenuItem.Icon>
                                 </MenuItem>
                             </ContextMenu>
-                        </ListView.ContextMenu>
-                        <ListView.View>
+                        </controls:SortableListView.ContextMenu>
+                        <controls:SortableListView.View>
                             <GridView ColumnHeaderContainerStyle="{StaticResource UpdatedGridViewColumnHeaderStyle}">
                                 <GridViewColumn>
                                     <GridViewColumn.Header>
@@ -408,8 +410,8 @@
                                     </GridViewColumn.CellTemplate>
                                 </GridViewColumn>
                             </GridView>
-                        </ListView.View>
-                        <ListView.ItemContainerStyle>
+                        </controls:SortableListView.View>
+                        <controls:SortableListView.ItemContainerStyle>
                             <Style TargetType="ListViewItem"
                                    BasedOn="{StaticResource UpdatedListViewItemStyle}">
                                 <Setter Property="Height"
@@ -417,8 +419,8 @@
                                 <Setter Property="VerticalContentAlignment"
                                         Value="Stretch" />
                             </Style>
-                        </ListView.ItemContainerStyle>
-                    </ListView>
+                        </controls:SortableListView.ItemContainerStyle>
+                    </controls:SortableListView>
                     <WrapPanel HorizontalAlignment="Center"
                                Grid.Row="1">
                         <Button x:Name="NewPointGroupButton"

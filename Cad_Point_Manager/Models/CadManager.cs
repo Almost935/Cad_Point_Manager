@@ -12,6 +12,7 @@ using netDxf;
 using netDxf.Entities;
 using netDxf.Tables;
 using SharpDX;
+using SharpDX.Direct3D9;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -42,6 +43,7 @@ namespace Cad_Point_Manager.Models
         private ICollectionView _layersView;
         private ICollectionView _pointGroupsView;
         private ICollectionView _pointsView;
+        private ICollectionView _groupedPointsView;
         private CogoPointManager _cogoPointManager;
         private Size2F _viewportSize = Size2F.Empty;
         private Enums.SelectionMode _snapSelectionMode = Enums.SelectionMode.CogoPoints;
@@ -164,6 +166,15 @@ namespace Cad_Point_Manager.Models
             {
                 _pointsView = value;
                 OnPropertyChanged(nameof(PointsView));
+            }
+        }
+        public ICollectionView GroupedPointsView
+        {
+            get => _groupedPointsView;
+            set
+            {
+                _groupedPointsView = value;
+                OnPropertyChanged(nameof(GroupedPointsView));
             }
         }
         public CogoPointManager CogoPointManager
@@ -365,9 +376,13 @@ namespace Cad_Point_Manager.Models
             PointGroupsView.SortDescriptions.Clear();
             PointGroupsView.SortDescriptions.Add(new SortDescription("Name", ListSortDirection.Ascending));
 
-            PointsView = new ListCollectionView(CogoPointManager.CogoPoints);
-            PointsView.GroupDescriptions.Clear();
-            PointsView.GroupDescriptions.Add(new PropertyGroupDescription("PointGroup"));
+            PointsView = CollectionViewSource.GetDefaultView(CogoPointManager.CogoPoints);
+            PointsView.SortDescriptions.Clear();
+            PointsView.SortDescriptions.Add(new SortDescription("PointNumber", ListSortDirection.Ascending));
+
+            GroupedPointsView = new ListCollectionView(CogoPointManager.CogoPoints);
+            GroupedPointsView.GroupDescriptions.Clear();
+            GroupedPointsView.GroupDescriptions.Add(new PropertyGroupDescription("PointGroup"));
 
             LayoutsView = new ListCollectionView(Layouts);
             LayoutsView.SortDescriptions.Clear();
@@ -644,7 +659,7 @@ namespace Cad_Point_Manager.Models
 
         public void GetTestDxfPoints()
         {
-            CogoPointManager.PointGroups.Clear();
+            CogoPointManager.Reset();
 
             var inflatedExtents = Rect.Inflate(Extents, Extents.Width * 0.1, Extents.Height * 0.1);
             float rows = 15;
@@ -652,8 +667,8 @@ namespace Cad_Point_Manager.Models
             float yIncrement = (inflatedExtents.Height / (rows - 1)).ToFloat();
             float xIncrement = (inflatedExtents.Width / (cols - 1)).ToFloat();
             int pointNum = 1;
-            float elevation = 0;
             string description = "Test Point";
+            Random random = new();
 
             for (int i = 0; i < rows; i++)
             {
@@ -669,7 +684,8 @@ namespace Cad_Point_Manager.Models
                     for (int j = 0; j < cols; j++)
                     {
                         float x = inflatedExtents.Left.ToFloat() + (xIncrement * j);
-                        var pointCreated = CogoPointManager.TryAddPointToActiveGroup(pointNum, new Vector3(x, y, 0), out _, elevation, description);
+                        var pointCreated = CogoPointManager.TryAddPointToActiveGroup(pointNum, new Vector3(x, y, 0), out _, 
+                            (Math.Round(300 + random.NextDouble() * 100, 3)).ToFloat(), description);
                         if (pointCreated) { pointNum++; continue; }
                     }
                 }

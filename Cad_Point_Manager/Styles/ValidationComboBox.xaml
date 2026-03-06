@@ -287,6 +287,10 @@
                 <ColumnDefinition MinWidth="{DynamicResource {x:Static SystemParameters.VerticalScrollBarWidthKey}}"
                                   Width="0" />
             </Grid.ColumnDefinitions>
+            <!--<Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>-->
             <Popup x:Name="PART_Popup"
                    AllowsTransparency="true"
                    Grid.ColumnSpan="2"
@@ -326,7 +330,8 @@
             <ToggleButton x:Name="toggleButton"
                           Grid.ColumnSpan="2"
                           IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource Mode=TemplatedParent}}"
-                          Style="{StaticResource ComboBoxToggleButton}" />
+                          Style="{StaticResource ComboBoxToggleButton}"
+/>
             <ContentPresenter x:Name="contentPresenter"
                               ContentStringFormat="{TemplateBinding SelectionBoxItemStringFormat}"
                               ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
@@ -334,7 +339,7 @@
                               ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}"
                               HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                               IsHitTestVisible="false"
-                              Margin="2 0 2 0"
+                              Margin="5 0 5 0"
                               SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"
                               VerticalAlignment="Center" />
         </Grid>

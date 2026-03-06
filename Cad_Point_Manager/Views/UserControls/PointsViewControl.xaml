@@ -10,37 +10,49 @@
              xmlns:viewsAssorted="clr-namespace:Cad_Point_Manager.Views.Assorted"
              xmlns:converters="clr-namespace:Cad_Point_Manager.Converters"
              xmlns:helpers="clr-namespace:Cad_Point_Manager.Helpers"
+             xmlns:controls="clr-namespace:Cad_Point_Manager.Controls"
+             xmlns:viewmodels="clr-namespace:Cad_Point_Manager.ViewModels"
+             xmlns:common="clr-namespace:Cad_Point_Manager.Common"
+             d:DataContext="{d:DesignInstance Type=viewmodels:PointsViewModel}"
              mc:Ignorable="d"
              d:DesignHeight="600"
-             d:DesignWidth="1200"
-             DataContext="{Binding Mode=OneWay, RelativeSource={RelativeSource Self}}">
+             d:DesignWidth="1200">
     <UserControl.Resources>
         <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"
                                               CollapseWhenFalse="True" />
+        <converters:EnumDescriptionConverter x:Key="EnumDescriptionConverter" />
+
+        <ObjectDataProvider x:Key="FilterTypeValues"
+                            MethodName="GetValues"
+                            ObjectType="{x:Type system:Enum}">
+            <ObjectDataProvider.MethodParameters>
+                <x:Type TypeName="common:FilterType" />
+            </ObjectDataProvider.MethodParameters>
+        </ObjectDataProvider>
     </UserControl.Resources>
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="3*" />
+            <ColumnDefinition Width="4*" />
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
-        <ListView x:Name="pointsListView"
-                  Grid.Row="0"
-                  Margin="20"
-                  Background="{StaticResource PopoutMenuBackgroundBrush}"
-                  ItemsSource="{Binding ElementName=root, Path=CadManager.PointsView}"
-                  Style="{StaticResource PointsViewListViewStyle}"
-                  SelectionMode="Extended"
-                  Loaded="PointsListView_Loaded"
-                  VirtualizingPanel.IsVirtualizingWhenGrouping="True"
-                  VirtualizingPanel.ScrollUnit="Pixel"
-                  ScrollViewer.CanContentScroll="True"
-                  VirtualizingStackPanel.IsVirtualizing="True"
-                  VirtualizingStackPanel.VirtualizationMode="Recycling"
-                  VirtualizingStackPanel.IsContainerVirtualizable="True"
-                  VirtualizingPanel.CacheLength="0,0">
-            <ListView.Resources>
-                <system:Double x:Key="ContentFontSize">14</system:Double>
-                <system:Double x:Key="HeaderFontSize">14</system:Double>
+        <controls:SortableListView x:Name="pointsListView"
+                                   Grid.Row="0"
+                                   Margin="10"
+                                   ItemsSource="{Binding ElementName=root, Path=ViewModel.PointsView}"
+                                   Style="{StaticResource UpdatedListViewStyle}"
+                                   Background="White"
+                                   IsColumnHeaderHitTestVisible="True"
+                                   SelectionMode="Extended"
+                                   Loaded="PointsListView_Loaded"
+                                   VirtualizingPanel.IsVirtualizingWhenGrouping="True"
+                                   VirtualizingPanel.ScrollUnit="Item"
+                                   ScrollViewer.CanContentScroll="True"
+                                   VirtualizingStackPanel.IsVirtualizing="True"
+                                   VirtualizingStackPanel.VirtualizationMode="Recycling"
+                                   VirtualizingStackPanel.IsContainerVirtualizable="True">
+            <controls:SortableListView.Resources>
+                <system:Double x:Key="ContentFontSize">11</system:Double>
+                <system:Double x:Key="HeaderFontSize">11</system:Double>
                 <Thickness x:Key="TextboxPadding">0 1 0 1</Thickness>
                 <Thickness x:Key="TextblockPadding">3 1 3 2</Thickness>
                 <Thickness x:Key="TextblockHeaderPadding">3 1 3 2</Thickness>
@@ -94,10 +106,10 @@
                     <Setter Property="FontSize"
                             Value="{StaticResource HeaderFontSize}" />
                     <Setter Property="Foreground"
-                            Value="{StaticResource BodyForeground}" />
+                            Value="{StaticResource HeaderForeground }" />
                 </Style>
-            </ListView.Resources>
-            <ListView.ItemsPanel>
+            </controls:SortableListView.Resources>
+            <controls:SortableListView.ItemsPanel>
                 <ItemsPanelTemplate>
                     <VirtualizingStackPanel VirtualizingPanel.IsVirtualizing="True"
                                             VirtualizingPanel.VirtualizationMode="Recycling"
@@ -105,8 +117,8 @@
                                             VirtualizingPanel.ScrollUnit="Pixel"
                                             VirtualizingPanel.CacheLength="0 0" />
                 </ItemsPanelTemplate>
-            </ListView.ItemsPanel>
-            <ListView.ItemContainerStyle>
+            </controls:SortableListView.ItemsPanel>
+            <controls:SortableListView.ItemContainerStyle>
                 <Style TargetType="ListViewItem"
                        BasedOn="{StaticResource UpdatedListViewItemStyle}">
                     <Setter Property="Height"
@@ -114,9 +126,9 @@
                     <Setter Property="VerticalContentAlignment"
                             Value="Stretch" />
                 </Style>
-            </ListView.ItemContainerStyle>
-            <ListView.View>
-                <GridView>
+            </controls:SortableListView.ItemContainerStyle>
+            <controls:SortableListView.View>
+                <GridView ColumnHeaderContainerStyle="{StaticResource UpdatedGridViewColumnHeaderStyle}">
                     <GridViewColumn helpers:GridViewSort.PropertyName="PointNumber">
                         <GridViewColumn.Header>
                             <TextBlock Text="Point Number"
@@ -262,8 +274,366 @@
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
+                    <GridViewColumn helpers:GridViewSort.PropertyName="PointGroup.Name">
+                        <GridViewColumn.Header>
+                            <TextBlock Text="Point Group"
+                                       Style="{StaticResource HeaderTextBlockStyle}" />
+                        </GridViewColumn.Header>
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <ComboBox Background="White"
+                                          Style="{StaticResource ValidationComboBox}"
+                                          FontSize="{StaticResource ContentFontSize}"
+                                          ItemsSource="{Binding ElementName=root, Path=ViewModel.PointGroupsView}"
+                                          DisplayMemberPath="Name"
+                                          Margin="5 2 20 2"
+                                          SelectedItem="{Binding PointGroup, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                          IsSynchronizedWithCurrentItem="False" />
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
                 </GridView>
-            </ListView.View>
-        </ListView>
+            </controls:SortableListView.View>
+        </controls:SortableListView>
+
+        <Grid Grid.Column="1"
+              Margin="10"
+              DataContext="{Binding ElementName=root, Path=ViewModel}">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <ScrollViewer VerticalScrollBarVisibility="Auto"
+                          Grid.Row="0">
+                <ItemsControl ItemsSource="{Binding ActiveFilters}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Margin="10,0,10,6"
+                                    Padding="8,6"
+                                    CornerRadius="12"
+                                    Background="#33FFFFFF">
+                                <DockPanel LastChildFill="True">
+                                    <Button DockPanel.Dock="Right"
+                                            Content="✕"
+                                            Width="22"
+                                            Height="22"
+                                            Margin="8,0,0,0"
+                                            Command="{Binding DataContext.RemoveFilterCommand, 
+                                            RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                            CommandParameter="{Binding}"
+                                            ToolTip="Remove filter" />
+
+                                    <TextBlock Text="{Binding DisplayText}"
+                                               Foreground="White"
+                                               VerticalAlignment="Center"
+                                               TextWrapping="Wrap" />
+                                </DockPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+            <Border Grid.Row="1"
+                    Background="White"
+                    CornerRadius="5"
+                    Height="150">
+                <Grid Margin="10">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="2*" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <Grid Grid.Row="1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <ComboBox Grid.Column="0"
+                                  Height="25"
+                                  ItemsSource="{Binding Source={StaticResource FilterTypeValues}}"
+                                  Style="{StaticResource ValidationComboBox}"
+                                  SelectedItem="{Binding SelectedFilterType}">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Converter={StaticResource EnumDescriptionConverter}}" />
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+                        <Button Grid.Column="1"
+                                Margin="10 0 10 0"
+                                Height="25"
+                                Width="25"
+                                Style="{StaticResource BorderWidgetsButton}"
+                                Command="{Binding AddFilterCommand}"
+                                ToolTip="Add Filter">
+                            <fa:FontAwesome Icon="Check"
+                                            FontSize="18"
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center" />
+                        </Button>
+                    </Grid>
+
+                    <ContentControl Grid.Row="0"
+                                    Margin="2"
+                                    Content="{Binding ElementName=root, Path=ViewModel}">
+                        <ContentControl.Resources>
+                            <GridLength x:Key="TextBlockColumnWidth">*</GridLength>
+                            <GridLength x:Key="TextBoxColumnWidth">1.8*</GridLength>
+                            <Thickness x:Key="TextBlockMargin">3 0 3 0</Thickness>
+                            <system:Double x:Key="ContentFontSize">12</system:Double>
+
+                            <Style TargetType="{x:Type TextBox}"
+                                   BasedOn="{StaticResource ValidationTextBox}">
+                                <Setter Property="FontSize"
+                                        Value="12" />
+                            </Style>
+                            <Style x:Key="txtBlockStyle"
+                                   TargetType="{x:Type TextBlock}">
+                                <Setter Property="FontSize"
+                                        Value="12" />
+                                <Setter Property="Foreground"
+                                        Value="Black" />
+                                <Setter Property="Margin"
+                                        Value="{StaticResource TextBlockMargin}" />
+                                <Setter Property="VerticalAlignment"
+                                        Value="Center" />
+                                <Setter Property="HorizontalAlignment"
+                                        Value="Left" />
+                            </Style>
+                            <Style TargetType="{x:Type ComboBox}"
+                                   BasedOn="{StaticResource ValidationComboBox}">
+                                <Setter Property="FontSize"
+                                        Value="11" />
+                                <Setter Property="Height"
+                                        Value="25" />
+                            </Style>
+                        </ContentControl.Resources>
+                        <ContentControl.Style>
+                            <Style TargetType="ContentControl">
+                                <Setter Property="ContentTemplate">
+                                    <Setter.Value>
+                                        <DataTemplate />
+                                    </Setter.Value>
+                                </Setter>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding ElementName=root, Path=ViewModel.SelectedFilterType}"
+                                                 Value="{x:Static common:FilterType.PointNumberFilter}">
+                                        <Setter Property="ContentTemplate">
+                                            <Setter.Value>
+                                                <DataTemplate>
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="{StaticResource TextBlockColumnWidth}" />
+                                                            <ColumnDefinition Width="{StaticResource TextBoxColumnWidth}" />
+                                                        </Grid.ColumnDefinitions>
+                                                        <Grid.RowDefinitions>
+                                                            <RowDefinition Height="*" />
+                                                            <RowDefinition Height="*" />
+                                                        </Grid.RowDefinitions>
+                                                        <TextBlock Grid.Row="0"
+                                                                   Grid.Column="0"
+                                                                   Style="{StaticResource txtBlockStyle}"
+                                                                   Text="Min Point Number:" />
+                                                        <TextBox Grid.Row="0"
+                                                                 Grid.Column="1"
+                                                                 Height="25"
+                                                                 Text="{Binding PointNumberFilterEditor.MinText,
+                                                                 UpdateSourceTrigger=PropertyChanged,
+                                                                 ValidatesOnNotifyDataErrors=True}" />
+                                                        <TextBlock Grid.Row="1"
+                                                                   Grid.Column="0"
+                                                                   Style="{StaticResource txtBlockStyle}"
+                                                                   Text="Max Point Number:" />
+                                                        <TextBox Grid.Row="1"
+                                                                 Grid.Column="1"
+                                                                 Height="25"
+                                                                 Text="{Binding PointNumberFilterEditor.MaxText,
+                                                                 UpdateSourceTrigger=PropertyChanged,
+                                                                 ValidatesOnNotifyDataErrors=True}" />
+                                                    </Grid>
+                                                </DataTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding ElementName=root, Path=ViewModel.SelectedFilterType}"
+                                                 Value="{x:Static common:FilterType.NorthingFilter}">
+                                        <Setter Property="ContentTemplate">
+                                            <Setter.Value>
+                                                <DataTemplate>
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="{StaticResource TextBlockColumnWidth}" />
+                                                            <ColumnDefinition Width="{StaticResource TextBoxColumnWidth}" />
+                                                        </Grid.ColumnDefinitions>
+                                                        <Grid.RowDefinitions>
+                                                            <RowDefinition Height="*" />
+                                                            <RowDefinition Height="*" />
+                                                        </Grid.RowDefinitions>
+                                                        <TextBlock Grid.Row="0"
+                                                                   Grid.Column="0"
+                                                                   Text="Min Northing:"
+                                                                   Style="{StaticResource txtBlockStyle}" />
+                                                        <TextBox Grid.Row="0"
+                                                                 Grid.Column="1"
+                                                                 Height="25"
+                                                                 Text="{Binding NorthingFilterEditor.MinText,
+                                                                 UpdateSourceTrigger=PropertyChanged,
+                                                                 ValidatesOnNotifyDataErrors=True}" />
+                                                        <TextBlock Grid.Row="1"
+                                                                   Grid.Column="0"
+                                                                   Style="{StaticResource txtBlockStyle}"
+                                                                   Text="Max Northing:" />
+                                                        <TextBox Grid.Row="1"
+                                                                 Grid.Column="1"
+                                                                 Height="25"
+                                                                 Text="{Binding NorthingFilterEditor.MaxText,
+                                                                 UpdateSourceTrigger=PropertyChanged,
+                                                                 ValidatesOnNotifyDataErrors=True}" />
+                                                    </Grid>
+                                                </DataTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding ElementName=root, Path=ViewModel.SelectedFilterType}"
+                                                 Value="{x:Static common:FilterType.EastingFilter}">
+                                        <Setter Property="ContentTemplate">
+                                            <Setter.Value>
+                                                <DataTemplate>
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="{StaticResource TextBlockColumnWidth}" />
+                                                            <ColumnDefinition Width="{StaticResource TextBoxColumnWidth}" />
+                                                        </Grid.ColumnDefinitions>
+                                                        <Grid.RowDefinitions>
+                                                            <RowDefinition Height="*" />
+                                                            <RowDefinition Height="*" />
+                                                        </Grid.RowDefinitions>
+                                                        <TextBlock Grid.Row="0"
+                                                                   Grid.Column="0"
+                                                                   Style="{StaticResource txtBlockStyle}"
+                                                                   Text="Min Easting:" />
+                                                        <TextBox Grid.Row="0"
+                                                                 Grid.Column="1"
+                                                                 Height="25"
+                                                                 Text="{Binding EastingFilterEditor.MinText,
+                                                                 UpdateSourceTrigger=PropertyChanged,
+                                                                 ValidatesOnNotifyDataErrors=True}" />
+                                                        <TextBlock Grid.Row="1"
+                                                                   Grid.Column="0"
+                                                                   Style="{StaticResource txtBlockStyle}"
+                                                                   Text="Max Easting:" />
+                                                        <TextBox Grid.Row="1"
+                                                                 Grid.Column="1"
+                                                                 Height="25"
+                                                                 Text="{Binding EastingFilterEditor.MaxText,
+                                                                 UpdateSourceTrigger=PropertyChanged,
+                                                                 ValidatesOnNotifyDataErrors=True}" />
+                                                    </Grid>
+                                                </DataTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding ElementName=root, Path=ViewModel.SelectedFilterType}"
+                                                 Value="{x:Static common:FilterType.ElevationFilter}">
+                                        <Setter Property="ContentTemplate">
+                                            <Setter.Value>
+                                                <DataTemplate>
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="{StaticResource TextBlockColumnWidth}" />
+                                                            <ColumnDefinition Width="{StaticResource TextBoxColumnWidth}" />
+                                                        </Grid.ColumnDefinitions>
+                                                        <Grid.RowDefinitions>
+                                                            <RowDefinition Height="*" />
+                                                            <RowDefinition Height="*" />
+                                                        </Grid.RowDefinitions>
+                                                        <TextBlock Grid.Row="0"
+                                                                   Grid.Column="0"
+                                                                   Style="{StaticResource txtBlockStyle}"
+                                                                   Text="Min Elevation:" />
+                                                        <TextBox Grid.Row="0"
+                                                                 Grid.Column="1"
+                                                                 Height="25"
+                                                                 Text="{Binding ElevationFilterEditor.MinText,
+                                                                 UpdateSourceTrigger=PropertyChanged,
+                                                                 ValidatesOnNotifyDataErrors=True}" />
+                                                        <TextBlock Grid.Row="1"
+                                                                   Grid.Column="0"
+                                                                   Style="{StaticResource txtBlockStyle}"
+                                                                   Text="Max Elevation:" />
+                                                        <TextBox Grid.Row="1"
+                                                                 Grid.Column="1"
+                                                                 Height="25"
+                                                                 Text="{Binding ElevationFilterEditor.MaxText,
+                                                                 UpdateSourceTrigger=PropertyChanged,
+                                                                 ValidatesOnNotifyDataErrors=True}" />
+                                                    </Grid>
+                                                </DataTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding ElementName=root, Path=ViewModel.SelectedFilterType}"
+                                                 Value="{x:Static common:FilterType.DescriptionFilter}">
+                                        <Setter Property="ContentTemplate">
+                                            <Setter.Value>
+                                                <DataTemplate>
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="{StaticResource TextBlockColumnWidth}" />
+                                                            <ColumnDefinition Width="{StaticResource TextBoxColumnWidth}" />
+                                                        </Grid.ColumnDefinitions>
+                                                        <Grid.RowDefinitions>
+                                                            <RowDefinition Height="*" />
+                                                            <RowDefinition Height="*" />
+                                                        </Grid.RowDefinitions>
+                                                        <TextBlock Grid.Row="1"
+                                                                   Grid.Column="0"
+                                                                   Style="{StaticResource txtBlockStyle}"
+                                                                   Text="Description Contains:" />
+                                                        <TextBox Grid.Row="1"
+                                                                 Grid.Column="1"
+                                                                 Height="25"
+                                                                 Text="{Binding DescriptionFilterEditor.Text,
+                                                                 UpdateSourceTrigger=PropertyChanged,
+                                                                 ValidatesOnNotifyDataErrors=True}" />
+                                                    </Grid>
+                                                </DataTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding ElementName=root, Path=ViewModel.SelectedFilterType}"
+                                                 Value="{x:Static common:FilterType.PointGroupFilter}">
+                                        <Setter Property="ContentTemplate">
+                                            <Setter.Value>
+                                                <DataTemplate>
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="{StaticResource TextBlockColumnWidth}" />
+                                                            <ColumnDefinition Width="{StaticResource TextBoxColumnWidth}" />
+                                                        </Grid.ColumnDefinitions>
+                                                        <Grid.RowDefinitions>
+                                                            <RowDefinition Height="*" />
+                                                            <RowDefinition Height="*" />
+                                                        </Grid.RowDefinitions>
+                                                        <TextBlock Grid.Row="1"
+                                                                   Grid.Column="0"
+                                                                   Style="{StaticResource txtBlockStyle}"
+                                                                   Text="Point Group:" />
+                                                        <ComboBox Grid.Row="1"
+                                                                  Grid.Column="1"
+                                                                  Background="White"
+                                                                  ItemsSource="{Binding ElementName=root, Path=ViewModel.PointGroupsView}"
+                                                                  DisplayMemberPath="Name" />
+                                                    </Grid>
+                                                </DataTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ContentControl.Style>
+                    </ContentControl>
+                </Grid>
+            </Border>
+        </Grid>
     </Grid>
 </UserControl>

@@ -953,7 +953,7 @@ namespace Cad_Point_Manager.Views.UserControls
                 return;
             }
             CadManager.CogoPointManager.MergePointGroups(_selectedPointGroups, MergePointGroup);
-            CadManager.PointsView.Refresh();
+            CadManager.GroupedPointsView.Refresh();
         }
         private void AvailableMergePointGroupsCBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {

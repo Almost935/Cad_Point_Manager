@@ -1,6 +1,8 @@
 ﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                    xmlns:viewsAssorted="clr-namespace:Cad_Point_Manager.Views.Assorted">
+                    xmlns:viewsAssorted="clr-namespace:Cad_Point_Manager.Views.Assorted"
+                    xmlns:controls="clr-namespace:Cad_Point_Manager.Controls"
+                    xmlns:helpers="clr-namespace:Cad_Point_Manager.Helpers">
 
     <!-- ScrollViewer template used by the ListView -->
     <Style x:Key="UpdatedListViewScrollViewer"
@@ -21,6 +23,7 @@
 
                         <!-- Column headers -->
                         <ScrollViewer Grid.Row="0"
+                                      Grid.ColumnSpan="2"
                                       HorizontalScrollBarVisibility="Hidden"
                                       VerticalScrollBarVisibility="Hidden"
                                       Focusable="False">
@@ -55,7 +58,10 @@
                         <!-- Vertical scrollbar -->
                         <ScrollBar x:Name="PART_VerticalScrollBar"
                                    Grid.Column="1"
-                                   Grid.RowSpan="3"
+                                   Grid.Row="1"
+                                   Grid.RowSpan="1"
+                                   HorizontalAlignment="Right"
+                                   Style="{DynamicResource CustomVerticalScrollBar}"
                                    Maximum="{TemplateBinding ScrollableHeight}"
                                    ViewportSize="{TemplateBinding ViewportHeight}"
                                    Value="{TemplateBinding VerticalOffset}"
@@ -103,6 +109,8 @@
                              Color="White" />
             <SolidColorBrush x:Key="HeaderBackgroundBrush"
                              Color="#FF747781" />
+            <SolidColorBrush x:Key="HeaderMouseOverBackgroundBrush"
+                             Color="#FF959595" />
             <SolidColorBrush x:Key="HeaderBorderBrush"
                              Color="White" />
             <Color x:Key="ControlMouseOverColor">#CCCCCC</Color>
@@ -110,18 +118,28 @@
         <Setter Property="Foreground"
                 Value="{DynamicResource HeaderTextBrush}" />
         <Setter Property="IsHitTestVisible"
-                Value="False" />
+                Value="{Binding RelativeSource={RelativeSource AncestorType={x:Type controls:SortableListView}},
+                            Path=IsColumnHeaderHitTestVisible}" />
         <Setter Property="FontSize"
                 Value="11" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="GridViewColumnHeader">
-                    <Border Background="{DynamicResource HeaderBackgroundBrush}"
+                    <Border x:Name="border"
+                            Background="{DynamicResource HeaderBackgroundBrush}"
                             BorderBrush="{DynamicResource HeaderBorderBrush}"
                             BorderThickness="0.5"
                             VerticalAlignment="Bottom">
                         <ContentPresenter Margin="5 0 5 0" />
                     </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver"
+                                 Value="True">
+                            <Setter TargetName="border"
+                                    Property="Background"
+                                    Value="{DynamicResource HeaderMouseOverBackgroundBrush}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
@@ -234,6 +252,10 @@
                 Value="{StaticResource UpdatedListViewItemStyle}" />
         <Setter Property="GridView.ColumnHeaderContainerStyle"
                 Value="{StaticResource UpdatedGridViewColumnHeaderStyle}" />
+        <Setter Property="helpers:GridViewSort.AutoSort"
+                Value="True" />
+        <Setter Property="helpers:GridViewSort.ShowSortGlyph"
+                Value="True" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ListView">

@@ -37,6 +37,16 @@ namespace Cad_Point_Manager.Views.UserControls
             typeof(CadManager),
             typeof(PointsViewControl),
             new PropertyMetadata(null, OnCadManagerChanged));
+
+        public PointsViewModel ViewModel
+        {
+            get => (PointsViewModel)GetValue(ViewModelProperty);
+            private set => SetValue(ViewModelProperty, value);
+        }
+
+        public static readonly DependencyProperty ViewModelProperty =
+            DependencyProperty.Register(nameof(ViewModel), typeof(PointsViewModel), typeof(PointsViewControl));
+
         #endregion
 
         #region Constructors
@@ -61,6 +71,7 @@ namespace Cad_Point_Manager.Views.UserControls
                 pointsGridView.Columns[2].Width = pointsListColumnWidth * 1.0;
                 pointsGridView.Columns[3].Width = pointsListColumnWidth * 1.0;
                 pointsGridView.Columns[4].Width = pointsListColumnWidth * 1.25;
+                pointsGridView.Columns[5].Width = pointsListColumnWidth * 1.0;
             }
         }
 
@@ -79,13 +90,18 @@ namespace Cad_Point_Manager.Views.UserControls
 
         }
 
+        //private static void OnCadManagerChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        //{
+        //    if (d is LeftHandPopout control && e.NewValue is not null && e.NewValue is CadManager cadManager)
+        //    {
+        //        control.CogoPointSelectionViewModel?.UpdateCadManager(cadManager);
+        //        control.CogoPointSelectionViewModel?.Refresh();
+        //    }
+        //}
         private static void OnCadManagerChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
-            if (d is LeftHandPopout control && e.NewValue is not null && e.NewValue is CadManager cadManager)
-            {
-                control.CogoPointSelectionViewModel?.UpdateCadManager(cadManager);
-                control.CogoPointSelectionViewModel?.Refresh();
-            }
+            if (d is not PointsViewControl control) { return; }
+            control.ViewModel = new PointsViewModel(e.NewValue as CadManager);
         }
         #endregion
     }

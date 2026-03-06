@@ -32,6 +32,7 @@
                 <ResourceDictionary Source="Styles/TabControlStyle.xaml" />
                 <ResourceDictionary Source="Styles/InlineEditableTextStyle.xaml" />
                 <ResourceDictionary Source="Styles/PointsViewListViewStyle.xaml" />
+                <ResourceDictionary Source="Styles/ListViewScrollBar.xaml" />
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Application.Resources>

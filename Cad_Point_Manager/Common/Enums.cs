@@ -1,5 +1,27 @@
-﻿namespace Cad_Point_Manager.Common
+﻿using System.ComponentModel;
+
+namespace Cad_Point_Manager.Common
 {
+    public enum FilterType
+    {
+        [Description("Point Number Filter")]
+        PointNumberFilter,
+
+        [Description("Northing Filter")]
+        NorthingFilter,
+
+        [Description("Easting Filter")]
+        EastingFilter,
+
+        [Description("Elevation Filter")]
+        ElevationFilter,
+
+        [Description("Description Filter")]
+        DescriptionFilter,
+
+        [Description("Point Group Filter")]
+        PointGroupFilter,
+    }
     public class Enums
     {
         public enum LineType
