@@ -18,15 +18,15 @@ namespace Cad_Point_Manager.ViewModels.Editors
             get => _selectedPointGroup;
             set
             {
-                if (ReferenceEquals(_selectedPointGroup, value)) return;
+                if (ReferenceEquals(_selectedPointGroup, value)) { return; }
                 _selectedPointGroup = value;
                 OnPropertyChanged(nameof(SelectedPointGroup));
                 Validate();
             }
         }
-
         public bool TryGetPointGroup(out PointGroup? pointGroup)
         {
+            Validate();
             pointGroup = SelectedPointGroup;
             return pointGroup is not null;
         }
@@ -41,8 +41,7 @@ namespace Cad_Point_Manager.ViewModels.Editors
 
         public IEnumerable GetErrors(string? propertyName)
         {
-            if (string.IsNullOrEmpty(propertyName))
-                return _errors.SelectMany(kvp => kvp.Value);
+            if (string.IsNullOrEmpty(propertyName)) { return _errors.SelectMany(kvp => kvp.Value); }
 
             return _errors.TryGetValue(propertyName, out var list)
                 ? list

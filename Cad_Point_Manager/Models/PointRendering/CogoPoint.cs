@@ -331,4 +331,29 @@ namespace Cad_Point_Manager.Models.PointRendering
         //public static bool operator !=(CogoPoint a, CogoPoint b) => !(a == b);
         #endregion
     }
+
+    public sealed class CogoPointDto
+    {
+        public int PointNumber { get; set; }
+        public float X { get; set; }
+        public float Y { get; set; }
+        public float Z { get; set; }
+        public float Elevation { get; set; }
+        public string Description { get; set; } = string.Empty;
+        public string PointGroupName { get; set; } = string.Empty;
+
+        public CogoPointDto() { }
+
+        public CogoPointDto(CogoPoint cogoPoint)
+        {
+            if (cogoPoint is null) { return; }
+            PointNumber = cogoPoint.PointNumber;
+            X = (float)cogoPoint.Easting;
+            Y = (float)cogoPoint.Northing;
+            Z = (float)cogoPoint.Elevation;
+            Elevation = (float)cogoPoint.Elevation;
+            Description = cogoPoint.Description ?? string.Empty;
+            PointGroupName = cogoPoint.PointGroup?.Name ?? string.Empty;
+        }
+    }
 }

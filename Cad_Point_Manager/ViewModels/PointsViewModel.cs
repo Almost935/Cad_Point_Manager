@@ -72,7 +72,6 @@ namespace Cad_Point_Manager.ViewModels
         #region Commands
         public ICommand RemoveFilterCommand { get; }
         public ICommand ClearAllFiltersCommand { get; }
-        //public ICommand AddFilterCommand { get; }
 
 
         private readonly RelayCommand _addFilterCommand;
@@ -119,6 +118,8 @@ namespace Cad_Point_Manager.ViewModels
                 FilterType.NorthingFilter => NorthingFilterEditor.IsValid,
                 FilterType.EastingFilter => EastingFilterEditor.IsValid,
                 FilterType.ElevationFilter => ElevationFilterEditor.IsValid,
+                FilterType.DescriptionFilter => DescriptionFilterEditor.IsValid,
+                FilterType.PointGroupFilter => PointGroupFilterEditor.IsValid,
                 _ => true
             };
         }

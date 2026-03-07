@@ -32,7 +32,7 @@
     </UserControl.Resources>
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="4*" />
+            <ColumnDefinition Width="3*" />
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
         <controls:SortableListView x:Name="pointsListView"
@@ -376,8 +376,8 @@
                                     Margin="2"
                                     Content="{Binding ElementName=root, Path=ViewModel}">
                         <ContentControl.Resources>
-                            <GridLength x:Key="TextBlockColumnWidth">*</GridLength>
-                            <GridLength x:Key="TextBoxColumnWidth">1.8*</GridLength>
+                            <GridLength x:Key="TextBlockColumnWidth">Auto</GridLength>
+                            <GridLength x:Key="TextBoxColumnWidth">*</GridLength>
                             <Thickness x:Key="TextBlockMargin">3 0 3 0</Thickness>
                             <system:Double x:Key="ContentFontSize">12</system:Double>
 
@@ -390,6 +390,10 @@
                                    TargetType="{x:Type TextBlock}">
                                 <Setter Property="FontSize"
                                         Value="12" />
+                                <Setter Property="FontFamily"
+                                        Value="Segoe UI" />
+                                <Setter Property="Width"
+                                        Value="120" />
                                 <Setter Property="Foreground"
                                         Value="Black" />
                                 <Setter Property="Margin"
@@ -620,8 +624,11 @@
                                                                    Text="Point Group:" />
                                                         <ComboBox Grid.Row="1"
                                                                   Grid.Column="1"
-                                                                  Background="White"
                                                                   ItemsSource="{Binding ElementName=root, Path=ViewModel.PointGroupsView}"
+                                                                  SelectedItem="{Binding PointGroupFilterEditor.SelectedPointGroup, 
+                                                                  Mode=TwoWay,
+                                                                  UpdateSourceTrigger=PropertyChanged,
+                                                                  ValidatesOnNotifyDataErrors=True}"
                                                                   DisplayMemberPath="Name" />
                                                     </Grid>
                                                 </DataTemplate>

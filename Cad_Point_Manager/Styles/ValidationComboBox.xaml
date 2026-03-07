@@ -163,9 +163,9 @@
                         </MultiDataTrigger>
                         <Trigger Property="Validation.HasError"
                                  Value="True">
-                            <Setter TargetName="templateRoot"
+                            <!--<Setter TargetName="templateRoot"
                                     Property="BorderBrush"
-                                    Value="Red" />
+                                    Value="Red" />-->
                             <Setter Property="Foreground"
                                     Value="Red" />
                             <Setter Property="ToolTip"
@@ -398,6 +398,8 @@
                 Value="False" />
         <Setter Property="Template"
                 Value="{StaticResource ComboBoxTemplate}" />
+        <Setter Property="Validation.ErrorTemplate"
+                Value="{x:Null}" />
         <Style.Triggers>
             <Trigger Property="IsEnabled"
                      Value="False">

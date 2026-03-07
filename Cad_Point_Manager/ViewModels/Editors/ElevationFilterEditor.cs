@@ -40,6 +40,8 @@ namespace Cad_Point_Manager.ViewModels.Editors
         // Parsed values if valid
         public bool TryGetRange(out double min, out double max)
         {
+            Validate();
+
             min = 0; max = 0;
             if (!double.TryParse(MinText, out min)) { return false; }
             if (!double.TryParse(MaxText, out max)) { return false; }

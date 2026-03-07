@@ -175,6 +175,8 @@ namespace Cad_Point_Manager.Models.PointRendering
         {
             PointInfoBaseXoffset = (float)(FontBaseSize * PointScale * _markerToPointScaleFactor);
         }
+
+        
         #endregion
 
         #region INotifyPropertyChanged
@@ -185,5 +187,30 @@ namespace Cad_Point_Manager.Models.PointRendering
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
         #endregion
+    }
+
+    public sealed class PointGroupDto
+    {
+        public string Name { get; set; }
+        public bool IsVisible { get; set; }
+        public double PointScale { get; set; }
+
+        public byte A { get; set; }
+        public byte R { get; set; }
+        public byte G { get; set; }
+        public byte B { get; set; }
+
+        public PointGroupDto() { }
+
+        public PointGroupDto(PointGroup pointGroup)
+        {
+            Name = pointGroup.Name;
+            IsVisible = pointGroup.IsVisible;
+            PointScale = pointGroup.PointScale;
+            A = pointGroup.Color.A;
+            R = pointGroup.Color.R;
+            G = pointGroup.Color.G;
+            B = pointGroup.Color.B;
+        }
     }
 }

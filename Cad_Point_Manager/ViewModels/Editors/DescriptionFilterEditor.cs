@@ -50,6 +50,8 @@ namespace Cad_Point_Manager.ViewModels.Editors
         #region Methods
         public bool TryGetText(out string text)
         {
+            Validate();
+
             text = (Text ?? string.Empty).Trim();
             return !string.IsNullOrWhiteSpace(text);
         }

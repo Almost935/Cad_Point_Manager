@@ -99,9 +99,19 @@
                         <Separator Style="{StaticResource MenuItemSeparatorStyle1}" />
                         <MenuItem Header="Print"
                                   Command="{Binding PrintJobCommand}"
-                                  Style="{StaticResource MenuItemStyle1}">
+                                  Style="{StaticResource MenuItemStyle1}"
+                                  IsEnabled="{Binding LayoutsVisible}">
                             <MenuItem.Icon>
                                 <fa:FontAwesome Icon="Print" />
+                            </MenuItem.Icon>
+                        </MenuItem>
+                        <Separator Style="{StaticResource MenuItemSeparatorStyle1}" />
+                        <MenuItem Header="Export"
+                                  Style="{StaticResource MenuItemStyle1}"
+                                  IsEnabled="{Binding PointsVisible}"
+                                  Command="{Binding ExportPointsCommand}">
+                            <MenuItem.Icon>
+                                <fa:FontAwesome Icon="FileExcelOutline" />
                             </MenuItem.Icon>
                         </MenuItem>
                     </MenuItem>

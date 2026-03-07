@@ -432,6 +432,7 @@ namespace Cad_Point_Manager.ViewModels
         public ICommand SaveJobCommand { get; set; }
         public ICommand SaveAsJobCommand { get; set; }
         public ICommand PrintJobCommand { get; set; }
+        public ICommand ExportPointsCommand { get; set; }
         public ICommand ZoomToExtentsCommand { get; set; }
 
         public ICommand SnapToggleCommand => new RelayCommand<object>(OnSnapTogglePressed);
@@ -460,6 +461,7 @@ namespace Cad_Point_Manager.ViewModels
             SaveJobCommand = new RelayCommand<RoutedEventArgs>(SaveJob);
             SaveAsJobCommand = new RelayCommand<RoutedEventArgs>(SaveJobAs);
             PrintJobCommand = new RelayCommand<RoutedEventArgs>(PrintJob);
+            ExportPointsCommand = new RelayCommand<RoutedEventArgs>(ExportPoints);
 
             ZoomToExtentsCommand = new RelayCommand<RoutedEventArgs>(ZoomToExtents);
 
@@ -557,6 +559,56 @@ namespace Cad_Point_Manager.ViewModels
             stopwatch.Stop();
             Debug.WriteLine($"PrintJob Time: {stopwatch.ElapsedMilliseconds}");
         }
+        public async void ExportPoints(RoutedEventArgs e)
+        {
+            var pointsView = JobFileManager?.CadManager?.PointsView;
+            if (pointsView == null)
+            {
+                MessageBox.Show("No points are available to export.", "Export Points", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            pointsView.Refresh();
+
+            var visiblePoints = pointsView.Cast<object>()
+                                          .OfType<CogoPoint>()
+                                          .ToList();
+
+            if (visiblePoints.Count == 0)
+            {
+                MessageBox.Show("There are no visible points to export.", "Export Points", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            var jobName = JobFileManager?.JobName;
+            var safeJob = FileHelpers.MakeSafeFileName(string.IsNullOrWhiteSpace(jobName) ? "Points" : jobName);
+            var suggestedFileName = $"{safeJob}_Points.csv";
+
+            var fallbackDir = @"C:\Users\fcraw\source\repos\Cad_Point_Manager\Cad_Point_Manager\Resources\Testing";
+            var initialDir = LastExportPaths.GetInitialDirectoryOrFallback(fallbackDir);
+
+            var request = new FileSaveDialogRequest
+            {
+                Title = "Export Points to CSV",
+                Filter = "CSV files (*.csv)|*.csv",
+                DefaultExtension = ".csv",
+                InitialDirectory = initialDir,
+                DefaultFileName = suggestedFileName,
+                OverwritePrompt = true
+            };
+
+            if (!_fileSaveDialogService.TryPickSavePath(request, out var path)) { return; }
+
+            try
+            {
+                await Task.Run(() => ExportHelpers.ExportPointsToCsv(path, visiblePoints));
+                MessageBox.Show($"Exported {visiblePoints.Count} points.", "Export Complete", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Failed to export points.\n\n{ex.Message}", "Export Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
 
         public void ZoomToExtents(RoutedEventArgs e)
         {
@@ -567,7 +619,7 @@ namespace Cad_Point_Manager.ViewModels
             }
             if (ModelsVisible)
             {
-                JobFileManager.CadManager3D?.ZoomToExtents();
+                JobFileManager.CadManager?.ZoomToExtents();
             }
         }
 
@@ -581,15 +633,15 @@ namespace Cad_Point_Manager.ViewModels
                 switch (name)
                 {
                     case "PointCogoCreation":
-                        if (!isChecked) { JobFileManager.CadManager3D.SnapSelectionMode = Enums.SelectionMode.CogoPoints; }
-                        else { JobFileManager.CadManager3D.SnapSelectionMode = Enums.SelectionMode.Points; }
+                        if (!isChecked) { JobFileManager.CadManager.SnapSelectionMode = Enums.SelectionMode.CogoPoints; }
+                        else { JobFileManager.CadManager.SnapSelectionMode = Enums.SelectionMode.Points; }
                         break;
                     case "GeometryCogoCreation":
-                        if (!isChecked) { JobFileManager.CadManager3D.SnapSelectionMode = Enums.SelectionMode.CogoPoints; }
-                        else { JobFileManager.CadManager3D.SnapSelectionMode = Enums.SelectionMode.Geometries; }
+                        if (!isChecked) { JobFileManager.CadManager.SnapSelectionMode = Enums.SelectionMode.CogoPoints; }
+                        else { JobFileManager.CadManager.SnapSelectionMode = Enums.SelectionMode.Geometries; }
                         break;
                     default:
-                        JobFileManager.CadManager3D.SnapSelectionMode = Enums.SelectionMode.CogoPoints;
+                        JobFileManager.CadManager.SnapSelectionMode = Enums.SelectionMode.CogoPoints;
                         break;
                 }
             }
@@ -598,7 +650,7 @@ namespace Cad_Point_Manager.ViewModels
         // Point Creation Methods
         private void OnSubmitCogoPointClicked()
         {
-            if (JobFileManager.CadManager3D.SnapSelectionMode == Enums.SelectionMode.Points)
+            if (JobFileManager.CadManager.SnapSelectionMode == Enums.SelectionMode.Points)
             {
                 if (SelectedHitTestablePoints.Count > 0)
                 {
@@ -622,13 +674,13 @@ namespace Cad_Point_Manager.ViewModels
                     {
                         foreach (var hitPoint in SelectedHitTestablePoints)
                         {
-                            int pointNum = JobFileManager.CadManager3D.CogoPointManager.GetNextAvailablePointNumber(NewCogoPointsStartNumber);
-                            JobFileManager.CadManager3D.CogoPointManager.TryAddPoint(pointNum, hitPoint.Position.ToSharpDXVector3(), ActivePointGroup,
+                            int pointNum = JobFileManager.CadManager.CogoPointManager.GetNextAvailablePointNumber(NewCogoPointsStartNumber);
+                            JobFileManager.CadManager.CogoPointManager.TryAddPoint(pointNum, hitPoint.Position.ToSharpDXVector3(), ActivePointGroup,
                                 out var cogoPoint, NewCogoPointsElevation.ToFloat(), NewCogoPointsDescription);
                         }
 
                         ResetSelectionRequested?.Invoke(this, EventArgs.Empty);
-                        JobFileManager.CadManager3D.UpdateCogoPointTree();
+                        JobFileManager.CadManager.UpdateCogoPointTree();
 
                         ClearErrors(NewCogoPointsStartNumberText);
                         ClearErrors(NewCogoPointsElevationText);
@@ -638,7 +690,7 @@ namespace Cad_Point_Manager.ViewModels
                     }
                 }
             }
-            else if (JobFileManager.CadManager3D.SnapSelectionMode == Enums.SelectionMode.Geometries)
+            else if (JobFileManager.CadManager.SnapSelectionMode == Enums.SelectionMode.Geometries)
             {
                 if (ChainPaths.Count > 0)
                 {
@@ -670,16 +722,16 @@ namespace Cad_Point_Manager.ViewModels
 
                         for (int i = 0; i < coords.Count; i++)
                         {
-                            int pointNum = JobFileManager.CadManager3D.CogoPointManager.GetNextAvailablePointNumber(NewCogoPointsStartNumber);
-                            JobFileManager.CadManager3D.CogoPointManager.TryAddPoint(pointNum, coords[i].ToSharpDXVector3(), ActivePointGroup,
+                            int pointNum = JobFileManager.CadManager.CogoPointManager.GetNextAvailablePointNumber(NewCogoPointsStartNumber);
+                            JobFileManager.CadManager.CogoPointManager.TryAddPoint(pointNum, coords[i].ToSharpDXVector3(), ActivePointGroup,
                             out var cogoPoint, NewCogoPointsElevation.ToFloat(), NewCogoPointsDescription);
                         }
 
-                        JobFileManager.CadManager3D.CogoPointTextVerticesDirty = true;
-                        JobFileManager.CadManager3D.CogoPointCircleVerticesDirty = true;
+                        JobFileManager.CadManager.CogoPointTextVerticesDirty = true;
+                        JobFileManager.CadManager.CogoPointCircleVerticesDirty = true;
 
                         ResetSelectionRequested?.Invoke(this, EventArgs.Empty);
-                        JobFileManager.CadManager3D.UpdateCogoPointTree();
+                        JobFileManager.CadManager.UpdateCogoPointTree();
 
                         ClearErrors(NewCogoPointsStartNumberText);
                         ClearErrors(NewCogoPointsElevationText);
@@ -728,7 +780,7 @@ namespace Cad_Point_Manager.ViewModels
 
             await _layoutPdfVectorExporter.ExportAsync(
                 ActiveLayout,
-                JobFileManager.CadManager3D,
+                JobFileManager.CadManager,
                 ActiveLayout.Viewport.Scene,
                 StateController,
                 SceneIdMap,

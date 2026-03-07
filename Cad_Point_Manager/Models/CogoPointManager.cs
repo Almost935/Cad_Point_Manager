@@ -387,6 +387,15 @@ namespace Cad_Point_Manager.Models
                 }
             }
         }
+
+        public List<PointGroupDto> GetPointGroupDtos()
+        {
+            return PointGroups.Select(pg => new PointGroupDto(pg)).ToList();
+        }
+        public List<CogoPointDto> GetCogoPointDtos()
+        {
+            return CogoPoints.Select(p => new CogoPointDto(p)).ToList();
+        }
         #endregion
 
         #region INotifyPropertyChanged Implementation

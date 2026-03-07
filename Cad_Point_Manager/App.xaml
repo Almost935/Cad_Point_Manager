@@ -19,7 +19,6 @@
                 <ResourceDictionary Source="Styles/MenuStyles.xaml" />
                 <ResourceDictionary Source="/Styles/UpdatedListViewStyle.xaml" />
                 <ResourceDictionary Source="Styles/Icons.xaml" />
-                <ResourceDictionary Source="Styles/ValidationTemplate.xaml" />
                 <ResourceDictionary Source="Styles/ListViewExpanderStyle.xaml" />
                 <ResourceDictionary Source="Styles/CogoPointStyles.xaml" />
                 <ResourceDictionary Source="Styles/CogoPointAnchorToggleButton.xaml" />
