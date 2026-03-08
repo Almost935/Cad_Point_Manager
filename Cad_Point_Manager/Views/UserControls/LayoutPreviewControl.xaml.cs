@@ -117,7 +117,7 @@ namespace Cad_Point_Manager.Views.UserControls
             if (Layout == null) { return; }
             if (Renderer == null) { return; }
 
-            Scene scene = Layout.Viewport.Scene;
+            Rect bounds = Layout.Viewport.Bounds;
 
             int pxW = InchesToPixels(ViewportWidth, PreviewDpi);
             int pxH = InchesToPixels(ViewportHeight, PreviewDpi);
@@ -127,7 +127,7 @@ namespace Cad_Point_Manager.Views.UserControls
             var wb = GetOrCreateWriteable(pxW, pxH);
             await Renderer.Dispatcher.InvokeAsync(() =>
             {
-                Renderer.RenderSceneIntoWriteableBitmap(scene, wb);
+                Renderer.RenderSceneIntoWriteableBitmap(bounds, wb);
             });
 
             LayoutPreviewImage.Source = wb;

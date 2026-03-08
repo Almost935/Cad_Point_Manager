@@ -32,7 +32,7 @@ namespace Cad_Point_Manager.Services.LayoutExporting
         public Task ExportAsync(
             Layout layout,
             CadManager cadManager3D,
-            Scene scene,
+            Rect bounds,
             D3dStateController stateController,
             SceneIdMap ids,
             ResCache resCache,
@@ -51,7 +51,7 @@ namespace Cad_Point_Manager.Services.LayoutExporting
                     layout.Viewport.LocalRectIn.Y * 72.0,
                     layout.Viewport.LocalRectIn.Width * 72.0,
                     layout.Viewport.LocalRectIn.Height * 72.0);
-                Matrix worldToPdf = BuildWorldToPdfFromCameraNew(layout, cadManager3D, scene);
+                Matrix worldToPdf = BuildWorldToPdfFromCameraNew(layout, cadManager3D, bounds);
 
                 LayoutPdfVectorExporter.Export(
                     layout,
@@ -735,11 +735,11 @@ namespace Cad_Point_Manager.Services.LayoutExporting
             }
         }
 
-        private static Matrix BuildWorldToPdfFromCameraNew(Layout layout, CadManager cadManager, Scene scene)
+        private static Matrix BuildWorldToPdfFromCameraNew(Layout layout, CadManager cadManager, Rect bounds)
         {
-            if (layout is null) throw new ArgumentNullException(nameof(layout));
-            if (cadManager is null) throw new ArgumentNullException(nameof(cadManager));
-            if (scene is null) throw new ArgumentNullException(nameof(scene));
+            if (layout is null) { throw new ArgumentNullException(nameof(layout)); }
+            if (cadManager is null) { throw new ArgumentNullException(nameof(cadManager)); }
+            if (bounds == Rect.Empty) { throw new ArgumentException("Bounds cannot be Rect.Empty.", nameof(bounds)); }
 
             var cam = cadManager.Camera ?? throw new InvalidOperationException("cadManager.Camera is null.");
 
@@ -763,20 +763,19 @@ namespace Cad_Point_Manager.Services.LayoutExporting
                 var virtualViewport = new SharpDX.ViewportF(0, 0, (float)vpW, (float)vpH);
 
                 // Use the SAVED visible scene bounds (world rect)
-                var b = scene.Bounds; // RectangleF
-                if (b.Width <= 0 || b.Height <= 0)
+                if (bounds.Width <= 0 || bounds.Height <= 0)
                     throw new InvalidOperationException("Scene.Bounds is invalid (width/height <= 0).");
 
                 // Add small padding to avoid hairline clipping
                 const double padFrac = 0.02; // 2%
-                double padX = b.Width * padFrac;
-                double padY = b.Height * padFrac;
+                double padX = bounds.Width * padFrac;
+                double padY = bounds.Height * padFrac;
 
                 var padded = new Rect(
-                    b.X - padX,
-                    b.Y - padY,
-                    b.Width + 2 * padX,
-                    b.Height + 2 * padY);
+                    bounds.X - padX,
+                    bounds.Y - padY,
+                    bounds.Width + 2 * padX,
+                    bounds.Height + 2 * padY);
 
                 // Center projection on the scene bounds and fit BOTH axes (min(scaleX, scaleY))
                 cam.Extents = padded;

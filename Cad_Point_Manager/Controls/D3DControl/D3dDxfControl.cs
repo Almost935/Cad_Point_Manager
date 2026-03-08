@@ -3466,7 +3466,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         #endregion
 
         #region Printing Methods
-        public void RenderSceneIntoWriteableBitmap(Scene scene, WriteableBitmap target)
+        public void RenderSceneIntoWriteableBitmap(Rect bounds, WriteableBitmap target)
         {
             EnsurePreviewTargets(target.PixelWidth, target.PixelHeight);
 
@@ -3497,8 +3497,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 Viewport = new ViewportF(0, 0, target.PixelWidth, target.PixelHeight);
 
                 // ---- FIT TO SCENE BOUNDS (this prevents cropping) ----
-                var b = scene?.Bounds ?? SharpDX.RectangleF.Empty;
-                if (b.Width <= 0 || b.Height <= 0)
+                if (bounds.Width <= 0 || bounds.Height <= 0)
                 {
                     // fallback: fit whole drawing if scene bounds are invalid
                     cam.InitialViewMatrix = GetExtentsFittingMatrix(Viewport, CadManager3D.Extents);
@@ -3506,37 +3505,22 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 }
                 else
                 {
-                    // Add a small padding so geometry doesn't kiss the border
-                    const float padFrac = 0.00f; // 2%
-                    float padX = b.Width * padFrac;
-                    float padY = b.Height * padFrac;
-
-                    var padded = new Rect(
-                        b.X - padX,
-                        b.Y - padY,
-                        b.Width + padX * 2,
-                        b.Height + padY * 2
-                    );
-
                     // Important: make the camera's projection center on THIS rect
-                    cam.Extents = padded;
+                    cam.Extents = bounds;
 
                     // Fit scale based on this rect size
-                    cam.InitialViewMatrix = GetExtentsFittingMatrix(Viewport, padded);
+                    cam.InitialViewMatrix = GetExtentsFittingMatrix(Viewport, bounds);
 
                     // Neutralize any model-space zoom/pan so it cannot clip
                     cam.CurrentZoomStep = 0;
-                    cam.Translate = SharpDX.Vector2.Zero;
+                    cam.Translate = Vector2.Zero;
 
                     cam.UpdateViewportSize(Viewport);
                     cam.UpdateProjection();
                     cam.UpdateView();
                 }
-
                 cam.UpdateViewProjection();
                 UpdateConstantBuffers();
-
-                scene.TestMatrix = cam.D2dMatrix;
 
                 _dxfDirty = true;
                 _combinedDirty = true;

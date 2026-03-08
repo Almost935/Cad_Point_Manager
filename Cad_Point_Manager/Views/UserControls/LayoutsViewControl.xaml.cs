@@ -185,7 +185,7 @@ namespace Cad_Point_Manager.Views.UserControls
         }
         private async void ActiveLayoutViewport_PropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
-            if (e.PropertyName == nameof(LayoutViewport.Scene) ||
+            if (e.PropertyName == nameof(LayoutViewport.Bounds) ||
                 e.PropertyName == nameof(LayoutViewport.LocalRectIn) ||
                 e.PropertyName == nameof(LayoutViewport.ShowBorder))
             {
