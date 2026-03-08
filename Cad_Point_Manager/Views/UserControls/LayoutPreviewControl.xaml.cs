@@ -1,4 +1,5 @@
 ﻿using Cad_Point_Manager.Controls.D3DControl;
+using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Models.Printing;
 using System.Collections.Concurrent;
 using System.ComponentModel;
@@ -117,8 +118,6 @@ namespace Cad_Point_Manager.Views.UserControls
             if (Layout == null) { return; }
             if (Renderer == null) { return; }
 
-            Rect bounds = Layout.Viewport.Bounds;
-
             int pxW = InchesToPixels(ViewportWidth, PreviewDpi);
             int pxH = InchesToPixels(ViewportHeight, PreviewDpi);
 
@@ -127,7 +126,7 @@ namespace Cad_Point_Manager.Views.UserControls
             var wb = GetOrCreateWriteable(pxW, pxH);
             await Renderer.Dispatcher.InvokeAsync(() =>
             {
-                Renderer.RenderSceneIntoWriteableBitmap(bounds, wb);
+                Renderer.RenderSceneIntoWriteableBitmap(Layout.Viewport.Scene, wb);
             });
 
             LayoutPreviewImage.Source = wb;

@@ -9,7 +9,7 @@ namespace Cad_Point_Manager.Models.Printing
     {
         #region Fields
         private Rect _localRectIn;
-        private Rect _bounds;
+        private Scene _scene;
         #endregion
 
         #region Properties
@@ -25,15 +25,15 @@ namespace Cad_Point_Manager.Models.Printing
                 }
             }
         }
-        public Rect Bounds
+        public Scene Scene
         {
-            get => _bounds;
+            get => _scene;
             set
             {
-                if (_bounds != value)
+                if (_scene != value)
                 {
-                    _bounds = value;
-                    OnPropertyChanged(nameof(Bounds));
+                    _scene = value;
+                    OnPropertyChanged(nameof(Scene));
                 }
             }
         }
@@ -44,10 +44,10 @@ namespace Cad_Point_Manager.Models.Printing
         #endregion
 
         #region Constructors
-        public LayoutViewport(Rect localRectIn, Rect bounds)
+        public LayoutViewport(Rect localRectIn, Scene scene)
         {
             _localRectIn = localRectIn;
-            _bounds = bounds;
+            _scene = scene;
         }
         #endregion
 

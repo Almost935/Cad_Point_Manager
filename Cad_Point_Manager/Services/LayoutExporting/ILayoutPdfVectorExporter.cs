@@ -11,7 +11,7 @@ namespace Cad_Point_Manager.Services.LayoutExporting
         Task ExportAsync(
             Layout layout, 
             CadManager cadManager3D,
-            Rect bounds,
+            Scene scene,
             D3dStateController stateController, 
             SceneIdMap ids, ResCache resCache, 
             List<TbPrimitive> templatePrims, 

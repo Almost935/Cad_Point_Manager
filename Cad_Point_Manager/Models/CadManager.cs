@@ -324,17 +324,16 @@ namespace Cad_Point_Manager.Models
             Layouts.Clear();
 
             Rect viewportBounds = new(0.5, 0.5, 28.938, 23);
-            Rect viewBounds = Camera.OverviewScene.Bounds.ToRect();
             var layout1 = new Layout() { Name = "Layout 1" };
-            layout1.Viewport = new LayoutViewport(viewportBounds, viewBounds);
+            layout1.Viewport = new LayoutViewport(viewportBounds, Camera.OverviewScene);
             Layouts.Add(layout1);
 
             var layout2 = new Layout() { Name = "Layout 2" };
-            layout2.Viewport = new LayoutViewport(viewportBounds, viewBounds);
+            layout2.Viewport = new LayoutViewport(viewportBounds, Camera.OverviewScene);
             Layouts.Add(layout2);
 
             var layout3 = new Layout() { Name = "Layout 3" };
-            layout3.Viewport = new LayoutViewport(viewportBounds, viewBounds);
+            layout3.Viewport = new LayoutViewport(viewportBounds, Camera.OverviewScene);
             Layouts.Add(layout3);
         }
 

@@ -32,12 +32,11 @@ namespace Cad_Point_Manager.Services.LayoutExporting
         public Task ExportAsync(
             Layout layout,
             CadManager cadManager3D,
-            Rect bounds,
+            Scene scene,
             D3dStateController stateController,
             SceneIdMap ids,
             ResCache resCache,
-            List<TbPrimitive> templatePrims,
-            string outputPath,
+            List<TbPrimitive> templatePrims,            string outputPath,
             CancellationToken ct = default)
         {
             return Application.Current.Dispatcher.InvokeAsync(() =>
@@ -51,7 +50,7 @@ namespace Cad_Point_Manager.Services.LayoutExporting
                     layout.Viewport.LocalRectIn.Y * 72.0,
                     layout.Viewport.LocalRectIn.Width * 72.0,
                     layout.Viewport.LocalRectIn.Height * 72.0);
-                Matrix worldToPdf = BuildWorldToPdfFromCameraNew(layout, cadManager3D, bounds);
+                Matrix worldToPdf = BuildWorldToPdfFromCameraNew(layout, cadManager3D, scene.Bounds.ToRect());
 
                 LayoutPdfVectorExporter.Export(
                     layout,

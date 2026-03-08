@@ -791,7 +791,7 @@ namespace Cad_Point_Manager.ViewModels
             await _layoutPdfVectorExporter.ExportAsync(
                 ActiveLayout,
                 JobFileManager.CadManager,
-                ActiveLayout.Viewport.Bounds,
+                ActiveLayout.Viewport.Scene,
                 StateController,
                 SceneIdMap,
                 ResCache,

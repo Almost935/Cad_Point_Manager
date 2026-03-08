@@ -3466,7 +3466,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         #endregion
 
         #region Printing Methods
-        public void RenderSceneIntoWriteableBitmap(Rect bounds, WriteableBitmap target)
+        public void RenderSceneIntoWriteableBitmap(Scene scene, WriteableBitmap target)
         {
             EnsurePreviewTargets(target.PixelWidth, target.PixelHeight);
 
@@ -3497,6 +3497,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 Viewport = new ViewportF(0, 0, target.PixelWidth, target.PixelHeight);
 
                 // ---- FIT TO SCENE BOUNDS (this prevents cropping) ----
+                var bounds = scene.Bounds.ToRect();
                 if (bounds.Width <= 0 || bounds.Height <= 0)
                 {
                     // fallback: fit whole drawing if scene bounds are invalid
