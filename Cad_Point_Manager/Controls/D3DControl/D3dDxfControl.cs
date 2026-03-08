@@ -158,9 +158,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private GeometryShader _leaderLineGlowGS;
         private Buffer _leaderLineGlowSettings;
 
-        // --- Per-label & per-group indirection state ---
-        private D3dStateBuffers _stateBufs;
-
         // Cogo point hover rendering
         private bool _cogoHoverShadersLoaded = false;
         private bool _hoverVerticesDirty = false;
@@ -460,6 +457,18 @@ namespace Cad_Point_Manager.Controls.D3DControl
             get => (D3dStateController)GetValue(StateControllerProperty);
             set => SetValue(StateControllerProperty, value);
         }
+
+        public static readonly DependencyProperty StateBuffersProperty =
+            DependencyProperty.Register(
+                nameof(StateBuffers),
+                typeof(D3dStateBuffers),
+                typeof(D3dDxfControl),
+                new FrameworkPropertyMetadata(null));
+        public D3dStateBuffers StateBuffers
+        {
+            get => (D3dStateBuffers)GetValue(StateBuffersProperty);
+            set => SetValue(StateBuffersProperty, value);
+        }
         #endregion
 
         #region Functions
@@ -579,11 +588,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
             ctx.PixelShader.Set(_lineGlowPixelShader);
             ctx.InputAssembler.InputLayout = _lineInputLayout;
             ctx.VertexShader.SetConstantBuffer(0, _transformationBuffer);
-            ctx.VertexShader.SetShaderResource(0, _stateBufs.LayerSRV);
+            ctx.VertexShader.SetShaderResource(0, StateBuffers.LayerSRV);
             ctx.GeometryShader.SetConstantBuffer(0, _transformationBuffer);
             ctx.GeometryShader.SetConstantBuffer(1, _lineGlowSettingsBuffer);
-            ctx.GeometryShader.SetShaderResource(0, _stateBufs.LayerSRV);
-            ctx.GeometryShader.SetShaderResource(1, _stateBufs.ObjectSRV);
+            ctx.GeometryShader.SetShaderResource(0, StateBuffers.LayerSRV);
+            ctx.GeometryShader.SetShaderResource(1, StateBuffers.ObjectSRV);
             ctx.InputAssembler.PrimitiveTopology = PrimitiveTopology.LineList;
             ctx.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding(
                 _lineVertexBuffer.Buffer, _lineVertexBuffer.Stride, 0));
@@ -595,8 +604,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
             ctx.InputAssembler.InputLayout = _lineInputLayout;
             ctx.VertexShader.SetConstantBuffer(0, _transformationBuffer);
             ctx.VertexShader.SetConstantBuffer(1, _lineSettingsBuffer);
-            ctx.VertexShader.SetShaderResource(0, _stateBufs.LayerSRV);
-            ctx.VertexShader.SetShaderResource(1, _stateBufs.ObjectSRV);
+            ctx.VertexShader.SetShaderResource(0, StateBuffers.LayerSRV);
+            ctx.VertexShader.SetShaderResource(1, StateBuffers.ObjectSRV);
             ctx.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding(
                 _lineVertexBuffer.Buffer, _lineVertexBuffer.Stride, 0));
             ctx.InputAssembler.PrimitiveTopology = PrimitiveTopology.LineList;
@@ -616,8 +625,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
             ctx.InputAssembler.InputLayout = _textInputLayout;
             ctx.VertexShader.SetConstantBuffer(0, _transformationBuffer);
             ctx.VertexShader.SetConstantBuffer(2, _viewportBuffer);
-            ctx.VertexShader.SetShaderResource(0, _stateBufs.LayerSRV);
-            ctx.VertexShader.SetShaderResource(1, _stateBufs.ObjectSRV);
+            ctx.VertexShader.SetShaderResource(0, StateBuffers.LayerSRV);
+            ctx.VertexShader.SetShaderResource(1, StateBuffers.ObjectSRV);
             ctx.InputAssembler.PrimitiveTopology = PrimitiveTopology.TriangleList;
             ctx.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding(
                  _textVertexBuffer.Buffer, _textVertexBuffer.Stride, 0));
@@ -640,11 +649,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
             ctx.VertexShader.SetConstantBuffer(2, _viewportBuffer);
             ctx.InputAssembler.PrimitiveTopology = PrimitiveTopology.TriangleList;
 
-            ctx.VertexShader.SetShaderResource(0, _stateBufs.LabelSRV);
-            ctx.VertexShader.SetShaderResource(1, _stateBufs.PointSRV);
-            ctx.VertexShader.SetShaderResource(2, _stateBufs.GroupSRV);
+            ctx.VertexShader.SetShaderResource(0, StateBuffers.LabelSRV);
+            ctx.VertexShader.SetShaderResource(1, StateBuffers.PointSRV);
+            ctx.VertexShader.SetShaderResource(2, StateBuffers.GroupSRV);
 
-            ctx.PixelShader.SetShaderResource(1, _stateBufs.GroupSRV);
+            ctx.PixelShader.SetShaderResource(1, StateBuffers.GroupSRV);
 
             // Bind slot 0 (glyph vertex buffer) once
             var vbGlyph = new VertexBufferBinding(atlas.VertexBuffer, Utilities.SizeOf<GlyphVertexDU>(), 0);
@@ -684,11 +693,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
             ctx.GeometryShader.SetConstantBuffer(0, _transformationBuffer);
             ctx.GeometryShader.SetConstantBuffer(1, _pointCircleSettings);
 
-            ctx.VertexShader.SetShaderResource(0, _stateBufs.PointSRV);
-            ctx.VertexShader.SetShaderResource(1, _stateBufs.GroupSRV);
+            ctx.VertexShader.SetShaderResource(0, StateBuffers.PointSRV);
+            ctx.VertexShader.SetShaderResource(1, StateBuffers.GroupSRV);
 
-            ctx.GeometryShader.SetShaderResource(0, _stateBufs.PointSRV);
-            ctx.GeometryShader.SetShaderResource(1, _stateBufs.GroupSRV);
+            ctx.GeometryShader.SetShaderResource(0, StateBuffers.PointSRV);
+            ctx.GeometryShader.SetShaderResource(1, StateBuffers.GroupSRV);
 
             ctx.InputAssembler.PrimitiveTopology = PrimitiveTopology.PointList;
             ctx.InputAssembler.SetVertexBuffers(0,
@@ -714,8 +723,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
             ctx.PixelShader.SetConstantBuffer(1, _toggleSettingsBuffer);
 
             // ✅ ADD: state SRVs (t0/t1) for the VS (shader fetches flags/offset)
-            ctx.VertexShader.SetShaderResource(0, _stateBufs.PointSRV); // t0
-            ctx.VertexShader.SetShaderResource(1, _stateBufs.GroupSRV); // t1
+            ctx.VertexShader.SetShaderResource(0, StateBuffers.PointSRV); // t0
+            ctx.VertexShader.SetShaderResource(1, StateBuffers.GroupSRV); // t1
 
             ctx.InputAssembler.PrimitiveTopology = PrimitiveTopology.TriangleList;
 
@@ -737,8 +746,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
             ctx.VertexShader.SetConstantBuffer(0, _transformationBuffer);
             ctx.GeometryShader.SetConstantBuffer(0, _transformationBuffer);
             ctx.GeometryShader.SetConstantBuffer(1, _leaderLineGlowSettings);
-            ctx.GeometryShader.SetShaderResource(0, _stateBufs.PointSRV);
-            ctx.GeometryShader.SetShaderResource(1, _stateBufs.GroupSRV);
+            ctx.GeometryShader.SetShaderResource(0, StateBuffers.PointSRV);
+            ctx.GeometryShader.SetShaderResource(1, StateBuffers.GroupSRV);
             ctx.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding(_leaderLineBuffer.Buffer, _leaderLineBuffer.Stride, 0));
             ctx.Draw(_leaderLineInstanceCount, 0);
 
@@ -748,8 +757,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
             ctx.VertexShader.SetConstantBuffer(0, _transformationBuffer);
             ctx.GeometryShader.SetConstantBuffer(0, _transformationBuffer);
             ctx.GeometryShader.SetConstantBuffer(1, _leaderLineSettings);
-            ctx.GeometryShader.SetShaderResource(0, _stateBufs.PointSRV);
-            ctx.GeometryShader.SetShaderResource(1, _stateBufs.GroupSRV);
+            ctx.GeometryShader.SetShaderResource(0, StateBuffers.PointSRV);
+            ctx.GeometryShader.SetShaderResource(1, StateBuffers.GroupSRV);
             ctx.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding(_leaderLineBuffer.Buffer, _leaderLineBuffer.Stride, 0));
             ctx.Draw(_leaderLineInstanceCount, 0);
 
@@ -829,12 +838,12 @@ namespace Cad_Point_Manager.Controls.D3DControl
             if (_lineVertexBuffer is null || CadManager3D is null) { return; }
 
             var context = ResCache.DeviceContext;
-            var vertexSpan = CadManager3D.UpdateLineVerticesList(SceneIdMap, _stateBufs);
-            _stateBufs.EnsureObjectCapacity(SceneIdMap.ObjectCount);
+            var vertexSpan = CadManager3D.UpdateLineVerticesList(SceneIdMap, StateBuffers);
+            StateBuffers.EnsureObjectCapacity(SceneIdMap.ObjectCount);
             _lineVertexBuffer.Update(context, vertexSpan);
             _lineVertexCount = vertexSpan.Length;
 
-            _stateBufs.FlushAll();
+            StateBuffers.FlushAll();
             _lineVerticesDirty = false;
             _dxfDirty = true;
         }
@@ -847,11 +856,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
             }
 
             var context = ResCache.DeviceContext;
-            var vertexSpan = CadManager3D.UpdateTextVerticesList(ResCache, SceneIdMap, _stateBufs);
+            var vertexSpan = CadManager3D.UpdateTextVerticesList(ResCache, SceneIdMap, StateBuffers);
             _textVertexBuffer.Update(context, vertexSpan);
             _textVertexCount = vertexSpan.Length;
 
-            _stateBufs.FlushAll();
+            StateBuffers.FlushAll();
             _textVerticesDirty = false;
             _dxfDirty = true;
         }
@@ -875,14 +884,14 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 var isGroupVisible = pg.IsVisible ? 1f : 0f;
 
                 uint gId = SceneIdMap.GetOrAddGroupId(pg, out var isNewGroup);
-                if (isNewGroup) { _stateBufs.EnsureGroupCapacity(SceneIdMap.GroupCount); }
+                if (isNewGroup) { StateBuffers.EnsureGroupCapacity(SceneIdMap.GroupCount); }
 
                 foreach (var p in pg.Points)
                 {
                     if (p == null) { continue; }
 
                     uint pId = SceneIdMap.GetOrAddPointId(p, out var isNewPoint);
-                    if (isNewPoint) { _stateBufs.EnsurePointCapacity(SceneIdMap.PointCount); }
+                    if (isNewPoint) { StateBuffers.EnsurePointCapacity(SceneIdMap.PointCount); }
 
                     var isMO = p.IsMouseOver ? 1f : 0f;
                     var isSel = p.IsSelected ? 1f : 0f;
@@ -933,7 +942,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             }
             else { UpdateInitialMatrix(); }
 
-            _stateBufs.FlushAll();
+            StateBuffers.FlushAll();
             _glyphVerticesDirty = false;
             _dxfDirty = true;
 
@@ -945,11 +954,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
             if (_pointCircleVertexBuffer is null) { return; }
 
             var context = ResCache.DeviceContext;
-            var vertexSpan = CadManager3D.UpdatePointCircleVerticesList(SceneIdMap, _stateBufs);
+            var vertexSpan = CadManager3D.UpdatePointCircleVerticesList(SceneIdMap, StateBuffers);
             _pointCircleVertexBuffer.Update(context, vertexSpan);
             _pointCircleVertexCount = vertexSpan.Length;
 
-            _stateBufs.FlushAll();
+            StateBuffers.FlushAll();
             _pointCircleVerticesDirty = false;
             _dxfDirty = true;
         }
@@ -1072,13 +1081,13 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 if (pg is null) { continue; }
 
                 var gid = SceneIdMap.GetOrAddGroupId(pg, out var isNewGroup);
-                if (isNewGroup) { _stateBufs.EnsureGroupCapacity(SceneIdMap.GroupCount); }
+                if (isNewGroup) { StateBuffers.EnsureGroupCapacity(SceneIdMap.GroupCount); }
 
                 foreach (var p in pg.Points)
                 {
                     if (p is null) { continue; }
                     var pid = SceneIdMap.GetOrAddPointId(p, out var isNewPoint);
-                    if (isNewPoint) { _stateBufs.EnsurePointCapacity(SceneIdMap.PointCount); }
+                    if (isNewPoint) { StateBuffers.EnsurePointCapacity(SceneIdMap.PointCount); }
 
                     var center = Vector2.Zero;
 
@@ -1091,7 +1100,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 }
             }
 
-            _stateBufs.FlushAll();
+            StateBuffers.FlushAll();
             _anchorInstanceBuffer.Update(ctx, CollectionsMarshal.AsSpan(inst));
             _anchorVerticesCount = inst.Count;
             _anchorVerticesDirty = false;
@@ -1105,13 +1114,13 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 if (pg is null) { continue; }
 
                 uint gid = SceneIdMap.GetOrAddGroupId(pg, out var isNewGroup);
-                if (isNewGroup) { _stateBufs.EnsureGroupCapacity(SceneIdMap.GroupCount); }
+                if (isNewGroup) { StateBuffers.EnsureGroupCapacity(SceneIdMap.GroupCount); }
 
                 foreach (var p in pg.Points)
                 {
                     if (p is null) { continue; }
                     uint pid = SceneIdMap.GetOrAddPointId(p, out var isNewPoint);
-                    if (isNewPoint) { _stateBufs.EnsurePointCapacity(SceneIdMap.PointCount); }
+                    if (isNewPoint) { StateBuffers.EnsurePointCapacity(SceneIdMap.PointCount); }
 
                     var vertex = new LeaderLineInstance
                     {
@@ -1123,7 +1132,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     list.Add(vertex);
                 }
             }
-            _stateBufs.FlushAll();
+            StateBuffers.FlushAll();
             _leaderLineInstanceCount = list.Count;
             _leaderLineBuffer.Update(ResCache.DeviceContext, CollectionsMarshal.AsSpan(list));
             _leaderLineVerticesDirty = false;
@@ -1503,9 +1512,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _dragFillBuffer = new(device, 6);
 
             SceneIdMap ??= new();
-            _stateBufs?.Dispose();
-            _stateBufs = new(device, device.ImmediateContext);
-            StateController = new(SceneIdMap, _stateBufs);
+            StateBuffers?.Dispose();
+            StateBuffers = new(device, device.ImmediateContext);
+            StateController = new(SceneIdMap, StateBuffers);
 
             _anchorInstanceBuffer?.Dispose();
             _anchorInstanceBuffer = new(device, 64);
@@ -3087,7 +3096,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
         public void CompactStateBuffersIfUnder25Pct()
         {
-            if (_stateBufs is null || CadManager3D is null) { return; }
+            if (StateBuffers is null || CadManager3D is null) { return; }
 
             // Current live counts
             int groups = CadManager3D.CogoPointManager.PointGroups.Count;
@@ -3097,7 +3106,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             int layers = SceneIdMap?.LayerCount ?? 0;
             int objects = SceneIdMap?.ObjectCount ?? 0;
 
-            _stateBufs.MaybeShrinkAllTo25PctOrLess(labels, points, groups, layers, objects, UnbindAllStateSrvs);
+            StateBuffers.MaybeShrinkAllTo25PctOrLess(labels, points, groups, layers, objects, UnbindAllStateSrvs);
 
             // Re-upload CPU shadow arrays (if needed)
             // (Most of your state is already kept in _stateBufs.*Span; call your normal upload)
@@ -3223,7 +3232,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     pg.PropertyChanged += PointGroup_PropertyChanged;
 
                     var gId = SceneIdMap.GetOrAddGroupId(pg, out var isNew);
-                    if (isNew) { _stateBufs.InitializeGroupState(SceneIdMap.GroupCount, pg, gId); }
+                    if (isNew) { StateBuffers.InitializeGroupState(SceneIdMap.GroupCount, pg, gId); }
                 }
             }
             if (e.Action == NotifyCollectionChangedAction.Remove)
@@ -3248,17 +3257,17 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
                     uint pId = SceneIdMap.GetOrAddPointId(cp, out var isNewPoint);
                     uint gId = SceneIdMap.GetOrAddGroupId(cp.PointGroup, out var isNewGroup);
-                    if (isNewGroup) { _stateBufs.InitializeGroupState(SceneIdMap.GroupCount, cp.PointGroup, gId); }
-                    if (isNewPoint) { _stateBufs.InitializePointState(SceneIdMap.PointCount, cp, pId, gId); }
+                    if (isNewGroup) { StateBuffers.InitializeGroupState(SceneIdMap.GroupCount, cp.PointGroup, gId); }
+                    if (isNewPoint) { StateBuffers.InitializePointState(SceneIdMap.PointCount, cp, pId, gId); }
 
                     uint idPN = SceneIdMap.GetOrAddLabelId(cp, 0, out var isNew);
-                    if (isNew) { _stateBufs.InitializeLabelState(SceneIdMap.MaxLabelCount, cp.PointNumberOffset, idPN); }
+                    if (isNew) { StateBuffers.InitializeLabelState(SceneIdMap.MaxLabelCount, cp.PointNumberOffset, idPN); }
 
                     uint idElev = SceneIdMap.GetOrAddLabelId(cp, 1, out isNew);
-                    if (isNew) { _stateBufs.InitializeLabelState(SceneIdMap.MaxLabelCount, cp.ElevationOffset, idElev); }
+                    if (isNew) { StateBuffers.InitializeLabelState(SceneIdMap.MaxLabelCount, cp.ElevationOffset, idElev); }
 
                     uint idDesc = SceneIdMap.GetOrAddLabelId(cp, 2, out isNew);
-                    if (isNew) { _stateBufs.InitializeLabelState(SceneIdMap.MaxLabelCount, cp.DescriptionOffset, idDesc); }
+                    if (isNew) { StateBuffers.InitializeLabelState(SceneIdMap.MaxLabelCount, cp.DescriptionOffset, idDesc); }
                 }
             }
             if (e.Action == NotifyCollectionChangedAction.Remove)
@@ -3287,7 +3296,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
                     var lid = SceneIdMap.GetOrAddLayerId(layer, out bool isNew);
                     layer.Id = lid;
-                    if (isNew) { _stateBufs.InitializeLayerState(SceneIdMap.LayerCount, layer, lid); }
+                    if (isNew) { StateBuffers.InitializeLayerState(SceneIdMap.LayerCount, layer, lid); }
                 }
             }
             if (e.Action == NotifyCollectionChangedAction.Remove)
@@ -3313,19 +3322,19 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
                     if (obj is DrawingMtext drawingMtext)
                     {
-                        if (drawingMtext.MtextBlock is null) { drawingMtext.UpdateMtextBlock(ResCache, drawingMtext.Layer.Id, SceneIdMap, _stateBufs); }
+                        if (drawingMtext.MtextBlock is null) { drawingMtext.UpdateMtextBlock(ResCache, drawingMtext.Layer.Id, SceneIdMap, StateBuffers); }
                         foreach (var row in drawingMtext.MtextBlock.Rows)
                         {
                             foreach (var seg in row.Segments)
                             {
                                 var segId = SceneIdMap.GetOrAddObjectId(seg, out isNew);
-                                if (isNew) { _stateBufs.InitializeObjectState(SceneIdMap.ObjectCount, seg, segId); }
+                                if (isNew) { StateBuffers.InitializeObjectState(SceneIdMap.ObjectCount, seg, segId); }
                                 continue;
                             }
                         }
                     }
                     var oId = SceneIdMap.GetOrAddObjectId(drawingObj, out isNew);
-                    if (isNew) { _stateBufs.InitializeObjectState(SceneIdMap.ObjectCount, drawingObj, oId); }
+                    if (isNew) { StateBuffers.InitializeObjectState(SceneIdMap.ObjectCount, drawingObj, oId); }
                 }
             }
         }
@@ -3676,7 +3685,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     _toggleVS?.Dispose(); _toggleVS = null;
                     _togglePS?.Dispose(); _togglePS = null;
 
-                    _stateBufs.Dispose(); _stateBufs = null;
+                    StateBuffers.Dispose(); StateBuffers = null;
                 }
 
                 disposedValue = true;

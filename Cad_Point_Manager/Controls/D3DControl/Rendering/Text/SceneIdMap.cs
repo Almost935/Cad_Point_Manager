@@ -89,6 +89,17 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
             return id;
         }
 
+        public void Reset()
+        {
+            _labelOf.Clear();
+            _pointOf.Clear();
+            _groupOf.Clear();
+            _layerOf.Clear();
+            _objectOf.Clear();
+
+            _nextLabelId = 0;
+        }
+
         public int MaxLabelCount => (int)_nextLabelId;
         public int PointCount => _pointOf.Count;
         public int GroupCount => _groupOf.Count;

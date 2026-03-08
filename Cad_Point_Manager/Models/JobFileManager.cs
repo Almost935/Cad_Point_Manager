@@ -3,9 +3,11 @@ using Cad_Point_Manager.Models;
 using Cad_Point_Manager.Models.PointRendering;
 using netDxf;
 using System.IO;
+using System.IO.Compression;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Windows;
+using System.Windows.Media;
 
 namespace Cad_Point_Manager.Models
 {
@@ -16,7 +18,7 @@ namespace Cad_Point_Manager.Models
         private string _jobFilePath;
         private string _dxfFilePath;
         private DxfDocument _dxfDoc;
-        private CadManager _cadManager3D;
+        private CadManager _CadManager;
         private Rect _extents = RectExtensions.Zero;
         #endregion
 
@@ -59,10 +61,10 @@ namespace Cad_Point_Manager.Models
         }
         public CadManager CadManager
         {
-            get { return _cadManager3D; }
+            get { return _CadManager; }
             set
             {
-                _cadManager3D = value;
+                _CadManager = value;
                 OnPropertyChanged();
             }
         }
@@ -84,7 +86,7 @@ namespace Cad_Point_Manager.Models
         #region Constructors
         public JobFileManager()
         {
-            CadManager = new CadManager();
+            CadManager = new();
         }
         #endregion
 
@@ -104,25 +106,28 @@ namespace Cad_Point_Manager.Models
         }
         public bool TrySaveJobFile()
         {
-            if (!JobPathSet)
+            try
             {
-                bool result = TryGetJobFilePath();
+                if (!JobPathSet)
+                {
+                    if (!TryGetJobFilePath())
+                    {
+                        return false;
+                    }
+                }
 
-                if (result == true)
-                {
-                    JobPathSet = true;
-                    SaveJobFile(JobFilePath);
-                    return true;
-                }
-                else
-                {
-                    return false;
-                }
-            }
-            else
-            {
                 SaveJobFile(JobFilePath);
                 return true;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    $"Failed to save job file.\n\n{ex.Message}",
+                    "Save Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+
+                return false;
             }
         }
         public bool TryGetJobFilePath()
@@ -132,27 +137,54 @@ namespace Cad_Point_Manager.Models
                 DefaultExt = ".cpm",
                 Filter = "Cad Point Manager Files (*.cpm)|*.cpm"
             };
-            //dlg.InitialDirectory = @"C:\Users\fcraw\source\repos\Cad_Point_Manager\Cad_Point_Manager\Resources\DXF";
 
             bool? result = dlg.ShowDialog();
 
             if (result == true)
             {
                 JobFilePath = dlg.FileName;
-                JobName = Path.GetFileName(JobFilePath);
+                JobName = Path.GetFileNameWithoutExtension(JobFilePath);
                 JobPathSet = true;
                 return true;
             }
-            else
-            {
-                return false;
-            }
+
+            return false;
         }
         public void SaveJobFile(string path)
         {
-            JobFileData jobFileData = new() { JobName = JobName, DxfFileName = Dxf };
-            string jsonString = JsonSerializer.Serialize(jobFileData);
-            File.WriteAllText(path, jsonString);
+            if (DxfDoc is null)
+                throw new InvalidOperationException("Cannot save job because no DXF document is loaded.");
+
+            JobFileData jobFileData = BuildJobFileData();
+
+            var jsonOptions = new JsonSerializerOptions
+            {
+                WriteIndented = true,
+                Converters = { new JsonStringEnumConverter() }
+            };
+
+            using FileStream fileStream = File.Create(path);
+            using ZipArchive archive = new(fileStream, ZipArchiveMode.Create);
+
+            // Save job.json
+            ZipArchiveEntry jsonEntry = archive.CreateEntry("job.json", CompressionLevel.Optimal);
+            using (Stream jsonStream = jsonEntry.Open())
+            using (StreamWriter writer = new(jsonStream))
+            {
+                string jsonString = JsonSerializer.Serialize(jobFileData, jsonOptions);
+                writer.Write(jsonString);
+            }
+
+            // Save drawing.dxf
+            ZipArchiveEntry dxfEntry = archive.CreateEntry("drawing.dxf", CompressionLevel.Optimal);
+            using (Stream dxfStream = dxfEntry.Open())
+            {
+                bool success = DxfDoc.Save(dxfStream);
+                if (!success)
+                {
+                    throw new InvalidOperationException("Failed to save DXF into the job file.");
+                }
+            }
         }
 
         public bool TryLoadJobFile()
@@ -162,32 +194,36 @@ namespace Cad_Point_Manager.Models
                 DefaultExt = ".cpm",
                 Filter = "Cad Point Manager Files (*.cpm)|*.cpm"
             };
-            //dlg.InitialDirectory = @"C:\Users\fcraw\source\repos\Cad_Point_Manager\Cad_Point_Manager\Resources\DXF";
 
             bool? result = dlg.ShowDialog();
 
-            if (result == true)
+            if (result != true)
             {
-                string jsonString = File.ReadAllText(dlg.FileName);
-                var options = new JsonSerializerOptions { IncludeFields = true, Converters = { new JsonStringEnumConverter() } };
-                JobFileData jobFileData = JsonSerializer.Deserialize<JobFileData>(jsonString, options);
-                bool isLoaded = LoadJobFile(jobFileData);
+                return false;
+            }
 
-                if (isLoaded)
-                {
-                    JobFilePath = dlg.FileName;
-                    JobName = Path.GetFileName(JobFilePath);
-                    JobPathSet = true;
-
-                    return true;
-                }
-                else
+            try
+            {
+                bool loaded = LoadJobFileFromPath(dlg.FileName);
+                if (!loaded)
                 {
                     return false;
                 }
+
+                JobFilePath = dlg.FileName;
+                JobName = Path.GetFileNameWithoutExtension(dlg.FileName);
+                JobPathSet = true;
+
+                return true;
             }
-            else
+            catch (Exception ex)
             {
+                MessageBox.Show(
+                    $"Failed to load job file.\n\n{ex.Message}",
+                    "Load Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+
                 return false;
             }
         }
@@ -211,32 +247,196 @@ namespace Cad_Point_Manager.Models
                 CadManager.LoadDxf(dxfDoc);
             }
         }
-    }
+
         #endregion
-}
 
-public sealed class JobFileData
-{
-    public int FileVersion { get; set; } = 1;
-    public string JobName { get; set; } = string.Empty;
-    public string JobFilePath { get; set; } = string.Empty;
-    public string DxfFileName { get; set; } = string.Empty;
-    public string DxfFilePath { get; set; } = string.Empty;
-    public Rect Extents { get; set; }
+        #region Private Save Helpers
+        private JobFileData BuildJobFileData()
+        {
+            List<PointGroupDto> pointGroupDtos = [];
+            List<CogoPointDto> cogoPointDtos = [];
 
-    public List<PointGroupDto> PointGroups { get; set; } = new();
-    public List<CogoPointDto> CogoPoints { get; set; } = new();
+            if (CadManager?.CogoPointManager?.PointGroups is not null)
+            {
+                foreach (var pointGroup in CadManager.CogoPointManager.PointGroups)
+                {
+                    pointGroupDtos.Add(new(pointGroup));
+                }
+            }
 
-    public JobFileData() { }
+            if (CadManager?.CogoPointManager?.CogoPoints is not null)
+            {
+                foreach (var point in CadManager.CogoPointManager.CogoPoints)
+                {
+                    cogoPointDtos.Add(new CogoPointDto(point));
+                }
+            }
 
-    public JobFileData(JobFileManager jobFile)
+            return new JobFileData(this);
+        }
+        #endregion
+
+        #region Private Load Helpers
+        private bool LoadJobFileFromPath(string filePath)
+        {
+            using FileStream fileStream = File.OpenRead(filePath);
+            using ZipArchive archive = new(fileStream, ZipArchiveMode.Read);
+
+            ZipArchiveEntry? jsonEntry = archive.GetEntry("job.json");
+            ZipArchiveEntry? dxfEntry = archive.GetEntry("drawing.dxf");
+
+            if (jsonEntry is null || dxfEntry is null)
+            {
+                return false;
+            }
+
+            JobFileData? jobFileData;
+            using (Stream jsonStream = jsonEntry.Open())
+            using (StreamReader reader = new(jsonStream))
+            {
+                string jsonString = reader.ReadToEnd();
+
+                var options = new JsonSerializerOptions
+                {
+                    Converters = { new JsonStringEnumConverter() }
+                };
+
+                jobFileData = JsonSerializer.Deserialize<JobFileData>(jsonString, options);
+            }
+
+            if (jobFileData is null)
+            {
+                return false;
+            }
+
+            DxfDocument? loadedDxf;
+            string tempDxfPath = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}.dxf");
+
+            try
+            {
+                using (Stream dxfStream = dxfEntry.Open())
+                using (FileStream tempFile = File.Create(tempDxfPath))
+                {
+                    dxfStream.CopyTo(tempFile);
+                }
+
+                loadedDxf = DxfDocument.Load(tempDxfPath);
+            }
+            finally
+            {
+                if (File.Exists(tempDxfPath))
+                {
+                    File.Delete(tempDxfPath);
+                }
+            }
+
+            if (loadedDxf is null)
+            {
+                return false;
+            }
+
+            return LoadJobFile(jobFileData, loadedDxf);
+        }
+
+        private bool LoadJobFile(JobFileData jobFileData, DxfDocument dxfDoc)
+        {
+            if (jobFileData is null || dxfDoc is null)
+            {
+                return false;
+            }
+
+            NewJobFile();
+
+            JobName = jobFileData.JobName;
+            DxfDoc = dxfDoc;
+            Extents = jobFileData.Extents;
+
+            // Rebuild DXF-derived runtime objects
+            CadManager.LoadDxf(dxfDoc);
+
+            // Important: if LoadDxf() currently creates test points, remove that call there.
+            // This clear acts as a safeguard in case that call is still present.
+            CadManager.ClearDxfPoints();
+
+            Dictionary<string, PointGroup> pointGroupsByName = new(StringComparer.OrdinalIgnoreCase);
+
+            // Restore PointGroups first
+            foreach (PointGroupDto pgDto in jobFileData.PointGroups)
+            {
+                bool created = CadManager.CogoPointManager.TryCreatePointGroup(
+                    pgDto.Name,
+                    Color.FromArgb(pgDto.A, pgDto.R, pgDto.G, pgDto.B),
+                    out PointGroup? pointGroup);
+
+                if (!created || pointGroup is null)
+                {
+                    continue;
+                }
+
+                pointGroup.IsVisible = pgDto.IsVisible;
+                pointGroup.PointScale = pgDto.PointScale;
+
+                pointGroupsByName[pointGroup.Name] = pointGroup;
+            }
+
+            // Restore CogoPoints
+            foreach (CogoPointDto cpDto in jobFileData.CogoPoints)
+            {
+                if (!pointGroupsByName.TryGetValue(cpDto.PointGroupName, out PointGroup? pointGroup))
+                {
+                    continue;
+                }
+
+                CadManager.CogoPointManager.TryAddPoint(
+                    cpDto.PointNumber,
+                    new SharpDX.Vector3(cpDto.X, cpDto.Y, cpDto.Z),
+                    pointGroup,
+                    out _,
+                    cpDto.Elevation,
+                    cpDto.Description);
+            }
+
+            // Rebuild runtime-only state
+            CadManager.UpdateExtents();
+            CadManager.UpdateCogoPointTree();
+
+            Extents = CadManager.Extents;
+
+            CadManager.LineVerticesDirty = true;
+            CadManager.TextVerticesDirty = true;
+            CadManager.CogoPointTextVerticesDirty = true;
+            CadManager.CogoPointCircleVerticesDirty = true;
+            CadManager.HitTestableObjectTreeDirty = true;
+            CadManager.DxfNeedsReload = true;
+
+            return true;
+        }
+        #endregion
+    }
+
+    public sealed class JobFileData
     {
-        JobName = jobFile.JobName;
-        JobFilePath = jobFile.JobFilePath;
-        DxfFileName = jobFile.DxfFileName;
-        DxfFilePath = jobFile.DxfFilePath;
-        Extents = jobFile.Extents;
-        PointGroups = jobFile.CadManager.CogoPointManager.GetPointGroupDtos();
-        CogoPoints = jobFile.CadManager.CogoPointManager.GetCogoPointDtos();
+        public int FileVersion { get; set; } = 1;
+        public string JobName { get; set; } = string.Empty;
+        public string JobFilePath { get; set; } = string.Empty;
+        public string DxfFileName { get; set; } = string.Empty;
+        public string DxfFilePath { get; set; } = string.Empty;
+        public Rect Extents { get; set; }
+
+        public List<PointGroupDto> PointGroups { get; set; } = new();
+        public List<CogoPointDto> CogoPoints { get; set; } = new();
+
+        public JobFileData() { }
+
+        public JobFileData(JobFileManager jobFile)
+        {
+            JobName = jobFile.JobName;
+            JobFilePath = jobFile.JobFilePath;
+            DxfFileName = jobFile.DxfFileName;
+            DxfFilePath = jobFile.DxfFilePath;
+            Extents = jobFile.Extents;
+            PointGroups = jobFile.CadManager.CogoPointManager.GetPointGroupDtos();
+            CogoPoints = jobFile.CadManager.CogoPointManager.GetCogoPointDtos();
+        }
     }
 }

@@ -423,6 +423,7 @@ namespace Cad_Point_Manager.ViewModels
 
         public SceneIdMap SceneIdMap { get; set; }
         public D3dStateController StateController { get; set; }
+        public D3dStateBuffers StateBuffers { get; set; }
         #endregion
 
         #region Commands
@@ -450,6 +451,7 @@ namespace Cad_Point_Manager.ViewModels
         #region Events
         public event EventHandler? ResetSelectionRequested;
         public event EventHandler? ResetLayoutsViewRequested;
+        public event EventHandler? RebuildLayoutsViewRequested;
         #endregion
 
         #region Constructors
@@ -479,13 +481,21 @@ namespace Cad_Point_Manager.ViewModels
                 bool saved = JobFileManager.TrySaveJobFile();
                 if (saved)
                 {
+                    SceneIdMap.Reset();
+                    StateController.ClearDirty();
+                    StateBuffers.ResetFull();
                     JobFileManager.NewJobFile();
+                    RebuildLayoutsViewRequested?.Invoke(this, EventArgs.Empty);
                 }
                 else { return; }
             }
             else if (result == MessageBoxResult.No)
             {
+                SceneIdMap.Reset();
+                StateController.ClearDirty();
+                StateBuffers.ResetFull();
                 JobFileManager.NewJobFile();
+                RebuildLayoutsViewRequested?.Invoke(this, EventArgs.Empty);
             }
             else
             {

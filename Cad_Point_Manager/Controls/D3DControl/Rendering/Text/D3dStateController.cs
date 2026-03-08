@@ -238,6 +238,15 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
             _bufs.FlushLabelSubset(_dirtyLabels);
             _dirtyLabels.Clear();
         }
+
+        public void ClearDirty()
+        {
+            _dirtyObjects.Clear();
+            _dirtyGroups.Clear();
+            _dirtyLabels.Clear();
+            _dirtyPoints.Clear();
+            _dirtyLayers.Clear();
+        }
         #endregion
     }
 }

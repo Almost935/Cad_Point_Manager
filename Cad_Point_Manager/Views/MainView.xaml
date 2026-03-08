@@ -170,8 +170,8 @@
               Grid.Row="1"
               Visibility="{Binding LayoutsVisible, Converter={StaticResource BoolToVisibilityConverter}}">
             <uc:LayoutsViewControl x:Name="LayoutsViewControl"
-                                   CadManager="{Binding DataContext.JobFileManager.CadManager3D, RelativeSource={RelativeSource AncestorType=Page}}"
-                                   Scenes="{Binding DataContext.JobFileManager.CadManager3D.Camera.Scenes, RelativeSource={RelativeSource AncestorType=Page}}"
+                                   CadManager="{Binding DataContext.JobFileManager.CadManager, RelativeSource={RelativeSource AncestorType=Page}}"
+                                   Scenes="{Binding DataContext.JobFileManager.CadManager.Camera.Scenes, RelativeSource={RelativeSource AncestorType=Page}}"
                                    Renderer="{Binding ElementName=d3dDxfControl}"
                                    ActiveLayout="{Binding DataContext.ActiveLayout, RelativeSource={RelativeSource AncestorType=Page}, Mode=TwoWay}" />
         </Grid>
@@ -381,7 +381,7 @@
                             <MultiBinding Converter="{StaticResource SnapToggleEnumToBoolConverter}">
                                 <Binding Path="Tag"
                                          RelativeSource="{RelativeSource Self}" />
-                                <Binding Path="JobFileManager.CadManager3D.SnapSelectionMode" />
+                                <Binding Path="JobFileManager.CadManager.SnapSelectionMode" />
                             </MultiBinding>
                         </ToggleButton.IsChecked>
                     </ToggleButton>
@@ -406,7 +406,7 @@
                             <MultiBinding Converter="{StaticResource SnapToggleEnumToBoolConverter}">
                                 <Binding Path="Tag"
                                          RelativeSource="{RelativeSource Self}" />
-                                <Binding Path="JobFileManager.CadManager3D.SnapSelectionMode" />
+                                <Binding Path="JobFileManager.CadManager.SnapSelectionMode" />
                             </MultiBinding>
                         </ToggleButton.IsChecked>
                     </ToggleButton>
@@ -452,7 +452,7 @@
                               Style="{StaticResource ValidationComboBox}"
                               Height="{StaticResource CogoCreationTextBoxHeight}"
                               MinWidth="{StaticResource CogoCreationTextBoxWidth}"
-                              ItemsSource="{Binding JobFileManager.CadManager3D.PointGroupsView}"
+                              ItemsSource="{Binding JobFileManager.CadManager.PointGroupsView}"
                               DisplayMemberPath="Name"
                               Margin="{StaticResource CogoPointCreationTextBoxMargin}"
                               SelectedValue="{Binding ActivePointGroup}" />
@@ -461,25 +461,24 @@
             <Grid x:Name="PopoutsGrid"
                   Grid.Row="2"
                   ClipToBounds="False"
-                  Panel.ZIndex="1"
-                  PreviewMouseLeftButtonUp="PopoutsGrid_PreviewMouseLeftButtonUp">
+                  Panel.ZIndex="1">
                 <uc:RightHandPopout x:Name="RightSidePopout"
                                     Panel.ZIndex="1"
                                     Width="400"
                                     HorizontalAlignment="Right"
                                     ClipToBounds="False"
-                                    CadManager="{Binding JobFileManager.CadManager3D}"
-                                    LayerCollectionView="{Binding JobFileManager.CadManager3D.LayersView}"
-                                    PointGroupCollectionView="{Binding JobFileManager.CadManager3D.PointGroupsView}"
+                                    CadManager="{Binding JobFileManager.CadManager}"
+                                    LayerCollectionView="{Binding JobFileManager.CadManager.LayersView}"
+                                    PointGroupCollectionView="{Binding JobFileManager.CadManager.PointGroupsView}"
                                     Grid.Column="1" />
                 <uc:LeftHandPopout x:Name="LeftSidePopout"
                                    Panel.ZIndex="1"
                                    Width="400"
                                    HorizontalAlignment="Left"
                                    ClipToBounds="False"
-                                   CadManager="{Binding JobFileManager.CadManager3D}"
+                                   CadManager="{Binding JobFileManager.CadManager}"
                                    SelectedCogoPoints="{Binding SelectedCogoPoints}"
-                                   Camera="{Binding JobFileManager.CadManager3D.Camera}"
+                                   Camera="{Binding JobFileManager.CadManager.Camera}"
                                    ActivePointGroup="{Binding ActivePointGroup}" />
             </Grid>
             <Grid x:Name="dxfGrid"
@@ -505,7 +504,7 @@
                     </MultiBinding>
                 </Grid.Margin>
                 <d3D:D3dDxfControl x:Name="d3dDxfControl"
-                                   CadManager3D="{Binding JobFileManager.CadManager3D}"
+                                   CadManager3D="{Binding JobFileManager.CadManager}"
                                    Layers="{Binding Layers, Mode=TwoWay}"
                                    PointGroups="{Binding PointGroups, Mode=TwoWay}"
                                    CogoPoints="{Binding CogoPoints, Mode=TwoWay}"
@@ -513,8 +512,9 @@
                                    SelectedGeometries="{Binding SelectedGeometries, Mode=TwoWay}"
                                    SnappedHitTestablePoint="{Binding SnappedHitTestablePoint, Mode=TwoWay}"
                                    SelectedHitTestablePoints="{Binding SelectedHitTestablePoints, Mode=TwoWay}"
-                                   SceneIdMap="{Binding SceneIdMap, Mode=TwoWay}"
-                                   StateController="{Binding StateController, Mode=TwoWay}"
+                                   SceneIdMap="{Binding SceneIdMap, Mode=OneWayToSource}"
+                                   StateController="{Binding StateController, Mode=OneWayToSource}"
+                                   StateBuffers="{Binding StateBuffers, Mode=OneWayToSource}"
                                    ResCache="{Binding ResCache}"
                                    Focusable="True"
                                    MousePosition="{Binding MousePosition, Mode=OneWayToSource}"
@@ -523,7 +523,7 @@
                     <uc:SignificantPointControl HitTestablePoint="{Binding DataContext.SnappedHitTestablePoint, RelativeSource={RelativeSource AncestorType=Page}}"
                                                 Focusable="False"
                                                 IsHitTestVisible="False"
-                                                Visibility="{Binding Path=DataContext.JobFileManager.CadManager3D.SnapSelectionMode, RelativeSource={RelativeSource AncestorType=Page},Converter={StaticResource SelectionModeToVisibilityConverter}, ConverterParameter=Points}">
+                                                Visibility="{Binding Path=DataContext.JobFileManager.CadManager.SnapSelectionMode, RelativeSource={RelativeSource AncestorType=Page},Converter={StaticResource SelectionModeToVisibilityConverter}, ConverterParameter=Points}">
                         <uc:SignificantPointControl.RenderTransform>
                             <TransformGroup>
                                 <TranslateTransform>
@@ -532,7 +532,7 @@
                                                       ConverterParameter="X">
                                             <Binding Path="DataContext.SnappedHitTestablePoint.Position"
                                                      RelativeSource="{RelativeSource AncestorType=Page}" />
-                                            <Binding Path="DataContext.JobFileManager.CadManager3D.Camera.WindowsMatrix"
+                                            <Binding Path="DataContext.JobFileManager.CadManager.Camera.WindowsMatrix"
                                                      RelativeSource="{RelativeSource AncestorType=Page}" />
                                         </MultiBinding>
                                     </TranslateTransform.X>
@@ -541,7 +541,7 @@
                                                       ConverterParameter="Y">
                                             <Binding Path="DataContext.SnappedHitTestablePoint.Position"
                                                      RelativeSource="{RelativeSource AncestorType=Page}" />
-                                            <Binding Path="DataContext.JobFileManager.CadManager3D.Camera.WindowsMatrix"
+                                            <Binding Path="DataContext.JobFileManager.CadManager.Camera.WindowsMatrix"
                                                      RelativeSource="{RelativeSource AncestorType=Page}" />
                                         </MultiBinding>
                                     </TranslateTransform.Y>
@@ -557,7 +557,7 @@
               Grid.Row="1"
               Visibility="{Binding PointsVisible, Converter={StaticResource BoolToVisibilityConverter}}">
             <uc:PointsViewControl x:Name="PointsViewControl"
-                                  CadManager="{Binding DataContext.JobFileManager.CadManager3D, RelativeSource={RelativeSource AncestorType=Page}}"/>
+                                  CadManager="{Binding DataContext.JobFileManager.CadManager, RelativeSource={RelativeSource AncestorType=Page}}"/>
         </Grid>
 
         <Grid x:Name="LowerRibbonGrid"

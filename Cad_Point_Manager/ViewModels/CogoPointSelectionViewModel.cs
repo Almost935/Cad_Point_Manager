@@ -46,19 +46,16 @@ namespace Cad_Point_Manager.ViewModels
             get => GetCommonValueOrVaries(p => p.Northing);
             set => SetDoubleProperty(p => p.Northing = double.Parse(value));
         }
-
         public string Easting
         {
             get => GetCommonValueOrVaries(p => p.Easting);
             set => SetDoubleProperty(p => p.Easting = double.Parse(value));
         }
-
         public string Elevation
         {
             get => GetCommonValueOrVaries(p => p.Elevation);
             set => SetDoubleProperty(p => p.Elevation = double.Parse(value));
         }
-
         public string Description
         {
             get
@@ -77,7 +74,6 @@ namespace Cad_Point_Manager.ViewModels
                 OnPropertyChanged(nameof(Description));
             }
         }
-
         public string PointGroup
         {
             get

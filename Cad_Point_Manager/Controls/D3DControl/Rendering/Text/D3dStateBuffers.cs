@@ -1,4 +1,5 @@
-﻿// Rendering/D3D/D3dStateBuffers.cs
+﻿
+// Rendering/D3D/D3dStateBuffers.cs
 using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Models.DrawingObjects;
 using Cad_Point_Manager.Models.PointRendering;
@@ -561,13 +562,55 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
             });
         }
 
+        public void ResetFull()
+        {
+            Dispose();
+
+            _labelCap = 0;
+            _pointCap = 0;
+            _groupCap = 0;
+            _layerCap = 0;
+            _objectCap = 0;
+
+            _labelCpu = [];
+            _pointCpu = [];
+            _groupCpu = [];
+            _layerCpu = [];
+            _objectCpu = [];
+        }
+
 
         public void Dispose()
         {
-            _labelSrv?.Dispose(); _labelBuf?.Dispose();
-            _pointSrv?.Dispose(); _pointBuf?.Dispose();
-            _groupSrv?.Dispose(); _groupBuf?.Dispose();
-            _layerSrv?.Dispose(); _layerBuf?.Dispose();
+            _labelSrv?.Dispose();
+            _labelSrv = null;
+
+            _labelBuf?.Dispose();
+            _labelBuf = null;
+
+            _pointSrv?.Dispose();
+            _pointSrv = null;
+
+            _pointBuf?.Dispose();
+            _pointBuf = null;
+
+            _groupSrv?.Dispose();
+            _groupSrv = null;
+
+            _groupBuf?.Dispose();
+            _groupBuf = null;
+
+            _layerSrv?.Dispose();
+            _layerSrv = null;
+
+            _layerBuf?.Dispose();
+            _layerBuf = null;
+
+            _objectSrv?.Dispose();
+            _objectSrv = null;
+
+            _objectBuf?.Dispose();
+            _objectBuf = null;
         }
 
         private static int NextPow2(int v)

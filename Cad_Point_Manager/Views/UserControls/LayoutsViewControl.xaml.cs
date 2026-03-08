@@ -29,10 +29,6 @@ namespace Cad_Point_Manager.Views.UserControls
         private Matrix _initialMatrix;
         #endregion
 
-        #region Properties
-
-        #endregion
-
         #region Dependency Properties
         public static readonly DependencyProperty CadManagerProperty =
             DependencyProperty.Register(

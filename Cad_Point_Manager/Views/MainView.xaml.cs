@@ -24,6 +24,7 @@ namespace Cad_Point_Manager.Views
                     //Application.Current.MainWindow.KeyUp += vm.Window_KeyUp;
                     vm.ResetSelectionRequested += Vm_ResetSelectionRequested;
                     vm.ResetLayoutsViewRequested += OnResetLayoutsView;
+                    vm.RebuildLayoutsViewRequested += OnRebuildLayoutsView;
                 }
             };
             Unloaded += (s, e) =>
@@ -33,6 +34,7 @@ namespace Cad_Point_Manager.Views
                     //Application.Current.MainWindow.KeyUp -= vm.Window_KeyUp;
                     vm.ResetSelectionRequested -= Vm_ResetSelectionRequested;
                     vm.ResetLayoutsViewRequested -= OnResetLayoutsView;
+                    vm.RebuildLayoutsViewRequested += OnRebuildLayoutsView;
                 }
             };
         }
@@ -40,6 +42,11 @@ namespace Cad_Point_Manager.Views
         private void OnResetLayoutsView(object? sender, EventArgs e)
         {
             LayoutsViewControl.ResetView();
+        }
+
+        private void OnRebuildLayoutsView(object? sender, EventArgs e)
+        {
+            LayoutsViewControl.ReloadPreview();
         }
 
         private void Vm_ResetSelectionRequested(object? sender, EventArgs e)
@@ -94,20 +101,6 @@ namespace Cad_Point_Manager.Views
                     textBox.SelectAll();
                 }), DispatcherPriority.Input);
             }
-        }
-
-        private void PopoutsGrid_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
-        {
-            //if (d3dDxfControl != null)
-            //{
-            //    // Forward the move to the D3D control so its OnMouseMove runs
-            //    var args = new MouseButtonEventArgs(e.MouseDevice, e.Timestamp, MouseButton.Left)
-            //    {
-            //        RoutedEvent = UIElement.MouseLeftButtonUpEvent,
-            //        Source = d3dDxfControl
-            //    };
-            //    d3dDxfControl.RaiseEvent(args);
-            //}
         }
 
         private void LayoutsModeRadioButton_Click(object sender, RoutedEventArgs e)
