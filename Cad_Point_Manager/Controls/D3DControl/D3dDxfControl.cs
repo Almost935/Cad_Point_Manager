@@ -326,14 +326,14 @@ namespace Cad_Point_Manager.Controls.D3DControl
         #endregion
 
         #region Dependency Properties
-        public CadManager CadManager3D
+        public CadManager CadManager
         {
             get { return (CadManager)GetValue(CadManager3DProperty); }
             set { SetValue(CadManager3DProperty, value); }
         }
         public static readonly DependencyProperty CadManager3DProperty =
         DependencyProperty.Register(
-            nameof(CadManager3D),
+            nameof(CadManager),
             typeof(CadManager),
             typeof(D3dDxfControl),
             new PropertyMetadata(null, OnCadManager3DChanged));
@@ -496,21 +496,21 @@ namespace Cad_Point_Manager.Controls.D3DControl
         {
             if (ResCache is null) { return; }
 
-            if (CadManager3D.Camera is null)
+            if (CadManager.Camera is null)
             {
                 SetInitialMatrix();
-                CadManager3D.Camera = new(Viewport, GlobalHelperProperties.ZoomFactor, new Rect(0, 0, Viewport.Width, Viewport.Height));
-                CadManager3D.ResetTemplates();
+                CadManager.Camera = new(Viewport, GlobalHelperProperties.ZoomFactor, new Rect(0, 0, Viewport.Width, Viewport.Height));
+                CadManager.ResetTemplates();
             }
             if (DxfNeedsReload)
             {
                 SetInitialMatrix();
-                CadManager3D.Camera.ResetView(_dxfInitialMatrix, CadManager3D.Extents);
-                CadManager3D.ResetTemplates();
+                CadManager.Camera.ResetView(_dxfInitialMatrix, CadManager.Extents);
+                CadManager.ResetTemplates();
 
                 ConstantBuffersDirty = true;
                 DxfNeedsReload = false;
-                CadManager3D.DxfNeedsReload = false;
+                CadManager.DxfNeedsReload = false;
             }
             if (!_buffersInitialized) { InitializeBuffers(); }
 
@@ -534,7 +534,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             if (!_sigPointShadersLoaded) { InitializeSignificantPointsShaders(); }
 
             if (!ConstantBuffersInitialized) { InitializeConstantBuffers(); }
-            if (ConstantBuffersDirty || CadManager3D.Camera.IsDirty) { UpdateConstantBuffers(); }
+            if (ConstantBuffersDirty || CadManager.Camera.IsDirty) { UpdateConstantBuffers(); }
 
             if (!_hitTestIsRunning)
             {
@@ -835,10 +835,10 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         private void UpdateLineVertices()
         {
-            if (_lineVertexBuffer is null || CadManager3D is null) { return; }
+            if (_lineVertexBuffer is null || CadManager is null) { return; }
 
             var context = ResCache.DeviceContext;
-            var vertexSpan = CadManager3D.UpdateLineVerticesList(SceneIdMap, StateBuffers);
+            var vertexSpan = CadManager.UpdateLineVerticesList(SceneIdMap, StateBuffers);
             StateBuffers.EnsureObjectCapacity(SceneIdMap.ObjectCount);
             _lineVertexBuffer.Update(context, vertexSpan);
             _lineVertexCount = vertexSpan.Length;
@@ -849,14 +849,14 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
         private void UpdateTextVertices()
         {
-            if (_textVertexBuffer is null || CadManager3D is null)
+            if (_textVertexBuffer is null || CadManager is null)
             {
                 _textVerticesDirty = false;
                 return;
             }
 
             var context = ResCache.DeviceContext;
-            var vertexSpan = CadManager3D.UpdateTextVerticesList(ResCache, SceneIdMap, StateBuffers);
+            var vertexSpan = CadManager.UpdateTextVerticesList(ResCache, SceneIdMap, StateBuffers);
             _textVertexBuffer.Update(context, vertexSpan);
             _textVertexCount = vertexSpan.Length;
 
@@ -934,13 +934,13 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 }
             }
 
-            CadManager3D.CogoPointManager.UpdateCogoPointTree();
+            CadManager.CogoPointManager.UpdateCogoPointTree();
 
-            if (CadManager3D.Camera.CurrentZoomStep == 0 && CadManager3D.Camera.Translate == Vector2.Zero)
-            {
-                SetInitialMatrix();
-            }
-            else { UpdateInitialMatrix(); }
+            //if (CadManager.Camera.CurrentZoomStep == 0 && CadManager.Camera.Translate == Vector2.Zero)
+            //{
+            //    SetInitialMatrix();
+            //}
+            //else { UpdateInitialMatrix(); }
 
             StateBuffers.FlushAll();
             _glyphVerticesDirty = false;
@@ -954,7 +954,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             if (_pointCircleVertexBuffer is null) { return; }
 
             var context = ResCache.DeviceContext;
-            var vertexSpan = CadManager3D.UpdatePointCircleVerticesList(SceneIdMap, StateBuffers);
+            var vertexSpan = CadManager.UpdatePointCircleVerticesList(SceneIdMap, StateBuffers);
             _pointCircleVertexBuffer.Update(context, vertexSpan);
             _pointCircleVertexCount = vertexSpan.Length;
 
@@ -1007,11 +1007,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
         private void UpdateCogoHoverVertices()
         {
-            if (ResCache is null || CadManager3D.Camera is null) { return; }
+            if (ResCache is null || CadManager.Camera is null) { return; }
 
             var ctx = ResCache.DeviceContext;
             _hoverCircleVertices.Clear();
-            var wupp = CadManager3D.Camera.GetWorldUnitsPerPixel();
+            var wupp = CadManager.Camera.GetWorldUnitsPerPixel();
             var rectInstances = new List<RoundedHoverRectInstance>(16);
 
             foreach (CogoPoint cp in _mouseOverCogoPoints)
@@ -1072,7 +1072,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
         private void UpdateToggleAnchorVertices()
         {
-            if (ResCache is null || CadManager3D.Camera is null || ResCache.DeviceContext is null) { return; }
+            if (ResCache is null || CadManager.Camera is null || ResCache.DeviceContext is null) { return; }
 
             var ctx = ResCache.DeviceContext;
             var inst = new List<ToggleAnchorInstance>(SelectedCogoPoints.Count);
@@ -1654,7 +1654,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
         private void UpdateConstantBuffers()
         {
-            var transformation = CadManager3D.Camera.ViewProjectionMatrix;
+            var transformation = CadManager.Camera.ViewProjectionMatrix;
             var transformationBuffer = new TransformationBuffer
             {
                 WorldViewProjection = transformation
@@ -1667,7 +1667,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             };
             ResCache.DeviceContext.UpdateSubresource(ref viewportBuffer, _viewportBuffer);
 
-            var worldUnitsPerPixel = CadManager3D.Camera.GetWorldUnitsPerPixel();
+            var worldUnitsPerPixel = CadManager.Camera.GetWorldUnitsPerPixel();
 
             var lineSettings = new LineSettingsBuffer
             {
@@ -1744,7 +1744,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             ResCache.DeviceContext.UpdateSubresource(ref sigPointSettings, _sigPointSettingsBuffer);
 
             ConstantBuffersDirty = false;
-            CadManager3D.Camera.IsDirty = false;
+            CadManager.Camera.IsDirty = false;
             _dxfDirty = true;
             _combinedDirty = true;
         }
@@ -1858,16 +1858,16 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         private void SetInitialMatrix()
         {
-            if (!CadManager3D.DxfLoaded) { _dxfInitialMatrix = Matrix.Identity; }
+            if (!CadManager.DxfLoaded) { _dxfInitialMatrix = Matrix.Identity; }
             else
             {
-                CadManager3D.UpdateExtents();
-                _dxfInitialMatrix = GetExtentsFittingMatrix(Viewport, CadManager3D.Extents);
+                CadManager.UpdateExtents();
+                _dxfInitialMatrix = GetExtentsFittingMatrix(Viewport, CadManager.Extents);
 
-                if (CadManager3D.Camera is not null)
+                if (CadManager.Camera is not null)
                 {
-                    CadManager3D.Camera.ResetView(_dxfInitialMatrix, CadManager3D.Extents);
-                    _hittestStrokeThickness = 7.0f / (CadManager3D.Camera.InitialViewMatrix.M11 * CadManager3D.Camera.CurrentZoom);
+                    CadManager.Camera.ResetView(_dxfInitialMatrix, CadManager.Extents);
+                    _hittestStrokeThickness = 7.0f / (CadManager.Camera.InitialViewMatrix.M11 * CadManager.Camera.CurrentZoom);
                     UpdateToggleAnchorDimensions();
                     ConstantBuffersDirty = true;
                 }
@@ -1875,10 +1875,10 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
         private void UpdateInitialMatrix()
         {
-            if (CadManager3D is null || !CadManager3D.DxfLoaded || CadManager3D.Camera is null) { return; }
+            if (CadManager is null || !CadManager.DxfLoaded || CadManager.Camera is null) { return; }
 
-            CadManager3D.UpdateExtents();
-            _dxfInitialMatrix = GetExtentsFittingMatrix(Viewport, CadManager3D.Extents);
+            CadManager.UpdateExtents();
+            _dxfInitialMatrix = GetExtentsFittingMatrix(Viewport, CadManager.Extents);
             ConstantBuffersDirty = true;
         }
         private Matrix GetExtentsFittingMatrix(ViewportF viewport, Rect extents)
@@ -1890,7 +1890,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         {
             var mousePx = DipToPixel(mousePosDip);
 
-            DxfCoords = CadManager3D.Camera.ScreenToWorld(mousePx);
+            DxfCoords = CadManager.Camera.ScreenToWorld(mousePx);
             MousePosition = DxfCoords.ToPoint();
             DxfCoordsString = formatVectorString(DxfCoords);
         }
@@ -1917,7 +1917,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             if (_cogoPointTextBeingMoved)
             {
                 var mousePx = GetMousePx(e);
-                var w = CadManager3D.Camera.ScreenToWorld(mousePx);
+                var w = CadManager.Camera.ScreenToWorld(mousePx);
 
                 var delta = new Vector2(w.X - _pressedToggleButtonPoint.Position.X.ToFloat(),
                     w.Y - _pressedToggleButtonPoint.Position.Y.ToFloat());
@@ -1956,7 +1956,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
                 if (e.MiddleButton == MouseButtonState.Pressed)
                 {
-                    CadManager3D.Camera.Pan(currentMousePos, _prevMousePos);
+                    CadManager.Camera.Pan(currentMousePos, _prevMousePos);
                     ConstantBuffersDirty = true;
                     e.Handled = true;
                 }
@@ -1976,8 +1976,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
             CurrentlyAppliedDragRectMatrix = matrix;
             UpdateDragRect();
 
-            CadManager3D.Camera.Zoom(zoomStep, mousePixels);
-            _hittestStrokeThickness = 7.0f / (CadManager3D.Camera.InitialViewMatrix.M11 * CadManager3D.Camera.CurrentZoom);
+            CadManager.Camera.Zoom(zoomStep, mousePixels);
+            _hittestStrokeThickness = 7.0f / (CadManager.Camera.InitialViewMatrix.M11 * CadManager.Camera.CurrentZoom);
 
             UpdateToggleAnchorDimensions();
 
@@ -2037,7 +2037,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             {
                 RecomputeCogoPointBoundsFast(_pressedToggleButtonPoint);
                 EndCogoToggleButtonPress();
-                CadManager3D.CogoPointManager.UpdateCogoPointTree();
+                CadManager.CogoPointManager.UpdateCogoPointTree();
                 UpdateInitialMatrix();
 
                 if (IsMouseCaptured) { ReleaseMouseCapture(); }
@@ -2054,7 +2054,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             bool cogoPointVerticesDirty = false;
             bool sigPointsVerticesDirty = false;
 
-            switch (CadManager3D.SnapSelectionMode)
+            switch (CadManager.SnapSelectionMode)
             {
                 case Common.Enums.SelectionMode.Geometries:
                     {
@@ -2174,7 +2174,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 ResetCogoToggleButtonMouseOver();
 
                 var mousePx = GetMousePx(e);
-                var w = CadManager3D.Camera.ScreenToWorld(mousePx);
+                var w = CadManager.Camera.ScreenToWorld(mousePx);
 
                 var delta = new Vector2(w.X - _pressedToggleButtonPoint.Position.X.ToFloat(),
                     w.Y - _pressedToggleButtonPoint.Position.Y.ToFloat());
@@ -2206,7 +2206,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             }
             if (e.Key == Key.Delete)
             {
-                if (CadManager3D.SnapSelectionMode == Common.Enums.SelectionMode.CogoPoints &&
+                if (CadManager.SnapSelectionMode == Common.Enums.SelectionMode.CogoPoints &&
                     SelectedCogoPoints.Count > 0)
                 {
                     DeleteCogoPoints(SelectedCogoPoints.ToList());
@@ -2248,14 +2248,14 @@ namespace Cad_Point_Manager.Controls.D3DControl
         {
             base.OnTargetsResized(wPx, hPx);
             Viewport = new(0, 0, wPx, hPx, 0.0f, 1.0f);
-            CadManager3D.ViewportSize = new Size2F(wPx, hPx);
+            CadManager.ViewportSize = new Size2F(wPx, hPx);
 
             SetInitialMatrix();
 
-            if (CadManager3D.Camera is not null)
+            if (CadManager.Camera is not null)
             {
-                CadManager3D.Camera.UpdateViewportSize(Viewport);
-                CadManager3D.ResetTemplates();
+                CadManager.Camera.UpdateViewportSize(Viewport);
+                CadManager.ResetTemplates();
                 ConstantBuffersDirty = true;
             }
             _dxfDirty = true;
@@ -2271,9 +2271,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         private void UpdateToggleAnchorDimensions()
         {
-            float wupp = CadManager3D.Camera.GetWorldUnitsPerPixel();
+            float wupp = CadManager.Camera.GetWorldUnitsPerPixel();
             float desiredHalfWorld = (AnchorPixelSize * 0.5f) * wupp;
-            float drawingShort = (float)Math.Min(CadManager3D.Camera.Extents.Width, CadManager3D.Camera.Extents.Height);
+            float drawingShort = (float)Math.Min(CadManager.Camera.Extents.Width, CadManager.Camera.Extents.Height);
             float maxHalfBase = (drawingShort * MaxCogoToggleToDrawingFraction) * 0.5f;
 
             // Cache for settings
@@ -2281,7 +2281,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _maxHalfBaseForAnchors = maxHalfBase;
             _featherWorldForAnchors = FeatherPx * wupp;
 
-            foreach (var pg in CadManager3D.CogoPointManager.PointGroups)
+            foreach (var pg in CadManager.CogoPointManager.PointGroups)
             {
                 foreach (var p in pg.Points)
                 {
@@ -2374,9 +2374,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         public void ZoomToExtents()
         {
-            if (CadManager3D.Camera is null) { return; }
+            if (CadManager.Camera is null) { return; }
 
-            CadManager3D.Camera.ResetView(_dxfInitialMatrix, CadManager3D.Extents);
+            CadManager.Camera.ResetView(_dxfInitialMatrix, CadManager.Extents);
             ResetHoverObjects();
             UpdateToggleAnchorDimensions();
             ConstantBuffersDirty = true;
@@ -2421,9 +2421,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
                 if (_suspendHitTesting) { await Task.Delay(50); continue; }
 
-                if (CadManager3D.DxfLoaded && CadManager3D.HitTestingEnabled)
+                if (CadManager.DxfLoaded && CadManager.HitTestingEnabled)
                 {
-                    switch (CadManager3D.SnapSelectionMode)
+                    switch (CadManager.SnapSelectionMode)
                     {
                         case Common.Enums.SelectionMode.Points:
                             RunPointsHitTest(_hitTestCancellationTokenSource.Token);
@@ -2463,7 +2463,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 Dispatcher.BeginInvoke(() => RunPointsHitTest(token));
                 return;
             }
-            if (!CadManager3D.DxfLoaded) { return; }
+            if (!CadManager.DxfLoaded) { return; }
 
             _lastHitTestCoords = new(DxfCoords.X, DxfCoords.Y);
 
@@ -2480,7 +2480,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 {
                     ResetHoverObjects();
 
-                    _nearestHitTestablePoints = CadManager3D.HitTestSignficantPoints(_lastHitTestCoords, _hittestStrokeThickness).Take(_maxSelectableObjects).ToList();
+                    _nearestHitTestablePoints = CadManager.HitTestSignficantPoints(_lastHitTestCoords, _hittestStrokeThickness).Take(_maxSelectableObjects).ToList();
 
                     if (_nearestHitTestablePoints.Count > 0)
                     {
@@ -2506,7 +2506,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             }
             else
             {
-                _nearestHitTestablePoints = CadManager3D.HitTestSignficantPoints(_lastHitTestCoords, _hittestStrokeThickness).Take(_maxSelectableObjects).ToList();
+                _nearestHitTestablePoints = CadManager.HitTestSignficantPoints(_lastHitTestCoords, _hittestStrokeThickness).Take(_maxSelectableObjects).ToList();
 
                 if (_nearestHitTestablePoints.Count < 1) { return; }
 
@@ -2542,7 +2542,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 return;
             }
 
-            if (!CadManager3D.DxfLoaded) { return; }
+            if (!CadManager.DxfLoaded) { return; }
 
             _lastHitTestCoords = new(DxfCoords.X, DxfCoords.Y);
 
@@ -2561,7 +2561,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                         ResetHoverObjects();
                         flushObjectStates = true;
 
-                        _nearestHitTestableGeometries = CadManager3D.HitTestGeometries(_lastHitTestCoords, _hittestStrokeThickness).Take(_maxSelectableObjects).ToList();
+                        _nearestHitTestableGeometries = CadManager.HitTestGeometries(_lastHitTestCoords, _hittestStrokeThickness).Take(_maxSelectableObjects).ToList();
                         if (_nearestHitTestableGeometries.Count > 0)
                         {
                             bool exists = HitTestingHelpers.TryGetNextDrawingGeometry(_currentSnapHitTestIndex, _nearestHitTestableGeometries, out var tup);
@@ -2585,7 +2585,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             }
             else
             {
-                _nearestHitTestableGeometries = CadManager3D.HitTestGeometries(_lastHitTestCoords, _hittestStrokeThickness).Take(_maxSelectableObjects).ToList();
+                _nearestHitTestableGeometries = CadManager.HitTestGeometries(_lastHitTestCoords, _hittestStrokeThickness).Take(_maxSelectableObjects).ToList();
 
                 if (_nearestHitTestableGeometries.Count > 0)
                 {
@@ -2623,7 +2623,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 Dispatcher.BeginInvoke(() => RunCogoPointsHitTest(token));
                 return;
             }
-            if (!CadManager3D.DxfLoaded) { return; }
+            if (!CadManager.DxfLoaded) { return; }
 
             _lastHitTestCoords = new(DxfCoords.X, DxfCoords.Y);
 
@@ -2672,7 +2672,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                         hoverVerticesDirty = true;
                         pointFlushNeeded = true;
 
-                        _nearestHitTestableCogoPoints = CadManager3D.HitTestCogoPoints(_lastHitTestCoords, _hittestStrokeThickness).Take(_maxSelectableObjects).ToList();
+                        _nearestHitTestableCogoPoints = CadManager.HitTestCogoPoints(_lastHitTestCoords, _hittestStrokeThickness).Take(_maxSelectableObjects).ToList();
                         if (_nearestHitTestableCogoPoints.Count > 0)
                         {
                             bool exists = HitTestingHelpers.TryGetNextCogoPoint(_currentSnapHitTestIndex, _nearestHitTestableCogoPoints, out var tup);
@@ -2702,7 +2702,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             }
             else
             {
-                _nearestHitTestableCogoPoints = CadManager3D.HitTestCogoPoints(_lastHitTestCoords, _hittestStrokeThickness)
+                _nearestHitTestableCogoPoints = CadManager.HitTestCogoPoints(_lastHitTestCoords, _hittestStrokeThickness)
                     .Take(_maxSelectableObjects).ToList();
                 if (_nearestHitTestableCogoPoints.Count > 0)
                 {
@@ -2739,13 +2739,13 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private async void RunDragCogoPointsHittest(CancellationToken token)
         {
             if (token.IsCancellationRequested) { return; }
-            if (!CadManager3D.DxfLoaded) { return; }
+            if (!CadManager.DxfLoaded) { return; }
 
             // Read DragRect safely from UI thread (cheap, single read)
             Rect currentRect = await Dispatcher.InvokeAsync(() => DragRect, DispatcherPriority.Render);
             if (currentRect.IsEmpty || currentRect.Width <= 0 || currentRect.Height <= 0) { return; }
 
-            var newSet = CadManager3D
+            var newSet = CadManager
                 .HitTestDragCogoPoints(currentRect)
                 .Where(p => currentRect.Contains(p.Bounds))
                 .ToHashSet();
@@ -2784,7 +2784,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 return;
             }
 
-            if (!CadManager3D.DxfLoaded) { return; }
+            if (!CadManager.DxfLoaded) { return; }
             if (_lastQueriedDxfRect == DragRect) { return; }
 
             var addedRegions = GetDragDelta(_lastQueriedDxfRect, DragRect);
@@ -2798,7 +2798,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             foreach (var region in addedRegions)
             {
-                var newHits = CadManager3D.HitTestDragGeometries(region).Distinct();
+                var newHits = CadManager.HitTestDragGeometries(region).Distinct();
 
                 foreach (var geometry in newHits)
                 {
@@ -2813,7 +2813,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             foreach (var region in removedRegions)
             {
-                var possiblyRemoved = CadManager3D.HitTestDragGeometries(region).Distinct();
+                var possiblyRemoved = CadManager.HitTestDragGeometries(region).Distinct();
 
                 foreach (var geometry in possiblyRemoved)
                 {
@@ -2840,9 +2840,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         private void LoadHitTestableObjectTree()
         {
-            if (CadManager3D is null) { return; }
+            if (CadManager is null) { return; }
 
-            CadManager3D.UpdateHitTestableObjectTree();
+            CadManager.UpdateHitTestableObjectTree();
             HitTestableObjectTreeDirty = false;
         }
 
@@ -3076,13 +3076,13 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 SceneIdMap.TryRemoveLabelId(cp, 2);
                 SceneIdMap.TryRemovePointId(cp);
 
-                CadManager3D.CogoPointManager.DeletePoint(cp);
+                CadManager.CogoPointManager.DeletePoint(cp);
             }
 
             StateController.FlushPointUpdates();
             StateController.FlushLabelUpdates();
 
-            CadManager3D.CogoPointManager.UpdateCogoPointTree();
+            CadManager.CogoPointManager.UpdateCogoPointTree();
             UpdateInitialMatrix();
         }
         private void UnbindAllStateSrvs(DeviceContext ctx)
@@ -3096,11 +3096,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
         public void CompactStateBuffersIfUnder25Pct()
         {
-            if (StateBuffers is null || CadManager3D is null) { return; }
+            if (StateBuffers is null || CadManager is null) { return; }
 
             // Current live counts
-            int groups = CadManager3D.CogoPointManager.PointGroups.Count;
-            int points = CadManager3D.CogoPointManager.PointGroups.SelectMany(pg => pg.Points).Count();
+            int groups = CadManager.CogoPointManager.PointGroups.Count;
+            int points = CadManager.CogoPointManager.PointGroups.SelectMany(pg => pg.Points).Count();
             int labelsPerPoint = 3;              // adjust if you render fewer/more lines
             int labels = points * labelsPerPoint;
             int layers = SceneIdMap?.LayerCount ?? 0;
@@ -3134,7 +3134,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         private void ClearDxf()
         {
-            CadManager3D.Camera.ResetView(Matrix.Identity, CadManager3D.Extents);
+            CadManager.Camera.ResetView(Matrix.Identity, CadManager.Extents);
             ResetHoverObjects();
             _lineVerticesDirty = _textVerticesDirty = true;
         }
@@ -3163,55 +3163,55 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
         private void CadManager3D_PropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
-            if (e.PropertyName == nameof(CadManager3D.DxfNeedsReload))
+            if (e.PropertyName == nameof(CadManager.DxfNeedsReload))
             {
-                if (CadManager3D.DxfNeedsReload)
+                if (CadManager.DxfNeedsReload)
                 {
                     DxfNeedsReload = true;
                 }
             }
-            if (e.PropertyName == nameof(CadManager3D.LineVerticesDirty))
+            if (e.PropertyName == nameof(CadManager.LineVerticesDirty))
             {
-                if (CadManager3D.LineVerticesDirty)
+                if (CadManager.LineVerticesDirty)
                 {
                     _lineVerticesDirty = true;
                 }
             }
-            if (e.PropertyName == nameof(CadManager3D.TextVerticesDirty))
+            if (e.PropertyName == nameof(CadManager.TextVerticesDirty))
             {
-                if (CadManager3D.TextVerticesDirty)
+                if (CadManager.TextVerticesDirty)
                 {
                     _textVerticesDirty = true;
                 }
             }
-            if (e.PropertyName == nameof(CadManager3D.CogoPointTextVerticesDirty))
+            if (e.PropertyName == nameof(CadManager.CogoPointTextVerticesDirty))
             {
-                if (CadManager3D.CogoPointTextVerticesDirty)
+                if (CadManager.CogoPointTextVerticesDirty)
                 {
                     _glyphVerticesDirty = true;
                     _leaderLineVerticesDirty = true;
                     _anchorVerticesDirty = true;
                 }
             }
-            if (e.PropertyName == nameof(CadManager3D.CogoPointCircleVerticesDirty))
+            if (e.PropertyName == nameof(CadManager.CogoPointCircleVerticesDirty))
             {
-                if (CadManager3D.CogoPointCircleVerticesDirty)
+                if (CadManager.CogoPointCircleVerticesDirty)
                 {
                     _pointCircleVerticesDirty = true;
                 }
             }
-            if (e.PropertyName == nameof(CadManager3D.HitTestableObjectTreeDirty))
+            if (e.PropertyName == nameof(CadManager.HitTestableObjectTreeDirty))
             {
-                if (CadManager3D.HitTestableObjectTreeDirty)
+                if (CadManager.HitTestableObjectTreeDirty)
                 {
                     HitTestableObjectTreeDirty = true;
                 }
             }
-            if (e.PropertyName == nameof(CadManager3D.DxfLoaded) && !CadManager3D.DxfLoaded)
+            if (e.PropertyName == nameof(CadManager.DxfLoaded) && !CadManager.DxfLoaded)
             {
                 ClearDxf();
             }
-            if (e.PropertyName == nameof(CadManager3D.SnapSelectionMode))
+            if (e.PropertyName == nameof(CadManager.SnapSelectionMode))
             {
                 ResetSelectedObjects();
                 ResetHoverObjects();
@@ -3221,7 +3221,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         private void PointGroups_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
         {
-            PointGroups = CadManager3D?.CogoPointManager?.PointGroups;
+            PointGroups = CadManager?.CogoPointManager?.PointGroups;
             if (e.Action == NotifyCollectionChangedAction.Add)
             {
                 foreach (PointGroup pg in e.NewItems)
@@ -3246,7 +3246,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
         private void CogoPoints_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
         {
-            CogoPoints = CadManager3D?.CogoPointManager?.CogoPoints;
+            CogoPoints = CadManager?.CogoPointManager?.CogoPoints;
             if (e.Action == NotifyCollectionChangedAction.Add)
             {
                 foreach (var obj in e.NewItems)
@@ -3281,7 +3281,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
         private void Layers_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
         {
-            Layers = CadManager3D?.Layers;
+            Layers = CadManager?.Layers;
             if (e.Action == NotifyCollectionChangedAction.Add)
             {
                 foreach (KeyValuePair<string, ObjectLayer> keyValue in e.NewItems)
@@ -3395,7 +3395,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                         }
                         if (labelsNeedUpdate) { StateController.FlushLabelUpdates(); }
 
-                        CadManager3D.CogoPointManager.UpdateCogoPointTree();
+                        CadManager.CogoPointManager.UpdateCogoPointTree();
                         UpdateInitialMatrix();
                     }
 
@@ -3427,7 +3427,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     StateController.FlushPointUpdates();
                     RecomputeCogoPointBoundsFast(cp);
 
-                    CadManager3D.CogoPointManager.UpdateCogoPointTree();
+                    CadManager.CogoPointManager.UpdateCogoPointTree();
                     UpdateInitialMatrix();
 
                     _pointCircleVerticesDirty = true; _dxfDirty = true; _combinedDirty = true;
@@ -3445,7 +3445,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     }
                     RecomputeCogoPointBoundsFast(cp);
 
-                    CadManager3D.CogoPointManager.UpdateCogoPointTree();
+                    CadManager.CogoPointManager.UpdateCogoPointTree();
                     UpdateInitialMatrix();
 
                     _dxfDirty = true; _combinedDirty = true;
@@ -3479,7 +3479,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             var oldViewport = Viewport;
 
             // Save camera state (MORE than you were saving)
-            var cam = CadManager3D.Camera;
+            var cam = CadManager.Camera;
             var oldInitialViewMatrix = cam.InitialViewMatrix;
             var oldExtents = cam.Extents;
             var oldPan = cam.Translate;
@@ -3496,23 +3496,17 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 // Preview viewport in PIXELS
                 Viewport = new ViewportF(0, 0, target.PixelWidth, target.PixelHeight);
 
-                // ---- FIT TO SCENE BOUNDS (this prevents cropping) ----
                 var bounds = scene.Bounds.ToRect();
                 if (bounds.Width <= 0 || bounds.Height <= 0)
                 {
                     // fallback: fit whole drawing if scene bounds are invalid
-                    cam.InitialViewMatrix = GetExtentsFittingMatrix(Viewport, CadManager3D.Extents);
+                    cam.InitialViewMatrix = GetExtentsFittingMatrix(Viewport, CadManager.Extents);
                     cam.UpdateViewportSize(Viewport);
                 }
                 else
                 {
-                    // Important: make the camera's projection center on THIS rect
                     cam.Extents = bounds;
-
-                    // Fit scale based on this rect size
                     cam.InitialViewMatrix = GetExtentsFittingMatrix(Viewport, bounds);
-
-                    // Neutralize any model-space zoom/pan so it cannot clip
                     cam.CurrentZoomStep = 0;
                     cam.Translate = Vector2.Zero;
 
@@ -3534,16 +3528,13 @@ namespace Cad_Point_Manager.Controls.D3DControl
             }
             finally
             {
-                // Restore render targets
                 ResCache.DxfTexture = oldDxfTex;
                 ResCache.DxfRenderTargetView = oldDxfRTV;
                 ResCache.Texture2D = oldTex;
                 ResCache.RenderTargetView = oldRTV;
 
-                // Restore viewport
                 Viewport = oldViewport;
 
-                // Restore camera state (including Extents!)
                 cam.Extents = oldExtents;
                 cam.InitialViewMatrix = oldInitialViewMatrix;
                 cam.UpdateViewportSize(oldViewport);

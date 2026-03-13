@@ -30,6 +30,19 @@ namespace Cad_Point_Manager.Controls
             set { SetValue(ActiveObjectProperty, value); }
         }
 
+        public bool IsColumnHeaderHitTestVisible
+        {
+            get => (bool)GetValue(IsColumnHeaderHitTestVisibleProperty);
+            set => SetValue(IsColumnHeaderHitTestVisibleProperty, value);
+        }
+
+        public static readonly DependencyProperty IsColumnHeaderHitTestVisibleProperty =
+            DependencyProperty.Register(
+                nameof(IsColumnHeaderHitTestVisible),
+                typeof(bool),
+                typeof(DoubleClickSetListView),
+                new FrameworkPropertyMetadata(true));
+
         public DoubleClickSetListView()
         {
             ItemContainerGenerator.StatusChanged += (_, __) =>

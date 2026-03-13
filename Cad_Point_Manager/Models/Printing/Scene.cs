@@ -59,6 +59,32 @@ namespace Cad_Point_Manager.Models.Printing
         #endregion
 
         #region Methods
+        public RectangleF GetViewportFitBounds(ViewportF viewport)
+        {
+            if (viewport.Width <= 0 || viewport.Height <= 0)
+                return RectangleF.Empty;
+
+            if (Bounds.Width <= 0 || Bounds.Height <= 0)
+                return RectangleF.Empty;
+
+            float scaleX = Bounds.Width / viewport.Width;
+            float scaleY = Bounds.Height / viewport.Height;
+
+            float scale = Math.Max(scaleX, scaleY);
+
+            float fitWidth = viewport.Width * scale;
+            float fitHeight = viewport.Height * scale;
+
+            float centerX = Bounds.X + Bounds.Width / 2f;
+            float centerY = Bounds.Y + Bounds.Height / 2f;
+
+            return new RectangleF(
+                centerX - fitWidth / 2f,
+                centerY - fitHeight / 2f,
+                fitWidth,
+                fitHeight
+            );
+        }
         #endregion
 
         #region INotifyPropertyChanged Implementation

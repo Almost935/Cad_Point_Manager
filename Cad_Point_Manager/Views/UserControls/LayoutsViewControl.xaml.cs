@@ -216,7 +216,7 @@ namespace Cad_Point_Manager.Views.UserControls
             // Middle button drag to pan (change to Left if you prefer)
             if (e.ChangedButton == MouseButton.Middle)
             {
-                if (tabControl.IsMouseOver) { return; }
+                if (layoutsListView.IsMouseOver) { return; }
 
                 _panning = true;
                 _panStartMouse = e.GetPosition(BackgroundCanvas);
@@ -249,7 +249,7 @@ namespace Cad_Point_Manager.Views.UserControls
         }
         private void Root_MouseWheel(object sender, MouseWheelEventArgs e)
         {
-            if (tabControl.IsMouseOver) { return; }
+            if (layoutsListView.IsMouseOver) { return; }
 
             // Mouse position in the content we are transforming (Surface coords)
             Point p = e.GetPosition(BackgroundCanvas);

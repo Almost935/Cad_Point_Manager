@@ -132,7 +132,7 @@
               HorizontalAlignment="Stretch"
               Grid.Column="1"
               Margin="1 0 0 0"
-              RenderTransformOrigin="0, 1">
+              RenderTransformOrigin="0,1">
             <controls:SortableListView x:Name="pointsListView"
                                        Grid.Row="0"
                                        Background="{StaticResource PopoutMenuBackgroundBrush}"

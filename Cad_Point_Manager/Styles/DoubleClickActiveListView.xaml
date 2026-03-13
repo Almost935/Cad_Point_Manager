@@ -95,7 +95,7 @@
     </Style>
 
     <!-- GridView column header -->
-    <Style x:Key="DoubleClickActiveListViewColumnHeader"
+    <!--<Style x:Key="DoubleClickActiveListViewColumnHeader"
            TargetType="GridViewColumnHeader">
         <Style.Resources>
             <SolidColorBrush x:Key="HeaderTextBrush"
@@ -121,6 +121,67 @@
                             VerticalAlignment="Bottom">
                         <ContentPresenter Margin="5 0 5 0" />
                     </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+        <Style.Triggers>
+            <Trigger Property="Role"
+                     Value="Floating">
+                <Setter Property="Opacity"
+                        Value="0.7" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="GridViewColumnHeader">
+                            <Canvas Name="PART_FloatingHeaderCanvas">
+                                <Rectangle Fill="#60000000"
+                                           Width="{TemplateBinding ActualWidth}"
+                                           Height="{TemplateBinding ActualHeight}" />
+                            </Canvas>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Trigger>
+        </Style.Triggers>
+    </Style>-->
+
+    <Style x:Key="DoubleClickActiveListViewColumnHeader"
+           TargetType="GridViewColumnHeader">
+        <Style.Resources>
+            <SolidColorBrush x:Key="HeaderTextBrush"
+                             Color="White" />
+            <SolidColorBrush x:Key="HeaderBackgroundBrush"
+                             Color="#FF747781" />
+            <SolidColorBrush x:Key="HeaderMouseOverBackgroundBrush"
+                             Color="#FF959595" />
+            <SolidColorBrush x:Key="HeaderBorderBrush"
+                             Color="White" />
+            <Color x:Key="ControlMouseOverColor">#CCCCCC</Color>
+        </Style.Resources>
+        <Setter Property="Foreground"
+                Value="{DynamicResource HeaderTextBrush}" />
+        <Setter Property="IsHitTestVisible"
+                Value="{Binding RelativeSource={RelativeSource AncestorType={x:Type controls:DoubleClickSetListView}},
+                        Path=IsColumnHeaderHitTestVisible}" />
+        <Setter Property="FontSize"
+                Value="11" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="GridViewColumnHeader">
+                    <Border x:Name="border"
+                            Background="{DynamicResource HeaderBackgroundBrush}"
+                            BorderBrush="{DynamicResource HeaderBorderBrush}"
+                            BorderThickness="0.5"
+                            VerticalAlignment="Bottom">
+                        <ContentPresenter Margin="5 0 5 0" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver"
+                                 Value="True">
+                            <Setter TargetName="border"
+                                    Property="Background"
+                                    Value="{DynamicResource HeaderMouseOverBackgroundBrush}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
@@ -255,8 +316,12 @@
                 Value="Stretch" />
         <Setter Property="HorizontalContentAlignment"
                 Value="Stretch" />
+        <!--<Setter Property="ItemContainerStyle"
+                Value="{StaticResource DoubleClickActiveListViewItem}" />-->
         <Setter Property="ItemContainerStyle"
                 Value="{StaticResource DoubleClickActiveListViewItem}" />
+        <Setter Property="GridView.ColumnHeaderContainerStyle"
+                Value="{StaticResource DoubleClickActiveListViewColumnHeader}" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type controls:DoubleClickSetListView}">

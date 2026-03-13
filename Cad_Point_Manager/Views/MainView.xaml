@@ -504,7 +504,7 @@
                     </MultiBinding>
                 </Grid.Margin>
                 <d3D:D3dDxfControl x:Name="d3dDxfControl"
-                                   CadManager3D="{Binding JobFileManager.CadManager}"
+                                   CadManager="{Binding JobFileManager.CadManager}"
                                    Layers="{Binding Layers, Mode=TwoWay}"
                                    PointGroups="{Binding PointGroups, Mode=TwoWay}"
                                    CogoPoints="{Binding CogoPoints, Mode=TwoWay}"

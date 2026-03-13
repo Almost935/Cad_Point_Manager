@@ -1,4 +1,5 @@
 ﻿using Cad_Point_Manager.Extensions;
+using Cad_Point_Manager.Helpers;
 using Cad_Point_Manager.Models.Printing;
 using SharpDX;
 using System.Collections.ObjectModel;
@@ -452,7 +453,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             if (ViewProjectionMatrix == Matrix.Identity) { return new RectangleF(0, 0, Viewport.Width, Viewport.Height); }
 
-            // Normal path:
             Vector2 screenTL = new(0, 0);
             Vector2 screenTR = new(Viewport.Width, 0);
             Vector2 screenBR = new(Viewport.Width, Viewport.Height);
@@ -477,7 +477,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             {
                 defaultScene.ZoomStep = 0;
                 defaultScene.Translation = Vector2.Zero;
-                defaultScene.Bounds = GetCurrentViewportBounds();
+                defaultScene.Bounds = Extents.ToRectangeF();
             }
         }
         #endregion

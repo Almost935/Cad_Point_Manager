@@ -67,5 +67,13 @@ namespace Cad_Point_Manager.Helpers
 
             return scaledRotationMatrix;
         }
+
+        public static Vector2 TransformVector2(float x, float y, Matrix3x2 m)
+        {
+            return new Vector2(
+                x * m.M11 + y * m.M21 + m.M31,
+                x * m.M12 + y * m.M22 + m.M32
+            );
+        }
     }
 }

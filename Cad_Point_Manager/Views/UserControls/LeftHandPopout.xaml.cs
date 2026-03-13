@@ -335,16 +335,12 @@ namespace Cad_Point_Manager.Views.UserControls
             var binding = tb.GetBindingExpression(TextBox.TextProperty);
             if (!Validation.GetHasError(tb))
             {
-                binding?.UpdateSource();  // still commit on losing focus
+                binding?.UpdateSource();
             }
 
-            // Figure out which field this textbox corresponds to
             string? currentField = PointsInferFieldNameFromDisplayElement(tb);
             string? editingField = InlineEdit.GetEditingField(lvi);
 
-            // If EditingField was already changed to a *different* field
-            // (e.g. we moved from PointNumber -> Northing),
-            // don't clear it here or we'll immediately collapse the new editor.
             if (!string.IsNullOrEmpty(editingField) &&
                 currentField != null &&
                 !string.Equals(editingField, currentField, StringComparison.Ordinal))
@@ -352,7 +348,6 @@ namespace Cad_Point_Manager.Views.UserControls
                 return;
             }
 
-            // Normal case: leaving edit for this field / row
             InlineEdit.SetEditingField(lvi, null);
         }
         #endregion

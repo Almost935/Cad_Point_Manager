@@ -36,5 +36,10 @@ namespace Cad_Point_Manager.Extensions
             if (a.IsEmpty || b.IsEmpty) return false;
             return a.Contains(b);
         }
+
+        public static SharpDX.RectangleF ToRectangeF(this Rect rect)
+        {
+            return new SharpDX.RectangleF(rect.Left.ToFloat(), rect.Top.ToFloat(), rect.Width.ToFloat(), rect.Height.ToFloat());
+        }
     }
 }
