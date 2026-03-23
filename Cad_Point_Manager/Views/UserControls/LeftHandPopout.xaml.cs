@@ -38,7 +38,6 @@ namespace Cad_Point_Manager.Views.UserControls
         private bool _isMouseOverPanel = false;
         private bool _mainPanelIsVisible = false;
         private ScaleTransform _mainPanelTransform = new();
-        private ValidationService _validationService = new();
 
         // Points related fields
         private readonly List<CogoPoint> _selectedPoints = [];
@@ -447,16 +446,19 @@ namespace Cad_Point_Manager.Views.UserControls
         }
         private void PointsListViewZoomPoint_Click(object sender, RoutedEventArgs e)
         {
-            if (Camera is null || _lastPointsListItem is null) { return; }
+            //if (Camera is null || _lastPointsListItem is null) { return; }
 
-            var p = _lastPointsListItem.DataContext as CogoPoint;
-           
-            double centerX = p.Bounds.Left + (p.Bounds.Width * 0.5);
-            double centerY = p.Bounds.Top + (p.Bounds.Height * 0.5);
-            
-            Camera.ZoomToBounds(new Rect(centerX - (p.Bounds.Width * _zoomToPointPaddingFactor * 0.5), centerY - (p.Bounds.Height * _zoomToPointPaddingFactor * 0.5), 
-                p.Bounds.Width * _zoomToPointPaddingFactor, p.Bounds.Height * _zoomToPointPaddingFactor));
-            Camera.IsDirty = true;
+            //var p = _lastPointsListItem.DataContext as CogoPoint;
+
+            //double centerX = p.Bounds.Left + (p.Bounds.Width * 0.5);
+            //double centerY = p.Bounds.Top + (p.Bounds.Height * 0.5);
+
+            //Camera.ZoomToBounds(new Rect(centerX - (p.Bounds.Width * _zoomToPointPaddingFactor * 0.5), centerY - (p.Bounds.Height * _zoomToPointPaddingFactor * 0.5), 
+            //    p.Bounds.Width * _zoomToPointPaddingFactor, p.Bounds.Height * _zoomToPointPaddingFactor));
+            //Camera.IsDirty = true;
+
+            if (Camera is null || _lastPointsListItem is null || _lastPointsListItem.DataContext is not CogoPoint p) { return; }
+            CadManager.ZoomToPoint(p, _zoomToPointPaddingFactor);
         }
         private void PointsListView_ContextMenuOpening(object sender, ContextMenuEventArgs e)
         {
@@ -534,7 +536,7 @@ namespace Cad_Point_Manager.Views.UserControls
                 {
                     case "PointNumber":
                         {
-                            if (!_validationService.ValidatePointNumberChange(text, cp, CadManager.CogoPointManager, out string svcError))
+                            if (!ValidationService.ValidatePointNumberChange(text, cp, CadManager.CogoPointManager, out string svcError))
                             {
                                 errorMessage = svcError;
                             }
@@ -552,7 +554,7 @@ namespace Cad_Point_Manager.Views.UserControls
                         }
                     case "Description":
                         {
-                            if (!_validationService.ValidateString(text, out string svcError))
+                            if (!ValidationService.ValidateString(text, out string svcError))
                             {
                                 errorMessage = svcError;
                             }
@@ -772,7 +774,6 @@ namespace Cad_Point_Manager.Views.UserControls
 
             return true;
         }
-
         #endregion
 
         // ------------------------------------------------------------------------
@@ -871,7 +872,7 @@ namespace Cad_Point_Manager.Views.UserControls
                     return;
                 }
 
-                var isValid = _validationService.ValidateNewPointNumber(textbox.Text, CadManager.CogoPointManager, out string errorMessage);
+                var isValid = ValidationService.ValidateNewPointNumber(textbox.Text, CadManager.CogoPointManager, out string errorMessage);
                 if (!isValid)
                 {
                     Validation.MarkInvalid(BindingOperations.GetBindingExpression(textbox, TextBox.TextProperty),
@@ -1411,7 +1412,7 @@ namespace Cad_Point_Manager.Views.UserControls
                     // ---- POINT NUMBER: non-negative int, must NOT already exist ----
                     case "Name":
                         {
-                            if (!_validationService.ValidateSceneNameChange(text, scene, Camera, out string svcError))
+                            if (!ValidationService.ValidateSceneNameChange(text, scene, Camera, out string svcError))
                             {
                                 errorMessage = svcError;
                             }

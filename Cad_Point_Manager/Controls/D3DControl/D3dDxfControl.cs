@@ -282,15 +282,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 OnPropertyChanged(nameof(IsDragging));
             }
         }
-        //public Point DragStart
-        //{
-        //    get => _dragStart;
-        //    set
-        //    {
-        //        _dragStart = value;
-        //        OnPropertyChanged(nameof(DragStart));
-        //    }
-        //}
         public Rect DragRect
         {
 
@@ -2381,7 +2372,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
             UpdateToggleAnchorDimensions();
             ConstantBuffersDirty = true;
         }
-
+        public void ZoomToPoint()
+        {
+            _hittestStrokeThickness = 7.0f / (CadManager.Camera.InitialViewMatrix.M11 * CadManager.Camera.CurrentZoom);
+            UpdateToggleAnchorDimensions();
+        }
         public void UpdateDragRect()
         {
             if (!IsDragging)
@@ -3147,6 +3142,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             {
                 oldCadManager3D.PropertyChanged -= control.CadManager3D_PropertyChanged;
                 oldCadManager3D.ZoomToExtentsRequested -= control.ZoomToExtents;
+                oldCadManager3D.ZoomToPointRequested -= control.ZoomToPoint;
                 oldCadManager3D.CogoPointManager.CogoPoints.CollectionChanged -= control.CogoPoints_CollectionChanged;
                 oldCadManager3D.CogoPointManager.PointGroups.CollectionChanged -= control.PointGroups_CollectionChanged;
                 oldCadManager3D.Layers.CollectionChanged -= control.Layers_CollectionChanged;
@@ -3156,6 +3152,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             {
                 newCadManager3D.PropertyChanged += control.CadManager3D_PropertyChanged;
                 newCadManager3D.ZoomToExtentsRequested += control.ZoomToExtents;
+                newCadManager3D.ZoomToPointRequested += control.ZoomToPoint;
                 newCadManager3D.CogoPointManager.CogoPoints.CollectionChanged += control.CogoPoints_CollectionChanged;
                 newCadManager3D.CogoPointManager.PointGroups.CollectionChanged += control.PointGroups_CollectionChanged;
                 newCadManager3D.Layers.CollectionChanged += control.Layers_CollectionChanged;

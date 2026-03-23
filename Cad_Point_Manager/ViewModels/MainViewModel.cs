@@ -31,7 +31,6 @@ namespace Cad_Point_Manager.ViewModels
     public class MainViewModel : INotifyPropertyChanged, INotifyDataErrorInfo
     {
         #region Fields
-        private readonly ValidationService _validationService = new();
         private readonly NewSelectionConnectivityService _service = new();
 
         private readonly Dictionary<string, List<string>> _errors = [];
@@ -322,7 +321,7 @@ namespace Cad_Point_Manager.ViewModels
                 _newCogoPointsDescriptionText = value;
 
                 ClearErrors(nameof(NewCogoPointsDescriptionText));
-                bool isValid = _validationService.ValidateString(value, out string errorMessage);
+                bool isValid = ValidationService.ValidateString(value, out string errorMessage);
 
                 if (!isValid)
                 {

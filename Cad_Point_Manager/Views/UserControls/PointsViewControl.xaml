@@ -49,7 +49,8 @@
                                    ScrollViewer.CanContentScroll="True"
                                    VirtualizingStackPanel.IsVirtualizing="True"
                                    VirtualizingStackPanel.VirtualizationMode="Recycling"
-                                   VirtualizingStackPanel.IsContainerVirtualizable="True">
+                                   VirtualizingStackPanel.IsContainerVirtualizable="True"
+                                   ContextMenuOpening="PointsListView_ContextMenuOpening">
             <controls:SortableListView.Resources>
                 <system:Double x:Key="ContentFontSize">11</system:Double>
                 <system:Double x:Key="HeaderFontSize">11</system:Double>

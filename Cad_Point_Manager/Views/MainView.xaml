@@ -431,32 +431,6 @@
                         </i:Interaction.Triggers>
                     </Button>
                 </Grid>
-                <Grid Grid.Column="6"
-                      Margin="{StaticResource ItemMargin}">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
-                    <Grid.ToolTip>
-                        <TextBlock Text="The currently active point group. &#10;All created cogo points will be set to this point group."
-                                   FontSize="{StaticResource ToolTipFontSize}" />
-                    </Grid.ToolTip>
-                    <TextBlock Foreground="White"
-                               FontSize="12"
-                               VerticalAlignment="Center"
-                               HorizontalAlignment="Center"
-                               Text="Active Point Group:"
-                               Margin="{StaticResource CogoPointCreationTextBlockMargin}" />
-                    <ComboBox Grid.Column="1"
-                              Background="White"
-                              Style="{StaticResource ValidationComboBox}"
-                              Height="{StaticResource CogoCreationTextBoxHeight}"
-                              MinWidth="{StaticResource CogoCreationTextBoxWidth}"
-                              ItemsSource="{Binding JobFileManager.CadManager.PointGroupsView}"
-                              DisplayMemberPath="Name"
-                              Margin="{StaticResource CogoPointCreationTextBoxMargin}"
-                              SelectedValue="{Binding ActivePointGroup}" />
-                </Grid>
             </Grid>
             <Grid x:Name="PopoutsGrid"
                   Grid.Row="2"
@@ -557,61 +531,91 @@
               Grid.Row="1"
               Visibility="{Binding PointsVisible, Converter={StaticResource BoolToVisibilityConverter}}">
             <uc:PointsViewControl x:Name="PointsViewControl"
-                                  CadManager="{Binding DataContext.JobFileManager.CadManager, RelativeSource={RelativeSource AncestorType=Page}}"/>
+                                  CadManager="{Binding DataContext.JobFileManager.CadManager, RelativeSource={RelativeSource AncestorType=Page}}"
+                                  ActivePointGroup="{Binding ActivePointGroup}" />
         </Grid>
 
-        <Grid x:Name="LowerRibbonGrid"
-              Grid.Row="3"
-              Margin="40,0,40,0">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="Auto" />
-            </Grid.ColumnDefinitions>
-            <TextBlock Foreground="White"
-                       VerticalAlignment="Center"
-                       HorizontalAlignment="Center"
-                       TextAlignment="Center"
-                       Margin="0 5 0 5"
-                       Text="{Binding ElementName=d3dDxfControl, Path=DxfCoordsString}"
-                       Visibility="{Binding ModelsVisible, Converter={StaticResource BoolToVisibilityConverter}}" />
-            <WrapPanel Grid.Column="2"
-                  Margin="0 5 0 5">
-                <RadioButton x:Name="modelModeRadioButton"
-                             GroupName="ModeRadioButtons"
-                             Style="{StaticResource BorderWidgetsToggleButton}"
-                             IsChecked="{Binding ModelsVisible, Mode=TwoWay}"
-                             Margin="1 0 1 0">
-                    <RadioButton.Content>
-                        <TextBlock Text="Model Mode"
-                                   VerticalAlignment="Center"
-                                   Margin="10 2 10 2" />
-                    </RadioButton.Content>
-                </RadioButton>
-                <RadioButton x:Name="layoutsModeRadioButton"
-                             GroupName="ModeRadioButtons"
-                             Style="{StaticResource BorderWidgetsToggleButton}"
-                             IsChecked="{Binding LayoutsVisible, Mode=TwoWay}"
-                             Click="LayoutsModeRadioButton_Click"
-                             Margin="1 0 1 0">
-                    <RadioButton.Content>
-                        <TextBlock Text="Layouts Mode"
-                                   VerticalAlignment="Center"
-                                   Margin="10 2 10 2" />
-                    </RadioButton.Content>
-                </RadioButton>
-                <RadioButton x:Name="pointsModeRadioButton"
-                             GroupName="ModeRadioButtons"
-                             Style="{StaticResource BorderWidgetsToggleButton}"
-                             IsChecked="{Binding PointsVisible, Mode=TwoWay}"
-                             Margin="1 0 1 0">
-                    <RadioButton.Content>
-                        <TextBlock Text="Points Mode"
-                                   VerticalAlignment="Center"
-                                   Margin="10 2 10 2" />
-                    </RadioButton.Content>
-                </RadioButton>
-            </WrapPanel>
-        </Grid>
+        <Border Background="{StaticResource WidgetBrush}"
+                Grid.Row="3">
+            <Grid x:Name="LowerRibbonGrid"
+                  Background="{StaticResource WidgetBrush}"
+                  Margin="40 0 40 0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Foreground="White"
+                           VerticalAlignment="Center"
+                           HorizontalAlignment="Left"
+                           TextAlignment="Center"
+                           Margin="0 5 0 5"
+                           Text="{Binding ElementName=d3dDxfControl, Path=DxfCoordsString}"
+                           Visibility="{Binding ModelsVisible, Converter={StaticResource BoolToVisibilityConverter}}" />
+                <Grid Grid.Column="1"
+                      HorizontalAlignment="Center">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <Grid.ToolTip>
+                        <TextBlock Text="The currently active point group. &#10;All created cogo points will be set to this point group."
+                                   FontSize="{StaticResource ToolTipFontSize}" />
+                    </Grid.ToolTip>
+                    <TextBlock Foreground="White"
+                               Margin="10 5 10 5"
+                               FontSize="12"
+                               VerticalAlignment="Center"
+                               HorizontalAlignment="Center"
+                               Text="Active Point Group:" />
+                    <ComboBox Grid.Column="1"
+                              Margin="10 5 10 5"
+                              Width="150"
+                              Background="White"
+                              Style="{StaticResource ValidationComboBox}"
+                              ItemsSource="{Binding JobFileManager.CadManager.PointGroupsView}"
+                              DisplayMemberPath="Name"
+                              SelectedValue="{Binding ActivePointGroup}" />
+                </Grid>
+                <WrapPanel Grid.Column="2"
+                           Margin="0 5 0 5"
+                           HorizontalAlignment="Right">
+                    <RadioButton x:Name="modelModeRadioButton"
+                                 GroupName="ModeRadioButtons"
+                                 Style="{StaticResource BorderWidgetsToggleButton}"
+                                 IsChecked="{Binding ModelsVisible, Mode=TwoWay}"
+                                 Margin="1 0 1 0">
+                        <RadioButton.Content>
+                            <TextBlock Text="Model Mode"
+                                       VerticalAlignment="Center"
+                                       Margin="10 2 10 2" />
+                        </RadioButton.Content>
+                    </RadioButton>
+                    <RadioButton x:Name="layoutsModeRadioButton"
+                                 GroupName="ModeRadioButtons"
+                                 Style="{StaticResource BorderWidgetsToggleButton}"
+                                 IsChecked="{Binding LayoutsVisible, Mode=TwoWay}"
+                                 Click="LayoutsModeRadioButton_Click"
+                                 Margin="1 0 1 0">
+                        <RadioButton.Content>
+                            <TextBlock Text="Layouts Mode"
+                                       VerticalAlignment="Center"
+                                       Margin="10 2 10 2" />
+                        </RadioButton.Content>
+                    </RadioButton>
+                    <RadioButton x:Name="pointsModeRadioButton"
+                                 GroupName="ModeRadioButtons"
+                                 Style="{StaticResource BorderWidgetsToggleButton}"
+                                 IsChecked="{Binding PointsVisible, Mode=TwoWay}"
+                                 Margin="1 0 1 0">
+                        <RadioButton.Content>
+                            <TextBlock Text="Points Mode"
+                                       VerticalAlignment="Center"
+                                       Margin="10 2 10 2" />
+                        </RadioButton.Content>
+                    </RadioButton>
+                </WrapPanel>
+            </Grid>
+        </Border>
     </Grid>
 </Page>

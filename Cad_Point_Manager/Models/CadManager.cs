@@ -31,7 +31,6 @@ namespace Cad_Point_Manager.Models
         private const float _pointSizeToExtentsFactor = 0.001f;
 
         private bool _dxfLoaded = false;
-        //private bool 
         private bool _lineVerticesDirty = false;
         private bool _textVerticesDirty = false;
         private bool _cogoPointTextVerticesDirty = false;
@@ -253,8 +252,8 @@ namespace Cad_Point_Manager.Models
             }
         }
 
-        public DxfDocument DxfDocument { get; set; }
-        public HitTestableObjectTree HitTestableObjectTree { get; set; }
+        public DxfDocument DxfDocument { get; private set; }
+        public HitTestableObjectTree HitTestableObjectTree { get; private set; }
         public TextVertex[] NumberVertices { get; set; } = [];
         #endregion
 
@@ -262,6 +261,7 @@ namespace Cad_Point_Manager.Models
         public event PropertyChangedEventHandler PropertyChanged;
 
         public event Action ZoomToExtentsRequested;
+        public event Action ZoomToPointRequested;
         #endregion
 
         #region Constructor
@@ -319,22 +319,73 @@ namespace Cad_Point_Manager.Models
             Extents = Rect.Union(dxfExtents, pointsExtents);
         }
 
+        public bool TryAddLayout(string layoutName, LayoutViewport viewport, out Layout layout)
+        {
+            if (!Layouts.Any(x => string.Equals(x.Name, layoutName, StringComparison.OrdinalIgnoreCase)))
+            {
+                layout = new Layout() { Name = layoutName, Viewport = viewport };
+                Layouts.Add(layout);
+                return true;
+            }
+            layout = null;
+            return false;
+        }
+        public string GetNextAvailableLayoutName(int startCount = 1)
+        {
+            int num = startCount;
+            string layoutName = GetLayoutName(num);
+
+            while (LayoutNameExists(layoutName))
+            {
+                num++;
+                layoutName = GetLayoutName(num);
+            }
+
+            return layoutName;
+
+            string GetLayoutName(int num) { return $"Layout {num}"; }
+            bool LayoutNameExists(string name) { return Layouts.Any(layout => layout.Name == name); }
+
+        }
+        public bool ValidateLayoutNameChange(string newLayoutName, Layout layout, out string? errorMessage)
+        {
+            errorMessage = null;
+
+            if (newLayoutName == layout.Name) { return true; }
+
+            if (Layouts.Any(x => x.Name == newLayoutName))
+            {
+                errorMessage = $"Layout name \"{newLayoutName}\" already exists.";
+                return false;
+            }
+            return true;
+        }
+        public bool TryDeleteLayout(Layout layout)
+        {
+            return Layouts.Remove(layout);
+        }
+
+        public void ZoomToPoint(CogoPoint p, double paddingFactor)
+        {
+            double centerX = p.Bounds.Left + (p.Bounds.Width * 0.5);
+            double centerY = p.Bounds.Top + (p.Bounds.Height * 0.5);
+
+            Camera.ZoomToBounds(new Rect(centerX - (p.Bounds.Width * paddingFactor * 0.5), centerY - (p.Bounds.Height * paddingFactor * 0.5),
+                p.Bounds.Width * paddingFactor, p.Bounds.Height * paddingFactor));
+            Camera.IsDirty = true;
+
+            ZoomToPointRequested?.Invoke();
+        }
+
         public void ResetTemplates()
         {
             Layouts.Clear();
 
             Rect viewportBounds = new(0.5, 0.5, 28.938, 23);
-            var layout1 = new Layout() { Name = "Layout 1" };
-            layout1.Viewport = new LayoutViewport(viewportBounds, Camera.OverviewScene);
-            Layouts.Add(layout1);
-
-            var layout2 = new Layout() { Name = "Layout 2" };
-            layout2.Viewport = new LayoutViewport(viewportBounds, Camera.OverviewScene);
-            Layouts.Add(layout2);
-
-            var layout3 = new Layout() { Name = "Layout 3" };
-            layout3.Viewport = new LayoutViewport(viewportBounds, Camera.OverviewScene);
-            Layouts.Add(layout3);
+            LayoutViewport viewport = new(viewportBounds, Camera.OverviewScene);
+            TryAddLayout(GetNextAvailableLayoutName(), viewport, out var layout);
+            TryAddLayout(GetNextAvailableLayoutName(), viewport, out layout);
+            TryAddLayout(GetNextAvailableLayoutName(), viewport, out layout);
         }
 
         public void GetPointScale()
@@ -672,7 +723,7 @@ namespace Cad_Point_Manager.Models
                     for (int j = 0; j < cols; j++)
                     {
                         float x = inflatedExtents.Left.ToFloat() + (xIncrement * j);
-                        var pointCreated = CogoPointManager.TryAddPointToActiveGroup(pointNum, new Vector3(x, y, 0), out _, 
+                        var pointCreated = CogoPointManager.TryAddPointToActiveGroup(pointNum, new Vector3(x, y, 0), out _,
                             (Math.Round(300 + random.NextDouble() * 100, 3)).ToFloat(), description);
                         if (pointCreated) { pointNum++; continue; }
                     }

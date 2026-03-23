@@ -5,11 +5,12 @@ using Cad_Point_Manager.Models.Printing;
 
 namespace Cad_Point_Manager.Services
 {
-    public class ValidationService
+    public static class ValidationService
     {
+        private static readonly System.Buffers.SearchValues<char> s_illegalGroupNameChars = System.Buffers.SearchValues.Create("@#%^&*");
         private static readonly char[] IllegalGroupNameChars = ['@', '#', '%', '^', '&', '*'];
 
-        public bool ValidateNewPointNumber(string input, CogoPointManager cogoPointManager, out string errorMessage)
+        public static bool ValidateNewPointNumber(string input, CogoPointManager cogoPointManager, out string errorMessage)
         {
             if (!int.TryParse(input, out int pointNumber))
             {
@@ -31,7 +32,7 @@ namespace Cad_Point_Manager.Services
             return true;
         }
 
-        public bool ValidatePointNumberChange(string input, CogoPoint editPoint, CogoPointManager cogoPointManager, out string errorMessage)
+        public static bool ValidatePointNumberChange(string input, CogoPoint editPoint, CogoPointManager cogoPointManager, out string errorMessage)
         {
             var isInt = int.TryParse(input, out int newNum);
             if (!isInt)
@@ -54,7 +55,7 @@ namespace Cad_Point_Manager.Services
             return true;
         }
 
-        public bool ValidatePointGroupName(string input, IEnumerable<PointGroup> existingGroups, out string errorMessage)
+        public static bool ValidatePointGroupName(string input, IEnumerable<PointGroup> existingGroups, out string errorMessage)
         {
             if (string.IsNullOrWhiteSpace(input))
             {
@@ -62,7 +63,7 @@ namespace Cad_Point_Manager.Services
                 return false;
             }
 
-            if (input.IndexOfAny(IllegalGroupNameChars) >= 0)
+            if (input.AsSpan().IndexOfAny(s_illegalGroupNameChars) >= 0)
             {
                 errorMessage = "Point group name must not contain illegal characters.";
                 return false;
@@ -78,7 +79,7 @@ namespace Cad_Point_Manager.Services
             return true;
         }
 
-        public bool ValidateString(string input, out string errorMessage)
+        public static bool ValidateString(string input, out string errorMessage)
         {
             errorMessage = null;
             if (input == null) { return false; }
@@ -104,7 +105,7 @@ namespace Cad_Point_Manager.Services
             return isValid;
         }
 
-        public bool ValidateSceneNameChange(string input, Scene scene, Camera camera, out string errorMessage)
+        public static bool ValidateSceneNameChange(string input, Scene scene, Camera camera, out string errorMessage)
         {
             if (string.IsNullOrWhiteSpace(input))
             {
@@ -112,7 +113,7 @@ namespace Cad_Point_Manager.Services
                 return false;
             }
 
-            if (input.IndexOfAny(IllegalGroupNameChars) >= 0)
+            if (input.AsSpan().IndexOfAny(s_illegalGroupNameChars) >= 0)
             {
                 errorMessage = "Scene name must not contain illegal characters.";
                 return false;
@@ -127,5 +128,30 @@ namespace Cad_Point_Manager.Services
             errorMessage = null;
             return true;
         }
+
+        public static bool ValidateLayoutNameChange(string input, Layout layout, CadManager cadManager, out string errorMessage)
+        {
+            if (string.IsNullOrWhiteSpace(input))
+            {
+                errorMessage = "Layout name is required.";
+                return false;
+            }
+
+            if (input.AsSpan().IndexOfAny(s_illegalGroupNameChars) >= 0)
+            {
+                errorMessage = "Layout name must not contain illegal characters.";
+                return false;
+            }
+
+            if (!cadManager.ValidateLayoutNameChange(input, layout, out string cpmError))
+            {
+                errorMessage = cpmError;
+                return false;
+            }
+
+            errorMessage = null;
+            return true;
+        }
+
     }
 }

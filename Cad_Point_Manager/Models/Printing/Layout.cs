@@ -9,15 +9,31 @@ namespace Cad_Point_Manager.Models.Printing
     public class Layout : INotifyPropertyChanged
     {
         #region Fields
+        private string _name = "Layout 1";
         private LayoutViewport _viewport;
         private PageSize _pageSize = PageSize.Get36x24;
+        private double pageWidth = 36;
+        private double pageHeight = 24;
         private TitleblockAttributes _attributes = new TitleblockAttributes();
         #endregion
 
         #region Properties
+        public string Name
+        {
+            get => _name; 
+            set
+            {
+                if (_name != value)
+                {
+                    _name = value;
+                    OnPropertyChanged(nameof(Name));
+                }
+            }
+
+        }
         public LayoutViewport Viewport
         {
-            get { return _viewport; }
+            get => _viewport;
             set
             {
                 if (_viewport != value)
@@ -29,7 +45,7 @@ namespace Cad_Point_Manager.Models.Printing
         }
         public PageSize PageSize
         {
-            get { return _pageSize; }
+            get => _pageSize;
             set
             {
                 if (value != _pageSize)
@@ -41,7 +57,7 @@ namespace Cad_Point_Manager.Models.Printing
         }
         public TitleblockAttributes Attributes
         {
-            get { return _attributes; }
+            get => _attributes;
             set
             {
                 if (_attributes != value)
@@ -52,7 +68,6 @@ namespace Cad_Point_Manager.Models.Printing
             }
         }
 
-        public string Name { get; set; } = "Layout 1";
         public ObservableCollection<DrawingObject> DrawingObjects { get; set; } = [];
         public FontFamily FontFamily { get; set; } = new FontFamily("Arial");
         #endregion
