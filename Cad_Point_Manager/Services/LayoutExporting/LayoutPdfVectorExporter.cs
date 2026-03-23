@@ -42,8 +42,8 @@ namespace Cad_Point_Manager.Services.LayoutExporting
             return Application.Current.Dispatcher.InvokeAsync(() =>
             {
                 var viewSize = new Size(cadManager3D.ViewportSize.Width, cadManager3D.ViewportSize.Height);
-                double pageWpts = layout.PageSize.Width * 72.0;
-                double pageHpts = layout.PageSize.Height * 72.0;
+                double pageWpts = layout.PageWidth * 72.0;
+                double pageHpts = layout.PageHeight * 72.0;
 
                 Rect pdfViewportPts = new(
                     layout.Viewport.LocalRectIn.X * 72.0,
@@ -77,8 +77,8 @@ namespace Cad_Point_Manager.Services.LayoutExporting
         {
             Directory.CreateDirectory(Path.GetDirectoryName(outputPdfPath)!);
 
-            double pageWpts = layout.PageSize.Width * 72.0;
-            double pageHpts = layout.PageSize.Height * 72.0;
+            double pageWpts = layout.PageWidth * 72.0;
+            double pageHpts = layout.PageHeight * 72.0;
 
             using var doc = new PdfDocument();
             var page = doc.AddPage();

@@ -12,8 +12,8 @@ namespace Cad_Point_Manager.Models.Printing
             Size viewSizeInViewUnits, // the size that worldToView maps into (see note below)
             out double pageHeightPts)
         {
-            double pageWpts = layout.PageSize.Width * 72.0;
-            pageHeightPts = layout.PageSize.Height * 72.0;
+            double pageWpts = layout.PageWidth * 72.0;
+            pageHeightPts = layout.PageHeight * 72.0;
 
             // Viewport rectangle on page in POINTS
             var vpIn = layout.Viewport.LocalRectIn;     // inches

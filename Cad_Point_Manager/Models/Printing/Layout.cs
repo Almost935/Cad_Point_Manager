@@ -11,9 +11,8 @@ namespace Cad_Point_Manager.Models.Printing
         #region Fields
         private string _name = "Layout 1";
         private LayoutViewport _viewport;
-        private PageSize _pageSize = PageSize.Get36x24;
-        private double pageWidth = 36;
-        private double pageHeight = 24;
+        private double _pageWidth = 36;
+        private double _pageHeight = 24;
         private TitleblockAttributes _attributes = new TitleblockAttributes();
         #endregion
 
@@ -43,15 +42,27 @@ namespace Cad_Point_Manager.Models.Printing
                 }
             }
         }
-        public PageSize PageSize
+        public double PageWidth
         {
-            get => _pageSize;
+            get => _pageWidth;
             set
             {
-                if (value != _pageSize)
+                if (value != _pageWidth)
                 {
-                    _pageSize = value;
-                    OnPropertyChanged(nameof(PageSize));
+                    _pageWidth = value;
+                    OnPropertyChanged(nameof(PageWidth));
+                }
+            }
+        }   
+        public double PageHeight
+        {
+            get => _pageHeight;
+            set
+            {
+                if (value != _pageHeight)
+                {
+                    _pageHeight = value;
+                    OnPropertyChanged(nameof(PageHeight));
                 }
             }
         }

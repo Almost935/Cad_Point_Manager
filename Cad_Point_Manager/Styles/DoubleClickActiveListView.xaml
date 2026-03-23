@@ -95,55 +95,6 @@
     </Style>
 
     <!-- GridView column header -->
-    <!--<Style x:Key="DoubleClickActiveListViewColumnHeader"
-           TargetType="GridViewColumnHeader">
-        <Style.Resources>
-            <SolidColorBrush x:Key="HeaderTextBrush"
-                             Color="White" />
-            <SolidColorBrush x:Key="HeaderBackgroundBrush"
-                             Color="#FF747781" />
-            <SolidColorBrush x:Key="HeaderBorderBrush"
-                             Color="White" />
-            <Color x:Key="ControlMouseOverColor">#CCCCCC</Color>
-        </Style.Resources>
-        <Setter Property="Foreground"
-                Value="{DynamicResource HeaderTextBrush}" />
-        <Setter Property="IsHitTestVisible"
-                Value="False" />
-        <Setter Property="FontSize"
-                Value="11" />
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="GridViewColumnHeader">
-                    <Border Background="{DynamicResource HeaderBackgroundBrush}"
-                            BorderBrush="{DynamicResource HeaderBorderBrush}"
-                            BorderThickness="0.5"
-                            VerticalAlignment="Bottom">
-                        <ContentPresenter Margin="5 0 5 0" />
-                    </Border>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
-        <Style.Triggers>
-            <Trigger Property="Role"
-                     Value="Floating">
-                <Setter Property="Opacity"
-                        Value="0.7" />
-                <Setter Property="Template">
-                    <Setter.Value>
-                        <ControlTemplate TargetType="GridViewColumnHeader">
-                            <Canvas Name="PART_FloatingHeaderCanvas">
-                                <Rectangle Fill="#60000000"
-                                           Width="{TemplateBinding ActualWidth}"
-                                           Height="{TemplateBinding ActualHeight}" />
-                            </Canvas>
-                        </ControlTemplate>
-                    </Setter.Value>
-                </Setter>
-            </Trigger>
-        </Style.Triggers>
-    </Style>-->
-
     <Style x:Key="DoubleClickActiveListViewColumnHeader"
            TargetType="GridViewColumnHeader">
         <Style.Resources>
@@ -239,7 +190,8 @@
                             SnapsToDevicePixels="true"
                             BorderThickness="0"
                             Background="Transparent"
-                            Margin="0 0 0 0">
+                            Margin="0"
+                            Padding="0">
                         <GridViewRowPresenter />
                     </Border>
                     <ControlTemplate.Triggers>
@@ -316,8 +268,8 @@
                 Value="Stretch" />
         <Setter Property="HorizontalContentAlignment"
                 Value="Stretch" />
-        <!--<Setter Property="ItemContainerStyle"
-                Value="{StaticResource DoubleClickActiveListViewItem}" />-->
+        <Setter Property="Padding"
+                Value="0" />
         <Setter Property="ItemContainerStyle"
                 Value="{StaticResource DoubleClickActiveListViewItem}" />
         <Setter Property="GridView.ColumnHeaderContainerStyle"

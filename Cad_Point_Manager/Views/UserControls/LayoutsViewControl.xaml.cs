@@ -250,7 +250,6 @@ namespace Cad_Point_Manager.Views.UserControls
                     "layoutName" => "Name",
                     "layoutWidth" => "PageWidth",
                     "layoutHeight" => "PageHeight",
-                    "scene" => "Scene",
                     _ => null
                 };
             }
@@ -621,15 +620,13 @@ namespace Cad_Point_Manager.Views.UserControls
 
         private void FitPageToView()
         {
-            if (ActiveLayout?.PageSize == null) { return; }
-
             double viewW = BackgroundCanvas.ActualWidth - 20;
             double viewH = BackgroundCanvas.ActualHeight - 20;
 
             if (viewW <= 0 || viewH <= 0) { return; }
 
-            double pageW = ActiveLayout.PageSize.Width;
-            double pageH = ActiveLayout.PageSize.Height;
+            double pageW = ActiveLayout.PageWidth;
+            double pageH = ActiveLayout.PageHeight;
 
             if (pageW <= 0 || pageH <= 0) { return; }
 

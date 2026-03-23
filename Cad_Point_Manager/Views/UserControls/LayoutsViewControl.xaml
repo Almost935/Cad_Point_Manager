@@ -165,7 +165,9 @@
                     <GridViewColumn Header="Name">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <Grid x:Name="layoutName">
+                                <Grid x:Name="layoutName"
+                                      Background="#66FF0000"
+                                      Margin="0">
                                     <TextBlock x:Name="tbDisplay"
                                                Text="{Binding Name}"
                                                Style="{StaticResource InlineTextBlockStyle}" />
@@ -190,17 +192,20 @@
                     <GridViewColumn Header="Page Width">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <Grid x:Name="layoutWidth">
+                                <Grid x:Name="layoutWidth"
+                                      Background="#66001BFF"
+                                      Margin="0"
+                                      HorizontalAlignment="Stretch">
                                     <TextBlock x:Name="tbDisplay"
-                                               Text="{Binding PageSize.Width, StringFormat=N3}"
+                                               Text="{Binding PageWidth, StringFormat=N3}"
                                                Style="{StaticResource InlineTextBlockStyle}" />
                                     <TextBox x:Name="layoutWidthEdit"
-                                             Text="{Binding PageSize.Width, UpdateSourceTrigger=Explicit, StringFormat=N3}"
+                                             Text="{Binding PageWidth, UpdateSourceTrigger=Explicit, StringFormat=N3}"
                                              Style="{StaticResource InlineEditBoxStyle}" />
                                 </Grid>
                                 <DataTemplate.Triggers>
                                     <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ListViewItem}, Path=(viewsAssorted:InlineEdit.EditingField)}"
-                                                 Value="Name">
+                                                 Value="PageWidth">
                                         <Setter TargetName="tbDisplay"
                                                 Property="Visibility"
                                                 Value="Collapsed" />
@@ -215,17 +220,18 @@
                     <GridViewColumn Header="Page Height">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <Grid x:Name="layoutHeight">
+                                <Grid x:Name="layoutHeight"
+                                      Background="#66E600FF">
                                     <TextBlock x:Name="tbDisplay"
-                                               Text="{Binding PageSize.Height, StringFormat=N3}"
+                                               Text="{Binding PageHeight, StringFormat=N3}"
                                                Style="{StaticResource InlineTextBlockStyle}" />
                                     <TextBox x:Name="layoutHeightEdit"
-                                             Text="{Binding PageSize.Height, UpdateSourceTrigger=Explicit, StringFormat=N3}"
+                                             Text="{Binding PageHeight, UpdateSourceTrigger=Explicit, StringFormat=N3}"
                                              Style="{StaticResource InlineEditBoxStyle}" />
                                 </Grid>
                                 <DataTemplate.Triggers>
                                     <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ListViewItem}, Path=(viewsAssorted:InlineEdit.EditingField)}"
-                                                 Value="Name">
+                                                 Value="PageHeight">
                                         <Setter TargetName="tbDisplay"
                                                 Property="Visibility"
                                                 Value="Collapsed" />
@@ -240,10 +246,12 @@
                     <GridViewColumn Header="Scene">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <ComboBox Style="{StaticResource ValidationComboBox}"
-                                          ItemsSource="{Binding ElementName=Root, Path=Scenes}"
-                                          DisplayMemberPath="Name"
-                                          SelectedValue="{Binding Viewport.Scene, Mode=TwoWay}" />
+                                <Grid Background="#66FF4600">
+                                    <ComboBox Style="{StaticResource ValidationComboBox}"
+                                              ItemsSource="{Binding ElementName=Root, Path=Scenes}"
+                                              DisplayMemberPath="Name"
+                                              SelectedValue="{Binding Viewport.Scene, Mode=TwoWay}" />
+                                </Grid>
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
@@ -256,17 +264,17 @@
                 ClipToBounds="False">
             <Canvas x:Name="PageHost"
                     Background="White"
-                    Width="{Binding ActiveLayout.PageSize.Width}"
-                    Height="{Binding ActiveLayout.PageSize.Height}"
+                    Width="{Binding ActiveLayout.PageWidth}"
+                    Height="{Binding ActiveLayout.PageHeight}"
                     Cursor="{x:Static helpers:AppCursors.DarkCrosshairCursor}">
                 <Canvas.RenderTransform>
                     <MatrixTransform Matrix="{Binding ElementName=Root, Path=ViewMatrix}" />
                 </Canvas.RenderTransform>
                 <local:BaseTitleblock x:Name="Titleblock"
                                       HorizontalAlignment="Stretch"
-                                      VerticalAlignment="Stretch" 
+                                      VerticalAlignment="Stretch"
                                       Panel.ZIndex="1"
-                                      ActiveLayout="{Binding ActiveLayout}"/>
+                                      ActiveLayout="{Binding ActiveLayout}" />
                 <Border x:Name="viewportBorder"
                         Width="{Binding ElementName=Titleblock, Path=ViewportWidth}"
                         Height="{Binding ElementName=Titleblock, Path=ViewportHeight}"
