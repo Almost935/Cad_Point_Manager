@@ -81,9 +81,9 @@
             <Setter.Value>
                 <LinearGradientBrush StartPoint="0,0"
                                      EndPoint="0,1">
-                    <GradientStop Color="{DynamicResource BorderLightColor}"
+                    <GradientStop Color="{DynamicResource ListViewThumbLightColor}"
                                   Offset="0.0" />
-                    <GradientStop Color="{DynamicResource BorderDarkColor}"
+                    <GradientStop Color="{DynamicResource ListViewThumbDarkColor}"
                                   Offset="1.0" />
                 </LinearGradientBrush>
             </Setter.Value>

@@ -267,21 +267,6 @@ namespace Cad_Point_Manager.Views.UserControls
             LayoutPreviewControl.RebuildAsync();
         }
 
-        private void LayoutsListView_Loaded(object sender, RoutedEventArgs e)
-        {
-            DoubleClickSetListView listview = sender as DoubleClickSetListView;
-
-            GridView layoutssGridView = listview.View as GridView;
-            double layoutsListTotalWidth = layoutsListView.ActualWidth;
-            double layoutsListColumnWidth = layoutsListTotalWidth / layoutssGridView.Columns.Count;
-            if (layoutsListColumnWidth > 0)
-            {
-                layoutssGridView.Columns[0].Width = layoutsListColumnWidth * 1.15;
-                layoutssGridView.Columns[1].Width = layoutsListColumnWidth * 0.75;
-                layoutssGridView.Columns[2].Width = layoutsListColumnWidth * 0.75;
-                layoutssGridView.Columns[3].Width = layoutsListColumnWidth * 1.35;
-            }
-        }
         private void LayoutsListInlineEditBox_PreviewKeyDown(object sender, KeyEventArgs e)
         {
             if (sender is not TextBox tb) { return; }

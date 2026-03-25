@@ -27,14 +27,13 @@
             <ColumnDefinition Width="2.5*" />
         </Grid.ColumnDefinitions>
         <controls:DoubleClickSetListView x:Name="layoutsListView"
-                                         Style="{StaticResource DoubleClickActiveListView}"
+                                         Style="{StaticResource LayoutsListView}"
                                          Margin="5"
                                          Grid.Row="0"
                                          Panel.ZIndex="2"
                                          Background="White"
                                          Cursor="Arrow"
                                          ItemsSource="{Binding CadManager.LayoutsView}"
-                                         Loaded="LayoutsListView_Loaded"
                                          VirtualizingPanel.IsVirtualizingWhenGrouping="True"
                                          VirtualizingPanel.ScrollUnit="Pixel"
                                          ScrollViewer.CanContentScroll="True"
@@ -88,6 +87,82 @@
                     <EventSetter Event="MouseDown"
                                  Handler="LayoutsCellDisplay_MouseDown" />
                 </Style>
+
+                <DataTemplate x:Key="LayoutNameTemplate">
+                    <Grid x:Name="layoutName"
+                          Background="Transparent">
+                        <TextBlock x:Name="tbDisplay"
+                                   Text="{Binding Name}"
+                                   Style="{StaticResource InlineTextBlockStyle}" />
+                        <TextBox x:Name="layoutNameEdit"
+                                 Text="{Binding Name, UpdateSourceTrigger=Explicit}"
+                                 Style="{StaticResource InlineEditBoxStyle}" />
+                    </Grid>
+                    <DataTemplate.Triggers>
+                        <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ListViewItem}, Path=(viewsAssorted:InlineEdit.EditingField)}"
+                                     Value="Name">
+                            <Setter TargetName="tbDisplay"
+                                    Property="Visibility"
+                                    Value="Collapsed" />
+                            <Setter TargetName="layoutNameEdit"
+                                    Property="Visibility"
+                                    Value="Visible" />
+                        </DataTrigger>
+                    </DataTemplate.Triggers>
+                </DataTemplate>
+                <DataTemplate x:Key="LayoutWidthTemplate">
+                    <Grid x:Name="layoutWidth"
+                          Background="Transparent">
+                        <TextBlock x:Name="tbDisplay"
+                                   Text="{Binding PageWidth, StringFormat=N3}"
+                                   Style="{StaticResource InlineTextBlockStyle}" />
+                        <TextBox x:Name="layoutWidthEdit"
+                                 Text="{Binding PageWidth, UpdateSourceTrigger=Explicit, StringFormat=N3}"
+                                 Style="{StaticResource InlineEditBoxStyle}" />
+                    </Grid>
+                    <DataTemplate.Triggers>
+                        <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ListViewItem}, Path=(viewsAssorted:InlineEdit.EditingField)}"
+                                     Value="PageWidth">
+                            <Setter TargetName="tbDisplay"
+                                    Property="Visibility"
+                                    Value="Collapsed" />
+                            <Setter TargetName="layoutWidthEdit"
+                                    Property="Visibility"
+                                    Value="Visible" />
+                        </DataTrigger>
+                    </DataTemplate.Triggers>
+                </DataTemplate>
+                <DataTemplate x:Key="LayoutHeightTemplate">
+                    <Grid x:Name="layoutHeight"
+                          Background="Transparent">
+                        <TextBlock x:Name="tbDisplay"
+                                   Text="{Binding PageHeight, StringFormat=N3}"
+                                   Style="{StaticResource InlineTextBlockStyle}" />
+                        <TextBox x:Name="layoutHeightEdit"
+                                 Text="{Binding PageHeight, UpdateSourceTrigger=Explicit, StringFormat=N3}"
+                                 Style="{StaticResource InlineEditBoxStyle}" />
+                    </Grid>
+                    <DataTemplate.Triggers>
+                        <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ListViewItem}, Path=(viewsAssorted:InlineEdit.EditingField)}"
+                                     Value="PageHeight">
+                            <Setter TargetName="tbDisplay"
+                                    Property="Visibility"
+                                    Value="Collapsed" />
+                            <Setter TargetName="layoutHeightEdit"
+                                    Property="Visibility"
+                                    Value="Visible" />
+                        </DataTrigger>
+                    </DataTemplate.Triggers>
+                </DataTemplate>
+                <DataTemplate x:Key="LayoutSceneTemplate">
+                    <Grid x:Name="layoutScene"
+                          Background="Transparent">
+                        <ComboBox Style="{StaticResource ValidationComboBox}"
+                                  ItemsSource="{Binding ElementName=Root, Path=Scenes}"
+                                  DisplayMemberPath="Name"
+                                  SelectedValue="{Binding Viewport.Scene, Mode=TwoWay}" />
+                    </Grid>
+                </DataTemplate>
             </controls:DoubleClickSetListView.Resources>
             <controls:DoubleClickSetListView.ContextMenu>
                 <ContextMenu x:Name="pointsListViewContextMenu"
@@ -160,103 +235,34 @@
                                             VirtualizingPanel.CacheLength="0 0" />
                 </ItemsPanelTemplate>
             </controls:DoubleClickSetListView.ItemsPanel>
-            <controls:DoubleClickSetListView.View>
-                <GridView ColumnHeaderContainerStyle="{StaticResource DoubleClickActiveListViewColumnHeader}">
-                    <GridViewColumn Header="Name">
-                        <GridViewColumn.CellTemplate>
-                            <DataTemplate>
-                                <Grid x:Name="layoutName"
-                                      Background="#66FF0000"
-                                      Margin="0">
-                                    <TextBlock x:Name="tbDisplay"
-                                               Text="{Binding Name}"
-                                               Style="{StaticResource InlineTextBlockStyle}" />
-                                    <TextBox x:Name="layoutNameEdit"
-                                             Text="{Binding Name, UpdateSourceTrigger=Explicit}"
-                                             Style="{StaticResource InlineEditBoxStyle}" />
-                                </Grid>
-                                <DataTemplate.Triggers>
-                                    <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ListViewItem}, Path=(viewsAssorted:InlineEdit.EditingField)}"
-                                                 Value="Name">
-                                        <Setter TargetName="tbDisplay"
-                                                Property="Visibility"
-                                                Value="Collapsed" />
-                                        <Setter TargetName="layoutNameEdit"
-                                                Property="Visibility"
-                                                Value="Visible" />
-                                    </DataTrigger>
-                                </DataTemplate.Triggers>
-                            </DataTemplate>
-                        </GridViewColumn.CellTemplate>
-                    </GridViewColumn>
-                    <GridViewColumn Header="Page Width">
-                        <GridViewColumn.CellTemplate>
-                            <DataTemplate>
-                                <Grid x:Name="layoutWidth"
-                                      Background="#66001BFF"
-                                      Margin="0"
-                                      HorizontalAlignment="Stretch">
-                                    <TextBlock x:Name="tbDisplay"
-                                               Text="{Binding PageWidth, StringFormat=N3}"
-                                               Style="{StaticResource InlineTextBlockStyle}" />
-                                    <TextBox x:Name="layoutWidthEdit"
-                                             Text="{Binding PageWidth, UpdateSourceTrigger=Explicit, StringFormat=N3}"
-                                             Style="{StaticResource InlineEditBoxStyle}" />
-                                </Grid>
-                                <DataTemplate.Triggers>
-                                    <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ListViewItem}, Path=(viewsAssorted:InlineEdit.EditingField)}"
-                                                 Value="PageWidth">
-                                        <Setter TargetName="tbDisplay"
-                                                Property="Visibility"
-                                                Value="Collapsed" />
-                                        <Setter TargetName="layoutWidthEdit"
-                                                Property="Visibility"
-                                                Value="Visible" />
-                                    </DataTrigger>
-                                </DataTemplate.Triggers>
-                            </DataTemplate>
-                        </GridViewColumn.CellTemplate>
-                    </GridViewColumn>
-                    <GridViewColumn Header="Page Height">
-                        <GridViewColumn.CellTemplate>
-                            <DataTemplate>
-                                <Grid x:Name="layoutHeight"
-                                      Background="#66E600FF">
-                                    <TextBlock x:Name="tbDisplay"
-                                               Text="{Binding PageHeight, StringFormat=N3}"
-                                               Style="{StaticResource InlineTextBlockStyle}" />
-                                    <TextBox x:Name="layoutHeightEdit"
-                                             Text="{Binding PageHeight, UpdateSourceTrigger=Explicit, StringFormat=N3}"
-                                             Style="{StaticResource InlineEditBoxStyle}" />
-                                </Grid>
-                                <DataTemplate.Triggers>
-                                    <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ListViewItem}, Path=(viewsAssorted:InlineEdit.EditingField)}"
-                                                 Value="PageHeight">
-                                        <Setter TargetName="tbDisplay"
-                                                Property="Visibility"
-                                                Value="Collapsed" />
-                                        <Setter TargetName="layoutHeightEdit"
-                                                Property="Visibility"
-                                                Value="Visible" />
-                                    </DataTrigger>
-                                </DataTemplate.Triggers>
-                            </DataTemplate>
-                        </GridViewColumn.CellTemplate>
-                    </GridViewColumn>
-                    <GridViewColumn Header="Scene">
-                        <GridViewColumn.CellTemplate>
-                            <DataTemplate>
-                                <Grid Background="#66FF4600">
-                                    <ComboBox Style="{StaticResource ValidationComboBox}"
-                                              ItemsSource="{Binding ElementName=Root, Path=Scenes}"
-                                              DisplayMemberPath="Name"
-                                              SelectedValue="{Binding Viewport.Scene, Mode=TwoWay}" />
-                                </Grid>
-                            </DataTemplate>
-                        </GridViewColumn.CellTemplate>
-                    </GridViewColumn>
-                </GridView>
-            </controls:DoubleClickSetListView.View>
+            <controls:DoubleClickSetListView.ItemTemplate>
+                <DataTemplate>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="1.15*" />
+                            <ColumnDefinition Width="0.75*" />
+                            <ColumnDefinition Width="0.75*" />
+                            <ColumnDefinition Width="1.35*" />
+                        </Grid.ColumnDefinitions>
+                        <!-- NAME -->
+                        <ContentControl Grid.Column="0"
+                                        Content="{Binding}"
+                                        ContentTemplate="{StaticResource LayoutNameTemplate}" />
+                        <!-- WIDTH -->
+                        <ContentControl Grid.Column="1"
+                                        Content="{Binding}"
+                                        ContentTemplate="{StaticResource LayoutWidthTemplate}" />
+                        <!-- HEIGHT -->
+                        <ContentControl Grid.Column="2"
+                                        Content="{Binding}"
+                                        ContentTemplate="{StaticResource LayoutHeightTemplate}" />
+                        <!-- SCENE -->
+                        <ContentControl Grid.Column="3"
+                                        Content="{Binding}"
+                                        ContentTemplate="{StaticResource LayoutSceneTemplate}" />
+                    </Grid>
+                </DataTemplate>
+            </controls:DoubleClickSetListView.ItemTemplate>
         </controls:DoubleClickSetListView>
         <Canvas x:Name="BackgroundCanvas"
                 Grid.Column="1"

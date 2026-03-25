@@ -2,8 +2,38 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:controls="clr-namespace:Cad_Point_Manager.Controls">
 
-    <Style x:Key="DoubleClickActiveListViewScrollViewer"
+    <Style x:Key="LayoutsListViewScrollViewer"
            TargetType="ScrollViewer">
+        <Style.Resources>
+            <SolidColorBrush x:Key="HeaderForeground"
+                             Color="White" />
+            <SolidColorBrush x:Key="ColumnHeaderBorderBackground"
+                             Color="#FF747781" />
+            <SolidColorBrush x:Key="ScrollBarBackgroundBrush"
+                             Color="#FF747781" />
+            <SolidColorBrush x:Key="ScrollBarThumbBrush"
+                             Color="#FF999897" />
+            <Style x:Key="HeaderBorderStyle"
+                   TargetType="Border">
+                <Style.Setters>
+                    <Setter Property="Background"
+                            Value="{StaticResource ColumnHeaderBorderBackground}" />
+                    <Setter Property="Margin"
+                            Value="0.5 1 0.5 1" />
+                </Style.Setters>
+            </Style>
+            <Style x:Key="HeaderTextBlockStyle"
+                   TargetType="TextBlock">
+                <Style.Setters>
+                    <Setter Property="Margin"
+                            Value="5 0.5 5 0.5" />
+                    <Setter Property="Foreground"
+                            Value="{StaticResource HeaderForeground}" />
+                    <Setter Property="FontSize"
+                            Value="11" />
+                </Style.Setters>
+            </Style>
+        </Style.Resources>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ScrollViewer">
@@ -23,15 +53,35 @@
                                       HorizontalScrollBarVisibility="Hidden"
                                       VerticalScrollBarVisibility="Hidden"
                                       Focusable="False">
-                            <GridViewHeaderRowPresenter Margin="0"
-                                                        Columns="{Binding View.Columns, RelativeSource={RelativeSource AncestorType=ListView}}"
-                                                        ColumnHeaderContainerStyle="{Binding View.ColumnHeaderContainerStyle, RelativeSource={RelativeSource AncestorType=ListView}}"
-                                                        ColumnHeaderTemplate="{Binding View.ColumnHeaderTemplate, RelativeSource={RelativeSource AncestorType=ListView}}"
-                                                        ColumnHeaderTemplateSelector="{Binding View.ColumnHeaderTemplateSelector, RelativeSource={RelativeSource AncestorType=ListView}}"
-                                                        AllowsColumnReorder="{Binding View.AllowsColumnReorder, RelativeSource={RelativeSource AncestorType=ListView}}"
-                                                        ColumnHeaderContextMenu="{Binding View.ColumnHeaderContextMenu, RelativeSource={RelativeSource AncestorType=ListView}}"
-                                                        ColumnHeaderToolTip="{Binding View.ColumnHeaderToolTip, RelativeSource={RelativeSource AncestorType=ListView}}"
-                                                        SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+                            <Grid Grid.Row="0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="1.15*" />
+                                    <ColumnDefinition Width="0.75*" />
+                                    <ColumnDefinition Width="0.75*" />
+                                    <ColumnDefinition Width="1.35*" />
+                                </Grid.ColumnDefinitions>
+
+                                <Border Style="{StaticResource HeaderBorderStyle}"
+                                        Grid.Column="0">
+                                    <TextBlock Text="Name"
+                                               Style="{StaticResource HeaderTextBlockStyle}" />
+                                </Border>
+                                <Border Style="{StaticResource HeaderBorderStyle}"
+                                        Grid.Column="1">
+                                    <TextBlock Text="Page Width"
+                                               Style="{StaticResource HeaderTextBlockStyle}" />
+                                </Border>
+                                <Border Style="{StaticResource HeaderBorderStyle}"
+                                        Grid.Column="2">
+                                    <TextBlock Text="Page Height"
+                                               Style="{StaticResource HeaderTextBlockStyle}" />
+                                </Border>
+                                <Border Style="{StaticResource HeaderBorderStyle}"
+                                        Grid.Column="3">
+                                    <TextBlock Text="Scene"
+                                               Style="{StaticResource HeaderTextBlockStyle}" />
+                                </Border>
+                            </Grid>
                         </ScrollViewer>
 
                         <!-- Items -->
@@ -66,21 +116,17 @@
     </Style>
 
     <!-- Column header grip (Thumb) -->
-    <Style x:Key="DoubleClickActiveListViewThumb"
+    <Style x:Key="LayoutsListViewThumb"
            TargetType="Thumb">
-        <Style.Resources>
-            <Color x:Key="BorderLightColor">#FFCCCCCC</Color>
-            <Color x:Key="BorderDarkColor">#FF999999</Color>
-        </Style.Resources>
         <Setter Property="Width"
                 Value="100" />
         <Setter Property="Background">
             <Setter.Value>
                 <LinearGradientBrush StartPoint="0,0"
                                      EndPoint="0,1">
-                    <GradientStop Color="{DynamicResource BorderLightColor}"
+                    <GradientStop Color="{DynamicResource ListViewThumbLightColor}"
                                   Offset="0.0" />
-                    <GradientStop Color="{DynamicResource BorderDarkColor}"
+                    <GradientStop Color="{DynamicResource ListViewThumbDarkColor}"
                                   Offset="1.0" />
                 </LinearGradientBrush>
             </Setter.Value>
@@ -98,70 +144,8 @@
         </Setter>
     </Style>
 
-    <!-- GridView column header -->
-    <Style x:Key="DoubleClickActiveListViewColumnHeader"
-           TargetType="GridViewColumnHeader">
-        <Style.Resources>
-            <SolidColorBrush x:Key="HeaderTextBrush"
-                             Color="White" />
-            <SolidColorBrush x:Key="HeaderBackgroundBrush"
-                             Color="#FF747781" />
-            <SolidColorBrush x:Key="HeaderMouseOverBackgroundBrush"
-                             Color="#FF959595" />
-            <SolidColorBrush x:Key="HeaderBorderBrush"
-                             Color="White" />
-            <Color x:Key="ControlMouseOverColor">#CCCCCC</Color>
-        </Style.Resources>
-        <Setter Property="Foreground"
-                Value="{DynamicResource HeaderTextBrush}" />
-        <Setter Property="IsHitTestVisible"
-                Value="{Binding RelativeSource={RelativeSource AncestorType={x:Type controls:DoubleClickSetListView}},
-                        Path=IsColumnHeaderHitTestVisible}" />
-        <Setter Property="FontSize"
-                Value="11" />
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="GridViewColumnHeader">
-                    <Border x:Name="border"
-                            Background="{DynamicResource HeaderBackgroundBrush}"
-                            BorderBrush="{DynamicResource HeaderBorderBrush}"
-                            BorderThickness="0.5"
-                            VerticalAlignment="Bottom">
-                        <ContentPresenter Margin="5 0 5 0" />
-                    </Border>
-                    <ControlTemplate.Triggers>
-                        <Trigger Property="IsMouseOver"
-                                 Value="True">
-                            <Setter TargetName="border"
-                                    Property="Background"
-                                    Value="{DynamicResource HeaderMouseOverBackgroundBrush}" />
-                        </Trigger>
-                    </ControlTemplate.Triggers>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
-        <Style.Triggers>
-            <Trigger Property="Role"
-                     Value="Floating">
-                <Setter Property="Opacity"
-                        Value="0.7" />
-                <Setter Property="Template">
-                    <Setter.Value>
-                        <ControlTemplate TargetType="GridViewColumnHeader">
-                            <Canvas Name="PART_FloatingHeaderCanvas">
-                                <Rectangle Fill="#60000000"
-                                           Width="{TemplateBinding ActualWidth}"
-                                           Height="{TemplateBinding ActualHeight}" />
-                            </Canvas>
-                        </ControlTemplate>
-                    </Setter.Value>
-                </Setter>
-            </Trigger>
-        </Style.Triggers>
-    </Style>
-
     <!-- ListViewItem -->
-    <Style  x:Key="DoubleClickActiveListViewItem"
+    <Style  x:Key="LayoutsListViewItem"
             TargetType="{x:Type controls:DoubleClickSetListViewItem}">
         <Style.Resources>
             <SolidColorBrush x:Key="SelectedBackgroundBrush"
@@ -190,14 +174,6 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type controls:DoubleClickSetListViewItem}">
-                    <!--<Border x:Name="Border"
-                            SnapsToDevicePixels="true"
-                            BorderThickness="0"
-                            Background="Transparent"
-                            Margin="0"
-                            Padding="0">
-                        <GridViewRowPresenter />
-                    </Border>-->
                     <Border x:Name="Border"
                             SnapsToDevicePixels="true"
                             BorderThickness="0"
@@ -261,7 +237,7 @@
     </Style>
 
     <!-- ListView -->
-    <Style x:Key="DoubleClickActiveListView"
+    <Style x:Key="LayoutsListView"
            TargetType="{x:Type controls:DoubleClickSetListView}">
         <Style.Resources>
             <SolidColorBrush x:Key="ListView.Static.Border"
@@ -286,9 +262,7 @@
         <Setter Property="Padding"
                 Value="0" />
         <Setter Property="ItemContainerStyle"
-                Value="{StaticResource DoubleClickActiveListViewItem}" />
-        <Setter Property="GridView.ColumnHeaderContainerStyle"
-                Value="{StaticResource DoubleClickActiveListViewColumnHeader}" />
+                Value="{StaticResource LayoutsListViewItem}" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type controls:DoubleClickSetListView}">
@@ -297,7 +271,7 @@
                             BorderThickness="{TemplateBinding BorderThickness}"
                             Background="{TemplateBinding Background}"
                             Padding="0">
-                        <ScrollViewer Style="{StaticResource DoubleClickActiveListViewScrollViewer}"
+                        <ScrollViewer Style="{StaticResource LayoutsListViewScrollViewer}"
                                       Padding="0">
                             <ItemsPresenter />
                         </ScrollViewer>

@@ -1,11 +1,13 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 
 namespace Cad_Point_Manager.Controls
 {
     public class DoubleClickSetListView : ListView
     {
+        #region Dependency Properties
         public static readonly DependencyProperty ActiveItemProperty =
             DependencyProperty.Register(
                 "ActiveItem",
@@ -35,14 +37,15 @@ namespace Cad_Point_Manager.Controls
             get => (bool)GetValue(IsColumnHeaderHitTestVisibleProperty);
             set => SetValue(IsColumnHeaderHitTestVisibleProperty, value);
         }
-
         public static readonly DependencyProperty IsColumnHeaderHitTestVisibleProperty =
             DependencyProperty.Register(
                 nameof(IsColumnHeaderHitTestVisible),
                 typeof(bool),
                 typeof(DoubleClickSetListView),
                 new FrameworkPropertyMetadata(true));
+        #endregion
 
+        #region Constructors
         public DoubleClickSetListView()
         {
             ItemContainerGenerator.StatusChanged += (_, __) =>
@@ -51,7 +54,9 @@ namespace Cad_Point_Manager.Controls
                     ApplyActiveObjectToContainer();
             };
         }
+        #endregion
 
+        #region Methods
         protected override bool IsItemItsOwnContainerOverride(object item)
         {
             return item is DoubleClickSetListViewItem;
@@ -126,9 +131,11 @@ namespace Cad_Point_Manager.Controls
             ActiveItem = container;
             ActiveItem.IsActive = true;
         }
+        #endregion
     }
     public class DoubleClickSetListViewItem : ListViewItem
     {
+        #region Events
         // Register a custom routed event using the Bubble routing strategy.
         public static readonly RoutedEvent IsActivatedChangedEvent = EventManager.RegisterRoutedEvent(
             name: "ListViewItemIsActiveEvent",
@@ -136,6 +143,15 @@ namespace Cad_Point_Manager.Controls
             handlerType: typeof(RoutedEventHandler),
             ownerType: typeof(DoubleClickSetListViewItem));
 
+        // Provide CLR accessors for assigning an event handler.
+        public event RoutedEventHandler IsActiveChangedHandler
+        {
+            add { AddHandler(IsActivatedChangedEvent, value); }
+            remove { RemoveHandler(IsActivatedChangedEvent, value); }
+        }
+        #endregion
+
+        #region Dependency Properties
         public static readonly DependencyProperty IsActiveProperty =
             DependencyProperty.Register(
             "IsActive",
@@ -147,14 +163,9 @@ namespace Cad_Point_Manager.Controls
             get { return (bool)GetValue(IsActiveProperty); }
             set { SetValue(IsActiveProperty, value); }
         }
+        #endregion
 
-        // Provide CLR accessors for assigning an event handler.
-        public event RoutedEventHandler IsActiveChangedHandler
-        {
-            add { AddHandler(IsActivatedChangedEvent, value); }
-            remove { RemoveHandler(IsActivatedChangedEvent, value); }
-        }
-
+        #region Methods
         void ListViewItemActivated()
         {
             // Create a RoutedEventArgs instance.
@@ -169,5 +180,6 @@ namespace Cad_Point_Manager.Controls
             IsActive = true;
             ListViewItemActivated();
         }
+        #endregion
     }
 }

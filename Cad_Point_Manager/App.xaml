@@ -28,6 +28,7 @@
                 <ResourceDictionary Source="Styles/ContextMenuStyle.xaml" />
                 <ResourceDictionary Source="Styles/TextBoxStyles.xaml" />
                 <ResourceDictionary Source="Styles/DoubleClickActiveListView.xaml" />
+                <ResourceDictionary Source="Styles/LayoutsListView.xaml" />
                 <ResourceDictionary Source="Styles/TabControlStyle.xaml" />
                 <ResourceDictionary Source="Styles/InlineEditableTextStyle.xaml" />
                 <ResourceDictionary Source="Styles/PointsViewListViewStyle.xaml" />
