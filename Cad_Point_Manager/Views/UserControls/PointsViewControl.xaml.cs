@@ -39,7 +39,6 @@ namespace Cad_Point_Manager.Views.UserControls
         private string? _lastPointsListContextField;
         private ListViewItem? _lastPointsListItem;
         private readonly List<CogoPoint> _selectedPoints = [];
-        private CogoPoint _lastRightClickedPoint;
         private static readonly string[] _newPointFieldOrder =
         {
             "PointNumber",
@@ -375,12 +374,12 @@ namespace Cad_Point_Manager.Views.UserControls
             TryCreateNewPoint(CadManager.CogoPointManager.GetNextAvailablePointNumber(_lastCreatedPointNumber),
                 new Vector3(0, 0, 0), ActivePointGroup, 0, "");
         }
-        private void PointsListViewRenamePoint_Click(object sender, RoutedEventArgs e)
-        {
-            if (_lastPointsListItem == null) { return; }
+        //private void PointsListViewRenamePoint_Click(object sender, RoutedEventArgs e)
+        //{
+        //    if (_lastPointsListItem == null) { return; }
 
-            BeginPointsListCellEdit(_lastPointsListItem, "PointNumber");
-        }
+        //    BeginPointsListCellEdit(_lastPointsListItem, "PointNumber");
+        //}
         private void PointsListViewEditPoint_Click(object sender, RoutedEventArgs e)
         {
             if (_lastPointsListItem == null || string.IsNullOrEmpty(_lastPointsListContextField))
@@ -482,7 +481,6 @@ namespace Cad_Point_Manager.Views.UserControls
                                    ?? VisualTreeHelpers.FindAncestor<ListViewItem>(src);
             if (lvi == null) { return; }
             if (lvi.DataContext is not CogoPoint point) { return; }
-            _lastRightClickedPoint = point;
 
             string field = PointsInferFieldNameFromDisplayElement(fe);
             if (string.IsNullOrEmpty(field)) { return; }

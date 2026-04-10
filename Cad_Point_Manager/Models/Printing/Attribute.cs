@@ -7,9 +7,8 @@ namespace Cad_Point_Manager.Models.Printing
     public class Attribute : INotifyPropertyChanged
     {
         #region Fields
-        private readonly string _baseText;
-
         private string _text;
+        private string _baseText;
         private double _fontSize;
         private Color _fontColor = Colors.Black;
         #endregion
@@ -32,6 +31,18 @@ namespace Cad_Point_Manager.Models.Printing
                     {
                         IsBaseValue = true;
                     }
+                }
+            }
+        }
+        public string BaseText
+        {
+            get { return _baseText; }
+            set
+            {
+                if ( _baseText != value)
+                {
+                    _baseText = value;
+                    OnPropertyChanged(nameof(BaseText));
                 }
             }
         }
@@ -66,7 +77,7 @@ namespace Cad_Point_Manager.Models.Printing
         #region Constructors
         public Attribute(string baseValue, double fontSize)
         {
-            _baseText = baseValue;
+            BaseText = baseValue;
             Text = baseValue;
             FontSize = fontSize;
         }

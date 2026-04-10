@@ -1,4 +1,5 @@
 ﻿using Cad_Point_Manager.Helpers;
+using Cad_Point_Manager.Models.Printing;
 using Cad_Point_Manager.Views.UserControls;
 using System.Windows;
 using System.Windows.Controls;
@@ -6,6 +7,7 @@ using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
+using Attribute = Cad_Point_Manager.Models.Printing.Attribute;
 
 namespace Cad_Point_Manager.Controls
 {
@@ -20,10 +22,33 @@ namespace Cad_Point_Manager.Controls
         private TextBlock? _readView;
         #endregion
 
+        #region Properties
+        public string DisplayText
+        {
+            get
+            {
+                if (DataContext is Attribute attr)
+                {
+                    return string.IsNullOrWhiteSpace(Text)
+                        ? attr.BaseText
+                        : Text;
+                }
+
+                return Text;
+            }
+        }
+        #endregion
+
         #region Dependency Properties
         public static readonly DependencyProperty TextProperty =
-            DependencyProperty.Register(nameof(Text), typeof(string), typeof(TemplateInlineEditableTextControl),
-                new FrameworkPropertyMetadata(string.Empty, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault));
+            DependencyProperty.Register(
+            nameof(Text),
+            typeof(string),
+            typeof(TemplateInlineEditableTextControl),
+            new FrameworkPropertyMetadata(
+                string.Empty,
+                FrameworkPropertyMetadataOptions.BindsTwoWayByDefault,
+                OnTextChanged)); // 👈 add this
         public string Text
         {
             get => (string)GetValue(TextProperty);
@@ -145,6 +170,21 @@ namespace Cad_Point_Manager.Controls
 
             if (!commit && _originalText != null) { Text = _originalText; }
 
+            if (commit)
+            {
+                if (string.IsNullOrWhiteSpace(Text))
+                {
+                    // keep model blank
+                    SetCurrentValue(TextProperty, "");
+
+                    // force UI refresh AFTER overlay is removed
+                    Dispatcher.BeginInvoke(() =>
+                    {
+                        OnDisplayTextChanged();
+                    }, DispatcherPriority.Render);
+                }
+            }
+
             // Unhook from host + remove overlay editor
             if (_host is not null)
             {
@@ -242,6 +282,37 @@ namespace Cad_Point_Manager.Controls
 
             double s = _host.ViewMatrix.M11;
             _overlayEditor.FontSize = ScaleFontWithView ? Math.Max(1, FontSize * s) : Math.Max(1, FontSize * 12);
+        }
+
+        private string GetDisplayText()
+        {
+            if (string.IsNullOrWhiteSpace(Text) && DataContext is Attribute attr)
+            {
+                return attr.BaseText;
+            }
+
+            return Text;
+        }
+
+        private static void OnTextChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            var ctrl = (TemplateInlineEditableTextControl)d;
+            ctrl.OnDisplayTextChanged();
+        }
+
+        private void OnDisplayTextChanged()
+        {
+            // Force template to exist
+            if (_readView == null)
+            {
+                ApplyTemplate();
+                _readView = GetTemplateChild("ReadView") as TextBlock;
+            }
+
+            if (_readView != null)
+            {
+                _readView.Text = DisplayText;
+            }
         }
         #endregion
     }

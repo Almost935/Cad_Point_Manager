@@ -7,7 +7,10 @@ using Cad_Point_Manager.Models.Printing;
 using Cad_Point_Manager.Services;
 using Cad_Point_Manager.Views.Assorted;
 using MaterialDesignThemes.Wpf;
+using System.Collections;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
@@ -31,7 +34,6 @@ namespace Cad_Point_Manager.Views.UserControls
         private Point _panStartMouse;     // mouse position when pan started (in container coords)
         private Matrix _panStartMatrix;   // matrix at pan start
         private bool _panning;
-        private bool _didInitialFit;
 
         private Matrix _initialMatrix;
 
@@ -40,7 +42,7 @@ namespace Cad_Point_Manager.Views.UserControls
         private int _newLayoutFieldIndex;
         private ListViewItem? _lastLayoutsListItem;
         private string? _lastLayoutsListContextField;
-        private Layout _lastRightClickedLayout;
+        private FrameworkElement? _lastRightClickedCellElement;
         private static readonly string[] _newLayoutFieldOrder =
         {
             "Name",
@@ -99,6 +101,18 @@ namespace Cad_Point_Manager.Views.UserControls
             set => SetValue(ScenesProperty, value);
         }
 
+        public static readonly DependencyProperty SelectedLayoutsProperty =
+            DependencyProperty.Register(
+                nameof(SelectedLayouts),
+                typeof(IList),
+                typeof(LayoutsViewControl),
+                new PropertyMetadata(null));
+        public IList SelectedLayouts
+        {
+            get => (IList)GetValue(SelectedLayoutsProperty);
+            set => SetValue(SelectedLayoutsProperty, value);
+        }
+
         public static readonly DependencyProperty ViewMatrixProperty =
         DependencyProperty.Register(
             nameof(ViewMatrix),
@@ -116,6 +130,8 @@ namespace Cad_Point_Manager.Views.UserControls
         public LayoutsViewControl()
         {
             InitializeComponent();
+
+            SelectedLayouts = new ObservableCollection<Layout>();
         }
         #endregion
 
@@ -124,6 +140,40 @@ namespace Cad_Point_Manager.Views.UserControls
         #endregion
 
         #region Methods
+        private void LayoutsListView_ContextMenuOpening(object sender, ContextMenuEventArgs e)
+        {
+            if (e.OriginalSource is not DependencyObject src) { return; }
+            if (e.OriginalSource is not FrameworkElement fe) { return; }
+
+            ListViewItem? lvi = src as ListViewItem
+                ?? VisualTreeHelpers.FindAncestor<ListViewItem>(src);
+
+            if (lvi?.DataContext is not Layout layout)
+            {
+                _lastLayoutsListItem = null;
+                _lastLayoutsListContextField = null;
+                _lastRightClickedCellElement = null;
+
+                return;
+            }
+
+            string field = LayoutsInferFieldNameFromDisplayElement(fe);
+
+            if (string.IsNullOrEmpty(field))
+            {
+                e.Handled = true;
+
+                _lastLayoutsListItem = null;
+                _lastLayoutsListContextField = null;
+                _lastRightClickedCellElement = null;
+
+                return;
+            }
+
+            _lastLayoutsListContextField = field;
+            _lastLayoutsListItem = lvi;
+            _lastRightClickedCellElement = fe;
+        }
         private void NewLayout_Click(object sender, RoutedEventArgs e)
         {
             Rect viewportBounds = new(0.5, 0.5, 28.938, 23);
@@ -137,12 +187,10 @@ namespace Cad_Point_Manager.Views.UserControls
             layoutsListView.SelectedItem = newLayout;
             layoutsListView.UpdateLayout();
 
-            // First scroll attempt: realize the group container
             layoutsListView.ScrollIntoView(newLayout);
 
             Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() =>
             {
-                // 1. Find the GroupItem that corresponds to this PointGroup
                 GroupItem targetGroupItem = null;
 
                 foreach (var groupItem in VisualTreeHelpers.FindVisualChildren<GroupItem>(layoutsListView))
@@ -161,15 +209,12 @@ namespace Cad_Point_Manager.Views.UserControls
                     expander?.IsExpanded = true;
                 }
 
-                // 3. Now the group is expanded; scroll the point again so its row is in view
                 layoutsListView.ScrollIntoView(newLayout);
 
-                // 4. On another dispatcher tick, its ListViewItem should exist and we can start editing
                 Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() =>
                 {
                     if (layoutsListView.ItemContainerGenerator.ContainerFromItem(newLayout) is ListViewItem container)
                     {
-                        // NEW POINT EDIT MODE:
                         _isCreatingNewLayout = true;
                         _newLayout = newLayout;
                         _newLayoutFieldIndex = 0;
@@ -193,25 +238,39 @@ namespace Cad_Point_Manager.Views.UserControls
                 }));
             }));
         }
-        private void DeleteLayout_Click(object sender, RoutedEventArgs e)
+        private void DeleteLayouts_Click(object sender, RoutedEventArgs e)
         {
-
+            if (MessageBox.Show($"Are you sure you want to delete {SelectedLayouts.Count} layout?",
+                "Confirm Delete", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
+            {
+                foreach (var layout in SelectedLayouts.Cast<Layout>().ToList())
+                {
+                    CadManager?.TryDeleteLayout(layout);
+                }
+            }
         }
         private void EditLayout_Click(object sender, RoutedEventArgs e)
         {
-            if (_lastLayoutsListItem is null || string.IsNullOrEmpty(_lastLayoutsListContextField))
-            {
-                return;
-            }
+            if (_lastLayoutsListItem is null ||
+                string.IsNullOrEmpty(_lastLayoutsListContextField)) { return; }
+
+            if (!IsValidStoredLayoutCell()) { return; }
 
             BeginLayoutsListCellEdit(_lastLayoutsListItem, _lastLayoutsListContextField);
 
             pointsListViewContextMenu.IsOpen = false;
         }
-        private void PointNameEditLayout_Click(object sender, RoutedEventArgs e)
-        {
+        //private void PointNameEditLayout_Click(object sender, RoutedEventArgs e)
+        //{
+        //    if (_lastLayoutsListItem is null ||
+        //        string.IsNullOrEmpty(_lastLayoutsListContextField)) { return; }
 
-        }
+        //    if (!IsValidStoredLayoutCell()) { return; }
+
+        //    BeginLayoutsListCellEdit(_lastLayoutsListItem, "Name");
+
+        //    pointsListViewContextMenu.IsOpen = false;
+        //}
 
         private void BeginLayoutsListCellEdit(ListViewItem lvi, string field)
         {
@@ -254,6 +313,23 @@ namespace Cad_Point_Manager.Views.UserControls
                 };
             }
             return null;
+        }
+
+        private bool IsValidStoredLayoutCell()
+        {
+            if (_lastRightClickedCellElement == null) { return false; }
+
+            if (!VisualTreeHelpers.IsElementInVisualTree(_lastRightClickedCellElement)) { return false; }
+
+            var currentLvi = VisualTreeHelpers.FindAncestor<ListViewItem>(_lastRightClickedCellElement);
+            if (currentLvi == null || currentLvi != _lastLayoutsListItem) { return false; }
+
+            string field = LayoutsInferFieldNameFromDisplayElement(_lastRightClickedCellElement);
+
+            if (string.IsNullOrEmpty(field)) { return false; }
+
+            // Ensure field still matches what we stored
+            return field == _lastLayoutsListContextField;
         }
 
         private void SetViewMatrix(Matrix m)
@@ -446,7 +522,13 @@ namespace Cad_Point_Manager.Views.UserControls
         }
         private void LayoutsCellDisplay_MouseDown(object sender, MouseButtonEventArgs e)
         {
+            if (e.ClickCount < 2) { return; }
+            if (sender is not FrameworkElement fe || VisualTreeHelpers.FindAncestor<ListViewItem>(fe) is not ListViewItem lvi) { return; }
 
+            string field = LayoutsInferFieldNameFromDisplayElement(fe);
+            if (string.IsNullOrEmpty(field)) { return; }
+
+            BeginLayoutsListCellEdit(lvi, field);
         }
         private void Layouts_CollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
         {
@@ -511,32 +593,11 @@ namespace Cad_Point_Manager.Views.UserControls
                 ctrl.LayoutPreviewControl.RebuildAsync();
             }
         }
-
-        private void LayoutsListView_ContextMenuOpening(object sender, ContextMenuEventArgs e)
-        {
-            // element that was actually right-clicked
-            if (e.OriginalSource is not DependencyObject src) { return; }
-            if (e.OriginalSource is not FrameworkElement fe) { return; }
-
-            // Walk up from the OriginalSource until we find something we can map to a field
-            ListViewItem? lvi = src as ListViewItem
-                                   ?? VisualTreeHelpers.FindAncestor<ListViewItem>(src);
-            if (lvi == null) { return; }
-            if (lvi.DataContext is not Layout layout) { return; }
-            _lastRightClickedLayout = layout;
-
-            string field = LayoutsInferFieldNameFromDisplayElement(fe);
-            if (string.IsNullOrEmpty(field)) { return; }
-
-            _lastLayoutsListContextField = field;
-            _lastLayoutsListItem = lvi;
-        }
         #endregion
 
         #region Pan and Zoom Methods
         private void Root_MouseButtonDown(object sender, MouseButtonEventArgs e)
         {
-            // Middle button drag to pan (change to Left if you prefer)
             if (e.ChangedButton == MouseButton.Middle)
             {
                 if (layoutsListView.IsMouseOver) { return; }
@@ -547,6 +608,8 @@ namespace Cad_Point_Manager.Views.UserControls
                 Mouse.Capture(BackgroundCanvas);
                 e.Handled = true;
             }
+
+            CommitInlineEditIfActive(e.OriginalSource as DependencyObject);
         }
         private void Root_MouseUp(object sender, MouseButtonEventArgs e)
         {
@@ -600,6 +663,28 @@ namespace Cad_Point_Manager.Views.UserControls
             FitPageToView();
         }
 
+        private void CommitInlineEditIfActive(DependencyObject clickedElement)
+        {
+            // Find active editing ListViewItem
+            var editingItem = VisualTreeHelpers
+                .FindVisualChildren<ListViewItem>(layoutsListView)
+                .FirstOrDefault(lvi => InlineEdit.GetEditingField(lvi) != null);
+
+            if (editingItem == null)
+                return;
+
+            // If click is INSIDE the same item → ignore
+            if (clickedElement != null)
+            {
+                var clickedLvi = VisualTreeHelpers.FindAncestor<ListViewItem>(clickedElement);
+                if (clickedLvi == editingItem)
+                    return;
+            }
+
+            // 🔥 Force commit (simulate LostFocus)
+            InlineEdit.SetEditingField(editingItem, null);
+        }
+
         private static double Clamp(double v, double min, double max)
         => v < min ? min : (v > max ? max : v);
 
@@ -633,8 +718,6 @@ namespace Cad_Point_Manager.Views.UserControls
 
             _initialMatrix = m;
             SetViewMatrix(m);
-
-            _didInitialFit = true;
         }
 
         public void ResetView()

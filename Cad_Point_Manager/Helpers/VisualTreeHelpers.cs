@@ -80,5 +80,21 @@ namespace Cad_Point_Manager.Helpers
             }
             return false;
         }
+
+        public static bool IsElementInVisualTree(DependencyObject element)
+        {
+            while (element != null)
+            {
+                if (element is Visual || element is System.Windows.Media.Media3D.Visual3D)
+                {
+                    element = VisualTreeHelper.GetParent(element);
+                }
+                else
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
     }
 }

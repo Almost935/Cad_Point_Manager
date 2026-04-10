@@ -446,17 +446,6 @@ namespace Cad_Point_Manager.Views.UserControls
         }
         private void PointsListViewZoomPoint_Click(object sender, RoutedEventArgs e)
         {
-            //if (Camera is null || _lastPointsListItem is null) { return; }
-
-            //var p = _lastPointsListItem.DataContext as CogoPoint;
-
-            //double centerX = p.Bounds.Left + (p.Bounds.Width * 0.5);
-            //double centerY = p.Bounds.Top + (p.Bounds.Height * 0.5);
-
-            //Camera.ZoomToBounds(new Rect(centerX - (p.Bounds.Width * _zoomToPointPaddingFactor * 0.5), centerY - (p.Bounds.Height * _zoomToPointPaddingFactor * 0.5), 
-            //    p.Bounds.Width * _zoomToPointPaddingFactor, p.Bounds.Height * _zoomToPointPaddingFactor));
-            //Camera.IsDirty = true;
-
             if (Camera is null || _lastPointsListItem is null || _lastPointsListItem.DataContext is not CogoPoint p) { return; }
             CadManager.ZoomToPoint(p, _zoomToPointPaddingFactor);
         }

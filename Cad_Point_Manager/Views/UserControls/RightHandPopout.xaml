@@ -13,7 +13,7 @@
              xmlns:validation="clr-namespace:Cad_Point_Manager.Views.ValidationRules"
              xmlns:fa="http://schemas.fontawesome.io/icons/"
              xmlns:sys="clr-namespace:System;assembly=mscorlib"
-             xmlns:behaviors="clr-namespace:Cad_Point_Manager.Behavior"
+             xmlns:behaviors="clr-namespace:Cad_Point_Manager.Behaviors"
              xmlns:viewsAssorted="clr-namespace:Cad_Point_Manager.Views.Assorted"
              mc:Ignorable="d"
              d:DesignHeight="400"
@@ -243,7 +243,7 @@
                                         </fa:FontAwesome>
                                     </MenuItem.Icon>
                                 </MenuItem>
-                                <MenuItem x:Name="renamePGMenuItem"
+                                <!--<MenuItem x:Name="renamePGMenuItem"
                                           Header="Rename"
                                           Click="RenamePGMenuItem_Click"
                                           Style="{StaticResource DefaultContextMenuItemStyle}"
@@ -257,11 +257,11 @@
                                             </fa:FontAwesome.LayoutTransform>
                                         </fa:FontAwesome>
                                     </MenuItem.Icon>
-                                </MenuItem>
+                                </MenuItem>-->
                                 <MenuItem Header="Edit Cell"
+                                          InputGestureText="F2"
                                           Click="EditPGMenuItem_Click"
-                                          Style="{StaticResource DefaultContextMenuItemStyle}"
-                                          InputGestureText="Ctrl+E">
+                                          Style="{StaticResource DefaultContextMenuItemStyle}">
                                     <MenuItem.Icon>
                                         <fa:FontAwesome Icon="Edit"
                                                         Foreground="{StaticResource BodyForeground}">

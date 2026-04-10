@@ -4,7 +4,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 
-namespace Cad_Point_Manager.Behavior
+namespace Cad_Point_Manager.Behaviors
 {
     public static class PreserveSelectionOnDoubleClickBehavior
     {

@@ -114,24 +114,6 @@ namespace Cad_Point_Manager.Views.UserControls
                 OnPropertyChanged(nameof(PointGroupListColorPickerOpen));
             }
         }
-        //public string NewPointGroupName
-        //{
-        //    get { return _newPointGroupName; }
-        //    set
-        //    {
-        //        _newPointGroupName = value;
-        //        OnPropertyChanged(nameof(NewPointGroupName));
-        //    }
-        //}
-        //public Color NewPointGroupColor
-        //{
-        //    get { return _newPointGroupColor; }
-        //    set
-        //    {
-        //        _newPointGroupColor = value;
-        //        OnPropertyChanged(nameof(NewPointGroupColor));
-        //    }
-        //}
         public double NewPointGroupScale
         {
             get { return _newPointGroupScale; }
@@ -280,9 +262,6 @@ namespace Cad_Point_Manager.Views.UserControls
         }
         private void HideControl()
         {
-            //LayerListVisible = false;
-            //PointGroupListVisible = false;
-
             _mainPanelIsVisible = false;
 
             DoubleAnimation slideOut = new DoubleAnimation

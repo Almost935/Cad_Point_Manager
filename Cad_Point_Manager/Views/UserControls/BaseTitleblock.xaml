@@ -25,6 +25,7 @@
         <FontWeight x:Key="DefaultFontWeight">Normal</FontWeight>
 
         <converters:ColorToBrushConverter x:Key="ColorToBrush" />
+        <converters:EmptyToDefaultConverter x:Key="EmptyToDefaultConverter" />
     </UserControl.Resources>
 
     <Canvas  Width="36"
@@ -76,13 +77,20 @@
                 Canvas.Top="7.2585">
             <controls:TemplateInlineEditableTextControl Style="{StaticResource InlineEditableTextStyle}"
                                                         DataContext="{Binding ActiveLayout.Attributes.Notes, ElementName=Root}"
-                                                        Text="{Binding Text, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, FallbackValue=Notes}"
                                                         FontFamily="{StaticResource DefaultFontFamily}"
                                                         FontWeight="{StaticResource DefaultFontWeight}"
                                                         FontSize="{Binding FontSize, FallbackValue=0.25}"
                                                         Foreground="{Binding FontColor, Converter={StaticResource ColorToBrush}}"
                                                         ScaleFontWithView="True"
-                                                        Margin="{StaticResource drawingDescMargin}" />
+                                                        Margin="{StaticResource drawingDescMargin}">
+                <controls:TemplateInlineEditableTextControl.Text>
+                    <MultiBinding Converter="{StaticResource EmptyToDefaultConverter}"
+                                  Mode="TwoWay">
+                        <Binding Path="Text" />
+                        <Binding Path="BaseText" />
+                    </MultiBinding>
+                </controls:TemplateInlineEditableTextControl.Text>
+            </controls:TemplateInlineEditableTextControl>
         </Border>
 
         <Grid Canvas.Left="29.5"

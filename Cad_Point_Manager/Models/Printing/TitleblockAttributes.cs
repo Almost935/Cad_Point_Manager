@@ -145,11 +145,11 @@ namespace Cad_Point_Manager.Models.Printing
             string? propertyName = null)
         {
             if (EqualityComparer<T>.Default.Equals(field, value))
-                return false;
+            { return false; }
 
             field = value;
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-            return true;
+            { return true; }
         }
     }
 
