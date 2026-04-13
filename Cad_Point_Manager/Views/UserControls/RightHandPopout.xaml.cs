@@ -631,12 +631,6 @@ namespace Cad_Point_Manager.Views.UserControls
                 Colors.Black,
                 CadManager.PointBaseScale);
         }
-        private void RenamePGMenuItem_Click(object sender, RoutedEventArgs e)
-        {
-            if (_lastPointGroupListViewItem == null) { return; }
-
-            BeginPointGroupListCellEdit(_lastPointGroupListViewItem, "Name");
-        }
         private void EditPGMenuItem_Click(object sender, RoutedEventArgs e)
         {
             if (_lastPointGroupListViewItem == null || string.IsNullOrEmpty(_lastContextField)) { return; }

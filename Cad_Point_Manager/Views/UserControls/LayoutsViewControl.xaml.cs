@@ -52,6 +52,11 @@ namespace Cad_Point_Manager.Views.UserControls
         };
         #endregion
 
+        #region Properties
+        private bool IsInDesignMode =>
+            DesignerProperties.GetIsInDesignMode(new DependencyObject());
+        #endregion
+
         #region Dependency Properties
         public static readonly DependencyProperty CadManagerProperty =
             DependencyProperty.Register(
@@ -104,12 +109,12 @@ namespace Cad_Point_Manager.Views.UserControls
         public static readonly DependencyProperty SelectedLayoutsProperty =
             DependencyProperty.Register(
                 nameof(SelectedLayouts),
-                typeof(IList),
+                typeof(ObservableCollection<Layout>),
                 typeof(LayoutsViewControl),
-                new PropertyMetadata(null));
-        public IList SelectedLayouts
+                new PropertyMetadata(new ObservableCollection<Layout>()));
+        public ObservableCollection<Layout> SelectedLayouts
         {
-            get => (IList)GetValue(SelectedLayoutsProperty);
+            get => (ObservableCollection<Layout>)GetValue(SelectedLayoutsProperty);
             set => SetValue(SelectedLayoutsProperty, value);
         }
 
@@ -130,8 +135,6 @@ namespace Cad_Point_Manager.Views.UserControls
         public LayoutsViewControl()
         {
             InitializeComponent();
-
-            SelectedLayouts = new ObservableCollection<Layout>();
         }
         #endregion
 
@@ -260,17 +263,6 @@ namespace Cad_Point_Manager.Views.UserControls
 
             pointsListViewContextMenu.IsOpen = false;
         }
-        //private void PointNameEditLayout_Click(object sender, RoutedEventArgs e)
-        //{
-        //    if (_lastLayoutsListItem is null ||
-        //        string.IsNullOrEmpty(_lastLayoutsListContextField)) { return; }
-
-        //    if (!IsValidStoredLayoutCell()) { return; }
-
-        //    BeginLayoutsListCellEdit(_lastLayoutsListItem, "Name");
-
-        //    pointsListViewContextMenu.IsOpen = false;
-        //}
 
         private void BeginLayoutsListCellEdit(ListViewItem lvi, string field)
         {
@@ -520,16 +512,7 @@ namespace Cad_Point_Manager.Views.UserControls
 
             InlineEdit.SetEditingField(lvi, null);
         }
-        private void LayoutsCellDisplay_MouseDown(object sender, MouseButtonEventArgs e)
-        {
-            if (e.ClickCount < 2) { return; }
-            if (sender is not FrameworkElement fe || VisualTreeHelpers.FindAncestor<ListViewItem>(fe) is not ListViewItem lvi) { return; }
-
-            string field = LayoutsInferFieldNameFromDisplayElement(fe);
-            if (string.IsNullOrEmpty(field)) { return; }
-
-            BeginLayoutsListCellEdit(lvi, field);
-        }
+        
         private void Layouts_CollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
         {
             if (CadManager is not null && CadManager.Layouts.Count > 0)
@@ -660,6 +643,8 @@ namespace Cad_Point_Manager.Views.UserControls
 
         private void BackgroundCanvas_SizeChanged(object sender, SizeChangedEventArgs e)
         {
+            if (IsInDesignMode) { return; }
+
             FitPageToView();
         }
 
@@ -690,6 +675,8 @@ namespace Cad_Point_Manager.Views.UserControls
 
         private void FitPageToView()
         {
+            if (IsInDesignMode) { return; }
+
             double viewW = BackgroundCanvas.ActualWidth - 20;
             double viewH = BackgroundCanvas.ActualHeight - 20;
 

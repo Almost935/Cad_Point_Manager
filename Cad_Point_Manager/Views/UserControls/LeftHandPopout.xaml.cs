@@ -68,11 +68,7 @@ namespace Cad_Point_Manager.Views.UserControls
 
         // Scenes related fields
         private List<Scene> _selectedScenes = [];
-        private bool _newSceneBeingEdited = false;
         private Scene _newScene = null;
-        private string _previousViewName;
-
-        private string? _lastScenesListContextField;
         private ListViewItem? _lastScenesListItem;
         private Scene? _lastRightClickedScene;
         #endregion
@@ -416,12 +412,6 @@ namespace Cad_Point_Manager.Views.UserControls
 
             bool created = TryCreateNewPoint(CadManager.CogoPointManager.GetNextAvailablePointNumber(_lastCreatedPointNumber),
                 new Vector3(0, 0, 0), ActivePointGroup, 0, "");
-        }
-        private void PointsListViewRenamePoint_Click(object sender, RoutedEventArgs e)
-        {
-            if (_lastPointsListItem == null) { return; }
-
-            BeginPointsListCellEdit(_lastPointsListItem, "PointNumber");
         }
         private void PointsListViewEditPoint_Click(object sender, RoutedEventArgs e)
         {
@@ -1226,9 +1216,7 @@ namespace Cad_Point_Manager.Views.UserControls
             string tempViewName = Camera.GetTempSceneName();
             if (!Camera.TrySaveScene(tempViewName, out var newScene) || newScene == null) { return; }
 
-            _newSceneBeingEdited = true;
             _newScene = newScene;
-            _previousViewName = _newScene.Name;
 
             scenesListView.SelectedItem = _newScene;
             scenesListView.UpdateLayout();
@@ -1261,9 +1249,7 @@ namespace Cad_Point_Manager.Views.UserControls
             string tempViewName = Camera.GetTempSceneName();
             if (!Camera.TrySaveScene(tempViewName, out var newScene) || newScene == null) { return; }
 
-            _newSceneBeingEdited = true;
             _newScene = newScene;
-            _previousViewName = _newScene.Name;
 
             scenesListView.SelectedItem = _newScene;
             scenesListView.UpdateLayout();
@@ -1327,7 +1313,6 @@ namespace Cad_Point_Manager.Views.UserControls
             string field = ScenesInferFieldNameFromDisplayElement(fe);
             if (string.IsNullOrEmpty(field)) { return; }
 
-            _lastScenesListContextField = field;
             _lastScenesListItem = lvi;
         }
         private void ScenesListView_ContextMenuClosing(object sender, ContextMenuEventArgs e)

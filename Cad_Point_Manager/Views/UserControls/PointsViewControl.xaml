@@ -13,6 +13,7 @@
              xmlns:controls="clr-namespace:Cad_Point_Manager.Controls"
              xmlns:viewmodels="clr-namespace:Cad_Point_Manager.ViewModels"
              xmlns:common="clr-namespace:Cad_Point_Manager.Common"
+             xmlns:behaviors="clr-namespace:Cad_Point_Manager.Behaviors"
              d:DataContext="{d:DesignInstance Type=viewmodels:PointsViewModel}"
              mc:Ignorable="d"
              d:DesignHeight="600"
@@ -50,10 +51,9 @@
                                    VirtualizingStackPanel.IsVirtualizing="True"
                                    VirtualizingStackPanel.VirtualizationMode="Recycling"
                                    VirtualizingStackPanel.IsContainerVirtualizable="True"
-                                   ContextMenuOpening="PointsListView_ContextMenuOpening">
+                                   ContextMenuOpening="PointsListView_ContextMenuOpening"
+                                   behaviors:ListViewSelectedItemsBehavior.SelectedItems="{Binding ElementName=root, Path=SelectedPoints, Mode=TwoWay}">
             <controls:SortableListView.Resources>
-                <system:Double x:Key="ContentFontSize">11</system:Double>
-                <system:Double x:Key="HeaderFontSize">11</system:Double>
                 <Thickness x:Key="TextboxPadding">0 1 0 1</Thickness>
                 <Thickness x:Key="TextblockPadding">3 1 3 2</Thickness>
                 <Thickness x:Key="TextblockHeaderPadding">3 1 3 2</Thickness>
@@ -75,7 +75,7 @@
                     <Setter Property="Padding"
                             Value="{StaticResource TextboxPadding}" />
                     <Setter Property="FontSize"
-                            Value="{StaticResource ContentFontSize}" />
+                            Value="{StaticResource ListViewFontSize}" />
                     <Setter Property="Foreground"
                             Value="{StaticResource BodyForeground}" />
                     <Setter Property="Visibility"
@@ -92,7 +92,7 @@
                     <Setter Property="Margin"
                             Value="{StaticResource TextblockPadding}" />
                     <Setter Property="FontSize"
-                            Value="{StaticResource ContentFontSize}" />
+                            Value="{StaticResource ListViewFontSize}" />
                     <Setter Property="Foreground"
                             Value="{StaticResource BodyForeground}" />
                     <EventSetter Event="MouseDown"
@@ -105,7 +105,7 @@
                     <Setter Property="Margin"
                             Value="{StaticResource TextblockHeaderPadding}" />
                     <Setter Property="FontSize"
-                            Value="{StaticResource HeaderFontSize}" />
+                            Value="{StaticResource ListViewHeaderFontSize}" />
                     <Setter Property="Foreground"
                             Value="{StaticResource HeaderForeground }" />
                 </Style>
@@ -146,20 +146,6 @@
                             </fa:FontAwesome>
                         </MenuItem.Icon>
                     </MenuItem>
-                    <!--<MenuItem Header="Rename"
-                              Click="PointsListViewRenamePoint_Click"
-                              Style="{StaticResource DefaultContextMenuItemStyle}"
-                              InputGestureText="F2">
-                        <MenuItem.Icon>
-                            <fa:FontAwesome Icon="ICursor"
-                                            Foreground="{StaticResource BodyForeground}">
-                                <fa:FontAwesome.LayoutTransform>
-                                    <ScaleTransform ScaleX="1.3"
-                                                    ScaleY="1.3" />
-                                </fa:FontAwesome.LayoutTransform>
-                            </fa:FontAwesome>
-                        </MenuItem.Icon>
-                    </MenuItem>-->
                     <MenuItem Header="Edit"
                               InputGestureText="F2"
                               Click="PointsListViewEditPoint_Click"
@@ -347,11 +333,11 @@
                             <DataTemplate>
                                 <ComboBox Background="White"
                                           Style="{StaticResource ValidationComboBox}"
-                                          FontSize="{StaticResource ContentFontSize}"
+                                          FontSize="{StaticResource ListViewFontSize}"
                                           ItemsSource="{Binding ElementName=root, Path=ViewModel.PointGroupsView}"
                                           DisplayMemberPath="Name"
                                           Margin="5 2 20 2"
-                                          SelectedItem="{Binding PointGroup, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                          SelectedItem="{Binding PointGroup, Mode=TwoWay}"
                                           IsSynchronizedWithCurrentItem="False" />
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>

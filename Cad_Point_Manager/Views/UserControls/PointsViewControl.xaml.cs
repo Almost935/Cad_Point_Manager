@@ -38,7 +38,6 @@ namespace Cad_Point_Manager.Views.UserControls
         private int _lastCreatedPointNumber = 1;
         private string? _lastPointsListContextField;
         private ListViewItem? _lastPointsListItem;
-        private readonly List<CogoPoint> _selectedPoints = [];
         private static readonly string[] _newPointFieldOrder =
         {
             "PointNumber",
@@ -85,6 +84,18 @@ namespace Cad_Point_Manager.Views.UserControls
             typeof(PointGroup),
             typeof(PointsViewControl),
             new PropertyMetadata(null));
+
+        public static readonly DependencyProperty SelectedPointsProperty =
+            DependencyProperty.Register(
+                nameof(SelectedPoints),
+                typeof(ObservableCollection<CogoPoint>),
+                typeof(PointsViewControl),
+                new PropertyMetadata(new ObservableCollection<CogoPoint>()));
+        public ObservableCollection<CogoPoint> SelectedPoints
+        {
+            get => (ObservableCollection<CogoPoint>)GetValue(SelectedPointsProperty);
+            set => SetValue(SelectedPointsProperty, value);
+        }
         #endregion
 
         #region Constructors
@@ -129,6 +140,7 @@ namespace Cad_Point_Manager.Views.UserControls
             {
                 string text = tb.Text;
                 string? errorMessage = null;
+                bool applyToMultiplePoints = false; // If the edited property is not PointNumber and multiple points are selected then it will be applied to all of them
 
                 switch (field)
                 {
@@ -144,6 +156,7 @@ namespace Cad_Point_Manager.Views.UserControls
                     case "Easting":
                     case "Elevation":
                         {
+                            applyToMultiplePoints = true;
                             if (!double.TryParse(text, out _))
                             {
                                 errorMessage = $"{field} must be a valid number.";
@@ -152,6 +165,7 @@ namespace Cad_Point_Manager.Views.UserControls
                         }
                     case "Description":
                         {
+                            applyToMultiplePoints = true;
                             if (!ValidationService.ValidateString(text, out string svcError))
                             {
                                 errorMessage = svcError;
@@ -183,8 +197,37 @@ namespace Cad_Point_Manager.Views.UserControls
                     // Valid: commit the value
                     if (binding != null)
                     {
-                        Validation.ClearInvalid(binding);
-                        binding.UpdateSource();
+                        if (applyToMultiplePoints && SelectedPoints.Count > 1)
+                        {
+                            foreach (var point in SelectedPoints)
+                            {
+                                if (ReferenceEquals(point, cp)) continue; // skip the one already updated
+
+                                switch (field)
+                                {
+                                    case "Northing":
+                                        if (double.TryParse(text, out double n)) { point.Northing = n; }
+                                        break;
+
+                                    case "Easting":
+                                        if (double.TryParse(text, out double eVal)) { point.Easting = eVal; }
+                                        break;
+
+                                    case "Elevation":
+                                        if (double.TryParse(text, out double el)) { point.Elevation = el; }
+                                        break;
+
+                                    case "Description":
+                                        point.Description = text;
+                                        break;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            Validation.ClearInvalid(binding);
+                            binding.UpdateSource();
+                        }
                     }
 
                     if (field == "Northing" ||
@@ -374,18 +417,9 @@ namespace Cad_Point_Manager.Views.UserControls
             TryCreateNewPoint(CadManager.CogoPointManager.GetNextAvailablePointNumber(_lastCreatedPointNumber),
                 new Vector3(0, 0, 0), ActivePointGroup, 0, "");
         }
-        //private void PointsListViewRenamePoint_Click(object sender, RoutedEventArgs e)
-        //{
-        //    if (_lastPointsListItem == null) { return; }
-
-        //    BeginPointsListCellEdit(_lastPointsListItem, "PointNumber");
-        //}
         private void PointsListViewEditPoint_Click(object sender, RoutedEventArgs e)
         {
-            if (_lastPointsListItem == null || string.IsNullOrEmpty(_lastPointsListContextField))
-            {
-                return;
-            }
+            if (_lastPointsListItem == null || string.IsNullOrEmpty(_lastPointsListContextField)) { return; }
 
             BeginPointsListCellEdit(_lastPointsListItem, _lastPointsListContextField);
 
@@ -395,7 +429,7 @@ namespace Cad_Point_Manager.Views.UserControls
         {
             if (CadManager is null || CadManager.CogoPointManager is null) { return; }
 
-            var pointsToDelete = new List<CogoPoint>(_selectedPoints);
+            var pointsToDelete = new List<CogoPoint>(SelectedPoints);
             foreach (var point in pointsToDelete)
             {
                 CadManager.CogoPointManager.DeletePoint(point);
