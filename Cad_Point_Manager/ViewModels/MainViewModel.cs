@@ -433,6 +433,7 @@ namespace Cad_Point_Manager.ViewModels
         public ICommand SaveAsJobCommand { get; set; }
         public ICommand PrintJobCommand { get; set; }
         public ICommand ExportPointsCommand { get; set; }
+        public ICommand ImportPointsCommand { get; set; }
         public ICommand ZoomToExtentsCommand { get; set; }
 
         public ICommand SnapToggleCommand => new RelayCommand<object>(OnSnapTogglePressed);

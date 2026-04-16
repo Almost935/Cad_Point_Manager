@@ -114,6 +114,14 @@
                                 <fa:FontAwesome Icon="FileExcelOutline" />
                             </MenuItem.Icon>
                         </MenuItem>
+                        <MenuItem Header="Import"
+                                  Style="{StaticResource MenuItemStyle1}"
+                                  IsEnabled="{Binding PointsVisible}"
+                                  Command="{Binding ImportPointsCommand}">
+                            <MenuItem.Icon>
+                                <fa:FontAwesome Icon="FileExcelOutline" />
+                            </MenuItem.Icon>
+                        </MenuItem>
                     </MenuItem>
                     <MenuItem Header="Insert"
                               Style="{StaticResource MenuItemStyle1}">

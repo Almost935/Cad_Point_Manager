@@ -135,9 +135,26 @@ namespace Cad_Point_Manager.Controls.D3DControl
             {
                 return;
             }
-
+            
             var presentParams = GetPresentParameters();
             Dx11ImageSource.D3DDevice.ResetEx(ref presentParams);
+        }
+
+        internal static void RecreateD3D()
+        {
+            Disposer.SafeDispose(ref Dx11ImageSource.D3DDevice);
+            Disposer.SafeDispose(ref Dx11ImageSource.D3DContext);
+
+            var presentParams = GetPresentParameters();
+
+            Dx11ImageSource.D3DContext = new Direct3DEx();
+            Dx11ImageSource.D3DDevice = new DeviceEx(
+                Dx11ImageSource.D3DContext,
+                0,
+                DeviceType.Hardware,
+                IntPtr.Zero,
+                CreateFlags.HardwareVertexProcessing | CreateFlags.Multithreaded | CreateFlags.FpuPreserve,
+                presentParams);
         }
 
         private static PresentParameters GetPresentParameters()

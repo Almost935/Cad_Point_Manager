@@ -3520,7 +3520,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 ResCache.DeviceContext.Rasterizer.SetViewport(Viewport);
 
                 Render();
-
+                
                 ResCache.CopyToWriteableBitmap(ResCache.Texture2D, target);
             }
             finally

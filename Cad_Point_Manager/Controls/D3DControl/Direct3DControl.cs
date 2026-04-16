@@ -5,6 +5,7 @@ using SharpDX.DXGI;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Windows;
+using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Threading;
 using FeatureLevel = SharpDX.Direct3D.FeatureLevel;
@@ -15,6 +16,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
     public abstract class Direct3DControl : System.Windows.Controls.Image
     {
         #region Fields
+        private const int WM_DISPLAYCHANGE = 0x007E;
+
         private SharpDX.Direct3D11.Device _device;
         private DeviceContext _deviceContext;
         private Texture2D _texture2D;
@@ -124,10 +127,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     };
                 }
             };
-            base.Loaded += Window_Loaded;
-            base.Unloaded += Window_Closing;
 
-            base.Stretch = System.Windows.Media.Stretch.Fill;
+            Loaded += Window_Loaded;
+            Unloaded += Window_Closing;
+
+            Stretch = Stretch.Fill;
         }
 
         public abstract void Render();
@@ -138,7 +142,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            if (Direct3DControl.IsInDesignMode)
+            if (IsInDesignMode)
             {
                 return;
             }
@@ -149,7 +153,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         private void Window_Closing(object sender, RoutedEventArgs e)
         {
-            if (Direct3DControl.IsInDesignMode)
+            if (IsInDesignMode)
             {
                 return;
             }
@@ -158,12 +162,17 @@ namespace Cad_Point_Manager.Controls.D3DControl
             EndD3D();
         }
 
+        private void OnDisplayChanged()
+        {
+            // 🔥 This is where you trigger your D3D rebuild
+            Debug.WriteLine("Display changed detected in control");
+
+            //HandleDisplayChange();
+        }
+
         private void OnRendering(object sender, EventArgs e)
         {
-            if (!_renderTimer.IsRunning || !_d3DSurface.IsFrontBufferAvailable)
-            {
-                return;
-            }
+            if (!_renderTimer.IsRunning || !_d3DSurface.IsFrontBufferAvailable) { return; }
 
             _d3DSurface.Lock();
             PrepareAndCallRender();
@@ -171,7 +180,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _d3DSurface.Unlock();
 
             _device.ImmediateContext.Flush();
-
             _lastRenderTime = _renderTimer.ElapsedMilliseconds;
         }
 
@@ -186,21 +194,13 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _resizeTimer.Start();
         }
 
-        private void OnIsFrontBufferAvailableChanged(object sender, DependencyPropertyChangedEventArgs e)
+        private async void OnIsFrontBufferAvailableChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
             if (_d3DSurface.IsFrontBufferAvailable)
             {
-                //StartRendering();
-
-                // 1) Reset the underlying D3D9Ex device used by D3DImage
-                Dx11ImageSource.ResetD3D();
-
-                // 2) Recreate + rebind the shared D3D11 textures and reattach backbuffer
+                Dx11ImageSource.RecreateD3D();
                 CreateAndBindTargets();
-
-                // 3) Optional but strongly recommended: force a redraw so you re-clear to white
                 OnFrontBufferRestored();
-
                 StartRendering();
             }
             else
@@ -214,7 +214,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             var control = (Direct3DControl)d;
             control._d3DSurface.RenderWait = (int)e.NewValue;
         }
-
 
         private void StartD3D()
         {
@@ -275,13 +274,13 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             InitializeDirect2D();
             InitializeGlyphAtlas();
-            base.Source = _d3DSurface;
+            Source = _d3DSurface;
         }
 
         private void EndD3D()
         {
             _d3DSurface.IsFrontBufferAvailableChanged -= OnIsFrontBufferAvailableChanged;
-            base.Source = null;
+            Source = null;
 
             Disposer.SafeDispose(ref _d3DSurface);
             Disposer.SafeDispose(ref _device);
@@ -460,7 +459,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             }
 
             IsRendering = true;
-            System.Windows.Media.CompositionTarget.Rendering += OnRendering;
+            CompositionTarget.Rendering += OnRendering;
             _renderTimer.Start();
         }
 
@@ -472,7 +471,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             }
 
             IsRendering = false;
-            System.Windows.Media.CompositionTarget.Rendering -= OnRendering;
+            CompositionTarget.Rendering -= OnRendering;
             _renderTimer.Stop();
         }
 
@@ -532,6 +531,17 @@ namespace Cad_Point_Manager.Controls.D3DControl
             return (w, h);
         }
         protected virtual void OnTargetsResized(int wPx, int hPx) { }
+
+        private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+        {
+            if (msg == WM_DISPLAYCHANGE)
+            {
+                OnDisplayChanged();
+            }
+
+            return IntPtr.Zero;
+        }
+
         #endregion
     }
 }
