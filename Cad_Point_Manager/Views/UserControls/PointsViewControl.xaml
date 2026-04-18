@@ -33,7 +33,7 @@
     </UserControl.Resources>
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="3*" />
+            <ColumnDefinition Width="2*" />
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
         <controls:SortableListView x:Name="pointsListView"
@@ -351,10 +351,12 @@
               DataContext="{Binding ElementName=root, Path=ViewModel}">
             <Grid.RowDefinitions>
                 <RowDefinition Height="*" />
-                <RowDefinition Height="Auto" />
+                <RowDefinition Height="0.5*" />
+                <RowDefinition Height="0.05*" />
             </Grid.RowDefinitions>
             <ScrollViewer VerticalScrollBarVisibility="Auto"
-                          Grid.Row="0">
+                          Grid.Row="0"
+                          Visibility="{Binding ElementName=PointFiltersRadioButton, Path=IsChecked, Converter={StaticResource BoolToVis}}">
                 <ItemsControl ItemsSource="{Binding ActiveFilters}">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
@@ -386,7 +388,7 @@
             <Border Grid.Row="1"
                     Background="White"
                     CornerRadius="5"
-                    Height="150">
+                    Visibility="{Binding ElementName=PointFiltersRadioButton, Path=IsChecked, Converter={StaticResource BoolToVis}}">
                 <Grid Margin="10">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="2*" />
@@ -691,6 +693,76 @@
                     </ContentControl>
                 </Grid>
             </Border>
+            <Border Grid.Row="1"
+                    Background="White"
+                    CornerRadius="5"
+                    Visibility="{Binding ElementName=ImportPointsRadioButton, Path=IsChecked, Converter={StaticResource BoolToVis}}">
+                <StackPanel Margin="10">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="4*" />
+                        </Grid.ColumnDefinitions>
+                        <Button Command="{Binding ImportVM.LoadFileCommand}"
+                                Style="{StaticResource BorderWidgetsButton}"
+                                Height="25"
+                                Margin="5 5 5 5">
+                            <fa:FontAwesome Icon="FolderOpen"
+                                            FontSize="18"
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center" />
+                        </Button>
+                        <TextBox Text="{Binding ImportVM.ImportFilePath}"
+                                 Style="{StaticResource ValidationTextBox}"
+                                 Height="25"
+                                 Grid.Column="1"
+                                 VerticalAlignment="Center" />
+                    </Grid>
+                    <DataGrid ItemsSource="{Binding ImportVM.Columns}"
+                              AutoGenerateColumns="False"
+                              Height="200">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Column"
+                                                Binding="{Binding Header}"
+                                                Width="*" />
+                            <DataGridTextColumn Header="Type"
+                                                Binding="{Binding DetectedType}"
+                                                Width="*" />
+                            <DataGridTemplateColumn Header="Map To"
+                                                    Width="*">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <ComboBox ItemsSource="{Binding DataContext.ImportVM.AvailableFields, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                  SelectedItem="{Binding DataContext.ImportVM.Mappings[{{Binding Index}}].AssignedField,
+                                      RelativeSource={RelativeSource AncestorType=UserControl}}" />
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                    <Button Content="Import"
+                            Command="{Binding ImportVM.ImportCommand}"
+                            Margin="0 10 0 0"
+                            Height="25" />
+
+                </StackPanel>
+            </Border>
+            <WrapPanel Grid.Row="2"
+                       VerticalAlignment="Center"
+                       HorizontalAlignment="Center">
+                <RadioButton x:Name="PointFiltersRadioButton"
+                             Content="Point Filters"
+                             Foreground="White"
+                             Margin="10 0 10 0"
+                             GroupName="RightSide"
+                             IsChecked="False" />
+                <RadioButton x:Name="ImportPointsRadioButton"
+                             Content="Import Points"
+                             Foreground="White"
+                             Margin="10 0 10 0"
+                             GroupName="RightSide"
+                             IsChecked="True" />
+            </WrapPanel>
         </Grid>
     </Grid>
 </UserControl>

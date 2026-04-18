@@ -65,6 +65,9 @@ namespace Cad_Point_Manager.ViewModels
         public DescriptionFilterEditor DescriptionFilterEditor { get; } = new();
         public PointGroupFilterEditor PointGroupFilterEditor { get; } = new();
 
+        // Point Importing
+        public ImportPointsViewModel ImportVM { get; }
+
         public ICollectionView PointsView => CadManager?.PointsView;
         public ICollectionView PointGroupsView => CadManager?.PointGroupsView;
         #endregion
@@ -82,6 +85,8 @@ namespace Cad_Point_Manager.ViewModels
         public PointsViewModel(CadManager cadManager)
         {
             CadManager = cadManager;
+
+            ImportVM = new ImportPointsViewModel(cadManager);
 
             // IMPORTANT: set the view filter ONCE
             if (PointsView != null) { PointsView.Filter = CombinedFilterPredicate; }
