@@ -693,19 +693,26 @@
                     </ContentControl>
                 </Grid>
             </Border>
-            <Border Grid.Row="1"
+            <Border Grid.Row="0"
+            Grid.RowSpan="2"
                     Background="White"
                     CornerRadius="5"
                     Visibility="{Binding ElementName=ImportPointsRadioButton, Path=IsChecked, Converter={StaticResource BoolToVis}}">
-                <StackPanel Margin="10">
-                    <Grid>
+                <Grid Margin="10">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <Grid Grid.Row="0">
                         <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="4*" />
                         </Grid.ColumnDefinitions>
                         <Button Command="{Binding ImportVM.LoadFileCommand}"
                                 Style="{StaticResource BorderWidgetsButton}"
                                 Height="25"
+                                Width="40"
                                 Margin="5 5 5 5">
                             <fa:FontAwesome Icon="FolderOpen"
                                             FontSize="18"
@@ -716,36 +723,110 @@
                                  Style="{StaticResource ValidationTextBox}"
                                  Height="25"
                                  Grid.Column="1"
-                                 VerticalAlignment="Center" />
+                                 VerticalAlignment="Center"
+                                 IsEnabled="False" />
                     </Grid>
-                    <DataGrid ItemsSource="{Binding ImportVM.Columns}"
-                              AutoGenerateColumns="False"
-                              Height="200">
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Header="Column"
-                                                Binding="{Binding Header}"
-                                                Width="*" />
-                            <DataGridTextColumn Header="Type"
-                                                Binding="{Binding DetectedType}"
-                                                Width="*" />
-                            <DataGridTemplateColumn Header="Map To"
-                                                    Width="*">
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <ComboBox ItemsSource="{Binding DataContext.ImportVM.AvailableFields, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                  SelectedItem="{Binding DataContext.ImportVM.Mappings[{{Binding Index}}].AssignedField,
-                                      RelativeSource={RelativeSource AncestorType=UserControl}}" />
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-                            </DataGridTemplateColumn>
-                        </DataGrid.Columns>
-                    </DataGrid>
-                    <Button Content="Import"
+                    <controls:SortableListView x:Name="ImportListView"
+                                               Grid.Row="1"
+                                               ItemsSource="{Binding ImportVM.Columns}"
+                                               Margin="0 5 0 5"
+                                               VerticalAlignment="Stretch"
+                                               Style="{StaticResource UpdatedListViewStyle}"
+                                               IsColumnHeaderHitTestVisible="False"
+                                               Loaded="ImportListView_Loaded">
+                        <controls:SortableListView.Resources>
+                            <Thickness x:Key="TextblockHeaderPadding">3 1 3 2</Thickness>
+
+                            <SolidColorBrush x:Key="HeaderForeground"
+                                             Color="White" />
+
+                            <Style x:Key="HeaderTextBlockStyle"
+                                   TargetType="TextBlock">
+                                <Setter Property="VerticalAlignment"
+                                        Value="Center" />
+                                <Setter Property="Margin"
+                                        Value="{StaticResource TextblockHeaderPadding}" />
+                                <Setter Property="FontSize"
+                                        Value="{StaticResource ListViewHeaderFontSize}" />
+                                <Setter Property="Foreground"
+                                        Value="{StaticResource HeaderForeground }" />
+                            </Style>
+                        </controls:SortableListView.Resources>
+                        <controls:SortableListView.View>
+                            <GridView ColumnHeaderContainerStyle="{StaticResource UpdatedGridViewColumnHeaderStyle}">
+                                <GridViewColumn>
+                                    <GridViewColumn.Header>
+                                        <TextBlock Text="Column"
+                                                   Style="{StaticResource HeaderTextBlockStyle}" />
+                                    </GridViewColumn.Header>
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding Header}"
+                                                       Margin="3 1 3 2"
+                                                       VerticalAlignment="Center" />
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn>
+                                <GridViewColumn>
+                                    <GridViewColumn.Header>
+                                        <TextBlock Text="Type"
+                                                   Style="{StaticResource HeaderTextBlockStyle}" />
+                                    </GridViewColumn.Header>
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding DetectedType}"
+                                                       Margin="3 1 3 2"
+                                                       VerticalAlignment="Center" />
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn>
+                                <GridViewColumn>
+                                    <GridViewColumn.Header>
+                                        <TextBlock Text="Sample"
+                                                   Style="{StaticResource HeaderTextBlockStyle}" />
+                                    </GridViewColumn.Header>
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding SampleValues[0]}"
+                                                       Margin="3 1 3 2"
+                                                       VerticalAlignment="Center" />
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn>
+                                <GridViewColumn>
+                                    <GridViewColumn.Header>
+                                        <TextBlock Text="Map To"
+                                                   Style="{StaticResource HeaderTextBlockStyle}" />
+                                    </GridViewColumn.Header>
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <ComboBox Height="22"
+                                                      ItemsSource="{Binding ViewModel.ImportVM.AvailableFields, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                      SelectedItem="{Binding Mapping.AssignedField, Mode=TwoWay}"
+                                                      Style="{StaticResource ValidationComboBox}" />
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn>
+                            </GridView>
+                        </controls:SortableListView.View>
+                    </controls:SortableListView>
+                    <Button x:Name="ImportButton"
+                            Style="{StaticResource BorderWidgetsButton}"
+                            Grid.Row="2"
                             Command="{Binding ImportVM.ImportCommand}"
                             Margin="0 10 0 0"
-                            Height="25" />
+                            Height="30"
+                            Width="100"
+                            VerticalAlignment="Center">
+                        <Button.Content>
+                            <fa:FontAwesome Icon="Download"
+                                            FontSize="18"
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center" />
+                        </Button.Content>
+                    </Button>
 
-                </StackPanel>
+                </Grid>
             </Border>
             <WrapPanel Grid.Row="2"
                        VerticalAlignment="Center"

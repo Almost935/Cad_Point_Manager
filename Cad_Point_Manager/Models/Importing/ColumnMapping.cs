@@ -13,7 +13,8 @@ namespace Cad_Point_Manager.Models.Importing
         Northing,
         Easting,
         Elevation,
-        Description
+        Description,
+        PointGroup
     }
 
     public class ColumnMapping

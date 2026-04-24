@@ -531,5 +531,21 @@ namespace Cad_Point_Manager.Views.UserControls
             control.ViewModel = new PointsViewModel(e.NewValue as CadManager);
         }
         #endregion
+
+        private void ImportListView_Loaded(object sender, RoutedEventArgs e)
+        {
+            ListView listview = sender as ListView;
+
+            GridView importGridView = listview.View as GridView;
+            double importListTotalWidth = ImportListView.ActualWidth;
+            double importListColumnWidth = importListTotalWidth / importGridView.Columns.Count;
+            if (importListColumnWidth > 0)
+            {
+                importGridView.Columns[0].Width = importListColumnWidth * 1.0;
+                importGridView.Columns[1].Width = importListColumnWidth * 1.0;
+                importGridView.Columns[2].Width = importListColumnWidth * 1.0;
+                importGridView.Columns[3].Width = importListColumnWidth * 1.0;
+            }
+        }
     }
 }

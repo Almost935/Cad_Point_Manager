@@ -1,4 +1,5 @@
 ﻿using Cad_Point_Manager.Common.Collections;
+using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Models.PointRendering;
 using SharpDX;
 using System.ComponentModel;
@@ -97,7 +98,21 @@ namespace Cad_Point_Manager.Models
 
             if (pointNumber == p.PointNumber) { return true; }
 
-            if (CogoPoints.Any(x => x.PointNumber == pointNumber))
+            if (!IsValidPointName(pointNumber, out errorMessage))
+            {
+                return false;
+            }
+            return true;
+        }
+        public bool IsValidPointName(int pointNumber, out string? errorMessage)
+        {
+            errorMessage = null;
+            if (pointNumber <= 0)
+            {
+                errorMessage = "Point number must be greater than zero.";
+                return false;
+            }
+            if (CogoPoints.Any(p => p.PointNumber == pointNumber))
             {
                 errorMessage = $"Point number \"{pointNumber}\" already exists.";
                 return false;
@@ -165,6 +180,23 @@ namespace Cad_Point_Manager.Models
 
             return true;
         }
+        public bool TryAddPoint(CogoPoint p, PointGroup pg)
+        {
+            if (pg == null || !PointGroupExists(pg))
+            {
+                return false;
+            }
+
+            if (PointNumberExists(p.PointNumber) || !IsValidPointName(p.PointNumber, out _))
+            {
+                return false;
+            }
+
+            var isAdded = pg.TryAddPoint(p);
+            CogoPoints.Add(p);
+
+            return isAdded;
+        }
         public void AddPoint(CogoPoint cogoPoint)
         {
             CogoPoints.Add(cogoPoint);
@@ -174,6 +206,16 @@ namespace Cad_Point_Manager.Models
         {
             CogoPoints.Remove(cogoPoint);
             cogoPoint.PointGroup.Points.Remove(cogoPoint);
+        }
+        public void OverwritePoint(CogoPoint newPoint)
+        {
+            var existingPoint = CogoPoints.FirstOrDefault(p => p.PointNumber == newPoint.PointNumber);
+            if (existingPoint != null)
+            {
+                var group = existingPoint.PointGroup;
+                RemovePoint(existingPoint);
+                TryAddPoint(newPoint, group);
+            }
         }
 
         public bool TryCreatePointGroup(string groupName, Color color, out PointGroup pointGroup)
@@ -190,6 +232,21 @@ namespace Cad_Point_Manager.Models
             }
 
             pointGroup = new(groupName, color, this, CadManager.PointBaseScale);
+            PointGroups.Add(pointGroup);
+            return true;
+        }
+        public bool TryCreatePointGroup(PointGroup pointGroup)
+        {
+            if (string.IsNullOrWhiteSpace(pointGroup.Name))
+            {
+                pointGroup = null;
+                return false;
+            }
+            if (PointGroups.Any(pg => pg.Name.Equals(pointGroup.Name, StringComparison.OrdinalIgnoreCase)))
+            {
+                pointGroup = null;
+                return false;
+            }
             PointGroups.Add(pointGroup);
             return true;
         }
@@ -234,6 +291,21 @@ namespace Cad_Point_Manager.Models
                 return false;
             }
             return true;
+        }
+        public PointGroup GetPointGroup(string groupName, Color color, double scale)
+        {
+            var pgExists = TryGetPointGroup(groupName, out PointGroup pointGroup);
+            if (!pgExists)
+            {
+            var isValidName = IsValidPointGroupName(groupName, out string? errorMessage);
+                if (!isValidName)
+                {
+                    throw new ArgumentException($"Invalid point group name: {errorMessage}");
+                }
+                pointGroup = new(groupName, color, this, scale);
+                PointGroups.Add(pointGroup);
+            }
+            return pointGroup;
         }
         public bool PointGroupExists(PointGroup pg)
         {

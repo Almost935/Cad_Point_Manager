@@ -9,8 +9,12 @@ using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Diagnostics;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Media;
+using Cad_Point_Manager.Models.PointRendering;
+using Cad_Point_Manager.Views.InputWindows;
 
 namespace Cad_Point_Manager.ViewModels
 {
@@ -22,7 +26,6 @@ namespace Cad_Point_Manager.ViewModels
         private List<List<string>> _rows;
 
         public ObservableCollection<ColumnAnalysis> Columns { get; } = new();
-        public ObservableCollection<ColumnMapping> Mappings { get; } = new();
 
         private string _importFilePath;
         public string ImportFilePath
@@ -34,6 +37,18 @@ namespace Cad_Point_Manager.ViewModels
                 OnPropertyChanged(nameof(ImportFilePath));
             }
 
+        }
+
+        private bool _hasHeaderRow;
+        public bool HasHeaderRow
+        {
+            get => _hasHeaderRow;
+            set
+            {
+                _hasHeaderRow = value;
+                OnPropertyChanged();
+                Reanalyze(); // 👈 important
+            }
         }
 
         public Array AvailableFields => Enum.GetValues(typeof(CogoFieldType));
@@ -62,53 +77,109 @@ namespace Cad_Point_Manager.ViewModels
             ImportFilePath = dlg.FileName;
             _rows = _service.ReadFile(dlg.FileName);
 
-            Columns.Clear();
-            Mappings.Clear();
+            HasHeaderRow = _service.DetectHeaderRow(_rows);
 
-            var analyzed = _service.AnalyzeColumns(_rows);
+            Columns.Clear();
+
+            var analyzed = _service.AnalyzeColumns(_rows, HasHeaderRow);
 
             foreach (var col in analyzed)
             {
                 Columns.Add(col);
-                Mappings.Add(new ColumnMapping { ColumnIndex = col.Index });
             }
         }
 
         private bool CanImport()
         {
-            return Mappings.Any(m => m.AssignedField == CogoFieldType.PointNumber)
-                && Mappings.Count(m => m.AssignedField == CogoFieldType.Northing) == 1
-                && Mappings.Count(m => m.AssignedField == CogoFieldType.Easting) == 1;
+            var mappings = Columns.Select(c => c.Mapping);
+
+            return mappings.Any(m => m.AssignedField == CogoFieldType.PointNumber)
+                && mappings.Any(m => m.AssignedField == CogoFieldType.Northing)
+                && mappings.Any(m => m.AssignedField == CogoFieldType.Easting);
+        }
+
+        private bool PointGroupInImportFile()
+        {
+            var mappings = Columns.Select(c => c.Mapping);
+
+            return mappings.Any(m => m.AssignedField == CogoFieldType.PointGroup);
         }
 
         private void ImportPoints()
         {
-            var group = _cadManager.CogoPointManager.ActivePointGroup;
-            if (group == null)
+            var pointGroupsInFile = PointGroupInImportFile();
+            var mappings = Columns.Select(c => c.Mapping).ToList();
+
+            List<CogoPoint> potPoints = [];
+            foreach (var row in _rows)
             {
-                MessageBox.Show("Select an active point group.");
-                return;
+                (int num, double n, double e, double? elev, string? desc, string? pg) = _service.ParseRow(row, mappings);
+                if (pointGroupsInFile)
+                {
+                    var pgName = _service.GetMappedValue(row, mappings, CogoFieldType.PointGroup);
+
+                    if (pgName is null) { throw new Exception("Unexpected null point group name."); }
+
+                    var pg = _cadManager.CogoPointManager.GetPointGroup(pgName, Colors.Black, _cadManager.PointBaseScale);
+                    var p = _service.CreatePoint(row, mappings, pg, _cadManager.CogoPointManager);
+
+                    potPoints.Add(p);
+                }
+                else
+                {
+                    if (_cadManager.CogoPointManager.ActivePointGroup is null)
+                    {
+                        MessageBox.Show("You must select an active point group to create new points.");
+                        return;
+                    }
+                    var p = _service.CreatePoint(row, mappings, _cadManager.CogoPointManager.ActivePointGroup, _cadManager.CogoPointManager);
+                    _cadManager.CogoPointManager.TryAddPoint(p, _cadManager.CogoPointManager.ActivePointGroup);
+
+                    potPoints.Add(p);
+                }
             }
 
-            var points = _service.CreatePoints(
-                _rows,
-                Mappings.ToList(),
-                group,
-                _cadManager.CogoPointManager);
-
-            foreach (var p in points)
+            List<ImportConflict> conflictPoints = [];
+            List<CogoPoint> pointsToAdd = [];
+            for (int i = 0; i < potPoints.Count; i++)
             {
-                _cadManager.CogoPointManager.TryAddPoint(
-                    p.PointNumber,
-                    new SharpDX.Vector3((float)p.Easting, (float)p.Northing, 0),
-                    group,
-                    out _,
-                    (float)p.Elevation,
-                    p.Description);
+                if (_cadManager.CogoPointManager.PointNumberExists(potPoints[i].PointNumber) ||
+                pointsToAdd.Any(p => p.PointNumber == potPoints[i].PointNumber))
+                {
+
+                    conflictPoints.Add(new ImportConflict(potPoints[i]));
+                }
+                else
+                {
+                    pointsToAdd.Add(potPoints[i]);
+                    //_cadManager.CogoPointManager.AddPoint(potPoints[i]);
+                }
+            }
+
+            if (conflictPoints.Count > 0)
+            {
+                var dlg = new PointNumberDialog() { ImportConflicts = new(conflictPoints) };
+                if (dlg.ShowDialog() == true)
+                {
+                    //_cadManager.CogoPointManager.OverwritePoint(potPoints[i]);
+
+                }
             }
 
             _cadManager.CogoPointCircleVerticesDirty = true;
             _cadManager.CogoPointTextVerticesDirty = true;
+        }
+
+        private void Reanalyze()
+        {
+            Columns.Clear();
+
+            var analyzed = _service.AnalyzeColumns(_rows, HasHeaderRow);
+
+            foreach (var col in analyzed)
+            {
+                Columns.Add(col);
+            }
         }
     }
 }

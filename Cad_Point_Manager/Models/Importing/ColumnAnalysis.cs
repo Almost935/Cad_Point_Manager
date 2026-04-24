@@ -20,5 +20,7 @@ namespace Cad_Point_Manager.Models.Importing
         public bool IsAllDoubles { get; set; }
 
         public List<string> SampleValues { get; set; } = new();
+
+        public ColumnMapping Mapping { get; set; } = new();
     }
 }
