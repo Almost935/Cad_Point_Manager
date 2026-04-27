@@ -285,4 +285,33 @@
                   StrokeEndLineCap="Round" />
         </Canvas>
     </ControlTemplate>
+
+    <ControlTemplate x:Key="CloseIcon">
+        <Canvas Width="20"
+                Height="20"
+                Background="{TemplateBinding Background}">
+            <Line x:Name="line1"
+                  X1="4"
+                  Y1="4"
+                  X2="16"
+                  Y2="16"
+                  Stroke="{TemplateBinding Foreground}"
+                  StrokeThickness="2"
+                  StrokeDashCap="Round"
+                  StrokeEndLineCap="Round"
+                  StrokeLineJoin="Round"
+                  StrokeStartLineCap="Round" />
+            <Line x:Name="line2"
+                  X1="4"
+                  Y1="16"
+                  X2="16"
+                  Y2="4"
+                  Stroke="{TemplateBinding Foreground}"
+                  StrokeThickness="2"
+                  StrokeDashCap="Round"
+                  StrokeEndLineCap="Round"
+                  StrokeLineJoin="Round"
+                  StrokeStartLineCap="Round" />
+        </Canvas>
+    </ControlTemplate>
 </ResourceDictionary>

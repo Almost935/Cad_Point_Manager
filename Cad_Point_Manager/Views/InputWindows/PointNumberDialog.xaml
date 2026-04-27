@@ -4,14 +4,17 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Cad_Point_Manager.Views.InputWindows"
+        xmlns:controls="clr-namespace:Cad_Point_Manager.Controls"
+        xmlns:fa="clr-namespace:FontAwesome.WPF;assembly=FontAwesome.WPF"
         mc:Ignorable="d"
         Title="PointNumberDialog"
-        Height="200"
-        Width="400"
+        d:DataContext="{d:DesignInstance Type=local:PointNumberDialog}"
+        Height="400"
+        Width="600"
         WindowStartupLocation="CenterOwner"
-        WindowStyle="None"
+        WindowStyle="SingleBorderWindow"
         Background="Transparent"
-        AllowsTransparency="True"
+        AllowsTransparency="False"
         BorderThickness="0">
     <Window.Resources>
         <Style x:Key="PrimaryButtonStyle"
@@ -58,59 +61,42 @@
                     Value="10" />
             <Setter Property="FontFamily"
                     Value="Segoe UI Symbol" />
-            <!-- X icon -->
             <Setter Property="Cursor"
                     Value="Hand" />
-
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Canvas x:Name="bg"
-                                Height="20"
-                                Width="20"
-                                Background="Transparent">
-                            <Line X1="0"
-                                  Y1="0"
-                                  X2="20"
-                                  Y2="20"
-                                  Stroke="#33000000"
-                                  StrokeThickness="1"
-                                  StrokeDashCap="Round"
-                                  StrokeEndLineCap="Round"
-                                  StrokeLineJoin="Round"
-                                  StrokeStartLineCap="Round" />
-                            <Line X1="0"
-                                  Y1="20"
-                                  X2="20"
-                                  Y2="0"
-                                  Stroke="#33000000"
-                                  StrokeThickness="1"
-                                  StrokeDashCap="Round"
-                                  StrokeEndLineCap="Round"
-                                  StrokeLineJoin="Round"
-                                  StrokeStartLineCap="Round" />
+                        <Grid x:Name="bg"
+                              Background="Transparent">
+                            <Viewbox Margin="2">
+                                <ContentControl x:Name="closeIcon"
+                                                Template="{StaticResource CloseIcon}"
+                                                Foreground="#FFC8C8C8" />
+                            </Viewbox>
                             <ContentPresenter HorizontalAlignment="Center"
                                               VerticalAlignment="Center" />
-                        </Canvas>
+                        </Grid>
 
                         <ControlTemplate.Triggers>
-                            <!-- Hover -->
                             <Trigger Property="IsMouseOver"
+                                     Value="True">
+                                <Setter TargetName="bg"
+                                        Property="Background"
+                                        Value="#E81123" />
+                                <Setter TargetName="closeIcon"
+                                        Property="Foreground"
+                                        Value="White" />
+                            </Trigger>
+
+                            <Trigger Property="IsPressed"
                                      Value="True">
                                 <Setter TargetName="bg"
                                         Property="Background"
                                         Value="#E81123" />
                                 <Setter Property="Foreground"
                                         Value="White" />
-                            </Trigger>
-
-                            <!-- Pressed -->
-                            <Trigger Property="IsPressed"
-                                     Value="True">
-                                <Setter TargetName="bg"
-                                        Property="Background"
-                                        Value="#C50F1F" />
-                                <Setter Property="Foreground"
+                                <Setter TargetName="closeIcon"
+                                        Property="Foreground"
                                         Value="White" />
                             </Trigger>
                         </ControlTemplate.Triggers>
@@ -123,7 +109,6 @@
     <Border CornerRadius="8"
             Background="#F9F9F9"
             BorderBrush="#E5E5E5"
-            BorderThickness="1"
             Padding="0"
             ClipToBounds="True">
         <Grid Background="Transparent">
@@ -143,54 +128,49 @@
                            FontFamily="Segoe UI"
                            FontSize="10"
                            FontWeight="SemiBold"
-                           Foreground="#1F1F1F"
-                           Margin="10"
+                           Foreground="#FFC8C8C8"
+                           Margin="10 0 0 0"
+                           VerticalAlignment="Center"
                            HorizontalAlignment="Left" />
                 <!-- Close button -->
                 <Button x:Name="CloseButton"
                         HorizontalAlignment="Right"
-                        Margin="0 0 10 0"
+                        Margin="0 0 0 0"
+                        Height="25"
+                        Width="40"
                         Style="{StaticResource Win11CloseButtonStyle}"
                         Click="CloseButton_Click" />
             </Grid>
-            <DataGrid Grid.Row="1"
-                      Margin="20,0,20,10"
-                      Background="White"
-                      BorderThickness="0"
-                      RowBackground="White"
-                      AlternatingRowBackground="#F5F5F5"
-                      ItemsSource="{Binding CogoPoints}">
-                <DataGrid.ColumnHeaderStyle>
-                    <Style TargetType="DataGridColumnHeader">
-                        <Setter Property="FontFamily"
-                                Value="Segoe UI" />
-                        <Setter Property="FontSize"
-                                Value="10" />
-                        <Setter Property="FontWeight"
-                                Value="SemiBold" />
-                        <Setter Property="Foreground"
-                                Value="#1F1F1F" />
-                    </Style>
-                </DataGrid.ColumnHeaderStyle>
-                <DataGrid.Columns>
+            <controls:SortableListView x:Name="ConflictsListView"
+                                       Style="{StaticResource UpdatedListViewStyle}"
+                                       ItemsSource="{Binding ImportConflicts}"
+                                       Margin="20,0,20,10"
+                                       Grid.Row="1"
+                                       Loaded="ListView_Loaded">
+                <controls:SortableListView.View>
+                    <GridView ColumnHeaderContainerStyle="{StaticResource UpdatedGridViewColumnHeaderStyle}">
+                        <GridViewColumn Header="Current Number">
+                            <GridViewColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding ExistingPointNumber}"
+                                               VerticalAlignment="Center" />
+                                </DataTemplate>
+                            </GridViewColumn.CellTemplate>
+                        </GridViewColumn>
+                        <GridViewColumn Header="New Number">
+                            <GridViewColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBox Text="{Binding NewPointNumber, UpdateSourceTrigger=PropertyChanged}"
+                                             VerticalAlignment="Center"
+                                             Margin="5 2 20 2"
+                                             Style="{StaticResource ValidationTextBox}" />
+                                </DataTemplate>
+                            </GridViewColumn.CellTemplate>
+                        </GridViewColumn>
 
-                    <!-- Smaller column -->
-                    <DataGridTextColumn Header="Current Number"
-                                        FontSize="10"
-                                        FontFamily="Segoe UI"
-                                        FontWeight="SemiBold"
-                                        Binding="{Binding CurrentNumber}"
-                                        Width="1*"
-                                        IsReadOnly="True" />
-
-                    <!-- Bigger editable column -->
-                    <DataGridTextColumn Header="New Number"
-                                        Binding="{Binding NewPointNumber}"
-                                        Width="1*"
-                                        FontSize="10" />
-
-                </DataGrid.Columns>
-            </DataGrid>
+                    </GridView>
+                </controls:SortableListView.View>
+            </controls:SortableListView>
             <Border Grid.Row="2"
                     Background="Transparent"
                     Padding="12">

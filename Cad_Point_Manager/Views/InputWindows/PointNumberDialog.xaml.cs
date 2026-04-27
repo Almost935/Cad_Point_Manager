@@ -25,7 +25,7 @@ namespace Cad_Point_Manager.Views.InputWindows
     public partial class PointNumberDialog : Window, INotifyPropertyChanged
     {
         #region Fields
-        private ObservableCollection<CogoPoint> _importConflicts = [];
+        private ObservableCollection<ImportConflict> _importConflicts = [];
         #endregion
 
         #region Properties
@@ -47,6 +47,7 @@ namespace Cad_Point_Manager.Views.InputWindows
         public PointNumberDialog()
         {
             InitializeComponent();
+            DataContext = this;
         }
         #endregion
 
@@ -69,6 +70,20 @@ namespace Cad_Point_Manager.Views.InputWindows
             if (e.LeftButton == MouseButtonState.Pressed)
             {
                 DragMove();
+            }
+        }
+
+        private void ListView_Loaded(object sender, RoutedEventArgs e)
+        {
+            ListView listview = sender as ListView;
+
+            GridView gridView = listview.View as GridView;
+            double totalWidth = ConflictsListView.ActualWidth;
+            double columnWidth = totalWidth / gridView.Columns.Count;
+            if (columnWidth > 0)
+            {
+                gridView.Columns[0].Width = columnWidth * 1.0;
+                gridView.Columns[1].Width = columnWidth * 1.0;
             }
         }
         #endregion

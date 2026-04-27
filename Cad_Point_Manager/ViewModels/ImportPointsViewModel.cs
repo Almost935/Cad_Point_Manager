@@ -15,6 +15,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using Cad_Point_Manager.Models.PointRendering;
 using Cad_Point_Manager.Views.InputWindows;
+using Cad_Point_Manager.Extensions;
 
 namespace Cad_Point_Manager.ViewModels
 {
@@ -110,20 +111,22 @@ namespace Cad_Point_Manager.ViewModels
             var pointGroupsInFile = PointGroupInImportFile();
             var mappings = Columns.Select(c => c.Mapping).ToList();
 
-            List<CogoPoint> potPoints = [];
+            List<(int num, double n, double e, double? elev, string? desc, string? pg)> approvedPoints = [];
+            List<ImportConflict> conflictPoints = [];
             foreach (var row in _rows)
             {
-                (int num, double n, double e, double? elev, string? desc, string? pg) = _service.ParseRow(row, mappings);
-                if (pointGroupsInFile)
+                (int num, double n, double e, double? elev, string? desc, string? pg) parsedRow = _service.ParseRow(row, mappings);
+
+                if (pointGroupsInFile && parsedRow.pg is not null)
                 {
-                    var pgName = _service.GetMappedValue(row, mappings, CogoFieldType.PointGroup);
-
-                    if (pgName is null) { throw new Exception("Unexpected null point group name."); }
-
-                    var pg = _cadManager.CogoPointManager.GetPointGroup(pgName, Colors.Black, _cadManager.PointBaseScale);
-                    var p = _service.CreatePoint(row, mappings, pg, _cadManager.CogoPointManager);
-
-                    potPoints.Add(p);
+                    var errorMessage = _service.ValidatePointNumber(parsedRow.num, _cadManager.CogoPointManager);
+                    if (approvedPoints.Any(p => p.num == parsedRow.num))
+                    {
+                        conflictPoints.Add(new ImportConflict(new List<(int, double, double, double?, string?, string?)> { parsedRow }, parsedRow.num, "Point number already exists"));
+                    }
+                    else if (errorMessage is not null)
+                    { conflictPoints.Add(new ImportConflict(new List<(int, double, double, double?, string?, string?)> { parsedRow }, parsedRow.num, errorMessage)); }
+                    else { approvedPoints.Add(parsedRow); }
                 }
                 else
                 {
@@ -132,33 +135,14 @@ namespace Cad_Point_Manager.ViewModels
                         MessageBox.Show("You must select an active point group to create new points.");
                         return;
                     }
-                    var p = _service.CreatePoint(row, mappings, _cadManager.CogoPointManager.ActivePointGroup, _cadManager.CogoPointManager);
-                    _cadManager.CogoPointManager.TryAddPoint(p, _cadManager.CogoPointManager.ActivePointGroup);
 
-                    potPoints.Add(p);
-                }
-            }
-
-            List<ImportConflict> conflictPoints = [];
-            List<CogoPoint> pointsToAdd = [];
-            for (int i = 0; i < potPoints.Count; i++)
-            {
-                if (_cadManager.CogoPointManager.PointNumberExists(potPoints[i].PointNumber) ||
-                pointsToAdd.Any(p => p.PointNumber == potPoints[i].PointNumber))
-                {
-
-                    conflictPoints.Add(new ImportConflict(potPoints[i]));
-                }
-                else
-                {
-                    pointsToAdd.Add(potPoints[i]);
-                    //_cadManager.CogoPointManager.AddPoint(potPoints[i]);
                 }
             }
 
             if (conflictPoints.Count > 0)
             {
-                var dlg = new PointNumberDialog() { ImportConflicts = new(conflictPoints) };
+                var dlg = new PointNumberDialog();
+                dlg.ImportConflicts.AddRange(conflictPoints);
                 if (dlg.ShowDialog() == true)
                 {
                     //_cadManager.CogoPointManager.OverwritePoint(potPoints[i]);

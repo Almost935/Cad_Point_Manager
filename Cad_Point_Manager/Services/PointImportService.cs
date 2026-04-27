@@ -168,7 +168,7 @@ namespace Cad_Point_Manager.Services
             return result;
         }
 
-        public CogoPoint  CreatePoint(
+        public CogoPoint CreatePoint(
         List<string> row,
             List<ColumnMapping> mappings,
             PointGroup group,
@@ -253,6 +253,14 @@ namespace Cad_Point_Manager.Services
                 }
             }
             return (pointNum, northing, easting, elevation, description, pointGroup);
+        }
+
+        public string? ValidatePointNumber(int num, CogoPointManager manager)
+        {
+            if (num <= 0) { return "Point number must be greater than zero."; }
+            if (manager.PointExists(num)) { return $"Point number already exists"; }
+
+            return null;
         }
 
         public string? GetMappedValue(

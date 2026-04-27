@@ -153,7 +153,7 @@
         <Setter Property="HorizontalContentAlignment"
                 Value="Left" />
         <Setter Property="VerticalContentAlignment"
-                Value="Center" />
+                Value="Stretch" />
         <Setter Property="ToolTip">
             <Setter.Value>
                 <MultiBinding Converter="{StaticResource FirstValidationErrorConverter}">
@@ -180,10 +180,10 @@
                             Background="{DynamicResource BackgroundBrush}"
                             BorderBrush="{DynamicResource BorderBrush}"
                             BorderThickness="{DynamicResource BorderThickness}"
-                            CornerRadius="2">
+                            CornerRadius="2"
+                            Padding="2 1 2 1">
                         <ScrollViewer x:Name="PART_ContentHost"
-                                      Margin="0"
-                                      VerticalAlignment="Center" />
+                                      Margin="0" />
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="Validation.HasError"

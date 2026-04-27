@@ -9,7 +9,7 @@ namespace Cad_Point_Manager.Models.Importing
 {
     public class ImportConflict : BaseViewModel
     {
-        public List<string> Row { get; set; }
+        public List<(int num, double n, double e, double? elev, string? desc, string? pg)> Row { get; set; }
 
         public int ExistingPointNumber { get; set; }
 
@@ -24,12 +24,13 @@ namespace Cad_Point_Manager.Models.Importing
             }
         }
 
-        public string Reason { get; set; } = "Point number already exists";
+        public string Reason { get; set; }
 
-        public ImportConflict(List<string> row, int existingPointNumber)
+        public ImportConflict(List<(int num, double n, double e, double? elev, string? desc, string? pg)> row, int existingPointNumber, string reason)
         {
             Row = row;
             ExistingPointNumber = existingPointNumber;
+            Reason = reason;
         }   
     }
 }
