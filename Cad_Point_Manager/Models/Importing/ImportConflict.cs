@@ -1,36 +1,152 @@
 ﻿using Cad_Point_Manager.ViewModels;
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Cad_Point_Manager.Models.Importing
 {
-    public class ImportConflict : BaseViewModel
+    public class ImportConflict : BaseViewModel, INotifyDataErrorInfo
     {
+        #region Fields
+        private readonly Dictionary<string, List<string>> _errors = [];
+
+        private int? _newPointNumberParsed;
+        private string _newPointNumberText;
+        #endregion
+
+        #region Properties
         public List<(int num, double n, double e, double? elev, string? desc, string? pg)> Row { get; set; }
-
+        public bool HasErrors => _errors.Any();
         public int ExistingPointNumber { get; set; }
+        public string Reason { get; set; }
+        public Func<IEnumerable<ImportConflict>> GetAllConflicts { get; set; }
+        public Func<IEnumerable<int>> GetExistingPointNumbers { get; set; }
 
-        private int? _newPointNumber;
-        public int? NewPointNumber
+        public int? NewPointNumberParsed
         {
-            get => _newPointNumber;
+            get => _newPointNumberParsed;
             set
             {
-                _newPointNumber = value;
-                OnPropertyChanged();
+                _newPointNumberParsed = value;
+                OnPropertyChanged(nameof(NewPointNumberParsed));
             }
         }
+        public string NewPointNumberText
+        {
+            get => _newPointNumberText;
+            set
+            {
+                if (_newPointNumberText != value)
+                {
+                    _newPointNumberText = value;
+                    OnPropertyChanged(nameof(NewPointNumberText));
+                    ValidateNewPointNumber();
+                }
+            }
+        }
+        #endregion
 
-        public string Reason { get; set; }
-
+        #region Constructors
         public ImportConflict(List<(int num, double n, double e, double? elev, string? desc, string? pg)> row, int existingPointNumber, string reason)
         {
             Row = row;
             ExistingPointNumber = existingPointNumber;
             Reason = reason;
-        }   
+            ValidateNewPointNumber();
+        }
+        #endregion
+
+        #region Events
+        public event EventHandler<DataErrorsChangedEventArgs> ErrorsChanged;
+        #endregion
+
+        #region Methods
+        public IEnumerable GetErrors(string propertyName)
+        {
+            if (propertyName != null && _errors.TryGetValue(propertyName, out var list))
+                return list;
+            return Enumerable.Empty<string>();
+        }
+
+        private void AddError(string prop, string message)
+        {
+            if (!_errors.ContainsKey(prop))
+                _errors[prop] = new List<string>();
+
+            if (!_errors[prop].Contains(message))
+            {
+                _errors[prop].Add(message);
+                ErrorsChanged?.Invoke(this, new DataErrorsChangedEventArgs(prop));
+                OnPropertyChanged(nameof(HasErrors));
+            }
+        }
+
+        private void ClearErrors(string prop)
+        {
+            if (_errors.Remove(prop))
+            {
+                ErrorsChanged?.Invoke(this, new DataErrorsChangedEventArgs(prop));
+                OnPropertyChanged(nameof(HasErrors));
+            }
+        }
+
+        private void ValidateNewPointNumber()
+        {
+            const string prop = nameof(NewPointNumberText);
+            ClearErrors(prop);
+
+            if (string.IsNullOrWhiteSpace(NewPointNumberText))
+            {
+                AddError(prop, "Value is required");
+                NewPointNumberParsed = null;
+                return;
+            }
+
+            if (!int.TryParse(NewPointNumberText, out var val))
+            {
+                AddError(prop, "Must be a valid integer");
+                NewPointNumberParsed = null;
+                return;
+            }
+
+            // ❌ Rule 1: cannot match existing point
+            if (val == ExistingPointNumber)
+            {
+                AddError(prop, "Cannot match existing point number");
+            }
+
+            // ❌ Rule 2: duplicates in list
+            if (GetAllConflicts != null)
+            {
+                var duplicates = GetAllConflicts()
+                    .Where(x => x != this && x.NewPointNumberParsed == val)
+                    .Any();
+
+                if (duplicates)
+                {
+                    AddError(prop, "Duplicate number in list");
+                }
+            }
+
+            // ❌ Rule 3: already exists in dataset
+            if (GetExistingPointNumbers != null &&
+                GetExistingPointNumbers().Contains(val))
+            {
+                AddError(prop, "Number already exists in project");
+            }
+
+            NewPointNumberParsed = val;
+        }
+
+        public void ValidateAll()
+        {
+            ValidateNewPointNumber();
+        }
+        #endregion
     }
 }

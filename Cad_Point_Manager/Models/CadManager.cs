@@ -46,7 +46,6 @@ namespace Cad_Point_Manager.Models
         private CogoPointManager _cogoPointManager;
         private Size2F _viewportSize = Size2F.Empty;
         private Enums.SelectionMode _snapSelectionMode = Enums.SelectionMode.CogoPoints;
-        private double _pointBaseScale = 1;
         private bool _hitTestingEnabled = true;
         private BatchableObservableCollection<Layout> _layouts = [];
         private ICollectionView _layoutsView;
@@ -201,15 +200,6 @@ namespace Cad_Point_Manager.Models
             {
                 _snapSelectionMode = value;
                 OnPropertyChanged(nameof(SnapSelectionMode));
-            }
-        }
-        public double PointBaseScale
-        {
-            get => _pointBaseScale;
-            set
-            {
-                _pointBaseScale = value;
-                OnPropertyChanged(nameof(PointBaseScale));
             }
         }
         public bool HitTestingEnabled
@@ -392,16 +382,16 @@ namespace Cad_Point_Manager.Models
         {
             if (Extents.IsEmpty)
             {
-                PointBaseScale = 1;
+                CogoPointManager.PointBaseScale = 1;
                 return;
             }
             if (Extents.Width > Extents.Height)
             {
-                PointBaseScale = Extents.Width * _pointSizeToExtentsFactor;
+                CogoPointManager.PointBaseScale = Extents.Width * _pointSizeToExtentsFactor;
             }
             else
             {
-                PointBaseScale = Extents.Height * _pointSizeToExtentsFactor;
+                CogoPointManager.PointBaseScale = Extents.Height * _pointSizeToExtentsFactor;
             }
         }
 

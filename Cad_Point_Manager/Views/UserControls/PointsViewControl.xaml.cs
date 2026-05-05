@@ -530,7 +530,6 @@ namespace Cad_Point_Manager.Views.UserControls
             if (d is not PointsViewControl control) { return; }
             control.ViewModel = new PointsViewModel(e.NewValue as CadManager);
         }
-        #endregion
 
         private void ImportListView_Loaded(object sender, RoutedEventArgs e)
         {
@@ -547,5 +546,6 @@ namespace Cad_Point_Manager.Views.UserControls
                 importGridView.Columns[3].Width = importListColumnWidth * 1.0;
             }
         }
+        #endregion
     }
 }

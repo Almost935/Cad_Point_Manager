@@ -2,20 +2,12 @@
 using Cad_Point_Manager.Models;
 using Cad_Point_Manager.Models.Importing;
 using Cad_Point_Manager.Services;
-using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Diagnostics;
 using System.Windows;
 using System.Windows.Input;
-using System.Windows.Media;
-using Cad_Point_Manager.Models.PointRendering;
 using Cad_Point_Manager.Views.InputWindows;
 using Cad_Point_Manager.Extensions;
+using Cad_Point_Manager.Models.PointRendering;
 
 namespace Cad_Point_Manager.ViewModels
 {
@@ -117,6 +109,7 @@ namespace Cad_Point_Manager.ViewModels
             {
                 (int num, double n, double e, double? elev, string? desc, string? pg) parsedRow = _service.ParseRow(row, mappings);
 
+                if (parsedRow.num <= 0) { continue; }
                 if (pointGroupsInFile && parsedRow.pg is not null)
                 {
                     var errorMessage = _service.ValidatePointNumber(parsedRow.num, _cadManager.CogoPointManager);
@@ -141,12 +134,22 @@ namespace Cad_Point_Manager.ViewModels
 
             if (conflictPoints.Count > 0)
             {
-                var dlg = new PointNumberDialog();
+                var dlg = new PointNumberDialog(_cadManager);
                 dlg.ImportConflicts.AddRange(conflictPoints);
+                dlg.InitializeConflicts(_cadManager);
                 if (dlg.ShowDialog() == true)
                 {
-                    //_cadManager.CogoPointManager.OverwritePoint(potPoints[i]);
-
+                    foreach (var approvedPoint in approvedPoints)
+                    {
+                        var pos = new SharpDX.Vector3((float)approvedPoint.e, (float)approvedPoint.n, 0f);
+                        _cadManager.CogoPointManager.TryAddPoint(approvedPoint.num, pos, approvedPoint.pg, out _, (float)approvedPoint.elev, approvedPoint.desc);
+                    }
+                    foreach (var conflictPoint in conflictPoints)
+                    {
+                        var row = conflictPoint.Row;
+                        var pos = new SharpDX.Vector3((float)row.e, (float)row.n, 0f);
+                        _cadManager.CogoPointManager.TryAddPoint(row., pos, row.pg, out _, (float)approvedPoint.elev, approvedPoint.desc);
+                    }
                 }
             }
 

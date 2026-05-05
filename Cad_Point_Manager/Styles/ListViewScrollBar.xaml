@@ -47,18 +47,12 @@
             <SolidColorBrush x:Key="MouseOverTrackBackgroundBrush"
                              Color="#4C444444" />
             <SolidColorBrush x:Key="ThumbBrush"
-                             Color="#FF6A6A6A" />
-            <!--<SolidColorBrush x:Key="MouseOverThumbBrush"
-                             Color="#FF949494" />
-            <SolidColorBrush x:Key="DraggingThumbBrush"
-                             Color="#FF828282" />-->
+                             Color="#FF464646" />
             <SolidColorBrush x:Key="MouseOverThumbBrush"
                              Color="#FF6A6A6A" />
             <SolidColorBrush x:Key="DraggingThumbBrush"
                              Color="#FF6A6A6A" />
         </Style.Resources>
-        <!--<Setter Property="Background"
-                Value="#22000000" />-->
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ScrollBar">
@@ -71,7 +65,6 @@
                         </Grid.RowDefinitions>
 
                         <RepeatButton x:Name="pageUpButton"
-                                      Visibility="Hidden"
                                       Grid.Row="0"
                                       Command="ScrollBar.LineUpCommand"
                                       Style="{StaticResource ScrollBarArrowButtonStyle}">
@@ -90,7 +83,6 @@
                                ViewportSize="{TemplateBinding ViewportSize}"
                                IsDirectionReversed="True">
 
-                            <!--REQUIRED: Decrease + Increase buttons (can be invisible)-->
                             <Track.DecreaseRepeatButton>
                                 <RepeatButton Command="ScrollBar.PageUpCommand"
                                               Style="{StaticResource ScrollBarArrowButtonStyle}" />
@@ -108,8 +100,8 @@
                                             <Border x:Name="border"
                                                     Background="{StaticResource ThumbBrush}"
                                                     CornerRadius="6"
-                                                    Width="6" />
-                                            <!--<ControlTemplate.Triggers>
+                                                    Width="8" />
+                                            <ControlTemplate.Triggers>
                                                 <Trigger Property="IsMouseOver"
                                                          Value="True">
                                                     <Setter TargetName="border"
@@ -122,7 +114,7 @@
                                                             Property="Background"
                                                             Value="{StaticResource DraggingThumbBrush}" />
                                                 </Trigger>
-                                            </ControlTemplate.Triggers>-->
+                                            </ControlTemplate.Triggers>
                                         </ControlTemplate>
                                     </Thumb.Template>
                                 </Thumb>
@@ -130,7 +122,7 @@
                         </Track>
 
                         <RepeatButton x:Name="pageDownButton"
-                                      Visibility="Hidden"
+                                      Visibility="Visible"
                                       Grid.Row="2"
                                       Command="ScrollBar.LineDownCommand"
                                       Style="{StaticResource ScrollBarArrowButtonStyle}">
@@ -147,12 +139,12 @@
                             <Setter Property="Background"
                                     TargetName="TrackBg"
                                     Value="{DynamicResource MouseOverTrackBackgroundBrush}" />
-                            <Setter Property="Visibility"
-                                    Value="Visible"
-                                    TargetName="pageUpButton" />
-                            <Setter Property="Visibility"
-                                    Value="Visible"
-                                    TargetName="pageDownButton" />
+                            <Setter TargetName="pageUpButton"
+                                    Property="Visibility"
+                                    Value="Visible" />
+                            <Setter TargetName="pageDownButton"
+                                    Property="Visibility"
+                                    Value="Visible" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>

@@ -5,6 +5,7 @@ using SharpDX;
 using System.ComponentModel;
 using System.IO;
 using System.Windows;
+using System.Windows.Media;
 using Color = System.Windows.Media.Color;
 using Matrix = System.Windows.Media.Matrix;
 
@@ -17,6 +18,7 @@ namespace Cad_Point_Manager.Models
         private PointGroup _activePointGroup;
         private CadManager _cadManager;
         private BatchableObservableCollection<CogoPoint> _cogoPoints = [];
+        private double _pointBaseScale = 1;
         #endregion
 
         #region Properties
@@ -65,10 +67,20 @@ namespace Cad_Point_Manager.Models
                 }
             }
         }
+        public double PointBaseScale
+        {
+            get => _pointBaseScale;
+            set
+            {
+                _pointBaseScale = value;
+                OnPropertyChanged(nameof(PointBaseScale));
+            }
+        }
 
         public Rect Extents { get; set; } = Rect.Empty;
         public Matrix CurrentlyAppliedMatrix { get; set; } = Matrix.Identity;
         public CogoPointTree CogoPointTree { get; set; }
+        public Color DefaultPointGroupColor => Colors.Black;
 
         public List<int> UsedPointNumbers => PointGroups.SelectMany(pg => pg.Points).Select(p => p.PointNumber).ToList();
         public bool PointExists(int pointNumber) => PointGroups.SelectMany(pg => pg.Points).Any(p => p.PointNumber == pointNumber);
@@ -180,6 +192,21 @@ namespace Cad_Point_Manager.Models
 
             return true;
         }
+        public bool TryAddPoint(int pointNum, Vector3 position, string pgName, out CogoPoint cogoPoint, float elevation = 0, string description = "")
+        {
+            if (PointNumberExists(pointNum))
+            {
+                cogoPoint = null;
+                return false;
+            }
+
+            var pg = GetPointGroup(pgName, DefaultPointGroupColor, PointBaseScale);
+
+            cogoPoint = pg.AddPoint(pointNum, position, elevation, description);
+            CogoPoints.Add(cogoPoint);
+
+            return true;
+        }
         public bool TryAddPoint(CogoPoint p, PointGroup pg)
         {
             if (pg == null || !PointGroupExists(pg))
@@ -231,7 +258,7 @@ namespace Cad_Point_Manager.Models
                 return false;
             }
 
-            pointGroup = new(groupName, color, this, CadManager.PointBaseScale);
+            pointGroup = new(groupName, color, this, CadManager.CogoPointManager.PointBaseScale);
             PointGroups.Add(pointGroup);
             return true;
         }

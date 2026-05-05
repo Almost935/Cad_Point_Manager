@@ -694,7 +694,7 @@
                 </Grid>
             </Border>
             <Border Grid.Row="0"
-            Grid.RowSpan="2"
+                    Grid.RowSpan="2"
                     Background="White"
                     CornerRadius="5"
                     Visibility="{Binding ElementName=ImportPointsRadioButton, Path=IsChecked, Converter={StaticResource BoolToVis}}">
@@ -751,6 +751,15 @@
                                 <Setter Property="Foreground"
                                         Value="{StaticResource HeaderForeground }" />
                             </Style>
+                            <Style x:Key="BodyTextBlockStyle"
+                                   TargetType="TextBlock">
+                                <Setter Property="VerticalAlignment"
+                                        Value="Center" />
+                                <Setter Property="Margin"
+                                        Value="3 1 3 2" />
+                                <Setter Property="FontSize"
+                                        Value="{StaticResource ListViewFontSize}" />
+                            </Style>
                         </controls:SortableListView.Resources>
                         <controls:SortableListView.View>
                             <GridView ColumnHeaderContainerStyle="{StaticResource UpdatedGridViewColumnHeaderStyle}">
@@ -762,8 +771,7 @@
                                     <GridViewColumn.CellTemplate>
                                         <DataTemplate>
                                             <TextBlock Text="{Binding Header}"
-                                                       Margin="3 1 3 2"
-                                                       VerticalAlignment="Center" />
+                                                       Style="{StaticResource BodyTextBlockStyle}" />
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
                                 </GridViewColumn>
@@ -775,8 +783,7 @@
                                     <GridViewColumn.CellTemplate>
                                         <DataTemplate>
                                             <TextBlock Text="{Binding DetectedType}"
-                                                       Margin="3 1 3 2"
-                                                       VerticalAlignment="Center" />
+                                                       Style="{StaticResource BodyTextBlockStyle}" />
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
                                 </GridViewColumn>
@@ -788,8 +795,7 @@
                                     <GridViewColumn.CellTemplate>
                                         <DataTemplate>
                                             <TextBlock Text="{Binding SampleValues[0]}"
-                                                       Margin="3 1 3 2"
-                                                       VerticalAlignment="Center" />
+                                                       Style="{StaticResource BodyTextBlockStyle}"/>
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
                                 </GridViewColumn>
@@ -803,6 +809,8 @@
                                             <ComboBox Height="22"
                                                       ItemsSource="{Binding ViewModel.ImportVM.AvailableFields, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                       SelectedItem="{Binding Mapping.AssignedField, Mode=TwoWay}"
+                                                      Margin="5 2 5 2"
+                                                      FontSize="{StaticResource ListViewFontSize}"
                                                       Style="{StaticResource ValidationComboBox}" />
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>

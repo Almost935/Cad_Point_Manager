@@ -33,6 +33,15 @@
                     Value="SemiBold" />
             <Setter Property="Cursor"
                     Value="Hand" />
+            <Setter Property="IsEnabled"
+                    Value="True" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding HasErrors}"
+                             Value="True">
+                    <Setter Property="IsEnabled"
+                            Value="False" />
+                </DataTrigger>
+            </Style.Triggers>
         </Style>
         <Style x:Key="SecondaryButtonStyle"
                TargetType="Button">
@@ -106,90 +115,67 @@
         </Style>
     </Window.Resources>
 
-    <Border CornerRadius="8"
-            Background="#F9F9F9"
-            BorderBrush="#E5E5E5"
-            Padding="0"
-            ClipToBounds="True">
-        <Grid Background="Transparent">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <!-- Header -->
-                <RowDefinition Height="*" />
-                <!-- Content -->
-                <RowDefinition Height="Auto" />
-                <!-- Buttons -->
-            </Grid.RowDefinitions>
+    <Grid Background="White">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <controls:SortableListView x:Name="ConflictsListView"
+                                   Style="{StaticResource UpdatedListViewStyle}"
+                                   ItemsSource="{Binding ImportConflicts}"
+                                   Loaded="ListView_Loaded"
+                                   SizeChanged="ConflictsListView_SizeChanged">
+            <controls:SortableListView.View>
+                <GridView ColumnHeaderContainerStyle="{StaticResource UpdatedGridViewColumnHeaderStyle}">
+                    <GridViewColumn Header="Current Number">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding ExistingPointNumber}"
+                                           VerticalAlignment="Center" />
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                    <GridViewColumn Header="New Number">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBox Text="{Binding NewPointNumberText,
+                                UpdateSourceTrigger=PropertyChanged,
+                                ValidatesOnNotifyDataErrors=True}"
+                                         VerticalAlignment="Center"
+                                         Margin="5 2 20 2"
+                                         Style="{StaticResource ValidationTextBox}" />
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
 
-            <Grid x:Name="TitleBarGrid"
-                  Grid.Row="0"
-                  MouseDown="TitleBar_MouseDown">
-                <TextBlock Text="Resolve Duplicate Points"
-                           FontFamily="Segoe UI"
-                           FontSize="10"
-                           FontWeight="SemiBold"
-                           Foreground="#FFC8C8C8"
-                           Margin="10 0 0 0"
-                           VerticalAlignment="Center"
-                           HorizontalAlignment="Left" />
-                <!-- Close button -->
-                <Button x:Name="CloseButton"
-                        HorizontalAlignment="Right"
-                        Margin="0 0 0 0"
-                        Height="25"
-                        Width="40"
-                        Style="{StaticResource Win11CloseButtonStyle}"
-                        Click="CloseButton_Click" />
-            </Grid>
-            <controls:SortableListView x:Name="ConflictsListView"
-                                       Style="{StaticResource UpdatedListViewStyle}"
-                                       ItemsSource="{Binding ImportConflicts}"
-                                       Margin="20,0,20,10"
-                                       Grid.Row="1"
-                                       Loaded="ListView_Loaded">
-                <controls:SortableListView.View>
-                    <GridView ColumnHeaderContainerStyle="{StaticResource UpdatedGridViewColumnHeaderStyle}">
-                        <GridViewColumn Header="Current Number">
-                            <GridViewColumn.CellTemplate>
-                                <DataTemplate>
-                                    <TextBlock Text="{Binding ExistingPointNumber}"
-                                               VerticalAlignment="Center" />
-                                </DataTemplate>
-                            </GridViewColumn.CellTemplate>
-                        </GridViewColumn>
-                        <GridViewColumn Header="New Number">
-                            <GridViewColumn.CellTemplate>
-                                <DataTemplate>
-                                    <TextBox Text="{Binding NewPointNumber, UpdateSourceTrigger=PropertyChanged}"
-                                             VerticalAlignment="Center"
-                                             Margin="5 2 20 2"
-                                             Style="{StaticResource ValidationTextBox}" />
-                                </DataTemplate>
-                            </GridViewColumn.CellTemplate>
-                        </GridViewColumn>
+                </GridView>
+            </controls:SortableListView.View>
+        </controls:SortableListView>
+        <Border Grid.Row="2"
+                Padding="12">
 
-                    </GridView>
-                </controls:SortableListView.View>
-            </controls:SortableListView>
-            <Border Grid.Row="2"
-                    Background="Transparent"
-                    Padding="12">
-
-                <StackPanel Orientation="Horizontal"
-                            HorizontalAlignment="Right">
-
-                    <Button Content="Cancel"
-                            Width="60"
-                            Margin="0,0,10,0"
-                            Style="{StaticResource SecondaryButtonStyle}"
-                            FontSize="10" />
-
-                    <Button Content="Import"
-                            Width="60"
-                            Style="{StaticResource PrimaryButtonStyle}"
-                            FontSize="10" />
-                </StackPanel>
-            </Border>
-        </Grid>
-    </Border>
+            <StackPanel Orientation="Horizontal"
+                        HorizontalAlignment="Right">
+                <Button x:Name="AutoNumberButton"
+                        Content="Auto Number"
+                        Margin="0,0,10,0"
+                        Style="{StaticResource SecondaryButtonStyle}"
+                        FontSize="10"
+                        Click="AutoNumberButton_Click" />
+                <Button x:Name="CancelButton"
+                        Content="Cancel"
+                        Width="60"
+                        Margin="0,0,10,0"
+                        Style="{StaticResource SecondaryButtonStyle}"
+                        FontSize="10" 
+                        Click="CancelButton_Click"/>
+                <Button x:Name="ImportButton"
+                        Content="Import"
+                        Width="60"
+                        Style="{StaticResource PrimaryButtonStyle}"
+                        FontSize="10"
+                        Click="ImportButton_Click" />
+            </StackPanel>
+        </Border>
+    </Grid>
 </Window>
