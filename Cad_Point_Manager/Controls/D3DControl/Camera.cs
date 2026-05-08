@@ -297,8 +297,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         public void ZoomToBounds(Rect bounds)
         {
-            if (!HasValidViewport) return;
-            if (bounds.IsEmpty || bounds.Width <= 0 || bounds.Height <= 0) return;
+            if (!HasValidViewport) { return; }
+            if (bounds.IsEmpty || bounds.Width <= 0 || bounds.Height <= 0) { return; }
 
             // Optional padding so it's not edge-to-edge
             const float paddingPct = 0.05f; // 5% padding
@@ -336,8 +336,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             float desiredZoom = Math.Min(baseW / targetW, baseH / targetH);
 
             // Guard against weird values
-            if (float.IsNaN(desiredZoom) || float.IsInfinity(desiredZoom) || desiredZoom <= 0)
-                desiredZoom = 1f;
+            if (float.IsNaN(desiredZoom) || float.IsInfinity(desiredZoom) || desiredZoom <= 0) { desiredZoom = 1f; }
 
             // 3) Convert desiredZoom to a zoom step.
             // IMPORTANT: choose a zoom that does NOT exceed desiredZoom, so the bounds still fits.
@@ -362,7 +361,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             UpdateView();
             UpdateViewProjection();
-
         }
 
         private int ZoomStepFloor(float desiredZoom)

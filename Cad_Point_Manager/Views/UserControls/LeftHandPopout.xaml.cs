@@ -12,6 +12,7 @@ using SharpDX;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Windows;
@@ -376,12 +377,9 @@ namespace Cad_Point_Manager.Views.UserControls
 
             foreach (var selectedItem in selectedItems)
             {
-                if (selectedItem is CogoPoint selectedPoint)
+                if (selectedItem is CogoPoint selectedPoint && selectedPoint is not null)
                 {
-                    if (selectedPoint is not null)
-                    {
-                        _selectedPoints.Add(selectedPoint);
-                    }
+                    _selectedPoints.Add(selectedPoint);
                 }
             }
         }
@@ -450,7 +448,7 @@ namespace Cad_Point_Manager.Views.UserControls
                                    ?? VisualTreeHelpers.FindAncestor<ListViewItem>(src);
             if (lvi == null) { return; }
 
-            string field = PointsInferFieldNameFromDisplayElement(fe);
+            string field = GetFieldFromMousePosition(lvi);
             if (string.IsNullOrEmpty(field)) { return; }
 
             _lastPointsListContextField = field;
@@ -474,22 +472,54 @@ namespace Cad_Point_Manager.Views.UserControls
 
             BeginPointsListCellEdit(lvi, field);
         }
-        private static string PointsInferFieldNameFromDisplayElement(FrameworkElement fe)
+        private static string? PointsInferFieldNameFromDisplayElement(DependencyObject obj)
         {
-            var grid = VisualTreeHelpers.FindAncestor<Grid>(fe);
-            if (grid?.Name is string s && !string.IsNullOrWhiteSpace(s))
+            while (obj != null)
             {
-                // Map headers to property names as written in XAML
-                return s switch
+                if (obj is Grid g && !string.IsNullOrWhiteSpace(g.Name))
                 {
-                    "pointNumber" => "PointNumber",
-                    "northing" => "Northing",
-                    "easting" => "Easting",
-                    "elevation" => "Elevation",
-                    "description" => "Description",
-                    _ => null
-                };
+                    return g.Name switch
+                    {
+                        "pointNumber" => "PointNumber",
+                        "northing" => "Northing",
+                        "easting" => "Easting",
+                        "elevation" => "Elevation",
+                        "description" => "Description",
+                        _ => null
+                    };
+                }
+
+                obj = VisualTreeHelper.GetParent(obj);
             }
+
+            return null;
+        }
+        private string? GetFieldFromMousePosition(ListViewItem item)
+        {
+            if (pointsListView.View is not GridView gv) { return null; }
+
+            var p = Mouse.GetPosition(item);
+
+            double runningWidth = 0;
+
+            for (int i = 0; i < gv.Columns.Count; i++)
+            {
+                runningWidth += gv.Columns[i].ActualWidth;
+
+                if (p.X <= runningWidth)
+                {
+                    return i switch
+                    {
+                        0 => "PointNumber",
+                        1 => "Northing",
+                        2 => "Easting",
+                        3 => "Elevation",
+                        4 => "Description",
+                        _ => null
+                    };
+                }
+            }
+
             return null;
         }
         private void PointsListInlineEditBox_PreviewKeyDown(object sender, KeyEventArgs e)
@@ -1172,7 +1202,7 @@ namespace Cad_Point_Manager.Views.UserControls
             if (scenesGridViewColumnWidth > 0)
             {
                 double nameWidthFactor = 1.4;
-                double dimsWidthFactor = (5 -  nameWidthFactor) / (scenesGridView.Columns.Count - 1);
+                double dimsWidthFactor = (5 - nameWidthFactor) / (scenesGridView.Columns.Count - 1);
                 scenesGridView.Columns[0].Width = scenesGridViewColumnWidth * nameWidthFactor;
                 scenesGridView.Columns[1].Width = scenesGridViewColumnWidth * dimsWidthFactor;
                 scenesGridView.Columns[2].Width = scenesGridViewColumnWidth * dimsWidthFactor;
@@ -1230,9 +1260,9 @@ namespace Cad_Point_Manager.Views.UserControls
                     // try again once more if virtualization delayed it
                     Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() =>
                     {
-                        if (scenesListView.ItemContainerGenerator.ContainerFromItem(_newScene) is ListViewItem li) 
+                        if (scenesListView.ItemContainerGenerator.ContainerFromItem(_newScene) is ListViewItem li)
                         {
-                            BeginScenesListCellEdit(li, "Name"); 
+                            BeginScenesListCellEdit(li, "Name");
                         }
                     }));
                 }
@@ -1263,9 +1293,9 @@ namespace Cad_Point_Manager.Views.UserControls
                     // try again once more if virtualization delayed it
                     Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() =>
                     {
-                        if (scenesListView.ItemContainerGenerator.ContainerFromItem(_newScene) is ListViewItem li) 
+                        if (scenesListView.ItemContainerGenerator.ContainerFromItem(_newScene) is ListViewItem li)
                         {
-                            BeginScenesListCellEdit(li, "Name"); 
+                            BeginScenesListCellEdit(li, "Name");
                         }
                     }));
                 }

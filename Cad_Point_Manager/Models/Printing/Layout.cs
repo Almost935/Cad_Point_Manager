@@ -83,50 +83,6 @@ namespace Cad_Point_Manager.Models.Printing
         public FontFamily FontFamily { get; set; } = new FontFamily("Arial");
         #endregion
 
-        #region Constructors
-        //public Layout(netDxf.Objects.Layout layout)
-        //{
-        //    Debug.WriteLine($"Layout Name: {layout.Name}");
-
-        //    var viewport = layout.Viewport;
-        //    var associatedBlock = layout.AssociatedBlock;
-
-        //    List<EntityObject> entities = [];
-        //    foreach (var potE in associatedBlock.Entities)
-        //    {
-        //        if (potE is Insert insert)
-        //        {
-        //            entities.AddRange(insert.Explode());
-        //        }
-        //        else
-        //        {
-        //            entities.Add(potE);
-        //        }
-        //    }
-        //    foreach (var entity in entities)
-        //    {
-        //        if (entity is Line line)
-        //        {
-        //            Debug.WriteLine($"Line from {line.StartPoint} to {line.EndPoint}");
-        //        }
-        //        else if (entity is Circle circle)
-        //        {
-        //            Debug.WriteLine($"Circle at {circle.Center} with radius {circle.Radius}");
-        //        }
-        //        if (entity is Polyline2D pline)
-        //        {
-        //            pline.Explode().ForEach(explodedEntity =>
-        //            {
-        //                if (explodedEntity is Line explodedLine)
-        //                {
-        //                    Debug.WriteLine($"Polyline Line from {explodedLine.StartPoint} to {explodedLine.EndPoint}");
-        //                }
-        //            });
-        //        }
-        //    }
-        //}
-        #endregion
-
         #region NotifyPropertyChanged Implementation
         public event PropertyChangedEventHandler PropertyChanged;
         protected void OnPropertyChanged([CallerMemberName] string propertyName = null)

@@ -162,14 +162,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             EndD3D();
         }
 
-        private void OnDisplayChanged()
-        {
-            // 🔥 This is where you trigger your D3D rebuild
-            Debug.WriteLine("Display changed detected in control");
-
-            //HandleDisplayChange();
-        }
-
         private void OnRendering(object sender, EventArgs e)
         {
             if (!_renderTimer.IsRunning || !_d3DSurface.IsFrontBufferAvailable) { return; }
@@ -531,17 +523,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             return (w, h);
         }
         protected virtual void OnTargetsResized(int wPx, int hPx) { }
-
-        private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
-        {
-            if (msg == WM_DISPLAYCHANGE)
-            {
-                OnDisplayChanged();
-            }
-
-            return IntPtr.Zero;
-        }
-
         #endregion
     }
 }

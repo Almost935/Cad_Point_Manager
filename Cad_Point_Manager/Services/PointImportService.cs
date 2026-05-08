@@ -85,7 +85,8 @@ namespace Cad_Point_Manager.Services
                     DetectedType = values.All(v => int.TryParse(v, out _)) ? ColumnDataType.Integer :
                                    values.All(v => double.TryParse(v, out _)) ? ColumnDataType.Double :
                                    ColumnDataType.String,
-                    SampleValues = values.Take(5).ToList()
+                    SampleValues = values.Take(5).ToList(),
+                    Mapping = new ColumnMapping { ColumnIndex = col }
                 });
             }
 
@@ -216,7 +217,7 @@ namespace Cad_Point_Manager.Services
             return cp;
         }
 
-        public (int num, double n, double e, double? elev, string? desc, string? pg) ParseRow(
+        public ParsedPointImportRow ParseRow(
             List<string> row,
             List<ColumnMapping> mappings)
         {
@@ -241,8 +242,7 @@ namespace Cad_Point_Manager.Services
                         double.TryParse(val, out easting);
                         break;
                     case CogoFieldType.Elevation:
-                        if (double.TryParse(val, out double elev))
-                            elevation = elev;
+                        if (double.TryParse(val, out double elev)) { elevation = elev; }
                         break;
                     case CogoFieldType.Description:
                         description = val;
@@ -252,7 +252,7 @@ namespace Cad_Point_Manager.Services
                         break;
                 }
             }
-            return (pointNum, northing, easting, elevation, description, pointGroup);
+            return new ParsedPointImportRow(pointNum, northing, easting, elevation, description, pointGroup);
         }
 
         public string? ValidatePointNumber(int num, CogoPointManager manager)

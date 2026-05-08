@@ -629,7 +629,7 @@ namespace Cad_Point_Manager.Views.UserControls
             bool created = TryCreateNewPointGroup(
                 CadManager.CogoPointManager.GetTempPointGroupName(),
                 Colors.Black,
-                CadManager.PointBaseScale);
+                CadManager.CogoPointManager.PointBaseScale);
         }
         private void EditPGMenuItem_Click(object sender, RoutedEventArgs e)
         {
@@ -853,7 +853,7 @@ namespace Cad_Point_Manager.Views.UserControls
             bool created = TryCreateNewPointGroup(
                 CadManager.CogoPointManager.GetTempPointGroupName(),
                 Colors.Black,
-                CadManager.PointBaseScale);
+                CadManager.CogoPointManager.PointBaseScale);
         }
         private bool TryCreateNewPointGroup(string name, Color color, double scale)
         {

@@ -103,22 +103,22 @@ namespace Cad_Point_Manager.ViewModels
             var pointGroupsInFile = PointGroupInImportFile();
             var mappings = Columns.Select(c => c.Mapping).ToList();
 
-            List<(int num, double n, double e, double? elev, string? desc, string? pg)> approvedPoints = [];
+            List<ParsedPointImportRow> approvedPoints = [];
             List<ImportConflict> conflictPoints = [];
             foreach (var row in _rows)
             {
-                (int num, double n, double e, double? elev, string? desc, string? pg) parsedRow = _service.ParseRow(row, mappings);
+                ParsedPointImportRow parsedRow = _service.ParseRow(row, mappings);
 
-                if (parsedRow.num <= 0) { continue; }
-                if (pointGroupsInFile && parsedRow.pg is not null)
+                if (parsedRow.PointNumber <= 0) { continue; }
+                if (pointGroupsInFile && parsedRow.PointGroup is not null)
                 {
-                    var errorMessage = _service.ValidatePointNumber(parsedRow.num, _cadManager.CogoPointManager);
-                    if (approvedPoints.Any(p => p.num == parsedRow.num))
+                    var errorMessage = _service.ValidatePointNumber(parsedRow.PointNumber, _cadManager.CogoPointManager);
+                    if (approvedPoints.Any(p => p.PointNumber == parsedRow.PointNumber))
                     {
-                        conflictPoints.Add(new ImportConflict(new List<(int, double, double, double?, string?, string?)> { parsedRow }, parsedRow.num, "Point number already exists"));
+                        conflictPoints.Add(new ImportConflict(parsedRow, parsedRow.PointNumber, "Point number already exists"));
                     }
                     else if (errorMessage is not null)
-                    { conflictPoints.Add(new ImportConflict(new List<(int, double, double, double?, string?, string?)> { parsedRow }, parsedRow.num, errorMessage)); }
+                    { conflictPoints.Add(new ImportConflict(parsedRow, parsedRow.PointNumber, errorMessage)); }
                     else { approvedPoints.Add(parsedRow); }
                 }
                 else
@@ -141,14 +141,14 @@ namespace Cad_Point_Manager.ViewModels
                 {
                     foreach (var approvedPoint in approvedPoints)
                     {
-                        var pos = new SharpDX.Vector3((float)approvedPoint.e, (float)approvedPoint.n, 0f);
-                        _cadManager.CogoPointManager.TryAddPoint(approvedPoint.num, pos, approvedPoint.pg, out _, (float)approvedPoint.elev, approvedPoint.desc);
+                        var pos = new SharpDX.Vector3((float)approvedPoint.Easting, (float)approvedPoint.Northing, 0f);
+                        _cadManager.CogoPointManager.TryAddPoint(approvedPoint.PointNumber, pos, approvedPoint.PointGroup, out _, (float)approvedPoint.Elevation, approvedPoint.Description);
                     }
                     foreach (var conflictPoint in conflictPoints)
                     {
                         var row = conflictPoint.Row;
-                        var pos = new SharpDX.Vector3((float)row.e, (float)row.n, 0f);
-                        _cadManager.CogoPointManager.TryAddPoint(row., pos, row.pg, out _, (float)approvedPoint.elev, approvedPoint.desc);
+                        var pos = new SharpDX.Vector3((float)row.Easting, (float)row.Northing, 0f);
+                        _cadManager.CogoPointManager.TryAddPoint((int)conflictPoint.NewPointNumberParsed, pos, row.PointGroup, out _, (float)row.Elevation, row.Description);
                     }
                 }
             }

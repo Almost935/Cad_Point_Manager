@@ -33,14 +33,14 @@
     <SolidColorBrush x:Key="MouseOverHitTestablePointBrush"
                      Color="#7F08E6EE" />
 
-    <SolidColorBrush x:Key="testBrush"
-                     Color="#D812161A" />
-
     <SolidColorBrush x:Key="ErrorBrush"
                      Color="Red" />
 
     <SolidColorBrush x:Key="ContextMenuForegroundBrush"
                      Color="#FF5A5A5A" />
+
+    <SolidColorBrush x:Key="UneditableTextBrush"
+                     Color="#FF5B5B5B" />
 
     <!-- ListView Colors -->
     <Color x:Key="ListViewThumbLightColor">#FFCCCCCC</Color>

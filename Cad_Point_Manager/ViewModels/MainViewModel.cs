@@ -540,8 +540,6 @@ namespace Cad_Point_Manager.ViewModels
         {
             if (ActiveLayout == null) { return; }
 
-            var stopwatch = Stopwatch.StartNew();
-
             var jobName = JobFileManager?.JobName;
             var layoutName = ActiveLayout?.Name ?? "Layout";
             var safeJob = FileHelpers.MakeSafeFileName(string.IsNullOrWhiteSpace(jobName) ? "Job" : jobName);
@@ -565,9 +563,6 @@ namespace Cad_Point_Manager.ViewModels
             if (!_fileSaveDialogService.TryPickSavePath(request, out var path)) { return; }
 
             await ExportActiveLayoutAsync(path);
-
-            stopwatch.Stop();
-            Debug.WriteLine($"PrintJob Time: {stopwatch.ElapsedMilliseconds}");
         }
         public async void ExportPoints(RoutedEventArgs e)
         {

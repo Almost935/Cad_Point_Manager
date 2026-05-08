@@ -21,6 +21,6 @@ namespace Cad_Point_Manager.Models.Importing
 
         public List<string> SampleValues { get; set; } = new();
 
-        public ColumnMapping Mapping { get; set; } = new();
+        public ColumnMapping Mapping { get; set; }
     }
 }

@@ -20,7 +20,7 @@ namespace Cad_Point_Manager.Models.Importing
         #endregion
 
         #region Properties
-        public List<(int num, double n, double e, double? elev, string? desc, string? pg)> Row { get; set; }
+        public ParsedPointImportRow Row { get; set; }
         public bool HasErrors => _errors.Any();
         public int ExistingPointNumber { get; set; }
         public string Reason { get; set; }
@@ -52,7 +52,7 @@ namespace Cad_Point_Manager.Models.Importing
         #endregion
 
         #region Constructors
-        public ImportConflict(List<(int num, double n, double e, double? elev, string? desc, string? pg)> row, int existingPointNumber, string reason)
+        public ImportConflict(ParsedPointImportRow row, int existingPointNumber, string reason)
         {
             Row = row;
             ExistingPointNumber = existingPointNumber;

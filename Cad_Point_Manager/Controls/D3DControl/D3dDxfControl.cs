@@ -571,7 +571,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         private void DrawLines(DeviceContext ctx)
         {
-            //Stopwatch stopwatch = Stopwatch.StartNew();
             if (_lineVertexBuffer is null) { return; }
 
             ctx.VertexShader.Set(_lineGlowVertexShader);
@@ -601,14 +600,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 _lineVertexBuffer.Buffer, _lineVertexBuffer.Stride, 0));
             ctx.InputAssembler.PrimitiveTopology = PrimitiveTopology.LineList;
             ctx.Draw(_lineVertexCount, 0);
-
-            //stopwatch.Stop();
-            //Debug.WriteLine($"DrawLinesWithShader Time: {stopwatch.ElapsedMilliseconds} ms");
         }
         private void DrawText(DeviceContext ctx)
         {
-            //Stopwatch stopwatch = Stopwatch.StartNew();
-
             if (_textVertexBuffer is null) { return; }
 
             ctx.VertexShader.Set(_textVertexShader);
@@ -623,9 +617,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
                  _textVertexBuffer.Buffer, _textVertexBuffer.Stride, 0));
 
             ctx.Draw(_textVertexCount, 0);
-
-            //stopwatch.Stop();
-            //Debug.WriteLine($"DrawTextWithShader Time: {stopwatch.ElapsedMilliseconds} ms");
         }
         private void DrawGlyphBatches(DeviceContext ctx, GlyphAtlas atlas, Dictionary<short, List<GlyphInstance>> batches)
         {
@@ -674,8 +665,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
         private void DrawPointCircles(DeviceContext ctx)
         {
-            //Stopwatch stopwatch = Stopwatch.StartNew();
-
             ctx.VertexShader.Set(_pointCircleVS);
             ctx.GeometryShader.Set(_pointCircleGS);
             ctx.PixelShader.Set(_pointCirclePS);
@@ -696,9 +685,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             ctx.Draw(_pointCircleVertexCount, 0);
             ctx.GeometryShader.Set(null);
-
-            //stopwatch.Stop();
-            //Debug.WriteLine($"DrawCirclesWithShader Time: {stopwatch.ElapsedMilliseconds} ms");
         }
         private void DrawCogoPointAnchors(DeviceContext ctx)
         {
@@ -857,8 +843,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
         private void UpdateGlyphBatches()
         {
-            Stopwatch stopwatch = Stopwatch.StartNew();
-
             _glyphBatches.Clear();
 
             foreach (var pg in PointGroups)
@@ -927,18 +911,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             CadManager.CogoPointManager.UpdateCogoPointTree();
 
-            //if (CadManager.Camera.CurrentZoomStep == 0 && CadManager.Camera.Translate == Vector2.Zero)
-            //{
-            //    SetInitialMatrix();
-            //}
-            //else { UpdateInitialMatrix(); }
-
             StateBuffers.FlushAll();
             _glyphVerticesDirty = false;
             _dxfDirty = true;
-
-            stopwatch.Stop();
-            Debug.WriteLine($"UpdateGlyphBatches Time: {stopwatch.ElapsedMilliseconds} ms");
         }
         private void UpdatePointCircleVertices()
         {
@@ -3520,7 +3495,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 ResCache.DeviceContext.Rasterizer.SetViewport(Viewport);
 
                 Render();
-                
+
                 ResCache.CopyToWriteableBitmap(ResCache.Texture2D, target);
             }
             finally

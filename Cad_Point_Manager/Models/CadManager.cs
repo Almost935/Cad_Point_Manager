@@ -14,6 +14,7 @@ using netDxf.Tables;
 using SharpDX;
 using SharpDX.Direct3D9;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Windows;
@@ -363,7 +364,7 @@ namespace Cad_Point_Manager.Models
             Camera.ZoomToBounds(new Rect(centerX - (p.Bounds.Width * paddingFactor * 0.5), centerY - (p.Bounds.Height * paddingFactor * 0.5),
                 p.Bounds.Width * paddingFactor, p.Bounds.Height * paddingFactor));
             Camera.IsDirty = true;
-
+            //Zoom to point sometimes not working
             ZoomToPointRequested?.Invoke();
         }
 
