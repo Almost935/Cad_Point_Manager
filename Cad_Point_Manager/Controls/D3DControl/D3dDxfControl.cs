@@ -810,6 +810,71 @@ namespace Cad_Point_Manager.Controls.D3DControl
             ctx.Draw(_sigPointVertexCount, 0);
         }
 
+        private void DrawSelectedLines(DeviceContext ctx)
+        {
+            if (SelectedGeometries.Count == 0)
+            {
+                return;
+            }
+
+            //ctx.VertexShader.Set(_lineGlowVertexShader);
+            //ctx.GeometryShader.Set(_lineGlowGeometryShader);
+            //ctx.PixelShader.Set(_lineGlowPixelShader);
+
+            //ctx.InputAssembler.InputLayout = _lineInputLayout;
+
+            //ctx.VertexShader.SetConstantBuffer(0, _transformationBuffer);
+
+            //ctx.GeometryShader.SetConstantBuffer(0, _transformationBuffer);
+            //ctx.GeometryShader.SetConstantBuffer(1, _lineGlowSettingsBuffer);
+
+            //ctx.VertexShader.SetShaderResource(0, StateBuffers.LayerSRV);
+
+            //ctx.GeometryShader.SetShaderResource(0, StateBuffers.LayerSRV);
+            //ctx.GeometryShader.SetShaderResource(1, StateBuffers.ObjectSRV);
+
+            //ctx.InputAssembler.PrimitiveTopology = PrimitiveTopology.LineList;
+
+            //ctx.InputAssembler.SetVertexBuffers(
+            //    0,
+            //    new VertexBufferBinding(
+            //        _lineVertexBuffer.Buffer,
+            //        _lineVertexBuffer.Stride,
+            //        0));
+
+            //foreach (var geometry in SelectedGeometries)
+            //{
+            //    int vertexCount =
+            //        geometry.EndVertexIndex -
+            //        geometry.StartVertexIndex + 1;
+
+            //    ctx.Draw(vertexCount, geometry.StartVertexIndex);
+            //}
+
+            ctx.GeometryShader.Set(null);
+
+            // Draw selected lines on top
+            ctx.VertexShader.Set(_lineVertexShader);
+            ctx.PixelShader.Set(_linePixelShader);
+
+            ctx.InputAssembler.InputLayout = _lineInputLayout;
+
+            ctx.VertexShader.SetConstantBuffer(0, _transformationBuffer);
+            ctx.VertexShader.SetConstantBuffer(1, _lineSettingsBuffer);
+
+            ctx.VertexShader.SetShaderResource(0, StateBuffers.LayerSRV);
+            ctx.VertexShader.SetShaderResource(1, StateBuffers.ObjectSRV);
+
+            foreach (var geometry in SelectedGeometries)
+            {
+                int vertexCount =
+                    geometry.EndVertexIndex -
+                    geometry.StartVertexIndex + 1;
+
+                ctx.Draw(vertexCount, geometry.StartVertexIndex);
+            }
+        }
+
         private void UpdateLineVertices()
         {
             if (_lineVertexBuffer is null || CadManager is null) { return; }
@@ -2036,7 +2101,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
                         }
                         else
                         {
-                            var oldSel = new HashSet<DrawingGeometry>(SelectedGeometries);
                             foreach (var g in newSel)
                             {
                                 if (IsShiftPressed) { DeselectObject(g); }
@@ -2918,7 +2982,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 }
             }
         }
-
         private void DeselectObject(HitTestableObject hitTestableObject)
         {
             if (hitTestableObject is not null)

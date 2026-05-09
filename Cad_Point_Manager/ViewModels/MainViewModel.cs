@@ -446,6 +446,10 @@ namespace Cad_Point_Manager.ViewModels
         public ICommand CogoCreationTextBoxLostFocusCommand => new RelayCommand<RoutedEventArgs>(OnCogoCreationTextBoxLostFocus);
         public ICommand CogoCreationTextBoxGotFocusCommand => new RelayCommand<RoutedEventArgs>(OnCogoCreationTextBoxGotFocus);
         public ICommand CogoCreationTextBoxGotKeyboardFocusCommand => new RelayCommand<RoutedEventArgs>(OnCogoCreationTextBoxKeyboardGotFocus);
+
+        // Undo/Redo Commands
+        public ICommand UndoCommand { get; }
+        public ICommand RedoCommand { get; }
         #endregion
 
         #region Events
@@ -466,6 +470,13 @@ namespace Cad_Point_Manager.ViewModels
             ExportPointsCommand = new RelayCommand<RoutedEventArgs>(ExportPoints);
 
             ZoomToExtentsCommand = new RelayCommand<RoutedEventArgs>(ZoomToExtents);
+
+            UndoCommand = new RelayCommand(
+                () => JobFileManager.CadManager.UndoRedoManager.Undo(),
+                () => JobFileManager.CadManager.UndoRedoManager.CanUndo);
+            RedoCommand = new RelayCommand(
+                () => JobFileManager.CadManager.UndoRedoManager.Redo(),
+                () => JobFileManager.CadManager.UndoRedoManager.CanRedo);
 
             SelectedGeometries.CollectionChanged += SelectedGeometries_CollectionChanged;
         }

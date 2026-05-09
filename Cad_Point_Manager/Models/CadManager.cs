@@ -1,4 +1,5 @@
-﻿using Cad_Point_Manager.Common;
+﻿using Cad_Point_Manager.Commands.UndoRedo;
+using Cad_Point_Manager.Common;
 using Cad_Point_Manager.Common.Collections;
 using Cad_Point_Manager.Controls.D3DControl;
 using Cad_Point_Manager.Controls.D3DControl.Rendering.Text;
@@ -246,6 +247,7 @@ namespace Cad_Point_Manager.Models
         public DxfDocument DxfDocument { get; private set; }
         public HitTestableObjectTree HitTestableObjectTree { get; private set; }
         public TextVertex[] NumberVertices { get; set; } = [];
+        public UndoRedoManager UndoRedoManager { get; } = new();
         #endregion
 
         #region Events
@@ -276,9 +278,6 @@ namespace Cad_Point_Manager.Models
             DxfDocument = dxfDocument;
             Extents = DxfHelpers.GetBoundsFromHeader(DxfDocument);
             GetPointScale();
-
-            // Testing
-            GetTestDxfPoints();
 
             foreach (var e in DxfDocument.Entities.All)
             {

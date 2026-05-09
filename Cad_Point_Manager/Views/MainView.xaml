@@ -77,6 +77,7 @@
                             </MenuItem.Icon>
                         </MenuItem>
                         <MenuItem Header="Open"
+                                  InputGestureText="Ctrl+O"
                                   Command="{Binding LoadJobCommand}"
                                   Style="{StaticResource MenuItemStyle1}">
                             <MenuItem.Icon>
@@ -84,6 +85,15 @@
                             </MenuItem.Icon>
                         </MenuItem>
                         <MenuItem Header="Save"
+                                  InputGestureText="Ctrl+S"
+                                  Command="{Binding SaveJobCommand}"
+                                  Style="{StaticResource MenuItemStyle1}">
+                            <MenuItem.Icon>
+                                <fa:FontAwesome Icon="Save" />
+                            </MenuItem.Icon>
+                        </MenuItem>
+                        <MenuItem Header="Save As"
+                                  InputGestureText="Ctrl+Shift+S"
                                   Command="{Binding SaveJobCommand}"
                                   Style="{StaticResource MenuItemStyle1}">
                             <MenuItem.Icon>
@@ -98,6 +108,7 @@
                         </MenuItem>
                         <Separator Style="{StaticResource MenuItemSeparatorStyle1}" />
                         <MenuItem Header="Print"
+                                  InputGestureText="Ctrl+P"
                                   Command="{Binding PrintJobCommand}"
                                   Style="{StaticResource MenuItemStyle1}"
                                   IsEnabled="{Binding LayoutsVisible}">
@@ -123,26 +134,20 @@
                             </MenuItem.Icon>
                         </MenuItem>
                     </MenuItem>
-                    <MenuItem Header="Insert"
-                              Style="{StaticResource MenuItemStyle1}">
-                        <MenuItem Header="Insert DXF"
-                                  Command="{Binding AttachDxfFileCommand}"
-                                  Style="{StaticResource MenuItemStyle1}">
-                            <MenuItem.Icon>
-                                <fa:FontAwesome Icon="Paperclip" />
-                            </MenuItem.Icon>
-                        </MenuItem>
-                    </MenuItem>
                     <MenuItem Header="Edit"
                               Style="{StaticResource MenuItemStyle1}">
                         <MenuItem Header="Undo"
-                                  Style="{StaticResource MenuItemStyle1}">
+                                  InputGestureText="Ctrl+Z"
+                                  Style="{StaticResource MenuItemStyle1}"
+                                  Command="{Binding UndoCommand}">
                             <MenuItem.Icon>
                                 <fa:FontAwesome Icon="Undo" />
                             </MenuItem.Icon>
                         </MenuItem>
                         <MenuItem Header="Redo"
-                                  Style="{StaticResource MenuItemStyle1}">
+                                  InputGestureText="Ctrl+Y"
+                                  Style="{StaticResource MenuItemStyle1}"
+                                  Command="{Binding RedoCommand}">
                             <MenuItem.Icon>
                                 <fa:FontAwesome Icon="RotateRight" />
                             </MenuItem.Icon>
@@ -167,6 +172,16 @@
                                   Style="{StaticResource MenuItemStyle1}">
                             <MenuItem.Icon>
                                 <fa:FontAwesome Icon="SquareOutline" />
+                            </MenuItem.Icon>
+                        </MenuItem>
+                    </MenuItem>
+                    <MenuItem Header="Insert"
+                              Style="{StaticResource MenuItemStyle1}">
+                        <MenuItem Header="Insert DXF"
+                                  Command="{Binding AttachDxfFileCommand}"
+                                  Style="{StaticResource MenuItemStyle1}">
+                            <MenuItem.Icon>
+                                <fa:FontAwesome Icon="Paperclip" />
                             </MenuItem.Icon>
                         </MenuItem>
                     </MenuItem>

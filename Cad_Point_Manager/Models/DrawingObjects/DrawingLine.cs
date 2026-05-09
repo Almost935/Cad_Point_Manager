@@ -18,8 +18,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         #endregion
 
         #region Constructors
-        //private DrawingLine() { Type = DrawingObject3dType.DrawingLine; }
-
         public DrawingLine(Line line, ObjectLayer layer, bool isPartOfBlock = false, DrawingBlock block = null)
         {
             Type = DrawingObjectType.DrawingLine;
