@@ -93,6 +93,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private bool _lineShadersLoaded = false;
         private bool _lineVerticesDirty = false;
 
+        // Selected line relatdLinesDirty = false;ed fields
+        private ResizableBuffer<LineVertex> _selectedLineOverlayBuffer;
+        private int _selectedOverlayVertexCount;
+        private bool _selectedOverlayDirty = true;
+
         // Line glow shader related fields
         private Buffer _lineGlowSettingsBuffer;
         private VertexShader _lineGlowVertexShader;
@@ -506,6 +511,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             if (!_buffersInitialized) { InitializeBuffers(); }
 
             if (_lineVerticesDirty) { UpdateLineVertices(); }
+            if (_selectedOverlayDirty) { UpdateSelectedOverlayVertices(); }
             if (_textVerticesDirty) { UpdateTextVertices(); }
             if (_glyphVerticesDirty) { UpdateGlyphBatches(); }
             if (_pointCircleVerticesDirty) { UpdatePointCircleVertices(); }
@@ -547,15 +553,14 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 ctx.CopyResource(ResCache.DxfTexture, ResCache.Texture2D);
                 ctx.OutputMerger.SetRenderTargets(ResCache.RenderTargetView);
 
-                if (IsDragging && _dragFillVertexCount > 0) DrawDragOverlay(ctx);
-                if (_hoverRectInstanceCount > 0 || _hoverCircleVertices.Count > 0) DrawCogoPointHover(ctx);
-                if (_leaderLineInstanceCount > 0) DrawLeaderLines(ctx);
-                if (_anchorVerticesCount > 0) DrawCogoPointAnchors(ctx);
-                if (_sigPointVertexCount > 0) DrawSignificantPoints(ctx);
+                if (IsDragging && _dragFillVertexCount > 0) { DrawDragOverlay(ctx); }
+                if (_hoverRectInstanceCount > 0 || _hoverCircleVertices.Count > 0) { DrawCogoPointHover(ctx); }
+                if (_leaderLineInstanceCount > 0) { DrawLeaderLines(ctx); }
+                if (_anchorVerticesCount > 0) { DrawCogoPointAnchors(ctx); }
+                if (_sigPointVertexCount > 0) { DrawSignificantPoints(ctx); }
 
                 _combinedDirty = false;
             }
-
         }
 
         private void DrawDxf(DeviceContext ctx)
@@ -810,71 +815,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             ctx.Draw(_sigPointVertexCount, 0);
         }
 
-        private void DrawSelectedLines(DeviceContext ctx)
-        {
-            if (SelectedGeometries.Count == 0)
-            {
-                return;
-            }
-
-            //ctx.VertexShader.Set(_lineGlowVertexShader);
-            //ctx.GeometryShader.Set(_lineGlowGeometryShader);
-            //ctx.PixelShader.Set(_lineGlowPixelShader);
-
-            //ctx.InputAssembler.InputLayout = _lineInputLayout;
-
-            //ctx.VertexShader.SetConstantBuffer(0, _transformationBuffer);
-
-            //ctx.GeometryShader.SetConstantBuffer(0, _transformationBuffer);
-            //ctx.GeometryShader.SetConstantBuffer(1, _lineGlowSettingsBuffer);
-
-            //ctx.VertexShader.SetShaderResource(0, StateBuffers.LayerSRV);
-
-            //ctx.GeometryShader.SetShaderResource(0, StateBuffers.LayerSRV);
-            //ctx.GeometryShader.SetShaderResource(1, StateBuffers.ObjectSRV);
-
-            //ctx.InputAssembler.PrimitiveTopology = PrimitiveTopology.LineList;
-
-            //ctx.InputAssembler.SetVertexBuffers(
-            //    0,
-            //    new VertexBufferBinding(
-            //        _lineVertexBuffer.Buffer,
-            //        _lineVertexBuffer.Stride,
-            //        0));
-
-            //foreach (var geometry in SelectedGeometries)
-            //{
-            //    int vertexCount =
-            //        geometry.EndVertexIndex -
-            //        geometry.StartVertexIndex + 1;
-
-            //    ctx.Draw(vertexCount, geometry.StartVertexIndex);
-            //}
-
-            ctx.GeometryShader.Set(null);
-
-            // Draw selected lines on top
-            ctx.VertexShader.Set(_lineVertexShader);
-            ctx.PixelShader.Set(_linePixelShader);
-
-            ctx.InputAssembler.InputLayout = _lineInputLayout;
-
-            ctx.VertexShader.SetConstantBuffer(0, _transformationBuffer);
-            ctx.VertexShader.SetConstantBuffer(1, _lineSettingsBuffer);
-
-            ctx.VertexShader.SetShaderResource(0, StateBuffers.LayerSRV);
-            ctx.VertexShader.SetShaderResource(1, StateBuffers.ObjectSRV);
-
-            foreach (var geometry in SelectedGeometries)
-            {
-                int vertexCount =
-                    geometry.EndVertexIndex -
-                    geometry.StartVertexIndex + 1;
-
-                ctx.Draw(vertexCount, geometry.StartVertexIndex);
-            }
-        }
-
         private void UpdateLineVertices()
         {
             if (_lineVertexBuffer is null || CadManager is null) { return; }
@@ -888,6 +828,33 @@ namespace Cad_Point_Manager.Controls.D3DControl
             StateBuffers.FlushAll();
             _lineVerticesDirty = false;
             _dxfDirty = true;
+        }
+        private void UpdateSelectedOverlayVertices()
+        {
+            if (_selectedLineOverlayBuffer is null)
+            {
+                return;
+            }
+
+            List<LineVertex> selectedVertices = [];
+
+            foreach (var geometry in SelectedGeometries)
+            {
+                if (geometry?.Vertices == null)
+                {
+                    continue;
+                }
+
+                selectedVertices.AddRange(geometry.Vertices);
+            }
+
+            _selectedLineOverlayBuffer.Update(
+                ResCache.DeviceContext,
+                CollectionsMarshal.AsSpan(selectedVertices));
+
+            _selectedOverlayVertexCount = selectedVertices.Count;
+
+            _selectedOverlayDirty = false;
         }
         private void UpdateTextVertices()
         {
@@ -1523,6 +1490,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             _lineVertexBuffer?.Dispose();
             _lineVertexBuffer = new(device, GlobalHelperProperties.InitialLineVertices);
+
+            _selectedLineOverlayBuffer?.Dispose();
+            _selectedLineOverlayBuffer = new(device, 256);
 
             _textVertexBuffer?.Dispose();
             _textVertexBuffer = new(device, GlobalHelperProperties.InitialTextVertices);
@@ -2186,7 +2156,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             ResetHoverObjects();
 
             if (sigPointsVerticesDirty) { _sigPointVerticesDirty = true; }
-            if (geometryVerticesDirty) { _dxfDirty = true; _combinedDirty = true; }
+            if (geometryVerticesDirty) { _selectedOverlayDirty = true; _combinedDirty = true; }
             if (hoverVerticesDirty) { _hoverVerticesDirty = true; }
             if (cogoPointVerticesDirty) { _combinedDirty = true; _dxfDirty = true; }
 
