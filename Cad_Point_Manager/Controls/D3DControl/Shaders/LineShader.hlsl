@@ -13,6 +13,13 @@ cbuffer LineSettingsBuffer : register(b1)
     float4 selectedMouseOverColor;
 };
 
+cbuffer LineRenderModeBuffer : register(b2)
+{
+    uint RenderSelectedOnly;
+    uint RenderGlowPass;
+    float2 Padding;
+}
+
 // Input structure for the Vertex Shader
 struct VSInput
 {
@@ -72,6 +79,25 @@ PSInput VSMain(VSInput input)
     // Selection / hover
     float sel = ((os.Flags & OBJ_SELECTED) != 0u) ? 1.0f : 0.0f;
     float mo = ((os.Flags & OBJ_MOUSEOVER) != 0u) ? 1.0f : 0.0f;
+    
+    if (RenderSelectedOnly == 1u)
+    {
+        if (sel < 0.5f)
+        {
+            output.Position = float4(0, 0, 0, 0);
+            output.Color = float4(0, 0, 0, 0);
+            return output;
+        }
+    }
+    else
+    {
+        if (sel > 0.5f)
+        {
+            output.Position = float4(0, 0, 0, 0);
+            output.Color = float4(0, 0, 0, 0);
+            return output;
+        }
+    }
     
     output.Position = mul(float4(input.Position, 1.0), transformationMatrix);
     output.Color = ls.Color;

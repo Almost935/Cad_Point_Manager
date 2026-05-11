@@ -86,17 +86,13 @@ namespace Cad_Point_Manager.Controls.D3DControl
         // Line shader related fields
         private ResizableBuffer<LineVertex> _lineVertexBuffer;
         private Buffer _lineSettingsBuffer;
+        private Buffer _lineRenderModeBuffer;
         private int _lineVertexCount;
         private VertexShader _lineVertexShader;
         private PixelShader _linePixelShader;
         private InputLayout _lineInputLayout;
         private bool _lineShadersLoaded = false;
         private bool _lineVerticesDirty = false;
-
-        // Selected line relatdLinesDirty = false;ed fields
-        private ResizableBuffer<LineVertex> _selectedLineOverlayBuffer;
-        private int _selectedOverlayVertexCount;
-        private bool _selectedOverlayDirty = true;
 
         // Line glow shader related fields
         private Buffer _lineGlowSettingsBuffer;
@@ -165,7 +161,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         // Cogo point hover rendering
         private bool _cogoHoverShadersLoaded = false;
-        private bool _hoverVerticesDirty = false;
+        private bool _cogoHoverVerticesDirty = false;
 
         private ResizableBuffer<OverlayQuadVertex> _hoverRectBuffer;
         private ResizableBuffer<RoundedHoverRectInstance> _hoverRectInstanceBuffer;
@@ -511,11 +507,10 @@ namespace Cad_Point_Manager.Controls.D3DControl
             if (!_buffersInitialized) { InitializeBuffers(); }
 
             if (_lineVerticesDirty) { UpdateLineVertices(); }
-            if (_selectedOverlayDirty) { UpdateSelectedOverlayVertices(); }
             if (_textVerticesDirty) { UpdateTextVertices(); }
             if (_glyphVerticesDirty) { UpdateGlyphBatches(); }
             if (_pointCircleVerticesDirty) { UpdatePointCircleVertices(); }
-            if (_hoverVerticesDirty) { UpdateCogoHoverVertices(); }
+            if (_cogoHoverVerticesDirty) { UpdateCogoHoverVertices(); }
             if (HitTestableObjectTreeDirty) { LoadHitTestableObjectTree(); }
             if (_anchorVerticesDirty) { UpdateToggleAnchorVertices(); }
             if (_leaderLineVerticesDirty) { UpdateLeaderLineVertices(); }
@@ -594,16 +589,23 @@ namespace Cad_Point_Manager.Controls.D3DControl
             ctx.Draw(_lineVertexCount, 0);
             ctx.GeometryShader.Set(null);
 
+            // First pass for all non selected lines
+            SetLineRenderMode(ctx, false, false);
             ctx.VertexShader.Set(_lineVertexShader);
             ctx.PixelShader.Set(_linePixelShader);
             ctx.InputAssembler.InputLayout = _lineInputLayout;
             ctx.VertexShader.SetConstantBuffer(0, _transformationBuffer);
             ctx.VertexShader.SetConstantBuffer(1, _lineSettingsBuffer);
+            ctx.VertexShader.SetConstantBuffer(2, _lineRenderModeBuffer);
             ctx.VertexShader.SetShaderResource(0, StateBuffers.LayerSRV);
             ctx.VertexShader.SetShaderResource(1, StateBuffers.ObjectSRV);
             ctx.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding(
                 _lineVertexBuffer.Buffer, _lineVertexBuffer.Stride, 0));
             ctx.InputAssembler.PrimitiveTopology = PrimitiveTopology.LineList;
+            ctx.Draw(_lineVertexCount, 0);
+
+            // Second pass for all selected lines
+            SetLineRenderMode(ctx, true, false);
             ctx.Draw(_lineVertexCount, 0);
         }
         private void DrawText(DeviceContext ctx)
@@ -829,33 +831,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _lineVerticesDirty = false;
             _dxfDirty = true;
         }
-        private void UpdateSelectedOverlayVertices()
-        {
-            if (_selectedLineOverlayBuffer is null)
-            {
-                return;
-            }
-
-            List<LineVertex> selectedVertices = [];
-
-            foreach (var geometry in SelectedGeometries)
-            {
-                if (geometry?.Vertices == null)
-                {
-                    continue;
-                }
-
-                selectedVertices.AddRange(geometry.Vertices);
-            }
-
-            _selectedLineOverlayBuffer.Update(
-                ResCache.DeviceContext,
-                CollectionsMarshal.AsSpan(selectedVertices));
-
-            _selectedOverlayVertexCount = selectedVertices.Count;
-
-            _selectedOverlayDirty = false;
-        }
         private void UpdateTextVertices()
         {
             if (_textVertexBuffer is null || CadManager is null)
@@ -1065,7 +1040,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             _hoverCircleBuffer.Update(ctx, _hoverCircleVertices.ToArray());
 
-            _hoverVerticesDirty = false;
+            _cogoHoverVerticesDirty = false;
             _combinedDirty = true;
         }
         private void UpdateToggleAnchorVertices()
@@ -1491,9 +1466,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _lineVertexBuffer?.Dispose();
             _lineVertexBuffer = new(device, GlobalHelperProperties.InitialLineVertices);
 
-            _selectedLineOverlayBuffer?.Dispose();
-            _selectedLineOverlayBuffer = new(device, 256);
-
             _textVertexBuffer?.Dispose();
             _textVertexBuffer = new(device, GlobalHelperProperties.InitialTextVertices);
 
@@ -1559,6 +1531,16 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 OptionFlags = ResourceOptionFlags.None
             };
             _lineSettingsBuffer = new Buffer(ResCache.Device, lineBufferDesc);
+
+            var lineRenderModeBufferDesc = new BufferDescription
+            {
+                Usage = ResourceUsage.Dynamic,
+                SizeInBytes = Utilities.SizeOf<LineRenderModeBuffer>(),
+                BindFlags = BindFlags.ConstantBuffer,
+                CpuAccessFlags = CpuAccessFlags.Write,
+                OptionFlags = ResourceOptionFlags.None
+            };
+            _lineRenderModeBuffer = new Buffer(ResCache.Device, lineRenderModeBufferDesc);
 
             var lineGlowBufferDesc = new BufferDescription
             {
@@ -1748,6 +1730,30 @@ namespace Cad_Point_Manager.Controls.D3DControl
             CadManager.Camera.IsDirty = false;
             _dxfDirty = true;
             _combinedDirty = true;
+        }
+
+        private void SetLineRenderMode(DeviceContext ctx, 
+            bool selectedOnly,
+            bool glowPass)
+        {
+            var data = new LineRenderModeBuffer
+            {
+                RenderSelectedOnly = selectedOnly ? 1u : 0u,
+                RenderGlowPass = glowPass ? 1u : 0u
+            };
+
+            DataStream stream;
+            ctx.MapSubresource(
+                _lineRenderModeBuffer,
+                MapMode.WriteDiscard,
+                SharpDX.Direct3D11.MapFlags.None,
+                out stream);
+
+            stream.Write(data);
+
+            ctx.UnmapSubresource(_lineRenderModeBuffer, 0);
+
+            stream.Dispose();
         }
 
         private void AddCogoTextLabelLine(string s, float duToWorldBase,
@@ -1982,7 +1988,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             UpdateToggleAnchorDimensions();
 
-            _hoverVerticesDirty = true;
+            _cogoHoverVerticesDirty = true;
             ConstantBuffersDirty = true;
             e.Handled = true;
         }
@@ -2025,7 +2031,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 {
                     ResetHoverObjects();
                     _lineVerticesDirty = true;
-                    _hoverVerticesDirty = true;
+                    _cogoHoverVerticesDirty = true;
                 }
             }
         }
@@ -2051,7 +2057,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             _suspendHitTesting = true;
             bool geometryVerticesDirty = false;
-            bool hoverVerticesDirty = false;
+            bool cogoHoverVerticesDirty = false;
             bool cogoPointVerticesDirty = false;
             bool sigPointsVerticesDirty = false;
 
@@ -2079,7 +2085,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
                         }
                         SelectedGeometries.EndDefer();
 
-                        hoverVerticesDirty = true;
                         geometryVerticesDirty = true;
 
                         StateController.FlushObjectUpdates();
@@ -2100,13 +2105,13 @@ namespace Cad_Point_Manager.Controls.D3DControl
                                 {
                                     if (!p.IsSelected) { continue; }
                                     DeselectObject(p); SelectedCogoPoints.Remove(p);
-                                    hoverVerticesDirty = true; cogoPointVerticesDirty = true;
+                                    cogoHoverVerticesDirty = true; cogoPointVerticesDirty = true;
                                 }
                                 else
                                 {
                                     if (p.IsSelected) { continue; }
                                     SelectObject(p); SelectedCogoPoints.Add(p);
-                                    hoverVerticesDirty = true; cogoPointVerticesDirty = true;
+                                    cogoHoverVerticesDirty = true; cogoPointVerticesDirty = true;
                                 }
                             }
                             StateController.FlushPointUpdates();
@@ -2119,13 +2124,13 @@ namespace Cad_Point_Manager.Controls.D3DControl
                                 {
                                     if (!p.IsSelected) { continue; }
                                     DeselectObject(p); SelectedCogoPoints.Remove(p);
-                                    hoverVerticesDirty = true; cogoPointVerticesDirty = true;
+                                    cogoHoverVerticesDirty = true; cogoPointVerticesDirty = true;
                                 }
                                 else
                                 {
                                     if (p.IsSelected) { continue; }
                                     SelectObject(p); SelectedCogoPoints.Add(p);
-                                    hoverVerticesDirty = true; cogoPointVerticesDirty = true;
+                                    cogoHoverVerticesDirty = true; cogoPointVerticesDirty = true;
                                 }
                             }
                             StateController.FlushPointUpdates();
@@ -2156,8 +2161,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
             ResetHoverObjects();
 
             if (sigPointsVerticesDirty) { _sigPointVerticesDirty = true; }
-            if (geometryVerticesDirty) { _selectedOverlayDirty = true; _combinedDirty = true; }
-            if (hoverVerticesDirty) { _hoverVerticesDirty = true; }
+            if (geometryVerticesDirty) { _dxfDirty = true; }
+            if (cogoHoverVerticesDirty) { _cogoHoverVerticesDirty = true; }
             if (cogoPointVerticesDirty) { _combinedDirty = true; _dxfDirty = true; }
 
             _suspendHitTesting = false;
@@ -2181,7 +2186,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 UpdateCogoPointInfoOffset(_pressedToggleButtonPoint, delta);
                 _pressedToggleButtonPoint.HasLeaderLine = true;
 
-                _hoverVerticesDirty = true;
+                _cogoHoverVerticesDirty = true;
 
                 CaptureMouse();
                 e.Handled = true;
@@ -2644,7 +2649,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     {
                         ResetHoverObjects();
                         MouseOverCogoToggleButton(_mouseOverToggleButtonPoint);
-                        _hoverVerticesDirty = true;
+                        _cogoHoverVerticesDirty = true;
                         return;
                     }
                 }
@@ -2664,7 +2669,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     {
                         ResetHoverObjects();
                         MouseOverCogoToggleButton(snappedCogoPoint);
-                        _hoverVerticesDirty = true;
+                        _cogoHoverVerticesDirty = true;
                         StateController.FlushPointUpdates();
                         return;
                     }
@@ -2692,7 +2697,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                                     if (point.IsSelected && point.ToggleBounds.Contains(_lastHitTestCoords))
                                     {
                                         MouseOverCogoToggleButton(point);
-                                        _hoverVerticesDirty = true;
+                                        _cogoHoverVerticesDirty = true;
                                         return;
                                     }
                                     _mouseOverCogoPoints.Add(point);
@@ -2724,7 +2729,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                             {
                                 MouseOverCogoToggleButton(point);
                                 ResetHoverObjects();
-                                _hoverVerticesDirty = true; StateController.FlushPointUpdates();
+                                _cogoHoverVerticesDirty = true; StateController.FlushPointUpdates();
                                 return;
                             }
                             _mouseOverCogoPoints.Add(point);
@@ -2737,7 +2742,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 }
             }
 
-            if (hoverVerticesDirty) { _hoverVerticesDirty = true; }
+            if (hoverVerticesDirty) { _cogoHoverVerticesDirty = true; }
             if (pointFlushNeeded) { StateController.FlushPointUpdates(); }
         }
         private async void RunDragCogoPointsHittest(CancellationToken token)
@@ -2774,7 +2779,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 _mouseOverCogoPoints.Remove(p);
             }
 
-            if (adds.Count > 0 || removes.Count > 0) { _hoverVerticesDirty = true; }
+            if (adds.Count > 0 || removes.Count > 0) { _cogoHoverVerticesDirty = true; }
 
             //Something is causing the cogo text hover vertices to not reset and the the drag Rect
         }
@@ -3625,6 +3630,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
                     _lineVertexBuffer?.Dispose(); _lineVertexBuffer = null;
                     _lineSettingsBuffer?.Dispose(); _lineSettingsBuffer = null;
+                    _lineRenderModeBuffer?.Dispose(); _lineRenderModeBuffer = null;
                     _lineGlowSettingsBuffer?.Dispose(); _lineGlowSettingsBuffer = null;
                     _lineVertexShader?.Dispose(); _lineVertexShader = null;
                     _linePixelShader?.Dispose(); _linePixelShader = null;

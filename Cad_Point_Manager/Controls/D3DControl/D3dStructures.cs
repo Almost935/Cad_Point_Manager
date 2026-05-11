@@ -256,6 +256,13 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public Vector4 SelectedMouseOverColor;
     }
     [StructLayout(LayoutKind.Sequential)]
+    public struct LineRenderModeBuffer
+    {
+        public uint RenderSelectedOnly;
+        public uint RenderGlowPass;
+        private Vector2 _padding;
+    }
+    [StructLayout(LayoutKind.Sequential)]
     public struct LineGlowSettingsBuffer
     {
         public float GlowOffset;
