@@ -719,7 +719,7 @@ namespace Cad_Point_Manager.ViewModels
                     {
                         if (ActivePointGroup == null)
                         {
-                            AddError(nameof(ActivePointGroup), "A point group must be selected.");
+                            MessageBox.Show("You must select an active point group to create new points.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                         }
                         if (startNumberErrors is not null || elevErrors is not null || descErrors is not null)
                         {
@@ -791,6 +791,7 @@ namespace Cad_Point_Manager.ViewModels
         // Printing Methods
         public async Task ExportActiveLayoutAsync(string path)
         {
+
             var imageUri = ImageHelpers.LoadPackImage("pack://application:,,,/Resources/Images/IQ Contracting - Logo (Square).jpg");
             var templatePrims = TitleblockPrimitiveBuilder.Build(ActiveLayout, imageUri);
 

@@ -8,6 +8,7 @@ using Cad_Point_Manager.Models.PointRendering;
 using Cad_Point_Manager.Models.Printing;
 using PdfSharpCore.Drawing;
 using PdfSharpCore.Pdf;
+using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Windows;
@@ -36,7 +37,7 @@ namespace Cad_Point_Manager.Services.LayoutExporting
             D3dStateController stateController,
             SceneIdMap ids,
             ResCache resCache,
-            List<TbPrimitive> templatePrims,            string outputPath,
+            List<TbPrimitive> templatePrims, string outputPath,
             CancellationToken ct = default)
         {
             return Application.Current.Dispatcher.InvokeAsync(() =>
@@ -75,6 +76,8 @@ namespace Cad_Point_Manager.Services.LayoutExporting
             Matrix worldToPdf,
             string outputPdfPath)
         {
+            Stopwatch sw = Stopwatch.StartNew();
+
             Directory.CreateDirectory(Path.GetDirectoryName(outputPdfPath)!);
 
             double pageWpts = layout.PageWidth * 72.0;
@@ -126,6 +129,9 @@ namespace Cad_Point_Manager.Services.LayoutExporting
             doc.Save(outputPdfPath);
 
             _duGlyphPathCache.Clear();
+
+            sw.Stop();
+            Debug.WriteLine($"PDF export completed in {sw.Elapsed.TotalSeconds:F2} seconds.");
         }
 
         private static void DrawCogoPointStrings(
@@ -138,8 +144,6 @@ namespace Cad_Point_Manager.Services.LayoutExporting
             PointState[] pointStates,
             GroupState[] groupStates)
         {
-            // Pick a font family. If you have a setting on PointGroup, use that instead.
-            // Otherwise pick something installed (Arial is usually safe).
             const string fallbackFontFamily = "Arial";
 
             foreach (var pg in cadManager.CogoPointManager.PointGroups)
@@ -169,18 +173,9 @@ namespace Cad_Point_Manager.Services.LayoutExporting
                     DrawLine(p.Elevation.ToString("F3"), p, line: 1);
                     if (p.HasDescription) DrawLine(p.Description, p, line: 2);
 
-                    //// Draw point marker
-                    //float radiusWorld = GlobalHelperProperties.CogoPointCirclePixelRadius * gs.Scale;
-                    ////SharpDX.Vector2 worldTL = ps.Offset - radiusWorld;
-                    //SharpDX.Vector2 worldTL = new(ps.Offset.X - radiusWorld, ps.Offset.Y + radiusWorld);
-                    //(double xTransformed, double yTransformed) = TransformPoint(worldToPdf, worldTL);
-                    //double radiusX = Math.Abs(radiusWorld * worldToPdf.M11);
-                    //double radiusY = Math.Abs(radiusWorld * worldToPdf.M22);
-                    //gfx.DrawEllipse(brush, new XRect(xTransformed, yTransformed, radiusX, radiusY));
-
                     // Match shader: center = position + ps.Offset
                     var centerW = ps.Offset;
-                    var centerP = TransformPoint(worldToPdf, centerW);
+                    var (X, Y) = TransformPoint(worldToPdf, centerW);
 
                     // Match shader: radiusWorld = input.radius * gs.Scale
                     float radiusWorld = GlobalHelperProperties.CogoPointCirclePixelRadius * gs.Scale;
@@ -192,8 +187,8 @@ namespace Cad_Point_Manager.Services.LayoutExporting
                     // Filled disc (like your pixel shader)
                     gfx.DrawEllipse(
                         brush,
-                        centerP.X - rx,
-                        centerP.Y - ry,
+                        X - rx,
+                        Y - ry,
                         rx * 2.0,
                         ry * 2.0
                     );
@@ -202,7 +197,7 @@ namespace Cad_Point_Manager.Services.LayoutExporting
                     {
                         var start = TransformPoint(worldToPdf, p.Position.ToSharpDXVector2());
                         var end = TransformPoint(worldToPdf, p.Position.ToSharpDXVector2() + ps.PointInfoOffset);
-                        gfx.DrawLine(pen, new XPoint(start.X, start.Y), new XPoint(end.X, end.Y));    
+                        gfx.DrawLine(pen, new XPoint(start.X, start.Y), new XPoint(end.X, end.Y));
                     }
 
                     void DrawLine(string s, CogoPoint cp, int line)
@@ -243,7 +238,6 @@ namespace Cad_Point_Manager.Services.LayoutExporting
                 }
             }
         }
-
 
         private static void DrawCogoPointGlyphs(
             XGraphics gfx,

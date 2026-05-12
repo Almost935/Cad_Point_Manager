@@ -357,7 +357,7 @@
                                Text="Intermediate Points:"
                                Margin="{StaticResource CogoPointCreationTextBlockMargin}" />
                     <TextBox Grid.Column="1"
-                             Style="{StaticResource RoundedTextBoxStyle}"
+                             Style="{StaticResource ValidationTextBox}"
                              Background="White"
                              Height="{StaticResource CogoCreationTextBoxHeight}"
                              MinWidth="{StaticResource CogoCreationTextBoxWidth}"

@@ -1732,7 +1732,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _combinedDirty = true;
         }
 
-        private void SetLineRenderMode(DeviceContext ctx, 
+        private void SetLineRenderMode(DeviceContext ctx,
             bool selectedOnly,
             bool glowPass)
         {
@@ -3485,10 +3485,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
             var oldDxfRTV = ResCache.DxfRenderTargetView;
             var oldTex = ResCache.Texture2D;
             var oldRTV = ResCache.RenderTargetView;
-
             var oldViewport = Viewport;
 
-            // Save camera state (MORE than you were saving)
+            // Save camera state 
             var cam = CadManager.Camera;
             var oldInitialViewMatrix = cam.InitialViewMatrix;
             var oldExtents = cam.Extents;

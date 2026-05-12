@@ -121,7 +121,6 @@ namespace Cad_Point_Manager.Models.PointRendering
             PointScale = pointScale;
             UpdatePointInfoBaseXoffset();
         }
-        public PointGroup() { }
         #endregion
 
         #region Methods
@@ -175,8 +174,6 @@ namespace Cad_Point_Manager.Models.PointRendering
         {
             PointInfoBaseXoffset = (float)(FontBaseSize * PointScale * _markerToPointScaleFactor);
         }
-
-        
         #endregion
 
         #region INotifyPropertyChanged
