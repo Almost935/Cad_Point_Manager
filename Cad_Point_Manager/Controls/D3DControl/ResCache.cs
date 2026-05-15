@@ -154,12 +154,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public DWriteGlyphTessellator GlyphTessellator { get; set; }
         public AdvanceWidthCache AdvanceWidthCache { get; set; }
 
-        // Preview related properties
-        public Texture2D DxfPreviewTexture { get; set; }
-        public RenderTargetView DxfPreviewRenderTargetView { get; set; }
-        public Texture2D PreviewTexture { get; set; }
-        public RenderTargetView PreviewRenderTargetView { get; set; }
-
         public FontFace CogoPointFontFace { get; set; }
         public ConcurrentDictionary<(string fontName, FontWeight fontWeight, FontStretch fontStretch, FontStyle fontStyle), FontFace> FontFaceDict = [];
         #endregion
@@ -324,11 +318,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     {
                         fontFace.Dispose();
                     }
-
-                    DxfPreviewRenderTargetView?.Dispose();
-                    DxfPreviewTexture?.Dispose();
-                    PreviewRenderTargetView?.Dispose();
-                    PreviewTexture?.Dispose();
 
                     _readbackStaging?.Dispose();
                     _readbackStaging = null;

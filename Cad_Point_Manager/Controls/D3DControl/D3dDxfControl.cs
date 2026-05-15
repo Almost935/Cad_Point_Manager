@@ -3079,11 +3079,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 StateController.SetLabelVisible(cp, 1, false);
                 StateController.SetLabelVisible(cp, 2, false);
 
-                SceneIdMap.TryRemoveLabelId(cp, 0);
-                SceneIdMap.TryRemoveLabelId(cp, 1);
-                SceneIdMap.TryRemoveLabelId(cp, 2);
-                SceneIdMap.TryRemovePointId(cp);
-
                 CadManager.CogoPointManager.DeletePoint(cp);
             }
 
@@ -3472,93 +3467,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
         protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        }
-        #endregion
-
-        #region Printing Methods
-        public void RenderSceneIntoWriteableBitmap(Scene scene, WriteableBitmap target)
-        {
-            EnsurePreviewTargets(target.PixelWidth, target.PixelHeight);
-
-            // Save current targets
-            var oldDxfTex = ResCache.DxfTexture;
-            var oldDxfRTV = ResCache.DxfRenderTargetView;
-            var oldTex = ResCache.Texture2D;
-            var oldRTV = ResCache.RenderTargetView;
-            var oldViewport = Viewport;
-
-            // Save camera state 
-            var cam = CadManager.Camera;
-            var oldInitialViewMatrix = cam.InitialViewMatrix;
-            var oldExtents = cam.Extents;
-            var oldPan = cam.Translate;
-            var oldZoom = cam.CurrentZoomStep;
-
-            try
-            {
-                // Swap the pipeline to preview targets
-                ResCache.DxfTexture = ResCache.DxfPreviewTexture;
-                ResCache.DxfRenderTargetView = ResCache.DxfPreviewRenderTargetView;
-                ResCache.Texture2D = ResCache.PreviewTexture;
-                ResCache.RenderTargetView = ResCache.PreviewRenderTargetView;
-
-                // Preview viewport in PIXELS
-                Viewport = new ViewportF(0, 0, target.PixelWidth, target.PixelHeight);
-
-                var bounds = scene.Bounds.ToRect();
-                if (bounds.Width <= 0 || bounds.Height <= 0)
-                {
-                    // fallback: fit whole drawing if scene bounds are invalid
-                    cam.InitialViewMatrix = GetExtentsFittingMatrix(Viewport, CadManager.Extents);
-                    cam.UpdateViewportSize(Viewport);
-                }
-                else
-                {
-                    cam.Extents = bounds;
-                    cam.InitialViewMatrix = GetExtentsFittingMatrix(Viewport, bounds);
-                    cam.CurrentZoomStep = 0;
-                    cam.Translate = Vector2.Zero;
-
-                    cam.UpdateViewportSize(Viewport);
-                    cam.UpdateProjection();
-                    cam.UpdateView();
-                }
-                cam.UpdateViewProjection();
-                UpdateConstantBuffers();
-
-                _dxfDirty = true;
-                _combinedDirty = true;
-
-                ResCache.DeviceContext.Rasterizer.SetViewport(Viewport);
-
-                Render();
-
-                ResCache.CopyToWriteableBitmap(ResCache.Texture2D, target);
-            }
-            finally
-            {
-                ResCache.DxfTexture = oldDxfTex;
-                ResCache.DxfRenderTargetView = oldDxfRTV;
-                ResCache.Texture2D = oldTex;
-                ResCache.RenderTargetView = oldRTV;
-
-                Viewport = oldViewport;
-
-                cam.Extents = oldExtents;
-                cam.InitialViewMatrix = oldInitialViewMatrix;
-                cam.UpdateViewportSize(oldViewport);
-                cam.CurrentZoomStep = oldZoom;
-                cam.Translate = oldPan;
-                cam.UpdateProjection();
-                cam.UpdateView();
-                cam.UpdateViewProjection();
-
-                UpdateConstantBuffers();
-                ResCache.DeviceContext.Rasterizer.SetViewport(oldViewport);
-
-                _dxfDirty = true;
-                _combinedDirty = true;
-            }
         }
         #endregion
 

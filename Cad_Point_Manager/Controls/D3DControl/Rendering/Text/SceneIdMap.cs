@@ -10,7 +10,17 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
         private readonly Dictionary<PointGroup, uint> _groupOf = [];
         private readonly Dictionary<ObjectLayer, uint> _layerOf = [];
         private readonly Dictionary<DrawingObject, uint> _objectOf = [];
+
         private uint _nextLabelId;
+        private uint _nextPointId;
+        private uint _nextGroupId;
+        private uint _nextLayerId;
+        private uint _nextObjectId;
+
+        public int MaxPointId => (int)_nextPointId;
+        public int MaxGroupId => (int)_nextGroupId;
+        public int MaxLayerId => (int)_nextLayerId;
+        public int MaxObjectId => (int)_nextObjectId;
 
         public bool TryGetLabelId(CogoPoint cp, int line, out uint id) => _labelOf.TryGetValue((cp, line), out id);
         public bool TryGetPointId(CogoPoint p, out uint id) => _pointOf.TryGetValue(p, out id);
@@ -43,7 +53,7 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
                 isNew = false;
                 return id; 
             }
-            id = (uint)_pointOf.Count;
+            id = _nextPointId++;
             _pointOf[cp] = id;
 
             isNew = true;
@@ -56,7 +66,7 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
                 isNew = false;
                 return id; 
             }
-            id = (uint)_groupOf.Count;
+            id = _nextGroupId++;
             _groupOf[pg] = id;
 
             isNew = true;
@@ -69,7 +79,7 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
                 isNew = false;
                 return id; 
             }
-            id = (uint)_layerOf.Count;
+            id = _nextLayerId++;
             _layerOf[layer] = id;
 
             isNew = true;
@@ -82,7 +92,7 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
                 isNew = false;
                 return id; 
             }
-            id = (uint)_objectOf.Count;
+            id = _nextObjectId++;
             _objectOf[obj] = id;
 
             isNew = true;

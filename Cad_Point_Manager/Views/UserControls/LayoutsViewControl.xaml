@@ -28,241 +28,245 @@
             <ColumnDefinition Width="*" />
             <ColumnDefinition Width="2.5*" />
         </Grid.ColumnDefinitions>
-        <controls:DoubleClickSetListView x:Name="layoutsListView"
-                                         Style="{StaticResource LayoutsListView}"
-                                         Margin="5"
-                                         Grid.Row="0"
-                                         Panel.ZIndex="2"
-                                         Background="White"
-                                         Cursor="Arrow"
-                                         ItemsSource="{Binding CadManager.LayoutsView}"
-                                         VirtualizingPanel.IsVirtualizingWhenGrouping="True"
-                                         VirtualizingPanel.ScrollUnit="Pixel"
-                                         ScrollViewer.CanContentScroll="True"
-                                         VirtualizingStackPanel.IsVirtualizing="True"
-                                         VirtualizingStackPanel.VirtualizationMode="Recycling"
-                                         VirtualizingStackPanel.IsContainerVirtualizable="True"
-                                         VirtualizingPanel.CacheLength="0,0"
-                                         ActiveObject="{Binding ActiveLayout, Mode=TwoWay}"
-                                         ContextMenuOpening="LayoutsListView_ContextMenuOpening"
-                                         behaviors:ListViewSelectedItemsBehavior.SelectedItems="{Binding SelectedLayouts, Mode=TwoWay}">
-            <controls:DoubleClickSetListView.Resources>
-                <Thickness x:Key="TextboxPadding">0 1 0 1</Thickness>
-                <Thickness x:Key="TextblockMargin">3 0 3 0</Thickness>
-                <Thickness x:Key="TextblockPadding">0 0 0 2</Thickness>
-                <Thickness x:Key="TextblockHeaderMargin">3 1 3 2</Thickness>
-                <SolidColorBrush x:Key="HeaderForeground"
-                                 Color="White" />
-                <SolidColorBrush x:Key="BodyForeground"
-                                 Color="Black" />
-                <SolidColorBrush x:Key="ReadOnlyBodyForeground"
-                                 Color="#FF545454" />
-                <Style TargetType="{x:Type TextBlock}">
-                    <Setter Property="VerticalAlignment"
-                            Value="Center" />
-                </Style>
-                <Style x:Key="InlineEditBoxStyle"
-                       TargetType="TextBox"
-                       BasedOn="{StaticResource EditableTextBox}">
-                    <Setter Property="VerticalAlignment"
-                            Value="Center" />
-                    <Setter Property="Padding"
-                            Value="{StaticResource TextboxPadding}" />
-                    <Setter Property="FontSize"
-                            Value="{StaticResource ListViewFontSize}" />
-                    <Setter Property="Foreground"
-                            Value="{StaticResource BodyForeground}" />
-                    <Setter Property="Visibility"
-                            Value="Collapsed" />
-                    <EventSetter Event="PreviewKeyDown"
-                                 Handler="LayoutsListInlineEditBox_PreviewKeyDown" />
-                    <EventSetter Event="LostFocus"
-                                 Handler="InlineEditBox_LostFocus" />
-                </Style>
-                <Style x:Key="InlineTextBlockStyle"
-                       TargetType="TextBlock">
-                    <Setter Property="VerticalAlignment"
-                            Value="Center" />
-                    <Setter Property="Margin"
-                            Value="{StaticResource TextblockMargin}" />
-                    <Setter Property="Padding"
-                            Value="{StaticResource TextblockPadding}" />
-                    <Setter Property="FontSize"
-                            Value="{StaticResource ListViewFontSize}" />
-                    <Setter Property="Foreground"
-                            Value="{StaticResource BodyForeground}" />
-                    <Setter Property="LineHeight"
-                            Value="20" />
-                    <Setter Property="LineStackingStrategy"
-                            Value="BlockLineHeight" />
-                </Style>
+        <Grid Panel.ZIndex="2">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="5*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <controls:DoubleClickSetListView x:Name="layoutsListView"
+                                             Style="{StaticResource LayoutsListView}"
+                                             Margin="5"                                             
+                                             Background="White"
+                                             Cursor="Arrow"
+                                             ItemsSource="{Binding CadManager.LayoutsView}"
+                                             VirtualizingPanel.IsVirtualizingWhenGrouping="True"
+                                             VirtualizingPanel.ScrollUnit="Pixel"
+                                             ScrollViewer.CanContentScroll="True"
+                                             VirtualizingStackPanel.IsVirtualizing="True"
+                                             VirtualizingStackPanel.VirtualizationMode="Recycling"
+                                             VirtualizingStackPanel.IsContainerVirtualizable="True"
+                                             VirtualizingPanel.CacheLength="0,0"
+                                             ActiveObject="{Binding ActiveLayout, Mode=TwoWay}"
+                                             ContextMenuOpening="LayoutsListView_ContextMenuOpening"
+                                             behaviors:ListViewSelectedItemsBehavior.SelectedItems="{Binding SelectedLayouts, Mode=TwoWay}">
+                <controls:DoubleClickSetListView.Resources>
+                    <Thickness x:Key="TextboxPadding">0 1 0 1</Thickness>
+                    <Thickness x:Key="TextblockMargin">3 0 3 0</Thickness>
+                    <Thickness x:Key="TextblockPadding">0 0 0 2</Thickness>
+                    <Thickness x:Key="TextblockHeaderMargin">3 1 3 2</Thickness>
+                    <SolidColorBrush x:Key="HeaderForeground"
+                                     Color="White" />
+                    <SolidColorBrush x:Key="BodyForeground"
+                                     Color="Black" />
+                    <SolidColorBrush x:Key="ReadOnlyBodyForeground"
+                                     Color="#FF545454" />
+                    <Style TargetType="{x:Type TextBlock}">
+                        <Setter Property="VerticalAlignment"
+                                Value="Center" />
+                    </Style>
+                    <Style x:Key="InlineEditBoxStyle"
+                           TargetType="TextBox"
+                           BasedOn="{StaticResource EditableTextBox}">
+                        <Setter Property="VerticalAlignment"
+                                Value="Center" />
+                        <Setter Property="Padding"
+                                Value="{StaticResource TextboxPadding}" />
+                        <Setter Property="FontSize"
+                                Value="{StaticResource ListViewFontSize}" />
+                        <Setter Property="Foreground"
+                                Value="{StaticResource BodyForeground}" />
+                        <Setter Property="Visibility"
+                                Value="Collapsed" />
+                        <EventSetter Event="PreviewKeyDown"
+                                     Handler="LayoutsListInlineEditBox_PreviewKeyDown" />
+                        <EventSetter Event="LostFocus"
+                                     Handler="InlineEditBox_LostFocus" />
+                    </Style>
+                    <Style x:Key="InlineTextBlockStyle"
+                           TargetType="TextBlock">
+                        <Setter Property="VerticalAlignment"
+                                Value="Center" />
+                        <Setter Property="Margin"
+                                Value="{StaticResource TextblockMargin}" />
+                        <Setter Property="Padding"
+                                Value="{StaticResource TextblockPadding}" />
+                        <Setter Property="FontSize"
+                                Value="{StaticResource ListViewFontSize}" />
+                        <Setter Property="Foreground"
+                                Value="{StaticResource BodyForeground}" />
+                        <Setter Property="LineHeight"
+                                Value="20" />
+                        <Setter Property="LineStackingStrategy"
+                                Value="BlockLineHeight" />
+                    </Style>
 
-                <DataTemplate x:Key="LayoutNameTemplate">
-                    <Grid x:Name="layoutName"
-                          Background="Transparent"
-                          VerticalAlignment="Center">
-                        <TextBlock x:Name="tbDisplay"
-                                   Text="{Binding Name}"
-                                   Style="{StaticResource InlineTextBlockStyle}" />
-                        <TextBox x:Name="layoutNameEdit"
-                                 Text="{Binding Name, UpdateSourceTrigger=Explicit}"
-                                 Style="{StaticResource InlineEditBoxStyle}" />
-                    </Grid>
-                    <DataTemplate.Triggers>
-                        <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ListViewItem}, Path=(viewsAssorted:InlineEdit.EditingField)}"
-                                     Value="Name">
-                            <Setter TargetName="tbDisplay"
-                                    Property="Visibility"
-                                    Value="Collapsed" />
-                            <Setter TargetName="layoutNameEdit"
-                                    Property="Visibility"
-                                    Value="Visible" />
-                        </DataTrigger>
-                    </DataTemplate.Triggers>
-                </DataTemplate>
-                <DataTemplate x:Key="LayoutWidthTemplate">
-                    <Grid x:Name="layoutWidth"
-                          Background="Transparent">
-                        <TextBlock x:Name="tbDisplay"
-                                   Text="{Binding PageWidth, StringFormat=N3}"
-                                   Style="{StaticResource InlineTextBlockStyle}" />
-                        <TextBox x:Name="layoutWidthEdit"
-                                 Text="{Binding PageWidth, UpdateSourceTrigger=Explicit, StringFormat=N3}"
-                                 Style="{StaticResource InlineEditBoxStyle}" />
-                    </Grid>
-                    <DataTemplate.Triggers>
-                        <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ListViewItem}, Path=(viewsAssorted:InlineEdit.EditingField)}"
-                                     Value="PageWidth">
-                            <Setter TargetName="tbDisplay"
-                                    Property="Visibility"
-                                    Value="Collapsed" />
-                            <Setter TargetName="layoutWidthEdit"
-                                    Property="Visibility"
-                                    Value="Visible" />
-                        </DataTrigger>
-                    </DataTemplate.Triggers>
-                </DataTemplate>
-                <DataTemplate x:Key="LayoutHeightTemplate">
-                    <Grid x:Name="layoutHeight"
-                          Background="Transparent">
-                        <TextBlock x:Name="tbDisplay"
-                                   Text="{Binding PageHeight, StringFormat=N3}"
-                                   Style="{StaticResource InlineTextBlockStyle}" />
-                        <TextBox x:Name="layoutHeightEdit"
-                                 Text="{Binding PageHeight, UpdateSourceTrigger=Explicit, StringFormat=N3}"
-                                 Style="{StaticResource InlineEditBoxStyle}" />
-                    </Grid>
-                    <DataTemplate.Triggers>
-                        <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ListViewItem}, Path=(viewsAssorted:InlineEdit.EditingField)}"
-                                     Value="PageHeight">
-                            <Setter TargetName="tbDisplay"
-                                    Property="Visibility"
-                                    Value="Collapsed" />
-                            <Setter TargetName="layoutHeightEdit"
-                                    Property="Visibility"
-                                    Value="Visible" />
-                        </DataTrigger>
-                    </DataTemplate.Triggers>
-                </DataTemplate>
-                <DataTemplate x:Key="LayoutSceneTemplate">
-                    <Grid x:Name="layoutScene"
-                          Background="Transparent">
-                        <ComboBox Style="{StaticResource ValidationComboBox}"
-                                  ItemsSource="{Binding ElementName=Root, Path=Scenes}"
-                                  SelectedValue="{Binding Viewport.Scene, Mode=TwoWay}"
-                                  DisplayMemberPath="Name"
-                                  Margin="5 2 20 2"
-                                  Height="20" />
-                    </Grid>
-                </DataTemplate>
-            </controls:DoubleClickSetListView.Resources>
-            <controls:DoubleClickSetListView.ContextMenu>
-                <ContextMenu x:Name="pointsListViewContextMenu"
-                             Style="{StaticResource Win11ContextMenuStyle}"
-                             HasDropShadow="True">
-                    <MenuItem Header="New"
-                              Click="NewLayout_Click"
-                              Style="{StaticResource DefaultContextMenuItemStyle}"
-                              InputGestureText="Ctrl+Shift+N">
-                        <MenuItem.Icon>
-                            <fa:FontAwesome Icon="Plus"
-                                            Foreground="{StaticResource BodyForeground}">
-                                <fa:FontAwesome.LayoutTransform>
-                                    <ScaleTransform ScaleX="1.3"
-                                                    ScaleY="1.3" />
-                                </fa:FontAwesome.LayoutTransform>
-                            </fa:FontAwesome>
-                        </MenuItem.Icon>
-                    </MenuItem>
-                    <MenuItem Header="Edit"
-                              InputGestureText="F2"
-                              Click="EditLayout_Click"
-                              Style="{StaticResource DefaultContextMenuItemStyle}">
-                        <MenuItem.Icon>
-                            <fa:FontAwesome Icon="Edit"
-                                            Foreground="Black">
-                                <fa:FontAwesome.LayoutTransform>
-                                    <ScaleTransform ScaleX="1.3"
-                                                    ScaleY="1.3" />
-                                </fa:FontAwesome.LayoutTransform>
-                            </fa:FontAwesome>
-                        </MenuItem.Icon>
-                    </MenuItem>
-                    <MenuItem Header="Delete"
-                              Click="DeleteLayouts_Click"
-                              Style="{StaticResource DefaultContextMenuItemStyle}"
-                              InputGestureText="Del">
-                        <MenuItem.Icon>
-                            <fa:FontAwesome Icon="Trash"
-                                            RenderTransformOrigin="0.5 0.5"
-                                            Foreground="Black">
-                                <fa:FontAwesome.LayoutTransform>
-                                    <ScaleTransform ScaleX="1.3"
-                                                    ScaleY="1.3" />
-                                </fa:FontAwesome.LayoutTransform>
-                            </fa:FontAwesome>
-                        </MenuItem.Icon>
-                    </MenuItem>
-                </ContextMenu>
-            </controls:DoubleClickSetListView.ContextMenu>
-            <controls:DoubleClickSetListView.ItemsPanel>
-                <ItemsPanelTemplate>
-                    <VirtualizingStackPanel VirtualizingPanel.IsVirtualizing="True"
-                                            VirtualizingPanel.VirtualizationMode="Recycling"
-                                            VirtualizingPanel.IsVirtualizingWhenGrouping="True"
-                                            VirtualizingPanel.ScrollUnit="Pixel"
-                                            VirtualizingPanel.CacheLength="0 0" />
-                </ItemsPanelTemplate>
-            </controls:DoubleClickSetListView.ItemsPanel>
-            <controls:DoubleClickSetListView.ItemTemplate>
-                <DataTemplate>
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="1.15*" />
-                            <ColumnDefinition Width="0.75*" />
-                            <ColumnDefinition Width="0.75*" />
-                            <ColumnDefinition Width="1.35*" />
-                        </Grid.ColumnDefinitions>
-                        <!-- NAME -->
-                        <ContentControl Grid.Column="0"
-                                        Content="{Binding}"
-                                        ContentTemplate="{StaticResource LayoutNameTemplate}" />
-                        <!-- WIDTH -->
-                        <ContentControl Grid.Column="1"
-                                        Content="{Binding}"
-                                        ContentTemplate="{StaticResource LayoutWidthTemplate}" />
-                        <!-- HEIGHT -->
-                        <ContentControl Grid.Column="2"
-                                        Content="{Binding}"
-                                        ContentTemplate="{StaticResource LayoutHeightTemplate}" />
-                        <!-- SCENE -->
-                        <ContentControl Grid.Column="3"
-                                        Content="{Binding}"
-                                        ContentTemplate="{StaticResource LayoutSceneTemplate}" />
-                    </Grid>
-                </DataTemplate>
-            </controls:DoubleClickSetListView.ItemTemplate>
-        </controls:DoubleClickSetListView>
+                    <DataTemplate x:Key="LayoutNameTemplate">
+                        <Grid x:Name="layoutName"
+                              Background="Transparent"
+                              VerticalAlignment="Center">
+                            <TextBlock x:Name="tbDisplay"
+                                       Text="{Binding Name}"
+                                       Style="{StaticResource InlineTextBlockStyle}" />
+                            <TextBox x:Name="layoutNameEdit"
+                                     Text="{Binding Name, UpdateSourceTrigger=Explicit}"
+                                     Style="{StaticResource InlineEditBoxStyle}" />
+                        </Grid>
+                        <DataTemplate.Triggers>
+                            <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ListViewItem}, Path=(viewsAssorted:InlineEdit.EditingField)}"
+                                         Value="Name">
+                                <Setter TargetName="tbDisplay"
+                                        Property="Visibility"
+                                        Value="Collapsed" />
+                                <Setter TargetName="layoutNameEdit"
+                                        Property="Visibility"
+                                        Value="Visible" />
+                            </DataTrigger>
+                        </DataTemplate.Triggers>
+                    </DataTemplate>
+                    <DataTemplate x:Key="LayoutWidthTemplate">
+                        <Grid x:Name="layoutWidth"
+                              Background="Transparent">
+                            <TextBlock x:Name="tbDisplay"
+                                       Text="{Binding PageWidth, StringFormat=N3}"
+                                       Style="{StaticResource InlineTextBlockStyle}" />
+                            <TextBox x:Name="layoutWidthEdit"
+                                     Text="{Binding PageWidth, UpdateSourceTrigger=Explicit, StringFormat=N3}"
+                                     Style="{StaticResource InlineEditBoxStyle}" />
+                        </Grid>
+                        <DataTemplate.Triggers>
+                            <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ListViewItem}, Path=(viewsAssorted:InlineEdit.EditingField)}"
+                                         Value="PageWidth">
+                                <Setter TargetName="tbDisplay"
+                                        Property="Visibility"
+                                        Value="Collapsed" />
+                                <Setter TargetName="layoutWidthEdit"
+                                        Property="Visibility"
+                                        Value="Visible" />
+                            </DataTrigger>
+                        </DataTemplate.Triggers>
+                    </DataTemplate>
+                    <DataTemplate x:Key="LayoutHeightTemplate">
+                        <Grid x:Name="layoutHeight"
+                              Background="Transparent">
+                            <TextBlock x:Name="tbDisplay"
+                                       Text="{Binding PageHeight, StringFormat=N3}"
+                                       Style="{StaticResource InlineTextBlockStyle}" />
+                            <TextBox x:Name="layoutHeightEdit"
+                                     Text="{Binding PageHeight, UpdateSourceTrigger=Explicit, StringFormat=N3}"
+                                     Style="{StaticResource InlineEditBoxStyle}" />
+                        </Grid>
+                        <DataTemplate.Triggers>
+                            <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ListViewItem}, Path=(viewsAssorted:InlineEdit.EditingField)}"
+                                         Value="PageHeight">
+                                <Setter TargetName="tbDisplay"
+                                        Property="Visibility"
+                                        Value="Collapsed" />
+                                <Setter TargetName="layoutHeightEdit"
+                                        Property="Visibility"
+                                        Value="Visible" />
+                            </DataTrigger>
+                        </DataTemplate.Triggers>
+                    </DataTemplate>
+                    <DataTemplate x:Key="LayoutSceneTemplate">
+                        <Grid x:Name="layoutScene"
+                              Background="Transparent">
+                            <ComboBox Style="{StaticResource ValidationComboBox}"
+                                      ItemsSource="{Binding ElementName=Root, Path=Scenes}"
+                                      SelectedValue="{Binding Viewport.Scene, Mode=TwoWay}"
+                                      DisplayMemberPath="Name"
+                                      Margin="5 2 20 2"
+                                      Height="20" />
+                        </Grid>
+                    </DataTemplate>
+                </controls:DoubleClickSetListView.Resources>
+                <controls:DoubleClickSetListView.ContextMenu>
+                    <ContextMenu x:Name="pointsListViewContextMenu"
+                                 Style="{StaticResource Win11ContextMenuStyle}"
+                                 HasDropShadow="True">
+                        <MenuItem Header="New"
+                                  Click="NewLayout_Click"
+                                  Style="{StaticResource DefaultContextMenuItemStyle}"
+                                  InputGestureText="Ctrl+Shift+N">
+                            <MenuItem.Icon>
+                                <fa:FontAwesome Icon="Plus"
+                                                Foreground="{StaticResource BodyForeground}">
+                                    <fa:FontAwesome.LayoutTransform>
+                                        <ScaleTransform ScaleX="1.3"
+                                                        ScaleY="1.3" />
+                                    </fa:FontAwesome.LayoutTransform>
+                                </fa:FontAwesome>
+                            </MenuItem.Icon>
+                        </MenuItem>
+                        <MenuItem Header="Edit"
+                                  InputGestureText="F2"
+                                  Click="EditLayout_Click"
+                                  Style="{StaticResource DefaultContextMenuItemStyle}">
+                            <MenuItem.Icon>
+                                <fa:FontAwesome Icon="Edit"
+                                                Foreground="Black">
+                                    <fa:FontAwesome.LayoutTransform>
+                                        <ScaleTransform ScaleX="1.3"
+                                                        ScaleY="1.3" />
+                                    </fa:FontAwesome.LayoutTransform>
+                                </fa:FontAwesome>
+                            </MenuItem.Icon>
+                        </MenuItem>
+                        <MenuItem Header="Delete"
+                                  Click="DeleteLayouts_Click"
+                                  Style="{StaticResource DefaultContextMenuItemStyle}"
+                                  InputGestureText="Del">
+                            <MenuItem.Icon>
+                                <fa:FontAwesome Icon="Trash"
+                                                RenderTransformOrigin="0.5 0.5"
+                                                Foreground="Black">
+                                    <fa:FontAwesome.LayoutTransform>
+                                        <ScaleTransform ScaleX="1.3"
+                                                        ScaleY="1.3" />
+                                    </fa:FontAwesome.LayoutTransform>
+                                </fa:FontAwesome>
+                            </MenuItem.Icon>
+                        </MenuItem>
+                    </ContextMenu>
+                </controls:DoubleClickSetListView.ContextMenu>
+                <controls:DoubleClickSetListView.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <VirtualizingStackPanel VirtualizingPanel.IsVirtualizing="True"
+                                                VirtualizingPanel.VirtualizationMode="Recycling"
+                                                VirtualizingPanel.IsVirtualizingWhenGrouping="True"
+                                                VirtualizingPanel.ScrollUnit="Pixel"
+                                                VirtualizingPanel.CacheLength="0 0" />
+                    </ItemsPanelTemplate>
+                </controls:DoubleClickSetListView.ItemsPanel>
+                <controls:DoubleClickSetListView.ItemTemplate>
+                    <DataTemplate>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="1.15*" />
+                                <ColumnDefinition Width="0.75*" />
+                                <ColumnDefinition Width="0.75*" />
+                                <ColumnDefinition Width="1.35*" />
+                            </Grid.ColumnDefinitions>
+                            <!-- NAME -->
+                            <ContentControl Grid.Column="0"
+                                            Content="{Binding}"
+                                            ContentTemplate="{StaticResource LayoutNameTemplate}" />
+                            <!-- WIDTH -->
+                            <ContentControl Grid.Column="1"
+                                            Content="{Binding}"
+                                            ContentTemplate="{StaticResource LayoutWidthTemplate}" />
+                            <!-- HEIGHT -->
+                            <ContentControl Grid.Column="2"
+                                            Content="{Binding}"
+                                            ContentTemplate="{StaticResource LayoutHeightTemplate}" />
+                            <!-- SCENE -->
+                            <ContentControl Grid.Column="3"
+                                            Content="{Binding}"
+                                            ContentTemplate="{StaticResource LayoutSceneTemplate}" />
+                        </Grid>
+                    </DataTemplate>
+                </controls:DoubleClickSetListView.ItemTemplate>
+            </controls:DoubleClickSetListView>
+        </Grid>
         <Canvas x:Name="BackgroundCanvas"
                 Grid.Column="1"
                 SizeChanged="BackgroundCanvas_SizeChanged"
@@ -279,7 +283,17 @@
                                       VerticalAlignment="Stretch"
                                       Panel.ZIndex="1"
                                       ActiveLayout="{Binding ActiveLayout}" />
+
                 <Border x:Name="viewportBorder"
+                        Width="{Binding ElementName=Titleblock, Path=ActiveLayout.PageWidth}"
+                        Height="{Binding ElementName=Titleblock, Path=ActiveLayout.PageHeight}">
+                    <local:PdfLayoutPreviewControl x:Name="PdfLayoutPreviewControl"
+                                                   Renderer="{Binding Renderer}"
+                                                   CadManager="{Binding CadManager}"
+                                                   ActiveLayout="{Binding ActiveLayout}"
+                                                   Scenes="{Binding Scenes}" />
+                </Border>
+                <!--<Border x:Name="viewportBorder"
                         Width="{Binding ElementName=Titleblock, Path=ViewportWidth}"
                         Height="{Binding ElementName=Titleblock, Path=ViewportHeight}"
                         Canvas.Left="{Binding ElementName=Titleblock, Path=ViewportLeft}"
@@ -289,7 +303,7 @@
                                                    CadManager="{Binding CadManager}"
                                                    ActiveLayout="{Binding ActiveLayout}"
                                                    Scenes="{Binding Scenes}" />
-                </Border>
+                </Border>-->
             </Canvas>
 
             <Canvas x:Name="EditorOverlay"

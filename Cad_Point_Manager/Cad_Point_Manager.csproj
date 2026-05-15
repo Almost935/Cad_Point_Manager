@@ -64,6 +64,7 @@
     <Compile Remove="Services\Exporting\LayoutPdfExporter.cs" />
     <Compile Remove="Views\Assorted\InlineEditingHelper.cs" />
     <Compile Remove="Views\UserControls\LayoutControl.xaml.cs" />
+    <Compile Remove="Views\UserControls\LayoutPreviewControl.xaml.cs" />
     <Compile Remove="Views\UserControls\LayoutsListViewControl.xaml.cs" />
   </ItemGroup>
 
@@ -81,6 +82,7 @@
     <Page Remove="Styles\ListViewStyle.xaml" />
     <Page Remove="Styles\ValidationTemplate.xaml" />
     <Page Remove="Views\UserControls\LayoutControl.xaml" />
+    <Page Remove="Views\UserControls\LayoutPreviewControl.xaml" />
     <Page Remove="Views\UserControls\LayoutsListViewControl.xaml" />
   </ItemGroup>
 

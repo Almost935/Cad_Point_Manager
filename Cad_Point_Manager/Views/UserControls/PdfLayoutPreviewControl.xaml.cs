@@ -178,9 +178,9 @@ namespace Cad_Point_Manager.Views.UserControls
             }
 
             int renderWidth =
-                (int)Math.Round(activeLayout.Viewport.LocalRectIn.Width * GlobalHelperProperties.PdfPreviewDpi);
+                (int)Math.Round(activeLayout.PageWidth * GlobalHelperProperties.PdfPreviewDpi);
             int renderHeight =
-                (int)Math.Round(activeLayout.Viewport.LocalRectIn.Height * GlobalHelperProperties.PdfPreviewDpi);
+                (int)Math.Round(activeLayout.PageHeight * GlobalHelperProperties.PdfPreviewDpi);
 
             var worldToPdf =
                    LayoutPdfVectorExporter.BuildWorldToPdfFromCamera(
@@ -191,13 +191,14 @@ namespace Cad_Point_Manager.Views.UserControls
             await Task.Run(() =>
             {
                 using var pdf =
-                    LayoutPdfVectorExporter.ExportViewportPreviewToStream(
+                    LayoutPdfVectorExporter.ExportToStream(
                         activeLayout,
                         cadManager,
                         stateController,
                         sceneIdMap,
                         resCache,
                         worldToPdf);
+
                 pdf.Position = 0;
 
                 var bmp =

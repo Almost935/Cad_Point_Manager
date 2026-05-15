@@ -137,6 +137,68 @@ namespace Cad_Point_Manager.Services.Exporting
             Debug.WriteLine($"PDF export completed in {sw.Elapsed.TotalSeconds:F2} seconds.");
         }
 
+        public static MemoryStream ExportToStream(
+           Layout layout,
+           CadManager cadManager,
+           D3dStateController stateController,
+           SceneIdMap ids,
+           ResCache resCache,
+           Matrix worldToPdf)
+        {
+            Stopwatch sw = Stopwatch.StartNew();
+
+            var stream = new MemoryStream();
+
+            double pageWpts = layout.PageWidth * PdfPointsPerInch;
+            double pageHpts = layout.PageHeight * PdfPointsPerInch;
+
+            using var doc = new PdfDocument();
+            var page = doc.AddPage();
+            page.Width = pageWpts;
+            page.Height = pageHpts;
+
+            using var gfx = XGraphics.FromPdfPage(page);
+            gfx.DrawRectangle(XBrushes.White, 0, 0, pageWpts, pageHpts);
+
+            var viewportClip = new XRect(
+                layout.Viewport.LocalRectIn.X * PdfPointsPerInch,
+                layout.Viewport.LocalRectIn.Y * PdfPointsPerInch,
+                layout.Viewport.LocalRectIn.Width * PdfPointsPerInch,
+                layout.Viewport.LocalRectIn.Height * PdfPointsPerInch);
+
+            gfx.IntersectClip(viewportClip);
+
+            foreach (var kv in cadManager.Layers)
+            {
+                var layer = kv.Value;
+                if (!layer.IsVisible) { continue; }
+
+                foreach (var obj in layer.DrawingObjects)
+                {
+                    var pen = new XPen(PdfTransform.ToXColor(obj.Color.ToVector4()), 0.0);
+                    obj.DrawToPdf(gfx, worldToPdf, pen);
+                }
+            }
+
+            var labelStates = stateController.GetLabelStatesSnapshot();
+            var pointStates = stateController.GetPointStatesSnapshot();
+            var groupStates = stateController.GetGroupStatesSnapshot();
+
+            DrawCogoPointStrings(
+                gfx, cadManager, ids, resCache, worldToPdf,
+                labelStates, pointStates, groupStates);
+
+            doc.Save(stream, false);
+            stream.Position = 0;
+
+            _duGlyphPathCache.Clear();
+
+            sw.Stop();
+            Debug.WriteLine($"PDF export completed in {sw.Elapsed.TotalSeconds:F2} seconds.");
+
+            return stream;
+        }
+
         public static MemoryStream ExportViewportPreviewToStream(
             Layout layout,
             CadManager cadManager,
