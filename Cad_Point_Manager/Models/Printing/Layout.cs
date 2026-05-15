@@ -13,7 +13,7 @@ namespace Cad_Point_Manager.Models.Printing
         private LayoutViewport _viewport;
         private double _pageWidth = 36;
         private double _pageHeight = 24;
-        private TitleblockAttributes _attributes = new TitleblockAttributes();
+        private TitleblockAttributes _attributes = new();
         #endregion
 
         #region Properties

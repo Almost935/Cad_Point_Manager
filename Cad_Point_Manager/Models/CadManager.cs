@@ -373,9 +373,7 @@ namespace Cad_Point_Manager.Models
 
             Rect viewportBounds = new(0.5, 0.5, 28.938, 23);
             LayoutViewport viewport = new(viewportBounds, Camera.OverviewScene);
-            TryAddLayout(GetNextAvailableLayoutName(), viewport, out var layout);
-            TryAddLayout(GetNextAvailableLayoutName(), viewport, out layout);
-            TryAddLayout(GetNextAvailableLayoutName(), viewport, out layout);
+            TryAddLayout(GetNextAvailableLayoutName(), viewport, out _);
         }
 
         public void GetPointScale()

@@ -501,19 +501,19 @@ $TDUCREATE
   9
 $TDUPDATE
  40
-2461084.738634260
+2461174.532615741
   9
 $TDUUPDATE
  40
-2461084.946967593
+2461174.699282408
   9
 $TDINDWG
  40
-15.5473495370
+15.5766087963
   9
 $TDUSRTIMER
  40
-15.5472916667
+15.5765509259
   9
 $USRTIMER
  70
@@ -553,7 +553,7 @@ $SPLINESEGS
   9
 $HANDSEED
   5
-1E3F3
+1E54F
   9
 $SURFTAB1
  70
@@ -937,7 +937,7 @@ $FINGERPRINTGUID
   9
 $VERSIONGUID
   2
-{EEE72484-8451-0945-8388-D1B70D944B5D}
+{EC551E39-F917-D246-B4FD-A41D91709D43}
   9
 $EXTNAMES
 290
@@ -1279,7 +1279,7 @@ ObjectDBX Classes
  90
         0
  91
-        5
+       20
 280
      0
 281
@@ -1455,7 +1455,7 @@ AecBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autodesk,I
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -1551,7 +1551,7 @@ AecBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autodesk,I
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -1583,7 +1583,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -1599,7 +1599,7 @@ AecBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autodesk,I
  90
       129
  91
-        0
+        7
 280
      0
 281
@@ -1615,7 +1615,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -1631,7 +1631,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -1647,7 +1647,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -1663,7 +1663,7 @@ AecBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autodesk,I
  90
       129
  91
-        0
+       11
 280
      0
 281
@@ -1679,7 +1679,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -1695,7 +1695,7 @@ AecBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autodesk,I
  90
       129
  91
-        0
+       12
 280
      0
 281
@@ -1711,7 +1711,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -1727,7 +1727,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -1743,7 +1743,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -1759,7 +1759,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -1775,7 +1775,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        3
 280
      0
 281
@@ -1791,7 +1791,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -1807,7 +1807,7 @@ AecBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autodesk,I
  90
       129
  91
-        0
+        2
 280
      0
 281
@@ -1823,7 +1823,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -1839,7 +1839,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -1855,7 +1855,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -1871,7 +1871,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -1887,7 +1887,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -1903,7 +1903,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -1919,7 +1919,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -1935,7 +1935,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -1951,7 +1951,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        4
 280
      0
 281
@@ -1967,7 +1967,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -1983,7 +1983,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        3
 280
      0
 281
@@ -1999,7 +1999,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -2015,7 +2015,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -2031,7 +2031,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -2047,7 +2047,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -2063,7 +2063,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -2079,7 +2079,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -2095,7 +2095,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -2111,7 +2111,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -2127,7 +2127,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -2143,7 +2143,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -2159,7 +2159,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -2175,7 +2175,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -2191,7 +2191,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        2
 280
      0
 281
@@ -2207,7 +2207,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -2223,7 +2223,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -2239,7 +2239,7 @@ AecBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autodesk,I
  90
       129
  91
-        0
+        2
 280
      0
 281
@@ -2255,7 +2255,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -2271,7 +2271,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        2
 280
      0
 281
@@ -2287,7 +2287,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -2303,7 +2303,7 @@ AecBaseEx80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autodesk
  90
       129
  91
-        0
+        3
 280
      0
 281
@@ -2319,7 +2319,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -2335,7 +2335,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -2351,7 +2351,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -2367,7 +2367,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -2383,7 +2383,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -2399,7 +2399,7 @@ AecBaseEx80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autodesk
  90
       129
  91
-        0
+        3
 280
      0
 281
@@ -2415,7 +2415,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -2431,7 +2431,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        2
 280
      0
 281
@@ -2447,7 +2447,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -2463,7 +2463,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        2
 280
      0
 281
@@ -2479,7 +2479,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -2495,7 +2495,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -2511,7 +2511,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -2527,7 +2527,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -2543,7 +2543,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -2559,7 +2559,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -2575,7 +2575,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -2591,7 +2591,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -2607,7 +2607,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -2623,7 +2623,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -2639,7 +2639,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -2655,7 +2655,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        5
 280
      0
 281
@@ -2671,7 +2671,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -2687,7 +2687,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -2703,7 +2703,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -2719,7 +2719,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -2735,7 +2735,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -2751,7 +2751,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -2767,7 +2767,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -2783,7 +2783,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -2799,7 +2799,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -2815,7 +2815,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -2831,7 +2831,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -2847,7 +2847,7 @@ AecBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autodesk,I
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -2863,7 +2863,7 @@ AecBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autodesk,I
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -2879,7 +2879,7 @@ AecBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autodesk,I
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -2895,7 +2895,7 @@ AecBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autodesk,I
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -2911,7 +2911,7 @@ AecBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autodesk,I
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -2927,7 +2927,7 @@ AecBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autodesk,I
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -2943,7 +2943,7 @@ AecBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autodesk,I
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -2959,7 +2959,7 @@ AecBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autodesk,I
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -2975,7 +2975,7 @@ AecBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autodesk,I
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -2991,7 +2991,7 @@ AecBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autodesk,I
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -3007,7 +3007,7 @@ AecBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autodesk,I
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -3023,7 +3023,7 @@ AecBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autodesk,I
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -3039,7 +3039,7 @@ AecBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autodesk,I
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -3055,7 +3055,7 @@ AecBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autodesk,I
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -3071,7 +3071,7 @@ AecBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autodesk,I
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -3087,7 +3087,7 @@ AecBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autodesk,I
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -3103,7 +3103,7 @@ AecBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autodesk,I
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -3119,7 +3119,7 @@ AecBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autodesk,I
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -3135,7 +3135,7 @@ AecBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autodesk,I
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -3151,7 +3151,7 @@ AecBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autodesk,I
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -3167,7 +3167,7 @@ AecBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autodesk,I
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -3183,7 +3183,7 @@ AecBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autodesk,I
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -3199,7 +3199,7 @@ AecBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autodesk,I
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -3215,7 +3215,7 @@ AecBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autodesk,I
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -3231,7 +3231,7 @@ AecBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autodesk,I
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -3247,7 +3247,7 @@ AecBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autodesk,I
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -3263,7 +3263,7 @@ AecBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autodesk,I
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -3279,7 +3279,7 @@ AecBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autodesk,I
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -3295,7 +3295,7 @@ AecBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autodesk,I
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -3311,7 +3311,7 @@ AecBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autodesk,I
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -3327,7 +3327,7 @@ AecBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autodesk,I
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -3343,7 +3343,7 @@ AecBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autodesk,I
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -3359,7 +3359,7 @@ AecBaseEx80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autodesk
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -3375,7 +3375,7 @@ AecBaseEx80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autodesk
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -3391,7 +3391,7 @@ AecBaseEx80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autodesk
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -3407,7 +3407,7 @@ AecBaseEx80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autodesk
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -3423,7 +3423,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       893
  91
-        0
+        1
 280
      0
 281
@@ -3439,7 +3439,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -3455,7 +3455,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -3471,7 +3471,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -3487,7 +3487,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -3503,7 +3503,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -3519,7 +3519,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -3535,7 +3535,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -3551,7 +3551,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -3567,7 +3567,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        9
 280
      0
 281
@@ -3583,7 +3583,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -3599,7 +3599,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -3615,7 +3615,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -3631,7 +3631,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -3647,7 +3647,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -3663,7 +3663,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -3679,7 +3679,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -3695,7 +3695,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        3
 280
      0
 281
@@ -3711,7 +3711,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -3727,7 +3727,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        4
 280
      0
 281
@@ -3743,7 +3743,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -3759,7 +3759,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        3
 280
      0
 281
@@ -3775,7 +3775,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -3791,7 +3791,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -3807,7 +3807,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -3823,7 +3823,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -3839,7 +3839,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        3
 280
      0
 281
@@ -3855,7 +3855,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -3871,7 +3871,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -3887,7 +3887,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -3903,7 +3903,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -3919,7 +3919,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        4
 280
      0
 281
@@ -3935,7 +3935,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -3951,7 +3951,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -3967,7 +3967,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -3983,7 +3983,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -3999,7 +3999,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -4015,7 +4015,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -4031,7 +4031,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -4047,7 +4047,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -4063,7 +4063,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -4079,7 +4079,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -4095,7 +4095,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -4111,7 +4111,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -4127,7 +4127,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -4143,7 +4143,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -4159,7 +4159,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -4175,7 +4175,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -4191,7 +4191,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        2
 280
      0
 281
@@ -4207,7 +4207,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -4223,7 +4223,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -4239,7 +4239,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -4255,7 +4255,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -4271,7 +4271,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -4287,7 +4287,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -4303,7 +4303,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -4319,7 +4319,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -4335,7 +4335,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -4351,7 +4351,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -4367,7 +4367,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -4383,7 +4383,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -4399,7 +4399,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -4415,7 +4415,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -4431,7 +4431,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        4
 280
      0
 281
@@ -4447,7 +4447,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -4463,7 +4463,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -4479,7 +4479,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -4495,7 +4495,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -4511,7 +4511,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -4527,7 +4527,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -4543,7 +4543,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -4559,7 +4559,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -4575,7 +4575,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -4591,7 +4591,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -4607,7 +4607,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -4623,7 +4623,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -4639,7 +4639,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -4655,7 +4655,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -4671,7 +4671,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -4687,7 +4687,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -4703,7 +4703,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -4719,7 +4719,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -4735,7 +4735,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -4751,7 +4751,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -4767,7 +4767,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -4783,7 +4783,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -4799,7 +4799,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        2
 280
      0
 281
@@ -4815,7 +4815,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -4831,7 +4831,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -4847,7 +4847,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -4863,7 +4863,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -4879,7 +4879,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        2
 280
      0
 281
@@ -4895,7 +4895,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -4911,7 +4911,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        2
 280
      0
 281
@@ -4927,7 +4927,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -4943,7 +4943,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -4959,7 +4959,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -4975,7 +4975,7 @@ AecArchBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -7679,7 +7679,7 @@ AecSchedule80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -7695,7 +7695,7 @@ AecSchedule80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autode
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -8223,7 +8223,7 @@ AecBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autodesk,I
  90
       129
  91
-        0
+        8
 280
      0
 281
@@ -8239,7 +8239,7 @@ AecBase80|Product Desc: Autodesk Architectural Desktop 2007 |Company: Autodesk,I
  90
       129
  91
-        0
+        1
 280
      0
 281
@@ -9823,7 +9823,7 @@ SCENEOE
  90
      4095
  91
-        0
+        1
 280
      0
 281
@@ -10915,9 +10915,9 @@ AcDbViewportTableRecord
  21
 1.0
  12
-165.8289219975953
+-55.45672880055502
  22
-59.54773794665187
+-80.47545524465931
  13
 0.0
  23
@@ -10935,17 +10935,17 @@ AcDbViewportTableRecord
  26
 0.0
  36
-975.6704026842017
+866.1079271926901
  17
 1104.427551269531
  27
-5085.541992187501
+5060.062744140625
  37
 0.0
  40
-23.01238322921769
+113.0733950181177
  41
-2.582763337893296
+2.321078431372549
  42
 50.0
  43
@@ -12331,7 +12331,7 @@ A28
 100
 AcDbSymbolTable
  70
-     3
+     2
 100
 AcDbDimStyleTable
  71
@@ -12533,7 +12533,7 @@ BLOCK_RECORD
 100
 AcDbSymbolTable
  70
-    50
+    49
   0
 BLOCK_RECORD
   5
@@ -12603,14 +12603,6 @@ Grid - Tag_Column_Grid_Head-327277-NORTH GARAGE FOUNDATION PLAN
 102
 {BLKREFS
 331
-BC
-331
-BF
-331
-B0
-331
-DA
-331
 FA
 331
 FD
@@ -12632,6 +12624,14 @@ D1
 D4
 331
 D7
+331
+BC
+331
+BF
+331
+B0
+331
+DA
 102
 }
  70
@@ -12656,6 +12656,88 @@ _Oblique
 0
 102
 {BLKREFS
+331
+1553E
+331
+1A3EA
+331
+1A3EB
+331
+1A3E1
+331
+1A3E2
+331
+1A3F3
+331
+1A3F4
+331
+15431
+331
+15432
+331
+1A3D8
+331
+1A3D9
+331
+1A3CF
+331
+1543C
+331
+1543D
+331
+1545D
+331
+1545E
+331
+1541B
+331
+1541C
+331
+15426
+331
+15427
+331
+1D6E3
+331
+1D6E4
+331
+15465
+331
+15466
+331
+153D8
+331
+153D9
+331
+153F0
+331
+15405
+331
+15406
+331
+15410
+331
+15411
+331
+154C9
+331
+154CA
+331
+154D2
+331
+154D3
+331
+154DB
+331
+154DC
+331
+1A3B4
+331
+1A3B5
+331
+1A3BD
+331
+1A3BE
 331
 15480
 331
@@ -12740,88 +12822,6 @@ _Oblique
 1A3C7
 331
 153EF
-331
-1543C
-331
-1543D
-331
-1545D
-331
-1545E
-331
-1541B
-331
-1541C
-331
-15426
-331
-15427
-331
-1D6E3
-331
-1D6E4
-331
-15465
-331
-15466
-331
-153D8
-331
-153D9
-331
-153F0
-331
-15405
-331
-15406
-331
-15410
-331
-15411
-331
-154C9
-331
-154CA
-331
-154D2
-331
-154D3
-331
-154DB
-331
-154DC
-331
-1A3B4
-331
-1A3B5
-331
-1A3BD
-331
-1A3BE
-331
-1553E
-331
-1A3EA
-331
-1A3EB
-331
-1A3E1
-331
-1A3E2
-331
-1A3F3
-331
-1A3F4
-331
-15431
-331
-15432
-331
-1A3D8
-331
-1A3D9
-331
-1A3CF
 102
 }
  70
@@ -12885,13 +12885,13 @@ Section - Section Head - Filled-1526-NORTH GARAGE FOUNDATION PLAN
 102
 {BLKREFS
 331
-2B0
-331
 2A2
 331
 2A9
 331
 283
+331
+2B0
 102
 }
  70
@@ -12921,8 +12921,6 @@ Revision Tag - Revision Tag-1868994-NORTH GARAGE FOUNDATION PLAN
 102
 {BLKREFS
 331
-33B
-331
 348
 331
 34A
@@ -12930,6 +12928,8 @@ Revision Tag - Revision Tag-1868994-NORTH GARAGE FOUNDATION PLAN
 344
 331
 346
+331
+33B
 102
 }
  70
@@ -63589,17 +63589,17 @@ G-ANNO-TTLB-WIDE
 310
 F40400001D0000000C00000016000000000000C00C00000033000000000000000C00000013000000993A0000C4000000260000002DD2E57C193492407088503C1D22B440000000000000000000000000000000000000000000000000000000000000F03F000000000000F03F00000000000000000000000000000000430065
 310
-006E007400650072003A002000000050000800000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F00000000000000000000000000000000000000000000000000000000010000002200000041007200690061006C00000000000000000000000C0000001300000000943577D400
+006E007400650072003A00200000006C000800000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F00000000000000000000000000000000000000000000000000000000010000002200000041007200690061006C00000000000000000000000C0000001300000000943577D400
 310
-000026000000B5AA8AC5093E92407088503C1D22B440000000000000000000000000000000000000000000000000000000000000F03F000000000000F03F0000000000000000000000000000000031003100350036002E00380039002C00200035003100340033002E003200330000005C0010000000010000000000000000
+000026000000B5AA8AC5093E92407088503C1D22B440000000000000000000000000000000000000000000000000000000000000F03F000000000000F03F0000000000000000000000000000000031003100350036002E00380039002C00200035003100340033002E00320033000000720010000000010000000000000000
 310
 00E03F000000000000F03F0000000000000000000000000000F03F00000000000000000000000000000000000000000000000000000000010000002200000041007200690061006C0000000000000000000000C40000002600000030B5D4E104349240A78FDE604721B4400000000000000000000000000000000000000000
 310
-00000000000000000000F03F000000000000F03F000000000000000000000000000000005200610064006900750073003A002000000000000800000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F00000000000000000000000000000000000000000000000000000000010000
+00000000000000000000F03F000000000000F03F000000000000000000000000000000005200610064006900750073003A00200000005F000800000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F00000000000000000000000000000000000000000000000000000000010000
 310
 002200000041007200690061006C00000000000000000000000C0000001300000000943577BC00000026000000F2997ACB443E9240A78FDE604721B440000000000000000000000000000000000000000000000000000000000000F03F000000000000F03F0000000000000000000000000000000039002E00300030000000
 310
-5C000400000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F00000000000000000000000000000000000000000000000000000000010000002200000041007200690061006C00000000007400000070000C00000033000000000000000C000000100000000D0000000C00000016
+3C000400000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F00000000000000000000000000000000000000000000000000000000010000002200000041007200690061006C00000000007400000070000C00000033000000000000000C000000100000000D0000000C00000016
 310
 000000000000C00C00000012000000FF7F00000C00000013000000010000000C00000014000000010000005400000007000000030000006174B079C5249240A6C3D81F941FB4400000000000000000358EC879F0229240474DC3855C1FB4400000000000000000F7F0E8FD63249240061C5925B71FB4400000000000000000
 310
@@ -63855,17 +63855,17 @@ G-ANNO-TTLB-WIDE
 310
 F40400001D0000000C00000016000000000000C00C00000033000000000000000C00000013000000993A0000C400000026000000107676E1519A9140CA8C93306723B440000000000000000000000000000000000000000000000000000000000000F03F000000000000F03F00000000000000000000000000000000430065
 310
-006E007400650072003A00200000006C000800000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F00000000000000000000000000000000000000000000000000000000010000002200000041007200690061006C00000000000000000000000C0000001300000000943577D400
+006E007400650072003A002000000065000800000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F00000000000000000000000000000000000000000000000000000000010000002200000041007200690061006C000000000000000000736C0C0000001300000000943577D400
 310
-000026000000984E1B2A42A49140CA8C93306723B440000000000000000000000000000000000000000000000000000000000000F03F000000000000F03F0000000000000000000000000000000031003100340035002E00370035002C00200035003100340039002E00320030000000C64610000000010000000000000000
+000026000000984E1B2A42A49140CA8C93306723B440000000000000000000000000000000000000000000000000000000000000F03F000000000000F03F0000000000000000000000000000000031003100340035002E00370035002C00200035003100340039002E003200300000005C0010000000010000000000000000
 310
 00E03F000000000000F03F0000000000000000000000000000F03F00000000000000000000000000000000000000000000000000000000010000002200000041007200690061006C0000000000000000000000C400000026000000FE4F479452AA9140019421559122B4400000000000000000000000000000000000000000
 310
-00000000000000000000F03F000000000000F03F000000000000000000000000000000005200610064006900750073003A002000000032000800000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F00000000000000000000000000000000000000000000000000000000010000
+00000000000000000000F03F000000000000F03F000000000000000000000000000000005200610064006900750073003A00200000006C000800000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F00000000000000000000000000000000000000000000000000000000010000
 310
 002200000041007200690061006C00000000000000000000000C0000001300000000943577BC00000026000000C034ED7D92B49140019421559122B440000000000000000000000000000000000000000000000000000000000000F03F000000000000F03F0000000000000000000000000000000038002E00300030000000
 310
-3C000400000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F00000000000000000000000000000000000000000000000000000000010000002200000041007200690061006C00000000003400000063000C00000033000000000000000C000000100000000D0000000C00000016
+50000400000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F00000000000000000000000000000000000000000000000000000000010000002200000041007200690061006C00000000000000000000000C00000033000000000000000C000000100000000D0000000C00000016
 310
 000000000000C00C00000012000000FF7F00000C00000013000000010000000C0000001400000001000000540000000700000003000000F1070F77DFC6914013F18728501FB44000000000000000008FFFC620AEC79140B4811B1FD91EB440000000000000000031BCBC3550C69140F383AAF7381FB4400000000000000000
 310
@@ -64121,7 +64121,7 @@ G-ANNO-TTLB-WIDE
 310
 A4020000190000000C00000016000000000000C00C00000033000000000000000C00000013000000993A00000C0000001300000000943577D400000026000000BC97DAE0DE129240704CA69D4324B440000000000000000000000000000000000000000000000000000000000000F03F000000000000F03F00000000000000
 310
-00000000000000000031003100350033002E00340030002C00200035003100350031002E003500320000005C001000000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F000000000000000000000000000000000000000000000000000000000100000022000000410072006900
+00000000000000000031003100350033002E00340030002C00200035003100350031002E0035003200000065001000000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F000000000000000000000000000000000000000000000000000000000100000022000000410072006900
 310
 61006C00000000000000000000000C00000033000000000000000C000000100000000D0000000C00000016000000000000C00C00000012000000FF7F00000C00000013000000010000000C00000014000000010000005400000007000000030000001A367B14E3069240651DA93DEB1FB4400000000000000000B94017B19D
 310
@@ -64379,9 +64379,9 @@ G-ANNO-TTLB-WIDE
 310
 A4020000190000000C00000016000000000000C00C00000033000000000000000C00000013000000993A00000C0000001300000000943577D4000000260000004445F9409F0B9240054D19AE2218B440000000000000000000000000000000000000000000000000000000000000F03F000000000000F03F00000000000000
 310
-00000000000000000031003100340038002E00300035002C00200035003100340031002E003500340000005C001000000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F000000000000000000000000000000000000000000000000000000000100000022000000410072006900
+00000000000000000031003100340038002E00300035002C00200035003100340031002E0035003400000000651000000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F000000000000000000000000000000000000000000000000000000000100000022000000410072006900
 310
-61006C00000000007400000070000C00000033000000000000000C000000100000000D0000000C00000016000000000000C00C00000012000000FF7F00000C00000013000000010000000C00000014000000010000005400000007000000030000007C21569926F291403091B414AA15B4400000000000000000B0B149DC2F
+61006C00000000000000000000000C00000033000000000000000C000000100000000D0000000C00000016000000000000C00C00000012000000FF7F00000C00000013000000010000000C00000014000000010000005400000007000000030000007C21569926F291403091B414AA15B4400000000000000000B0B149DC2F
 310
 F09140C79215CB8915B4400000000000000000801D8E89E1F19140579A2219D115B44000000000000000000C00000014000000010000000C00000013000000891300003C00000006000000020000007E1F721104F29140C395EB96BD15B44000000000000000006B26197F7C099240BB301E485618B4400000000000000000
 310
@@ -64687,31 +64687,31 @@ G-ANNO-TTLB-WIDE
 310
 28080000230000000C00000016000000000000C00C00000033000000000000000C00000013000000993A0000C40000002600000033A66743F61C914070F9E4256638B440000000000000000000000000000000000000000000000000000000000000F03F000000000000F03F00000000000000000000000000000000430065
 310
-006E007400650072003A002000000000000800000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F00000000000000000000000000000000000000000000000000000000010000002200000041007200690061006C00000000000000000000000C0000001300000000943577D400
+006E007400650072003A002000000067000800000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F00000000000000000000000000000000000000000000000000000000010000002200000041007200690061006C00000000000000000000000C0000001300000000943577D400
 310
-000026000000BB7E0C8CE626914070F9E4256638B440000000000000000000000000000000000000000000000000000000000000F03F000000000000F03F0000000000000000000000000000000031003000380036002E00340033002C00200035003100380037002E00320036000000200010000000010000000000000000
+000026000000BB7E0C8CE626914070F9E4256638B440000000000000000000000000000000000000000000000000000000000000F03F000000000000F03F0000000000000000000000000000000031003000380036002E00340033002C00200035003100380037002E00320036000000006510000000010000000000000000
 310
-00E03F000000000000F03F0000000000000000000000000000F03F00000000000000000000000000000000000000000000000000000000010000002200000041007200690061006C0000000000650000000000C400000026000000368956A8E11C9140A700734A9037B4400000000000000000000000000000000000000000
+00E03F000000000000F03F0000000000000000000000000000F03F00000000000000000000000000000000000000000000000000000000010000002200000041007200690061006C0000000000000000000000C400000026000000368956A8E11C9140A700734A9037B4400000000000000000000000000000000000000000
 310
-00000000000000000000F03F000000000000F03F000000000000000000000000000000005200610064006900750073003A002000000000000800000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F00000000000000000000000000000000000000000000000000000000010000
+00000000000000000000F03F000000000000F03F000000000000000000000000000000005200610064006900750073003A002000000074000800000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F00000000000000000000000000000000000000000000000000000000010000
 310
-002200000041007200690061006C00000000000000000000000C0000001300000000943577BC00000026000000F86DFC9121279140A700734A9037B440000000000000000000000000000000000000000000000000000000000000F03F000000000000F03F00000000000000000000000000000000310030002E0030003000
+002200000041007200690061006C00000000000000000074000C0000001300000000943577BC00000026000000F86DFC9121279140A700734A9037B440000000000000000000000000000000000000000000000000000000000000F03F000000000000F03F00000000000000000000000000000000310030002E0030003000
 310
 00000500000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F00000000000000000000000000000000000000000000000000000000010000002200000041007200690061006C0000000000000000000000CC00000026000000DBE77BC1F91C9140490251C6B836B4400000000000
 310
 00000000000000000000000000000000000000000000000000F03F000000000000F03F0000000000000000000000000000000053007400610072007400200041006E0067006C0065003A00200000000D00000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F0000000000000000
 310
-0000000000000000000000000000000000000000010000002200000041007200690061006C00000000006400000066000C0000001300000000943577C4000000260000007AF5A8CC592C9140490251C6B836B440000000000000000000000000000000000000000000000000000000000000F03F000000000000F03F000000
+0000000000000000000000000000000000000000010000002200000041007200690061006C00000000006200000038000C0000001300000000943577C4000000260000007AF5A8CC592C9140490251C6B836B440000000000000000000000000000000000000000000000000000000000000F03F000000000000F03F000000
 310
-000000000000000000000000003200320037002E003700330032003500000000000800000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F00000000000000000000000000000000000000000000000000000000010000002200000041007200690061006C000000000000000000
+000000000000000000000000003200320037002E003700330032003500000065000800000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F00000000000000000000000000000000000000000000000000000000010000002200000041007200690061006C000000000000000000
 310
-0000C8000000260000003E1CEE4EE11C91408009DFEAE235B440000000000000000000000000000000000000000000000000000000000000F03F000000000000F03F0000000000000000000000000000000045006E006400200041006E0067006C0065003A00200000000B00000001000000000000000000E03F0000000000
+736CC8000000260000003E1CEE4EE11C91408009DFEAE235B440000000000000000000000000000000000000000000000000000000000000F03F000000000000F03F0000000000000000000000000000000045006E006400200041006E0067006C0065003A00200000000B00000001000000000000000000E03F0000000000
 310
-00F03F0000000000000000000000000000F03F00000000000000000000000000000000000000000000000000000000010000002200000041007200690061006C00000000000000000000000C0000001300000000943577C400000026000000174C5183532B91408009DFEAE235B44000000000000000000000000000000000
+00F03F0000000000000000000000000000F03F00000000000000000000000000000000000000000000000000000000010000002200000041007200690061006C0000000000736C000000000C0000001300000000943577C400000026000000174C5183532B91408009DFEAE235B44000000000000000000000000000000000
 310
 0000000000000000000000000000F03F000000000000F03F000000000000000000000000000000003300350034002E003000380039003200000067000800000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F000000000000000000000000000000000000000000000000000000
 310
-00010000002200000041007200690061006C00000000000000000000000C00000033000000000000000C000000100000000D0000000C00000016000000000000C00C00000012000000FF7F00000C00000013000000010000000C0000001400000001000000540000000700000003000000832316099A099140CE42E4639939
+00010000002200000041007200690061006C00000000007400000070000C00000033000000000000000C000000100000000D0000000C00000016000000000000C00C00000012000000FF7F00000C00000013000000010000000C0000001400000001000000540000000700000003000000832316099A099140CE42E4639939
 310
 B4400000000000000000E34FAC01040891402B5A623BEA39B440000000000000000047EABAF6EC099140634769AEBE39B44000000000000000000C00000014000000010000000C00000013000000891300003C0000000600000002000000E586E87FC309914018C52609AC39B44000000000000000007B062C3FA91A914070
 310
@@ -65045,11 +65045,11 @@ G-ANNO-TTLB-WIDE
 310
 40030000190000000C00000016000000000000C00C00000033000000000000000C00000013000000993A0000C0000000260000008F9D145171F8904064D89F66FD4CB440000000000000000000000000000000000000000000000000000000000000F03F000000000000F03F00000000000000000000000000000000530074
 310
-006100720074003A00000000000600000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F00000000000000000000000000000000000000000000000000000000010000002200000041007200690061006C0000000000000000000000BC00000026000000F2D186DE58F890400E83
+006100720074003A0000005C000600000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F00000000000000000000000000000000000000000000000000000000010000002200000041007200690061006C0000000000300000003900BC00000026000000F2D186DE58F890400E83
 310
-4A11284CB440000000000000000000000000000000000000000000000000000000000000F03F000000000000F03F0000000000000000000000000000000045006E0064003A0000003E000400000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F00000000000000000000000000
+4A11284CB440000000000000000000000000000000000000000000000000000000000000F03F000000000000F03F0000000000000000000000000000000045006E0064003A00000000000400000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F00000000000000000000000000
 310
-000000000000000000000000000000010000002200000041007200690061006C00000000003400000030000C00000033000000000000000C000000100000000D0000000C00000016000000000000C00C00000012000000FF7F00000C00000013000000010000000C0000001400000001000000540000000700000003000000
+000000000000000000000000000000010000002200000041007200690061006C00000000000000000000000C00000033000000000000000C000000100000000D0000000C00000016000000000000C00C00000012000000FF7F00000C00000013000000010000000C0000001400000001000000540000000700000003000000
 310
 41A7381F2AED9040DD4532D45547B4400000000000000000B7ABD16313EC90406FA9375CE846B44000000000000000008989BD0A8DEC904096B9F5826647B44000000000000000000C00000014000000010000000C00000013000000891300003C00000006000000020000006518FB94DBEC9040B9FF932B5E47B440000000
 310
@@ -65389,7 +65389,7 @@ G-ANNO-TTLB-WIDE
 310
 A4020000190000000C00000016000000000000C00C00000033000000000000000C00000013000000993A00000C0000001300000000943577D400000026000000B7AECC6AC93691401441A0C1443FB440000000000000000000000000000000000000000000000000000000000000F03F000000000000F03F00000000000000
 310
-00000000000000000031003000390034002E00330039002C00200035003100380031002E003200300000005C001000000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F000000000000000000000000000000000000000000000000000000000100000022000000410072006900
+00000000000000000031003000390034002E00330039002C00200035003100380031002E0032003000000000001000000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F000000000000000000000000000000000000000000000000000000000100000022000000410072006900
 310
 61006C00000000007400000070000C00000033000000000000000C000000100000000D0000000C00000016000000000000C00C00000012000000FF7F00000C00000013000000010000000C00000014000000010000005400000007000000030000003479088A911B9140B52BE577473DB4400000000000000000E2BF99FA90
 310
@@ -65647,9 +65647,9 @@ G-ANNO-TTLB-WIDE
 310
 A4020000190000000C00000016000000000000C00C00000033000000000000000C00000013000000993A00000C0000001300000000943577D400000026000000137124AA5A339140D599594E0748B440000000000000000000000000000000000000000000000000000000000000F03F000000000000F03F00000000000000
 310
-00000000000000000031003000390036002E00330037002C00200035003100380038002E0033003800000065001000000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F000000000000000000000000000000000000000000000000000000000100000022000000410072006900
+00000000000000000031003000390036002E00330037002C00200035003100380038002E003300380000005C001000000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F000000000000000000000000000000000000000000000000000000000100000022000000410072006900
 310
-61006C00000000000000000000000C00000033000000000000000C000000100000000D0000000C00000016000000000000C00C00000012000000FF7F00000C00000013000000010000000C0000001400000001000000540000000700000003000000136D0831262391408B02BCA9AA44B44000000000000000005DB8A0C77C
+61006C00000000006500000000000C00000033000000000000000C000000100000000D0000000C00000016000000000000C00C00000012000000FF7F00000C00000013000000010000000C0000001400000001000000540000000700000003000000136D0831262391408B02BCA9AA44B44000000000000000005DB8A0C77C
 310
 219140D5CCB74F6044B440000000000000000046E679BDAE22914052610923C944B44000000000000000000C00000014000000010000000C00000013000000891300003C0000000600000002000000AD294177EA229140EEB162E6B944B44000000000000000003B5244E837319140887D5EE83A48B4400000000000000000
 310
@@ -65929,9 +65929,9 @@ G-ANNO-TTLB-WIDE
 310
 A4020000190000000C00000016000000000000C00C00000033000000000000000C00000013000000993A00000C0000001300000000943577D400000026000000CB64D1129AB49040F32B463D1C45B440000000000000000000000000000000000000000000000000000000000000F03F000000000000F03F00000000000000
 310
-00000000000000000031003000370038002E00340038002C00200035003100390033002E003300310000005C001000000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F000000000000000000000000000000000000000000000000000000000100000022000000410072006900
+00000000000000000031003000370038002E00340038002C00200035003100390033002E0033003100000033001000000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F000000000000000000000000000000000000000000000000000000000100000022000000410072006900
 310
-61006C00000000007400000070000C00000033000000000000000C000000100000000D0000000C00000016000000000000C00C00000012000000FF7F00000C00000013000000010000000C0000001400000001000000540000000700000003000000108F767B5CD890400226B5A1FC48B4400000000000000000D21CB268E9
+61006C00000000000000000000000C00000033000000000000000C000000100000000D0000000C00000016000000000000C00C00000012000000FF7F00000C00000013000000010000000C0000001400000001000000540000000700000003000000108F767B5CD890400226B5A1FC48B4400000000000000000D21CB268E9
 310
 D99040D92E3F405049B4400000000000000000693AB76ADED89040AB36E8F7E048B44000000000000000000C00000014000000010000000C00000013000000891300003C0000000600000002000000BDE416739DD8904056AECECCEE48B44000000000000000000DEC0AD547CC9040A70F4BD74F45B4400000000000000000
 310
@@ -66319,23 +66319,23 @@ A8060000200000000C00000016000000000000C00C00000033000000000000000C00000013000000
 310
 0065006E00740065007200200050006F0069006E0074003A00200000000F00000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F00000000000000000000000000000000000000000000000000000000010000002200000041007200690061006C00000000000000000074000C00
 310
-00001300000000943577D400000026000000B9B58BEEFA7091406A7B1B15E73AB440000000000000000000000000000000000000000000000000000000000000F03F000000000000F03F0000000000000000000000000000000031003100330036002E00390035002C00200035003100360039002E003600350000005C0010
+00001300000000943577D400000026000000B9B58BEEFA7091406A7B1B15E73AB440000000000000000000000000000000000000000000000000000000000000F03F000000000000F03F0000000000000000000000000000000031003100330036002E00390035002C00200035003100360039002E00360035000000650010
 310
 00000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F00000000000000000000000000000000000000000000000000000000010000002200000041007200690061006C0000000000000000000000CC000000260000009F87DF3EDD6B91400B7DF9900F3AB4400000000000000000
 310
 00000000000000000000000000000000000000000000F03F000000000000F03F0000000000000000000000000000000053007400610072007400200041006E0067006C0065003A00200000000D00000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F0000000000000000000000
 310
-0000000000000000000000000000000000010000002200000041007200690061006C00000000006100000000000C0000001300000000943577C4000000260000003E950C4A3D7B91400B7DF9900F3AB440000000000000000000000000000000000000000000000000000000000000F03F000000000000F03F000000000000
+0000000000000000000000000000000000010000002200000041007200690061006C00000000006400000066000C0000001300000000943577C4000000260000003E950C4A3D7B91400B7DF9900F3AB440000000000000000000000000000000000000000000000000000000000000F03F000000000000F03F000000000000
 310
-000000000000000000003300300030002E00370032003200320000002E000800000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F00000000000000000000000000000000000000000000000000000000010000002200000041007200690061006C0000000000000000007800C8
+000000000000000000003300300030002E003700320032003200000050000800000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F00000000000000000000000000000000000000000000000000000000010000002200000041007200690061006C000000000000000000736CC8
 310
 0000002600000002476C10A66C9140428487B53939B440000000000000000000000000000000000000000000000000000000000000F03F000000000000F03F0000000000000000000000000000000045006E006400200041006E0067006C0065003A00200000000B00000001000000000000000000E03F000000000000F03F
 310
-0000000000000000000000000000F03F00000000000000000000000000000000000000000000000000000000010000002200000041007200690061006C00000000007000000000000C0000001300000000943577C400000026000000DB76CF44187B9140428487B53939B44000000000000000000000000000000000000000
+0000000000000000000000000000F03F00000000000000000000000000000000000000000000000000000000010000002200000041007200690061006C0000000000736C000000000C0000001300000000943577C400000026000000DB76CF44187B9140428487B53939B44000000000000000000000000000000000000000
 310
-0000000000000000000000F03F000000000000F03F000000000000000000000000000000003200300039002E003000380031003600000074000800000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F000000000000000000000000000000000000000000000000000000000100
+0000000000000000000000F03F000000000000F03F000000000000000000000000000000003200300039002E003000380031003600000064000800000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F000000000000000000000000000000000000000000000000000000000100
 310
-00002200000041007200690061006C0000000000000000003E000C00000033000000000000000C000000100000000D0000000C00000016000000000000C00C00000012000000FF7F00000C00000013000000010000000C0000001400000001000000540000000700000003000000EB313BDF3BA59140201528DC5135B44000
+00002200000041007200690061006C00000000000000000000000C00000033000000000000000C000000100000000D0000000C00000016000000000000C00C00000012000000FF7F00000C00000013000000010000000C0000001400000001000000540000000700000003000000EB313BDF3BA59140201528DC5135B44000
 310
 00000000000000AF107D07ABA69140A6D10E22F634B4400000000000000000CD70A1B8D8A49140D92FDC212F35B44000000000000000000C00000014000000010000000C00000013000000891300003C00000006000000020000005C51EE4B0AA591407D22027F4035B4400000000000000000F860B25E0F899140D3E5DDAB
 310
@@ -66585,23 +66585,23 @@ G-ANNO-TTLB-WIDE
 310
 A4060000200000000C00000016000000000000C00C00000033000000000000000C00000013000000993A0000D000000026000000DA5799FF578A91402E4CE52E4546B440000000000000000000000000000000000000000000000000000000000000F03F000000000000F03F00000000000000000000000000000000200043
 310
-0065006E00740065007200200050006F0069006E0074003A00200000000F00000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F00000000000000000000000000000000000000000000000000000000010000002200000041007200690061006C00000000000000000000000C00
+0065006E00740065007200200050006F0069006E0074003A00200000000F00000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F00000000000000000000000000000000000000000000000000000000010000002200000041007200690061006C0000000000660000006C000C00
 310
-00001300000000943577D4000000260000005D809506349C91402E4CE52E4546B440000000000000000000000000000000000000000000000000000000000000F03F000000000000F03F0000000000000000000000000000000031003100340036002E00320032002C00200035003100370036002E00310035000000000010
+00001300000000943577D4000000260000005D809506349C91402E4CE52E4546B440000000000000000000000000000000000000000000000000000000000000F03F000000000000F03F0000000000000000000000000000000031003100340036002E00320032002C00200035003100370036002E003100350000005C0010
 310
-00000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F00000000000000000000000000000000000000000000000000000000010000002200000041007200690061006C0000000000740000007000CC00000026000000EDBF67E59E989140CF4DC3AA6D45B4400000000000000000
+00000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F00000000000000000000000000000000000000000000000000000000010000002200000041007200690061006C0000000000000000000000CC00000026000000EDBF67E59E989140CF4DC3AA6D45B4400000000000000000
 310
 00000000000000000000000000000000000000000000F03F000000000000F03F0000000000000000000000000000000053007400610072007400200041006E0067006C0065003A00200000000D00000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F0000000000000000000000
 310
-0000000000000000000000000000000000010000002200000041007200690061006C00000000006400000066000C0000001300000000943577C0000000260000008CCD94F0FEA79140CF4DC3AA6D45B440000000000000000000000000000000000000000000000000000000000000F03F000000000000F03F000000000000
+0000000000000000000000000000000000010000002200000041007200690061006C00000000000077000000140C0000001300000000943577C0000000260000008CCD94F0FEA79140CF4DC3AA6D45B440000000000000000000000000000000000000000000000000000000000000F03F000000000000F03F000000000000
 310
 00000000000000000000340033002E00300038003000370000000700000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F00000000000000000000000000000000000000000000000000000000010000002200000041007200690061006C0000000000000000000000C800000026
 310
 00000083C5178EE0979140065551CF9744B440000000000000000000000000000000000000000000000000000000000000F03F000000000000F03F0000000000000000000000000000000045006E006400200041006E0067006C0065003A00200000000B00000001000000000000000000E03F000000000000F03F00000000
 310
-00000000000000000000F03F00000000000000000000000000000000000000000000000000000000010000002200000041007200690061006C000000000000000000F03F0C0000001300000000943577C4000000260000005CF57AC252A69140065551CF9744B4400000000000000000000000000000000000000000000000
+00000000000000000000F03F00000000000000000000000000000000000000000000000000000000010000002200000041007200690061006C00000000000000000000000C0000001300000000943577C4000000260000005CF57AC252A69140065551CF9744B4400000000000000000000000000000000000000000000000
 310
-00000000000000F03F000000000000F03F000000000000000000000000000000003200370030002E003000300030003000000000000800000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F00000000000000000000000000000000000000000000000000000000010000002200
+00000000000000F03F000000000000F03F000000000000000000000000000000003200370030002E003000300030003000000074000800000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F00000000000000000000000000000000000000000000000000000000010000002200
 310
 000041007200690061006C00000000000000000000000C00000033000000000000000C000000100000000D0000000C00000016000000000000C00C00000012000000FF7F00000C00000013000000010000000C000000140000000100000054000000070000000300000092FC44F774D09140E4E5F1F5AF40B4400000000000
 310
@@ -66859,9 +66859,9 @@ G-ANNO-TTLB-WIDE
 310
 A4020000190000000C00000016000000000000C00C00000033000000000000000C00000013000000993A00000C0000001300000000943577D400000026000000DDF7876407D791405CF89B2BDB3CB440000000000000000000000000000000000000000000000000000000000000F03F000000000000F03F00000000000000
 310
-00000000000000000031003100330036002E00330033002C00200035003100370037002E0036003300000000001000000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F000000000000000000000000000000000000000000000000000000000100000022000000410072006900
+00000000000000000031003100330036002E00330033002C00200035003100370037002E0036003300000000651000000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F000000000000000000000000000000000000000000000000000000000100000022000000410072006900
 310
-61006C00000000007400000070000C00000033000000000000000C000000100000000D0000000C00000016000000000000C00C00000012000000FF7F00000C00000013000000010000000C0000001400000001000000540000000700000003000000948A64E42AC3914022F82284D939B44000000000000000003EB7C4A756
+61006C00000000000000000000000C00000033000000000000000C000000100000000D0000000C00000016000000000000C00C00000012000000FF7F00000C00000013000000010000000C0000001400000001000000540000000700000003000000948A64E42AC3914022F82284D939B44000000000000000003EB7C4A756
 310
 C1914045588E83A139B4400000000000000000E64E33EEC8C29140ED914374FC39B44000000000000000000C00000014000000010000000C00000013000000891300003C0000000600000002000000BDEC4BE9F9C29140084533FCEA39B440000000000000000004D9A7A2E4D4914011DCA0C50E3DB4400000000000000000
 310
@@ -67117,9 +67117,9 @@ G-ANNO-TTLB-WIDE
 310
 A4020000190000000C00000016000000000000C00C00000033000000000000000C00000013000000993A00000C0000001300000000943577D4000000260000004DEBEA2C33EF91408265F344E431B440000000000000000000000000000000000000000000000000000000000000F03F000000000000F03F00000000000000
 310
-00000000000000000031003100340034002E00320034002C00200035003100360036002E0033003500000000001000000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F000000000000000000000000000000000000000000000000000000000100000022000000410072006900
+00000000000000000031003100340034002E00320034002C00200035003100360036002E0033003500000000651000000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F000000000000000000000000000000000000000000000000000000000100000022000000410072006900
 310
-61006C00000000007400000070000C00000033000000000000000C000000100000000D0000000C00000016000000000000C00C00000012000000FF7F00000C00000013000000010000000C0000001400000001000000540000000700000003000000FC14CA4876E291402EE13731AF2EB44000000000000000009A90B0ECF1
+61006C00000000000000000000000C00000033000000000000000C000000100000000D0000000C00000016000000000000C00C00000012000000FF7F00000C00000013000000010000000C0000001400000001000000540000000700000003000000FC14CA4876E291402EE13731AF2EB44000000000000000009A90B0ECF1
 310
 E0914011B77118592EB440000000000000000077154B99F1E191403B0CEA06CA2EB44000000000000000000C00000014000000010000000C00000013000000891300003C00000006000000020000003A950AF133E29140B5F6109CBC2EB440000000000000000075CC0A6B10ED91403A49F8DE1732B4400000000000000000
 310
@@ -67407,23 +67407,23 @@ G-ANNO-TTLB-WIDE
 310
 8C060000200000000C00000016000000000000C00C00000033000000000000000C00000013000000993A0000C40000002600000017A8500D697F90407DCC2360D623B440000000000000000000000000000000000000000000000000000000000000F03F000000000000F03F00000000000000000000000000000000430065
 310
-006E007400650072003A002000000000000800000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F00000000000000000000000000000000000000000000000000000000010000002200000041007200690061006C00000000000000000078000C0000001300000000943577D400
+006E007400650072003A002000000000000800000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F00000000000000000000000000000000000000000000000000000000010000002200000041007200690061006C000000000000000000736C0C0000001300000000943577D400
 310
-0000260000009F80F555598990407DCC2360D623B440000000000000000000000000000000000000000000000000000000000000F03F000000000000F03F0000000000000000000000000000000031003000340037002E00330030002C00200035003100350035002E003300360000005C0010000000010000000000000000
+0000260000009F80F555598990407DCC2360D623B440000000000000000000000000000000000000000000000000000000000000F03F000000000000F03F0000000000000000000000000000000031003000340037002E00330030002C00200035003100350035002E00330036000000000010000000010000000000000000
 310
 00E03F000000000000F03F0000000000000000000000000000F03F00000000000000000000000000000000000000000000000000000000010000002200000041007200690061006C0000000000000000000000C400000026000000BFE9648B6C7F90401ECE01DCFE22B4400000000000000000000000000000000000000000
 310
-00000000000000000000F03F000000000000F03F000000000000000000000000000000005300740061007200740041003A002000000000000800000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F00000000000000000000000000000000000000000000000000000000010000
+00000000000000000000F03F000000000000F03F000000000000000000000000000000005300740061007200740041003A002000000025000800000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F00000000000000000000000000000000000000000000000000000000010000
 310
 002200000041007200690061006C00000000000000000000000C0000001300000000943577C400000026000000D6A90792BD8890401ECE01DCFE22B440000000000000000000000000000000000000000000000000000000000000F03F000000000000F03F000000000000000000000000000000003200370030002E003000
 310
-300030003000000000000800000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F00000000000000000000000000000000000000000000000000000000010000002200000041007200690061006C0000000000000000000000C000000026000000221ED718547F904055D58F0029
+30003000300000003A000800000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F00000000000000000000000000000000000000000000000000000000010000002200000041007200690061006C0000000000000000000000C000000026000000221ED718547F904055D58F0029
 310
 22B440000000000000000000000000000000000000000000000000000000000000F03F000000000000F03F0000000000000000000000000000000045006E006400200041003A00200000000700000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F000000000000000000000000
 310
-00000000000000000000000000000000010000002200000041007200690061006C00000000003E00000000000C0000001300000000943577C4000000260000000B32CA017E88904055D58F002922B440000000000000000000000000000000000000000000000000000000000000F03F000000000000F03F00000000000000
+00000000000000000000000000000000010000002200000041007200690061006C00000000000000000000000C0000001300000000943577C4000000260000000B32CA017E88904055D58F002922B440000000000000000000000000000000000000000000000000000000000000F03F000000000000F03F00000000000000
 310
-0000000000000000003300340035002E00380031003100320000003A000800000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F00000000000000000000000000000000000000000000000000000000010000002200000041007200690061006C00000000000000000000000C00
+0000000000000000003300340035002E003800310031003200000000000800000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F00000000000000000000000000000000000000000000000000000000010000002200000041007200690061006C00000000000000000000000C00
 310
 000033000000000000000C000000100000000D0000000C00000016000000000000C00C00000012000000FF7F00000C00000013000000010000000C0000001400000001000000540000000700000003000000FBAE2A1F867290403046932A3C21B44000000000000000009AEE7810B5709040D81132880221B4400000000000
 310
@@ -67677,21 +67677,21 @@ G-ANNO-TTLB-WIDE
 310
 006E007400650072003A002000000000000800000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F00000000000000000000000000000000000000000000000000000000010000002200000041007200690061006C00000000000000000000000C0000001300000000943577D400
 310
-00002600000056AACDD8332090404ED3F618A724B440000000000000000000000000000000000000000000000000000000000000F03F000000000000F03F0000000000000000000000000000000031003000340036002E00390035002C00200035003100340036002E00360034000000000010000000010000000000000000
+00002600000056AACDD8332090404ED3F618A724B440000000000000000000000000000000000000000000000000000000000000F03F000000000000F03F0000000000000000000000000000000031003000340036002E00390035002C00200035003100340036002E00360034000000300010000000010000000000000000
 310
-00E03F000000000000F03F0000000000000000000000000000F03F00000000000000000000000000000000000000000000000000000000010000002200000041007200690061006C0000000000740000007000C400000026000000D422219EFB209040EFD4D494CF23B4400000000000000000000000000000000000000000
+00E03F000000000000F03F0000000000000000000000000000F03F00000000000000000000000000000000000000000000000000000000010000002200000041007200690061006C0000000000000000000000C400000026000000D422219EFB209040EFD4D494CF23B4400000000000000000000000000000000000000000
 310
-00000000000000000000F03F000000000000F03F000000000000000000000000000000005300740061007200740041003A00200000003A000800000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F00000000000000000000000000000000000000000000000000000000010000
+00000000000000000000F03F000000000000F03F000000000000000000000000000000005300740061007200740041003A002000000025000800000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F00000000000000000000000000000000000000000000000000000000010000
 310
-002200000041007200690061006C00000000000000000078000C0000001300000000943577C400000026000000EBE2C3A44C2A9040EFD4D494CF23B440000000000000000000000000000000000000000000000000000000000000F03F000000000000F03F000000000000000000000000000000003300320030002E003000
+002200000041007200690061006C00000000000000000000000C0000001300000000943577C400000026000000EBE2C3A44C2A9040EFD4D494CF23B440000000000000000000000000000000000000000000000000000000000000F03F000000000000F03F000000000000000000000000000000003300320030002E003000
 310
-350037003000000000000800000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F00000000000000000000000000000000000000000000000000000000010000002200000041007200690061006C0000000000000000000000C000000026000000872337D38321904026DC62B9F9
+350037003000000031000800000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F00000000000000000000000000000000000000000000000000000000010000002200000041007200690061006C0000000000000000000000C000000026000000872337D38321904026DC62B9F9
 310
 22B440000000000000000000000000000000000000000000000000000000000000F03F000000000000F03F0000000000000000000000000000000045006E006400200041003A00200000000700000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F000000000000000000000000
 310
 00000000000000000000000000000000010000002200000041007200690061006C00000000000000000000000C0000001300000000943577C40000002600000070372ABCAD2A904026DC62B9F922B440000000000000000000000000000000000000000000000000000000000000F03F000000000000F03F00000000000000
 310
-0000000000000000003200330031002E003200360033003100000039000800000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F00000000000000000000000000000000000000000000000000000000010000002200000041007200690061006C00000000000000000000000C00
+0000000000000000003200330031002E003200360033003100000020000800000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F00000000000000000000000000000000000000000000000000000000010000002200000041007200690061006C00000000000000000000000C00
 310
 000033000000000000000C000000100000000D0000000C00000016000000000000C00C00000012000000FF7F00000C00000013000000010000000C00000014000000010000005400000007000000030000000C38DC328250904043F485CF8021B4400000000000000000FDD3FE1635529040225331F83921B4400000000000
 310
@@ -67969,7 +67969,7 @@ A4020000190000000C00000016000000000000C00C00000033000000000000000C00000013000000
 310
 00000000000000000031003000350031002E00350032002C00200035003100350031002E003900360000005C001000000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F000000000000000000000000000000000000000000000000000000000100000022000000410072006900
 310
-61006C00000000006500000000000C00000033000000000000000C000000100000000D0000000C00000016000000000000C00C00000012000000FF7F00000C00000013000000010000000C0000001400000001000000540000000700000003000000E901DD8CD76D9040EC26F7837720B4400000000000000000B5771CC60F
+61006C00000000000000000000000C00000033000000000000000C000000100000000D0000000C00000016000000000000C00C00000012000000FF7F00000C00000013000000010000000C0000001400000001000000540000000700000003000000E901DD8CD76D9040EC26F7837720B4400000000000000000B5771CC60F
 310
 6E904026526D83F61FB4400000000000000000B6773B3C336D9040AECCD5FB6B20B44000000000000000000C00000014000000010000000C00000013000000891300003C0000000600000002000000CF3C8C64856D9040CD79E6BF7120B440000000000000000043659519686690409172D3B6C726B4400000000000000000
 310
@@ -68227,13 +68227,13 @@ G-ANNO-TTLB-WIDE
 310
 006E007400650072003A002000000000000800000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F00000000000000000000000000000000000000000000000000000000010000002200000041007200690061006C00000000000000000000000C0000001300000000943577D400
 310
-000026000000CC44278898349140843912EF0924B440000000000000000000000000000000000000000000000000000000000000F03F000000000000F03F0000000000000000000000000000000031003100310032002E00340037002C00200035003100330037002E003900380000005C0010000000010000000000000000
+000026000000CC44278898349140843912EF0924B440000000000000000000000000000000000000000000000000000000000000F03F000000000000F03F0000000000000000000000000000000031003100310032002E00340037002C00200035003100330037002E00390038000000330010000000010000000000000000
 310
 00E03F000000000000F03F0000000000000000000000000000F03F00000000000000000000000000000000000000000000000000000000010000002200000041007200690061006C0000000000000000000000CC000000260000007B4C19D0722F9140253BF06A3223B4400000000000000000000000000000000000000000
 310
 00000000000000000000F03F000000000000F03F0000000000000000000000000000000053007400610072007400200041006E0067006C0065003A00200000000D00000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F0000000000000000000000000000000000000000000000
 310
-0000000000010000002200000041007200690061006C00000000006400000066000C0000001300000000943577C4000000260000001A5A46DBD23E9140253BF06A3223B440000000000000000000000000000000000000000000000000000000000000F03F000000000000F03F000000000000000000000000000000003100
+0000000000010000002200000041007200690061006C00000000006100000000000C0000001300000000943577C4000000260000001A5A46DBD23E9140253BF06A3223B440000000000000000000000000000000000000000000000000000000000000F03F000000000000F03F000000000000000000000000000000003100
 310
 370030002E003200330035003300000000000800000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F00000000000000000000000000000000000000000000000000000000010000002200000041007200690061006C0000000000000000000000C80000002600000064015C8540
 310
@@ -68241,7 +68241,7 @@ G-ANNO-TTLB-WIDE
 310
 0000F03F00000000000000000000000000000000000000000000000000000000010000002200000041007200690061006C000000000000000000F03F0C0000001300000000943577C4000000260000003D31BFB9B23E91405C427E8F5C22B440000000000000000000000000000000000000000000000000000000000000F0
 310
-3F000000000000F03F000000000000000000000000000000003100330039002E003700310036003700000032000800000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F000000000000000000000000000000000000000000000000000000000100000022000000410072006900
+3F000000000000F03F000000000000000000000000000000003100330039002E003700310036003700000065000800000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F000000000000000000000000000000000000000000000000000000000100000022000000410072006900
 310
 61006C00000000000000000000000C00000033000000000000000C000000100000000D0000000C00000016000000000000C00C00000012000000FF7F00000C00000013000000010000000C00000014000000010000005400000007000000030000005BAF07B1A6669140F5CD58B4781EB440000000000000000060B0ADF0D4
 310
@@ -68499,11 +68499,11 @@ G-ANNO-TTLB-WIDE
 310
 98060000200000000C00000016000000000000C00C00000033000000000000000C00000013000000993A0000C400000026000000B5005F136FA79140339AA181AB12B440000000000000000000000000000000000000000000000000000000000000F03F000000000000F03F00000000000000000000000000000000430065
 310
-006E007400650072003A002000000030000800000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F00000000000000000000000000000000000000000000000000000000010000002200000041007200690061006C00000000000000000000000C0000001300000000943577D400
+006E007400650072003A00200000005C000800000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F00000000000000000000000000000000000000000000000000000000010000002200000041007200690061006C00000000000000000000000C0000001300000000943577D400
 310
-0000260000003DD9035C5FB19140339AA181AB12B440000000000000000000000000000000000000000000000000000000000000F03F000000000000F03F0000000000000000000000000000000031003100310037002E00310032002C00200035003100340034002E00320035000000000010000000010000000000000000
+0000260000003DD9035C5FB19140339AA181AB12B440000000000000000000000000000000000000000000000000000000000000F03F000000000000F03F0000000000000000000000000000000031003100310037002E00310032002C00200035003100340034002E00320035000000006510000000010000000000000000
 310
-00E03F000000000000F03F0000000000000000000000000000F03F00000000000000000000000000000000000000000000000000000000010000002200000041007200690061006C0000000000740000007000CC000000260000005D42739172A79140D49B7FFDD311B4400000000000000000000000000000000000000000
+00E03F000000000000F03F0000000000000000000000000000F03F00000000000000000000000000000000000000000000000000000000010000002200000041007200690061006C0000000000000000000000CC000000260000005D42739172A79140D49B7FFDD311B4400000000000000000000000000000000000000000
 310
 00000000000000000000F03F000000000000F03F0000000000000000000000000000000053007400610072007400200041006E0067006C0065003A00200000000D00000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F0000000000000000000000000000000000000000000000
 310
@@ -68793,7 +68793,7 @@ A4020000190000000C00000016000000000000C00C00000033000000000000000C00000013000000
 310
 00000000000000000031003100320034002E00360034002C00200035003100330037002E0037003600000000001000000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F000000000000000000000000000000000000000000000000000000000100000022000000410072006900
 310
-61006C00000000007400000070000C00000033000000000000000C000000100000000D0000000C00000016000000000000C00C00000012000000FF7F00000C00000013000000010000000C00000014000000010000005400000007000000030000005CE019D7CC909140D2EE0C4B0012B440000000000000000016A3C03D93
+61006C00000000006C0000006B000C00000033000000000000000C000000100000000D0000000C00000016000000000000C00C00000012000000FF7F00000C00000013000000010000000C00000014000000010000005400000007000000030000005CE019D7CC909140D2EE0C4B0012B440000000000000000016A3C03D93
 310
 9291409BE21F92C111B4400000000000000000E1E86B08949091409DC9370FD811B44000000000000000000C00000014000000010000000C00000013000000891300003C00000006000000020000009FE4C26FB0909140375C222DEC11B4400000000000000000229FDE0D676D9140A9B5B5550915B4400000000000000000
 310
@@ -69097,7 +69097,7 @@ G-ANNO-TTLB-WIDE
 310
 94020000190000000C00000016000000000000C00C00000033000000000000000C00000013000000993A00000C0000001300000000943577C400000026000000A137758228969140AC37FF0E4E1DB440000000000000000000000000000000000000000000000000000000000000F03F000000000000F03F00000000000000
 310
-0000000000000000003300310039002E003100370036003900000000000800000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F00000000000000000000000000000000000000000000000000000000010000002200000041007200690061006C00000000000000000000000C00
+0000000000000000003300310039002E003100370036003900000045000800000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F00000000000000000000000000000000000000000000000000000000010000002200000041007200690061006C00000000000000000000000C00
 310
 000033000000000000000C000000100000000D0000000C00000016000000000000C00C00000012000000FF7F00000C00000013000000010000000C0000001400000001000000540000000700000003000000650F29AAB6809140DFCB2B704816B440000000000000000065256364527F914040E41111EA15B4400000000000
 310
@@ -69445,7 +69445,7 @@ G-ANNO-TTLB-WIDE
 310
 94020000190000000C00000016000000000000C00C00000033000000000000000C00000013000000993A00000C0000001300000000943577C400000026000000425545F93B329140A35B6B94A71DB440000000000000000000000000000000000000000000000000000000000000F03F000000000000F03F00000000000000
 310
-0000000000000000003100340034002E003500330036003600000064000800000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F00000000000000000000000000000000000000000000000000000000010000002200000041007200690061006C00000000000000000000000C00
+0000000000000000003100340034002E003500330036003600000000000800000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F00000000000000000000000000000000000000000000000000000000010000002200000041007200690061006C00000000000000000000000C00
 310
 000033000000000000000C000000100000000D0000000C00000016000000000000C00C00000012000000FF7F00000C00000013000000010000000C0000001400000001000000540000000700000003000000895E2A9D035A914003C48B15CD1CB4400000000000000000B7ADFEC9EB5B9140729C0EFDA01CB4400000000000
 310
@@ -69703,7 +69703,7 @@ G-ANNO-TTLB-WIDE
 310
 94020000190000000C00000016000000000000C00C00000033000000000000000C00000013000000993A00000C0000001300000000943577C400000026000000FEC9FE10213091403C362CB8B517B440000000000000000000000000000000000000000000000000000000000000F03F000000000000F03F00000000000000
 310
-0000000000000000003200330035002E003600370037003900000064000800000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F00000000000000000000000000000000000000000000000000000000010000002200000041007200690061006C00000000000000000000000C00
+0000000000000000003200330035002E003600370037003900000065000800000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F00000000000000000000000000000000000000000000000000000000010000002200000041007200690061006C00000000000000000000000C00
 310
 000033000000000000000C000000100000000D0000000C00000016000000000000C00C00000012000000FF7F00000C00000013000000010000000C00000014000000010000005400000007000000030000005CB894C509649140D41362262013B440000000000000000061236BD8A8659140AC25593BD212B4400000000000
 310
@@ -70815,9 +70815,9 @@ G-ANNO-TTLB-WIDE
 310
 000500001D0000000C00000016000000000000C00C00000033000000000000000C00000013000000993A0000C000000026000000DDC148ADDB9D9240BFC576DA3740B440000000000000000000000000000000000000000000000000000000000000F03F000000000000F03F00000000000000000000000000000000530074
 310
-006100720074003A00200000000700000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F00000000000000000000000000000000000000000000000000000000010000002200000041007200690061006C00000000000000000000000C0000001300000000943577D40000002600
+006100720074003A00200000000700000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F00000000000000000000000000000000000000000000000000000000010000002200000041007200690061006C00000000006100000000000C0000001300000000943577D40000002600
 310
-00008B12B6A04FA59240BFC576DA3740B440000000000000000000000000000000000000000000000000000000000000F03F000000000000F03F0000000000000000000000000000000031003100380039002E00300033002C00200035003100390030002E0038003100000000001000000001000000000000000000E03F00
+00008B12B6A04FA59240BFC576DA3740B440000000000000000000000000000000000000000000000000000000000000F03F000000000000F03F0000000000000000000000000000000031003100380039002E00300033002C00200035003100390030002E0038003100000030001000000001000000000000000000E03F00
 310
 0000000000F03F0000000000000000000000000000F03F00000000000000000000000000000000000000000000000000000000010000002200000041007200690061006C0000000000000000000000BC0000002600000040F6BA3AC39D9240F6CC04FF613FB440000000000000000000000000000000000000000000000000
 310
@@ -70825,7 +70825,7 @@ G-ANNO-TTLB-WIDE
 310
 006C00000000000000000000000C0000001300000000943577D40000002600000028695E5749A49240F6CC04FF613FB440000000000000000000000000000000000000000000000000000000000000F03F000000000000F03F0000000000000000000000000000000031003100370033002E00320037002C00200035003100
 310
-360038002E0038003200000000001000000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F00000000000000000000000000000000000000000000000000000000010000002200000041007200690061006C00000000006500000000000C00000033000000000000000C00000010
+360038002E003800320000005C001000000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F00000000000000000000000000000000000000000000000000000000010000002200000041007200690061006C00000000000000000000000C00000033000000000000000C00000010
 310
 0000000D0000000C00000016000000000000C00C00000012000000FF7F00000C00000013000000010000000C0000001400000001000000540000000700000003000000550983AC9F829240875AC505EC3FB4400000000000000000550983AC9F809240DCAF1A5B0140B4400000000000000000550983AC9F829240310570B0
 310
@@ -71131,9 +71131,9 @@ G-ANNO-TTLB-WIDE
 310
 A4020000190000000C00000016000000000000C00C00000033000000000000000C00000013000000993A00000C0000001300000000943577D400000026000000D4F76CB00D689240D812F9FF7E25B440000000000000000000000000000000000000000000000000000000000000F03F000000000000F03F00000000000000
 310
-00000000000000000031003100370033002E00330039002C00200035003100360034002E0031003700000000001000000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F000000000000000000000000000000000000000000000000000000000100000022000000410072006900
+00000000000000000031003100370033002E00330039002C00200035003100360034002E003100370000005C001000000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F000000000000000000000000000000000000000000000000000000000100000022000000410072006900
 310
-61006C00000000007400000070000C00000033000000000000000C000000100000000D0000000C00000016000000000000C00C00000012000000FF7F00000C00000013000000010000000C0000001400000001000000540000000700000003000000583F8C4E5D569240D246B81EB52BB44000000000000000007BAA036394
+61006C00000000000000000000000C00000033000000000000000C000000100000000D0000000C00000016000000000000C00C00000012000000FF7F00000C00000013000000010000000C0000001400000001000000540000000700000003000000583F8C4E5D569240D246B81EB52BB44000000000000000007BAA036394
 310
 559240F3B40CC52C2CB4400000000000000000D08EE4AAED569240DFABDCE0CB2BB44000000000000000000C00000014000000010000000C00000013000000891300003C00000006000000020000001467B87CA55692405979CA7FC02BB4400000000000000000FCD88CEEEA6592408CF6FD99B225B4400000000000000000
 310
@@ -71389,9 +71389,9 @@ G-ANNO-TTLB-WIDE
 310
 A4020000190000000C00000016000000000000C00C00000033000000000000000C00000013000000993A00000C0000001300000000943577D4000000260000007DF5ABA92C5A92401372B71F0424B440000000000000000000000000000000000000000000000000000000000000F03F000000000000F03F00000000000000
 310
-00000000000000000031003100360031002E00320034002C00200035003100350039002E003500340000005C001000000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F000000000000000000000000000000000000000000000000000000000100000022000000410072006900
+00000000000000000031003100360031002E00320034002C00200035003100350039002E0035003400000065001000000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F000000000000000000000000000000000000000000000000000000000100000022000000410072006900
 310
-61006C00000000006500000000000C00000033000000000000000C000000100000000D0000000C00000016000000000000C00C00000012000000FF7F00000C00000013000000010000000C00000014000000010000005400000007000000030000008C0D2CB1CB2692404477390E5627B4400000000000000000FD6761B3F1
+61006C00000000000000000000000C00000033000000000000000C000000100000000D0000000C00000016000000000000C00C00000012000000FF7F00000C00000013000000010000000C00000014000000010000005400000007000000030000008C0D2CB1CB2692404477390E5627B4400000000000000000FD6761B3F1
 310
 249240ADFA1CF28A27B440000000000000000096D86AAFF6269240864DA2587F27B44000000000000000000C00000014000000010000000C00000013000000891300003C000000060000000200000011734B30E126924065E26DB36A27B4400000000000000000A9D6CBE709589240C755BCB93724B4400000000000000000
 310
@@ -72145,7 +72145,7 @@ G-ANNO-TTLB-WIDE
 310
 006100720074003A00200000000700000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F00000000000000000000000000000000000000000000000000000000010000002200000041007200690061006C00000000000000000000000C0000001300000000943577D40000002600
 310
-00001B4D69A4B8C68F4072BEB35D0ED6B340000000000000000000000000000000000000000000000000000000000000F03F000000000000F03F0000000000000000000000000000000031003000320037002E00300030002C00200034003900380033002E003100320000005C001000000001000000000000000000E03F00
+00001B4D69A4B8C68F4072BEB35D0ED6B340000000000000000000000000000000000000000000000000000000000000F03F000000000000F03F0000000000000000000000000000000031003000320037002E00300030002C00200034003900380033002E0031003200000000651000000001000000000000000000E03F00
 310
 0000000000F03F0000000000000000000000000000F03F00000000000000000000000000000000000000000000000000000000010000002200000041007200690061006C0000000000000000000000BC00000026000000058DC69D67BA8F40A9C5418238D5B340000000000000000000000000000000000000000000000000
 310
@@ -72153,7 +72153,7 @@ G-ANNO-TTLB-WIDE
 310
 006C00000000000000000000000C0000001300000000943577D400000026000000D3720DD773C78F40A9C5418238D5B340000000000000000000000000000000000000000000000000000000000000F03F000000000000F03F0000000000000000000000000000000031003000320037002E00300030002C00200035003100
 310
-330034002E003500310000005C001000000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F00000000000000000000000000000000000000000000000000000000010000002200000041007200690061006C00000000000000000000000C00000033000000000000000C00000010
+330034002E0035003100000065001000000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F00000000000000000000000000000000000000000000000000000000010000002200000041007200690061006C00000000000000000000000C00000033000000000000000C00000010
 310
 0000000D0000000C00000016000000000000C00C00000012000000FF7F00000C00000013000000010000000C0000001400000001000000540000000700000003000000C77E462A420B9040C006871063CFB340000000000000000000000000000C9040BC91EF49EACEB3400000000000000000E0F492BEAF0A9040926BE524
 310
@@ -72405,9 +72405,9 @@ G-ANNO-TTLB-WIDE
 310
 000500001D0000000C00000016000000000000C00C00000033000000000000000C00000013000000993A0000C000000026000000ACCA7E95E667904023B5C0C059D9B340000000000000000000000000000000000000000000000000000000000000F03F000000000000F03F00000000000000000000000000000000530074
 310
-006100720074003A00200000000700000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F00000000000000000000000000000000000000000000000000000000010000002200000041007200690061006C00000000007200000073000C0000001300000000943577D40000002600
+006100720074003A00200000000700000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F00000000000000000000000000000000000000000000000000000000010000002200000041007200690061006C00000000000000000000000C0000001300000000943577D40000002600
 310
-00005A1BEC885A6F904023B5C0C059D9B340000000000000000000000000000000000000000000000000000000000000F03F000000000000F03F0000000000000000000000000000000031003000340035002E00300030002C00200034003900380033002E00310032000000C6461000000001000000000000000000E03F00
+00005A1BEC885A6F904023B5C0C059D9B340000000000000000000000000000000000000000000000000000000000000F03F000000000000F03F0000000000000000000000000000000031003000340035002E00300030002C00200034003900380033002E003100320000005C001000000001000000000000000000E03F00
 310
 0000000000F03F0000000000000000000000000000F03F00000000000000000000000000000000000000000000000000000000010000002200000041007200690061006C0000000000000000000000BC000000260000000FFFF022CE6790405ABC4EE583D8B340000000000000000000000000000000000000000000000000
 310
@@ -72415,7 +72415,7 @@ G-ANNO-TTLB-WIDE
 310
 006C00000000000000000000000C0000001300000000943577D400000026000000F771943F546E90405ABC4EE583D8B340000000000000000000000000000000000000000000000000000000000000F03F000000000000F03F0000000000000000000000000000000031003000340035002E00300030002C00200035003100
 310
-330033002E0037003300000000001000000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F00000000000000000000000000000000000000000000000000000000010000002200000041007200690061006C00000000007400000070000C00000033000000000000000C00000010
+330033002E0037003300000000001000000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F00000000000000000000000000000000000000000000000000000000010000002200000041007200690061006C00000000000000000000000C00000033000000000000000C00000010
 310
 0000000D0000000C00000016000000000000C00C00000012000000FF7F00000C00000013000000010000000C0000001400000001000000540000000700000003000000594EB16CCD559040997CB82517D6B3400000000000000000F7FFFFFFFF539040AE8253B7DBD5B34000000000000000005336FB6167559040CCACFF58
 310
@@ -72879,7 +72879,7 @@ G-ANNO-TTLB-WIDE
 310
 A4020000190000000C00000016000000000000C00C00000033000000000000000C00000013000000993A00000C0000001300000000943577D4000000260000009A54DDF447CE904072EED37F91D2B340000000000000000000000000000000000000000000000000000000000000F03F000000000000F03F00000000000000
 310
-00000000000000000031003000370032002E00330030002C00200035003000380031002E0038003900000000001000000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F000000000000000000000000000000000000000000000000000000000100000022000000410072006900
+00000000000000000031003000370032002E00330030002C00200035003000380031002E003800390000005C001000000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F000000000000000000000000000000000000000000000000000000000100000022000000410072006900
 310
 61006C00000000000000000000000C00000033000000000000000C000000100000000D0000000C00000016000000000000C00C00000012000000FF7F00000C00000013000000010000000C0000001400000001000000540000000700000003000000E45C8BF598C19040079F359D63D9B3400000000000000000CA878DAF30
 310
@@ -73137,7 +73137,7 @@ G-ANNO-TTLB-WIDE
 310
 A4020000190000000C00000016000000000000C00C00000033000000000000000C00000013000000993A00000C0000001300000000943577D400000026000000427E2AF8B0FF90401C4E0354D9EFB340000000000000000000000000000000000000000000000000000000000000F03F000000000000F03F00000000000000
 310
-00000000000000000031003000380030002E00330038002C00200035003100300031002E0037003400000065001000000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F000000000000000000000000000000000000000000000000000000000100000022000000410072006900
+00000000000000000031003000380030002E00330038002C00200035003100300031002E0037003400000000651000000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F000000000000000000000000000000000000000000000000000000000100000022000000410072006900
 310
 61006C00000000000000000000000C00000033000000000000000C000000100000000D0000000C00000016000000000000C00C00000012000000FF7F00000C00000013000000010000000C0000001400000001000000540000000700000003000000A0492BB987E39040E956960CD1EDB34000000000000000001F6AFBC286
 310
@@ -73395,7 +73395,7 @@ G-ANNO-TTLB-WIDE
 310
 A4020000190000000C00000016000000000000C00C00000033000000000000000C00000013000000993A00000C0000001300000000943577D400000026000000375FEE0D347B9040BE233E1AF5E3B340000000000000000000000000000000000000000000000000000000000000F03F000000000000F03F00000000000000
 310
-00000000000000000031003000360037002E00360037002C00200035003000380033002E0037003700000000001000000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F000000000000000000000000000000000000000000000000000000000100000022000000410072006900
+00000000000000000031003000360037002E00360037002C00200035003000380033002E0037003700000033001000000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F000000000000000000000000000000000000000000000000000000000100000022000000410072006900
 310
 61006C00000000000000000000000C00000033000000000000000C000000100000000D0000000C00000016000000000000C00C00000012000000FF7F00000C00000013000000010000000C00000014000000010000005400000007000000030000000AC3F4F8A8AD9040DDD7F11536DCB3400000000000000000653350BAAA
 310
@@ -73655,7 +73655,7 @@ A4020000190000000C00000016000000000000C00C00000033000000000000000C00000013000000
 310
 00000000000000000031003000370035002E00370035002C00200035003100300033002E0036003200000000001000000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F000000000000000000000000000000000000000000000000000000000100000022000000410072006900
 310
-61006C00000000006500000000000C00000033000000000000000C000000100000000D0000000C00000016000000000000C00C00000012000000FF7F00000C00000013000000010000000C0000001400000001000000540000000700000003000000DA4B3CAFC2CE904027CAD5C220F0B3400000000000000000B715BECD00
+61006C00000000000000000000000C00000033000000000000000C000000100000000D0000000C00000016000000000000C00C00000012000000FF7F00000C00000013000000010000000C0000001400000001000000540000000700000003000000DA4B3CAFC2CE904027CAD5C220F0B3400000000000000000B715BECD00
 310
 CF9040E7A097ED9FEFB340000000000000000047745AE81ECE9040043BACC214F0B34000000000000000000C00000014000000010000000C00000013000000891300003C00000006000000020000001160CBCB70CE90409602C1C21AF0B3400000000000000000C148D4C789C89040F04F879823F5B3400000000000000000
 310
@@ -74163,7 +74163,7 @@ G-ANNO-TTLB-WIDE
 310
 94020000190000000C00000016000000000000C00C00000033000000000000000C00000013000000993A00000C0000001300000000943577C400000026000000430AE593C9B29040D6D2ACE00EEDB340000000000000000000000000000000000000000000000000000000000000F03F000000000000F03F00000000000000
 310
-0000000000000000003100350037002E003800340034003500000000000800000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F00000000000000000000000000000000000000000000000000000000010000002200000041007200690061006C000000000000000000DAB30C00
+0000000000000000003100350037002E003800340034003500000000000800000001000000000000000000E03F000000000000F03F0000000000000000000000000000F03F00000000000000000000000000000000000000000000000000000000010000002200000041007200690061006C00000000000000000000000C00
 310
 000033000000000000000C000000100000000D0000000C00000016000000000000C00C00000012000000FF7F00000C00000013000000010000000C0000001400000001000000540000000700000003000000E69613D23DD69040B89D0820A6EEB3400000000000000000EBBF5CC843D89040F72CF491AEEEB3400000000000
 310
@@ -76315,7 +76315,7 @@ AcDbMText
  72
      5
   1
-qq eeeee\Pdfg
+{\Ftxt|c0;qq eeeee\Pdfg}
  73
      1
  44
@@ -76341,9 +76341,9 @@ Embedded Object
  41
 0.0
  42
-14.23679787207172
+17.59687079352003
  43
-17.51284753597935
+17.59687079352003
  71
      2
  72
@@ -78513,7 +78513,7 @@ AcDbMText
  41
 8.143807156697917
  46
-3.264310043377007
+3.264310043377006
  71
      3
  72
@@ -78573,9 +78573,9 @@ AcDbMText
  40
 0.7499999999999992
  41
-7.442890904457968
+7.442890904457967
  46
-3.000000000002727
+3.000000000002726
  71
      2
  72
@@ -78637,7 +78637,7 @@ AcDbMText
  41
 9.023954119870737
  46
-3.176219653528277
+3.176219653528276
  71
      5
  72
@@ -79499,7 +79499,7 @@ AcDbMText
  40
 0.75
  41
-7.466374889282631
+7.46637488928263
  46
 0.0
  71
@@ -79529,7 +79529,7 @@ Embedded Object
  31
 0.0
  40
-7.466374889282631
+7.46637488928263
  41
 0.0
  42
@@ -79541,7 +79541,7 @@ Embedded Object
  72
      1
  44
-7.466374889282631
+7.46637488928263
  45
 150.0
  73
@@ -79549,7 +79549,7 @@ Embedded Object
  74
      0
  46
-3.388095877463059
+3.388095877463058
   0
 LINE
   5
@@ -80169,7 +80169,7 @@ IQ_Template_2.10.25
  10
 -35.04999999999999
  20
-7.489967066933623
+7.489967066933622
  30
 0.0
   0
@@ -80895,7 +80895,7 @@ AcDbEntity
 100
 AcDbText
  10
--5.875892517135213
+-5.875892517135212
  20
 0.3133185295303633
  30
@@ -80905,7 +80905,7 @@ AcDbText
   1
 
  11
--5.875892517135213
+-5.875892517135212
  21
 0.5013185295303622
  31
@@ -80927,7 +80927,7 @@ NOTES
  72
      0
  11
--5.875892517135213
+-5.875892517135212
  21
 0.5013185295303622
  31
@@ -80935,7 +80935,7 @@ NOTES
 101
 Embedded Object
  10
--5.875892517135213
+-5.875892517135212
  20
 0.5013185295303622
  30
@@ -81233,11 +81233,11 @@ ACAD_VISUALSTYLE
   3
 ACDB_RECOMPOSE_DATA
 350
-1E3F2
+1E54E
   3
 AcDbVariableDictionary
 350
-1E336
+1E547
   3
 ADE_QUERY_LIBRARY
 350
@@ -82455,47 +82455,73 @@ AcDbIdSet
  90
        92
 330
-15558
+D1F0
 330
-15559
+D1F1
 330
-1C9F0
+D1F2
 330
-EC9B
+D1F3
 330
-EC9C
+D1F5
 330
-ECB7
+D1F6
 330
-C2C4
+DEDC
 330
-C2C5
+DEDD
 330
-C2C6
+DEDE
 330
-C2D1
+DEDF
 330
-C2D2
+ECB8
 330
-C2CB
+ECB9
 330
-C2CC
+ECBA
 330
-C2BD
+ECBC
 330
-C2BE
+ECBD
 330
-C2BF
+ECBE
 330
-D1EF
+ECBF
 330
-D20B
+15557
 330
-D20C
+15572
 330
-D1F8
+15573
 330
-D1F9
+15574
+330
+1622C
+330
+1622D
+330
+16232
+330
+16233
+330
+16238
+330
+16239
+330
+1623E
+330
+1623F
+330
+16226
+330
+16227
+330
+1624A
+330
+1624B
+330
+1C9EF
 330
 DEC2
 330
@@ -82533,37 +82559,17 @@ ECC6
 330
 ECC7
 330
-15557
+EC9B
 330
-15572
+EC9C
 330
-15573
+ECB7
 330
-15574
+C2C4
 330
-1622C
+C2C5
 330
-1622D
-330
-16232
-330
-16233
-330
-16238
-330
-16239
-330
-1623E
-330
-1623F
-330
-16226
-330
-16227
-330
-1624A
-330
-1624B
+C2C6
 330
 F96E
 330
@@ -82603,41 +82609,35 @@ F97C
 330
 11327
 330
-1C9EF
+C2D1
 330
-D1F0
+C2D2
 330
-D1F1
+C2CB
 330
-D1F2
+C2CC
 330
-D1F3
+C2BD
 330
-D1F5
+C2BE
 330
-D1F6
+C2BF
 330
-DEDC
+D1EF
 330
-DEDD
+D20B
 330
-DEDE
+D20C
 330
-DEDF
+D1F8
 330
-ECB8
+D1F9
 330
-ECB9
+15558
 330
-ECBA
+15559
 330
-ECBC
-330
-ECBD
-330
-ECBE
-330
-ECBF
+1C9F0
 100
 AcDbFieldList
   0
@@ -82719,11 +82719,11 @@ AcDbXrecord
 280
      1
 300
-{EEE72484-8451-0945-8388-D1B70D944B5D}
+{EC551E39-F917-D246-B4FD-A41D91709D43}
 301
 {AA180A17-8D69-3D48-92E4-651F8E6126F8}
 302
-{EEE72484-8451-0945-8388-D1B70D944B5D}
+{EC551E39-F917-D246-B4FD-A41D91709D43}
 303
 C:\Users\fcraw\source\repos\Cad_Point_Manager\Cad_Point_Manager\Resources\DXF\SmallDxf.dxf
 301
@@ -83115,7 +83115,7 @@ C2C
   0
 XRECORD
   5
-1E3F2
+1E54E
 102
 {ACAD_REACTORS
 330
@@ -83135,7 +83135,7 @@ A43
   0
 DICTIONARY
   5
-1E336
+1E547
 102
 {ACAD_REACTORS
 330
@@ -83151,23 +83151,23 @@ AcDbDictionary
   3
 CANNOSCALE
 350
-1E33B
+1E54C
   3
 CMLEADERSTYLE
 350
-1E338
+1E549
   3
 CTABLESTYLE
 350
-1E337
+1E548
   3
 CVIEWDETAILSTYLE
 350
-1E339
+1E54A
   3
 CVIEWSECTIONSTYLE
 350
-1E33A
+1E54B
   0
 DICTIONARY
   5
@@ -83204,6 +83204,10 @@ EB3
 AcDbDictionary
 281
      1
+  3
+Standard
+350
+1E531
   0
 DICTIONARY
   5
@@ -83220,6 +83224,38 @@ EAA
 AcDbDictionary
 281
      1
+  3
+Elevation
+350
+1E52C
+  3
+Model
+350
+1E529
+  3
+Model High Detail
+350
+1E530
+  3
+Model Low Detail
+350
+1E52F
+  3
+Plan
+350
+1E52A
+  3
+Plan High Detail
+350
+1E52E
+  3
+Plan Low Detail
+350
+1E52D
+  3
+Reflected
+350
+1E52B
   0
 DICTIONARY
   5
@@ -83516,6 +83552,602 @@ AeccuDbDispRepColWorkPlane
 AeccuDbDispRepColWorkPlaneRef
 350
 1E20B
+  3
+AecDbDispRep2dSection
+350
+1E414
+  3
+AecDbDispRepAnchor
+350
+1E419
+  3
+AecDbDispRepAnchorBubToGrid
+350
+1E495
+  3
+AecDbDispRepAnchorBubToGridMdl
+350
+1E497
+  3
+AecDbDispRepAnchorBubToGridRcp
+350
+1E4AE
+  3
+AecDbDispRepAnchorEntToNode
+350
+1E424
+  3
+AecDbDispRepAnchorExtendedTagToEnt
+350
+1E41A
+  3
+AecDbDispRepAnchorTagToEnt
+350
+1E40F
+  3
+AecDbDispRepBdgElevLineModel
+350
+1E48B
+  3
+AecDbDispRepBdgElevLinePlan
+350
+1E437
+  3
+AecDbDispRepBdgElevLinePlan100
+350
+1E45E
+  3
+AecDbDispRepBdgElevLinePlan50
+350
+1E46A
+  3
+AecDbDispRepBdgElevLineRcp
+350
+1E499
+  3
+AecDbDispRepBdgSectionLineModel
+350
+1E487
+  3
+AecDbDispRepBdgSectionLinePlan
+350
+1E44C
+  3
+AecDbDispRepBdgSectionLinePlan100
+350
+1E444
+  3
+AecDbDispRepBdgSectionLinePlan50
+350
+1E468
+  3
+AecDbDispRepBdgSectionLineRcp
+350
+1E493
+  3
+AecDbDispRepBdgSectionModel
+350
+1E49B
+  3
+AecDbDispRepBdgSectionSubDiv
+350
+1E49C
+  3
+AecDbDispRepCeilingGrid
+350
+1E439
+  3
+AecDbDispRepCeilingGridModel
+350
+1E49E
+  3
+AecDbDispRepCeilingGridPlan100
+350
+1E462
+  3
+AecDbDispRepCeilingGridPlan50
+350
+1E483
+  3
+AecDbDispRepCeilingGridRcp
+350
+1E4A0
+  3
+AecDbDispRepClipVolModel
+350
+1E411
+  3
+AecDbDispRepClipVolPlan
+350
+1E42D
+  3
+AecDbDispRepClipVolResSubDiv
+350
+1E420
+  3
+AecDbDispRepClipVolResult
+350
+1E42C
+  3
+AecDbDispRepColumnGrid
+350
+1E43B
+  3
+AecDbDispRepColumnGridModel
+350
+1E4A2
+  3
+AecDbDispRepColumnGridPlan100
+350
+1E448
+  3
+AecDbDispRepColumnGridPlan50
+350
+1E476
+  3
+AecDbDispRepColumnGridRcp
+350
+1E4A4
+  3
+AecDbDispRepCurtainWallLayoutModel
+350
+1E4AC
+  3
+AecDbDispRepCurtainWallLayoutPlan
+350
+1E45C
+  3
+AecDbDispRepCurtainWallLayoutPlan100
+350
+1E45A
+  3
+AecDbDispRepCurtainWallLayoutPlan50
+350
+1E47F
+  3
+AecDbDispRepCurtainWallUnitModel
+350
+1E4A6
+  3
+AecDbDispRepCurtainWallUnitPlan
+350
+1E44E
+  3
+AecDbDispRepCurtainWallUnitPlan100
+350
+1E460
+  3
+AecDbDispRepCurtainWallUnitPlan50
+350
+1E485
+  3
+AecDbDispRepDimGroupPlan
+350
+1E4B0
+  3
+AecDbDispRepDimGroupPlan100
+350
+1E4A8
+  3
+AecDbDispRepDimGroupPlan50
+350
+1E4AA
+  3
+AecDbDispRepDisplayTheme
+350
+1E41C
+  3
+AecDbDispRepDoorElev
+350
+1E48D
+  3
+AecDbDispRepDoorModel
+350
+1E489
+  3
+AecDbDispRepDoorNominal
+350
+1E491
+  3
+AecDbDispRepDoorPlan
+350
+1E48F
+  3
+AecDbDispRepDoorPlan50
+350
+1E4B8
+  3
+AecDbDispRepDoorPlanHekto
+350
+1E4C6
+  3
+AecDbDispRepDoorRcp
+350
+1E4BC
+  3
+AecDbDispRepDoorThresholdPlan
+350
+1E4EA
+  3
+AecDbDispRepDoorThresholdSymbolPlan
+350
+1E4FA
+  3
+AecDbDispRepEditInPlaceProfile
+350
+1E406
+  3
+AecDbDispRepEntRef
+350
+1E41E
+  3
+AecDbDispRepLayoutCurve
+350
+1E42A
+  3
+AecDbDispRepLayoutGrid2d
+350
+1E428
+  3
+AecDbDispRepLayoutGrid3d
+350
+1E40D
+  3
+AecDbDispRepMaskBlockRef
+350
+1E426
+  3
+AecDbDispRepMaskBlockRefRcp
+350
+1E4CA
+  3
+AecDbDispRepMassElemModel
+350
+1E433
+  3
+AecDbDispRepMassElemPlan100
+350
+1E504
+  3
+AecDbDispRepMassElemPlan50
+350
+1E4C8
+  3
+AecDbDispRepMassElemRcp
+350
+1E506
+  3
+AecDbDispRepMassElemSchem
+350
+1E42F
+  3
+AecDbDispRepMassGroupModel
+350
+1E435
+  3
+AecDbDispRepMassGroupPlan
+350
+1E431
+  3
+AecDbDispRepMassGroupPlan100
+350
+1E4DA
+  3
+AecDbDispRepMassGroupPlan50
+350
+1E4E6
+  3
+AecDbDispRepMassGroupRcp
+350
+1E4F2
+  3
+AecDbDispRepMaterial
+350
+1E422
+  3
+AecDbDispRepMvBlockRef
+350
+1E413
+  3
+AecDbDispRepMvBlockRefModel
+350
+1E416
+  3
+AecDbDispRepMvBlockRefPlan100
+350
+1E441
+  3
+AecDbDispRepMvBlockRefPlan50
+350
+1E47A
+  3
+AecDbDispRepMvBlockRefRcp
+350
+1E514
+  3
+AecDbDispRepOpening
+350
+1E4F0
+  3
+AecDbDispRepOpeningModel
+350
+1E4E4
+  3
+AecDbDispRepOpeningPlan100
+350
+1E512
+  3
+AecDbDispRepOpeningPlan50
+350
+1E4E2
+  3
+AecDbDispRepOpeningPlanReflected
+350
+1E4F4
+  3
+AecDbDispRepOpeningSillPlan
+350
+1E4DC
+  3
+AecDbDispRepPolygonModel
+350
+1E409
+  3
+AecDbDispRepPolygonTrueColour
+350
+1E417
+  3
+AecDbDispRepRailingModel
+350
+1E4D8
+  3
+AecDbDispRepRailingPlan
+350
+1E4C0
+  3
+AecDbDispRepRailingPlan100
+350
+1E4EC
+  3
+AecDbDispRepRailingPlan50
+350
+1E4D0
+  3
+AecDbDispRepRoofModel
+350
+1E4D4
+  3
+AecDbDispRepRoofPlan
+350
+1E452
+  3
+AecDbDispRepRoofPlan100
+350
+1E43D
+  3
+AecDbDispRepRoofPlan50
+350
+1E466
+  3
+AecDbDispRepRoofRcp
+350
+1E4DE
+  3
+AecDbDispRepRoofSlabModel
+350
+1E4CC
+  3
+AecDbDispRepRoofSlabPlan
+350
+1E446
+  3
+AecDbDispRepRoofSlabPlan100
+350
+1E442
+  3
+AecDbDispRepRoofSlabPlan50
+350
+1E472
+  3
+AecDbDispRepScheduleTable
+350
+1E527
+  3
+AecDbDispRepSlabModel
+350
+1E4E0
+  3
+AecDbDispRepSlabPlan
+350
+1E43F
+  3
+AecDbDispRepSlabPlan100
+350
+1E44A
+  3
+AecDbDispRepSlabPlan50
+350
+1E464
+  3
+AecDbDispRepSlice
+350
+1E40B
+  3
+AecDbDispRepSpaceDecomposed
+350
+1E508
+  3
+AecDbDispRepSpaceModel
+350
+1E4BE
+  3
+AecDbDispRepSpacePlan
+350
+1E450
+  3
+AecDbDispRepSpacePlan100
+350
+1E454
+  3
+AecDbDispRepSpacePlan50
+350
+1E478
+  3
+AecDbDispRepSpaceRcp
+350
+1E4E8
+  3
+AecDbDispRepSpaceVolume
+350
+1E4EE
+  3
+AecDbDispRepStairModel
+350
+1E4D6
+  3
+AecDbDispRepStairPlan
+350
+1E4BA
+  3
+AecDbDispRepStairPlan100
+350
+1E502
+  3
+AecDbDispRepStairPlan50
+350
+1E50A
+  3
+AecDbDispRepStairPlanOverlapping
+350
+1E500
+  3
+AecDbDispRepStairRcp
+350
+1E4FC
+  3
+AecDbDispRepWallGraph
+350
+1E4F6
+  3
+AecDbDispRepWallModel
+350
+1E4FE
+  3
+AecDbDispRepWallPlan
+350
+1E456
+  3
+AecDbDispRepWallPlan100
+350
+1E458
+  3
+AecDbDispRepWallPlan50
+350
+1E474
+  3
+AecDbDispRepWallRcp
+350
+1E4F8
+  3
+AecDbDispRepWallSchem
+350
+1E50C
+  3
+AecDbDispRepWindowAssemblyModel
+350
+1E50E
+  3
+AecDbDispRepWindowAssemblyPlan
+350
+1E47B
+  3
+AecDbDispRepWindowAssemblyPlan100
+350
+1E470
+  3
+AecDbDispRepWindowAssemblyPlan50
+350
+1E481
+  3
+AecDbDispRepWindowAssemblySillPlan
+350
+1E510
+  3
+AecDbDispRepWindowElev
+350
+1E4B4
+  3
+AecDbDispRepWindowModel
+350
+1E4B2
+  3
+AecDbDispRepWindowNominal
+350
+1E4C2
+  3
+AecDbDispRepWindowPlan
+350
+1E4B6
+  3
+AecDbDispRepWindowPlan100
+350
+1E4C4
+  3
+AecDbDispRepWindowPlan50
+350
+1E4CE
+  3
+AecDbDispRepWindowRcp
+350
+1E4D2
+  3
+AecDbDispRepWindowSillPlan
+350
+1E515
+  3
+AecDbDispRepZone
+350
+1E47D
+  3
+AecDbDispRepZonePlan100
+350
+1E46E
+  3
+AecDbDispRepZonePlan50
+350
+1E46C
+  3
+AecsDbDispRepMemberElevationDesign
+350
+1E523
+  3
+AecsDbDispRepMemberElevationDetail
+350
+1E521
+  3
+AecsDbDispRepMemberLogical
+350
+1E51B
+  3
+AecsDbDispRepMemberModelDesign
+350
+1E51D
+  3
+AecsDbDispRepMemberModelDetail
+350
+1E51F
+  3
+AecsDbDispRepMemberPlanDesign
+350
+1E525
+  3
+AecsDbDispRepMemberPlanDetail
+350
+1E517
+  3
+AecsDbDispRepMemberPlanSketch
+350
+1E519
   0
 DICTIONARY
   5
@@ -83532,6 +84164,570 @@ CC0
 AcDbDictionary
 281
      1
+  3
+*A1
+350
+1E408
+  3
+*A10
+350
+1E41D
+  3
+*A100
+350
+1E4D5
+  3
+*A101
+350
+1E4D7
+  3
+*A102
+350
+1E4D9
+  3
+*A103
+350
+1E4DB
+  3
+*A104
+350
+1E4DD
+  3
+*A105
+350
+1E4DF
+  3
+*A106
+350
+1E4E1
+  3
+*A107
+350
+1E4E3
+  3
+*A108
+350
+1E4E5
+  3
+*A109
+350
+1E4E7
+  3
+*A11
+350
+1E41F
+  3
+*A110
+350
+1E4E9
+  3
+*A111
+350
+1E4EB
+  3
+*A112
+350
+1E4ED
+  3
+*A113
+350
+1E4EF
+  3
+*A114
+350
+1E4F1
+  3
+*A115
+350
+1E4F3
+  3
+*A116
+350
+1E4F5
+  3
+*A117
+350
+1E4F7
+  3
+*A118
+350
+1E4F9
+  3
+*A119
+350
+1E4FB
+  3
+*A12
+350
+1E421
+  3
+*A120
+350
+1E4FD
+  3
+*A121
+350
+1E4FF
+  3
+*A122
+350
+1E501
+  3
+*A123
+350
+1E503
+  3
+*A124
+350
+1E505
+  3
+*A125
+350
+1E507
+  3
+*A126
+350
+1E509
+  3
+*A127
+350
+1E50B
+  3
+*A128
+350
+1E50D
+  3
+*A129
+350
+1E50F
+  3
+*A13
+350
+1E423
+  3
+*A130
+350
+1E511
+  3
+*A131
+350
+1E513
+  3
+*A132
+350
+1E516
+  3
+*A133
+350
+1E518
+  3
+*A134
+350
+1E51A
+  3
+*A135
+350
+1E51C
+  3
+*A136
+350
+1E51E
+  3
+*A137
+350
+1E520
+  3
+*A138
+350
+1E522
+  3
+*A139
+350
+1E524
+  3
+*A14
+350
+1E425
+  3
+*A140
+350
+1E526
+  3
+*A141
+350
+1E528
+  3
+*A15
+350
+1E427
+  3
+*A16
+350
+1E429
+  3
+*A17
+350
+1E42B
+  3
+*A18
+350
+1E42E
+  3
+*A19
+350
+1E430
+  3
+*A2
+350
+1E40A
+  3
+*A20
+350
+1E432
+  3
+*A21
+350
+1E434
+  3
+*A22
+350
+1E436
+  3
+*A23
+350
+1E438
+  3
+*A24
+350
+1E43A
+  3
+*A25
+350
+1E43C
+  3
+*A26
+350
+1E43E
+  3
+*A27
+350
+1E440
+  3
+*A28
+350
+1E443
+  3
+*A29
+350
+1E445
+  3
+*A3
+350
+1E40C
+  3
+*A30
+350
+1E447
+  3
+*A31
+350
+1E449
+  3
+*A32
+350
+1E44B
+  3
+*A33
+350
+1E44D
+  3
+*A34
+350
+1E44F
+  3
+*A35
+350
+1E451
+  3
+*A36
+350
+1E453
+  3
+*A37
+350
+1E455
+  3
+*A38
+350
+1E457
+  3
+*A39
+350
+1E459
+  3
+*A4
+350
+1E40E
+  3
+*A40
+350
+1E45B
+  3
+*A41
+350
+1E45D
+  3
+*A42
+350
+1E45F
+  3
+*A43
+350
+1E461
+  3
+*A44
+350
+1E463
+  3
+*A45
+350
+1E465
+  3
+*A46
+350
+1E467
+  3
+*A47
+350
+1E469
+  3
+*A48
+350
+1E46B
+  3
+*A49
+350
+1E46D
+  3
+*A5
+350
+1E410
+  3
+*A50
+350
+1E46F
+  3
+*A51
+350
+1E471
+  3
+*A52
+350
+1E473
+  3
+*A53
+350
+1E475
+  3
+*A54
+350
+1E477
+  3
+*A55
+350
+1E479
+  3
+*A56
+350
+1E47C
+  3
+*A57
+350
+1E47E
+  3
+*A58
+350
+1E480
+  3
+*A59
+350
+1E482
+  3
+*A6
+350
+1E412
+  3
+*A60
+350
+1E484
+  3
+*A61
+350
+1E486
+  3
+*A62
+350
+1E488
+  3
+*A63
+350
+1E48A
+  3
+*A64
+350
+1E48C
+  3
+*A65
+350
+1E48E
+  3
+*A66
+350
+1E490
+  3
+*A67
+350
+1E492
+  3
+*A68
+350
+1E494
+  3
+*A69
+350
+1E496
+  3
+*A7
+350
+1E415
+  3
+*A70
+350
+1E498
+  3
+*A71
+350
+1E49A
+  3
+*A72
+350
+1E49D
+  3
+*A73
+350
+1E49F
+  3
+*A74
+350
+1E4A1
+  3
+*A75
+350
+1E4A3
+  3
+*A76
+350
+1E4A5
+  3
+*A77
+350
+1E4A7
+  3
+*A78
+350
+1E4A9
+  3
+*A79
+350
+1E4AB
+  3
+*A8
+350
+1E418
+  3
+*A80
+350
+1E4AD
+  3
+*A81
+350
+1E4AF
+  3
+*A82
+350
+1E4B1
+  3
+*A83
+350
+1E4B3
+  3
+*A84
+350
+1E4B5
+  3
+*A85
+350
+1E4B7
+  3
+*A86
+350
+1E4B9
+  3
+*A87
+350
+1E4BB
+  3
+*A88
+350
+1E4BD
+  3
+*A89
+350
+1E4BF
+  3
+*A9
+350
+1E41B
+  3
+*A90
+350
+1E4C1
+  3
+*A91
+350
+1E4C3
+  3
+*A92
+350
+1E4C5
+  3
+*A93
+350
+1E4C7
+  3
+*A94
+350
+1E4C9
+  3
+*A95
+350
+1E4CB
+  3
+*A96
+350
+1E4CD
+  3
+*A97
+350
+1E4CF
+  3
+*A98
+350
+1E4D1
+  3
+*A99
+350
+1E4D3
   0
 DICTIONARY
   5
@@ -83564,6 +84760,10 @@ A5C
 AcDbDictionary
 281
      1
+  3
+AEC_VARS_DWG_SETUP
+350
+1E407
   0
 XRECORD
   5
@@ -96659,15 +97859,15 @@ AcDbSavedByObjectVersion
   0
 DICTIONARYVAR
   5
-1E33B
+1E54C
 102
 {ACAD_REACTORS
 330
-1E336
+1E547
 102
 }
 330
-1E336
+1E547
 100
 DictionaryVariables
 280
@@ -96677,15 +97877,15 @@ DictionaryVariables
   0
 DICTIONARYVAR
   5
-1E338
+1E549
 102
 {ACAD_REACTORS
 330
-1E336
+1E547
 102
 }
 330
-1E336
+1E547
 100
 DictionaryVariables
 280
@@ -96695,15 +97895,15 @@ STANDARD
   0
 DICTIONARYVAR
   5
-1E337
+1E548
 102
 {ACAD_REACTORS
 330
-1E336
+1E547
 102
 }
 330
-1E336
+1E547
 100
 DictionaryVariables
 280
@@ -96713,15 +97913,15 @@ STANDARD
   0
 DICTIONARYVAR
   5
-1E339
+1E54A
 102
 {ACAD_REACTORS
 330
-1E336
+1E547
 102
 }
 330
-1E336
+1E547
 100
 DictionaryVariables
 280
@@ -96731,15 +97931,15 @@ Imperial24
   0
 DICTIONARYVAR
   5
-1E33A
+1E54B
 102
 {ACAD_REACTORS
 330
-1E336
+1E547
 102
 }
 330
-1E336
+1E547
 100
 DictionaryVariables
 280
@@ -105295,7 +106495,7 @@ AcDbDictionary
   3
 ACAD_ROUNDTRIP_2008_TABLESTYLE_CELLSTYLEMAP
 360
-1E3F1
+1E54D
   0
 DMMAP
   5
@@ -105443,7 +106643,7 @@ C2AD
  92
         0
  94
-       59
+       27
  95
         2
  96
@@ -105487,7 +106687,7 @@ ACVALUE_END
   7
 ACFD_FIELD_VALUE
  93
-        4
+        0
  90
        32
  11
@@ -105501,11 +106701,11 @@ ACFD_FIELD_VALUE
 300
 %lu2%pt3
 302
-1156.89, 5143.23
+
 304
 ACVALUE_END
 301
-1156.89, 5143.23
+
  98
        16
   0
@@ -105531,7 +106731,7 @@ C2AD
  92
         0
  94
-       59
+       27
  95
         2
  96
@@ -105575,7 +106775,7 @@ ACVALUE_END
   7
 ACFD_FIELD_VALUE
  93
-        4
+        0
  90
         2
 140
@@ -105585,11 +106785,11 @@ ACFD_FIELD_VALUE
 300
 %lu6
 302
-9.00
+
 304
 ACVALUE_END
 301
-9.00
+
  98
         4
   0
@@ -105615,7 +106815,7 @@ C2AC
  92
         0
  94
-       59
+       27
  95
         2
  96
@@ -105659,7 +106859,7 @@ ACVALUE_END
   7
 ACFD_FIELD_VALUE
  93
-        4
+        0
  90
        32
  11
@@ -105673,11 +106873,11 @@ ACFD_FIELD_VALUE
 300
 %lu2%pt3
 302
-1145.75, 5149.20
+
 304
 ACVALUE_END
 301
-1145.75, 5149.20
+
  98
        16
   0
@@ -105703,7 +106903,7 @@ C2AC
  92
         0
  94
-       59
+       27
  95
         2
  96
@@ -105747,7 +106947,7 @@ ACVALUE_END
   7
 ACFD_FIELD_VALUE
  93
-        4
+        0
  90
         2
 140
@@ -105757,11 +106957,11 @@ ACFD_FIELD_VALUE
 300
 %lu6
 302
-8.00
+
 304
 ACVALUE_END
 301
-8.00
+
  98
         4
   0
@@ -105787,7 +106987,7 @@ C2AF
  92
         0
  94
-       59
+       27
  95
         2
  96
@@ -105831,7 +107031,7 @@ ACVALUE_END
   7
 ACFD_FIELD_VALUE
  93
-        4
+        0
  90
        32
  11
@@ -105845,11 +107045,11 @@ ACFD_FIELD_VALUE
 300
 %lu2%pt3
 302
-1153.40, 5151.52
+
 304
 ACVALUE_END
 301
-1153.40, 5151.52
+
  98
        16
   0
@@ -105875,7 +107075,7 @@ C2AE
  92
         0
  94
-       59
+       27
  95
         2
  96
@@ -105919,7 +107119,7 @@ ACVALUE_END
   7
 ACFD_FIELD_VALUE
  93
-        4
+        0
  90
        32
  11
@@ -105933,11 +107133,11 @@ ACFD_FIELD_VALUE
 300
 %lu2%pt3
 302
-1148.05, 5141.54
+
 304
 ACVALUE_END
 301
-1148.05, 5141.54
+
  98
        16
   0
@@ -105963,7 +107163,7 @@ D1BB
  92
         0
  94
-       59
+       27
  95
         2
  96
@@ -106007,7 +107207,7 @@ ACVALUE_END
   7
 ACFD_FIELD_VALUE
  93
-        4
+        0
  90
        32
  11
@@ -106021,11 +107221,11 @@ ACFD_FIELD_VALUE
 300
 %lu2%pt3
 302
-1086.43, 5187.26
+
 304
 ACVALUE_END
 301
-1086.43, 5187.26
+
  98
        16
   0
@@ -106051,7 +107251,7 @@ D1BB
  92
         0
  94
-       27
+       59
  95
         2
  96
@@ -106095,7 +107295,7 @@ ACVALUE_END
   7
 ACFD_FIELD_VALUE
  93
-        0
+        4
  90
         2
 140
@@ -106105,11 +107305,11 @@ ACFD_FIELD_VALUE
 300
 %lu6
 302
-
+10.00
 304
 ACVALUE_END
 301
-
+10.00
  98
         5
   0
@@ -106135,7 +107335,7 @@ D1BB
  92
         0
  94
-       27
+       59
  95
         2
  96
@@ -106179,7 +107379,7 @@ ACVALUE_END
   7
 ACFD_FIELD_VALUE
  93
-        0
+        4
  90
         2
 140
@@ -106189,11 +107389,11 @@ ACFD_FIELD_VALUE
 300
 %au0
 302
-
+227.7325
 304
 ACVALUE_END
 301
-
+227.7325
  98
         8
   0
@@ -106219,7 +107419,7 @@ D1BB
  92
         0
  94
-       27
+       59
  95
         2
  96
@@ -106263,7 +107463,7 @@ ACVALUE_END
   7
 ACFD_FIELD_VALUE
  93
-        0
+        4
  90
         2
 140
@@ -106273,11 +107473,11 @@ ACFD_FIELD_VALUE
 300
 %au0
 302
-
+354.0892
 304
 ACVALUE_END
 301
-
+354.0892
  98
         8
   0
@@ -106303,7 +107503,7 @@ D1D9
  92
         0
  94
-       59
+       27
  95
         2
  96
@@ -106347,7 +107547,7 @@ ACVALUE_END
   7
 ACFD_FIELD_VALUE
  93
-        4
+        0
  90
        32
  11
@@ -106361,11 +107561,11 @@ ACFD_FIELD_VALUE
 300
 %lu2%pt3
 302
-1094.39, 5181.20
+
 304
 ACVALUE_END
 301
-1094.39, 5181.20
+
  98
        16
   0
@@ -106391,7 +107591,7 @@ D1DA
  92
         0
  94
-       59
+       27
  95
         2
  96
@@ -106435,7 +107635,7 @@ ACVALUE_END
   7
 ACFD_FIELD_VALUE
  93
-        4
+        0
  90
        32
  11
@@ -106449,11 +107649,11 @@ ACFD_FIELD_VALUE
 300
 %lu2%pt3
 302
-1096.37, 5188.38
+
 304
 ACVALUE_END
 301
-1096.37, 5188.38
+
  98
        16
   0
@@ -106479,7 +107679,7 @@ D1FC
  92
         0
  94
-       59
+       27
  95
         2
  96
@@ -106523,7 +107723,7 @@ ACVALUE_END
   7
 ACFD_FIELD_VALUE
  93
-        4
+        0
  90
        32
  11
@@ -106537,11 +107737,11 @@ ACFD_FIELD_VALUE
 300
 %lu2%pt3
 302
-1078.48, 5193.31
+
 304
 ACVALUE_END
 301
-1078.48, 5193.31
+
  98
        16
   0
@@ -106567,7 +107767,7 @@ DEAD
  92
         0
  94
-       59
+       27
  95
         2
  96
@@ -106611,7 +107811,7 @@ ACVALUE_END
   7
 ACFD_FIELD_VALUE
  93
-        4
+        0
  90
        32
  11
@@ -106625,11 +107825,11 @@ ACFD_FIELD_VALUE
 300
 %lu2%pt3
 302
-1136.95, 5169.65
+
 304
 ACVALUE_END
 301
-1136.95, 5169.65
+
  98
        16
   0
@@ -106655,7 +107855,7 @@ DEAD
  92
         0
  94
-       59
+       27
  95
         2
  96
@@ -106699,7 +107899,7 @@ ACVALUE_END
   7
 ACFD_FIELD_VALUE
  93
-        4
+        0
  90
         2
 140
@@ -106709,11 +107909,11 @@ ACFD_FIELD_VALUE
 300
 %au0
 302
-300.7222
+
 304
 ACVALUE_END
 301
-300.7222
+
  98
         8
   0
@@ -106739,7 +107939,7 @@ DEAD
  92
         0
  94
-       59
+       27
  95
         2
  96
@@ -106783,7 +107983,7 @@ ACVALUE_END
   7
 ACFD_FIELD_VALUE
  93
-        4
+        0
  90
         2
 140
@@ -106793,11 +107993,11 @@ ACFD_FIELD_VALUE
 300
 %au0
 302
-209.0816
+
 304
 ACVALUE_END
 301
-209.0816
+
  98
         8
   0
@@ -106823,7 +108023,7 @@ DEAE
  92
         0
  94
-       59
+       27
  95
         2
  96
@@ -106867,7 +108067,7 @@ ACVALUE_END
   7
 ACFD_FIELD_VALUE
  93
-        4
+        0
  90
        32
  11
@@ -106881,11 +108081,11 @@ ACFD_FIELD_VALUE
 300
 %lu2%pt3
 302
-1146.22, 5176.15
+
 304
 ACVALUE_END
 301
-1146.22, 5176.15
+
  98
        16
   0
@@ -106911,7 +108111,7 @@ DEAE
  92
         0
  94
-       59
+       27
  95
         2
  96
@@ -106955,7 +108155,7 @@ ACVALUE_END
   7
 ACFD_FIELD_VALUE
  93
-        4
+        0
  90
         2
 140
@@ -106965,11 +108165,11 @@ ACFD_FIELD_VALUE
 300
 %au0
 302
-43.0807
+
 304
 ACVALUE_END
 301
-43.0807
+
  98
         7
   0
@@ -106995,7 +108195,7 @@ DEAE
  92
         0
  94
-       59
+       27
  95
         2
  96
@@ -107039,7 +108239,7 @@ ACVALUE_END
   7
 ACFD_FIELD_VALUE
  93
-        4
+        0
  90
         2
 140
@@ -107049,11 +108249,11 @@ ACFD_FIELD_VALUE
 300
 %au0
 302
-270.0000
+
 304
 ACVALUE_END
 301
-270.0000
+
  98
         8
   0
@@ -107079,7 +108279,7 @@ DEB1
  92
         0
  94
-       59
+       27
  95
         2
  96
@@ -107123,7 +108323,7 @@ ACVALUE_END
   7
 ACFD_FIELD_VALUE
  93
-        4
+        0
  90
        32
  11
@@ -107137,11 +108337,11 @@ ACFD_FIELD_VALUE
 300
 %lu2%pt3
 302
-1136.33, 5177.63
+
 304
 ACVALUE_END
 301
-1136.33, 5177.63
+
  98
        16
   0
@@ -107167,7 +108367,7 @@ DEB2
  92
         0
  94
-       59
+       27
  95
         2
  96
@@ -107211,7 +108411,7 @@ ACVALUE_END
   7
 ACFD_FIELD_VALUE
  93
-        4
+        0
  90
        32
  11
@@ -107225,11 +108425,11 @@ ACFD_FIELD_VALUE
 300
 %lu2%pt3
 302
-1144.24, 5166.35
+
 304
 ACVALUE_END
 301
-1144.24, 5166.35
+
  98
        16
   0
@@ -107255,7 +108455,7 @@ EC70
  92
         0
  94
-       59
+       27
  95
         2
  96
@@ -107299,7 +108499,7 @@ ACVALUE_END
   7
 ACFD_FIELD_VALUE
  93
-        4
+        0
  90
        32
  11
@@ -107313,11 +108513,11 @@ ACFD_FIELD_VALUE
 300
 %lu2%pt3
 302
-1047.30, 5155.36
+
 304
 ACVALUE_END
 301
-1047.30, 5155.36
+
  98
        16
   0
@@ -107343,7 +108543,7 @@ EC70
  92
         0
  94
-       59
+       27
  95
         2
  96
@@ -107387,7 +108587,7 @@ ACVALUE_END
   7
 ACFD_FIELD_VALUE
  93
-        4
+        0
  90
         2
 140
@@ -107397,11 +108597,11 @@ ACFD_FIELD_VALUE
 300
 %au0
 302
-270.0000
+
 304
 ACVALUE_END
 301
-270.0000
+
  98
         8
   0
@@ -107427,7 +108627,7 @@ EC70
  92
         0
  94
-       59
+       27
  95
         2
  96
@@ -107471,7 +108671,7 @@ ACVALUE_END
   7
 ACFD_FIELD_VALUE
  93
-        4
+        0
  90
         2
 140
@@ -107481,11 +108681,11 @@ ACFD_FIELD_VALUE
 300
 %au0
 302
-345.8112
+
 304
 ACVALUE_END
 301
-345.8112
+
  98
         8
   0
@@ -107511,7 +108711,7 @@ AcObjProp
  92
         0
  94
-       59
+       27
  95
         2
  96
@@ -107555,7 +108755,7 @@ ACVALUE_END
   7
 ACFD_FIELD_VALUE
  93
-        4
+        0
  90
        32
  11
@@ -107569,11 +108769,11 @@ ACFD_FIELD_VALUE
 300
 %lu2%pt3
 302
-1046.95, 5146.64
+
 304
 ACVALUE_END
 301
-1046.95, 5146.64
+
  98
        16
   0
@@ -107599,7 +108799,7 @@ AcObjProp
  92
         0
  94
-       59
+       27
  95
         2
  96
@@ -107643,7 +108843,7 @@ ACVALUE_END
   7
 ACFD_FIELD_VALUE
  93
-        4
+        0
  90
         2
 140
@@ -107653,11 +108853,11 @@ ACFD_FIELD_VALUE
 300
 %au0
 302
-320.0570
+
 304
 ACVALUE_END
 301
-320.0570
+
  98
         8
   0
@@ -107683,7 +108883,7 @@ AcObjProp
  92
         0
  94
-       59
+       27
  95
         2
  96
@@ -107727,7 +108927,7 @@ ACVALUE_END
   7
 ACFD_FIELD_VALUE
  93
-        4
+        0
  90
         2
 140
@@ -107737,11 +108937,11 @@ ACFD_FIELD_VALUE
 300
 %au0
 302
-231.2631
+
 304
 ACVALUE_END
 301
-231.2631
+
  98
         8
   0
@@ -107767,7 +108967,7 @@ EC97
  92
         0
  94
-       59
+       27
  95
         2
  96
@@ -107811,7 +109011,7 @@ ACVALUE_END
   7
 ACFD_FIELD_VALUE
  93
-        4
+        0
  90
        32
  11
@@ -107825,11 +109025,11 @@ ACFD_FIELD_VALUE
 300
 %lu2%pt3
 302
-1051.52, 5151.96
+
 304
 ACVALUE_END
 301
-1051.52, 5151.96
+
  98
        16
   0
@@ -107855,7 +109055,7 @@ B608
  92
         0
  94
-       59
+       27
  95
         2
  96
@@ -107899,7 +109099,7 @@ ACVALUE_END
   7
 ACFD_FIELD_VALUE
  93
-        4
+        0
  90
        32
  11
@@ -107913,11 +109113,11 @@ ACFD_FIELD_VALUE
 300
 %lu2%pt3
 302
-1112.47, 5137.98
+
 304
 ACVALUE_END
 301
-1112.47, 5137.98
+
  98
        16
   0
@@ -107943,7 +109143,7 @@ B608
  92
         0
  94
-       59
+       27
  95
         2
  96
@@ -107987,7 +109187,7 @@ ACVALUE_END
   7
 ACFD_FIELD_VALUE
  93
-        4
+        0
  90
         2
 140
@@ -107997,11 +109197,11 @@ ACFD_FIELD_VALUE
 300
 %au0
 302
-170.2353
+
 304
 ACVALUE_END
 301
-170.2353
+
  98
         8
   0
@@ -108027,7 +109227,7 @@ B608
  92
         0
  94
-       59
+       27
  95
         2
  96
@@ -108071,7 +109271,7 @@ ACVALUE_END
   7
 ACFD_FIELD_VALUE
  93
-        4
+        0
  90
         2
 140
@@ -108081,11 +109281,11 @@ ACFD_FIELD_VALUE
 300
 %au0
 302
-139.7167
+
 304
 ACVALUE_END
 301
-139.7167
+
  98
         8
   0
@@ -108111,7 +109311,7 @@ AcObjProp
  92
         0
  94
-       59
+       27
  95
         2
  96
@@ -108155,7 +109355,7 @@ ACVALUE_END
   7
 ACFD_FIELD_VALUE
  93
-        4
+        0
  90
        32
  11
@@ -108169,11 +109369,11 @@ ACFD_FIELD_VALUE
 300
 %lu2%pt3
 302
-1117.12, 5144.25
+
 304
 ACVALUE_END
 301
-1117.12, 5144.25
+
  98
        16
   0
@@ -108199,7 +109399,7 @@ AcObjProp
  92
         0
  94
-       59
+       27
  95
         2
  96
@@ -108243,7 +109443,7 @@ ACVALUE_END
   7
 ACFD_FIELD_VALUE
  93
-        4
+        0
  90
         2
 140
@@ -108253,11 +109453,11 @@ ACFD_FIELD_VALUE
 300
 %au0
 302
-270.0000
+
 304
 ACVALUE_END
 301
-270.0000
+
  98
         8
   0
@@ -108283,7 +109483,7 @@ AcObjProp
  92
         0
  94
-       59
+       27
  95
         2
  96
@@ -108327,7 +109527,7 @@ ACVALUE_END
   7
 ACFD_FIELD_VALUE
  93
-        4
+        0
  90
         2
 140
@@ -108337,11 +109537,11 @@ ACFD_FIELD_VALUE
 300
 %au0
 302
-14.6541
+
 304
 ACVALUE_END
 301
-14.6541
+
  98
         7
   0
@@ -108367,7 +109567,7 @@ ECC2
  92
         0
  94
-       59
+       27
  95
         2
  96
@@ -108411,7 +109611,7 @@ ACVALUE_END
   7
 ACFD_FIELD_VALUE
  93
-        4
+        0
  90
        32
  11
@@ -108425,11 +109625,11 @@ ACFD_FIELD_VALUE
 300
 %lu2%pt3
 302
-1124.64, 5137.76
+
 304
 ACVALUE_END
 301
-1124.64, 5137.76
+
  98
        16
   0
@@ -108455,7 +109655,7 @@ F969
  92
         0
  94
-       27
+       59
  95
         2
  96
@@ -108499,7 +109699,7 @@ ACVALUE_END
   7
 ACFD_FIELD_VALUE
  93
-        0
+        4
  90
         2
 140
@@ -108509,11 +109709,11 @@ ACFD_FIELD_VALUE
 300
 %au0
 302
-
+319.1769
 304
 ACVALUE_END
 301
-
+319.1769
  98
         8
   0
@@ -108539,7 +109739,7 @@ F977
  92
         0
  94
-       27
+       59
  95
         2
  96
@@ -108583,7 +109783,7 @@ ACVALUE_END
   7
 ACFD_FIELD_VALUE
  93
-        0
+        4
  90
         2
 140
@@ -108593,11 +109793,11 @@ ACFD_FIELD_VALUE
 300
 %au0
 302
-
+144.5366
 304
 ACVALUE_END
 301
-
+144.5366
  98
         8
   0
@@ -108623,7 +109823,7 @@ F976
  92
         0
  94
-       27
+       59
  95
         2
  96
@@ -108667,7 +109867,7 @@ ACVALUE_END
   7
 ACFD_FIELD_VALUE
  93
-        0
+        4
  90
         2
 140
@@ -108677,11 +109877,11 @@ ACFD_FIELD_VALUE
 300
 %au0
 302
-
+235.6779
 304
 ACVALUE_END
 301
-
+235.6779
  98
         8
   0
@@ -108707,7 +109907,7 @@ F975
  92
         0
  94
-       27
+       59
  95
         2
  96
@@ -108751,7 +109951,7 @@ ACVALUE_END
   7
 ACFD_FIELD_VALUE
  93
-        0
+        4
  90
         2
 140
@@ -108761,11 +109961,11 @@ ACFD_FIELD_VALUE
 300
 %au0
 302
-
+18.4626
 304
 ACVALUE_END
 301
-
+18.4626
  98
         7
   0
@@ -108791,7 +109991,7 @@ AcObjProp
  92
         0
  94
-       59
+       27
  95
         2
  96
@@ -108835,7 +110035,7 @@ ACVALUE_END
   7
 ACFD_FIELD_VALUE
  93
-        4
+        0
  90
        32
  11
@@ -108849,11 +110049,11 @@ ACFD_FIELD_VALUE
 300
 %lu2%pt3
 302
-1178.98, 5169.63
+
 304
 ACVALUE_END
 301
-1178.98, 5169.63
+
  98
        16
   0
@@ -108879,7 +110079,7 @@ AcObjProp
  92
         0
  94
-       59
+       27
  95
         2
  96
@@ -108923,7 +110123,7 @@ ACVALUE_END
   7
 ACFD_FIELD_VALUE
  93
-        4
+        0
  90
        32
  11
@@ -108937,11 +110137,11 @@ ACFD_FIELD_VALUE
 300
 %lu2%pt3
 302
-1189.03, 5190.81
+
 304
 ACVALUE_END
 301
-1189.03, 5190.81
+
  98
        16
   0
@@ -108967,7 +110167,7 @@ AcObjProp
  92
         0
  94
-       59
+       27
  95
         2
  96
@@ -109011,7 +110211,7 @@ ACVALUE_END
   7
 ACFD_FIELD_VALUE
  93
-        4
+        0
  90
        32
  11
@@ -109025,11 +110225,11 @@ ACFD_FIELD_VALUE
 300
 %lu2%pt3
 302
-1173.27, 5168.82
+
 304
 ACVALUE_END
 301
-1173.27, 5168.82
+
  98
        16
   0
@@ -109055,7 +110255,7 @@ AcObjProp
  92
         0
  94
-       59
+       27
  95
         2
  96
@@ -109099,7 +110299,7 @@ ACVALUE_END
   7
 ACFD_FIELD_VALUE
  93
-        4
+        0
  90
        32
  11
@@ -109113,11 +110313,11 @@ ACFD_FIELD_VALUE
 300
 %lu2%pt3
 302
-1173.39, 5164.17
+
 304
 ACVALUE_END
 301
-1173.39, 5164.17
+
  98
        16
   0
@@ -109143,7 +110343,7 @@ AcObjProp
  92
         0
  94
-       59
+       27
  95
         2
  96
@@ -109187,7 +110387,7 @@ ACVALUE_END
   7
 ACFD_FIELD_VALUE
  93
-        4
+        0
  90
        32
  11
@@ -109201,11 +110401,11 @@ ACFD_FIELD_VALUE
 300
 %lu2%pt3
 302
-1161.24, 5159.54
+
 304
 ACVALUE_END
 301
-1161.24, 5159.54
+
  98
        16
   0
@@ -109231,7 +110431,7 @@ AcObjProp
  92
         0
  94
-       59
+       27
  95
         2
  96
@@ -109275,7 +110475,7 @@ ACVALUE_END
   7
 ACFD_FIELD_VALUE
  93
-        4
+        0
  90
        32
  11
@@ -109289,11 +110489,11 @@ ACFD_FIELD_VALUE
 300
 %lu2%pt3
 302
-1170.57, 5163.10
+
 304
 ACVALUE_END
 301
-1170.57, 5163.10
+
  98
        16
   0
@@ -109319,7 +110519,7 @@ D6
  92
         0
  94
-       59
+       27
  95
         2
  96
@@ -109363,7 +110563,7 @@ ACVALUE_END
   7
 ACFD_FIELD_VALUE
  93
-        4
+        0
  90
        32
  11
@@ -109377,11 +110577,11 @@ ACFD_FIELD_VALUE
 300
 %lu2%pt3
 302
-1027.00, 4983.12
+
 304
 ACVALUE_END
 301
-1027.00, 4983.12
+
  98
        16
   0
@@ -109407,7 +110607,7 @@ D6
  92
         0
  94
-       59
+       27
  95
         2
  96
@@ -109451,7 +110651,7 @@ ACVALUE_END
   7
 ACFD_FIELD_VALUE
  93
-        4
+        0
  90
        32
  11
@@ -109465,11 +110665,11 @@ ACFD_FIELD_VALUE
 300
 %lu2%pt3
 302
-1027.00, 5134.51
+
 304
 ACVALUE_END
 301
-1027.00, 5134.51
+
  98
        16
   0
@@ -109495,7 +110695,7 @@ B9
  92
         0
  94
-       59
+       27
  95
         2
  96
@@ -109539,7 +110739,7 @@ ACVALUE_END
   7
 ACFD_FIELD_VALUE
  93
-        4
+        0
  90
        32
  11
@@ -109553,11 +110753,11 @@ ACFD_FIELD_VALUE
 300
 %lu2%pt3
 302
-1045.00, 4983.12
+
 304
 ACVALUE_END
 301
-1045.00, 4983.12
+
  98
        16
   0
@@ -109583,7 +110783,7 @@ B9
  92
         0
  94
-       59
+       27
  95
         2
  96
@@ -109627,7 +110827,7 @@ ACVALUE_END
   7
 ACFD_FIELD_VALUE
  93
-        4
+        0
  90
        32
  11
@@ -109641,11 +110841,11 @@ ACFD_FIELD_VALUE
 300
 %lu2%pt3
 302
-1045.00, 5133.73
+
 304
 ACVALUE_END
 301
-1045.00, 5133.73
+
  98
        16
   0
@@ -109671,7 +110871,7 @@ AcObjProp
  92
         0
  94
-       59
+       27
  95
         2
  96
@@ -109715,7 +110915,7 @@ ACVALUE_END
   7
 ACFD_FIELD_VALUE
  93
-        4
+        0
  90
        32
  11
@@ -109729,11 +110929,11 @@ ACFD_FIELD_VALUE
 300
 %lu2%pt3
 302
-1072.30, 5081.89
+
 304
 ACVALUE_END
 301
-1072.30, 5081.89
+
  98
        16
   0
@@ -109759,7 +110959,7 @@ AcObjProp
  92
         0
  94
-       59
+       27
  95
         2
  96
@@ -109803,7 +111003,7 @@ ACVALUE_END
   7
 ACFD_FIELD_VALUE
  93
-        4
+        0
  90
        32
  11
@@ -109817,11 +111017,11 @@ ACFD_FIELD_VALUE
 300
 %lu2%pt3
 302
-1080.38, 5101.74
+
 304
 ACVALUE_END
 301
-1080.38, 5101.74
+
  98
        16
   0
@@ -109847,7 +111047,7 @@ AcObjProp
  92
         0
  94
-       59
+       27
  95
         2
  96
@@ -109891,7 +111091,7 @@ ACVALUE_END
   7
 ACFD_FIELD_VALUE
  93
-        4
+        0
  90
        32
  11
@@ -109905,11 +111105,11 @@ ACFD_FIELD_VALUE
 300
 %lu2%pt3
 302
-1067.67, 5083.77
+
 304
 ACVALUE_END
 301
-1067.67, 5083.77
+
  98
        16
   0
@@ -109935,7 +111135,7 @@ AcObjProp
  92
         0
  94
-       59
+       27
  95
         2
  96
@@ -109979,7 +111179,7 @@ ACVALUE_END
   7
 ACFD_FIELD_VALUE
  93
-        4
+        0
  90
        32
  11
@@ -109993,11 +111193,11 @@ ACFD_FIELD_VALUE
 300
 %lu2%pt3
 302
-1075.75, 5103.62
+
 304
 ACVALUE_END
 301
-1075.75, 5103.62
+
  98
        16
   0
@@ -110023,7 +111223,7 @@ AcObjProp
  92
         0
  94
-       27
+       59
  95
         2
  96
@@ -110067,7 +111267,7 @@ ACVALUE_END
   7
 ACFD_FIELD_VALUE
  93
-        0
+        4
  90
         2
 140
@@ -110077,11 +111277,11 @@ ACFD_FIELD_VALUE
 300
 %au0
 302
-
+67.8445
 304
 ACVALUE_END
 301
-
+67.8445
  98
         7
   0
@@ -110107,7 +111307,7 @@ AcObjProp
  92
         0
  94
-       27
+       59
  95
         2
  96
@@ -110151,7 +111351,7 @@ ACVALUE_END
   7
 ACFD_FIELD_VALUE
  93
-        0
+        4
  90
         2
 140
@@ -110161,11 +111361,11 @@ ACFD_FIELD_VALUE
 300
 %au0
 302
-
+157.8445
 304
 ACVALUE_END
 301
-
+157.8445
  98
         8
   0
@@ -110191,7 +111391,7 @@ AcObjProp
  92
         0
  94
-       59
+       27
  95
         2
  96
@@ -110235,7 +111435,7 @@ ACVALUE_END
   7
 ACFD_FIELD_VALUE
  93
-        4
+        0
  90
         2
 140
@@ -110245,11 +111445,11 @@ ACFD_FIELD_VALUE
 300
 %lu6
 302
-707.46
+
 304
 ACVALUE_END
 301
-707.46
+
  98
         6
   0
@@ -111927,7 +113127,7 @@ AcDbXrecord
   0
 CELLSTYLEMAP
   5
-1E3F1
+1E54D
 102
 {ACAD_REACTORS
 330

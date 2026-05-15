@@ -45,5 +45,7 @@ namespace Cad_Point_Manager.Helpers
         public static readonly SolidColorBrush SelectedCogoPointBrush = new(SelectedCogoPointColor);
         public static readonly Color SelectedCogoPointMouseOverColor = Color.FromArgb(255, 127, 255, 116);
         public static readonly SolidColorBrush SelectedCogoPointMouseOverBrush = new(SelectedCogoPointMouseOverColor);
+
+        public const float PdfPreviewDpi = 96;
     }
 }

@@ -38,7 +38,6 @@ namespace Cad_Point_Manager.Views.UserControls
         #endregion
 
         #region Dependency Properties
-
         public static readonly DependencyProperty RendererProperty =
             DependencyProperty.Register(
                 nameof(Renderer),

@@ -4,7 +4,7 @@ using Cad_Point_Manager.Models;
 using Cad_Point_Manager.Models.Printing;
 using System.Windows;
 
-namespace Cad_Point_Manager.Services.LayoutExporting
+namespace Cad_Point_Manager.Services.Exporting
 {
     public interface ILayoutPdfVectorExporter
     {
@@ -16,6 +16,7 @@ namespace Cad_Point_Manager.Services.LayoutExporting
             SceneIdMap ids, ResCache resCache, 
             List<TbPrimitive> templatePrims, 
             string outputPath, 
-            CancellationToken ct = default);
+            CancellationToken ct = default,
+            bool openAfterExport = false);
     }
 }

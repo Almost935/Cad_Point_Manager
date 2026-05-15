@@ -77,7 +77,6 @@ namespace Cad_Point_Manager.Views.UserControls
         public BaseTitleblock()
         {
             InitializeComponent();
-            //Attributes ??= new TitleblockAttributes();
         }
         #endregion
 

@@ -332,7 +332,7 @@ namespace Cad_Point_Manager.Views.UserControls
 
         public void ReloadPreview()
         {
-            LayoutPreviewControl.RebuildAsync();
+            PdfLayoutPreviewControl.RebuildAsync();
         }
 
         private void LayoutsListInlineEditBox_PreviewKeyDown(object sender, KeyEventArgs e)
@@ -545,7 +545,7 @@ namespace Cad_Point_Manager.Views.UserControls
         private static void OnActiveLayoutChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             var ctrl = (LayoutsViewControl)d;
-            if (ctrl is not null) { ctrl.LayoutPreviewControl.RebuildAsync(); }
+            if (ctrl is not null) { ctrl.PdfLayoutPreviewControl.RebuildAsync(); }
 
             if (e.OldValue is Layout oldLayout) { oldLayout.Viewport.PropertyChanged -= ctrl.ActiveLayoutViewport_PropertyChanged; }
 
@@ -560,11 +560,11 @@ namespace Cad_Point_Manager.Views.UserControls
                 // If PropertyChanged can come from a background thread, marshal to UI thread
                 if (!Dispatcher.CheckAccess())
                 {
-                    await Dispatcher.InvokeAsync(() => LayoutPreviewControl.RebuildAsync());
+                    await Dispatcher.InvokeAsync(() => PdfLayoutPreviewControl.RebuildAsync());
                     return;
                 }
 
-                LayoutPreviewControl.RebuildAsync();
+                PdfLayoutPreviewControl.RebuildAsync();
             }
         }
 
@@ -573,7 +573,7 @@ namespace Cad_Point_Manager.Views.UserControls
             var ctrl = (LayoutsViewControl)d;
             if (ctrl is not null)
             {
-                ctrl.LayoutPreviewControl.RebuildAsync();
+                ctrl.PdfLayoutPreviewControl.RebuildAsync();
             }
         }
         #endregion

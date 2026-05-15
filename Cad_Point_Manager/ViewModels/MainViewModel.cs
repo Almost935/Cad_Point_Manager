@@ -12,7 +12,8 @@ using Cad_Point_Manager.Models.PointRendering;
 using Cad_Point_Manager.Models.Printing;
 using Cad_Point_Manager.Services;
 using Cad_Point_Manager.Services.Dialogs;
-using Cad_Point_Manager.Services.LayoutExporting;
+using Cad_Point_Manager.Services.GeometrySelection;
+using Cad_Point_Manager.Services.Exporting;
 using netDxf;
 using System.Collections;
 using System.ComponentModel;
@@ -31,7 +32,7 @@ namespace Cad_Point_Manager.ViewModels
     public class MainViewModel : INotifyPropertyChanged, INotifyDataErrorInfo
     {
         #region Fields
-        private readonly NewSelectionConnectivityService _service = new();
+        private readonly SelectionConnectivityService _service = new();
 
         private readonly Dictionary<string, List<string>> _errors = [];
 
@@ -791,7 +792,6 @@ namespace Cad_Point_Manager.ViewModels
         // Printing Methods
         public async Task ExportActiveLayoutAsync(string path)
         {
-
             var imageUri = ImageHelpers.LoadPackImage("pack://application:,,,/Resources/Images/IQ Contracting - Logo (Square).jpg");
             var templatePrims = TitleblockPrimitiveBuilder.Build(ActiveLayout, imageUri);
 
@@ -803,7 +803,8 @@ namespace Cad_Point_Manager.ViewModels
                 SceneIdMap,
                 ResCache,
                 templatePrims,
-                path);
+                path,
+                openAfterExport: true);
         }
         #endregion
 

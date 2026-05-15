@@ -6,7 +6,7 @@ using CsvHelper;
 using System.Globalization;
 using System.IO;
 
-namespace Cad_Point_Manager.Services
+namespace Cad_Point_Manager.Services.Importing
 {
     public class PointImportService
     {

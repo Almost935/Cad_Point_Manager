@@ -1,6 +1,6 @@
 ﻿using Cad_Point_Manager.Models.DrawingObjects;
 
-namespace Cad_Point_Manager.Services
+namespace Cad_Point_Manager.Services.GeometrySelection
 {
     public interface ISelectionConnectivityService
     {

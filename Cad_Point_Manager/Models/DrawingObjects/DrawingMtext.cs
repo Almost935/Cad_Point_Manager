@@ -3,7 +3,7 @@ using Cad_Point_Manager.Controls.D3DControl;
 using Cad_Point_Manager.Controls.D3DControl.Rendering.Text;
 using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Helpers;
-using Cad_Point_Manager.Services.LayoutExporting;
+using Cad_Point_Manager.Services.Exporting;
 using netDxf;
 using netDxf.Entities;
 using PdfSharpCore.Drawing;
@@ -208,15 +208,17 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             var state = gfx.Save();
             if (Math.Abs(rotDeg) > 0.0001) { gfx.RotateAtTransform(rotDeg, basePdf); }
 
-            foreach (var row in MtextBlock.Rows)
+            var rows = MtextBlock.Rows.ToList();
+            
+            foreach (var row in rows)
             {
-                foreach (var seg in row.Segments)
+                var segments = row.Segments.ToList();
+
+                foreach (var seg in segments)
                 {
                     if (string.IsNullOrWhiteSpace(seg.Text)) { continue; }
 
-                    var fontFamily = string.IsNullOrWhiteSpace(seg.FontFamilyName)
-                        ? (string.IsNullOrWhiteSpace(FontFamilyName) ? "Arial" : FontFamilyName)
-                        : seg.FontFamilyName;
+                    var fontFamily = PdfDrawingHelpers.GetFontFamily(seg.FontFamilyName);
 
                     XFontStyle style = XFontStyle.Regular;
                     if (seg.IsBold) { style |= XFontStyle.Bold; }
@@ -338,7 +340,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             // Regex patterns for DXF formatting
             string aciColorPattern = @"\\[C](\d+);";
             string trueTypeColorPattern = @"\\[c](\d+);";
-            string fontPattern = @"\\f([^;]+);";
+            string fontPattern = @"\\[fF]([^;]+);";
             string heightPattern = @"\\H([\d.]+)x?;";
             string lineBreakPattern = @"\\P";
             string underlineStartPattern = @"\\L";
@@ -414,7 +416,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
                         currentSegment.Color = new((float)trueTypeColor.X, (float)trueTypeColor.Y, (float)trueTypeColor.Z, (float)trueTypeColor.W);
                     }
-                    else if (Regex.IsMatch(value, fontPattern))
+                    else if (Regex.IsMatch(value, fontPattern, RegexOptions.IgnoreCase))
                     {
                         string fontSpec = Regex.Match(value, fontPattern).Groups[1].Value;
                         var parts = fontSpec.Split('|', StringSplitOptions.RemoveEmptyEntries);

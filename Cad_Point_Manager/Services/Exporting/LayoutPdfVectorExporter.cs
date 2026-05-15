@@ -14,12 +14,14 @@ using System.Text;
 using System.Windows;
 using System.Windows.Media;
 
-namespace Cad_Point_Manager.Services.LayoutExporting
+namespace Cad_Point_Manager.Services.Exporting
 {
     public class LayoutPdfVectorExporter : ILayoutPdfVectorExporter
     {
-        static double Pt(double inches) => inches * 72.0;
-        static readonly Dictionary<short, XGraphicsPath> _duGlyphPathCache = new();
+        private const double PdfPointsPerInch = 72;
+
+        static double Pt(double inches) => inches * PdfPointsPerInch;
+        static readonly Dictionary<short, XGraphicsPath> _duGlyphPathCache = [];
 
         const uint LABEL_VISIBLE = 1u << 0;
 
@@ -38,20 +40,16 @@ namespace Cad_Point_Manager.Services.LayoutExporting
             SceneIdMap ids,
             ResCache resCache,
             List<TbPrimitive> templatePrims, string outputPath,
-            CancellationToken ct = default)
+            CancellationToken ct = default,
+            bool openAfterExport = false)
         {
             return Application.Current.Dispatcher.InvokeAsync(() =>
             {
                 var viewSize = new Size(cadManager3D.ViewportSize.Width, cadManager3D.ViewportSize.Height);
-                double pageWpts = layout.PageWidth * 72.0;
-                double pageHpts = layout.PageHeight * 72.0;
+                double pageWpts = layout.PageWidth * PdfPointsPerInch;
+                double pageHpts = layout.PageHeight * PdfPointsPerInch;
 
-                Rect pdfViewportPts = new(
-                    layout.Viewport.LocalRectIn.X * 72.0,
-                    layout.Viewport.LocalRectIn.Y * 72.0,
-                    layout.Viewport.LocalRectIn.Width * 72.0,
-                    layout.Viewport.LocalRectIn.Height * 72.0);
-                Matrix worldToPdf = BuildWorldToPdfFromCameraNew(layout, cadManager3D, scene.Bounds.ToRect());
+                Matrix worldToPdf = BuildWorldToPdfFromCamera(layout, cadManager3D, scene.Bounds.ToRect());
 
                 LayoutPdfVectorExporter.Export(
                     layout,
@@ -61,7 +59,8 @@ namespace Cad_Point_Manager.Services.LayoutExporting
                     resCache,
                     templatePrims,
                     worldToPdf,
-                    outputPath);
+                    outputPath,
+                    openAfterExport);
 
             }).Task;
         }
@@ -74,14 +73,15 @@ namespace Cad_Point_Manager.Services.LayoutExporting
             ResCache resCache,
             List<TbPrimitive> templatePrims,
             Matrix worldToPdf,
-            string outputPdfPath)
+            string outputPdfPath,
+            bool openAfterExport = false)
         {
             Stopwatch sw = Stopwatch.StartNew();
 
             Directory.CreateDirectory(Path.GetDirectoryName(outputPdfPath)!);
 
-            double pageWpts = layout.PageWidth * 72.0;
-            double pageHpts = layout.PageHeight * 72.0;
+            double pageWpts = layout.PageWidth * PdfPointsPerInch;
+            double pageHpts = layout.PageHeight * PdfPointsPerInch;
 
             using var doc = new PdfDocument();
             var page = doc.AddPage();
@@ -93,10 +93,10 @@ namespace Cad_Point_Manager.Services.LayoutExporting
 
             // --- CLIP TO VIEWPORT FOR CAD ONLY ---
             var viewportClip = new XRect(
-                layout.Viewport.LocalRectIn.X * 72.0,
-                layout.Viewport.LocalRectIn.Y * 72.0,
-                layout.Viewport.LocalRectIn.Width * 72.0,
-                layout.Viewport.LocalRectIn.Height * 72.0);
+                layout.Viewport.LocalRectIn.X * PdfPointsPerInch,
+                layout.Viewport.LocalRectIn.Y * PdfPointsPerInch,
+                layout.Viewport.LocalRectIn.Width * PdfPointsPerInch,
+                layout.Viewport.LocalRectIn.Height * PdfPointsPerInch);
 
             // Capture graphics state *object* so we can restore the exact state.
             XGraphicsState cadClipState = gfx.Save();
@@ -123,15 +123,73 @@ namespace Cad_Point_Manager.Services.LayoutExporting
                 labelStates, pointStates, groupStates);
 
             gfx.Restore(cadClipState);
-
             DrawTitleblockPdf(gfx, templatePrims);
-
             doc.Save(outputPdfPath);
 
             _duGlyphPathCache.Clear();
 
+            if (openAfterExport)
+            {
+                FileHelpers.TryOpenFile(outputPdfPath);
+            }
+
             sw.Stop();
             Debug.WriteLine($"PDF export completed in {sw.Elapsed.TotalSeconds:F2} seconds.");
+        }
+
+        public static MemoryStream ExportViewportPreviewToStream(
+            Layout layout,
+            CadManager cadManager,
+            D3dStateController stateController,
+            SceneIdMap ids,
+            ResCache resCache,
+            Matrix worldToPdf)
+        {
+            var stream = new MemoryStream();
+
+            using var doc = new PdfDocument();
+            var page = doc.AddPage();
+            double vpWpts = layout.Viewport.LocalRectIn.Width * PdfPointsPerInch;
+            double vpHpts = layout.Viewport.LocalRectIn.Height * PdfPointsPerInch;
+
+            page.Width = vpWpts;
+            page.Height = vpHpts;
+
+            using var gfx = XGraphics.FromPdfPage(page);
+
+            gfx.DrawRectangle(
+                XBrushes.White,
+                0,
+                0,
+                vpWpts,
+                vpHpts);
+
+            foreach (var kv in cadManager.Layers)
+            {
+                var layer = kv.Value;
+                if (!layer.IsVisible) { continue; }
+
+                foreach (var obj in layer.DrawingObjects)
+                {
+                    var pen = new XPen(
+                        PdfTransform.ToXColor(obj.Color.ToVector4()),
+                        0.0);
+                    obj.DrawToPdf(gfx, worldToPdf, pen);
+                }
+            }
+
+            var labelStates = stateController.GetLabelStatesSnapshot();
+            var pointStates = stateController.GetPointStatesSnapshot();
+            var groupStates = stateController.GetGroupStatesSnapshot();
+            DrawCogoPointStrings(
+                gfx, cadManager, ids, resCache, worldToPdf,
+                labelStates, pointStates, groupStates);
+
+            doc.Save(stream, false);
+
+            stream.Position = 0;
+
+            return stream;
         }
 
         private static void DrawCogoPointStrings(
@@ -674,61 +732,71 @@ namespace Cad_Point_Manager.Services.LayoutExporting
             return new XRect(rx, ry, w, h);
         }
 
-        private static Matrix BuildWorldToPdfFromCamera(Layout layout, CadManager cadManager, Scene scene)
+        private static SharpDX.Matrix GetExtentsFittingMatrix(SharpDX.ViewportF viewport, Rect extents)
         {
-            if (layout is null) throw new ArgumentNullException(nameof(layout));
-            if (cadManager is null) throw new ArgumentNullException(nameof(cadManager));
-            if (scene is null) throw new ArgumentNullException(nameof(scene));
-
-            var cam = cadManager.Camera;
-            if (cam is null) throw new InvalidOperationException("cadManager.Camera is null.");
-
-            // PDF viewport rect in POINTS (page coords, Y-down)
-            var vpIn = layout.Viewport.LocalRectIn;
-            double vpX = vpIn.X * 72.0;
-            double vpY = vpIn.Y * 72.0;
-            double vpW = vpIn.Width * 72.0;
-            double vpH = vpIn.Height * 72.0;
-
-            // Save camera state
-            var oldViewport = cam.Viewport;
-            var oldInitial = cam.InitialViewMatrix;
-            var oldTranslate = cam.Translate;
-            var oldZoomStep = cam.CurrentZoomStep;
-
-            try
-            {
-                // Virtual viewport matching the PDF viewport size.
-                // Only aspect/size matters for the camera math; using points makes it 1:1.
-                var virtualViewport = new SharpDX.ViewportF(0, 0, (float)vpW, (float)vpH);
-
-                // Rebuild the extents-fit matrix for THIS viewport size
-                cam.InitialViewMatrix = GetExtentsFittingMatrix(virtualViewport, cadManager.Extents);
-
-                // Recompute projection/view/windows matrices for this viewport
-                cam.UpdateViewportSize(virtualViewport);
-
-                // Apply the saved scene pan/zoom
-                cam.SetPanAndZoom(scene.Translation, scene.ZoomStep);
-
-                // Camera.WindowsMatrix maps world -> view (top-left origin, Y-down)
-                var worldToView = cam.WindowsMatrix;
-
-                // Shift view coords into the PDF viewport's top-left corner on the page
-                worldToView.Translate(vpX, vpY);
-
-                return worldToView;
-            }
-            finally
-            {
-                // Restore camera state
-                cam.UpdateViewportSize(oldViewport);
-                cam.InitialViewMatrix = oldInitial;
-                cam.SetPanAndZoom(oldTranslate, oldZoomStep);
-            }
+            // same as D3dDxfControl.GetExtentsFittingMatrix :contentReference[oaicite:8]{index=8}
+            double scale = Math.Min(viewport.Width / extents.Width, viewport.Height / extents.Height);
+            return SharpDX.Matrix.Scaling((float)scale, (float)scale, 1f)
+                 * SharpDX.Matrix.Translation((float)-extents.Left, (float)-extents.Top, 0f);
         }
 
-        private static Matrix BuildWorldToPdfFromCameraNew(Layout layout, CadManager cadManager, Rect bounds)
+        private static SharpDX.Vector2 ComputeCogoLabelWorldOrigin(in LabelState ls, in PointState ps, in GroupState gs)
+        {
+            // These constants already exist in your exporter:
+            // const uint POINT_ISFLIPPEDY = ...
+            float isFlippedY = ((ps.Flags & POINT_ISFLIPPEDY) != 0) ? -1f : 1f;
+            float textInfoOffset = gs.TextInfoBaseXoffset * isFlippedY;
+
+            float x =
+                ls.Offset.X +
+                textInfoOffset +
+                ps.PointInfoOffset.X +
+                ps.Offset.X;
+
+            float y =
+                (ls.Offset.Y * gs.Scale) +
+                ps.PointInfoOffset.Y +
+                ps.Offset.Y;
+
+            return new SharpDX.Vector2(x, y);
+        }
+
+        private static (double X, double Y) TransformPoint(Matrix m, SharpDX.Vector2 p)
+        {
+            // WPF Matrix semantics:
+            // x' = x*M11 + y*M21 + OffsetX
+            // y' = x*M12 + y*M22 + OffsetY
+            double x = p.X;
+            double y = p.Y;
+            return (x * m.M11 + y * m.M21 + m.OffsetX,
+                    x * m.M12 + y * m.M22 + m.OffsetY);
+        }
+
+        private static double PointsPerWorldUnit(Matrix worldToPdf)
+        {
+            // Length of transformed (0,1) gives “points per world unit” in Y direction.
+            double dx = worldToPdf.M21;
+            double dy = worldToPdf.M22;
+            double len = Math.Sqrt(dx * dx + dy * dy);
+            return len <= 0 ? 1.0 : len;
+        }
+
+        static double PointsPerWorldUnitX(Matrix worldToPdf)
+        {
+            double dx = worldToPdf.M11;
+            double dy = worldToPdf.M12;
+            double len = Math.Sqrt(dx * dx + dy * dy);
+            return len <= 0 ? 1.0 : len;
+        }
+
+        static double PointsPerWorldUnitY(Matrix worldToPdf)
+        {
+            double dx = worldToPdf.M21;
+            double dy = worldToPdf.M22;
+            double len = Math.Sqrt(dx * dx + dy * dy);
+            return len <= 0 ? 1.0 : len;
+        }
+        public static Matrix BuildWorldToPdfFromCamera(Layout layout, CadManager cadManager, Rect bounds)
         {
             if (layout is null) { throw new ArgumentNullException(nameof(layout)); }
             if (cadManager is null) { throw new ArgumentNullException(nameof(cadManager)); }
@@ -810,71 +878,5 @@ namespace Cad_Point_Manager.Services.LayoutExporting
                 cam.ResetToDefaults(); // puts matrices back in sync with restored state
             }
         }
-
-        private static SharpDX.Matrix GetExtentsFittingMatrix(SharpDX.ViewportF viewport, Rect extents)
-        {
-            // same as D3dDxfControl.GetExtentsFittingMatrix :contentReference[oaicite:8]{index=8}
-            double scale = Math.Min(viewport.Width / extents.Width, viewport.Height / extents.Height);
-            return SharpDX.Matrix.Scaling((float)scale, (float)scale, 1f)
-                 * SharpDX.Matrix.Translation((float)-extents.Left, (float)-extents.Top, 0f);
-        }
-
-        private static SharpDX.Vector2 ComputeCogoLabelWorldOrigin(in LabelState ls, in PointState ps, in GroupState gs)
-        {
-            // These constants already exist in your exporter:
-            // const uint POINT_ISFLIPPEDY = ...
-            float isFlippedY = ((ps.Flags & POINT_ISFLIPPEDY) != 0) ? -1f : 1f;
-            float textInfoOffset = gs.TextInfoBaseXoffset * isFlippedY;
-
-            float x =
-                ls.Offset.X +
-                textInfoOffset +
-                ps.PointInfoOffset.X +
-                ps.Offset.X;
-
-            float y =
-                (ls.Offset.Y * gs.Scale) +
-                ps.PointInfoOffset.Y +
-                ps.Offset.Y;
-
-            return new SharpDX.Vector2(x, y);
-        }
-
-        private static (double X, double Y) TransformPoint(Matrix m, SharpDX.Vector2 p)
-        {
-            // WPF Matrix semantics:
-            // x' = x*M11 + y*M21 + OffsetX
-            // y' = x*M12 + y*M22 + OffsetY
-            double x = p.X;
-            double y = p.Y;
-            return (x * m.M11 + y * m.M21 + m.OffsetX,
-                    x * m.M12 + y * m.M22 + m.OffsetY);
-        }
-
-        private static double PointsPerWorldUnit(Matrix worldToPdf)
-        {
-            // Length of transformed (0,1) gives “points per world unit” in Y direction.
-            double dx = worldToPdf.M21;
-            double dy = worldToPdf.M22;
-            double len = Math.Sqrt(dx * dx + dy * dy);
-            return len <= 0 ? 1.0 : len;
-        }
-
-        static double PointsPerWorldUnitX(Matrix worldToPdf)
-        {
-            double dx = worldToPdf.M11;
-            double dy = worldToPdf.M12;
-            double len = Math.Sqrt(dx * dx + dy * dy);
-            return len <= 0 ? 1.0 : len;
-        }
-
-        static double PointsPerWorldUnitY(Matrix worldToPdf)
-        {
-            double dx = worldToPdf.M21;
-            double dy = worldToPdf.M22;
-            double len = Math.Sqrt(dx * dx + dy * dy);
-            return len <= 0 ? 1.0 : len;
-        }
-
     }
 }

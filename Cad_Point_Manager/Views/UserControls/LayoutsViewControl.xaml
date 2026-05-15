@@ -267,8 +267,7 @@
                 Grid.Column="1"
                 SizeChanged="BackgroundCanvas_SizeChanged"
                 ClipToBounds="False">
-            <Canvas x:Name="PageHost"
-                    Background="White"
+            <Canvas Background="White"
                     Width="{Binding ActiveLayout.PageWidth}"
                     Height="{Binding ActiveLayout.PageHeight}"
                     Cursor="{x:Static helpers:AppCursors.DarkCrosshairCursor}">
@@ -285,12 +284,11 @@
                         Height="{Binding ElementName=Titleblock, Path=ViewportHeight}"
                         Canvas.Left="{Binding ElementName=Titleblock, Path=ViewportLeft}"
                         Canvas.Top="{Binding ElementName=Titleblock, Path=ViewportTop}">
-                    <local:LayoutPreviewControl x:Name="LayoutPreviewControl"
-                                                Renderer="{Binding Renderer}"
-                                                Layout="{Binding ActiveLayout}"
-                                                Scenes="{Binding Scenes}"
-                                                ViewportWidth="{Binding ElementName=Titleblock, Path=ViewportWidth}"
-                                                ViewportHeight="{Binding ElementName=Titleblock, Path=ViewportHeight}" />
+                    <local:PdfLayoutPreviewControl x:Name="PdfLayoutPreviewControl"
+                                                   Renderer="{Binding Renderer}"
+                                                   CadManager="{Binding CadManager}"
+                                                   ActiveLayout="{Binding ActiveLayout}"
+                                                   Scenes="{Binding Scenes}" />
                 </Border>
             </Canvas>
 

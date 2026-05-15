@@ -2,7 +2,7 @@
 using System.Numerics;
 using System.Windows.Media;
 
-namespace Cad_Point_Manager.Services.LayoutExporting
+namespace Cad_Point_Manager.Services.Exporting
 {
     public static class PdfTransform
     {

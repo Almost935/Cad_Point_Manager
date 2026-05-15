@@ -1,10 +1,9 @@
 ﻿using Cad_Point_Manager.Models.DrawingObjects;
 
-namespace Cad_Point_Manager.Services
+namespace Cad_Point_Manager.Services.GeometrySelection
 {
-    public sealed class NewSelectionConnectivityService : ISelectionConnectivityService
+    public sealed class SelectionConnectivityService : ISelectionConnectivityService
     {
-        // Implements: List<ChainPath> BuildChainsFromSelection(IEnumerable<DrawingObject3D> selected, double eps)
         public List<ChainPath> BuildChainsFromSelection(IEnumerable<DrawingObject> selected, double eps)
         {
             if (selected is null) return new List<ChainPath>();
