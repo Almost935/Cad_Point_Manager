@@ -2231,24 +2231,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             base.OnPreviewKeyDown(e);
         }
 
-        //protected override void OnRenderSizeChanged(SizeChangedInfo sizeInfo)
-        //{
-        //    base.OnRenderSizeChanged(sizeInfo);
-
-        //    Viewport = new(0, 0, (float)ActualWidth, (float)ActualHeight);
-        //    CadManager3D.ViewportSize = new((float)ActualWidth, (float)ActualHeight);
-
-        //    SetInitialMatrix();
-
-        //    if (CadManager3D.Camera is not null)
-        //    {
-        //        CadManager3D.Camera.UpdateViewportSize(Viewport);
-        //        CadManager3D.ResetTemplates();
-        //        ConstantBuffersDirty = true;
-        //    }
-
-        //    _dxfDirty = true;
-        //}
         protected override void OnTargetsResized(int wPx, int hPx)
         {
             base.OnTargetsResized(wPx, hPx);
@@ -2867,12 +2849,12 @@ namespace Cad_Point_Manager.Controls.D3DControl
                         StateController.SetObjectMouseOver(geometry, true);
                     }
                 }
-                if (hitTestableObject is CogoPoint dxfPoint)
+                if (hitTestableObject is CogoPoint cogoPoint)
                 {
-                    if (!dxfPoint.IsMouseOver)
+                    if (!cogoPoint.IsMouseOver)
                     {
-                        dxfPoint.MouseEnter();
-                        StateController.SetPointMouseOver(dxfPoint, true);
+                        cogoPoint.MouseEnter();
+                        StateController.SetPointMouseOver(cogoPoint, true);
                     }
                 }
                 if (hitTestableObject is HitTestablePoint point)
@@ -3087,6 +3069,10 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             CadManager.CogoPointManager.UpdateCogoPointTree();
             UpdateInitialMatrix();
+
+            ResetHoverObjects();
+            _cogoHoverVerticesDirty = true;
+            _glyphVerticesDirty = true;
         }
         private void UnbindAllStateSrvs(DeviceContext ctx)
         {
@@ -3237,7 +3223,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     pg.PropertyChanged += PointGroup_PropertyChanged;
 
                     var gId = SceneIdMap.GetOrAddGroupId(pg, out var isNew);
-                    if (isNew) { StateBuffers.InitializeGroupState(SceneIdMap.GroupCount, pg, gId); }
+                    if (isNew) { StateBuffers.InitializeGroupState(SceneIdMap.MaxGroupId, pg, gId); }
                 }
             }
             if (e.Action == NotifyCollectionChangedAction.Remove)
@@ -3262,8 +3248,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
                     uint pId = SceneIdMap.GetOrAddPointId(cp, out var isNewPoint);
                     uint gId = SceneIdMap.GetOrAddGroupId(cp.PointGroup, out var isNewGroup);
-                    if (isNewGroup) { StateBuffers.InitializeGroupState(SceneIdMap.GroupCount, cp.PointGroup, gId); }
-                    if (isNewPoint) { StateBuffers.InitializePointState(SceneIdMap.PointCount, cp, pId, gId); }
+                    if (isNewGroup) { StateBuffers.InitializeGroupState(SceneIdMap.MaxGroupId, cp.PointGroup, gId); }
+                    if (isNewPoint) { StateBuffers.InitializePointState(SceneIdMap.MaxPointId, cp, pId, gId); }
 
                     uint idPN = SceneIdMap.GetOrAddLabelId(cp, 0, out var isNew);
                     if (isNew) { StateBuffers.InitializeLabelState(SceneIdMap.MaxLabelCount, cp.PointNumberOffset, idPN); }
@@ -3301,7 +3287,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
                     var lid = SceneIdMap.GetOrAddLayerId(layer, out bool isNew);
                     layer.Id = lid;
-                    if (isNew) { StateBuffers.InitializeLayerState(SceneIdMap.LayerCount, layer, lid); }
+                    if (isNew) { StateBuffers.InitializeLayerState(SceneIdMap.MaxLayerId, layer, lid); }
                 }
             }
             if (e.Action == NotifyCollectionChangedAction.Remove)
@@ -3333,13 +3319,13 @@ namespace Cad_Point_Manager.Controls.D3DControl
                             foreach (var seg in row.Segments)
                             {
                                 var segId = SceneIdMap.GetOrAddObjectId(seg, out isNew);
-                                if (isNew) { StateBuffers.InitializeObjectState(SceneIdMap.ObjectCount, seg, segId); }
+                                if (isNew) { StateBuffers.InitializeObjectState(SceneIdMap.MaxObjectId, seg, segId); }
                                 continue;
                             }
                         }
                     }
                     var oId = SceneIdMap.GetOrAddObjectId(drawingObj, out isNew);
-                    if (isNew) { StateBuffers.InitializeObjectState(SceneIdMap.ObjectCount, drawingObj, oId); }
+                    if (isNew) { StateBuffers.InitializeObjectState(SceneIdMap.MaxObjectId, drawingObj, oId); }
                 }
             }
         }

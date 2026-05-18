@@ -570,12 +570,12 @@ namespace Cad_Point_Manager.Models
                 {
                     var layer = keyValuePair.Value;
                     var lId = sceneIdMap.GetOrAddLayerId(layer, out var isNewLayer);
-                    if (isNewLayer) { stateBuffers.InitializeLayerState(sceneIdMap.LayerCount, layer, lId); }
+                    if (isNewLayer) { stateBuffers.InitializeLayerState(sceneIdMap.MaxLayerId, layer, lId); }
 
                     foreach (var obj in layer.DrawingObjects)
                     {
                         var objectId = sceneIdMap.GetOrAddObjectId(obj, out var isNewObj);
-                        if (isNewObj) { stateBuffers.InitializeObjectState(sceneIdMap.ObjectCount, obj, objectId); }
+                        if (isNewObj) { stateBuffers.InitializeObjectState(sceneIdMap.MaxObjectId, obj, objectId); }
 
                         if (obj is DrawingGeometry drawingGeometry)
                         {
@@ -623,7 +623,7 @@ namespace Cad_Point_Manager.Models
                 {
                     var layer = kvp.Value;
                     var lid = sceneIdMap.GetOrAddLayerId(layer, out var isNewLayer);
-                    if (isNewLayer) { stateBuffers.InitializeLayerState(sceneIdMap.LayerCount, layer, lid); }
+                    if (isNewLayer) { stateBuffers.InitializeLayerState(sceneIdMap.MaxLayerId, layer, lid); }
 
                     if (!layer.IsVisible) { continue; }
 
@@ -665,12 +665,12 @@ namespace Cad_Point_Manager.Models
             {
                 if (!pg.IsVisible || pg is null) { continue; }
                 uint gid = sceneIdMap.GetOrAddGroupId(pg, out var isNewGroup);
-                if (isNewGroup) { stateBuffers.InitializeGroupState(sceneIdMap.GroupCount, pg, gid); }
+                if (isNewGroup) { stateBuffers.InitializeGroupState(sceneIdMap.MaxGroupId, pg, gid); }
 
                 foreach (CogoPoint p in pg.Points)
                 {
                     uint pid = sceneIdMap.GetOrAddPointId(p, out var isNewPoint);
-                    if (isNewPoint) { stateBuffers.InitializePointState(sceneIdMap.PointCount, p, pid, gid); }
+                    if (isNewPoint) { stateBuffers.InitializePointState(sceneIdMap.MaxPointId, p, pid, gid); }
 
                     _cachedPointMarkerVertices.Add(new PointMarkerInstance
                     {

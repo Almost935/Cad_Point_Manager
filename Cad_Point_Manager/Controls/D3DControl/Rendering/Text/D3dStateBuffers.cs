@@ -180,7 +180,6 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
                 BufferEx = new ShaderResourceViewDescription.ExtendedBufferResource { FirstElement = 0, ElementCount = _labelCap }
             });
         }
-
         public void EnsureGroupCapacity(int count)
         {
             if (count <= _groupCap) return;
@@ -222,14 +221,18 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
                 StructureByteStride = Utilities.SizeOf<PointState>()
             };
             _pointBuf = new Buffer(_device, desc);
+
             _pointSrv = new ShaderResourceView(_device, _pointBuf, new ShaderResourceViewDescription
             {
                 Format = Format.Unknown,
                 Dimension = ShaderResourceViewDimension.ExtendedBuffer,
-                BufferEx = new ShaderResourceViewDescription.ExtendedBufferResource { FirstElement = 0, ElementCount = _pointCap }
+                BufferEx = new ShaderResourceViewDescription.ExtendedBufferResource
+                {
+                    FirstElement = 0,
+                    ElementCount = _pointCap
+                }
             });
         }
-
         public void EnsureLayerCapacity(int count)
         {
             if (count <= _layerCap) return;

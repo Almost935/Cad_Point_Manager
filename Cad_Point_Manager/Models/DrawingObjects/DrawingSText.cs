@@ -178,7 +178,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         public override void UpdateTextVertices(ResCache resCache, uint layerId, SceneIdMap sceneIdMap, D3dStateBuffers stateBuffers)
         {
             var objectId = sceneIdMap.GetOrAddObjectId(this, out var isNewObject);
-            if (isNewObject) { stateBuffers.InitializeObjectState(sceneIdMap.ObjectCount, this, objectId); }
+            if (isNewObject) { stateBuffers.InitializeObjectState(sceneIdMap.MaxObjectId, this, objectId); }
             GetTextFormat(resCache.WriteFactory);
             GetTextLayout(resCache.WriteFactory);
             Tesselate(resCache, layerId, objectId);

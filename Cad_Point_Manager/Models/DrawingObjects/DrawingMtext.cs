@@ -557,7 +557,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
             var objectId = sceneIdMap.GetOrAddObjectId(segment, out bool isNewObj);
 
-            if (isNewObj) { stateBuffers.InitializeObjectState(sceneIdMap.ObjectCount, segment, objectId); }
+            if (isNewObj) { stateBuffers.InitializeObjectState(sceneIdMap.MaxObjectId, segment, objectId); }
             segment.GetTextLayout(resCache.WriteFactory);
             segment.Tesselate(resCache, layerId, objectId);
 

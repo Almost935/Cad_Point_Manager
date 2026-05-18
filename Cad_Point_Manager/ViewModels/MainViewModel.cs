@@ -25,6 +25,7 @@ using System.Windows.Input;
 
 using Point = System.Windows.Point;
 using TextBox = System.Windows.Controls.TextBox;
+using Cad_Point_Manager.Commands.UndoRedo;
 
 
 namespace Cad_Point_Manager.ViewModels
