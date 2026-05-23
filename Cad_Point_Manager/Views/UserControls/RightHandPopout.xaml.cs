@@ -152,6 +152,8 @@ namespace Cad_Point_Manager.Views.UserControls
         }
 
         public List<CogoPoint> SelectedCogoPoints => _selectedPointGroups.SelectMany(pg => pg.Points).ToList();
+
+        public string EditPointGroupName { get; set; }
         #endregion
 
         #region Dependency Properties
@@ -429,7 +431,7 @@ namespace Cad_Point_Manager.Views.UserControls
         }
         private void DeletePointGroupButton_Click(object sender, RoutedEventArgs e)
         {
-            if (CadManager is null || CadManager.CogoPointManager is null) { return; }
+            if (CadManager is null) { return; }
 
             var count = _selectedPointGroups.Sum(pg => pg.Points.Count);
             if (count > 0)
@@ -445,7 +447,7 @@ namespace Cad_Point_Manager.Views.UserControls
             }
 
             var copy = _selectedPointGroups.ToList();
-            foreach (var pg in copy) { CadManager.CogoPointManager.DeletePointGroup(pg); }
+            foreach (var pg in copy) { CadManager.TryDeletePointGroup(pg); }
 
             CadManager.CogoPointCircleVerticesDirty = true;
             CadManager.CogoPointTextVerticesDirty = true;
@@ -501,7 +503,7 @@ namespace Cad_Point_Manager.Views.UserControls
                                 errorMessage = null;
                                 break;
                             }
-                            if (!CadManager.CogoPointManager.IsValidPointGroupName(text, out string svcError))
+                            if (!CadManager.IsValidPointGroupName(text, out string svcError))
                             {
                                 errorMessage = svcError;
                             }
@@ -510,7 +512,7 @@ namespace Cad_Point_Manager.Views.UserControls
 
                     case "PointScale":
                         {
-                            if (!CadManager.CogoPointManager.IsValidPointScale(text, out string svcError))
+                            if (!CadManager.IsValidPointScale(text, out string svcError))
                             {
                                 errorMessage = svcError;
                             }
@@ -624,12 +626,12 @@ namespace Cad_Point_Manager.Views.UserControls
         }
         private void NewPGMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            if (CadManager is null || CadManager.CogoPointManager is null) { return; }
+            if (CadManager is null) { return; }
 
             bool created = TryCreateNewPointGroup(
-                CadManager.CogoPointManager.GetTempPointGroupName(),
+                CadManager.GetTempPointGroupName(),
                 Colors.Black,
-                CadManager.CogoPointManager.PointBaseScale);
+                CadManager.PointBaseScale);
         }
         private void EditPGMenuItem_Click(object sender, RoutedEventArgs e)
         {
@@ -640,7 +642,7 @@ namespace Cad_Point_Manager.Views.UserControls
         }
         private void DeletePGMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            if (CadManager is null || CadManager.CogoPointManager is null) { return; }
+            if (CadManager is null) { return; }
 
             var count = _selectedPointGroups.Sum(pg => pg.Points.Count);
             if (count > 0)
@@ -656,7 +658,7 @@ namespace Cad_Point_Manager.Views.UserControls
             }
 
             var copy = _selectedPointGroups.ToList();
-            foreach (var pg in copy) { CadManager.CogoPointManager.DeletePointGroup(pg); }
+            foreach (var pg in copy) { CadManager.DeletePointGroup(pg); }
 
             CadManager.CogoPointCircleVerticesDirty = true;
             CadManager.CogoPointTextVerticesDirty = true;
@@ -848,18 +850,18 @@ namespace Cad_Point_Manager.Views.UserControls
         // New Point Group Creation
         private void NewPointGroupButton_Click(object sender, RoutedEventArgs e)
         {
-            if (CadManager is null || CadManager.CogoPointManager is null) { return; }
+            if (CadManager is null) { return; }
 
             bool created = TryCreateNewPointGroup(
-                CadManager.CogoPointManager.GetTempPointGroupName(),
+                CadManager.GetTempPointGroupName(),
                 Colors.Black,
-                CadManager.CogoPointManager.PointBaseScale);
+                CadManager.PointBaseScale);
         }
         private bool TryCreateNewPointGroup(string name, Color color, double scale)
         {
-            if (CadManager is null || CadManager.CogoPointManager is null) { return false; }
+            if (CadManager is null) { return false; }
 
-            if (!CadManager.CogoPointManager.TryCreatePointGroup(name, color, out var pg) || pg == null)
+            if (!CadManager.TryCreatePointGroup(name, color, out var pg) || pg == null)
             {
                 return false;
             }
@@ -895,8 +897,8 @@ namespace Cad_Point_Manager.Views.UserControls
         // Point Group Merging
         private void InitializeMergeCollectionView()
         {
-            if (CadManager is null || CadManager.CogoPointManager is null || CadManager.CogoPointManager.PointGroups is null) { return; }
-            AvailableMergePointGroups = CollectionViewSource.GetDefaultView(CadManager.CogoPointManager.PointGroups);
+            if (CadManager is null) { return; }
+            AvailableMergePointGroups = CollectionViewSource.GetDefaultView(CadManager.PointGroups);
             AvailableMergePointGroups.Filter = FilterMergePoints;
         }
         private bool FilterMergePoints(object item)
@@ -925,7 +927,7 @@ namespace Cad_Point_Manager.Views.UserControls
                 }
                 return;
             }
-            CadManager.CogoPointManager.MergePointGroups(_selectedPointGroups, MergePointGroup);
+            CadManager.MergePointGroups(_selectedPointGroups, MergePointGroup);
             CadManager.GroupedPointsView.Refresh();
         }
         private void AvailableMergePointGroupsCBox_SelectionChanged(object sender, SelectionChangedEventArgs e)

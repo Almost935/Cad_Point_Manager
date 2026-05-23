@@ -53,6 +53,7 @@
     <Compile Remove="Helpers\DxfHelper.cs" />
     <Compile Remove="Helpers\Vector2EqualityComparer.cs" />
     <Compile Remove="Helpers\VectorEqualityComparer.cs" />
+    <Compile Remove="Models\CogoPointRepository.cs" />
     <Compile Remove="Models\Enums.cs" />
     <Compile Remove="Models\OffscreenBitmap.cs" />
     <Compile Remove="Models\OffscreenBitmapManager.cs" />

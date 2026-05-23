@@ -10,7 +10,7 @@ namespace Cad_Point_Manager.Services
         private static readonly System.Buffers.SearchValues<char> s_illegalGroupNameChars = System.Buffers.SearchValues.Create("@#%^&*");
         private static readonly char[] IllegalGroupNameChars = ['@', '#', '%', '^', '&', '*'];
 
-        public static bool ValidateNewPointNumber(string input, CogoPointManager cogoPointManager, out string errorMessage)
+        public static bool ValidateNewPointNumber(string input, CadManager cadManager, out string errorMessage)
         {
             if (!int.TryParse(input, out int pointNumber))
             {
@@ -22,7 +22,7 @@ namespace Cad_Point_Manager.Services
                 errorMessage = "Point number must be greater than zero.";
                 return false;
             }
-            if (cogoPointManager.PointExists(pointNumber))
+            if (cadManager.PointExists(pointNumber))
             {
                 errorMessage = $"Point number {pointNumber} is already in use.";
                 return false;
@@ -32,7 +32,7 @@ namespace Cad_Point_Manager.Services
             return true;
         }
 
-        public static bool ValidatePointNumberChange(string input, CogoPoint editPoint, CogoPointManager cogoPointManager, out string errorMessage)
+        public static bool ValidatePointNumberChange(string input, CogoPoint editPoint, CadManager cadManager, out string errorMessage)
         {
             var isInt = int.TryParse(input, out int newNum);
             if (!isInt)
@@ -45,7 +45,7 @@ namespace Cad_Point_Manager.Services
                 errorMessage = "Point number must be greater than zero.";
                 return false;
             }
-            if (!cogoPointManager.ValidatePointNameChange(newNum, editPoint, out string cpmError))
+            if (!cadManager.ValidatePointNameChange(newNum, editPoint, out string cpmError))
             {
                 errorMessage = cpmError;
                 return false;

@@ -29,7 +29,6 @@ namespace Cad_Point_Manager.Models.PointRendering
         private double _elevation = 0.0f;
         private PointGroup _pointGroup;
         private string _description;
-        private CogoPointManager _cogoPointManager;
         private bool _isEditing = false;
         #endregion
 
@@ -105,18 +104,6 @@ namespace Cad_Point_Manager.Models.PointRendering
                 }
             }
         }
-        public CogoPointManager CogoPointManager
-        {
-            get { return _cogoPointManager; }
-            set
-            {
-                if (_cogoPointManager != value)
-                {
-                    _cogoPointManager = value;
-                    OnPropertyChanged(nameof(CogoPointManager));
-                }
-            }
-        }
         public bool IsEditing
         {
             get { return _isEditing; }
@@ -134,6 +121,7 @@ namespace Cad_Point_Manager.Models.PointRendering
         public bool HasPointNumberError => HasErrorsFor(nameof(PointNumber));
         public bool HasDescription => !string.IsNullOrWhiteSpace(Description);
 
+        public CadManager CadManager { get; }
         public CogoPointBoundsSnapshot CogoPointBounds => _cogoPointBounds ?? _empty;
         public Rect PointNumberBounds { get; set; } = Rect.Empty;
         public Rect ElevationBounds { get; set; } = Rect.Empty;
@@ -161,9 +149,9 @@ namespace Cad_Point_Manager.Models.PointRendering
 
         #region Constructors
         public CogoPoint(PointGroup pointGroup, int pointNum, Vector3 position,
-            CogoPointManager cogoPointManager, float elevation = 0, string description = "")
+            CadManager cadManager, float elevation = 0, string description = "")
         {
-            CogoPointManager = cogoPointManager;
+            CadManager = cadManager;
             PointGroup = pointGroup;
             PointNumber = pointNum;
             Northing = position.Y;

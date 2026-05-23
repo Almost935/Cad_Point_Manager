@@ -11,6 +11,8 @@ namespace Cad_Point_Manager.Commands.UndoRedo
         void Execute();
         void Undo();
 
+        bool Succeeded { get; }
+        string? ErrorMessage { get; }
         string Description { get; }
     }
 }

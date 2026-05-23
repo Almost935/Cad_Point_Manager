@@ -256,17 +256,17 @@ namespace Cad_Point_Manager.Models
             List<PointGroupDto> pointGroupDtos = [];
             List<CogoPointDto> cogoPointDtos = [];
 
-            if (CadManager?.CogoPointManager?.PointGroups is not null)
+            if (CadManager?.PointGroups is not null)
             {
-                foreach (var pointGroup in CadManager.CogoPointManager.PointGroups)
+                foreach (var pointGroup in CadManager.PointGroups)
                 {
                     pointGroupDtos.Add(new(pointGroup));
                 }
             }
 
-            if (CadManager?.CogoPointManager?.CogoPoints is not null)
+            if (CadManager?.CogoPoints is not null)
             {
-                foreach (var point in CadManager.CogoPointManager.CogoPoints)
+                foreach (var point in CadManager.CogoPoints)
                 {
                     cogoPointDtos.Add(new CogoPointDto(point));
                 }
@@ -363,7 +363,7 @@ namespace Cad_Point_Manager.Models
             // Restore PointGroups first
             foreach (PointGroupDto pgDto in jobFileData.PointGroups)
             {
-                bool created = CadManager.CogoPointManager.TryCreatePointGroup(
+                bool created = CadManager.TryCreatePointGroup(
                     pgDto.Name,
                     Color.FromArgb(pgDto.A, pgDto.R, pgDto.G, pgDto.B),
                     out PointGroup? pointGroup);
@@ -387,7 +387,7 @@ namespace Cad_Point_Manager.Models
                     continue;
                 }
 
-                CadManager.CogoPointManager.TryAddPoint(
+                CadManager.TryCreatePoint(
                     cpDto.PointNumber,
                     new SharpDX.Vector3(cpDto.X, cpDto.Y, cpDto.Z),
                     pointGroup,
@@ -435,8 +435,8 @@ namespace Cad_Point_Manager.Models
             DxfFileName = jobFile.DxfFileName;
             DxfFilePath = jobFile.DxfFilePath;
             Extents = jobFile.Extents;
-            PointGroups = jobFile.CadManager.CogoPointManager.GetPointGroupDtos();
-            CogoPoints = jobFile.CadManager.CogoPointManager.GetCogoPointDtos();
+            PointGroups = jobFile.CadManager.GetPointGroupDtos();
+            CogoPoints = jobFile.CadManager.GetCogoPointDtos();
         }
     }
 }

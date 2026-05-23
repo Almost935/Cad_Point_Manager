@@ -16,7 +16,6 @@ namespace Cad_Point_Manager.Models.PointRendering
         private Color _color = Colors.Black;
         private bool _isVisible = true;
         private BatchableObservableCollection<CogoPoint> _points = [];
-        private CogoPointManager _cogoPointManager;
         private double _pointScale = 1;
         private float _pointInfoBaseXoffset = 0;
         #endregion
@@ -70,18 +69,6 @@ namespace Cad_Point_Manager.Models.PointRendering
                 }
             }
         }
-        public CogoPointManager CogoPointManager
-        {
-            get => _cogoPointManager;
-            set
-            {
-                if (_cogoPointManager != value)
-                {
-                    _cogoPointManager = value;
-                    OnPropertyChanged(nameof(CogoPointManager));
-                }
-            }
-        }
         public double PointScale
         {
             get => _pointScale;
@@ -110,14 +97,15 @@ namespace Cad_Point_Manager.Models.PointRendering
         public double FontBaseSize { get; set; } = 4;
         public double MarkerBaseSize { get; set; } = 0.75;
         public GroupState PointGroupState { get; set; }
+        public CadManager CadManager;
         #endregion
 
         #region Constructors
-        public PointGroup(string name, Color color, CogoPointManager cogoPointManager, double pointScale)
+        public PointGroup(string name, Color color, CadManager cadManager, double pointScale)
         {
             Name = name;
             Color = color;
-            CogoPointManager = cogoPointManager;
+            CadManager = cadManager;
             PointScale = pointScale;
             UpdatePointInfoBaseXoffset();
         }
@@ -132,7 +120,7 @@ namespace Cad_Point_Manager.Models.PointRendering
 
         public CogoPoint AddPoint(int pointNum, Vector3 position, float elevation = 0, string description = "")
         {
-            CogoPoint cogoPoint = new(this, pointNum, position, CogoPointManager, elevation, description);
+            CogoPoint cogoPoint = new(this, pointNum, position, CadManager, elevation, description);
             Points.Add(cogoPoint);
             return cogoPoint;
         }
@@ -143,7 +131,7 @@ namespace Cad_Point_Manager.Models.PointRendering
                 cogoPoint = null;
                 return false;
             }
-            cogoPoint = new(this, pointNum, position, CogoPointManager, elevation, description);
+            cogoPoint = new(this, pointNum, position, CadManager, elevation, description);
             Points.Add(cogoPoint);
             return true;
         }

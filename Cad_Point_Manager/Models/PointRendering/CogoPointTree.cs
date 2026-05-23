@@ -67,7 +67,7 @@ namespace Cad_Point_Manager.Models.PointRendering
         }
         private void GetCogoPoints()
         {
-            foreach (var pg in _cadManager.CogoPointManager.PointGroups)
+            foreach (var pg in _cadManager.PointGroups)
             {
                 CogoPoints.AddRange(pg.Points);
             }

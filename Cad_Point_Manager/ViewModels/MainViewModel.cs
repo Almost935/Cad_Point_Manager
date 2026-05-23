@@ -25,7 +25,6 @@ using System.Windows.Input;
 
 using Point = System.Windows.Point;
 using TextBox = System.Windows.Controls.TextBox;
-using Cad_Point_Manager.Commands.UndoRedo;
 
 
 namespace Cad_Point_Manager.ViewModels
@@ -692,9 +691,14 @@ namespace Cad_Point_Manager.ViewModels
                     {
                         foreach (var hitPoint in SelectedHitTestablePoints)
                         {
-                            int pointNum = JobFileManager.CadManager.CogoPointManager.GetNextAvailablePointNumber(NewCogoPointsStartNumber);
-                            JobFileManager.CadManager.CogoPointManager.TryAddPoint(pointNum, hitPoint.Position.ToSharpDXVector3(), ActivePointGroup,
-                                out var cogoPoint, NewCogoPointsElevation.ToFloat(), NewCogoPointsDescription);
+                            int pointNum = JobFileManager.CadManager.GetNextAvailablePointNumber(NewCogoPointsStartNumber);
+
+                            JobFileManager.CadManager.TryCreatePoint(
+                                pointNum,
+                                hitPoint.Position.ToSharpDXVector3(),
+                                ActivePointGroup, out _,
+                                NewCogoPointsElevation.ToFloat(),
+                                NewCogoPointsDescription);
                         }
 
                         ResetSelectionRequested?.Invoke(this, EventArgs.Empty);
@@ -738,12 +742,20 @@ namespace Cad_Point_Manager.ViewModels
                             coords.AddRange(pts.Select(p => new System.Numerics.Vector2((float)p.X, (float)p.Y)).ToList());
                         }
 
+                        List<(int pointNumber, SharpDX.Vector3 position, PointGroup pg, float elevation, string description)> pointsToCreate = [];
+                        int pointNum = JobFileManager.CadManager.GetNextAvailablePointNumber(NewCogoPointsStartNumber);
+
                         for (int i = 0; i < coords.Count; i++)
                         {
-                            int pointNum = JobFileManager.CadManager.CogoPointManager.GetNextAvailablePointNumber(NewCogoPointsStartNumber);
-                            JobFileManager.CadManager.CogoPointManager.TryAddPoint(pointNum, coords[i].ToSharpDXVector3(), ActivePointGroup,
-                            out var cogoPoint, NewCogoPointsElevation.ToFloat(), NewCogoPointsDescription);
+                            while (JobFileManager.CadManager.PointNumberExists(pointNum))
+                            {
+                                pointNum++;
+                            }
+                            pointsToCreate.Add((pointNum, coords[i].ToSharpDXVector3(), ActivePointGroup, NewCogoPointsElevation.ToFloat(), NewCogoPointsDescription));
+                            pointNum++;
                         }
+
+                        JobFileManager.CadManager.TryCreatePoints(pointsToCreate, out _, out _);
 
                         JobFileManager.CadManager.CogoPointTextVerticesDirty = true;
                         JobFileManager.CadManager.CogoPointCircleVerticesDirty = true;

@@ -113,7 +113,7 @@ namespace Cad_Point_Manager.ViewModels
                 if (parsedRow.PointNumber <= 0) { continue; }
                 if (pointGroupsInFile && parsedRow.PointGroup is not null)
                 {
-                    var errorMessage = _service.ValidatePointNumber(parsedRow.PointNumber, _cadManager.CogoPointManager);
+                    var errorMessage = _service.ValidatePointNumber(parsedRow.PointNumber, _cadManager);
                     if (approvedPoints.Any(p => p.PointNumber == parsedRow.PointNumber))
                     {
                         conflictPoints.Add(new ImportConflict(parsedRow, parsedRow.PointNumber, "Point number already exists"));
@@ -124,12 +124,11 @@ namespace Cad_Point_Manager.ViewModels
                 }
                 else
                 {
-                    if (_cadManager.CogoPointManager.ActivePointGroup is null)
+                    if (_cadManager.ActivePointGroup is null)
                     {
                         MessageBox.Show("You must select an active point group to create new points.");
                         return;
                     }
-
                 }
             }
 
@@ -140,16 +139,11 @@ namespace Cad_Point_Manager.ViewModels
                 dlg.InitializeConflicts(_cadManager);
                 if (dlg.ShowDialog() == true)
                 {
-                    foreach (var approvedPoint in approvedPoints)
-                    {
-                        var pos = new SharpDX.Vector3((float)approvedPoint.Easting, (float)approvedPoint.Northing, 0f);
-                        _cadManager.CogoPointManager.TryAddPoint(approvedPoint.PointNumber, pos, approvedPoint.PointGroup, out _, (float)approvedPoint.Elevation, approvedPoint.Description);
-                    }
                     foreach (var conflictPoint in conflictPoints)
                     {
                         var row = conflictPoint.Row;
-                        var pos = new SharpDX.Vector3((float)row.Easting, (float)row.Northing, 0f);
-                        _cadManager.CogoPointManager.TryAddPoint((int)conflictPoint.NewPointNumberParsed, pos, row.PointGroup, out _, (float)row.Elevation, row.Description);
+                        ParsedPointImportRow importRow = new(row.PointNumber, row.Northing, row.Easting, row.Elevation, row.Description, row.PointGroup);
+                        approvedPoints.Add(importRow);
                     }
                 }
             }

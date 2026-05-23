@@ -130,7 +130,7 @@ namespace Cad_Point_Manager.Views.InputWindows
 
         public void InitializeConflicts(CadManager cadManager)
         {
-            _existingPointNumbers = cadManager.CogoPointManager
+            _existingPointNumbers = cadManager
                 .UsedPointNumbers
                 .ToHashSet();
 
@@ -161,7 +161,8 @@ namespace Cad_Point_Manager.Views.InputWindows
 
         private void AutoNumberButton_Click(object sender, RoutedEventArgs e)
         {
-            List<int> usedNums = _cadManager.CogoPointManager.UsedPointNumbers;
+            List<int> usedNums = _cadManager.UsedPointNumbers;
+
             foreach (var conflict in ImportConflicts)
             {
                 int currentNum = conflict.ExistingPointNumber;

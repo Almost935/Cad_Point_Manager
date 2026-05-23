@@ -148,7 +148,7 @@ namespace Cad_Point_Manager.Views.UserControls
                 {
                     case "PointNumber":
                         {
-                            if (!ValidationService.ValidatePointNumberChange(text, cp, CadManager.CogoPointManager, out string svcError))
+                            if (!ValidationService.ValidatePointNumberChange(text, cp, CadManager, out string svcError))
                             {
                                 errorMessage = svcError;
                             }
@@ -235,7 +235,7 @@ namespace Cad_Point_Manager.Views.UserControls
                     if (field == "Northing" ||
                         field == "Easting")
                     {
-                        CadManager.CogoPointManager.UpdateCogoPointTree();
+                        CadManager.UpdateCogoPointTree();
                         CadManager.UpdateExtents();
                         CadManager.Camera.UpdateDefaultScene();
                     }
@@ -296,9 +296,9 @@ namespace Cad_Point_Manager.Views.UserControls
                 if (isNewPointRow)
                 {
                     // Cancel creation of this new point completely
-                    if (CadManager?.CogoPointManager != null && _newPoint != null)
+                    if (CadManager != null && _newPoint != null)
                     {
-                        CadManager.CogoPointManager.DeletePoint(_newPoint);
+                        CadManager.TryDeletePoint(_newPoint);
                         CadManager.CogoPointCircleVerticesDirty = true;
                         CadManager.CogoPointTextVerticesDirty = true;
                     }
@@ -409,14 +409,14 @@ namespace Cad_Point_Manager.Views.UserControls
 
         private void PointsListViewNewPoint_Click(object sender, RoutedEventArgs e)
         {
-            if (CadManager is null || CadManager.CogoPointManager is null) { return; }
+            if (CadManager is null) { return; }
             if (ActivePointGroup is null)
             {
                 MessageBox.Show("You must select an active point group to create new points.");
                 return;
             }
 
-            TryCreateNewPoint(CadManager.CogoPointManager.GetNextAvailablePointNumber(_lastCreatedPointNumber),
+            TryCreateNewPoint(CadManager.GetNextAvailablePointNumber(_lastCreatedPointNumber),
                 new Vector3(0, 0, 0), ActivePointGroup, 0, "");
         }
         private void PointsListViewEditPoint_Click(object sender, RoutedEventArgs e)
@@ -429,19 +429,19 @@ namespace Cad_Point_Manager.Views.UserControls
         }
         private void PointsListViewDeletePoint_Click(object sender, RoutedEventArgs e)
         {
-            if (CadManager is null || CadManager.CogoPointManager is null) { return; }
+            if (CadManager is null) { return; }
 
             var pointsToDelete = new List<CogoPoint>(SelectedPoints);
             foreach (var point in pointsToDelete)
             {
-                CadManager.CogoPointManager.DeletePoint(point);
+                CadManager.TryDeletePoint(point);
             }
             CadManager.CogoPointCircleVerticesDirty = true;
             CadManager.CogoPointTextVerticesDirty = true;
         }
         private bool TryCreateNewPoint(int num, Vector3 pos, PointGroup pg, float elevation, string description)
         {
-            if (!CadManager.CogoPointManager.TryAddPoint(num, pos, pg, out CogoPoint p, elevation, description))
+            if (!CadManager.TryCreatePoint(num, pos, pg, out CogoPoint p, elevation, description))
             { return false; }
 
             pointsListView.SelectedItem = p;

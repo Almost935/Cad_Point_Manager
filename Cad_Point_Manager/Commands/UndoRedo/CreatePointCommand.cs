@@ -1,4 +1,5 @@
-﻿using Cad_Point_Manager.Models;
+﻿using Cad_Point_Manager.Extensions;
+using Cad_Point_Manager.Models;
 using Cad_Point_Manager.Models.PointRendering;
 using SharpDX;
 using System;
@@ -11,7 +12,7 @@ namespace Cad_Point_Manager.Commands.UndoRedo
 {
     public class CreatePointCommand : IUndoableCommand
     {
-        private readonly CogoPointManager _pointManager;
+        private readonly CadManager _cadManager;
 
         private readonly int _pointNumber;
         private readonly Vector3 _position;
@@ -20,18 +21,24 @@ namespace Cad_Point_Manager.Commands.UndoRedo
         private readonly string _description;
 
         private CogoPoint? _createdPoint;
+        private bool _succeeded;
+        private string? _errorMessage;
 
+        public bool Succeeded => _succeeded;
+        public string? ErrorMessage => _errorMessage;
         public string Description => "Create Point";
 
+        public CogoPoint? CreatedPoint => _createdPoint;
+
         public CreatePointCommand(
-            CogoPointManager pointManager,
+            CadManager cadManager,
             int pointNumber,
             Vector3 position,
             PointGroup group,
             float elevation,
             string description)
         {
-            _pointManager = pointManager;
+            _cadManager = cadManager;
             _pointNumber = pointNumber;
             _position = position;
             _group = group;
@@ -39,38 +46,43 @@ namespace Cad_Point_Manager.Commands.UndoRedo
             _description = description;
         }
 
+        public CreatePointCommand(
+            CadManager cadManager,
+            CogoPoint cogoPoint)
+        {
+            _cadManager = cadManager;
+            _pointNumber = cogoPoint.PointNumber;
+            _position = cogoPoint.Position.ToSharpDXVector3();
+            _group = cogoPoint.PointGroup;
+            _elevation = cogoPoint.Elevation.ToFloat();
+            _description = cogoPoint.Description;
+        }
+
         public void Execute()
         {
-            _pointManager.TryAddPoint(
+            _succeeded = _cadManager.TryCreatePointInternal(
                 _pointNumber,
                 _position,
                 _group,
                 out _createdPoint,
+                out _errorMessage,
                 _elevation,
                 _description);
-
-            MarkDirty();
         }
 
         public void Undo()
         {
-            if (_createdPoint is null)
-                return;
+            if (_createdPoint is null) { return; }
 
-            _pointManager.RemovePoint(_createdPoint);
-
-            MarkDirty();
+            _cadManager.TryDeletePointInternal(_createdPoint);
         }
 
-        private void MarkDirty()
-        {
-            var cad = _pointManager.CadManager;
-
-            cad.CogoPointCircleVerticesDirty = true;
-            cad.CogoPointTextVerticesDirty = true;
-            cad.HitTestableObjectTreeDirty = true;
-
-            cad.UpdateExtents();
-        }
+        //public void MarkDirty()
+        //{
+        //    _cadManager.CogoPointCircleVerticesDirty = true;
+        //    _cadManager.CogoPointTextVerticesDirty = true;
+        //    //_cadManager.HitTestableObjectTreeDirty = true;
+        //    _cadManager.UpdateExtents();
+        //}
     }
 }

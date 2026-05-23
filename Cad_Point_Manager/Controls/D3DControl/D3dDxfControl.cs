@@ -328,7 +328,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             nameof(CadManager),
             typeof(CadManager),
             typeof(D3dDxfControl),
-            new PropertyMetadata(null, OnCadManager3DChanged));
+            new PropertyMetadata(null, OnCadManagerChanged));
 
         public static readonly DependencyProperty LayersProperty =
             DependencyProperty.Register(
@@ -916,7 +916,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 }
             }
 
-            CadManager.CogoPointManager.UpdateCogoPointTree();
+            CadManager.UpdateCogoPointTree();
 
             StateBuffers.FlushAll();
             _glyphVerticesDirty = false;
@@ -2044,7 +2044,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             {
                 RecomputeCogoPointBoundsFast(_pressedToggleButtonPoint);
                 EndCogoToggleButtonPress();
-                CadManager.CogoPointManager.UpdateCogoPointTree();
+                CadManager.UpdateCogoPointTree();
                 UpdateInitialMatrix();
 
                 if (IsMouseCaptured) { ReleaseMouseCapture(); }
@@ -2268,7 +2268,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _maxHalfBaseForAnchors = maxHalfBase;
             _featherWorldForAnchors = FeatherPx * wupp;
 
-            foreach (var pg in CadManager.CogoPointManager.PointGroups)
+            foreach (var pg in CadManager.PointGroups)
             {
                 foreach (var p in pg.Points)
                 {
@@ -3061,13 +3061,13 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 StateController.SetLabelVisible(cp, 1, false);
                 StateController.SetLabelVisible(cp, 2, false);
 
-                CadManager.CogoPointManager.DeletePoint(cp);
+                CadManager.TryDeletePoint(cp);
             }
 
             StateController.FlushPointUpdates();
             StateController.FlushLabelUpdates();
 
-            CadManager.CogoPointManager.UpdateCogoPointTree();
+            CadManager.UpdateCogoPointTree();
             UpdateInitialMatrix();
 
             ResetHoverObjects();
@@ -3088,8 +3088,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
             if (StateBuffers is null || CadManager is null) { return; }
 
             // Current live counts
-            int groups = CadManager.CogoPointManager.PointGroups.Count;
-            int points = CadManager.CogoPointManager.PointGroups.SelectMany(pg => pg.Points).Count();
+            int groups = CadManager.PointGroups.Count;
+            int points = CadManager.PointGroups.SelectMany(pg => pg.Points).Count();
             int labelsPerPoint = 3;              // adjust if you render fewer/more lines
             int labels = points * labelsPerPoint;
             int layers = SceneIdMap?.LayerCount ?? 0;
@@ -3128,31 +3128,31 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _lineVerticesDirty = _textVerticesDirty = true;
         }
 
-        private static void OnCadManager3DChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        private static void OnCadManagerChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             if (d is not D3dDxfControl control) { return; }
 
             if (e.OldValue is CadManager oldCadManager3D)
             {
-                oldCadManager3D.PropertyChanged -= control.CadManager3D_PropertyChanged;
+                oldCadManager3D.PropertyChanged -= control.CadManager_PropertyChanged;
                 oldCadManager3D.ZoomToExtentsRequested -= control.ZoomToExtents;
                 oldCadManager3D.ZoomToPointRequested -= control.ZoomToPoint;
-                oldCadManager3D.CogoPointManager.CogoPoints.CollectionChanged -= control.CogoPoints_CollectionChanged;
-                oldCadManager3D.CogoPointManager.PointGroups.CollectionChanged -= control.PointGroups_CollectionChanged;
+                oldCadManager3D.CogoPoints.CollectionChanged -= control.CogoPoints_CollectionChanged;
+                oldCadManager3D.PointGroups.CollectionChanged -= control.PointGroups_CollectionChanged;
                 oldCadManager3D.Layers.CollectionChanged -= control.Layers_CollectionChanged;
             }
 
             if (e.NewValue is CadManager newCadManager3D)
             {
-                newCadManager3D.PropertyChanged += control.CadManager3D_PropertyChanged;
+                newCadManager3D.PropertyChanged += control.CadManager_PropertyChanged;
                 newCadManager3D.ZoomToExtentsRequested += control.ZoomToExtents;
                 newCadManager3D.ZoomToPointRequested += control.ZoomToPoint;
-                newCadManager3D.CogoPointManager.CogoPoints.CollectionChanged += control.CogoPoints_CollectionChanged;
-                newCadManager3D.CogoPointManager.PointGroups.CollectionChanged += control.PointGroups_CollectionChanged;
+                newCadManager3D.CogoPoints.CollectionChanged += control.CogoPoints_CollectionChanged;
+                newCadManager3D.PointGroups.CollectionChanged += control.PointGroups_CollectionChanged;
                 newCadManager3D.Layers.CollectionChanged += control.Layers_CollectionChanged;
             }
         }
-        private void CadManager3D_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+        private void CadManager_PropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
             if (e.PropertyName == nameof(CadManager.DxfNeedsReload))
             {
@@ -3212,7 +3212,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         private void PointGroups_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
         {
-            PointGroups = CadManager?.CogoPointManager?.PointGroups;
+            PointGroups = CadManager?.PointGroups;
             if (e.Action == NotifyCollectionChangedAction.Add)
             {
                 foreach (PointGroup pg in e.NewItems)
@@ -3237,7 +3237,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
         private void CogoPoints_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
         {
-            CogoPoints = CadManager?.CogoPointManager?.CogoPoints;
+            CogoPoints = CadManager?.CogoPoints;
             if (e.Action == NotifyCollectionChangedAction.Add)
             {
                 foreach (var obj in e.NewItems)
@@ -3386,7 +3386,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                         }
                         if (labelsNeedUpdate) { StateController.FlushLabelUpdates(); }
 
-                        CadManager.CogoPointManager.UpdateCogoPointTree();
+                        CadManager.UpdateCogoPointTree();
                         UpdateInitialMatrix();
                     }
 
@@ -3418,7 +3418,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     StateController.FlushPointUpdates();
                     RecomputeCogoPointBoundsFast(cp);
 
-                    CadManager.CogoPointManager.UpdateCogoPointTree();
+                    CadManager.UpdateCogoPointTree();
                     UpdateInitialMatrix();
 
                     _pointCircleVerticesDirty = true; _dxfDirty = true; _combinedDirty = true;
@@ -3436,7 +3436,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     }
                     RecomputeCogoPointBoundsFast(cp);
 
-                    CadManager.CogoPointManager.UpdateCogoPointTree();
+                    CadManager.UpdateCogoPointTree();
                     UpdateInitialMatrix();
 
                     _dxfDirty = true; _combinedDirty = true;

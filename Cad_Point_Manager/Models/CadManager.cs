@@ -7,6 +7,7 @@ using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Helpers;
 using Cad_Point_Manager.Models.DrawingObjects;
 using Cad_Point_Manager.Models.HitTesting;
+using Cad_Point_Manager.Models.Importing;
 using Cad_Point_Manager.Models.PointRendering;
 using Cad_Point_Manager.Models.Printing;
 using netDxf;
@@ -16,11 +17,13 @@ using SharpDX;
 using SharpDX.Direct3D9;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Media;
+using Color = System.Windows.Media.Color;
 using Point = System.Windows.Point;
 using Vector2 = SharpDX.Vector2;
 using Vector3 = SharpDX.Vector3;
@@ -40,18 +43,23 @@ namespace Cad_Point_Manager.Models
         private bool _drawingObjectTreeDirty = false;
         private bool _dxfNeedsReload = false;
         private Rect _extents = RectExtensions.Zero;
+        private Rect _dxfExtents = RectExtensions.Zero;
+        private Rect _pointExtents = RectExtensions.Zero;
         private BatchableObservableCollection<KeyValuePair<string, ObjectLayer>> _layers = [];
+        private BatchableObservableCollection<PointGroup> _pointGroups = [];
+        private BatchableObservableCollection<CogoPoint> _cogoPoints = [];
         private ICollectionView _layersView;
         private ICollectionView _pointGroupsView;
         private ICollectionView _pointsView;
         private ICollectionView _groupedPointsView;
-        private CogoPointManager _cogoPointManager;
         private Size2F _viewportSize = Size2F.Empty;
         private Enums.SelectionMode _snapSelectionMode = Enums.SelectionMode.CogoPoints;
         private bool _hitTestingEnabled = true;
         private BatchableObservableCollection<Layout> _layouts = [];
         private ICollectionView _layoutsView;
         private Camera _camera;
+        private PointGroup _activePointGroup;
+        private double _pointBaseScale = 1;
 
         private readonly List<LineVertex> _cachedLineVertices = [];
         private readonly List<TextVertex> _cachedTextVertices = [];
@@ -132,6 +140,24 @@ namespace Cad_Point_Manager.Models
                 OnPropertyChanged(nameof(Extents));
             }
         }
+        public Rect DxfExtents
+        {
+            get => _dxfExtents;
+            set
+            {
+                _dxfExtents = value;
+                OnPropertyChanged(nameof(DxfExtents));
+            }
+        }
+        public Rect PointExtents
+        {
+            get => _pointExtents;
+            set
+            {
+                _pointExtents = value;
+                OnPropertyChanged(nameof(PointExtents));
+            }
+        }
         public BatchableObservableCollection<KeyValuePair<string, ObjectLayer>> Layers
         {
             get => _layers;
@@ -139,6 +165,27 @@ namespace Cad_Point_Manager.Models
             {
                 _layers = value;
                 OnPropertyChanged(nameof(Layers));
+            }
+        }
+        public BatchableObservableCollection<PointGroup> PointGroups
+        {
+            get => _pointGroups;
+            private set
+            {
+                _pointGroups = value;
+                OnPropertyChanged(nameof(PointGroups));
+            }
+        }
+        public BatchableObservableCollection<CogoPoint> CogoPoints
+        {
+            get => _cogoPoints;
+            set
+            {
+                if (_cogoPoints != value)
+                {
+                    _cogoPoints = value;
+                    OnPropertyChanged(nameof(CogoPoints));
+                }
             }
         }
         public ICollectionView LayersView
@@ -175,15 +222,6 @@ namespace Cad_Point_Manager.Models
             {
                 _groupedPointsView = value;
                 OnPropertyChanged(nameof(GroupedPointsView));
-            }
-        }
-        public CogoPointManager CogoPointManager
-        {
-            get => _cogoPointManager;
-            set
-            {
-                _cogoPointManager = value;
-                OnPropertyChanged(nameof(CogoPointManager));
             }
         }
         public Size2F ViewportSize
@@ -243,11 +281,35 @@ namespace Cad_Point_Manager.Models
                 }
             }
         }
+        public PointGroup ActivePointGroup
+        {
+            get => _activePointGroup;
+            set
+            {
+                if (_activePointGroup != value)
+                {
+                    _activePointGroup = value;
+                    OnPropertyChanged(nameof(ActivePointGroup));
+                }
+            }
+        }
+        public double PointBaseScale
+        {
+            get => _pointBaseScale;
+            set
+            {
+                _pointBaseScale = value;
+                OnPropertyChanged(nameof(PointBaseScale));
+            }
+        }
 
         public DxfDocument DxfDocument { get; private set; }
         public HitTestableObjectTree HitTestableObjectTree { get; private set; }
         public TextVertex[] NumberVertices { get; set; } = [];
         public UndoRedoManager UndoRedoManager { get; } = new();
+        public CogoPointTree CogoPointTree { get; set; }
+
+        public List<int> UsedPointNumbers => PointGroups.SelectMany(pg => pg.Points).Select(p => p.PointNumber).ToList();
         #endregion
 
         #region Events
@@ -260,8 +322,6 @@ namespace Cad_Point_Manager.Models
         #region Constructor
         public CadManager()
         {
-            CogoPointManager = new(this);
-
             GetCollectionViews();
         }
         #endregion
@@ -293,6 +353,9 @@ namespace Cad_Point_Manager.Models
                 }
             }
 
+            UpdateDxfExtents();
+            UpdateExtents();
+
             DxfLoaded = true;
             LineVerticesDirty = true;
             TextVerticesDirty = true;
@@ -302,13 +365,360 @@ namespace Cad_Point_Manager.Models
             DxfNeedsReload = true;
         }
 
-        public void UpdateExtents()
+        // CogoPoint related Methods
+        public bool PointExists(int pointNumber) => PointGroups.SelectMany(pg => pg.Points).Any(p => p.PointNumber == pointNumber);
+        public bool TryCreatePoint(int pointNumber, Vector3 position, PointGroup pg, out CogoPoint? point, float elevation = 0, string description = "")
         {
-            var dxfExtents = DxfHelpers.GetBoundsFromHeader(DxfDocument);
-            var pointsExtents = CogoPointManager.Extents;
-            Extents = Rect.Union(dxfExtents, pointsExtents);
+            var cmd = new CreatePointCommand(
+                this,
+                pointNumber,
+                position,
+                pg,
+                elevation,
+                description);
+
+            UndoRedoManager.Execute(cmd);
+
+            point = cmd.CreatedPoint;
+
+            return cmd.Succeeded;
+        }
+        internal bool TryCreatePointInternal(int pointNumber, Vector3 position, PointGroup pg, out CogoPoint? point, out string? errorMessage, float elevation = 0, string description = "")
+        {
+            if (pg is null || !PointGroupExists(pg))
+            {
+                point = null;
+                errorMessage = "Point group does not exist.";
+                return false;
+            }
+            if (!IsValidPointName(pointNumber, out errorMessage))
+            {
+                point = null;
+                return false;
+            }
+            point = pg.AddPoint(pointNumber, position, elevation, description);
+            CogoPoints.Add(point);
+            errorMessage = null;
+            return true;
+        }
+        public bool TryCreatePoints(
+            IEnumerable<(int pointNumber, Vector3 position, PointGroup pg, float elevation, string description)> pointData,
+            out List<CogoPoint> createdPoints,
+            out List<string> errorMessages)
+        {
+            createdPoints = new List<CogoPoint>();
+            errorMessages = new List<string>();
+            var commands = new List<IUndoableCommand>();
+
+            foreach (var p in pointData)
+            {
+                var cmd = new CreatePointCommand(
+                    this,
+                    p.pointNumber,
+                    p.position,
+                    p.pg,
+                    p.elevation,
+                    p.description);
+
+                commands.Add(cmd);
+
+                if (cmd.ErrorMessage is not null)
+                {
+                    errorMessages.Add(cmd.ErrorMessage);
+                }
+            }
+
+            var composite = new CompositeCommand(
+                this,
+                "Create Multiple Points",
+                commands);
+
+            UndoRedoManager.Execute(composite);
+
+            foreach (var cmd in commands.OfType<CreatePointCommand>())
+            {
+                if (cmd.CreatedPoint != null)
+                {
+                    createdPoints.Add(cmd.CreatedPoint);
+                }
+            }
+
+            return composite.Succeeded;
+        }
+        public bool TryImportPoints(IEnumerable<ParsedPointImportRow> points)
+        {
+            var cmd = new ImportPointsCommand(this, points);
+            UndoRedoManager.Execute(cmd);
+
+            return cmd.Succeeded;
+        }
+        public bool TryAddPoint(CogoPoint p, PointGroup pg)
+        {
+            if (pg == null || !PointGroupExists(pg))
+            {
+                return false;
+            }
+
+            if (PointNumberExists(p.PointNumber) || !IsValidPointName(p.PointNumber, out _))
+            {
+                return false;
+            }
+
+            var isAdded = pg.TryAddPoint(p);
+            CogoPoints.Add(p);
+
+            return isAdded;
+        }
+        public bool TryDeletePoint(CogoPoint point)
+        {
+            var cmd = new DeletePointCommand(this, point);
+            UndoRedoManager.Execute(cmd);
+
+            return cmd.Disposed;
+        }
+        internal bool TryDeletePointInternal(CogoPoint point)
+        {
+            bool deleted = false;
+            if (point != null && point.PointGroup != null)
+            {
+                deleted = point.PointGroup.DeletePoint(point);
+                if (deleted)
+                {
+                    CogoPoints.Remove(point);
+                }
+            }
+            return deleted;
+        }
+        public List<CogoPointDto> GetCogoPointDtos()
+        {
+            return CogoPoints.Select(p => new CogoPointDto(p)).ToList();
+        }
+        public int GetNextAvailablePointNumber(int startCount)
+        {
+            int num = startCount;
+            while (PointNumberExists(num)) { num++; }
+            return num;
+        }
+        public bool PointNumberExists(int num)
+        {
+            return PointGroups.SelectMany(pg => pg.Points).Any(p => p.PointNumber == num);
+        }
+        public bool ValidatePointNameChange(int pointNumber, CogoPoint p, out string? errorMessage)
+        {
+            errorMessage = null;
+
+            if (pointNumber == p.PointNumber) { return true; }
+
+            if (!IsValidPointName(pointNumber, out errorMessage))
+            {
+                return false;
+            }
+            return true;
+        }
+        public bool IsValidPointName(int pointNumber, out string? errorMessage)
+        {
+            errorMessage = null;
+            if (pointNumber <= 0)
+            {
+                errorMessage = "Point number must be greater than zero.";
+                return false;
+            }
+            if (PointNumberExists(pointNumber))
+            {
+                errorMessage = $"Point number \"{pointNumber}\" already exists.";
+                return false;
+            }
+            return true;
         }
 
+        // Point group related methods
+        public bool TryCreatePointGroup(string name, Color color, out PointGroup? pointGroup)
+        {
+            var cmd = new CreatePointGroupCommand(this, name, color);
+            UndoRedoManager.Execute(cmd);
+            pointGroup = cmd.CreatedPointGroup;
+
+            return pointGroup is not null;
+        }
+        internal bool TryCreatePointGroupInternal(string name, Color color, out PointGroup? pointGroup, out string? errorMessage)
+        {
+            if (!IsValidPointGroupName(name, out errorMessage))
+            {
+                pointGroup = null;
+                return false;
+            }
+
+            pointGroup = new PointGroup(name, color, this, PointBaseScale);
+            PointGroups.Add(pointGroup);
+
+            return true;
+        }
+        public bool TryGetPointGroup(string groupName, out PointGroup pointGroup)
+        {
+            pointGroup = PointGroups.FirstOrDefault(pg => pg.Name.Equals(groupName, StringComparison.OrdinalIgnoreCase));
+            if (pointGroup is null)
+            {
+                return false;
+            }
+            return true;
+        }
+        internal PointGroup GetPointGroup(string groupName)
+        {
+            var pgExists = TryGetPointGroup(groupName, out PointGroup pointGroup);
+            if (!pgExists)
+            {
+                var isValidName = IsValidPointGroupName(groupName, out string? errorMessage);
+                if (!isValidName)
+                {
+                    throw new ArgumentException($"Invalid point group name: {errorMessage}");
+                }
+                pointGroup = new(groupName, Colors.Black, this, PointBaseScale);
+                PointGroups.Add(pointGroup);
+            }
+            return pointGroup;
+        }
+        public void DeletePointGroup(PointGroup pg)
+        {
+            if (pg.Points.Count > 0)
+            {
+                var copy = pg.Points.ToList();
+                foreach (var p in copy)
+                {
+                    TryDeletePoint(p);
+                }
+            }
+            PointGroups.Remove(pg);
+        }
+        public void TryDeletePointGroup(PointGroup pg)
+        {
+            if (pg.Points.Count > 0)
+            {
+                var result = MessageBox.Show(
+                    "This will delete all points associated with this group. Continue?",
+                    "Warning", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No);
+
+                if (result != MessageBoxResult.Yes)
+                {
+                    foreach (var p in pg.Points)
+                    {
+                        TryDeletePoint(p);
+                    }
+                }
+                else { return; }
+            }
+            PointGroups.Remove(pg);
+        }
+        public void MergePointGroups(List<PointGroup> mergePGs, PointGroup destinationPG)
+        {
+            var copy = mergePGs.ToList();
+            foreach (var pg in copy) // Enumerate a copy
+            {
+                bool removed = PointGroups.Remove(pg);
+                if (removed)
+                {
+                    pg.MergeToPointGroup(destinationPG);
+                }
+            }
+        }
+        public List<PointGroupDto> GetPointGroupDtos()
+        {
+            return PointGroups.Select(pg => new PointGroupDto(pg)).ToList();
+        }
+        public bool TrySetActivePointGroup(PointGroup pointGroup)
+        {
+            bool exists = TryGetPointGroup(pointGroup.Name, out PointGroup verifiedPointGroup);
+            if (exists)
+            {
+                ActivePointGroup = verifiedPointGroup;
+                return true;
+            }
+            return false;
+        }
+        public bool TryAddPointToActiveGroup(int pointNum, Vector3 position, out CogoPoint cogoPoint, float elevation = 0, string description = "")
+        {
+            if (ActivePointGroup == null || PointNumberExists(pointNum))
+            {
+                cogoPoint = null;
+                return false;
+            }
+
+            cogoPoint = ActivePointGroup.AddPoint(pointNum, position, elevation, description);
+            CogoPoints.Add(cogoPoint);
+
+            return true;
+        }
+        public string GetTempPointGroupName()
+        {
+            string baseName = "New Group";
+            int counter = 1;
+            string groupName = baseName + $" {counter}";
+            while (PointGroupNameExists(groupName))
+            {
+                groupName = $"{baseName} {counter}";
+                counter++;
+            }
+            return groupName;
+        }
+        public bool PointGroupExists(PointGroup pg)
+        {
+            return PointGroups.Any(p => p == pg);
+        }
+        public bool IsValidPointGroupName(string name, out string? errorMessage)
+        {
+            errorMessage = null;
+
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                errorMessage = "Name cannot be empty or whitespace.";
+                return false;
+            }
+
+            // Trim spaces just for validation purposes
+            name = name.Trim();
+
+            // Disallowed characters
+            char[] invalidChars = Path.GetInvalidFileNameChars(); // includes \ / : * ? " < > | and control characters
+            if (name.IndexOfAny(invalidChars) >= 0)
+            {
+                errorMessage = $"Name contains invalid characters: {string.Join(" ", invalidChars)}";
+                return false;
+            }
+
+            // Verify uniqueness
+            if (PointGroups.Any(pg => pg.Name.Equals(name, StringComparison.OrdinalIgnoreCase)))
+            {
+                errorMessage = "A point group with this name already exists.";
+                return false;
+            }
+
+            return true;
+        }
+        public bool PointGroupNameExists(string name)
+        {
+            return PointGroups.Any(pg => pg.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+        }
+        public bool IsValidPointScale(string input, out string? errorMessage)
+        {
+            errorMessage = null;
+            if (string.IsNullOrWhiteSpace(input))
+            {
+                errorMessage = "Point scale cannot be empty.";
+                return false;
+            }
+            if (!double.TryParse(input, out double scale))
+            {
+                errorMessage = "Point scale must be a valid number.";
+                return false;
+            }
+            if (scale <= 0)
+            {
+                errorMessage = "Point scale must be greater than zero.";
+                return false;
+            }
+            return true;
+        }
+
+        // Layout related methods
         public bool TryAddLayout(string layoutName, LayoutViewport viewport, out Layout layout)
         {
             if (!Layouts.Any(x => string.Equals(x.Name, layoutName, StringComparison.OrdinalIgnoreCase)))
@@ -380,16 +790,16 @@ namespace Cad_Point_Manager.Models
         {
             if (Extents.IsEmpty)
             {
-                CogoPointManager.PointBaseScale = 1;
+                PointBaseScale = 1;
                 return;
             }
             if (Extents.Width > Extents.Height)
             {
-                CogoPointManager.PointBaseScale = Extents.Width * _pointSizeToExtentsFactor;
+                PointBaseScale = Extents.Width * _pointSizeToExtentsFactor;
             }
             else
             {
-                CogoPointManager.PointBaseScale = Extents.Height * _pointSizeToExtentsFactor;
+                PointBaseScale = Extents.Height * _pointSizeToExtentsFactor;
             }
         }
 
@@ -399,15 +809,15 @@ namespace Cad_Point_Manager.Models
             LayersView.SortDescriptions.Clear();
             LayersView.SortDescriptions.Add(new SortDescription("Key", ListSortDirection.Ascending));
 
-            PointGroupsView = new ListCollectionView(CogoPointManager.PointGroups);
+            PointGroupsView = new ListCollectionView(PointGroups);
             PointGroupsView.SortDescriptions.Clear();
             PointGroupsView.SortDescriptions.Add(new SortDescription("Name", ListSortDirection.Ascending));
 
-            PointsView = CollectionViewSource.GetDefaultView(CogoPointManager.CogoPoints);
+            PointsView = CollectionViewSource.GetDefaultView(CogoPoints);
             PointsView.SortDescriptions.Clear();
             PointsView.SortDescriptions.Add(new SortDescription("PointNumber", ListSortDirection.Ascending));
 
-            GroupedPointsView = new ListCollectionView(CogoPointManager.CogoPoints);
+            GroupedPointsView = new ListCollectionView(CogoPoints);
             GroupedPointsView.GroupDescriptions.Clear();
             GroupedPointsView.GroupDescriptions.Add(new PropertyGroupDescription("PointGroup"));
 
@@ -461,7 +871,7 @@ namespace Cad_Point_Manager.Models
             if (HitTestableObjectTree is null) { return hits; }
 
             Rect rect = new(p.X - tolerance, p.Y - tolerance, tolerance * 2, tolerance * 2);
-            var nodes = CogoPointManager.CogoPointTree.GetIntersectingNodes(rect);
+            var nodes = CogoPointTree.GetIntersectingNodes(rect);
 
             foreach (var node in nodes)
             {
@@ -475,9 +885,9 @@ namespace Cad_Point_Manager.Models
         {
             List<CogoPoint> points = [];
 
-            if (CogoPointManager.CogoPointTree is null) { return points; }
+            if (CogoPointTree is null) { return points; }
 
-            var nodes = CogoPointManager.CogoPointTree.GetIntersectingNodes(rect);
+            var nodes = CogoPointTree.GetIntersectingNodes(rect);
 
             foreach (var node in nodes)
             {
@@ -525,7 +935,9 @@ namespace Cad_Point_Manager.Models
 
             Layers.Clear();
             _cachedLineVertices.Clear();
+            _cachedLineVertices.TrimExcess();
             _cachedTextVertices.Clear();
+            _cachedTextVertices.TrimExcess();
 
             DxfLoaded = false;
             LineVerticesDirty = true;
@@ -533,9 +945,13 @@ namespace Cad_Point_Manager.Models
         }
         public void ClearDxfPoints()
         {
-            CogoPointManager.Reset();
+            PointGroups.Clear();
+            CogoPoints.Clear();
+
             _cachedPointTextVertices.Clear();
+            _cachedPointTextVertices.TrimExcess();
             _cachedPointMarkerVertices.Clear();
+            _cachedPointMarkerVertices.TrimExcess();
 
             CogoPointTextVerticesDirty = true;
             CogoPointCircleVerticesDirty = true;
@@ -661,7 +1077,7 @@ namespace Cad_Point_Manager.Models
         {
             _cachedPointMarkerVertices.Clear();
 
-            foreach (var pg in CogoPointManager.PointGroups)
+            foreach (var pg in PointGroups)
             {
                 if (!pg.IsVisible || pg is null) { continue; }
                 uint gid = sceneIdMap.GetOrAddGroupId(pg, out var isNewGroup);
@@ -686,7 +1102,7 @@ namespace Cad_Point_Manager.Models
 
         public void GetTestDxfPoints()
         {
-            CogoPointManager.Reset();
+            ClearDxfPoints();
 
             var inflatedExtents = Rect.Inflate(Extents, Extents.Width * 0.1, Extents.Height * 0.1);
             float rows = 15;
@@ -700,10 +1116,10 @@ namespace Cad_Point_Manager.Models
             for (int i = 0; i < rows; i++)
             {
                 string pointGroupName = $"TestGroup {i + 1}";
-                bool created = CogoPointManager.TryCreatePointGroup(pointGroupName, Colors.Red, out var pointGroup);
+                bool created = TryCreatePointGroup(pointGroupName, Colors.Red, out var pointGroup);
                 if (created)
                 {
-                    var groupActivated = CogoPointManager.TrySetActivePointGroup(pointGroup);
+                    var groupActivated = TrySetActivePointGroup(pointGroup);
                     if (!groupActivated) { continue; }
 
                     float y = inflatedExtents.Top.ToFloat() + (yIncrement * i);
@@ -711,7 +1127,7 @@ namespace Cad_Point_Manager.Models
                     for (int j = 0; j < cols; j++)
                     {
                         float x = inflatedExtents.Left.ToFloat() + (xIncrement * j);
-                        var pointCreated = CogoPointManager.TryAddPointToActiveGroup(pointNum, new Vector3(x, y, 0), out _,
+                        var pointCreated = TryAddPointToActiveGroup(pointNum, new Vector3(x, y, 0), out _,
                             (Math.Round(300 + random.NextDouble() * 100, 3)).ToFloat(), description);
                         if (pointCreated) { pointNum++; continue; }
                     }
@@ -719,41 +1135,69 @@ namespace Cad_Point_Manager.Models
             }
         }
 
+        // Hit testing tree related methods
+        public void UpdateExtents()
+        {
+            DxfExtents = DxfHelpers.GetBoundsFromHeader(DxfDocument);
+            UpdatePointExtents();
+            Extents = Rect.Union(DxfExtents, PointExtents);
+        }
         public void UpdateHitTestableObjectTree()
         {
             HitTestableObjectTree = new(this, Extents, 5);
             HitTestableObjectTreeDirty = false;
-
-            //// DrawingObjectTree Testing
-            //foreach (var node in CogoPointManager.CogoPointTree.BaseLevelNodes)
-            //{
-            //    Vector4 color = new(0, 0, 0, 1);
-            //    var topLeft = new Vector3((float)node.Extents.Left, (float)node.Extents.Top, 0);
-            //    var bottomRight = new Vector3((float)node.Extents.Right, (float)node.Extents.Bottom, 0);
-            //    var bottomLeft = new Vector3((float)node.Extents.Left, (float)node.Extents.Bottom, 0);
-            //    var topRight = new Vector3((float)node.Extents.Right, (float)node.Extents.Top, 0);
-
-            //    LineVertex topLeftVertex = new(topLeft, color);
-            //    LineVertex bottomRightVertex = new(bottomRight, color);
-            //    LineVertex bottomLeftVertex = new(bottomLeft, color);
-            //    LineVertex topRightVertex = new(topRight, color);
-
-            //    _cachedLineVertices.Add(topLeftVertex);
-            //    _cachedLineVertices.Add(topRightVertex);
-
-            //    _cachedLineVertices.Add(bottomLeftVertex);
-            //    _cachedLineVertices.Add(bottomRightVertex);
-
-            //    _cachedLineVertices.Add(topLeftVertex);
-            //    _cachedLineVertices.Add(bottomLeftVertex);
-
-            //    _cachedLineVertices.Add(topRightVertex);
-            //    _cachedLineVertices.Add(bottomRightVertex);
-            //}
         }
         public void UpdateCogoPointTree()
         {
-            CogoPointManager.UpdateCogoPointTree();
+            UpdatePointExtents();
+            CogoPointTree = new(this, Extents, 5);
+        }
+        public void UpdateDxfExtents()
+        {
+            //var testExtents = DxfHelpers.GetBoundsFromHeader(DxfDocument);
+
+            DxfExtents = Rect.Empty;
+            foreach (var keyValuePair in Layers)
+            {
+                var layer = keyValuePair.Value;
+                foreach (var obj in layer.DrawingObjects)
+                {
+                    DxfExtents = Rect.Union(obj.Bounds, DxfExtents);
+                }
+            }
+        }
+        public void UpdatePointExtents()
+        {
+            if (PointGroups == null || PointGroups.Count == 0) { PointExtents = Rect.Empty; }
+
+            int processorCount = Environment.ProcessorCount;
+            var partialResults = new Rect[processorCount];
+
+            Parallel.For(0, processorCount, i =>
+            {
+                Rect localUnion = Rect.Empty;
+
+                // Use stride to balance uneven group sizes
+                for (int g = i; g < PointGroups.Count; g += processorCount)
+                {
+                    var group = PointGroups[g];
+                    if (group?.Points == null) { continue; }
+
+                    foreach (var point in group.Points)
+                    {
+                        localUnion.Union(point.Bounds);
+                    }
+                }
+                partialResults[i] = localUnion;
+            });
+
+            Rect finalUnion = Rect.Empty;
+            foreach (var r in partialResults)
+            {
+                finalUnion.Union(r);
+            }
+
+            PointExtents = finalUnion;
         }
         #endregion
     }

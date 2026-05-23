@@ -266,7 +266,7 @@ namespace Cad_Point_Manager.Services.Exporting
         {
             const string fallbackFontFamily = "Arial";
 
-            foreach (var pg in cadManager.CogoPointManager.PointGroups)
+            foreach (var pg in cadManager.PointGroups)
             {
                 if (pg is null || !pg.IsVisible) { continue; }
 
@@ -373,7 +373,7 @@ namespace Cad_Point_Manager.Services.Exporting
             var face = resCache.CogoPointFontFace;
             var duPerEm = face.Metrics.DesignUnitsPerEm;
 
-            foreach (var pg in cadManager.CogoPointManager.PointGroups)
+            foreach (var pg in cadManager.PointGroups)
             {
                 if (pg is null || !pg.IsVisible) { continue; }
 

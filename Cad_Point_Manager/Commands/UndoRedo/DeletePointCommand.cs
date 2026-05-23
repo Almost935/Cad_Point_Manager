@@ -10,45 +10,51 @@ namespace Cad_Point_Manager.Commands.UndoRedo
 {
     public class DeletePointCommand : IUndoableCommand
     {
-        private readonly CogoPointManager _pointManager;
+        private readonly CadManager _cadManager;
 
         private readonly CogoPoint _point;
         private readonly PointGroup _group;
 
+        private bool _disposed;
+
+        private bool _succeeded;
+        private string? _errorMessage;
+
+        public bool Succeeded => _succeeded;
+        public string? ErrorMessage => _errorMessage;
         public string Description => "Delete Point";
+        public bool Disposed => _disposed;
 
         public DeletePointCommand(
-            CogoPointManager pointManager,
+            CadManager cadManager,
             CogoPoint point)
         {
-            _pointManager = pointManager;
+            _cadManager = cadManager;
             _point = point;
             _group = point.PointGroup;
         }
 
         public void Execute()
         {
-            _pointManager.RemovePoint(_point);
+            _cadManager.TryDeletePointInternal(_point);
 
             MarkDirty();
         }
 
         public void Undo()
         {
-            _pointManager.TryAddPoint(_point, _group);
+            _cadManager.TryAddPoint(_point, _group);
 
             MarkDirty();
         }
 
         private void MarkDirty()
         {
-            var cad = _pointManager.CadManager;
+            //_cadManager.CogoPointCircleVerticesDirty = true;
+            //_cadManager.CogoPointTextVerticesDirty = true;
+            //_cadManager.HitTestableObjectTreeDirty = true;
 
-            cad.CogoPointCircleVerticesDirty = true;
-            cad.CogoPointTextVerticesDirty = true;
-            cad.HitTestableObjectTreeDirty = true;
-
-            cad.UpdateExtents();
+            //_cadManager.UpdateExtents();
         }
     }
 }

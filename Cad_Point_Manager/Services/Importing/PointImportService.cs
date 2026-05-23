@@ -114,108 +114,108 @@ namespace Cad_Point_Manager.Services.Importing
             return headerScore >= firstRow.Count / 2;
         }
 
-        public List<CogoPoint> CreatePoints(
-            List<List<string>> rows,
-            List<ColumnMapping> mappings,
-            PointGroup group,
-            CogoPointManager manager)
-        {
-            var result = new List<CogoPoint>();
+        //public List<CogoPoint> CreatePoints(
+        //    List<List<string>> rows,
+        //    List<ColumnMapping> mappings,
+        //    PointGroup group,
+        //    CadManager manager)
+        //{
+        //    var result = new List<CogoPoint>();
 
-            foreach (var row in rows.Skip(1))
-            {
-                int pointNum = 0;
-                double northing = 0;
-                double easting = 0;
-                double elevation = 0;
-                string description = "";
+        //    foreach (var row in rows.Skip(1))
+        //    {
+        //        int pointNum = 0;
+        //        double northing = 0;
+        //        double easting = 0;
+        //        double elevation = 0;
+        //        string description = "";
 
-                foreach (var map in mappings)
-                {
-                    string val = row[map.ColumnIndex];
+        //        foreach (var map in mappings)
+        //        {
+        //            string val = row[map.ColumnIndex];
 
-                    switch (map.AssignedField)
-                    {
-                        case CogoFieldType.PointNumber:
-                            int.TryParse(val, out pointNum);
-                            break;
-                        case CogoFieldType.Northing:
-                            double.TryParse(val, out northing);
-                            break;
-                        case CogoFieldType.Easting:
-                            double.TryParse(val, out easting);
-                            break;
-                        case CogoFieldType.Elevation:
-                            double.TryParse(val, out elevation);
-                            break;
-                        case CogoFieldType.Description:
-                            description = val;
-                            break;
-                    }
-                }
+        //            switch (map.AssignedField)
+        //            {
+        //                case CogoFieldType.PointNumber:
+        //                    int.TryParse(val, out pointNum);
+        //                    break;
+        //                case CogoFieldType.Northing:
+        //                    double.TryParse(val, out northing);
+        //                    break;
+        //                case CogoFieldType.Easting:
+        //                    double.TryParse(val, out easting);
+        //                    break;
+        //                case CogoFieldType.Elevation:
+        //                    double.TryParse(val, out elevation);
+        //                    break;
+        //                case CogoFieldType.Description:
+        //                    description = val;
+        //                    break;
+        //            }
+        //        }
 
-                var cp = new CogoPoint(
-                    group,
-                    pointNum,
-                    new SharpDX.Vector3((float)easting, (float)northing, 0),
-                    manager,
-                    (float)elevation,
-                    description
-                );
+        //        var cp = new CogoPoint(
+        //            group,
+        //            pointNum,
+        //            new SharpDX.Vector3((float)easting, (float)northing, 0),
+        //            manager,
+        //            (float)elevation,
+        //            description
+        //        );
 
-                result.Add(cp);
-            }
+        //        result.Add(cp);
+        //    }
 
-            return result;
-        }
+        //    return result;
+        //}
 
-        public CogoPoint CreatePoint(
-        List<string> row,
-            List<ColumnMapping> mappings,
-            PointGroup group,
-            CogoPointManager manager)
-        {
-            int pointNum = 0;
-            double northing = 0;
-            double easting = 0;
-            double elevation = 0;
-            string description = "";
+        //public CogoPoint CreatePoint(
+        //List<string> row,
+        //    List<ColumnMapping> mappings,
+        //    PointGroup group,
+        //    CadManager manager)
+        //{
+        //    int pointNum = 0;
+        //    double northing = 0;
+        //    double easting = 0;
+        //    double elevation = 0;
+        //    string description = "";
 
-            foreach (var map in mappings)
-            {
-                string val = row[map.ColumnIndex];
+        //    foreach (var map in mappings)
+        //    {
+        //        string val = row[map.ColumnIndex];
 
-                switch (map.AssignedField)
-                {
-                    case CogoFieldType.PointNumber:
-                        int.TryParse(val, out pointNum);
-                        break;
-                    case CogoFieldType.Northing:
-                        double.TryParse(val, out northing);
-                        break;
-                    case CogoFieldType.Easting:
-                        double.TryParse(val, out easting);
-                        break;
-                    case CogoFieldType.Elevation:
-                        double.TryParse(val, out elevation);
-                        break;
-                    case CogoFieldType.Description:
-                        description = val;
-                        break;
-                }
-            }
+        //        switch (map.AssignedField)
+        //        {
+        //            case CogoFieldType.PointNumber:
+        //                int.TryParse(val, out pointNum);
+        //                break;
+        //            case CogoFieldType.Northing:
+        //                double.TryParse(val, out northing);
+        //                break;
+        //            case CogoFieldType.Easting:
+        //                double.TryParse(val, out easting);
+        //                break;
+        //            case CogoFieldType.Elevation:
+        //                double.TryParse(val, out elevation);
+        //                break;
+        //            case CogoFieldType.Description:
+        //                description = val;
+        //                break;
+        //        }
+        //    }
 
-            var cp = new CogoPoint(
-                group,
-                pointNum,
-                new SharpDX.Vector3((float)easting, (float)northing, 0),
-                manager,
-                (float)elevation,
-                description
-            );
+        //    var cp = new CogoPoint(
+        //        group,
+        //        pointNum,
+        //        new SharpDX.Vector3((float)easting, (float)northing, 0),
+        //        manager,
+        //        (float)elevation,
+        //        description
+        //    );
 
-            return cp;
-        }
+        //    return cp;
+        //}
 
         public ParsedPointImportRow ParseRow(
             List<string> row,
@@ -255,7 +255,7 @@ namespace Cad_Point_Manager.Services.Importing
             return new ParsedPointImportRow(pointNum, northing, easting, elevation, description, pointGroup);
         }
 
-        public string? ValidatePointNumber(int num, CogoPointManager manager)
+        public string? ValidatePointNumber(int num, CadManager manager)
         {
             if (num <= 0) { return "Point number must be greater than zero."; }
             if (manager.PointExists(num)) { return $"Point number already exists"; }
