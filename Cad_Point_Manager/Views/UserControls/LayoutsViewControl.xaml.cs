@@ -182,7 +182,7 @@ namespace Cad_Point_Manager.Views.UserControls
             Rect viewportBounds = new(0.5, 0.5, 28.938, 23);
             LayoutViewport viewport = new(viewportBounds, CadManager.Camera.OverviewScene);
 
-            if (!CadManager.TryAddLayout(CadManager.GetNextAvailableLayoutName(), viewport, out var newLayout))
+            if (!CadManager.TryCreateLayout(CadManager.GetNextAvailableLayoutName(), viewport, out var newLayout))
             {
                 throw new Exception("Failed to add new layout.");
             }

@@ -25,7 +25,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             Type = DrawingObjectType.DrawingCircle;
             Layer = layer;
             IsPartOfBlock = isPartOfBlock;
-            DrawingBlock3D = block;
+            DrawingBlock = block;
             EntityObject = circle;
             ColorByLayer = EntityObject.Color.IsByLayer;
 

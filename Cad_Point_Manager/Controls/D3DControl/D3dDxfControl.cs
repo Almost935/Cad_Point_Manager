@@ -2216,8 +2216,12 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 {
                     DeleteCogoPoints(SelectedCogoPoints.ToList());
                     CompactStateBuffersIfUnder25Pct();
-                    _dxfDirty = true;
-                    _combinedDirty = true;
+                    ResetHoverObjects();
+
+                    _cogoHoverVerticesDirty = true;
+                    _glyphVerticesDirty = true;
+                    //_dxfDirty = true;
+                    //_combinedDirty = true;
                     e.Handled = true;
                 }
             }
@@ -3069,10 +3073,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             CadManager.UpdateCogoPointTree();
             UpdateInitialMatrix();
-
-            ResetHoverObjects();
-            _cogoHoverVerticesDirty = true;
-            _glyphVerticesDirty = true;
         }
         private void UnbindAllStateSrvs(DeviceContext ctx)
         {
@@ -3100,6 +3100,18 @@ namespace Cad_Point_Manager.Controls.D3DControl
             // Re-upload CPU shadow arrays (if needed)
             // (Most of your state is already kept in _stateBufs.*Span; call your normal upload)
             // Example: _stateBufs.FlushAll();
+        }
+
+        public void InvalidateCogoPointRendering()
+        {
+            _glyphVerticesDirty = true;
+            _pointCircleVerticesDirty = true;
+            _leaderLineVerticesDirty = true;
+            _anchorVerticesDirty = true;
+            _cogoHoverVerticesDirty = true;
+
+            _combinedDirty = true;
+            _dxfDirty = true;
         }
 
         private Vector2 DipToPixel(Vector2 dip)
@@ -3243,6 +3255,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 foreach (var obj in e.NewItems)
                 {
                     if (obj is not CogoPoint cp) { continue; }
+
                     cp.PropertyChanged -= CogoPoint_PropertyChanged;
                     cp.PropertyChanged += CogoPoint_PropertyChanged;
 

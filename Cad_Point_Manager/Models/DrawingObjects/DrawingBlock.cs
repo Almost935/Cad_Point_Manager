@@ -60,8 +60,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         #endregion
 
         #region Constructors
-        //private DrawingBlock() { Type = DrawingObject3dType.DrawingLine; }
-
         public DrawingBlock(Insert insert, ObjectLayer layer, bool isPartOfBlock = false, DrawingBlock block = null)
         {
             Type = DrawingObjectType.DrawingBlock;
@@ -70,7 +68,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             EntityObject = insert;
             Layer = layer;
             IsPartOfBlock = isPartOfBlock;
-            DrawingBlock3D = block;
+            DrawingBlock = block;
             ColorByLayer = EntityObject.Color.IsByLayer;
 
             UpdateColor();

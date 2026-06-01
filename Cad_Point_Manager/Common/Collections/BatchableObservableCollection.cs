@@ -5,33 +5,42 @@ namespace Cad_Point_Manager.Common.Collections
 {
     public class BatchableObservableCollection<T> : ObservableCollection<T>
     {
-        private bool _suppress;
+        private int _deferLevel;
         private bool _dirty;
+        private readonly List<NotifyCollectionChangedEventArgs> _deferredEvents = [];
 
         public IDisposable DeferNotifications()
         {
-            _suppress = true;
+            _deferLevel++;
             return new Scope(this);
         }
 
         protected override void OnCollectionChanged(NotifyCollectionChangedEventArgs e)
         {
-            if (_suppress)
+            if (_deferLevel > 0)
             {
-                _dirty = true;
+                _deferredEvents.Add(e);
                 return;
             }
+
             base.OnCollectionChanged(e);
         }
 
         public void EndDefer()
         {
-            _suppress = false;
-            if (_dirty)
+            _deferLevel--;
+
+            if (_deferLevel > 0)
             {
-                _dirty = false;
-                base.OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
+                return;
             }
+
+            foreach (var e in _deferredEvents)
+            {
+                base.OnCollectionChanged(e);
+            }
+
+            _deferredEvents.Clear();
         }
 
         private sealed class Scope : IDisposable

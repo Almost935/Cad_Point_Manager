@@ -6,6 +6,7 @@ using Cad_Point_Manager.Controls.D3DControl.Rendering.Text;
 using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Helpers;
 using Cad_Point_Manager.Models.DrawingObjects;
+using Cad_Point_Manager.Models.DrawingObjects.Dimensioning;
 using Cad_Point_Manager.Models.HitTesting;
 using Cad_Point_Manager.Models.Importing;
 using Cad_Point_Manager.Models.PointRendering;
@@ -23,10 +24,12 @@ using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Media;
+
 using Color = System.Windows.Media.Color;
 using Point = System.Windows.Point;
 using Vector2 = SharpDX.Vector2;
 using Vector3 = SharpDX.Vector3;
+using Vector4 = SharpDX.Vector4;
 
 namespace Cad_Point_Manager.Models
 {
@@ -373,7 +376,7 @@ namespace Cad_Point_Manager.Models
                 this,
                 pointNumber,
                 position,
-                pg,
+                pg.Name,
                 elevation,
                 description);
 
@@ -383,9 +386,11 @@ namespace Cad_Point_Manager.Models
 
             return cmd.Succeeded;
         }
-        internal bool TryCreatePointInternal(int pointNumber, Vector3 position, PointGroup pg, out CogoPoint? point, out string? errorMessage, float elevation = 0, string description = "")
+        internal bool TryCreatePointInternal(int pointNumber, Vector3 position, string pgName, out CogoPoint? point, out string? errorMessage, float elevation = 0, string description = "")
         {
-            if (pg is null || !PointGroupExists(pg))
+            var pgExists = TryGetPointGroup(pgName, out var pg);
+
+            if (!pgExists)
             {
                 point = null;
                 errorMessage = "Point group does not exist.";
@@ -396,9 +401,11 @@ namespace Cad_Point_Manager.Models
                 point = null;
                 return false;
             }
+
             point = pg.AddPoint(pointNumber, position, elevation, description);
             CogoPoints.Add(point);
             errorMessage = null;
+
             return true;
         }
         public bool TryCreatePoints(
@@ -416,7 +423,7 @@ namespace Cad_Point_Manager.Models
                     this,
                     p.pointNumber,
                     p.position,
-                    p.pg,
+                    p.pg.Name,
                     p.elevation,
                     p.description);
 
@@ -433,7 +440,10 @@ namespace Cad_Point_Manager.Models
                 "Create Multiple Points",
                 commands);
 
-            UndoRedoManager.Execute(composite);
+            using (CogoPoints.DeferNotifications())
+            {
+                UndoRedoManager.Execute(composite);
+            }
 
             foreach (var cmd in commands.OfType<CreatePointCommand>())
             {
@@ -717,18 +727,244 @@ namespace Cad_Point_Manager.Models
             }
             return true;
         }
+        public void ChangePointGroupName(PointGroup group, string newName)
+        {
+            List<IUndoableCommand> commands = [];
+
+            if (group.Name == newName)
+            {
+                return;
+            }
+
+            if (!IsValidPointGroupName(
+                    newName,
+                    out string error))
+            {
+                return;
+            }
+
+            commands.Add(
+                new PropertyChangeCommand<string>(
+                    "Edit Point Group Name",
+                    v => group.Name = v,
+                    group.Name,
+                    newName));
+
+            if (commands.Count == 0)
+            {
+                return;
+            }
+
+            UndoRedoManager.Execute(
+                new CompositeCommand(
+                    this,
+                    "Edit Point Group Name",
+                    commands));
+        }
+        public void ChangePointGroupScale(IEnumerable<PointGroup> groups, double newScale)
+        {
+            List<IUndoableCommand> commands = [];
+
+            foreach (var pg in groups)
+            {
+                if (Math.Abs(pg.PointScale - newScale) < 0.0001)
+                {
+                    continue;
+                }
+
+                commands.Add(
+                    new PropertyChangeCommand<double>(
+                        "Edit Point Group Scale",
+                        v => pg.PointScale = v,
+                        pg.PointScale,
+                        newScale));
+            }
+
+            if (commands.Count == 0)
+            {
+                return;
+            }
+
+            UndoRedoManager.Execute(
+                new CompositeCommand(
+                    this,
+                    "Edit Point Group Scale",
+                    commands));
+        }
+        public void ChangePointGroupVisibility(IEnumerable<PointGroup> groups, bool isVisible)
+        {
+            List<IUndoableCommand> commands = [];
+
+            foreach (var pg in groups)
+            {
+                if (pg.IsVisible == isVisible)
+                {
+                    continue;
+                }
+
+                commands.Add(
+                    new PropertyChangeCommand<bool>(
+                        "Edit Point Group Visibility",
+                        v => pg.IsVisible = v,
+                        pg.IsVisible,
+                        isVisible));
+            }
+
+            if (commands.Count == 0)
+            {
+                return;
+            }
+
+            UndoRedoManager.Execute(
+                new CompositeCommand(
+                    this,
+                    "Edit Point Group Visibility",
+                    commands));
+        }
+        public void ChangePointGroupColor(IEnumerable<PointGroup> groups, Color color)
+        {
+            List<IUndoableCommand> commands = [];
+
+            foreach (var pg in groups)
+            {
+                if (pg.Color == color)
+                {
+                    continue;
+                }
+
+                commands.Add(
+                    new PropertyChangeCommand<Color>(
+                        "Edit Point Group Color",
+                        v => pg.Color = v,
+                        pg.Color,
+                        color));
+            }
+
+            if (commands.Count == 0)
+            {
+                return;
+            }
+
+            UndoRedoManager.Execute(
+                new CompositeCommand(
+                    this,
+                    "Edit Point Group Color",
+                    commands));
+        }
+
+        // Layer related methods
+        public void ChangeLayerColor(IEnumerable<ObjectLayer> layers, Vector4 newColor)
+        {
+            List<IUndoableCommand> commands = [];
+
+            foreach (var layer in layers)
+            {
+                if (layer.Color == newColor) { continue; }
+
+                commands.Add(
+                    new PropertyChangeCommand<Vector4>(
+                        "Edit Layer Color",
+                        v => layer.Color = v,
+                        layer.Color,
+                        newColor));
+            }
+
+            if (commands.Count == 0)
+            {
+                return;
+            }
+
+            UndoRedoManager.Execute(
+                new CompositeCommand(
+                    this,
+                    "Edit Point Group Name",
+                    commands));
+        }
+        public void ChangeLayerVisibility(IEnumerable<ObjectLayer> layers, bool isVisible)
+        {
+            List<IUndoableCommand> commands = [];
+
+            foreach (var layer in layers)
+            {
+                if (layer.IsVisible == isVisible)
+                {
+                    continue;
+                }
+
+                commands.Add(
+                    new PropertyChangeCommand<bool>(
+                        "Edit Layer Visibility",
+                        v => layer.IsVisible = v,
+                        layer.IsVisible,
+                        isVisible));
+            }
+
+            if (commands.Count == 0) { return; }
+
+            UndoRedoManager.Execute(
+                new CompositeCommand(
+                    this,
+                    "Edit Layer Visibility",
+                    commands));
+        }
 
         // Layout related methods
-        public bool TryAddLayout(string layoutName, LayoutViewport viewport, out Layout layout)
+        public bool TryCreateLayout(string layoutName, LayoutViewport viewport, out Layout layout)
         {
-            if (!Layouts.Any(x => string.Equals(x.Name, layoutName, StringComparison.OrdinalIgnoreCase)))
+            var cmd = new CreateLayoutCommand(this, layoutName, viewport);
+            UndoRedoManager.Execute(cmd);
+            layout = cmd.CreatedLayout;
+            return layout != null;
+        }
+        public bool TryCreateLayoutInternal(string layoutName, LayoutViewport viewport, out Layout layout, out string? errorMessage)
+        {
+            if (Layouts.Any(x => string.Equals(x.Name, layoutName, StringComparison.OrdinalIgnoreCase)))
             {
-                layout = new Layout() { Name = layoutName, Viewport = viewport };
-                Layouts.Add(layout);
-                return true;
+                errorMessage = $"Layout name \"{layoutName}\" already exists.";
+                layout = null;
+                return false;
             }
-            layout = null;
-            return false;
+            layout = new Layout() { Name = layoutName, Viewport = viewport };
+            Layouts.Add(layout);
+            errorMessage = null;
+            return true;
+        }
+        public void ChangeLayoutName(IEnumerable<PointGroup> groups, string newName)
+        {
+            List<IUndoableCommand> commands = [];
+
+            foreach (var pg in groups)
+            {
+                if (pg.Name == newName)
+                {
+                    continue;
+                }
+
+                if (!IsValidPointGroupName(
+                        newName,
+                        out string error))
+                {
+                    return;
+                }
+
+                commands.Add(
+                    new PropertyChangeCommand<string>(
+                        "Edit Point Group Name",
+                        v => pg.Name = v,
+                        pg.Name,
+                        newName));
+            }
+
+            if (commands.Count == 0)
+            {
+                return;
+            }
+
+            UndoRedoManager.Execute(
+                new CompositeCommand(
+                    this,
+                    "Edit Point Group Name",
+                    commands));
         }
         public string GetNextAvailableLayoutName(int startCount = 1)
         {
@@ -747,15 +983,44 @@ namespace Cad_Point_Manager.Models
             bool LayoutNameExists(string name) { return Layouts.Any(layout => layout.Name == name); }
 
         }
+        public bool IsValidLayoutName(string name, out string? errorMessage)
+        {
+            errorMessage = null;
+
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                errorMessage = "Name cannot be empty or whitespace.";
+                return false;
+            }
+
+            // Trim spaces just for validation purposes
+            name = name.Trim();
+
+            // Disallowed characters
+            char[] invalidChars = Path.GetInvalidFileNameChars(); // includes \ / : * ? " < > | and control characters
+            if (name.IndexOfAny(invalidChars) >= 0)
+            {
+                errorMessage = $"Name contains invalid characters: {string.Join(" ", invalidChars)}";
+                return false;
+            }
+
+            // Verify uniqueness
+            if (Layouts.Any(layout => layout.Name.Equals(name, StringComparison.OrdinalIgnoreCase)))
+            {
+                errorMessage = "A layout with this name already exists.";
+                return false;
+            }
+
+            return true;
+        }
         public bool ValidateLayoutNameChange(string newLayoutName, Layout layout, out string? errorMessage)
         {
             errorMessage = null;
 
             if (newLayoutName == layout.Name) { return true; }
 
-            if (Layouts.Any(x => x.Name == newLayoutName))
+            if (!IsValidLayoutName(newLayoutName, out errorMessage))
             {
-                errorMessage = $"Layout name \"{newLayoutName}\" already exists.";
                 return false;
             }
             return true;
@@ -783,7 +1048,7 @@ namespace Cad_Point_Manager.Models
 
             Rect viewportBounds = new(0.5, 0.5, 28.938, 23);
             LayoutViewport viewport = new(viewportBounds, Camera.OverviewScene);
-            TryAddLayout(GetNextAvailableLayoutName(), viewport, out _);
+            TryCreateLayout(GetNextAvailableLayoutName(), viewport, out _);
         }
 
         public void GetPointScale()
@@ -1000,13 +1265,26 @@ namespace Cad_Point_Manager.Models
                             _cachedLineVertices.AddRange(drawingGeometry.Vertices);
                             drawingGeometry.EndVertexIndex = _cachedLineVertices.Count - 1;
                         }
-
                         if (obj is DrawingBlock drawingBlock)
                         {
                             drawingBlock.UpdateGeometryVertices(lId, objectId);
                             drawingBlock.StartLineVertexIndex = _cachedLineVertices.Count;
                             _cachedLineVertices.AddRange(drawingBlock.LineVertices);
                             drawingBlock.EndLineVertexIndex = _cachedLineVertices.Count - 1;
+                        }
+                        if (obj is DrawingAlignedDimension alignedDimension)
+                        {
+                            alignedDimension.UpdateGeometryVertices(lId, objectId);
+                            alignedDimension.StartLineVertexIndex = _cachedLineVertices.Count;
+                            _cachedLineVertices.AddRange(alignedDimension.LineVertices);
+                            alignedDimension.EndLineVertexIndex = _cachedLineVertices.Count - 1;
+                        }
+                        if (obj is DrawingLinearDimension linearDimension)
+                        {
+                            linearDimension.UpdateGeometryVertices(lId, objectId);
+                            linearDimension.StartLineVertexIndex = _cachedLineVertices.Count;
+                            _cachedLineVertices.AddRange(linearDimension.LineVertices);
+                            linearDimension.EndLineVertexIndex = _cachedLineVertices.Count - 1;
                         }
                     }
                 }
@@ -1065,6 +1343,20 @@ namespace Cad_Point_Manager.Models
                             drawingBlock.StartTextVertexIndex = _cachedTextVertices.Count;
                             _cachedTextVertices.AddRange(drawingBlock.TextVertices);
                             drawingBlock.EndTextVertexIndex = _cachedTextVertices.Count - 1;
+                        }
+                        if (obj is DrawingAlignedDimension alignedDimension)
+                        {
+                            alignedDimension.UpdateTextVertices(d3DResCache, lid, sceneIdMap, stateBuffers);
+                            alignedDimension.StartTextVertexIndex = _cachedTextVertices.Count;
+                            _cachedTextVertices.AddRange(alignedDimension.TextVertices);
+                            alignedDimension.EndTextVertexIndex = _cachedTextVertices.Count - 1;
+                        }
+                        if (obj is DrawingLinearDimension linearDimension)
+                        {
+                            linearDimension.UpdateTextVertices(d3DResCache, lid, sceneIdMap, stateBuffers);
+                            linearDimension.StartTextVertexIndex = _cachedTextVertices.Count;
+                            _cachedTextVertices.AddRange(linearDimension.TextVertices);
+                            linearDimension.EndTextVertexIndex = _cachedTextVertices.Count - 1;
                         }
                     }
                 }

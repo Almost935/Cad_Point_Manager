@@ -46,17 +46,14 @@ namespace Cad_Point_Manager.Views.UserControls
         private Color _prevPointGroupColor;
         private bool _pointGroupsMessageBoxOpen = false;
 
-        //private string _newPointGroupName = "";
-        //private Color _newPointGroupColor = Colors.Black;
         private double _newPointGroupScale = 1;
         private bool _newPointColorPickerToggleOpen = false;
         private ICollectionView _availableMergePointGroups;
         private PointGroup _mergePointGroup = null;
-        private bool _ignorePGListViewSelectionChanged = false;
 
         private readonly DispatcherTimer _hideTimer = new();
         private bool _isMouseOverPanel = false;
-        private ScaleTransform _mainPanelTransform = new();
+        private readonly ScaleTransform _mainPanelTransform = new();
         #endregion
 
         #region Properties
@@ -310,17 +307,11 @@ namespace Cad_Point_Manager.Views.UserControls
         }
         private void LayerCheckBox_Checked(object sender, RoutedEventArgs e)
         {
-            foreach (var layer in _selectedLayers)
-            {
-                layer.IsVisible = true;
-            }
+            CadManager.ChangeLayerVisibility(_selectedLayers, true);
         }
         private void LayerCheckBox_Unchecked(object sender, RoutedEventArgs e)
         {
-            foreach (var layer in _selectedLayers)
-            {
-                layer.IsVisible = false;
-            }
+            CadManager.ChangeLayerVisibility(_selectedLayers, false);
         }
         private async void LayersBorder_MouseEnter(object sender, MouseEventArgs e)
         {
@@ -343,11 +334,11 @@ namespace Cad_Point_Manager.Views.UserControls
             PortableColorPicker colorpicker = sender as PortableColorPicker;
             if (colorpicker is not null)
             {
-                var color = colorpicker.SelectedColor;
-                foreach (var layer in _selectedLayers)
-                {
-                    layer.Color = new Vector4(color.R / 255f, color.G / 255f, color.B / 255f, 1.0f);
-                }
+                Vector4 color = new(colorpicker.SelectedColor.ScR, colorpicker.SelectedColor.ScG, colorpicker.SelectedColor.ScB, colorpicker.SelectedColor.ScA);
+
+                CadManager.ChangeLayerColor(
+                    _selectedLayers,
+                    color);
             }
         }
         private void LayersListView_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -382,8 +373,7 @@ namespace Cad_Point_Manager.Views.UserControls
         }
         private void PointGroupsListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (sender is not ListView lv
-                || _ignorePGListViewSelectionChanged) { return; }
+            if (sender is not ListView lv) { return; }
 
             // Maintain anchor unless we are actively doing a SHIFT range
             if (!Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
@@ -544,19 +534,42 @@ namespace Cad_Point_Manager.Views.UserControls
                 }
                 else
                 {
-                    // Valid – clear any old errors and commit the value
                     if (binding != null)
                     {
                         Validation.ClearInvalid(binding);
-                        binding.UpdateSource();
                     }
 
-                    // leave edit mode
+                    switch (field)
+                    {
+                        case "Name":
+                            {
+                                CadManager.ChangePointGroupName(
+                                    pg,
+                                    text);
+
+                                break;
+                            }
+
+                        case "PointScale":
+                            {
+                                CadManager.ChangePointGroupScale(
+                                    _selectedPointGroups,
+                                    double.Parse(text));
+
+                                break;
+                            }
+                    }
+
+                    binding?.UpdateTarget();
+
                     InlineEdit.SetEditingField(lvi, null);
+
                     e.Handled = true;
 
-                    // move focus to next cell
-                    (tb as UIElement)?.MoveFocus(new TraversalRequest(FocusNavigationDirection.Next));
+                    (tb as UIElement)?.MoveFocus(
+                        new TraversalRequest(
+                            FocusNavigationDirection.Next));
+
                     return;
                 }
             }
@@ -571,14 +584,17 @@ namespace Cad_Point_Manager.Views.UserControls
         }
         private void PointGroupsInlineEditBox_LostFocus(object sender, RoutedEventArgs e)
         {
-            // If focus leaves the edit box, exit edit (commit if valid, otherwise keep error text synced)
-            if (sender is not TextBox tb) { return; }
+            if (sender is not TextBox tb)
+            {
+                return;
+            }
 
             var lvi = VisualTreeHelpers.FindAncestor<ListViewItem>(tb);
-            if (lvi == null) { return; }
 
-            var binding = tb.GetBindingExpression(TextBox.TextProperty);
-            if (!Validation.GetHasError(tb)) { binding?.UpdateSource(); } // commit if valid
+            if (lvi == null)
+            {
+                return;
+            }
 
             InlineEdit.SetEditingField(lvi, null);
         }
@@ -667,17 +683,15 @@ namespace Cad_Point_Manager.Views.UserControls
         // PointGroups listview visibily checkbox methods
         private void PointGroupsVisibilityCheckBox_Checked(object sender, RoutedEventArgs e)
         {
-            foreach (var pg in _selectedPointGroups)
-            {
-                pg.IsVisible = true;
-            }
+            CadManager.ChangePointGroupVisibility(
+                _selectedPointGroups,
+                true);
         }
         private void PointGroupsVisibilityCheckBox_Unchecked(object sender, RoutedEventArgs e)
         {
-            foreach (var pg in _selectedPointGroups)
-            {
-                pg.IsVisible = false;
-            }
+            CadManager.ChangePointGroupVisibility(
+                _selectedPointGroups,
+                false);
         }
         private void PointGroupsVisibilityCheckBox_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
@@ -738,8 +752,8 @@ namespace Cad_Point_Manager.Views.UserControls
         {
             if (PointGroupListColorPickerOpen) { return; }
 
-            if (sender is not PortableColorPicker cp ||
-                VisualTreeHelpers.FindAncestor<ListViewItem>(cp) is not ListViewItem lvi ||
+            if (sender is not PortableColorPicker cp || 
+                VisualTreeHelpers.FindAncestor<ListViewItem>(cp) is not ListViewItem lvi || 
                 ItemsControl.ItemsControlFromItemContainer(lvi) is not ListView lv) { return; }
 
             int clicked = lv.ItemContainerGenerator.IndexFromContainer(lvi);
@@ -804,10 +818,10 @@ namespace Cad_Point_Manager.Views.UserControls
                 if (_openColorPickerPG is null) { return; }
 
                 var color = colorpicker.SelectedColor;
-                foreach (var pg in _selectedPointGroups)
-                {
-                    pg.Color = color;
-                }
+                CadManager.ChangePointGroupColor(
+                        _selectedPointGroups,
+                        color);
+                
                 _openColorPickerPG.Color = color;
                 _openColorPickerPG = null;
 
@@ -835,10 +849,10 @@ namespace Cad_Point_Manager.Views.UserControls
                     if (_openColorPickerPG is null) { return; }
 
                     var color = colorpicker.SelectedColor;
-                    foreach (var pg in _selectedPointGroups)
-                    {
-                        pg.Color = color;
-                    }
+                    CadManager.ChangePointGroupColor(
+                        _selectedPointGroups,
+                        color);
+
                     _openColorPickerPG.Color = color;
                     _openColorPickerPG = null;
                     colorpicker.IsPopupOpen = false;
@@ -858,6 +872,7 @@ namespace Cad_Point_Manager.Views.UserControls
                 CadManager.PointBaseScale);
         }
         private bool TryCreateNewPointGroup(string name, Color color, double scale)
+
         {
             if (CadManager is null) { return false; }
 
@@ -886,7 +901,6 @@ namespace Cad_Point_Manager.Views.UserControls
                 }
                 else
                 {
-                    //PointGroupsNameStartRowEdit(container);
                     BeginPointGroupListCellEdit(container, "Name");
                 }
             }));

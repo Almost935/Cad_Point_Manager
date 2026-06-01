@@ -28,14 +28,15 @@
             <ColumnDefinition Width="*" />
             <ColumnDefinition Width="2.5*" />
         </Grid.ColumnDefinitions>
-        <Grid Panel.ZIndex="2">
+        <Grid Panel.ZIndex="2"
+              Background="White">
             <Grid.RowDefinitions>
                 <RowDefinition Height="5*" />
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
             <controls:DoubleClickSetListView x:Name="layoutsListView"
                                              Style="{StaticResource LayoutsListView}"
-                                             Margin="5"                                             
+                                             Margin="5"
                                              Background="White"
                                              Cursor="Arrow"
                                              ItemsSource="{Binding CadManager.LayoutsView}"
@@ -266,6 +267,44 @@
                     </DataTemplate>
                 </controls:DoubleClickSetListView.ItemTemplate>
             </controls:DoubleClickSetListView>
+            <WrapPanel HorizontalAlignment="Center"
+                       Grid.Row="1">
+                <Button x:Name="NewLayoutButton"
+                        Style="{StaticResource BorderWidgetsButton}"
+                        Width="40"
+                        Height="40"
+                        Margin="5 2 5 2"
+                        Click="NewLayout_Click">
+                    <Button.Content>
+                        <ContentControl Template="{StaticResource PlusIcon}" />
+                    </Button.Content>
+                    <Button.LayoutTransform>
+                        <ScaleTransform ScaleX="0.7"
+                                        ScaleY="0.7" />
+                    </Button.LayoutTransform>
+                    <Button.ToolTip>
+                        <TextBlock Text="Add New Point Group" />
+                    </Button.ToolTip>
+                </Button>
+                <Button x:Name="DeleteLayoutButton"
+                        Style="{StaticResource BorderWidgetsButton}"
+                        Width="40"
+                        Height="40"
+                        Margin="5 2 5 2"
+                        Click="DeleteLayouts_Click">
+                    <Button.Content>
+                        <ContentControl Template="{StaticResource CancelIcon}"
+                                        Foreground="White" />
+                    </Button.Content>
+                    <Button.LayoutTransform>
+                        <ScaleTransform ScaleX="0.7"
+                                        ScaleY="0.7" />
+                    </Button.LayoutTransform>
+                    <Button.ToolTip>
+                        <TextBlock Text="Add New Point Group" />
+                    </Button.ToolTip>
+                </Button>
+            </WrapPanel>
         </Grid>
         <Canvas x:Name="BackgroundCanvas"
                 Grid.Column="1"

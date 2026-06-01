@@ -23,7 +23,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             EntityObject = spline;
             Layer = layer;
             IsPartOfBlock = isPartOfBlock;
-            DrawingBlock3D = block;
+            DrawingBlock = block;
             ColorByLayer = EntityObject.Color.IsByLayer;
 
             UpdateColor();
@@ -37,7 +37,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             if (EntityObject is Spline spline)
             {
                 _polyline = spline.ToPolyline2D(_polylineApproximationPrecision);
-                PolylineApproximation = new(_polyline, Layer, isPartOfBlock: IsPartOfBlock, block: DrawingBlock3D);
+                PolylineApproximation = new(_polyline, Layer, isPartOfBlock: IsPartOfBlock, block: DrawingBlock);
             }
             else
             {

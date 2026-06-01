@@ -455,170 +455,173 @@
                     </GroupStyle>
                 </controls:SortableListView.GroupStyle>
             </controls:SortableListView>
-            <Grid x:Name="PropertiesGrid"
-                  Opacity="{Binding ElementName=root, Path=PropertiesTabOpacity}"
-                  Visibility="{Binding ElementName=root, Path=PropertiesTabVisible, Converter={StaticResource BoolToVisibilityConverter}}"
-                  Background="{StaticResource PopoutMenuBackgroundBrush}"
-                  DataContext="{Binding ElementName=root, Path=CogoPointSelectionViewModel}">
-                <Grid.Resources>
-                    <Thickness x:Key="RowMargin">10 0 10 0</Thickness>
-                    <Thickness x:Key="RowItemMargin">2</Thickness>
-                    <sys:Double x:Key="PropertiesTabTextSize">12</sys:Double>
-                </Grid.Resources>
-                <StackPanel Margin="5 10 5 10">
-                    <Grid Margin="{StaticResource RowItemMargin}">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="*" />
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Text="Selection Count:"
-                                   VerticalAlignment="Center"
-                                   FontSize="{StaticResource PropertiesTabTextSize}"
-                                   Margin="2,0,2,0" />
-                        <TextBlock x:Name="PropertiesSelectionCountTextBlock"
-                                   Text="{Binding SelectedPoints.Count}"
-                                   Grid.Column="1"
-                                   Height="20"
-                                   FontSize="{StaticResource PropertiesTabTextSize}"
-                                   Margin="2,2,2,2" />
-                    </Grid>
-                    <Grid Margin="{StaticResource RowItemMargin}">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="*" />
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Text="Point Number:"
-                                   VerticalAlignment="Center"
-                                   FontSize="{StaticResource PropertiesTabTextSize}"
-                                   Margin="2,0,2,0" />
-                        <TextBox x:Name="PropertiesPointNumberTextBox"
-                                 Text="{Binding Path=PointNumber, Mode=TwoWay, UpdateSourceTrigger=Explicit}"
-                                 Style="{StaticResource ValidationTextBox}"
-                                 Grid.Column="2"
-                                 Height="20"
-                                 FontSize="{StaticResource PropertiesTabTextSize}"
-                                 Margin="2,2,2,2"
-                                 IsEnabled="{Binding IsPointNumberEditable}"
-                                 PreviewMouseLeftButtonDown="PropertiesTextBox_PreviewMouseLeftButtonDown"
-                                 GotKeyboardFocus="PropertiesTextBox_GotKeyboardFocus"
-                                 LostFocus="PropertiesPointNumberTextBox_LostFocus"
-                                 TextChanged="PropertiesPointNumberTextBox_TextChanged"
-                                 PreviewKeyUp="PropertiesPointNumberTextBox_PreviewKeyUp" />
-                    </Grid>
-                    <Grid Margin="{StaticResource RowItemMargin}">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="*" />
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Text="Northing:"
-                                   VerticalAlignment="Center"
-                                   FontSize="{StaticResource PropertiesTabTextSize}"
-                                   Margin="{StaticResource RowItemMargin}" />
-                        <TextBox x:Name="PropertiesNorthingTextBox"
-                                 Style="{StaticResource ValidationTextBox}"
-                                 Text="{Binding Northing, Mode=TwoWay, UpdateSourceTrigger=Explicit}"
-                                 Grid.Column="1"
-                                 Height="20"
-                                 FontSize="{StaticResource PropertiesTabTextSize}"
-                                 Margin="{StaticResource RowItemMargin}"
-                                 IsEnabled="{Binding IsCoordinateEditable}"
-                                 PreviewMouseLeftButtonDown="PropertiesTextBox_PreviewMouseLeftButtonDown"
-                                 GotKeyboardFocus="PropertiesTextBox_GotKeyboardFocus"
-                                 LostFocus="PropertiesNorthingTextBox_LostFocus"
-                                 TextChanged="PropertiesNorthingTextBox_TextChanged"
-                                 PreviewKeyUp="PropertiesNorthingTextBox_PreviewKeyUp" />
-                    </Grid>
-                    <Grid Margin="{StaticResource RowItemMargin}">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="*" />
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Text="Easting:"
-                                   VerticalAlignment="Center"
-                                   FontSize="{StaticResource PropertiesTabTextSize}"
-                                   Margin="{StaticResource RowItemMargin}" />
-                        <TextBox x:Name="PropertiesEastingTextBox"
-                                 Style="{StaticResource ValidationTextBox}"
-                                 Text="{Binding Easting, Mode=TwoWay, UpdateSourceTrigger=Explicit}"
-                                 Grid.Column="1"
-                                 Height="20"
-                                 FontSize="{StaticResource PropertiesTabTextSize}"
-                                 Margin="{StaticResource RowItemMargin}"
-                                 IsEnabled="{Binding IsCoordinateEditable}"
-                                 PreviewMouseLeftButtonDown="PropertiesTextBox_PreviewMouseLeftButtonDown"
-                                 GotKeyboardFocus="PropertiesTextBox_GotKeyboardFocus"
-                                 LostFocus="PropertiesEastingTextBox_LostFocus"
-                                 TextChanged="PropertiesEastingTextBox_TextChanged"
-                                 PreviewKeyUp="PropertiesEastingTextBox_PreviewKeyUp" />
-                    </Grid>
-                    <Grid Margin="{StaticResource RowItemMargin}">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="*" />
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Text="Elevation:"
-                                   VerticalAlignment="Center"
-                                   FontSize="{StaticResource PropertiesTabTextSize}"
-                                   Margin="{StaticResource RowItemMargin}" />
-                        <TextBox x:Name="PropertiesElevationTextBox"
-                                 Style="{StaticResource ValidationTextBox}"
-                                 Text="{Binding Elevation, Mode=TwoWay, UpdateSourceTrigger=Explicit}"
-                                 Grid.Column="1"
-                                 Height="20"
-                                 FontSize="{StaticResource PropertiesTabTextSize}"
-                                 Margin="{StaticResource RowItemMargin}"
-                                 IsEnabled="{Binding IsCoordinateEditable}"
-                                 PreviewMouseLeftButtonDown="PropertiesTextBox_PreviewMouseLeftButtonDown"
-                                 GotKeyboardFocus="PropertiesTextBox_GotKeyboardFocus"
-                                 LostFocus="PropertiesElevationTextBox_LostFocus"
-                                 TextChanged="PropertiesElevationTextBox_TextChanged"
-                                 PreviewKeyUp="PropertiesElevationTextBox_PreviewKeyUp" />
-                    </Grid>
-                    <Grid Margin="{StaticResource RowItemMargin}">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="*" />
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Text="Description:"
-                                   VerticalAlignment="Center"
-                                   FontSize="{StaticResource PropertiesTabTextSize}"
-                                   Margin="{StaticResource RowItemMargin}" />
-                        <TextBox x:Name="PropertiesDescriptionTextBox"
-                                 Grid.Column="1"
-                                 Style="{StaticResource ValidationTextBox}"
-                                 Height="20"
-                                 FontSize="{StaticResource PropertiesTabTextSize}"
-                                 Margin="{StaticResource RowItemMargin}"
-                                 Text="{Binding Description, Mode=TwoWay, UpdateSourceTrigger=Explicit}"
-                                 IsEnabled="{Binding IsDescriptionEditable}"
-                                 PreviewMouseLeftButtonDown="PropertiesTextBox_PreviewMouseLeftButtonDown"
-                                 GotKeyboardFocus="PropertiesTextBox_GotKeyboardFocus"
-                                 LostFocus="PropertiesDescriptionTextBox_LostFocus"
-                                 TextChanged="PropertiesDescriptionTextBox_TextChanged"
-                                 PreviewKeyUp="PropertiesDescriptionTextBox_PreviewKeyUp" />
-                    </Grid>
-                    <Grid Margin="{StaticResource RowItemMargin}">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="*" />
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Text="Point Group:"
-                                   VerticalAlignment="Center"
-                                   FontSize="{StaticResource PropertiesTabTextSize}"
-                                   Margin="{StaticResource RowItemMargin}" />
-                        <controls:NoRevertComboBox x:Name="PropertiesPointGroupComboBox"
-                                                   Grid.Column="1"
-                                                   Height="20"
-                                                   Style="{StaticResource ValidationComboBox}"
-                                                   FontSize="{StaticResource PropertiesTabTextSize}"
-                                                   Margin="{StaticResource RowItemMargin}"
-                                                   ItemsSource="{Binding DisplayedPointGroupsName}"
-                                                   IsEnabled="{Binding IsPointGroupEditable}"
-                                                   SelectedItem="{Binding PointGroup}"
-                                                   SelectionChanged="PropertiesPointGroupComboBox_SelectionChanged" />
-                    </Grid>
-                </StackPanel>
-            </Grid>
+            <Border BorderBrush="#999897"
+                    BorderThickness="1">
+                <Grid x:Name="PropertiesGrid"
+                      Opacity="{Binding ElementName=root, Path=PropertiesTabOpacity}"
+                      Visibility="{Binding ElementName=root, Path=PropertiesTabVisible, Converter={StaticResource BoolToVisibilityConverter}}"
+                      Background="{StaticResource PopoutMenuBackgroundBrush}"
+                      DataContext="{Binding ElementName=root, Path=CogoPointSelectionViewModel}">
+                    <Grid.Resources>
+                        <Thickness x:Key="RowMargin">10 0 10 0</Thickness>
+                        <Thickness x:Key="RowItemMargin">2</Thickness>
+                        <sys:Double x:Key="PropertiesTabTextSize">12</sys:Double>
+                    </Grid.Resources>
+                    <StackPanel Margin="5 10 5 10">
+                        <Grid Margin="{StaticResource RowItemMargin}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Selection Count:"
+                                       VerticalAlignment="Center"
+                                       FontSize="{StaticResource PropertiesTabTextSize}"
+                                       Margin="2,0,2,0" />
+                            <TextBlock x:Name="PropertiesSelectionCountTextBlock"
+                                       Text="{Binding SelectedPoints.Count}"
+                                       Grid.Column="1"
+                                       Height="20"
+                                       FontSize="{StaticResource PropertiesTabTextSize}"
+                                       Margin="2,2,2,2" />
+                        </Grid>
+                        <Grid Margin="{StaticResource RowItemMargin}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Point Number:"
+                                       VerticalAlignment="Center"
+                                       FontSize="{StaticResource PropertiesTabTextSize}"
+                                       Margin="2,0,2,0" />
+                            <TextBox x:Name="PropertiesPointNumberTextBox"
+                                     Text="{Binding Path=PointNumber, Mode=TwoWay, UpdateSourceTrigger=Explicit}"
+                                     Style="{StaticResource ValidationTextBox}"
+                                     Grid.Column="2"
+                                     Height="20"
+                                     FontSize="{StaticResource PropertiesTabTextSize}"
+                                     Margin="2,2,2,2"
+                                     IsEnabled="{Binding IsPointNumberEditable}"
+                                     PreviewMouseLeftButtonDown="PropertiesTextBox_PreviewMouseLeftButtonDown"
+                                     GotKeyboardFocus="PropertiesTextBox_GotKeyboardFocus"
+                                     LostFocus="PropertiesPointNumberTextBox_LostFocus"
+                                     TextChanged="PropertiesPointNumberTextBox_TextChanged"
+                                     PreviewKeyUp="PropertiesPointNumberTextBox_PreviewKeyUp" />
+                        </Grid>
+                        <Grid Margin="{StaticResource RowItemMargin}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Northing:"
+                                       VerticalAlignment="Center"
+                                       FontSize="{StaticResource PropertiesTabTextSize}"
+                                       Margin="{StaticResource RowItemMargin}" />
+                            <TextBox x:Name="PropertiesNorthingTextBox"
+                                     Style="{StaticResource ValidationTextBox}"
+                                     Text="{Binding Northing, Mode=TwoWay, UpdateSourceTrigger=Explicit}"
+                                     Grid.Column="1"
+                                     Height="20"
+                                     FontSize="{StaticResource PropertiesTabTextSize}"
+                                     Margin="{StaticResource RowItemMargin}"
+                                     IsEnabled="{Binding IsCoordinateEditable}"
+                                     PreviewMouseLeftButtonDown="PropertiesTextBox_PreviewMouseLeftButtonDown"
+                                     GotKeyboardFocus="PropertiesTextBox_GotKeyboardFocus"
+                                     LostFocus="PropertiesNorthingTextBox_LostFocus"
+                                     TextChanged="PropertiesNorthingTextBox_TextChanged"
+                                     PreviewKeyUp="PropertiesNorthingTextBox_PreviewKeyUp" />
+                        </Grid>
+                        <Grid Margin="{StaticResource RowItemMargin}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Easting:"
+                                       VerticalAlignment="Center"
+                                       FontSize="{StaticResource PropertiesTabTextSize}"
+                                       Margin="{StaticResource RowItemMargin}" />
+                            <TextBox x:Name="PropertiesEastingTextBox"
+                                     Style="{StaticResource ValidationTextBox}"
+                                     Text="{Binding Easting, Mode=TwoWay, UpdateSourceTrigger=Explicit}"
+                                     Grid.Column="1"
+                                     Height="20"
+                                     FontSize="{StaticResource PropertiesTabTextSize}"
+                                     Margin="{StaticResource RowItemMargin}"
+                                     IsEnabled="{Binding IsCoordinateEditable}"
+                                     PreviewMouseLeftButtonDown="PropertiesTextBox_PreviewMouseLeftButtonDown"
+                                     GotKeyboardFocus="PropertiesTextBox_GotKeyboardFocus"
+                                     LostFocus="PropertiesEastingTextBox_LostFocus"
+                                     TextChanged="PropertiesEastingTextBox_TextChanged"
+                                     PreviewKeyUp="PropertiesEastingTextBox_PreviewKeyUp" />
+                        </Grid>
+                        <Grid Margin="{StaticResource RowItemMargin}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Elevation:"
+                                       VerticalAlignment="Center"
+                                       FontSize="{StaticResource PropertiesTabTextSize}"
+                                       Margin="{StaticResource RowItemMargin}" />
+                            <TextBox x:Name="PropertiesElevationTextBox"
+                                     Style="{StaticResource ValidationTextBox}"
+                                     Text="{Binding Elevation, Mode=TwoWay, UpdateSourceTrigger=Explicit}"
+                                     Grid.Column="1"
+                                     Height="20"
+                                     FontSize="{StaticResource PropertiesTabTextSize}"
+                                     Margin="{StaticResource RowItemMargin}"
+                                     IsEnabled="{Binding IsCoordinateEditable}"
+                                     PreviewMouseLeftButtonDown="PropertiesTextBox_PreviewMouseLeftButtonDown"
+                                     GotKeyboardFocus="PropertiesTextBox_GotKeyboardFocus"
+                                     LostFocus="PropertiesElevationTextBox_LostFocus"
+                                     TextChanged="PropertiesElevationTextBox_TextChanged"
+                                     PreviewKeyUp="PropertiesElevationTextBox_PreviewKeyUp" />
+                        </Grid>
+                        <Grid Margin="{StaticResource RowItemMargin}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Description:"
+                                       VerticalAlignment="Center"
+                                       FontSize="{StaticResource PropertiesTabTextSize}"
+                                       Margin="{StaticResource RowItemMargin}" />
+                            <TextBox x:Name="PropertiesDescriptionTextBox"
+                                     Grid.Column="1"
+                                     Style="{StaticResource ValidationTextBox}"
+                                     Height="20"
+                                     FontSize="{StaticResource PropertiesTabTextSize}"
+                                     Margin="{StaticResource RowItemMargin}"
+                                     Text="{Binding Description, Mode=TwoWay, UpdateSourceTrigger=Explicit}"
+                                     IsEnabled="{Binding IsDescriptionEditable}"
+                                     PreviewMouseLeftButtonDown="PropertiesTextBox_PreviewMouseLeftButtonDown"
+                                     GotKeyboardFocus="PropertiesTextBox_GotKeyboardFocus"
+                                     LostFocus="PropertiesDescriptionTextBox_LostFocus"
+                                     TextChanged="PropertiesDescriptionTextBox_TextChanged"
+                                     PreviewKeyUp="PropertiesDescriptionTextBox_PreviewKeyUp" />
+                        </Grid>
+                        <Grid Margin="{StaticResource RowItemMargin}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Point Group:"
+                                       VerticalAlignment="Center"
+                                       FontSize="{StaticResource PropertiesTabTextSize}"
+                                       Margin="{StaticResource RowItemMargin}" />
+                            <controls:NoRevertComboBox x:Name="PropertiesPointGroupComboBox"
+                                                       Grid.Column="1"
+                                                       Height="20"
+                                                       Style="{StaticResource ValidationComboBox}"
+                                                       FontSize="{StaticResource PropertiesTabTextSize}"
+                                                       Margin="{StaticResource RowItemMargin}"
+                                                       ItemsSource="{Binding DisplayedPointGroupsName}"
+                                                       IsEnabled="{Binding IsPointGroupEditable}"
+                                                       SelectedItem="{Binding PointGroup}"
+                                                       SelectionChanged="PropertiesPointGroupComboBox_SelectionChanged" />
+                        </Grid>
+                    </StackPanel>
+                </Grid>
+            </Border>
             <Grid Background="{StaticResource PopoutMenuBackgroundBrush}"
                   Opacity="{Binding ElementName=root, Path=ViewsTabOpacity}"
                   Visibility="{Binding ElementName=root, Path=ViewsTabVisible, Converter={StaticResource BoolToVisibilityConverter}}">

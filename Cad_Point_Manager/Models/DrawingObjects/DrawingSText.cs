@@ -51,7 +51,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             DxfText = text;
             Layer = layer;
             IsPartOfBlock = isPartOfBlock;
-            DrawingBlock3D = block;
+            DrawingBlock = block;
             ColorByLayer = EntityObject.Color.IsByLayer;
 
             UpdateColor();

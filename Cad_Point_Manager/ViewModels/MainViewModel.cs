@@ -55,6 +55,7 @@ namespace Cad_Point_Manager.ViewModels
         private double _vertexSnapTolerance = 1e-4;
         private Point _mousePosition = new();
         private ResCache _resCache = new ResCache();
+        private Enums.SelectionMode SelectionMode;
 
         // CogoPoint Creation Fields
         private int _newCogoPointsStartCount = 1;
@@ -451,6 +452,8 @@ namespace Cad_Point_Manager.ViewModels
         // Undo/Redo Commands
         public ICommand UndoCommand { get; }
         public ICommand RedoCommand { get; }
+
+        public ICommand DeleteCommand { get; set; }
         #endregion
 
         #region Events
@@ -472,18 +475,14 @@ namespace Cad_Point_Manager.ViewModels
 
             ZoomToExtentsCommand = new RelayCommand<RoutedEventArgs>(ZoomToExtents);
 
-            UndoCommand = new RelayCommand(
-                () => JobFileManager.CadManager.UndoRedoManager.Undo(),
-                () => JobFileManager.CadManager.UndoRedoManager.CanUndo);
-            RedoCommand = new RelayCommand(
-                () => JobFileManager.CadManager.UndoRedoManager.Redo(),
-                () => JobFileManager.CadManager.UndoRedoManager.CanRedo);
+            UndoCommand = new RelayCommand<RoutedEventArgs>(Undo);
+            RedoCommand = new RelayCommand<RoutedEventArgs>(Redo);
 
             SelectedGeometries.CollectionChanged += SelectedGeometries_CollectionChanged;
         }
         #endregion
 
-        #region Public Methods
+        #region Methods
         public void NewJob(RoutedEventArgs e)
         {
             var result = MessageBox.Show("Save current job before exiting?", "Warning", MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
@@ -547,6 +546,20 @@ namespace Cad_Point_Manager.ViewModels
         public void SaveJobAs(RoutedEventArgs e)
         {
 
+        }
+        public void Undo(RoutedEventArgs e)
+        {
+            if (JobFileManager.CadManager.UndoRedoManager.CanUndo)
+            {
+                JobFileManager.CadManager.UndoRedoManager.Undo();
+            }
+        }
+        public void Redo(RoutedEventArgs e)
+        {
+            if (JobFileManager.CadManager.UndoRedoManager.CanRedo)
+            {
+                JobFileManager.CadManager.UndoRedoManager.Redo();
+            }
         }
         public async void PrintJob(RoutedEventArgs e)
         {
@@ -624,6 +637,17 @@ namespace Cad_Point_Manager.ViewModels
             catch (Exception ex)
             {
                 MessageBox.Show($"Failed to export points.\n\n{ex.Message}", "Export Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        public void Delete(RoutedEventArgs e)
+        {
+            if (JobFileManager.CadManager.SnapSelectionMode == Enums.SelectionMode.CogoPoints)
+            {
+                if (SelectedCogoPoints.Count > 0)
+                {
+                    
+                }
             }
         }
 

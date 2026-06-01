@@ -50,7 +50,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             EntityObject = mtext;
             Layer = layer;
             IsPartOfBlock = isPartOfBlock;
-            DrawingBlock3D = block;
+            DrawingBlock = block;
             ColorByLayer = EntityObject.Color.IsByLayer;
             AttachmentPoint = TextRenderingHelpers.GetAttachmentPoint(DxfMtext.AttachmentPoint);
 
@@ -349,14 +349,15 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             string overstrikeEndPattern = @"\\o";
             string strikethroughStartPattern = @"\\K";
             string strikethroughEndPattern = @"\\k";
-            string alignLeftPattern = @"\\pxql;";
-            string alignCenterPattern = @"\\pxqc;";
-            string alignRightPattern = @"\\pxqr;";
-            string alignJustifyPattern = @"\\pxqj;";
-            string alignDistributedPattern = @"\\pxqd;";
+            string paraAlignLeftPattern = @"\\pxql;";
+            string paraAlignCenterPattern = @"\\pxqc;";
+            string paraAlignRightPattern = @"\\pxqr;";
+            string paraAlignJustifyPattern = @"\\pxqj;";
+            string paraAlignDistributedPattern = @"\\pxqd;";
             string paragraphIndentPattern = @"\\pi([\d.]+);";
+            string alignmentPattern = @"\\A([012]);";
 
-            string pattern = $@"((\\[LOkoK])|{aciColorPattern}|{trueTypeColorPattern}|{fontPattern}|{heightPattern}|{lineBreakPattern}|{paragraphIndentPattern}|{underlineStartPattern}|{underlineEndPattern}|{overstrikeStartPattern}|{overstrikeEndPattern}|{strikethroughStartPattern}|{strikethroughEndPattern}|{alignLeftPattern}|{alignCenterPattern}|{alignRightPattern}|{alignJustifyPattern}|{alignDistributedPattern}|[^{{}}\\]+)";
+            string pattern = $@"((\\[LOkoK])|{aciColorPattern}|{trueTypeColorPattern}|{fontPattern}|{heightPattern}|{lineBreakPattern}|{paragraphIndentPattern}|{underlineStartPattern}|{underlineEndPattern}|{overstrikeStartPattern}|{overstrikeEndPattern}|{strikethroughStartPattern}|{strikethroughEndPattern}|{paraAlignLeftPattern}|{paraAlignCenterPattern}|{paraAlignRightPattern}|{paraAlignJustifyPattern}|{paraAlignDistributedPattern}|{alignmentPattern}|[^{{}}\\]+)";
 
             Enums.TextAlignment baseAlignment;
             if (AttachmentPoint == Enums.TextAttachmentPoint.TopRight ||
@@ -391,7 +392,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                         {
                             if (IsPartOfBlock)
                             {
-                                currentSegment.Color = DrawingBlock3D.Color;
+                                currentSegment.Color = DrawingBlock.Color;
                             }
                             else
                             {
@@ -466,25 +467,30 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                     {
                         currentSegment.IsStrikethrough = false;
                     }
-                    else if (Regex.IsMatch(value, alignLeftPattern))
+                    else if (Regex.IsMatch(value, paraAlignLeftPattern))
                     {
                         currentSegment.TextAlignment = Enums.TextAlignment.Left;
                     }
-                    else if (Regex.IsMatch(value, alignCenterPattern))
+                    else if (Regex.IsMatch(value, paraAlignCenterPattern))
                     {
                         currentSegment.TextAlignment = Enums.TextAlignment.Center;
                     }
-                    else if (Regex.IsMatch(value, alignRightPattern))
+                    else if (Regex.IsMatch(value, paraAlignRightPattern))
                     {
                         currentSegment.TextAlignment = Enums.TextAlignment.Right;
                     }
-                    else if (Regex.IsMatch(value, alignJustifyPattern))
+                    else if (Regex.IsMatch(value, paraAlignJustifyPattern))
                     {
                         currentSegment.TextAlignment = Enums.TextAlignment.Justified;
                     }
-                    else if (Regex.IsMatch(value, alignDistributedPattern))
+                    else if (Regex.IsMatch(value, paraAlignDistributedPattern))
                     {
                         currentSegment.TextAlignment = Enums.TextAlignment.Distributed;
+                    }
+                    else if (Regex.IsMatch(value, alignmentPattern))
+                    {
+                        int alignment =
+                            int.Parse(Regex.Match(value, alignmentPattern).Groups[1].Value);
                     }
                     else
                     {

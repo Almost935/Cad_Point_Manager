@@ -52,6 +52,18 @@
                          Color="#3300FFFF" />
     </Page.Resources>
 
+    <Page.InputBindings>
+
+        <KeyBinding Key="Z"
+                    Modifiers="Control"
+                    Command="{Binding UndoCommand}" />
+
+        <KeyBinding Key="Y"
+                    Modifiers="Control"
+                    Command="{Binding RedoCommand}" />
+
+    </Page.InputBindings>
+
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />

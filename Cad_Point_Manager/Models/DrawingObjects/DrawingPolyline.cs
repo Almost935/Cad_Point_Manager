@@ -25,7 +25,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             Type = DrawingObjectType.DrawingPolyline;
             Layer = layer;
             IsPartOfBlock = isPartOfBlock;
-            DrawingBlock3D = block;
+            DrawingBlock = block;
             EntityObject = polyline2D;
             ColorByLayer = EntityObject.Color.IsByLayer;
 
@@ -38,7 +38,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             Type = DrawingObjectType.DrawingPolyline;
             Layer = layer;
             IsPartOfBlock = isPartOfBlock;
-            DrawingBlock3D = block;
+            DrawingBlock = block;
             EntityObject = polyline3D;
             ColorByLayer = EntityObject.Color.IsByLayer;
 

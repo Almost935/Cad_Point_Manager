@@ -15,7 +15,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         public Vector4 Color { get; set; }
         public DrawingObject3dColorType DrawingObject3DColorType { get; set; }
         public bool IsPartOfBlock { get; set; } = false;
-        public DrawingBlock DrawingBlock3D { get; set; }
+        public DrawingBlock DrawingBlock { get; set; }
         public bool ColorByLayer { get; set; }
         #endregion
 
@@ -42,7 +42,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             else if (EntityObject.Color.IsByBlock)
             {
                 DrawingObject3DColorType = DrawingObject3dColorType.ByBlock;
-                if (DrawingBlock3D is not null) { Color = DrawingBlock3D.Color; }
+                if (DrawingBlock is not null) { Color = DrawingBlock.Color; }
                 else { Color = new(0, 0, 0, 1); }
             }
             else

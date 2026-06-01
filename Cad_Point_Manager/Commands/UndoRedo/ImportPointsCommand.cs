@@ -45,8 +45,6 @@ namespace Cad_Point_Manager.Commands.UndoRedo
 
             foreach (var row in _rows)
             {
-                var pg = _cadManager.GetPointGroup(row.PointGroup);
-
                 Vector3 position = new(
                     (float)row.Easting,
                     (float)row.Northing,
@@ -57,7 +55,7 @@ namespace Cad_Point_Manager.Commands.UndoRedo
                         _cadManager,
                         row.PointNumber,
                         position,
-                        pg,
+                        row.PointGroup,
                         (float)(row.Elevation ?? 0),
                         row.Description ?? ""));
             }

@@ -10,7 +10,8 @@
         DrawingSText,
         DrawingMtext,
         DrawingMtextSegment,
-        DrawingSpline
+        DrawingSpline,
+        DrawingDimension
     }
 
     public enum DrawingObject3dColorType
@@ -18,5 +19,15 @@
         ByLayer,
         ByBlock,
         ByObject
+    }
+
+    public enum DrawingDimensionType
+    {
+        Linear,
+        Aligned,
+        Angular,
+        Diameter,
+        Radius,
+        Ordinate
     }
 }

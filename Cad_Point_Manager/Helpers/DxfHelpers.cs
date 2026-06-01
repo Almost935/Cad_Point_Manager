@@ -1,4 +1,5 @@
 ﻿using Cad_Point_Manager.Models.DrawingObjects;
+using Cad_Point_Manager.Models.DrawingObjects.Dimensioning;
 using netDxf;
 using netDxf.Entities;
 using netDxf.Header;
@@ -55,6 +56,8 @@ namespace Cad_Point_Manager.Helpers
                 MText mtext => new DrawingMtext(mtext, layer),
                 Text text => new DrawingSText(text, layer),
                 Spline spline => new DrawingSpline(spline, layer),
+                AlignedDimension alignedDimension => new DrawingAlignedDimension(alignedDimension, layer),
+                LinearDimension linearDimension => new DrawingLinearDimension(linearDimension, layer),
                 _ => null,
             };
         }

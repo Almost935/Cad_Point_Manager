@@ -16,7 +16,7 @@ namespace Cad_Point_Manager.Commands.UndoRedo
 
         private readonly int _pointNumber;
         private readonly Vector3 _position;
-        private readonly PointGroup _group;
+        private readonly string _groupName;
         private readonly float _elevation;
         private readonly string _description;
 
@@ -34,14 +34,14 @@ namespace Cad_Point_Manager.Commands.UndoRedo
             CadManager cadManager,
             int pointNumber,
             Vector3 position,
-            PointGroup group,
+            string groupName,
             float elevation,
             string description)
         {
             _cadManager = cadManager;
             _pointNumber = pointNumber;
             _position = position;
-            _group = group;
+            _groupName = groupName;
             _elevation = elevation;
             _description = description;
         }
@@ -53,7 +53,7 @@ namespace Cad_Point_Manager.Commands.UndoRedo
             _cadManager = cadManager;
             _pointNumber = cogoPoint.PointNumber;
             _position = cogoPoint.Position.ToSharpDXVector3();
-            _group = cogoPoint.PointGroup;
+            _groupName = cogoPoint.PointGroup.Name;
             _elevation = cogoPoint.Elevation.ToFloat();
             _description = cogoPoint.Description;
         }
@@ -63,7 +63,7 @@ namespace Cad_Point_Manager.Commands.UndoRedo
             _succeeded = _cadManager.TryCreatePointInternal(
                 _pointNumber,
                 _position,
-                _group,
+                _groupName,
                 out _createdPoint,
                 out _errorMessage,
                 _elevation,
@@ -76,13 +76,5 @@ namespace Cad_Point_Manager.Commands.UndoRedo
 
             _cadManager.TryDeletePointInternal(_createdPoint);
         }
-
-        //public void MarkDirty()
-        //{
-        //    _cadManager.CogoPointCircleVerticesDirty = true;
-        //    _cadManager.CogoPointTextVerticesDirty = true;
-        //    //_cadManager.HitTestableObjectTreeDirty = true;
-        //    _cadManager.UpdateExtents();
-        //}
     }
 }

@@ -29,7 +29,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             Type = DrawingObjectType.DrawingArc;
             Layer = layer;
             IsPartOfBlock = isPartOfBlock;
-            DrawingBlock3D = block;
+            DrawingBlock = block;
             EntityObject = arc;
             ColorByLayer = EntityObject.Color.IsByLayer;
 
