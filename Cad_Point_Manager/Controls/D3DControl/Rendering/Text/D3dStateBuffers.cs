@@ -152,8 +152,12 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
             baseFlags |= (uint)ObjectFlags.Visible;
             if (obj.IsSelected) { baseFlags |= (uint)ObjectFlags.Selected; }
             if (obj.IsMouseOver) { baseFlags |= (uint)ObjectFlags.MouseOver; }
-            if (obj.ColorType == ColorType.ByLayer) { baseFlags |= (uint)ObjectFlags.ColorByLayer; }
-            ObjectSpan[(int)oId] = new ObjectState { Color = obj.Color, Flags = baseFlags };
+
+            Vector4 color = obj.ObjectColor;
+            if (obj.ColorType == ColorType.ByLayer) { color = obj.Layer.Color; baseFlags |= (uint)ObjectFlags.ColorByLayer; }
+            else if (obj.ColorType == ColorType.ByBlock) { color = obj.BlockColor; }
+
+            ObjectSpan[(int)oId] = new ObjectState { Color = color, Flags = baseFlags };
         }
 
         public void EnsureLabelCapacity(int count)

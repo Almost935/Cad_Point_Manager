@@ -96,7 +96,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             var verts = TextVertices;
             if (verts == null || verts.Count < 3) { return; }
 
-            var brush = new XSolidBrush(PdfTransform.ToXColor(Color.ToVector4()));
+            var brush = new XSolidBrush(PdfTransform.ToXColor(ObjectColor.ToVector4()));
             var path = new XGraphicsPath();
 
             for (int i = 0; i + 2 < verts.Count; i += 3)

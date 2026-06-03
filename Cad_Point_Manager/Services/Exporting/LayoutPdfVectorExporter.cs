@@ -109,7 +109,7 @@ namespace Cad_Point_Manager.Services.Exporting
 
                 foreach (var obj in layer.DrawingObjects)
                 {
-                    var pen = new XPen(PdfTransform.ToXColor(obj.Color.ToVector4()), 0.0);
+                    var pen = new XPen(PdfTransform.ToXColor(obj.ObjectColor.ToVector4()), 0.0);
                     obj.DrawToPdf(gfx, worldToPdf, pen);
                 }
             }
@@ -175,7 +175,7 @@ namespace Cad_Point_Manager.Services.Exporting
 
                 foreach (var obj in layer.DrawingObjects)
                 {
-                    var pen = new XPen(PdfTransform.ToXColor(obj.Color.ToVector4()), 0.0);
+                    var pen = new XPen(PdfTransform.ToXColor(obj.ObjectColor.ToVector4()), 0.0);
                     obj.DrawToPdf(gfx, worldToPdf, pen);
                 }
             }
@@ -234,7 +234,7 @@ namespace Cad_Point_Manager.Services.Exporting
                 foreach (var obj in layer.DrawingObjects)
                 {
                     var pen = new XPen(
-                        PdfTransform.ToXColor(obj.Color.ToVector4()),
+                        PdfTransform.ToXColor(obj.ObjectColor.ToVector4()),
                         0.0);
                     obj.DrawToPdf(gfx, worldToPdf, pen);
                 }

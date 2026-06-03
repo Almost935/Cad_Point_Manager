@@ -88,6 +88,11 @@ namespace Cad_Point_Manager.Helpers
             }
         }
 
+        public static Vector4 GetObjectColor(EntityObject entity)
+        {
+           return new(entity.Color.R / 255.0f, entity.Color.G / 255.0f, entity.Color.B / 255.0f, 1);
+        }
+
         public static (byte r, byte g, byte b, byte a) GetRGBAColor(EntityObject entity)
         {
             byte r, g, b, a;

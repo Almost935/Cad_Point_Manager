@@ -26,7 +26,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
     {
         #region Fields
         // Debugging
-        public const string _debugTextFilter = "vsgas";
+        public const string _debugTextFilter = "Base";
 
         private const int _fontRenderingMinimumSize = 50;
         #endregion
@@ -233,7 +233,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
                     var fontSizePts = seg.TextHeight * seg.FontSizeFactor * worldToPdf.M11;
                     var font = new XFont(fontFamily, fontSizePts, style);
-                    var brush = new XSolidBrush(PdfTransform.ToXColor(seg.Color.ToVector4()));
+                    var brush = new XSolidBrush(PdfTransform.ToXColor(seg.ObjectColor.ToVector4()));
 
                     var pPdf = PdfDrawingHelpers.WorldToPdf(new Vector2(seg.Position.X, seg.Position.Y), worldToPdf);
                     var size = gfx.MeasureString(seg.Text, font);
@@ -334,14 +334,14 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                     { alignment = Enums.TextAlignment.Center; }
                     else { alignment = Enums.TextAlignment.Left; }
 
-                    TextSegmentInformation segmentInfo = new(text, Color, ColorType, FontFamilyName, DxfMtext.Height,
+                    TextSegmentInformation segmentInfo = new(text, ObjectColor, ColorType, FontFamilyName, DxfMtext.Height,
                         IsBold, IsItalic, false, false, false, false, alignment);
                     var textSegment = CreateMtextSegment(segmentInfo, resCache, layerId, sceneIdMap, stateBuffers);
                     MtextBlock.AddSegment(textSegment);
 
-                    //Debug.WriteLineIf(text.Contains(_debugTextFilter), $"Single Line Texts: segmentInfo.Text: {segmentInfo.Text} " +
-                    //    $"\nsegmentInfo.ColorType: {segmentInfo.ColorType} segmentInfo.Color: {segmentInfo.Color}" +
-                    //    $"\nColorType: {ColorType} Color: {Color}\n");
+                    Debug.WriteLineIf(text.Contains(_debugTextFilter), $"Single Line Texts: segmentInfo.Text: {segmentInfo.Text} " +
+                        $"\nsegmentInfo.ColorType: {segmentInfo.ColorType} segmentInfo.Color: {segmentInfo.ObjectColor}" +
+                        $"\nColorType: {ColorType} ObjectColor: {ObjectColor} BlockColor: {BlockColor}\n");
                 }
                 return;
             }
@@ -382,7 +382,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             else { baseAlignment = Enums.TextAlignment.Left; }
 
             UpdateColor();
-            TextSegmentInformation currentSegment = new("", Color, ColorType, FontFamilyName, DxfMtext.Height, IsBold, IsItalic, false, false, false, false, baseAlignment);
+            TextSegmentInformation currentSegment = new("", ObjectColor, ColorType, FontFamilyName, DxfMtext.Height, IsBold, IsItalic, false, false, false, false, baseAlignment);
 
             foreach (var text in texts)
             {
@@ -403,7 +403,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                         {
                             if (IsPartOfBlock && DrawingBlock != null)
                             {
-                                currentSegment.Color = DrawingBlock.Color;
+                                currentSegment.ObjectColor = DrawingBlock.ObjectColor;
                                 currentSegment.ColorType = DrawingBlock.ColorType;
 
                                 //Debug.WriteLineIf(DxfMtext.PlainText().Contains(_debugTextFilter), $"1: text: {text} " +
@@ -412,7 +412,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                             else
                             {
                                 var aciColor = AciColor.Default;
-                                currentSegment.Color = new(aciColor.R / 255.0f, aciColor.G / 255.0f, aciColor.B / 255.0f, 1.0f);
+                                currentSegment.ObjectColor = new(aciColor.R / 255.0f, aciColor.G / 255.0f, aciColor.B / 255.0f, 1.0f);
 
                                 //Debug.WriteLineIf(DxfMtext.PlainText().Contains(_debugTextFilter), $"2: text: {text} " +
                                 //    $"\ncurrentSegment.ColorType: {currentSegment.ColorType} currentSegment.Color: {currentSegment.Color}\n");
@@ -420,7 +420,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                         }
                         else if (colorI == 256)
                         {
-                            currentSegment.Color = Layer.Color;
+                            currentSegment.ObjectColor = Layer.Color;
                             currentSegment.ColorType = ColorType.ByLayer;
 
                             //Debug.WriteLineIf(DxfMtext.PlainText().Contains(_debugTextFilter), $"3: text: {text} " +
@@ -429,7 +429,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                         else
                         {
                             var vector = AutoCadColorConverter.ConvertACINumberToRGBA((short)colorI);
-                            currentSegment.Color = new((float)vector.X, (float)vector.Y, (float)vector.Z, (float)vector.W);
+                            currentSegment.ObjectColor = new((float)vector.X, (float)vector.Y, (float)vector.Z, (float)vector.W);
                             currentSegment.ColorType = ColorType.ByObject;
 
                             //Debug.WriteLineIf(DxfMtext.PlainText().Contains(_debugTextFilter), $"4: text: {text} " +
@@ -441,7 +441,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                         int colorI = int.Parse(Regex.Match(value, trueTypeColorPattern).Groups[1].Value);
                         var trueTypeColor = AutoCadColorConverter.ConvertTrueColorToVector4(colorI);
 
-                        currentSegment.Color = new((float)trueTypeColor.X, (float)trueTypeColor.Y, (float)trueTypeColor.Z, (float)trueTypeColor.W);
+                        currentSegment.ObjectColor = new((float)trueTypeColor.X, (float)trueTypeColor.Y, (float)trueTypeColor.Z, (float)trueTypeColor.W);
                         currentSegment.ColorType = ColorType.ByObject;
 
                         //Debug.WriteLineIf(DxfMtext.PlainText().Contains(_debugTextFilter), $"5: text: {text} " +
@@ -528,7 +528,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                         currentSegment.Text = currentSegment.Text.TrimEnd();
                         if (currentSegment.HasValue) { textSegments.Add(currentSegment); }
 
-                        currentSegment = new("", currentSegment.Color, currentSegment.ColorType, currentSegment.Font, currentSegment.TextHeight,
+                        currentSegment = new("", currentSegment.ObjectColor, currentSegment.ColorType, currentSegment.Font, currentSegment.TextHeight,
                             currentSegment.IsBold, currentSegment.IsItalic, currentSegment.IsUnderlined, currentSegment.IsOverstriked, 
                             currentSegment.IsStrikethrough, currentSegment.IsNewLine, currentSegment.TextAlignment);
 
@@ -555,7 +555,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
                             if (i != 0) { isNewLine = false; }
 
-                            var newSegmentInfo = new TextSegmentInformation(segmentText, segmentInfo.Color, segmentInfo.ColorType, segmentInfo.Font, segmentInfo.TextHeight,
+                            var newSegmentInfo = new TextSegmentInformation(segmentText, segmentInfo.ObjectColor, segmentInfo.ColorType, segmentInfo.Font, segmentInfo.TextHeight,
                                 segmentInfo.IsBold, segmentInfo.IsItalic, segmentInfo.IsUnderlined, segmentInfo.IsOverstriked, segmentInfo.IsStrikethrough,
                                 isNewLine, segmentInfo.TextAlignment);
                             var newSegment = CreateMtextSegment(newSegmentInfo, resCache, layerId, sceneIdMap, stateBuffers);
@@ -590,7 +590,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             SceneIdMap sceneIdMap,
             D3dStateBuffers stateBuffers)
         {
-            DrawingMtextSegment segment = new(this, Layer, segmentInfo.Text, segmentInfo.Color, segmentInfo.ColorType, 
+            DrawingMtextSegment segment = new(this, Layer, segmentInfo.Text, segmentInfo.ObjectColor, segmentInfo.ColorType, 
                 Vector3.Zero, 0, (float)segmentInfo.TextHeight, segmentInfo.Font, segmentInfo.IsItalic, segmentInfo.IsBold,
                 segmentInfo.IsUnderlined, segmentInfo.IsStrikethrough, segmentInfo.IsOverstriked, segmentInfo.IsNewLine, 
                 0, segmentInfo.TextAlignment);
@@ -615,7 +615,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
     {
         #region Properties
         public string Text { get; set; }
-        public Vector4 Color { get; set; }
+        public Vector4 ObjectColor { get; set; }
         public ColorType ColorType { get; set; }
         public string Font { get; set; }
         public double TextHeight { get; set; }
@@ -631,12 +631,12 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         #endregion
 
         #region Constructors
-        public TextSegmentInformation(string text = "", Vector4? color = null, ColorType colorType = ColorType.ByObject, string font = "Arial", 
+        public TextSegmentInformation(string text = "", Vector4? objectColor = null, ColorType colorType = ColorType.ByObject, string font = "Arial", 
             double textHeight = 0, bool isBold = false, bool isItalic = false, bool isUnderlined = false, bool isOverstrike = false, 
             bool isStrikethrough = false, bool isNewLine = false, Enums.TextAlignment textAlignment = Enums.TextAlignment.Left)
         {
             Text = text;
-            Color = color ?? new Vector4(0, 0, 0, 1);
+            ObjectColor = objectColor ?? new Vector4(0, 0, 0, 1);
             ColorType = colorType;
             Font = font;
             TextHeight = textHeight;

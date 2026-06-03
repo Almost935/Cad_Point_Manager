@@ -46,7 +46,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         #endregion
 
         #region Constructors
-        public DrawingMtextSegment(DrawingMtext drawingMtext, ObjectLayer layer, string text, Vector4 color, ColorType colorType, Vector3 position, 
+        public DrawingMtextSegment(DrawingMtext drawingMtext, ObjectLayer layer, string text, Vector4 objectColor, ColorType colorType, Vector3 position, 
             float rotation, float fontHeight, string fontFamilyName, bool isItalic, bool isBold, bool isUnderlined, bool isStrikeOut, 
             bool isOverStrike, bool isNewLine, float maxWidth, Enums.TextAlignment textAlignment = Enums.TextAlignment.Left)
         {
@@ -55,7 +55,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             Layer = layer;
             EntityObject = drawingMtext.EntityObject;
             Text = text;
-            Color = color;
+            ObjectColor = objectColor;
             ColorType = colorType;
             Position = position;
             Rotation = rotation;
@@ -75,8 +75,8 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             UpdateTransform();
 
             Debug.WriteLineIf(DrawingMtext.DxfMtext.PlainText().Contains(DrawingMtext._debugTextFilter), $"MtextSegment Constructor: Text: {Text} " +
-                $"\nColorType: {ColorType} Color: {Color}" +
-                $"\n{DrawingMtext.ColorType} {DrawingMtext.Color}\n");
+                $"\nColorType: {ColorType} ObjectColor: {ObjectColor} BlockColor: {BlockColor}" +
+                $"\n{DrawingMtext.ColorType} {DrawingMtext.ObjectColor}\n");
         }
         #endregion
 
