@@ -348,11 +348,11 @@ namespace Cad_Point_Manager.Models
                 if (e is Text text && string.IsNullOrWhiteSpace(text.Value)) { continue; }
 
                 var layer = GetLayer(e.Layer);
-                var drawingObj3d = DxfHelpers.GetDrawingObject3D(e, layer);
+                var drawingObj = DxfHelpers.GetDrawingObject(e, layer);
 
-                if (layer is not null && drawingObj3d is not null)
+                if (layer is not null && drawingObj is not null)
                 {
-                    layer.AddDrawingObject(drawingObj3d);
+                    layer.AddDrawingObject(drawingObj);
                 }
             }
 

@@ -17,13 +17,14 @@ namespace Cad_Point_Manager.Models.DrawingObjects.Dimensioning
         #endregion
 
         #region Constructors
-        public DrawingAlignedDimension(AlignedDimension alignedDimension, ObjectLayer layer, bool isPartOfBlock = false, DrawingBlock block = null)
+        public DrawingAlignedDimension(AlignedDimension alignedDimension, ObjectLayer layer, ColorType colorType, bool isPartOfBlock = false, DrawingBlock block = null)
         {
             EntityObject = alignedDimension;
             AlignedDimension = alignedDimension;
             Type = DrawingObjectType.DrawingDimension;
             DimensionType = DrawingDimensionType.Aligned;
             Layer = layer;
+            ColorType = colorType;
             IsPartOfBlock = isPartOfBlock;
             DrawingBlock = block;
 
@@ -38,7 +39,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects.Dimensioning
             _drawingObjects.Clear();
             foreach (var e in AlignedDimension.Block.Entities)
             {
-                var obj = DxfHelpers.GetDrawingObject3D(e, Layer);
+                var obj = DxfHelpers.GetDrawingObject(e, Layer);
                 if (obj is not null)
                 {
                     _drawingObjects.Add(obj);

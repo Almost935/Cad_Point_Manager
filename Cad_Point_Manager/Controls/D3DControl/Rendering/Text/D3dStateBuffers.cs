@@ -152,7 +152,7 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
             baseFlags |= (uint)ObjectFlags.Visible;
             if (obj.IsSelected) { baseFlags |= (uint)ObjectFlags.Selected; }
             if (obj.IsMouseOver) { baseFlags |= (uint)ObjectFlags.MouseOver; }
-            if (obj.ColorByLayer) { baseFlags |= (uint)ObjectFlags.ColorByLayer; }
+            if (obj.ColorType == ColorType.ByLayer) { baseFlags |= (uint)ObjectFlags.ColorByLayer; }
             ObjectSpan[(int)oId] = new ObjectState { Color = obj.Color, Flags = baseFlags };
         }
 

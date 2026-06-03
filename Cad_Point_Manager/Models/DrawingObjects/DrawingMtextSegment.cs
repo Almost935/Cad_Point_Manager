@@ -5,6 +5,7 @@ using PdfSharpCore.Drawing;
 using SharpDX;
 using SharpDX.DirectWrite;
 using SharpDX.Mathematics.Interop;
+using System.Diagnostics;
 using System.Windows;
 
 using FontStretch = SharpDX.DirectWrite.FontStretch;
@@ -16,9 +17,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects
     public class DrawingMtextSegment : DrawingObject, IDisposable
     {
         #region Fields
-        private const float _flatteningTolerance = 0.001f;
-
-        private int _fontRenderingMinimumSize;
         private TextFormat _textFormat = null;
         private FontFace _fontFace = null;
         #endregion
@@ -48,16 +46,17 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         #endregion
 
         #region Constructors
-        public DrawingMtextSegment(DrawingMtext drawingMtext, string text, Vector4 color, Vector3 position, float rotation,
-            float fontHeight, string fontFamilyName, bool isItalic, bool isBold, bool isUnderlined, bool isStrikeOut, bool isOverStrike,
-            bool isNewLine, int fontRenderingMinimumSize, float maxWidth, Enums.TextAlignment textAlignment = Enums.TextAlignment.Left)
+        public DrawingMtextSegment(DrawingMtext drawingMtext, ObjectLayer layer, string text, Vector4 color, ColorType colorType, Vector3 position, 
+            float rotation, float fontHeight, string fontFamilyName, bool isItalic, bool isBold, bool isUnderlined, bool isStrikeOut, 
+            bool isOverStrike, bool isNewLine, float maxWidth, Enums.TextAlignment textAlignment = Enums.TextAlignment.Left)
         {
             Type = DrawingObjectType.DrawingMtextSegment;
             DrawingMtext = drawingMtext;
+            Layer = layer;
             EntityObject = drawingMtext.EntityObject;
-            ColorByLayer = EntityObject.Color.IsByLayer;
             Text = text;
             Color = color;
+            ColorType = colorType;
             Position = position;
             Rotation = rotation;
             TextHeight = fontHeight;
@@ -68,20 +67,22 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             IsStrikeOut = isStrikeOut;
             IsOverStrike = isOverStrike;
             IsNewLine = isNewLine;
-            _fontRenderingMinimumSize = fontRenderingMinimumSize;
             MaxWidth = maxWidth;
             TextAlignment = textAlignment;
             GlowOffset = TextHeight * GlobalHelperProperties.TextHeightToGlowOffsetFactor;
 
+            UpdateColor();
             UpdateTransform();
+
+            Debug.WriteLineIf(DrawingMtext.DxfMtext.PlainText().Contains(DrawingMtext._debugTextFilter), $"MtextSegment Constructor: Text: {Text} " +
+                $"\nColorType: {ColorType} Color: {Color}" +
+                $"\n{DrawingMtext.ColorType} {DrawingMtext.Color}\n");
         }
         #endregion
 
         #region Methods
-        public override void UpdateData()
-        {
+        public override void UpdateData() { }
 
-        }
         public override void DrawToD2dDeviceContext(SharpDX.Direct2D1.DeviceContext1 deviceContext, SharpDX.Direct2D1.Factory2 factory,
             SharpDX.Direct2D1.Brush brush, float thickness, SharpDX.Direct2D1.StrokeStyle1 strokeStyle)
         {

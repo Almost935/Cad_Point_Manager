@@ -24,14 +24,14 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         #region Constructor
         //private DrawingArc() { Type = DrawingObject3dType.DrawingLine; }
 
-        public DrawingArc(Arc arc, ObjectLayer layer, bool isPartOfBlock = false, DrawingBlock block = null)
+        public DrawingArc(Arc arc, ObjectLayer layer, ColorType colorType, bool isPartOfBlock = false, DrawingBlock block = null)
         {
             Type = DrawingObjectType.DrawingArc;
             Layer = layer;
+            ColorType = colorType;
             IsPartOfBlock = isPartOfBlock;
             DrawingBlock = block;
             EntityObject = arc;
-            ColorByLayer = EntityObject.Color.IsByLayer;
 
             UpdateColor();
             UpdateData();

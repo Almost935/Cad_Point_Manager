@@ -13,10 +13,10 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         public ObjectLayer Layer { get; set; }
         public EntityObject EntityObject { get; set; }
         public Vector4 Color { get; set; }
-        public DrawingObject3dColorType DrawingObject3DColorType { get; set; }
+        public ColorType ColorType { get; set; }
         public bool IsPartOfBlock { get; set; } = false;
         public DrawingBlock DrawingBlock { get; set; }
-        public bool ColorByLayer { get; set; }
+        //public bool ColorByLayer { get; set; }
         #endregion
 
         #region Methods
@@ -34,22 +34,19 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
         public void UpdateColor()
         {
-            if (EntityObject.Color.IsByLayer)
+            if (ColorType == ColorType.ByLayer)
             {
-                DrawingObject3DColorType = DrawingObject3dColorType.ByLayer;
                 Color = Layer.Color;
             }
-            else if (EntityObject.Color.IsByBlock)
+            else if (ColorType == ColorType.ByBlock)
             {
-                DrawingObject3DColorType = DrawingObject3dColorType.ByBlock;
                 if (DrawingBlock is not null) { Color = DrawingBlock.Color; }
                 else { Color = new(0, 0, 0, 1); }
             }
-            else
-            {
-                DrawingObject3DColorType = DrawingObject3dColorType.ByObject;
-                Color = new(EntityObject.Color.R / 255.0f, EntityObject.Color.G / 255.0f, EntityObject.Color.B / 255.0f, 1);
-            }
+            //else
+            //{
+            //    Color = new(EntityObject.Color.R / 255.0f, EntityObject.Color.G / 255.0f, EntityObject.Color.B / 255.0f, 1);
+            //}
 
             if (Color.X == 1 && Color.Y == 1 && Color.Z == 1)
             {

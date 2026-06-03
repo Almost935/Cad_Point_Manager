@@ -18,17 +18,17 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         #endregion
 
         #region Constructors
-        public DrawingLine(Line line, ObjectLayer layer, bool isPartOfBlock = false, DrawingBlock block = null)
+        public DrawingLine(Line line, ObjectLayer layer, ColorType colorType, bool isPartOfBlock = false, DrawingBlock block = null)
         {
             Type = DrawingObjectType.DrawingLine;
             Layer = layer;
+            ColorType = colorType;
             IsPartOfBlock = isPartOfBlock;
             DrawingBlock = block;
             EntityObject = line;
-            ColorByLayer = EntityObject.Color.IsByLayer;
 
-            UpdateData();
             UpdateColor();
+            UpdateData();
         }
         #endregion
 

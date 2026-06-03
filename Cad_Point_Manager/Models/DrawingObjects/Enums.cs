@@ -14,7 +14,7 @@
         DrawingDimension
     }
 
-    public enum DrawingObject3dColorType
+    public enum ColorType
     {
         ByLayer,
         ByBlock,

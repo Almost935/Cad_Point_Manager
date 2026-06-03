@@ -20,13 +20,14 @@ namespace Cad_Point_Manager.Models.DrawingObjects.Dimensioning
         #endregion
 
         #region Constructors
-        public DrawingLinearDimension(LinearDimension linearDimension, ObjectLayer layer, bool isPartOfBlock = false, DrawingBlock block = null)
+        public DrawingLinearDimension(LinearDimension linearDimension, ObjectLayer layer, ColorType colorType, bool isPartOfBlock = false, DrawingBlock block = null)
         {
             EntityObject = linearDimension;
             LinearDimension = linearDimension;
             Type = DrawingObjectType.DrawingDimension;
             DimensionType = DrawingDimensionType.Linear;
             Layer = layer;
+            ColorType = colorType;
             IsPartOfBlock = isPartOfBlock;
             DrawingBlock = block;
 
@@ -41,7 +42,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects.Dimensioning
             _drawingObjects.Clear();
             foreach (var e in LinearDimension.Block.Entities)
             {
-                var obj = DxfHelpers.GetDrawingObject3D(e, Layer);
+                var obj = DxfHelpers.GetDrawingObject(e, Layer);
                 if (obj is not null)
                 {
                     _drawingObjects.Add(obj);

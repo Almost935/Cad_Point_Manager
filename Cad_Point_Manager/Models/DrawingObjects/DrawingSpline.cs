@@ -17,14 +17,14 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         #endregion
 
         #region Constructors
-        public DrawingSpline(Spline spline, ObjectLayer layer, bool isPartOfBlock = false, DrawingBlock block = null)
+        public DrawingSpline(Spline spline, ObjectLayer layer, ColorType colorType, bool isPartOfBlock = false, DrawingBlock block = null)
         {
             Type = DrawingObjectType.DrawingSpline;
             EntityObject = spline;
             Layer = layer;
+            ColorType = colorType;
             IsPartOfBlock = isPartOfBlock;
             DrawingBlock = block;
-            ColorByLayer = EntityObject.Color.IsByLayer;
 
             UpdateColor();
             UpdateData();
@@ -37,7 +37,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             if (EntityObject is Spline spline)
             {
                 _polyline = spline.ToPolyline2D(_polylineApproximationPrecision);
-                PolylineApproximation = new(_polyline, Layer, isPartOfBlock: IsPartOfBlock, block: DrawingBlock);
+                PolylineApproximation = new(_polyline, Layer, ColorType, isPartOfBlock: IsPartOfBlock, block: DrawingBlock);
             }
             else
             {

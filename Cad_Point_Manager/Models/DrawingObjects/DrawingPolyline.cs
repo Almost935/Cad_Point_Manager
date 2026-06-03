@@ -20,27 +20,27 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         #region Constructors
         //private DrawingPolyline() { Type = DrawingObject3dType.DrawingPolyline; }
 
-        public DrawingPolyline(Polyline2D polyline2D, ObjectLayer layer, bool isPartOfBlock = false, DrawingBlock block = null)
+        public DrawingPolyline(Polyline2D polyline2D, ObjectLayer layer, ColorType colorType, bool isPartOfBlock = false, DrawingBlock block = null)
         {
             Type = DrawingObjectType.DrawingPolyline;
             Layer = layer;
+            ColorType = colorType;
             IsPartOfBlock = isPartOfBlock;
             DrawingBlock = block;
             EntityObject = polyline2D;
-            ColorByLayer = EntityObject.Color.IsByLayer;
 
             UpdateColor();
             UpdateData();
         }
 
-        public DrawingPolyline(Polyline3D polyline3D, ObjectLayer layer, bool isPartOfBlock = false, DrawingBlock block = null)
+        public DrawingPolyline(Polyline3D polyline3D, ObjectLayer layer, ColorType colorType, bool isPartOfBlock = false, DrawingBlock block = null)
         {
             Type = DrawingObjectType.DrawingPolyline;
             Layer = layer;
+            ColorType = colorType;
             IsPartOfBlock = isPartOfBlock;
             DrawingBlock = block;
             EntityObject = polyline3D;
-            ColorByLayer = EntityObject.Color.IsByLayer;
 
             UpdateColor();
             UpdateData();

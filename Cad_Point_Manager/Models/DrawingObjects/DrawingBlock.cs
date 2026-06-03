@@ -60,16 +60,15 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         #endregion
 
         #region Constructors
-        public DrawingBlock(Insert insert, ObjectLayer layer, bool isPartOfBlock = false, DrawingBlock block = null)
+        public DrawingBlock(Insert insert, ObjectLayer layer, ColorType colorType, bool isPartOfBlock = false, DrawingBlock block = null)
         {
             Type = DrawingObjectType.DrawingBlock;
             DxfInsert = insert;
-
             EntityObject = insert;
             Layer = layer;
+            ColorType = colorType;
             IsPartOfBlock = isPartOfBlock;
             DrawingBlock = block;
-            ColorByLayer = EntityObject.Color.IsByLayer;
 
             UpdateColor();
             UpdateData();
@@ -160,7 +159,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
                 foreach (var e in objs)
                 {
-                    var obj = DxfHelpers.GetDrawingObject3D(e, Layer);
+                    var obj = DxfHelpers.GetDrawingObject(e, Layer);
                     if (obj is not null) { DrawingObjects.Add(obj); }
                 }
             }

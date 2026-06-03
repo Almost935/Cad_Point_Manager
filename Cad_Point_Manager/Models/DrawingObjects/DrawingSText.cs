@@ -44,15 +44,15 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         #endregion
 
         #region Constructor
-        public DrawingSText(Text text, ObjectLayer layer, bool isPartOfBlock = false, DrawingBlock block = null)
+        public DrawingSText(Text text, ObjectLayer layer, ColorType colorType, bool isPartOfBlock = false, DrawingBlock block = null)
         {
             Type = DrawingObjectType.DrawingSText;
             EntityObject = text;
             DxfText = text;
             Layer = layer;
+            ColorType = colorType;
             IsPartOfBlock = isPartOfBlock;
             DrawingBlock = block;
-            ColorByLayer = EntityObject.Color.IsByLayer;
 
             UpdateColor();
             UpdateData();

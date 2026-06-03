@@ -43,21 +43,21 @@ namespace Cad_Point_Manager.Helpers
         }
 
         // DrawingObject3D getters
-        public static DrawingObject GetDrawingObject3D(EntityObject e, ObjectLayer layer)
+        public static DrawingObject GetDrawingObject(EntityObject e, ObjectLayer layer)
         {
             return e switch
             {
-                Line line => new DrawingLine(line, layer),
-                Arc arc => new DrawingArc(arc, layer),
-                Polyline2D polyline2D => new DrawingPolyline(polyline2D, layer),
-                Polyline3D polyline3D => new DrawingPolyline(polyline3D, layer),
-                Circle circle => new DrawingCircle(circle, layer),
-                Insert block => new DrawingBlock(block, layer),
-                MText mtext => new DrawingMtext(mtext, layer),
-                Text text => new DrawingSText(text, layer),
-                Spline spline => new DrawingSpline(spline, layer),
-                AlignedDimension alignedDimension => new DrawingAlignedDimension(alignedDimension, layer),
-                LinearDimension linearDimension => new DrawingLinearDimension(linearDimension, layer),
+                Line line => new DrawingLine(line, layer, GetColorType(line)),
+                Arc arc => new DrawingArc(arc, layer, GetColorType(arc)),
+                Polyline2D polyline2D => new DrawingPolyline(polyline2D, layer, GetColorType(polyline2D)),
+                Polyline3D polyline3D => new DrawingPolyline(polyline3D, layer, GetColorType(polyline3D)),
+                Circle circle => new DrawingCircle(circle, layer, GetColorType(circle)),
+                Insert block => new DrawingBlock(block, layer, GetColorType(block)),
+                MText mtext => new DrawingMtext(mtext, layer, GetColorType(mtext)),
+                Text text => new DrawingSText(text, layer, GetColorType(text)),
+                Spline spline => new DrawingSpline(spline, layer, GetColorType(spline)),
+                AlignedDimension alignedDimension => new DrawingAlignedDimension(alignedDimension, layer, GetColorType(alignedDimension)),
+                LinearDimension linearDimension => new DrawingLinearDimension(linearDimension, layer, GetColorType(linearDimension)),
                 _ => null,
             };
         }
@@ -65,11 +65,27 @@ namespace Cad_Point_Manager.Helpers
         {
             return e switch
             {
-                Line line => new DrawingLine(line, layer),
-                Arc arc => new DrawingArc(arc, layer),
-                Circle circle => new DrawingCircle(circle, layer),
+                Line line => new DrawingLine(line, layer, GetColorType(line)),
+                Arc arc => new DrawingArc(arc, layer, GetColorType(arc)),
+                Circle circle => new DrawingCircle(circle, layer, GetColorType(circle)),
                 _ => null,
             };
+        }
+
+        public static ColorType GetColorType(EntityObject entity)
+        {
+            if (entity.Color.IsByLayer)
+            {
+                return ColorType.ByLayer;
+            }
+            else if (entity.Color.IsByBlock)
+            {
+                return ColorType.ByBlock;
+            }
+            else
+            {
+                return ColorType.ByObject;
+            }
         }
 
         public static (byte r, byte g, byte b, byte a) GetRGBAColor(EntityObject entity)
