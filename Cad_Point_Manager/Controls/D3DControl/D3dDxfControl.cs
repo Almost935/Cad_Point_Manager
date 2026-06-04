@@ -948,7 +948,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             {
                 RectMinWorld = new Vector2((float)r.Left, (float)r.Top),
                 RectMaxWorld = new Vector2((float)r.Right, (float)r.Bottom),
-                ThicknessPx = 1.5f,     // tweak as desired
+                ThicknessPx = 1.0f,     // tweak as desired
                 FeatherPx = 1.0f,     // small AA feather
                 BorderColor = new Vector4(0f, 0.749f, 1f, 1f) // DeepSkyBlue like your lines
             };

@@ -2,6 +2,7 @@
 using Cad_Point_Manager.Helpers;
 using netDxf.Entities;
 using PdfSharpCore.Drawing;
+using SharpDX;
 using SharpDX.Direct2D1;
 using SharpDX.Mathematics.Interop;
 using System.Windows;
@@ -24,10 +25,11 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         #region Constructor
         //private DrawingArc() { Type = DrawingObject3dType.DrawingLine; }
 
-        public DrawingArc(Arc arc, ObjectLayer layer, ColorType colorType, bool isPartOfBlock = false, DrawingBlock block = null)
+        public DrawingArc(Arc arc, ObjectLayer layer, Vector4 objectColor, ColorType colorType, bool isPartOfBlock = false, DrawingBlock block = null)
         {
             Type = DrawingObjectType.DrawingArc;
             Layer = layer;
+            ObjectColor = objectColor;
             ColorType = colorType;
             IsPartOfBlock = isPartOfBlock;
             DrawingBlock = block;

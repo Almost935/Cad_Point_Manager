@@ -20,10 +20,11 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         #endregion
 
         #region Constructor
-        public DrawingCircle(Circle circle, ObjectLayer layer, ColorType colorType, bool isPartOfBlock = false, DrawingBlock block = null)
+        public DrawingCircle(Circle circle, ObjectLayer layer, Vector4 objectColor, ColorType colorType, bool isPartOfBlock = false, DrawingBlock block = null)
         {
             Type = DrawingObjectType.DrawingCircle;
             Layer = layer;
+            ObjectColor = objectColor;
             ColorType = colorType;
             IsPartOfBlock = isPartOfBlock;
             DrawingBlock = block;

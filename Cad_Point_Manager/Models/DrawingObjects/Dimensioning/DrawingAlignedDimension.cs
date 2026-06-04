@@ -3,6 +3,7 @@ using Cad_Point_Manager.Controls.D3DControl.Rendering.Text;
 using Cad_Point_Manager.Helpers;
 using netDxf.Entities;
 using PdfSharpCore.Drawing;
+using SharpDX;
 using SharpDX.Direct2D1;
 using System.Diagnostics;
 using System.Windows;
@@ -17,13 +18,14 @@ namespace Cad_Point_Manager.Models.DrawingObjects.Dimensioning
         #endregion
 
         #region Constructors
-        public DrawingAlignedDimension(AlignedDimension alignedDimension, ObjectLayer layer, ColorType colorType, bool isPartOfBlock = false, DrawingBlock block = null)
+        public DrawingAlignedDimension(AlignedDimension alignedDimension, ObjectLayer layer, Vector4 objectcolor, ColorType colorType, bool isPartOfBlock = false, DrawingBlock block = null)
         {
             EntityObject = alignedDimension;
             AlignedDimension = alignedDimension;
             Type = DrawingObjectType.DrawingDimension;
             DimensionType = DrawingDimensionType.Aligned;
             Layer = layer;
+            ObjectColor = objectcolor;
             ColorType = colorType;
             IsPartOfBlock = isPartOfBlock;
             DrawingBlock = block;

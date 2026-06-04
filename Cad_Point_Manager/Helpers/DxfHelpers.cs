@@ -47,17 +47,17 @@ namespace Cad_Point_Manager.Helpers
         {
             return e switch
             {
-                Line line => new DrawingLine(line, layer, GetColorType(line)),
-                Arc arc => new DrawingArc(arc, layer, GetColorType(arc)),
-                Polyline2D polyline2D => new DrawingPolyline(polyline2D, layer, GetColorType(polyline2D)),
-                Polyline3D polyline3D => new DrawingPolyline(polyline3D, layer, GetColorType(polyline3D)),
-                Circle circle => new DrawingCircle(circle, layer, GetColorType(circle)),
-                Insert block => new DrawingBlock(block, layer, GetColorType(block)),
-                MText mtext => new DrawingMtext(mtext, layer, GetColorType(mtext)),
-                Text text => new DrawingSText(text, layer, GetColorType(text)),
-                Spline spline => new DrawingSpline(spline, layer, GetColorType(spline)),
-                AlignedDimension alignedDimension => new DrawingAlignedDimension(alignedDimension, layer, GetColorType(alignedDimension)),
-                LinearDimension linearDimension => new DrawingLinearDimension(linearDimension, layer, GetColorType(linearDimension)),
+                Line line => new DrawingLine(line, layer, GetObjectColor(line), GetColorType(line)),
+                Arc arc => new DrawingArc(arc, layer, GetObjectColor(arc), GetColorType(arc)),
+                Polyline2D polyline2D => new DrawingPolyline(polyline2D, layer, GetObjectColor(polyline2D), GetColorType(polyline2D)),
+                Polyline3D polyline3D => new DrawingPolyline(polyline3D, layer, GetObjectColor(polyline3D), GetColorType(polyline3D)),
+                Circle circle => new DrawingCircle(circle, layer, GetObjectColor(circle), GetColorType(circle)),
+                Insert block => new DrawingBlock(block, layer, GetObjectColor(block), GetColorType(block)),
+                MText mtext => new DrawingMtext(mtext, layer, GetObjectColor(mtext), GetColorType(mtext)),
+                Text text => new DrawingSText(text, layer, GetObjectColor(text), GetColorType(text)),
+                Spline spline => new DrawingSpline(spline, layer, GetObjectColor(spline), GetColorType(spline)),
+                AlignedDimension alignedDimension => new DrawingAlignedDimension(alignedDimension, layer, GetObjectColor(alignedDimension), GetColorType(alignedDimension)),
+                LinearDimension linearDimension => new DrawingLinearDimension(linearDimension, layer, GetObjectColor(linearDimension), GetColorType(linearDimension)),
                 _ => null,
             };
         }
@@ -65,9 +65,9 @@ namespace Cad_Point_Manager.Helpers
         {
             return e switch
             {
-                Line line => new DrawingLine(line, layer, GetColorType(line)),
-                Arc arc => new DrawingArc(arc, layer, GetColorType(arc)),
-                Circle circle => new DrawingCircle(circle, layer, GetColorType(circle)),
+                Line line => new DrawingLine(line, layer, GetObjectColor(line), GetColorType(line)),
+                Arc arc => new DrawingArc(arc, layer, GetObjectColor(arc), GetColorType(arc)),
+                Circle circle => new DrawingCircle(circle, layer, GetObjectColor(circle), GetColorType(circle)),
                 _ => null,
             };
         }
@@ -88,7 +88,7 @@ namespace Cad_Point_Manager.Helpers
             }
         }
 
-        public static Vector4 GetObjectColor(EntityObject entity)
+        public static SharpDX.Vector4 GetObjectColor(EntityObject entity)
         {
            return new(entity.Color.R / 255.0f, entity.Color.G / 255.0f, entity.Color.B / 255.0f, 1);
         }

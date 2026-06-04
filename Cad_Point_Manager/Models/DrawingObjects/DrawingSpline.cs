@@ -1,5 +1,6 @@
 ﻿using netDxf.Entities;
 using PdfSharpCore.Drawing;
+using SharpDX;
 using SharpDX.Direct2D1;
 
 namespace Cad_Point_Manager.Models.DrawingObjects
@@ -17,11 +18,12 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         #endregion
 
         #region Constructors
-        public DrawingSpline(Spline spline, ObjectLayer layer, ColorType colorType, bool isPartOfBlock = false, DrawingBlock block = null)
+        public DrawingSpline(Spline spline, ObjectLayer layer, Vector4 objectColor, ColorType colorType, bool isPartOfBlock = false, DrawingBlock block = null)
         {
             Type = DrawingObjectType.DrawingSpline;
             EntityObject = spline;
             Layer = layer;
+            ObjectColor = objectColor;
             ColorType = colorType;
             IsPartOfBlock = isPartOfBlock;
             DrawingBlock = block;
@@ -37,7 +39,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             if (EntityObject is Spline spline)
             {
                 _polyline = spline.ToPolyline2D(_polylineApproximationPrecision);
-                PolylineApproximation = new(_polyline, Layer, ColorType, isPartOfBlock: IsPartOfBlock, block: DrawingBlock);
+                PolylineApproximation = new(_polyline, Layer, ObjectColor, ColorType, isPartOfBlock: IsPartOfBlock, block: DrawingBlock);
             }
             else
             {

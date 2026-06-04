@@ -3,6 +3,7 @@ using Cad_Point_Manager.Controls.D3DControl.Rendering.Text;
 using Cad_Point_Manager.Helpers;
 using netDxf.Entities;
 using PdfSharpCore.Drawing;
+using SharpDX;
 using SharpDX.Direct2D1;
 using System;
 using System.Collections.Generic;
@@ -20,13 +21,14 @@ namespace Cad_Point_Manager.Models.DrawingObjects.Dimensioning
         #endregion
 
         #region Constructors
-        public DrawingLinearDimension(LinearDimension linearDimension, ObjectLayer layer, ColorType colorType, bool isPartOfBlock = false, DrawingBlock block = null)
+        public DrawingLinearDimension(LinearDimension linearDimension, ObjectLayer layer, Vector4 objectcolor, ColorType colorType, bool isPartOfBlock = false, DrawingBlock block = null)
         {
             EntityObject = linearDimension;
             LinearDimension = linearDimension;
             Type = DrawingObjectType.DrawingDimension;
             DimensionType = DrawingDimensionType.Linear;
             Layer = layer;
+            ObjectColor = objectcolor;
             ColorType = colorType;
             IsPartOfBlock = isPartOfBlock;
             DrawingBlock = block;

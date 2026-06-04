@@ -74,9 +74,10 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             UpdateColor();
             UpdateTransform();
 
-            Debug.WriteLineIf(DrawingMtext.DxfMtext.PlainText().Contains(DrawingMtext._debugTextFilter), $"MtextSegment Constructor: Text: {Text} " +
-                $"\nColorType: {ColorType} ObjectColor: {ObjectColor} BlockColor: {BlockColor}" +
-                $"\n{DrawingMtext.ColorType} {DrawingMtext.ObjectColor}\n");
+            //Debug.WriteLineIf(DrawingMtext.DxfMtext.PlainText().Contains(DrawingMtext._debugTextFilter), $"MtextSegment Constructor: Text: {Text} " +
+            //    $"\nColorType: {ColorType} ObjectColor: {ObjectColor} BlockColor: {BlockColor}" +
+            //    $"\n{DrawingMtext.ColorType} {DrawingMtext.ObjectColor}" +
+            //    $"\nDrawingMtext.Text: {DrawingMtext.Text}\n");
         }
         #endregion
 

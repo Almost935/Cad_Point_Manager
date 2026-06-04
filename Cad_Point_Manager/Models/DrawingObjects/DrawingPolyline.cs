@@ -1,6 +1,7 @@
 ﻿using Cad_Point_Manager.Helpers;
 using netDxf.Entities;
 using PdfSharpCore.Drawing;
+using SharpDX;
 using SharpDX.Direct2D1;
 using SharpDX.Mathematics.Interop;
 using System.Windows;
@@ -20,10 +21,11 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         #region Constructors
         //private DrawingPolyline() { Type = DrawingObject3dType.DrawingPolyline; }
 
-        public DrawingPolyline(Polyline2D polyline2D, ObjectLayer layer, ColorType colorType, bool isPartOfBlock = false, DrawingBlock block = null)
+        public DrawingPolyline(Polyline2D polyline2D, ObjectLayer layer, Vector4 objectColor, ColorType colorType, bool isPartOfBlock = false, DrawingBlock block = null)
         {
             Type = DrawingObjectType.DrawingPolyline;
             Layer = layer;
+            ObjectColor = objectColor;
             ColorType = colorType;
             IsPartOfBlock = isPartOfBlock;
             DrawingBlock = block;
@@ -33,10 +35,11 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             UpdateData();
         }
 
-        public DrawingPolyline(Polyline3D polyline3D, ObjectLayer layer, ColorType colorType, bool isPartOfBlock = false, DrawingBlock block = null)
+        public DrawingPolyline(Polyline3D polyline3D, ObjectLayer layer, Vector4 objectColor, ColorType colorType, bool isPartOfBlock = false, DrawingBlock block = null)
         {
             Type = DrawingObjectType.DrawingPolyline;
             Layer = layer;
+            ObjectColor = objectColor;
             ColorType = colorType;
             IsPartOfBlock = isPartOfBlock;
             DrawingBlock = block;
