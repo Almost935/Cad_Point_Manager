@@ -35,27 +35,22 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
         public void UpdateColor()
         {
-            if (DrawingBlock is not null) { BlockColor = DrawingBlock.ObjectColor; }
-            else { BlockColor = new(0, 0, 0, 1); }
-
-            //if (ColorType == ColorType.ByLayer)
-            //{
-            //    ObjectColor = Layer.Color;
-            //}
-            //else if (ColorType == ColorType.ByBlock)
-            //{
-            //    if (DrawingBlock is not null) { ObjectColor = DrawingBlock.ObjectColor; }
-            //    else { ObjectColor = new(0, 0, 0, 1); }
-            //}
-            //else
-            //{
-            //    Color = new(EntityObject.Color.R / 255.0f, EntityObject.Color.G / 255.0f, EntityObject.Color.B / 255.0f, 1);
-            //}
-
-            if (ObjectColor.X == 1 && ObjectColor.Y == 1 && ObjectColor.Z == 1)
+            if (DrawingBlock is not null)
             {
-                ObjectColor = new(0, 0, 0, 1);
+                if (DrawingBlock.ColorType == ColorType.ByLayer)
+                {
+                    BlockColor = DrawingBlock.Layer.Color;
+                }
+                else if (DrawingBlock.ColorType == ColorType.ByBlock)
+                {
+                    BlockColor = DrawingBlock.BlockColor;
+                }
+                else
+                {
+                    BlockColor = DrawingBlock.ObjectColor;
+                }
             }
+            else { BlockColor = new(0, 0, 0, 1); }
         }
         #endregion
     }

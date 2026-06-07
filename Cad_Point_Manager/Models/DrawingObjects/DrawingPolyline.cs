@@ -162,7 +162,9 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
                 foreach (var e in entities)
                 {
-                    var obj = DxfHelpers.GetDrawingSegment3D(e, Layer);
+                    var colorType = DxfHelpers.GetColorType(e);
+                    Vector4 color = DxfHelpers.GetEntityObjectColor(e, DrawingBlock?.DxfInsert);
+                    var obj = DxfHelpers.GetDrawingSegment3D(e, Layer, color, colorType, DrawingBlock);
 
                     if (obj is not null)
                     {
@@ -202,7 +204,10 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
                 foreach (var e in entities)
                 {
-                    var obj = DxfHelpers.GetDrawingSegment3D(e, Layer);
+                    var colorType = DxfHelpers.GetColorType(e);
+                    Vector4 color = DxfHelpers.GetEntityObjectColor(e, DrawingBlock.DxfInsert);
+                    var obj = DxfHelpers.GetDrawingSegment3D(e, Layer, color, colorType, DrawingBlock);
+
                     if (obj is not null)
                     {
                         obj.UpdateVertices(layerId, objectId);

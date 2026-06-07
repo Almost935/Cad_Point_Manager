@@ -5,6 +5,7 @@ using netDxf.Entities;
 using PdfSharpCore.Drawing;
 using SharpDX;
 using SharpDX.Direct2D1;
+using System.Diagnostics;
 using System.Windows;
 using static netDxf.Entities.HatchBoundaryPath;
 using Vector3 = SharpDX.Vector3;
@@ -159,9 +160,20 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             {
                 var objs = insert.Explode();
 
+                Debug.WriteLineIf(Layer.Name == "2. Dim_Testing", $"\nBlock ColorType: {ColorType} ObjectColor: {ObjectColor} BlockColor: {BlockColor} Layer.Color: {Layer.Color}");
+
                 foreach (var e in objs)
                 {
-                    var obj = DxfHelpers.GetDrawingObject(e, Layer);
+                    var colorType = DxfHelpers.GetColorType(e);
+                    Vector4 color = DxfHelpers.GetEntityObjectColor(e, DxfInsert);
+                    //Vector4 testcolor = DxfHelpers.GetDrawingObjectColor
+
+                    var obj = DxfHelpers.GetDrawingObject(e, Layer, color, colorType, this);
+
+                    Debug.WriteLineIf(Layer.Name == "Dim_Testing" && obj is not null, $"\n3. obj.GetType(): {obj.GetType()}" +
+                        $"\nobj.ColorType: {obj.ColorType} obj.ObjectColor: {obj.ObjectColor} obj.BlockColor: {obj.BlockColor} obj.Layer.Color: {obj.Layer.Color}" +
+                        $"\ncolor: {color}");
+
                     if (obj is not null) { DrawingObjects.Add(obj); }
                 }
             }
@@ -207,14 +219,21 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 }
                 if (obj is DrawingMtext mtext)
                 {
+                    Debug.WriteLineIf(Layer.Name == "Dim_Testing" && obj is not null,
+                       $"\n4: mtext.Text {mtext.Text} " +
+                       $"\nColorType: {ColorType} ObjectColor: {ObjectColor} BlockColor: {BlockColor} Layer.Color: {Layer.Color}");
+
                     mtext.UpdateTextVertices(resCache, layerId, sceneIdMap, stateBuffers);
 
-                    foreach (var row in mtext.MtextBlock.Rows)
+                    foreach (var segment in mtext.Segments)
                     {
-                        foreach (var segment in row.Segments)
-                        {
-                            TextVertices.AddRange(segment.TextVertices);
-                        }
+                        Debug.WriteLineIf(Layer.Name == "Dim_Testing",
+                                    $"\n5.1: segment.Text {segment.Text} ColorType: {ColorType} ObjectColor: {ObjectColor} BlockColor: {BlockColor} Layer.Color: {Layer.Color}");
+
+                        TextVertices.AddRange(segment.TextVertices);
+
+                        Debug.WriteLineIf(Layer.Name == "Dim_Testing",
+                                    $"\n5.2: segment.Text {segment.Text} ColorType: {ColorType} ObjectColor: {ObjectColor} BlockColor: {BlockColor} Layer.Color: {Layer.Color}");
                     }
                 }
             }

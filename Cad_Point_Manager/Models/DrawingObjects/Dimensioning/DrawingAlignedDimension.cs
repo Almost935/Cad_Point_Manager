@@ -1,6 +1,7 @@
 ﻿using Cad_Point_Manager.Controls.D3DControl;
 using Cad_Point_Manager.Controls.D3DControl.Rendering.Text;
 using Cad_Point_Manager.Helpers;
+using DocumentFormat.OpenXml.Office2016.Drawing.ChartDrawing;
 using netDxf.Entities;
 using PdfSharpCore.Drawing;
 using SharpDX;
@@ -38,27 +39,25 @@ namespace Cad_Point_Manager.Models.DrawingObjects.Dimensioning
         #region Methods
         public override void UpdateData()
         {
-            _drawingObjects.Clear();
-            foreach (var e in AlignedDimension.Block.Entities)
-            {
-                var obj = DxfHelpers.GetDrawingObject(e, Layer);
-                if (obj is not null)
-                {
-                    _drawingObjects.Add(obj);
-                }
-            }
+            var insert = new Insert(AlignedDimension.Block);
+
+            Debug.WriteLineIf(Layer.Name == "1: Dim_Testing", $"\n\n\nDim ColorType: {ColorType} ObjectColor: {ObjectColor} BlockColor: {BlockColor} Layer.Color: {Layer.Color}");
+
+            _dimensionBlock = DxfHelpers.GetDrawingObject(insert, Layer, DxfHelpers.GetDrawingObjectColor(this), ColorType) as DrawingBlock;
+
+            Debug.WriteLineIf(Layer.Name == "Dim_Testing", $"\n\n\n");
+
             UpdateBounds();
         }
         public override void UpdateBounds()
         {
             Bounds = Rect.Empty;
 
-            foreach (var drawingObj in DrawingObjects)
+            foreach (var drawingObj in _dimensionBlock.DrawingObjects)
             {
                 Bounds = Rect.Union(Bounds, drawingObj.Bounds);
             }
         }
-
 
         public override double DistanceToPoint(Point p)
         {
@@ -97,49 +96,15 @@ namespace Cad_Point_Manager.Models.DrawingObjects.Dimensioning
         {
             _lineVertices.Clear();
 
-            foreach (var obj in DrawingObjects)
-            {
-                if (obj is DrawingBlock block)
-                {
-                    block.UpdateGeometryVertices(layerId, objectId);
-                    _lineVertices.AddRange(block.LineVertices);
-                }
-                if (obj is DrawingGeometry geometry)
-                {
-                    geometry.UpdateVertices(layerId, objectId);
-                    _lineVertices.AddRange(geometry.Vertices);
-                }
-            }
+            _dimensionBlock.UpdateGeometryVertices(layerId, objectId);
+            _lineVertices.AddRange(_dimensionBlock.LineVertices);
         }
         public override void UpdateTextVertices(ResCache resCache, uint layerId, SceneIdMap sceneIdMap, D3dStateBuffers stateBuffers)
         {
             _textVertices.Clear();
 
-            foreach (var obj in DrawingObjects)
-            {
-                if (obj is DrawingBlock block)
-                {
-                    block.UpdateTextVertices(resCache, layerId, sceneIdMap, stateBuffers);
-                    _textVertices.AddRange(block.TextVertices);
-                }
-                if (obj is DrawingSText text)
-                {
-                    text.UpdateTextVertices(resCache, layerId, sceneIdMap, stateBuffers);
-                    _textVertices.AddRange(text.TextVertices);
-                }
-                if (obj is DrawingMtext mtext)
-                {
-                    mtext.UpdateTextVertices(resCache, layerId, sceneIdMap, stateBuffers);
-
-                    foreach (var row in mtext.MtextBlock.Rows)
-                    {
-                        foreach (var segment in row.Segments)
-                        {
-                            _textVertices.AddRange(segment.TextVertices);
-                        }
-                    }
-                }
-            }
+            _dimensionBlock.UpdateTextVertices(resCache, layerId, sceneIdMap, stateBuffers);
+            _textVertices.AddRange(_dimensionBlock.TextVertices);
         }
         #endregion 
     }

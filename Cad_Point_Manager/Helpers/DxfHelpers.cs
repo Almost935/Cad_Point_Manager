@@ -4,6 +4,7 @@ using netDxf;
 using netDxf.Entities;
 using netDxf.Header;
 using System.Windows;
+
 using Vector3 = netDxf.Vector3;
 
 namespace Cad_Point_Manager.Helpers
@@ -43,31 +44,31 @@ namespace Cad_Point_Manager.Helpers
         }
 
         // DrawingObject3D getters
-        public static DrawingObject GetDrawingObject(EntityObject e, ObjectLayer layer)
+        public static DrawingObject GetDrawingObject(EntityObject e, ObjectLayer layer, SharpDX.Vector4 color, ColorType colorType, DrawingBlock ownerBlock = null)
         {
             return e switch
             {
-                Line line => new DrawingLine(line, layer, GetObjectColor(line), GetColorType(line)),
-                Arc arc => new DrawingArc(arc, layer, GetObjectColor(arc), GetColorType(arc)),
-                Polyline2D polyline2D => new DrawingPolyline(polyline2D, layer, GetObjectColor(polyline2D), GetColorType(polyline2D)),
-                Polyline3D polyline3D => new DrawingPolyline(polyline3D, layer, GetObjectColor(polyline3D), GetColorType(polyline3D)),
-                Circle circle => new DrawingCircle(circle, layer, GetObjectColor(circle), GetColorType(circle)),
-                Insert block => new DrawingBlock(block, layer, GetObjectColor(block), GetColorType(block)),
-                MText mtext => new DrawingMtext(mtext, layer, GetObjectColor(mtext), GetColorType(mtext)),
-                Text text => new DrawingSText(text, layer, GetObjectColor(text), GetColorType(text)),
-                Spline spline => new DrawingSpline(spline, layer, GetObjectColor(spline), GetColorType(spline)),
-                AlignedDimension alignedDimension => new DrawingAlignedDimension(alignedDimension, layer, GetObjectColor(alignedDimension), GetColorType(alignedDimension)),
-                LinearDimension linearDimension => new DrawingLinearDimension(linearDimension, layer, GetObjectColor(linearDimension), GetColorType(linearDimension)),
+                Line line => new DrawingLine(line, layer, color, colorType, ownerBlock is not null, ownerBlock),
+                Arc arc => new DrawingArc(arc, layer, color, colorType, ownerBlock is not null, ownerBlock),
+                Polyline2D polyline2D => new DrawingPolyline(polyline2D, layer, color, colorType, ownerBlock is not null, ownerBlock),
+                Polyline3D polyline3D => new DrawingPolyline(polyline3D, layer, color, colorType, ownerBlock is not null, ownerBlock),
+                Circle circle => new DrawingCircle(circle, layer, color, colorType, ownerBlock is not null, ownerBlock),
+                Insert block => new DrawingBlock(block, layer, color, colorType, ownerBlock is not null, ownerBlock),
+                MText mtext => new DrawingMtext(mtext, layer, color, colorType, ownerBlock is not null, ownerBlock),
+                Text text => new DrawingSText(text, layer, color, colorType, ownerBlock is not null, ownerBlock),
+                Spline spline => new DrawingSpline(spline, layer, color, colorType, ownerBlock is not null, ownerBlock),
+                AlignedDimension alignedDimension => new DrawingAlignedDimension(alignedDimension, layer, color, colorType, ownerBlock is not null, ownerBlock),
+                LinearDimension linearDimension => new DrawingLinearDimension(linearDimension, layer, color, colorType, ownerBlock is not null, ownerBlock),
                 _ => null,
             };
         }
-        public static DrawingSegment GetDrawingSegment3D(EntityObject e, ObjectLayer layer)
+        public static DrawingSegment GetDrawingSegment3D(EntityObject e, ObjectLayer layer, SharpDX.Vector4 color, ColorType colorType, DrawingBlock ownerBlock = null)
         {
             return e switch
             {
-                Line line => new DrawingLine(line, layer, GetObjectColor(line), GetColorType(line)),
-                Arc arc => new DrawingArc(arc, layer, GetObjectColor(arc), GetColorType(arc)),
-                Circle circle => new DrawingCircle(circle, layer, GetObjectColor(circle), GetColorType(circle)),
+                Line line => new DrawingLine(line, layer, color, colorType, ownerBlock is not null, ownerBlock),
+                Arc arc => new DrawingArc(arc, layer, color, colorType, ownerBlock is not null, ownerBlock),
+                Circle circle => new DrawingCircle(circle, layer, color, colorType, ownerBlock is not null, ownerBlock),
                 _ => null,
             };
         }
@@ -88,9 +89,64 @@ namespace Cad_Point_Manager.Helpers
             }
         }
 
-        public static SharpDX.Vector4 GetObjectColor(EntityObject entity)
+        public static SharpDX.Vector4 GetEntityObjectColor(EntityObject entity, Insert owner = null)
         {
-           return new(entity.Color.R / 255.0f, entity.Color.G / 255.0f, entity.Color.B / 255.0f, 1);
+            SharpDX.Vector4 color = new(entity.Color.R / 255.0f, entity.Color.G / 255.0f, entity.Color.B / 255.0f, 1);
+
+            if (entity.Color.IsByLayer)
+            {
+                color = new(entity.Layer.Color.R / 255.0f, entity.Layer.Color.G / 255.0f, entity.Layer.Color.B / 255.0f, 1);
+            }
+            else if (entity.Color.IsByBlock)
+            {
+                if (owner is not null)
+                {
+                    color = GetEntityObjectColor(owner, null);
+                }
+                else
+                {
+                    // If the block reference is not provided, default to black
+                    color = new(0, 0, 0, 1);
+                }
+            }
+
+            // if the color is white, set it to black
+            if (entity.Color.R == 255 && entity.Color.G == 255 && entity.Color.B == 255)
+            {
+                color = new(0, 0, 0, 1);
+            }
+
+            return color;
+        }
+
+        public static SharpDX.Vector4 GetDrawingObjectColor(DrawingObject obj)
+        {
+            SharpDX.Vector4 color = new(obj.EntityObject.Color.R / 255.0f, obj.EntityObject.Color.G / 255.0f, obj.EntityObject.Color.B / 255.0f, 1);
+
+            if (obj.ColorType == ColorType.ByLayer)
+            {
+                color = obj.Layer.Color;
+            }
+            else if (obj.ColorType == ColorType.ByBlock)
+            {
+                if (obj.DrawingBlock is not null)
+                {
+                    color = GetDrawingObjectColor(obj.DrawingBlock);
+                }
+                else
+                {
+                    // If the block reference is not provided, default to black
+                    color = new(0, 0, 0, 1);
+                }
+            }
+
+            // if the color is white, set it to black
+            if (color.X == 1 && color.Y == 1 && color.Z == 1)
+            {
+                color = new(0, 0, 0, 1);
+            }
+
+            return color;
         }
 
         public static (byte r, byte g, byte b, byte a) GetRGBAColor(EntityObject entity)

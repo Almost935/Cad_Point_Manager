@@ -41,22 +41,15 @@ namespace Cad_Point_Manager.Models.DrawingObjects.Dimensioning
         #region Methods
         public override void UpdateData()
         {
-            _drawingObjects.Clear();
-            foreach (var e in LinearDimension.Block.Entities)
-            {
-                var obj = DxfHelpers.GetDrawingObject(e, Layer);
-                if (obj is not null)
-                {
-                    _drawingObjects.Add(obj);
-                }
-            }
+            _dimensionBlock = DxfHelpers.GetDrawingObject(new Insert(LinearDimension.Block), Layer, ObjectColor, ColorType) as DrawingBlock;
+
             UpdateBounds();
         }
         public override void UpdateBounds()
         {
             Bounds = Rect.Empty;
 
-            foreach (var drawingObj in DrawingObjects)
+            foreach (var drawingObj in _dimensionBlock.DrawingObjects)
             {
                 Bounds = Rect.Union(Bounds, drawingObj.Bounds);
             }
@@ -99,7 +92,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects.Dimensioning
         {
             _lineVertices.Clear();
 
-            foreach (var obj in DrawingObjects)
+            foreach (var obj in _dimensionBlock.DrawingObjects)
             {
                 if (obj is DrawingBlock block)
                 {
@@ -117,7 +110,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects.Dimensioning
         {
             _textVertices.Clear();
 
-            foreach (var obj in DrawingObjects)
+            foreach (var obj in _dimensionBlock.DrawingObjects)
             {
                 if (obj is DrawingBlock block)
                 {
@@ -133,12 +126,9 @@ namespace Cad_Point_Manager.Models.DrawingObjects.Dimensioning
                 {
                     mtext.UpdateTextVertices(resCache, layerId, sceneIdMap, stateBuffers);
 
-                    foreach (var row in mtext.MtextBlock.Rows)
+                    foreach (var segment in mtext.Segments)
                     {
-                        foreach (var segment in row.Segments)
-                        {
-                            _textVertices.AddRange(segment.TextVertices);
-                        }
+                        _textVertices.AddRange(segment.TextVertices);
                     }
                 }
             }

@@ -6,7 +6,8 @@ namespace Cad_Point_Manager.Models.DrawingObjects.Dimensioning
     public abstract class DrawingDimension : DrawingObject
     {
         #region Fields
-        protected readonly List<DrawingObject> _drawingObjects = [];
+        protected DrawingBlock _dimensionBlock;
+        //protected readonly List<DrawingObject> _drawingObjects = [];
         protected readonly List<LineVertex> _lineVertices = [];
         protected readonly List<TextVertex> _textVertices = [];
         #endregion
@@ -18,7 +19,8 @@ namespace Cad_Point_Manager.Models.DrawingObjects.Dimensioning
         public int StartTextVertexIndex { get; set; }
         public int EndTextVertexIndex { get; set; }
 
-        public IReadOnlyList<DrawingObject> DrawingObjects => _drawingObjects;
+        public DrawingBlock DimensionBlock => _dimensionBlock;
+        //public IReadOnlyList<DrawingObject> DrawingObjects => _drawingObjects;
         public IReadOnlyList<LineVertex> LineVertices => _lineVertices;
         public IReadOnlyList<TextVertex> TextVertices => _textVertices;
         #endregion

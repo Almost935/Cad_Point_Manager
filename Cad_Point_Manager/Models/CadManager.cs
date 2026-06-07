@@ -348,7 +348,7 @@ namespace Cad_Point_Manager.Models
                 if (e is Text text && string.IsNullOrWhiteSpace(text.Value)) { continue; }
 
                 var layer = GetLayer(e.Layer);
-                var drawingObj = DxfHelpers.GetDrawingObject(e, layer);
+                var drawingObj = DxfHelpers.GetDrawingObject(e, layer, DxfHelpers.GetEntityObjectColor(e), DxfHelpers.GetColorType(e));
 
                 if (layer is not null && drawingObj is not null)
                 {

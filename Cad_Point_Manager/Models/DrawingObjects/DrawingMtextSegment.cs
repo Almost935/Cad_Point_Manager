@@ -48,7 +48,8 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         #region Constructors
         public DrawingMtextSegment(DrawingMtext drawingMtext, ObjectLayer layer, string text, Vector4 objectColor, ColorType colorType, Vector3 position, 
             float rotation, float fontHeight, string fontFamilyName, bool isItalic, bool isBold, bool isUnderlined, bool isStrikeOut, 
-            bool isOverStrike, bool isNewLine, float maxWidth, Enums.TextAlignment textAlignment = Enums.TextAlignment.Left)
+            bool isOverStrike, bool isNewLine, float maxWidth, Enums.TextAlignment textAlignment = Enums.TextAlignment.Left, 
+            bool isPartOfBlock = false, DrawingBlock block = null)
         {
             Type = DrawingObjectType.DrawingMtextSegment;
             DrawingMtext = drawingMtext;
@@ -69,6 +70,8 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             IsNewLine = isNewLine;
             MaxWidth = maxWidth;
             TextAlignment = textAlignment;
+            IsPartOfBlock = isPartOfBlock;
+            DrawingBlock = block;
             GlowOffset = TextHeight * GlobalHelperProperties.TextHeightToGlowOffsetFactor;
 
             UpdateColor();

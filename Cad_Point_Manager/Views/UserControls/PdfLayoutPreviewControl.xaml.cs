@@ -208,6 +208,11 @@ namespace Cad_Point_Manager.Views.UserControls
                         renderHeight,
                         GlobalHelperProperties.PdfPreviewDpi);
 
+                if (Dispatcher.HasShutdownStarted || Dispatcher.HasShutdownFinished)
+                {
+                    return;
+                }
+
                 Dispatcher.Invoke(() =>
                 {
                     LayoutPreviewImage.Source = bmp;

@@ -1180,9 +1180,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             var path = AppDomain.CurrentDomain.BaseDirectory;
             while (Path.GetFileName(path) != "Cad_Point_Manager")
             {
-                path = Path.GetDirectoryName(path);
-                if (path == null)
-                    throw new DirectoryNotFoundException("The 'Cad_Point_Manager' directory could not be found in the path.");
+                path = Path.GetDirectoryName(path) ?? throw new DirectoryNotFoundException("The 'Cad_Point_Manager' directory could not be found in the path.");
             }
 
             string shaderPath = Path.Combine(path, @"Controls\D3DControl\Shaders\TextShader.hlsl");
@@ -3327,14 +3325,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     if (obj is DrawingMtext drawingMtext)
                     {
                         if (drawingMtext.MtextBlock is null) { drawingMtext.UpdateMtextBlock(ResCache, drawingMtext.Layer.Id, SceneIdMap, StateBuffers); }
-                        foreach (var row in drawingMtext.MtextBlock.Rows)
+                        foreach (var seg in drawingMtext.Segments)
                         {
-                            foreach (var seg in row.Segments)
-                            {
-                                var segId = SceneIdMap.GetOrAddObjectId(seg, out isNew);
-                                if (isNew) { StateBuffers.InitializeObjectState(SceneIdMap.MaxObjectId, seg, segId); }
-                                continue;
-                            }
+                            var segId = SceneIdMap.GetOrAddObjectId(seg, out isNew);
+                            if (isNew) { StateBuffers.InitializeObjectState(SceneIdMap.MaxObjectId, seg, segId); }
+                            continue;
                         }
                     }
                     var oId = SceneIdMap.GetOrAddObjectId(drawingObj, out isNew);
