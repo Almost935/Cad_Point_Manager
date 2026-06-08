@@ -153,18 +153,12 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
             if (obj.IsSelected) { baseFlags |= (uint)ObjectFlags.Selected; }
             if (obj.IsMouseOver) { baseFlags |= (uint)ObjectFlags.MouseOver; }
 
-            Vector4 color = obj.ObjectColor;
+            //Vector4 color = obj.ObjectColor;
+            Vector4 color = obj.GetColor();
             if (obj.ColorType == ColorType.ByLayer) { color = obj.Layer.Color; baseFlags |= (uint)ObjectFlags.ColorByLayer; }
             else if (obj.ColorType == ColorType.ByBlock)
             {
                 color = obj.BlockColor;
-            }
-
-            if (obj.Layer.Name == "Dim_Testing" && obj is DrawingMtextSegment segment)
-            {
-                Debug.WriteLine($"\n6: InitializeObjectState {segment.Text} " +
-                    $"\nColorType: {obj.ColorType} ObjectColor: {obj.ObjectColor} BlockColor: {obj.BlockColor} Layer.Color: {obj.Layer.Color}" +
-                    $"\ncolor: {color}");
             }
 
             ObjectSpan[(int)oId] = new ObjectState { Color = color, Flags = baseFlags };

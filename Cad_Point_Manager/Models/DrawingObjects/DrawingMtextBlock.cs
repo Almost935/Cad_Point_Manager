@@ -3,6 +3,7 @@ using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Helpers;
 using netDxf.Entities;
 using SharpDX;
+using System.Diagnostics;
 using Point = System.Windows.Point;
 
 namespace Cad_Point_Manager.Models.DrawingObjects

@@ -7,10 +7,12 @@ using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Helpers;
 using Cad_Point_Manager.Models.DrawingObjects;
 using Cad_Point_Manager.Models.DrawingObjects.Dimensioning;
+using Cad_Point_Manager.Models.DxfImport;
 using Cad_Point_Manager.Models.HitTesting;
 using Cad_Point_Manager.Models.Importing;
 using Cad_Point_Manager.Models.PointRendering;
 using Cad_Point_Manager.Models.Printing;
+using Cad_Point_Manager.Services.DxfLoading;
 using netDxf;
 using netDxf.Entities;
 using netDxf.Tables;
@@ -335,7 +337,7 @@ namespace Cad_Point_Manager.Models
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
-        public void LoadDxf(DxfDocument dxfDocument)
+        public void LoadDxf(DxfDocument dxfDocument, List<ParsedMLeader> mleaders)
         {
             ClearDxf();
             DxfDocument = dxfDocument;
@@ -356,6 +358,9 @@ namespace Cad_Point_Manager.Models
                 }
             }
 
+            // Handle MLeaders separately since netDxf does not support mleaders
+            LoadMleaders();
+
             UpdateDxfExtents();
             UpdateExtents();
 
@@ -368,7 +373,13 @@ namespace Cad_Point_Manager.Models
             DxfNeedsReload = true;
         }
 
-        // CogoPoint related Methods
+        // Mleader loading methods
+        private void LoadMleaders()
+        {
+            DxfImportService.LoadMleaders()
+        }
+
+        // CogoPoint related methods
         public bool PointExists(int pointNumber) => PointGroups.SelectMany(pg => pg.Points).Any(p => p.PointNumber == pointNumber);
         public bool TryCreatePoint(int pointNumber, Vector3 position, PointGroup pg, out CogoPoint? point, float elevation = 0, string description = "")
         {
@@ -1272,19 +1283,12 @@ namespace Cad_Point_Manager.Models
                             _cachedLineVertices.AddRange(drawingBlock.LineVertices);
                             drawingBlock.EndLineVertexIndex = _cachedLineVertices.Count - 1;
                         }
-                        if (obj is DrawingAlignedDimension alignedDimension)
+                        if (obj is DrawingDimension dimension)
                         {
-                            alignedDimension.UpdateGeometryVertices(lId, objectId);
-                            alignedDimension.StartLineVertexIndex = _cachedLineVertices.Count;
-                            _cachedLineVertices.AddRange(alignedDimension.LineVertices);
-                            alignedDimension.EndLineVertexIndex = _cachedLineVertices.Count - 1;
-                        }
-                        if (obj is DrawingLinearDimension linearDimension)
-                        {
-                            linearDimension.UpdateGeometryVertices(lId, objectId);
-                            linearDimension.StartLineVertexIndex = _cachedLineVertices.Count;
-                            _cachedLineVertices.AddRange(linearDimension.LineVertices);
-                            linearDimension.EndLineVertexIndex = _cachedLineVertices.Count - 1;
+                            dimension.UpdateGeometryVertices(lId, objectId);
+                            dimension.StartLineVertexIndex = _cachedLineVertices.Count;
+                            _cachedLineVertices.AddRange(dimension.LineVertices);
+                            dimension.EndLineVertexIndex = _cachedLineVertices.Count - 1;
                         }
                     }
                 }
@@ -1344,19 +1348,12 @@ namespace Cad_Point_Manager.Models
                             _cachedTextVertices.AddRange(drawingBlock.TextVertices);
                             drawingBlock.EndTextVertexIndex = _cachedTextVertices.Count - 1;
                         }
-                        if (obj is DrawingAlignedDimension alignedDimension)
+                        if (obj is DrawingDimension dimension)
                         {
-                            alignedDimension.UpdateTextVertices(d3DResCache, lid, sceneIdMap, stateBuffers);
-                            alignedDimension.StartTextVertexIndex = _cachedTextVertices.Count;
-                            _cachedTextVertices.AddRange(alignedDimension.TextVertices);
-                            alignedDimension.EndTextVertexIndex = _cachedTextVertices.Count - 1;
-                        }
-                        if (obj is DrawingLinearDimension linearDimension)
-                        {
-                            linearDimension.UpdateTextVertices(d3DResCache, lid, sceneIdMap, stateBuffers);
-                            linearDimension.StartTextVertexIndex = _cachedTextVertices.Count;
-                            _cachedTextVertices.AddRange(linearDimension.TextVertices);
-                            linearDimension.EndTextVertexIndex = _cachedTextVertices.Count - 1;
+                            dimension.UpdateTextVertices(d3DResCache, lid, sceneIdMap, stateBuffers);
+                            dimension.StartTextVertexIndex = _cachedTextVertices.Count;
+                            _cachedTextVertices.AddRange(dimension.TextVertices);
+                            dimension.EndTextVertexIndex = _cachedTextVertices.Count - 1;
                         }
                     }
                 }

@@ -1,6 +1,8 @@
 ﻿using Cad_Point_Manager.Common;
 using Cad_Point_Manager.Controls.D3DControl;
+using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Helpers;
+using Cad_Point_Manager.Services.Exporting;
 using PdfSharpCore.Drawing;
 using SharpDX;
 using SharpDX.DirectWrite;
@@ -46,9 +48,9 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         #endregion
 
         #region Constructors
-        public DrawingMtextSegment(DrawingMtext drawingMtext, ObjectLayer layer, string text, Vector4 objectColor, ColorType colorType, Vector3 position, 
-            float rotation, float fontHeight, string fontFamilyName, bool isItalic, bool isBold, bool isUnderlined, bool isStrikeOut, 
-            bool isOverStrike, bool isNewLine, float maxWidth, Enums.TextAlignment textAlignment = Enums.TextAlignment.Left, 
+        public DrawingMtextSegment(DrawingMtext drawingMtext, ObjectLayer layer, string text, Vector4 objectColor, ColorType colorType, Vector3 position,
+            float rotation, float fontHeight, string fontFamilyName, bool isItalic, bool isBold, bool isUnderlined, bool isStrikeOut,
+            bool isOverStrike, bool isNewLine, float maxWidth, Enums.TextAlignment textAlignment = Enums.TextAlignment.Left,
             bool isPartOfBlock = false, DrawingBlock block = null)
         {
             Type = DrawingObjectType.DrawingMtextSegment;
@@ -76,11 +78,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
             UpdateColor();
             UpdateTransform();
-
-            //Debug.WriteLineIf(DrawingMtext.DxfMtext.PlainText().Contains(DrawingMtext._debugTextFilter), $"MtextSegment Constructor: Text: {Text} " +
-            //    $"\nColorType: {ColorType} ObjectColor: {ObjectColor} BlockColor: {BlockColor}" +
-            //    $"\n{DrawingMtext.ColorType} {DrawingMtext.ObjectColor}" +
-            //    $"\nDrawingMtext.Text: {DrawingMtext.Text}\n");
         }
         #endregion
 
@@ -96,7 +93,56 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             XGraphics gfx,
             System.Windows.Media.Matrix worldToPdf,
             XPen pen)
-        { }
+        {
+            if (string.IsNullOrWhiteSpace(Text)) { return; }
+
+            var fontFamily = PdfDrawingHelpers.GetFontFamily(FontFamilyName);
+
+            XFontStyle style = XFontStyle.Regular;
+            if (IsBold) { style |= XFontStyle.Bold; }
+            if (IsItalic) { style |= XFontStyle.Italic; }
+
+            var fontSizePts = TextHeight * FontSizeFactor * worldToPdf.M11;
+            var font = new XFont(fontFamily, fontSizePts, style);
+            var brush = new XSolidBrush(PdfTransform.ToXColor(GetColor().ToVector4()));
+
+            var pPdf = PdfDrawingHelpers.WorldToPdf(new Vector2(Position.X, Position.Y), worldToPdf);
+            var size = gfx.MeasureString(Text, font);
+
+            double x = pPdf.X;
+            double y = pPdf.Y;
+
+            gfx.DrawString(Text, font, brush, new XPoint(x, y));
+
+            if (IsUnderlined || IsStrikeOut || IsOverStrike)
+            {
+                var linePen = new XPen(brush.Color, fontSizePts * 0.01);
+
+                var m = font.Metrics;
+                double em = m.UnitsPerEm;
+
+                double ascentPt = fontSizePts * (m.Ascent / em);
+                double descentPt = fontSizePts * (m.Descent / em);
+                double baselineY = y;
+
+                double underlineY = baselineY + descentPt * 0.95;
+                double strikeY = baselineY - ascentPt * 0.35;
+                double overstrikeY = baselineY - ascentPt * 0.95;
+
+                if (IsUnderlined)
+                {
+                    gfx.DrawLine(linePen, x, underlineY, x + size.Width, underlineY);
+                }
+                if (IsStrikeOut)
+                {
+                    gfx.DrawLine(linePen, x, strikeY, x + size.Width, strikeY);
+                }
+                if (IsOverStrike)
+                {
+                    gfx.DrawLine(linePen, x, overstrikeY, x + size.Width, overstrikeY);
+                }
+            }
+        }
 
         public override void MouseEnter()
         {

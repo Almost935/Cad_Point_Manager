@@ -1,5 +1,6 @@
 ﻿using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Models;
+using Cad_Point_Manager.Models.DxfImport;
 using Cad_Point_Manager.Models.PointRendering;
 using netDxf;
 using System.IO;
@@ -238,12 +239,14 @@ namespace Cad_Point_Manager.Models
 
             return true;
         }
-        public void LoadDxf(DxfDocument dxfDoc)
+        public void LoadDxf(DxfImportResult dxfimportResult)
         {
             if (dxfDoc is not null)
             {
                 DxfDoc = dxfDoc;
                 DxfFileName = DxfDoc.Name;
+
+
                 CadManager.LoadDxf(dxfDoc);
             }
         }

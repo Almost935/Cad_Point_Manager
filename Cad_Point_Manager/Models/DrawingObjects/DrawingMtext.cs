@@ -41,6 +41,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         public Enums.TextAttachmentPoint AttachmentPoint { get; set; }
         public DrawingMtextBlock MtextBlock { get; set; }
         public Vector3 TextAttachmentOffset { get; set; } = Vector3.Zero;
+        public bool AllowsWrapping { get; set; }
 
         public override List<TextVertex> TextVertices { get; set; } = [];
 
@@ -49,7 +50,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         #endregion
 
         #region Constructor
-        public DrawingMtext(MText mtext, ObjectLayer layer, Vector4 objectColor, ColorType colorType, bool isPartOfBlock = false, DrawingBlock block = null)
+        public DrawingMtext(MText mtext, ObjectLayer layer, Vector4 objectColor, ColorType colorType, bool allowsWrapping, bool isPartOfBlock = false, DrawingBlock block = null)
         {
             Type = DrawingObjectType.DrawingMtext;
             DxfMtext = mtext;
@@ -57,16 +58,13 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             Layer = layer;
             ObjectColor = objectColor;
             ColorType = colorType;
+            AllowsWrapping = allowsWrapping;
             IsPartOfBlock = isPartOfBlock;
             DrawingBlock = block;
             AttachmentPoint = TextRenderingHelpers.GetAttachmentPoint(DxfMtext.AttachmentPoint);
 
             UpdateColor();
             UpdateData();
-
-            //var text = DxfMtext.PlainText();
-            //Debug.WriteLineIf(text.Contains(_debugTextFilter), $"mtext.PlainText(): {text} " +
-            //    $"\nColorType: {ColorType} Color: {Color}\n");
         }
         #endregion
 
@@ -221,58 +219,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
                 foreach (var seg in segments)
                 {
-                    if (string.IsNullOrWhiteSpace(seg.Text)) { continue; }
-
-                    var fontFamily = PdfDrawingHelpers.GetFontFamily(seg.FontFamilyName);
-
-                    XFontStyle style = XFontStyle.Regular;
-                    if (seg.IsBold) { style |= XFontStyle.Bold; }
-                    if (seg.IsItalic) { style |= XFontStyle.Italic; }
-
-                    var fontSizePts = seg.TextHeight * seg.FontSizeFactor * worldToPdf.M11;
-                    var font = new XFont(fontFamily, fontSizePts, style);
-                    var brush = new XSolidBrush(PdfTransform.ToXColor(seg.ObjectColor.ToVector4()));
-
-                    var pPdf = PdfDrawingHelpers.WorldToPdf(new Vector2(seg.Position.X, seg.Position.Y), worldToPdf);
-                    var size = gfx.MeasureString(seg.Text, font);
-
-                    double x = pPdf.X;
-                    double y = pPdf.Y;
-
-                    gfx.DrawString(seg.Text, font, brush, new XPoint(x, y));
-
-                    if (seg.IsUnderlined || seg.IsStrikeOut || seg.IsOverStrike)
-                    {
-                        var linePen = new XPen(brush.Color, fontSizePts * 0.01);
-
-                        var m = font.Metrics;
-                        double em = m.UnitsPerEm;
-
-                        // Convert design-units metrics to points
-                        double ascentPt = fontSizePts * (m.Ascent / em);
-                        double descentPt = fontSizePts * (m.Descent / em);
-
-                        // If your y is baseline: (common in PDF libs)
-                        double baselineY = y;
-
-                        // Typical positions (tweak constants to match AutoCAD)
-                        double underlineY = baselineY + descentPt * 0.95;      // slightly below baseline
-                        double strikeY = baselineY - ascentPt * 0.35;      // around x-height-ish
-                        double overstrikeY = baselineY - ascentPt * 0.95;      // near top
-
-                        if (seg.IsUnderlined)
-                        {
-                            gfx.DrawLine(linePen, x, underlineY, x + size.Width, underlineY);
-                        }
-                        if (seg.IsStrikeOut)
-                        {
-                            gfx.DrawLine(linePen, x, strikeY, x + size.Width, strikeY);
-                        }
-                        if (seg.IsOverStrike)
-                        {
-                            gfx.DrawLine(linePen, x, overstrikeY, x + size.Width, overstrikeY);
-                        }
-                    }
+                    seg.DrawToPdf(gfx, worldToPdf, pen);
                 }
             }
             gfx.Restore(state);
@@ -312,8 +259,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             string rawText = DxfMtext.Value;
             Vector4 baseColor = DxfHelpers.GetDrawingObjectColor(this);
 
-            //Debug.WriteLineIf(DxfMtext.PlainText().Contains(_debugTextFilter), $"rawText: {rawText}");
-
             if (!rawText.Contains('\\'))
             {
                 var segmentTexts = rawText.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
@@ -335,8 +280,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                         IsBold, IsItalic, false, false, false, false, alignment);
                     var textSegment = CreateMtextSegment(segmentInfo, resCache, layerId, sceneIdMap, stateBuffers);
                     MtextBlock.AddSegment(textSegment);
-
-                    //Debug.WriteLineIf(DxfMtext.PlainText().Contains(_debugTextFilter), $"Single Line Text: segmentInfo.ColorType: {segmentInfo.ColorType} segmentInfo.ObjectColor: {segmentInfo.ObjectColor}\n");
                 }
                 return;
             }
@@ -376,13 +319,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             { baseAlignment = Enums.TextAlignment.Center; }
             else { baseAlignment = Enums.TextAlignment.Left; }
 
-            //Debug.WriteLineIf(rawText.Contains(_debugTextFilter), $"\n");
-            //foreach (var text in texts)
-            //{
-            //    Debug.WriteLineIf(text.Contains(_debugTextFilter), $"Raw text segment: '{text}'");
-            //}
-            //Debug.WriteLineIf(rawText.Contains(_debugTextFilter), $"\n");
-
             foreach (var text in texts)
             {
                 TextSegmentInformation currentSegment = new("", baseColor, ColorType, FontFamilyName, DxfMtext.Height,
@@ -408,31 +344,23 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
                                 currentSegment.ObjectColor = DrawingBlock.ObjectColor;
                                 currentSegment.ColorType = DrawingBlock.ColorType;
-
-                                //Debug.WriteLineIf(DxfMtext.PlainText().Contains(_debugTextFilter), $"1. currentSegment.ColorType: {currentSegment.ColorType} currentSegment.ObjectColor: {currentSegment.ObjectColor}\n");
                             }
                             else
                             {
                                 var aciColor = AciColor.Default;
                                 currentSegment.ObjectColor = new(aciColor.R / 255.0f, aciColor.G / 255.0f, aciColor.B / 255.0f, 1.0f);
-
-                                //Debug.WriteLineIf(DxfMtext.PlainText().Contains(_debugTextFilter), $"2. currentSegment.ColorType: {currentSegment.ColorType} currentSegment.ObjectColor: {currentSegment.ObjectColor}\n");
                             }
                         }
                         else if (colorI == 256)
                         {
                             currentSegment.ObjectColor = Layer.Color;
                             currentSegment.ColorType = ColorType.ByLayer;
-
-                            //Debug.WriteLineIf(DxfMtext.PlainText().Contains(_debugTextFilter), $"3. currentSegment.ColorType: {currentSegment.ColorType} currentSegment.ObjectColor: {currentSegment.ObjectColor}\n");
                         }
                         else
                         {
                             var vector = AutoCadColorConverter.ConvertACINumberToRGBA((short)colorI);
                             currentSegment.ObjectColor = new((float)vector.X, (float)vector.Y, (float)vector.Z, (float)vector.W);
                             currentSegment.ColorType = ColorType.ByObject;
-
-                            //Debug.WriteLineIf(DxfMtext.PlainText().Contains(_debugTextFilter), $"4. currentSegment.ColorType: {currentSegment.ColorType} currentSegment.ObjectColor: {currentSegment.ObjectColor}\n");
                         }
                     }
                     else if (Regex.IsMatch(value, trueTypeColorPattern))
@@ -442,8 +370,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
                         currentSegment.ObjectColor = new((float)trueTypeColor.X, (float)trueTypeColor.Y, (float)trueTypeColor.Z, (float)trueTypeColor.W);
                         currentSegment.ColorType = ColorType.ByObject;
-
-                        //Debug.WriteLineIf(DxfMtext.PlainText().Contains(_debugTextFilter), $"5. currentSegment.ColorType: {currentSegment.ColorType} currentSegment.ObjectColor: {currentSegment.ObjectColor}\n");
                     }
                     else if (Regex.IsMatch(value, fontPattern, RegexOptions.IgnoreCase))
                     {
@@ -539,7 +465,20 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
                 foreach (var segmentInfo in textSegments)
                 {
-                    var segmentTexts = segmentInfo.Text.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                    string[] segmentTexts;
+
+                    if (AllowsWrapping)
+                    {
+                        segmentTexts =
+                            segmentInfo.Text.Split(
+                                new[] { ' ' },
+                                StringSplitOptions.RemoveEmptyEntries);
+                    }
+                    else
+                    {
+
+                        segmentTexts = [segmentInfo.Text];
+                    }
 
                     if (segmentTexts.Length > 1)
                     {
@@ -555,23 +494,12 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                                 isNewLine, segmentInfo.TextAlignment);
                             var newSegment = CreateMtextSegment(newSegmentInfo, resCache, layerId, sceneIdMap, stateBuffers);
 
-                            //Debug.WriteLineIf(DxfMtext.PlainText().Contains(_debugTextFilter), $"6. newSegmentInfo.Text: {newSegmentInfo.Text} " +
-                            //    $"\nnewSegmentInfo.ColorType: {newSegmentInfo.ColorType} newSegmentInfo.ObjectColor: {newSegmentInfo.ObjectColor}" +
-                            //    $"\nnewSegment.ColorType: {newSegment.ColorType} newSegment.ObjectColor: {newSegment.ObjectColor} newSegment.BlockColor: {newSegment.BlockColor} newSegment.Layer.Color: {newSegment.Layer.Color}" +
-                            //    $"\nColorType: {ColorType} ObjectColor: {ObjectColor}\n");
-
                             MtextBlock.AddSegment(newSegment);
                         }
                     }
                     else
                     {
                         var segment = CreateMtextSegment(segmentInfo, resCache, layerId, sceneIdMap, stateBuffers);
-
-                        //Debug.WriteLineIf(DxfMtext.PlainText().Contains(_debugTextFilter), $"6. segmentInfo.Text: {segmentInfo.Text} " +
-                        //        $"\nsegmentInfo.ColorType: {segmentInfo.ColorType} segmentInfo.ObjectColor: {segmentInfo.ObjectColor}" +
-                        //        $"\nsegment.ColorType: {segment.ColorType} segment.ObjectColor: {segment.ObjectColor} segment.BlockColor: {segment.BlockColor} segment.Layer.Color: {segment.Layer.Color}" +
-                        //        $"\nColorType: {ColorType} ObjectColor: {ObjectColor} BlockColor: {BlockColor} DrawingBlock is null: {DrawingBlock is null}\n");
-
                         MtextBlock.AddSegment(segment);
                     }
                 }

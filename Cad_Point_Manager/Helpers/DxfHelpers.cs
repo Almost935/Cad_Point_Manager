@@ -44,7 +44,7 @@ namespace Cad_Point_Manager.Helpers
         }
 
         // DrawingObject3D getters
-        public static DrawingObject GetDrawingObject(EntityObject e, ObjectLayer layer, SharpDX.Vector4 color, ColorType colorType, DrawingBlock ownerBlock = null)
+        public static DrawingObject GetDrawingObject(EntityObject e, ObjectLayer layer, SharpDX.Vector4 color, ColorType colorType, DrawingBlock ownerBlock = null, bool isPartOfDimension = false)
         {
             return e switch
             {
@@ -53,16 +53,15 @@ namespace Cad_Point_Manager.Helpers
                 Polyline2D polyline2D => new DrawingPolyline(polyline2D, layer, color, colorType, ownerBlock is not null, ownerBlock),
                 Polyline3D polyline3D => new DrawingPolyline(polyline3D, layer, color, colorType, ownerBlock is not null, ownerBlock),
                 Circle circle => new DrawingCircle(circle, layer, color, colorType, ownerBlock is not null, ownerBlock),
-                Insert block => new DrawingBlock(block, layer, color, colorType, ownerBlock is not null, ownerBlock),
-                MText mtext => new DrawingMtext(mtext, layer, color, colorType, ownerBlock is not null, ownerBlock),
+                Insert block => new DrawingBlock(block, layer, color, colorType, ownerBlock is not null, ownerBlock, isPartOfDimension: isPartOfDimension),
+                MText mtext => new DrawingMtext(mtext, layer, color, colorType, !isPartOfDimension, ownerBlock is not null, ownerBlock),
                 Text text => new DrawingSText(text, layer, color, colorType, ownerBlock is not null, ownerBlock),
                 Spline spline => new DrawingSpline(spline, layer, color, colorType, ownerBlock is not null, ownerBlock),
-                AlignedDimension alignedDimension => new DrawingAlignedDimension(alignedDimension, layer, color, colorType, ownerBlock is not null, ownerBlock),
-                LinearDimension linearDimension => new DrawingLinearDimension(linearDimension, layer, color, colorType, ownerBlock is not null, ownerBlock),
+                Dimension dimension => new DrawingDimension(dimension, layer, color, colorType, ownerBlock is not null, ownerBlock),
                 _ => null,
             };
         }
-        public static DrawingSegment GetDrawingSegment3D(EntityObject e, ObjectLayer layer, SharpDX.Vector4 color, ColorType colorType, DrawingBlock ownerBlock = null)
+        public static DrawingSegment GetDrawingSegment(EntityObject e, ObjectLayer layer, SharpDX.Vector4 color, ColorType colorType, DrawingBlock ownerBlock = null)
         {
             return e switch
             {

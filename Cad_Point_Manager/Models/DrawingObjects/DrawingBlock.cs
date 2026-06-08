@@ -55,6 +55,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         public int EndLineVertexIndex { get; set; }
         public int StartTextVertexIndex { get; set; }
         public int EndTextVertexIndex { get; set; }
+        public bool IsPartOfDimension { get; set; } = false;
 
         public int NumberOfDrawingObjects => DrawingObjects.Count;
 
@@ -62,7 +63,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         #endregion
 
         #region Constructors
-        public DrawingBlock(Insert insert, ObjectLayer layer, Vector4 objectColor, ColorType colorType, bool isPartOfBlock = false, DrawingBlock block = null)
+        public DrawingBlock(Insert insert, ObjectLayer layer, Vector4 objectColor, ColorType colorType, bool isPartOfBlock = false, DrawingBlock block = null, bool isPartOfDimension = false)
         {
             Type = DrawingObjectType.DrawingBlock;
             DxfInsert = insert;
@@ -72,6 +73,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             ColorType = colorType;
             IsPartOfBlock = isPartOfBlock;
             DrawingBlock = block;
+            IsPartOfDimension = isPartOfDimension;
 
             UpdateColor();
             UpdateData();
@@ -160,19 +162,11 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             {
                 var objs = insert.Explode();
 
-                Debug.WriteLineIf(Layer.Name == "2. Dim_Testing", $"\nBlock ColorType: {ColorType} ObjectColor: {ObjectColor} BlockColor: {BlockColor} Layer.Color: {Layer.Color}");
-
                 foreach (var e in objs)
                 {
                     var colorType = DxfHelpers.GetColorType(e);
                     Vector4 color = DxfHelpers.GetEntityObjectColor(e, DxfInsert);
-                    //Vector4 testcolor = DxfHelpers.GetDrawingObjectColor
-
-                    var obj = DxfHelpers.GetDrawingObject(e, Layer, color, colorType, this);
-
-                    Debug.WriteLineIf(Layer.Name == "Dim_Testing" && obj is not null, $"\n3. obj.GetType(): {obj.GetType()}" +
-                        $"\nobj.ColorType: {obj.ColorType} obj.ObjectColor: {obj.ObjectColor} obj.BlockColor: {obj.BlockColor} obj.Layer.Color: {obj.Layer.Color}" +
-                        $"\ncolor: {color}");
+                    var obj = DxfHelpers.GetDrawingObject(e, Layer, color, colorType, this, isPartOfDimension: IsPartOfDimension);
 
                     if (obj is not null) { DrawingObjects.Add(obj); }
                 }
@@ -219,21 +213,11 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 }
                 if (obj is DrawingMtext mtext)
                 {
-                    Debug.WriteLineIf(Layer.Name == "Dim_Testing" && obj is not null,
-                       $"\n4: mtext.Text {mtext.Text} " +
-                       $"\nColorType: {ColorType} ObjectColor: {ObjectColor} BlockColor: {BlockColor} Layer.Color: {Layer.Color}");
-
                     mtext.UpdateTextVertices(resCache, layerId, sceneIdMap, stateBuffers);
 
                     foreach (var segment in mtext.Segments)
                     {
-                        Debug.WriteLineIf(Layer.Name == "Dim_Testing",
-                                    $"\n5.1: segment.Text {segment.Text} ColorType: {ColorType} ObjectColor: {ObjectColor} BlockColor: {BlockColor} Layer.Color: {Layer.Color}");
-
                         TextVertices.AddRange(segment.TextVertices);
-
-                        Debug.WriteLineIf(Layer.Name == "Dim_Testing",
-                                    $"\n5.2: segment.Text {segment.Text} ColorType: {ColorType} ObjectColor: {ObjectColor} BlockColor: {BlockColor} Layer.Color: {Layer.Color}");
                     }
                 }
             }

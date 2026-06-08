@@ -52,6 +52,16 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             }
             else { BlockColor = new(0, 0, 0, 1); }
         }
+
+        public Vector4 GetColor()
+        {
+            return ColorType switch
+            {
+                ColorType.ByLayer => Layer.Color,
+                ColorType.ByBlock => BlockColor,
+                _ => ObjectColor
+            };
+        }
         #endregion
     }
 }
