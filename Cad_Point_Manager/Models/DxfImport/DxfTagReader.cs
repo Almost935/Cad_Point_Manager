@@ -11,15 +11,35 @@ namespace Cad_Point_Manager.Models.DxfImport
     {
         public static List<DxfTag> ReadTags(string path)
         {
+            using var fs = new FileStream(
+                path,
+                FileMode.Open,
+                FileAccess.Read,
+                FileShare.ReadWrite);
+
+            using var reader = new StreamReader(fs);
+
+            return ReadTags(reader);
+        }
+
+        public static List<DxfTag> ReadTags(TextReader reader)
+        {
             var tags = new List<DxfTag>();
 
-            string[] lines = File.ReadAllLines(path);
-
-            for (int i = 0; i < lines.Length - 1; i += 2)
+            while (true)
             {
-                tags.Add(new DxfTag(
-                    int.Parse(lines[i].Trim()),
-                    lines[i + 1].Trim()));
+                string? codeLine = reader.ReadLine();
+                if (codeLine == null)
+                    break;
+
+                string? valueLine = reader.ReadLine();
+                if (valueLine == null)
+                    break;
+
+                tags.Add(
+                    new DxfTag(
+                        int.Parse(codeLine.Trim()),
+                        valueLine.Trim()));
             }
 
             return tags;

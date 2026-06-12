@@ -2,6 +2,7 @@
 using Cad_Point_Manager.Models;
 using Cad_Point_Manager.Models.DxfImport;
 using Cad_Point_Manager.Models.PointRendering;
+using Cad_Point_Manager.Services.DxfLoading;
 using netDxf;
 using System.IO;
 using System.IO.Compression;
@@ -18,7 +19,7 @@ namespace Cad_Point_Manager.Models
         private string _jobName = "Unsaved";
         private string _jobFilePath;
         private string _dxfFilePath;
-        private DxfDocument _dxfDoc;
+        private DxfImportResult _dxfImportResult;
         private CadManager _CadManager;
         private Rect _extents = RectExtensions.Zero;
         #endregion
@@ -51,12 +52,12 @@ namespace Cad_Point_Manager.Models
                 OnPropertyChanged();
             }
         }
-        public DxfDocument DxfDoc
+        public DxfImportResult DxfImportResult
         {
-            get { return _dxfDoc; }
+            get { return _dxfImportResult; }
             set
             {
-                _dxfDoc = value;
+                _dxfImportResult = value;
                 OnPropertyChanged();
             }
         }
@@ -101,7 +102,7 @@ namespace Cad_Point_Manager.Models
             JobName = string.Empty;
             JobFilePath = string.Empty;
             DxfFilePath = string.Empty;
-            DxfDoc = null;
+            DxfImportResult = null;
             Extents = Rect.Empty;
             JobPathSet = false;
         }
@@ -153,7 +154,7 @@ namespace Cad_Point_Manager.Models
         }
         public void SaveJobFile(string path)
         {
-            if (DxfDoc is null)
+            if (DxfImportResult is null)
                 throw new InvalidOperationException("Cannot save job because no DXF document is loaded.");
 
             JobFileData jobFileData = BuildJobFileData();
@@ -180,7 +181,7 @@ namespace Cad_Point_Manager.Models
             ZipArchiveEntry dxfEntry = archive.CreateEntry("drawing.dxf", CompressionLevel.Optimal);
             using (Stream dxfStream = dxfEntry.Open())
             {
-                bool success = DxfDoc.Save(dxfStream);
+                bool success = DxfImportResult.DxfDocument.Save(dxfStream);
                 if (!success)
                 {
                     throw new InvalidOperationException("Failed to save DXF into the job file.");
@@ -239,15 +240,14 @@ namespace Cad_Point_Manager.Models
 
             return true;
         }
-        public void LoadDxf(DxfImportResult dxfimportResult)
+        public void LoadDxf(DxfImportResult dxfImportResult)
         {
-            if (dxfDoc is not null)
+            if (dxfImportResult is not null)
             {
-                DxfDoc = dxfDoc;
-                DxfFileName = DxfDoc.Name;
+                DxfImportResult = dxfImportResult;
+                DxfFileName = DxfImportResult.DxfDocument.Name;
 
-
-                CadManager.LoadDxf(dxfDoc);
+                CadManager.LoadDxf(dxfImportResult);
             }
         }
 
@@ -312,7 +312,8 @@ namespace Cad_Point_Manager.Models
                 return false;
             }
 
-            DxfDocument? loadedDxf;
+            DxfImportResult? loadedImportResult;
+
             string tempDxfPath = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}.dxf");
 
             try
@@ -323,7 +324,7 @@ namespace Cad_Point_Manager.Models
                     dxfStream.CopyTo(tempFile);
                 }
 
-                loadedDxf = DxfDocument.Load(tempDxfPath);
+                loadedImportResult = DxfImportService.Load(tempDxfPath);
             }
             finally
             {
@@ -333,17 +334,14 @@ namespace Cad_Point_Manager.Models
                 }
             }
 
-            if (loadedDxf is null)
-            {
-                return false;
-            }
+            if (loadedImportResult is null) { return false; }
 
-            return LoadJobFile(jobFileData, loadedDxf);
+            return LoadJobFile(jobFileData, loadedImportResult);
         }
 
-        private bool LoadJobFile(JobFileData jobFileData, DxfDocument dxfDoc)
+        private bool LoadJobFile(JobFileData jobFileData, DxfImportResult dxfImportResult)
         {
-            if (jobFileData is null || dxfDoc is null)
+            if (jobFileData is null || dxfImportResult is null)
             {
                 return false;
             }
@@ -351,11 +349,11 @@ namespace Cad_Point_Manager.Models
             NewJobFile();
 
             JobName = jobFileData.JobName;
-            DxfDoc = dxfDoc;
+            DxfImportResult = dxfImportResult;
             Extents = jobFileData.Extents;
 
             // Rebuild DXF-derived runtime objects
-            CadManager.LoadDxf(dxfDoc);
+            CadManager.LoadDxf(dxfImportResult);
 
             // Important: if LoadDxf() currently creates test points, remove that call there.
             // This clear acts as a safeguard in case that call is still present.

@@ -25,6 +25,8 @@ using System.Windows.Input;
 
 using Point = System.Windows.Point;
 using TextBox = System.Windows.Controls.TextBox;
+using Cad_Point_Manager.Models.DxfImport;
+using Cad_Point_Manager.Services.DxfLoading;
 
 
 namespace Cad_Point_Manager.ViewModels
@@ -42,7 +44,7 @@ namespace Cad_Point_Manager.ViewModels
         private bool _jobFileLoaded = false;
         private string _dxfFilePath;
         private string _dxfFileName;
-        private DxfDocument _dxfDocument;
+        private DxfImportResult _dxfImportResult;
         private Size _viewportSize = Size.Empty;
         private BatchableObservableCollection<KeyValuePair<string, ObjectLayer>> _layers = [];
         private BatchableObservableCollection<PointGroup> _pointGroups = [];
@@ -117,13 +119,13 @@ namespace Cad_Point_Manager.ViewModels
                 OnPropertyChanged(nameof(DxfFileName));
             }
         }
-        public DxfDocument DxfDocument
+        public DxfImportResult DxfImportResult
         {
-            get { return _dxfDocument; }
+            get { return _dxfImportResult; }
             set
             {
-                _dxfDocument = value;
-                OnPropertyChanged(nameof(DxfDocument));
+                _dxfImportResult = value;
+                OnPropertyChanged(nameof(DxfImportResult));
             }
         }
         public Size ViewportSize
@@ -531,11 +533,11 @@ namespace Cad_Point_Manager.ViewModels
                 DxfFilePath = dlg.FileName;
                 DxfFileName = dlg.SafeFileName;
 
-                DxfDocument = DxfDocument.Load(DxfFilePath);
-                if (DxfDocument is not null)
+                DxfImportResult = DxfImportService.Load(DxfFilePath);
+                if (DxfImportResult is not null)
                 {
-                    DxfFileName = DxfDocument.Name;
-                    JobFileManager.LoadDxf(DxfDocument);
+                    DxfFileName = DxfImportResult.DxfDocument.Name;
+                    JobFileManager.LoadDxf(DxfImportResult);
                 }
             }
         }

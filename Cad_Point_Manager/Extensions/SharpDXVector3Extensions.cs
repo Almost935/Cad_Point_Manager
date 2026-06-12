@@ -15,6 +15,14 @@ namespace Cad_Point_Manager.Extensions
             return new System.Windows.Point(v.X, v.Y);
         }
 
+        public static netDxf.Vector3 ToNetDxfVector3(this Vector3 v)
+        {
+            return new netDxf.Vector3(v.X, v.Y, v.Z);
+        }
+        public static netDxf.Vector2 ToNetDxfVector2(this Vector3 v)
+        {
+            return new netDxf.Vector2(v.X, v.Y);
+        }
         public static Vector ToVector(this Vector3 v)
         {
             return new Vector(v.X, v.Y);

@@ -308,7 +308,7 @@ namespace Cad_Point_Manager.Models
             }
         }
 
-        public DxfDocument DxfDocument { get; private set; }
+        public DxfImportResult DxfImportResult { get; private set; }
         public HitTestableObjectTree HitTestableObjectTree { get; private set; }
         public TextVertex[] NumberVertices { get; set; } = [];
         public UndoRedoManager UndoRedoManager { get; } = new();
@@ -337,14 +337,19 @@ namespace Cad_Point_Manager.Models
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
-        public void LoadDxf(DxfDocument dxfDocument, List<ParsedMLeader> mleaders)
+        public void LoadDxf(DxfImportResult dxfImportResult)
         {
             ClearDxf();
-            DxfDocument = dxfDocument;
-            Extents = DxfHelpers.GetBoundsFromHeader(DxfDocument);
+            DxfImportResult = dxfImportResult;
+            Extents = DxfHelpers.GetBoundsFromHeader(DxfImportResult.DxfDocument);
             GetPointScale();
 
-            foreach (var e in DxfDocument.Entities.All)
+            foreach (var layer in dxfImportResult.DxfDocument.Layers)
+            {
+                GetLayer(layer);
+            }
+
+            foreach (var e in DxfImportResult.DxfDocument.Entities.All)
             {
                 if (e is MText mtext && string.IsNullOrWhiteSpace(mtext.Value)) { continue; }
                 if (e is Text text && string.IsNullOrWhiteSpace(text.Value)) { continue; }
@@ -358,8 +363,25 @@ namespace Cad_Point_Manager.Models
                 }
             }
 
-            // Handle MLeaders separately since netDxf does not support mleaders
-            LoadMleaders();
+            foreach (var mleader in dxfImportResult.MLeaders)
+            {
+                var textStyle = dxfImportResult.DxfDocument.TextStyles.FirstOrDefault(ts => ts.Handle == mleader.TextStyleId);
+
+                if (!dxfImportResult.DxfDocument.Layers.TryGetValue(mleader.LayerName, out Layer dxfLayer))
+                {
+                    throw new Exception($"Layer \"{mleader.LayerName}\" not found in DXF document.");
+                }
+                else
+                {
+                    var layer = GetLayer(dxfLayer);
+                    DrawingMleader drawingmleader = new(mleader, layer, textStyle, false, null);
+
+                    if (layer is not null && drawingmleader is not null)
+                    {
+                        layer.AddDrawingObject(drawingmleader);
+                    }
+                }
+            }
 
             UpdateDxfExtents();
             UpdateExtents();
@@ -371,12 +393,6 @@ namespace Cad_Point_Manager.Models
             CogoPointCircleVerticesDirty = true;
             HitTestableObjectTreeDirty = true;
             DxfNeedsReload = true;
-        }
-
-        // Mleader loading methods
-        private void LoadMleaders()
-        {
-            DxfImportService.LoadMleaders()
         }
 
         // CogoPoint related methods
@@ -918,6 +934,19 @@ namespace Cad_Point_Manager.Models
                     "Edit Layer Visibility",
                     commands));
         }
+        public ObjectLayer GetLayer(Layer dxfLayer)
+        {
+            ObjectLayer layer = Layers.FirstOrDefault(x => x.Value.Name == dxfLayer.Name).Value;
+
+            if (layer is not null) { return layer; }
+            else
+            {
+                layer = new(dxfLayer);
+                Layers.Add(new KeyValuePair<string, ObjectLayer>(dxfLayer.Name, layer));
+
+                return layer;
+            }
+        }
 
         // Layout related methods
         public bool TryCreateLayout(string layoutName, LayoutViewport viewport, out Layout layout)
@@ -1207,7 +1236,7 @@ namespace Cad_Point_Manager.Models
 
         public void ClearDxf()
         {
-            DxfDocument = null;
+            DxfImportResult = null;
 
             Layers.Clear();
             _cachedLineVertices.Clear();
@@ -1236,20 +1265,6 @@ namespace Cad_Point_Manager.Models
         public void ZoomToExtents()
         {
             ZoomToExtentsRequested?.Invoke();
-        }
-
-        public ObjectLayer GetLayer(Layer dxfLayer)
-        {
-            ObjectLayer layer = Layers.FirstOrDefault(x => x.Value.Name == dxfLayer.Name).Value;
-
-            if (layer is not null) { return layer; }
-            else
-            {
-                layer = new(dxfLayer);
-                Layers.Add(new KeyValuePair<string, ObjectLayer>(dxfLayer.Name, layer));
-
-                return layer;
-            }
         }
 
         public ReadOnlySpan<LineVertex> UpdateLineVerticesList(SceneIdMap sceneIdMap, D3dStateBuffers stateBuffers)
@@ -1289,6 +1304,13 @@ namespace Cad_Point_Manager.Models
                             dimension.StartLineVertexIndex = _cachedLineVertices.Count;
                             _cachedLineVertices.AddRange(dimension.LineVertices);
                             dimension.EndLineVertexIndex = _cachedLineVertices.Count - 1;
+                        }
+                        if (obj is DrawingMleader drawingMleader)
+                        {
+                            drawingMleader.UpdateGeometryVertices(lId, objectId);
+                            drawingMleader.StartLineVertexIndex = _cachedLineVertices.Count;
+                            _cachedLineVertices.AddRange(drawingMleader.LineVertices);
+                            drawingMleader.EndLineVertexIndex = _cachedLineVertices.Count - 1;
                         }
                     }
                 }
@@ -1354,6 +1376,13 @@ namespace Cad_Point_Manager.Models
                             dimension.StartTextVertexIndex = _cachedTextVertices.Count;
                             _cachedTextVertices.AddRange(dimension.TextVertices);
                             dimension.EndTextVertexIndex = _cachedTextVertices.Count - 1;
+                        }
+                        if (obj is DrawingMleader drawingMleader)
+                        {
+                            drawingMleader.UpdateTextVertices(d3DResCache, lid, sceneIdMap, stateBuffers);
+                            drawingMleader.StartTextVertexIndex = _cachedTextVertices.Count;
+                            _cachedTextVertices.AddRange(drawingMleader.TextVertices);
+                            drawingMleader.EndTextVertexIndex = _cachedTextVertices.Count - 1;
                         }
                     }
                 }
@@ -1427,7 +1456,7 @@ namespace Cad_Point_Manager.Models
         // Hit testing tree related methods
         public void UpdateExtents()
         {
-            DxfExtents = DxfHelpers.GetBoundsFromHeader(DxfDocument);
+            DxfExtents = DxfHelpers.GetBoundsFromHeader(DxfImportResult.DxfDocument);
             UpdatePointExtents();
             Extents = Rect.Union(DxfExtents, PointExtents);
         }

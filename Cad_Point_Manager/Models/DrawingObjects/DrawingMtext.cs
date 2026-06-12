@@ -3,6 +3,7 @@ using Cad_Point_Manager.Controls.D3DControl;
 using Cad_Point_Manager.Controls.D3DControl.Rendering.Text;
 using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Helpers;
+using Cad_Point_Manager.Models.DxfImport;
 using Cad_Point_Manager.Services.Exporting;
 using netDxf;
 using netDxf.Entities;
@@ -187,7 +188,15 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 IsBold = mText.Style.FontStyle == FontStyle.Bold;
                 IsItalic = mText.Style.FontStyle == FontStyle.Italic;
                 FontHeight = (float)mText.Height;
-                FontFamilyName = mText.Style.FontFamilyName;
+
+                var dxfFontFamilyName = mText.Style.FontFamilyName;
+                if (string.IsNullOrWhiteSpace(dxfFontFamilyName))
+                {
+                    dxfFontFamilyName = mText.Style.FontFile;
+                }
+                FontFamilyName = AutoCadFontResolver.Resolve(dxfFontFamilyName);
+
+                Debug.WriteLine($"mText.Style.FontFamilyName: {mText.Style.FontFamilyName} FontFamilyName: {FontFamilyName}");
             }
             else
             {
@@ -254,7 +263,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         public void UpdateMtextBlock(ResCache resCache, uint layerId, SceneIdMap sceneIdMap, D3dStateBuffers stateBuffers)
         {
             MtextBlock?.Dispose();
-            MtextBlock = new((float)MaxWidth, Position, DxfMtext.AttachmentPoint, Rotation);
+            MtextBlock = new((float)MaxWidth, Position, DxfMtext.AttachmentPoint, Rotation, AllowsWrapping);
 
             string rawText = DxfMtext.Value;
             Vector4 baseColor = DxfHelpers.GetDrawingObjectColor(this);

@@ -3,6 +3,7 @@ using Cad_Point_Manager.Controls.D3DControl;
 using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Helpers;
 using Cad_Point_Manager.Services.Exporting;
+using netDxf.Entities;
 using PdfSharpCore.Drawing;
 using SharpDX;
 using SharpDX.DirectWrite;

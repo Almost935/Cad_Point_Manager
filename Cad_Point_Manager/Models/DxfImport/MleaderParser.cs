@@ -1,6 +1,10 @@
-﻿using SharpDX;
+﻿using netDxf.Entities;
+using SharpDX;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -9,10 +13,17 @@ namespace Cad_Point_Manager.Models.DxfImport
 {
     public static class MleaderParser
     {
+        private enum ParseState
+        {
+            Entity,
+            ContextData,
+            Leader,
+            LeaderLine
+        }
+
         public static List<ParsedMLeader> Read(string dxfPath)
         {
             var tags = DxfTagReader.ReadTags(dxfPath);
-
             var leaders = new List<ParsedMLeader>();
 
             for (int i = 0; i < tags.Count; i++)
@@ -35,106 +46,152 @@ namespace Cad_Point_Manager.Models.DxfImport
                             tags.GetRange(
                                 start,
                                 i - start)));
+
+                    i--;
                 }
             }
 
             return leaders;
         }
 
-        private static ParsedMLeader ParseEntity(List<DxfTag> tags)
+        private static ParsedMLeader ParseEntity(
+            List<DxfTag> tags)
         {
-            var leader = new ParsedMLeader();
+            var mleader =
+                new ParsedMLeader();
 
-            ParseText(tags, leader);
-            ParseTextLocation(tags, leader);
-            ParseLeaderVertices(tags, leader);
+            ParsedLeaderNode? currentLeader =
+                null;
 
-            return leader;
-        }
+            ParsedLeaderLine? currentLine =
+                null;
 
-        private static void ParseText(List<DxfTag> tags, ParsedMLeader leader)
-        {
-            foreach (var tag in tags)
-            {
-                if (tag.Code == 304)
-                {
-                    leader.Text = tag.Value;
-                    return;
-                }
-            }
-        }
-
-        private static void ParseTextLocation(List<DxfTag> tags, ParsedMLeader leader)
-        {
-            float x = 0;
-            float y = 0;
-            float z = 0;
-
-            bool foundX = false;
-            bool foundY = false;
-            bool foundZ = false;
-
-            foreach (var tag in tags)
-            {
-                if (tag.Code == 12)
-                {
-                    x = float.Parse(tag.Value);
-                    foundX = true;
-                }
-
-                if (tag.Code == 22)
-                {
-                    y = float.Parse(tag.Value);
-                    foundY = true;
-                }
-
-                if (tag.Code == 32)
-                {
-                    z = float.Parse(tag.Value);
-                    foundZ = true;
-                }
-            }
-
-            if (foundX && foundY)
-            {
-                leader.TextLocation =
-                    new Vector3(x, y, z);
-            }
-        }
-
-        private static void ParseLeaderVertices(List<DxfTag> tags, ParsedMLeader leader)
-        {
-            List<Vector3> line = [];
+            ParseState state =
+                ParseState.Entity;
 
             float? x = null;
             float? y = null;
 
             foreach (var tag in tags)
             {
-                if (tag.Code == 10)
+                //----------------------------------
+                // Context Data
+                //----------------------------------
+                if (tag.Code == 300 &&
+                    tag.Value == "CONTEXT_DATA{")
                 {
-                    x = float.Parse(tag.Value);
+                    state = ParseState.ContextData;
+                    continue;
                 }
-                else if (tag.Code == 20)
+
+                if (tag.Code == 301 &&
+                    tag.Value == "}")
                 {
-                    y = float.Parse(tag.Value);
+                    state = ParseState.Entity;
+                    continue;
                 }
-                else if (tag.Code == 30 &&
-                         x.HasValue &&
-                         y.HasValue)
+
+                //----------------------------------
+                // Leader Node
+                //----------------------------------
+
+                if (tag.Code == 302 &&
+                    tag.Value == "LEADER{")
                 {
-                    line.Add(
-                        new Vector3(
-                            x.Value,
-                            y.Value,
-                            float.Parse(tag.Value)));
+                    currentLeader =
+                        new ParsedLeaderNode();
+
+                    mleader.Context
+                        .Leaders
+                        .Add(currentLeader);
+
+                    state = ParseState.Leader;
+                    continue;
+                }
+
+                if (tag.Code == 303 &&
+                    tag.Value == "}")
+                {
+                    currentLeader = null;
+
+                    state =
+                        ParseState.ContextData;
+
+                    continue;
+                }
+
+                //----------------------------------
+                // Leader Line
+                //----------------------------------
+
+                if (tag.Code == 304 &&
+                    tag.Value == "LEADER_LINE{")
+                {
+                    if (currentLeader == null)
+                        continue;
+
+                    currentLine =
+                        new ParsedLeaderLine();
+
+                    currentLeader
+                        .LeaderLines
+                        .Add(currentLine);
+
+                    state =
+                        ParseState.LeaderLine;
+
+                    continue;
+                }
+
+                if (tag.Code == 305 &&
+                    tag.Value == "}")
+                {
+                    currentLine = null;
+
+                    state =
+                        ParseState.Leader;
+
+                    continue;
+                }
+
+                //----------------------------------
+                // Store Tag
+                //----------------------------------
+
+                var mTag =
+                    new MLeaderTag
+                    {
+                        Code = tag.Code,
+                        Value = tag.Value
+                    };
+
+                switch (state)
+                {
+                    case ParseState.Entity:
+                        mleader.Tags
+                            .Add(mTag);
+                        break;
+
+                    case ParseState.ContextData:
+                        mleader.Context.Tags
+                            .Add(mTag);
+                        break;
+
+                    case ParseState.Leader:
+                        currentLeader?
+                            .Tags
+                            .Add(mTag);
+                        break;
+
+                    case ParseState.LeaderLine:
+                        currentLine?
+                            .Tags
+                            .Add(mTag);
+                        break;
                 }
             }
 
-            if (line.Count > 1)
-            {
-                leader.LeaderLines.Add(line);
-            }
+            return mleader;
         }
     }
 }

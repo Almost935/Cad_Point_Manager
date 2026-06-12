@@ -27,15 +27,17 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         public TextBox TextBox { get; set; } = TextBox.Empty;
         public Enums.TextAttachmentPoint AttachmentPoint { get; set; }
         public Vector3 AttachmentOffset { get; set; } = Vector3.Zero; // This will be used to offset the attachment point from the base position
+        public bool AllowsWrapping { get; set; } // This can be used to determine whether to allow text wrapping when adding segments
         #endregion
 
         #region Constructors
-        public DrawingMtextBlock(float maxWidth, Vector3 basePosition, MTextAttachmentPoint attachmentPoint, float rotation)
+        public DrawingMtextBlock(float maxWidth, Vector3 basePosition, MTextAttachmentPoint attachmentPoint, float rotation, bool allowsWrapping)
         {
             MaxWidth = maxWidth;
             BasePosition = basePosition;
             AttachmentPoint = TextRenderingHelpers.GetAttachmentPoint(attachmentPoint);
             Rotation = rotation;
+            AllowsWrapping = allowsWrapping;
         }
         #endregion
 
@@ -316,7 +318,14 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             {
                 var lastRow = _rows.Last();
 
-                if (lastRow.Width + segment.SpaceWidth + segment.Bounds.Width > MaxWidth || segment.IsNewLine)
+                bool shouldWrap =
+                    AllowsWrapping && 
+                    MaxWidth > 0 &&
+                    lastRow.Width +
+                    segment.SpaceWidth +
+                    segment.Bounds.Width > MaxWidth;
+
+                if (shouldWrap || segment.IsNewLine)
                 {
                     DrawingMtextRow newRow = new([segment], BasePosition, MaxWidth);
                     newRow.GetHeight();
