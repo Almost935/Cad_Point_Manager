@@ -1267,7 +1267,7 @@ namespace Cad_Point_Manager.Models
             ZoomToExtentsRequested?.Invoke();
         }
 
-        public ReadOnlySpan<LineVertex> UpdateLineVerticesList(SceneIdMap sceneIdMap, D3dStateBuffers stateBuffers)
+        public ReadOnlySpan<LineVertex> UpdateLineVerticesList(ResCache resCache, SceneIdMap sceneIdMap, D3dStateBuffers stateBuffers)
         {
             if (LineVerticesDirty)
             {
@@ -1291,6 +1291,20 @@ namespace Cad_Point_Manager.Models
                             _cachedLineVertices.AddRange(drawingGeometry.Vertices);
                             drawingGeometry.EndVertexIndex = _cachedLineVertices.Count - 1;
                         }
+                        if (obj is DrawingMtext drawingMtext)
+                        {
+                            drawingMtext.UpdateVertices(resCache, lId, sceneIdMap, stateBuffers);
+                            drawingMtext.StartLineVertexIndex = _cachedLineVertices.Count;
+                            _cachedLineVertices.AddRange(drawingMtext.LineVertices);
+                            drawingMtext.EndLineVertexIndex = _cachedLineVertices.Count - 1;
+                        }
+                        if (obj is DrawingSText drawingSText)
+                        {
+                            drawingSText.UpdateVertices(resCache, lId, sceneIdMap, stateBuffers);
+                            drawingSText.StartLineVertexIndex = _cachedLineVertices.Count;
+                            _cachedLineVertices.AddRange(drawingSText.LineVertices);
+                            drawingSText.EndLineVertexIndex = _cachedLineVertices.Count - 1;
+                        }
                         if (obj is DrawingBlock drawingBlock)
                         {
                             drawingBlock.UpdateGeometryVertices(lId, objectId);
@@ -1307,7 +1321,7 @@ namespace Cad_Point_Manager.Models
                         }
                         if (obj is DrawingMleader drawingMleader)
                         {
-                            drawingMleader.UpdateGeometryVertices(lId, objectId);
+                            drawingMleader.UpdateGeometryVertices(resCache, lId, objectId, sceneIdMap, stateBuffers);
                             drawingMleader.StartLineVertexIndex = _cachedLineVertices.Count;
                             _cachedLineVertices.AddRange(drawingMleader.LineVertices);
                             drawingMleader.EndLineVertexIndex = _cachedLineVertices.Count - 1;
@@ -1351,17 +1365,17 @@ namespace Cad_Point_Manager.Models
                     {
                         if (obj is DrawingSText text)
                         {
-                            text.UpdateTextVertices(d3DResCache, lid, sceneIdMap, stateBuffers);
-                            text.StartVertexIndex = _cachedTextVertices.Count;
+                            text.UpdateVertices(d3DResCache, lid, sceneIdMap, stateBuffers);
+                            text.StartTextVertexIndex = _cachedTextVertices.Count;
                             _cachedTextVertices.AddRange(text.TextVertices);
-                            text.EndVertexIndex = _cachedTextVertices.Count - 1;
+                            text.EndTextVertexIndex = _cachedTextVertices.Count - 1;
                         }
                         if (obj is DrawingMtext mtext)
                         {
-                            mtext.UpdateTextVertices(d3DResCache, lid, sceneIdMap, stateBuffers);
-                            mtext.StartVertexIndex = _cachedTextVertices.Count;
+                            mtext.UpdateVertices(d3DResCache, lid, sceneIdMap, stateBuffers);
+                            mtext.StartTextVertexIndex = _cachedTextVertices.Count;
                             _cachedTextVertices.AddRange(mtext.TextVertices);
-                            mtext.EndVertexIndex = _cachedTextVertices.Count - 1;
+                            mtext.EndTextVertexIndex = _cachedTextVertices.Count - 1;
                         }
                         if (obj is DrawingBlock drawingBlock)
                         {

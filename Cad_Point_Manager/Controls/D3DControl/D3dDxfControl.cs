@@ -822,7 +822,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             if (_lineVertexBuffer is null || CadManager is null) { return; }
 
             var context = ResCache.DeviceContext;
-            var vertexSpan = CadManager.UpdateLineVerticesList(SceneIdMap, StateBuffers);
+            var vertexSpan = CadManager.UpdateLineVerticesList(ResCache, SceneIdMap, StateBuffers);
             StateBuffers.EnsureObjectCapacity(SceneIdMap.ObjectCount);
             _lineVertexBuffer.Update(context, vertexSpan);
             _lineVertexCount = vertexSpan.Length;
@@ -1201,8 +1201,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     new InputElement("POSITION", 0, Format.R32G32B32_Float, 0, 0),
                     new InputElement("LAYERID", 0, Format.R32_UInt, 12, 0),
                     new InputElement("OBJECTID", 0, Format.R32_UInt, 16, 0),
-                    new InputElement("ISMOUSEOVER", 0, Format.R32_Float, 20, 0),
-                    new InputElement("ISSELECTED", 0, Format.R32_Float, 24, 0),
                  });
 
             _textShaderLoaded = true;

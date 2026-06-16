@@ -120,7 +120,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         {
 
         }
-        public void UpdateGeometryVertices(uint layerId, uint objectId)
+        public void UpdateGeometryVertices(ResCache resCache, uint layerId, uint objectId, SceneIdMap sceneIdMap, D3dStateBuffers stateBuffers)
         {
             LineVertices.Clear();
 
@@ -130,6 +130,14 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 {
                     geometry.UpdateVertices(layerId, objectId);
                     LineVertices.AddRange(geometry.Vertices);
+                }
+                if (obj is DrawingMtext mtext)
+                {
+                    mtext.UpdateVertices(resCache, layerId, sceneIdMap, stateBuffers);
+                    foreach (var segment in mtext.Segments)
+                    {
+                        LineVertices.AddRange(segment.LineVertices);
+                    }
                 }
             }
         }
@@ -141,7 +149,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             {
                 if (obj is DrawingMtext mtext)
                 {
-                    mtext.UpdateTextVertices(resCache, layerId, sceneIdMap, stateBuffers);
+                    mtext.UpdateVertices(resCache, layerId, sceneIdMap, stateBuffers);
 
                     foreach (var segment in mtext.Segments)
                     {

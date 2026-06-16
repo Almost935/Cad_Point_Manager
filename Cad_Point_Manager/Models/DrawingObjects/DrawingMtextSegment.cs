@@ -34,6 +34,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         public System.Windows.Media.Matrix Transform { get; set; }
         public TextLayout TextLayout { get; set; }
         public TextVertex[] TextVertices { get; set; } = [];
+        public LineVertex[] LineVertices { get; set; } = [];
         public float MaxWidth { get; set; }
         public bool IsItalic { get; set; } = false;
         public bool IsBold { get; set; } = false;
@@ -46,12 +47,13 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         public float RowXOffset { get; set; } = 0;
         public float GlowOffset { get; set; }
         public float FontSizeFactor { get; set; } = 1;
+        public TextRenderStyle TextRenderStyle { get; set; }
         #endregion
 
         #region Constructors
         public DrawingMtextSegment(DrawingMtext drawingMtext, ObjectLayer layer, string text, Vector4 objectColor, ColorType colorType, Vector3 position,
             float rotation, float fontHeight, string fontFamilyName, bool isItalic, bool isBold, bool isUnderlined, bool isStrikeOut,
-            bool isOverStrike, bool isNewLine, float maxWidth, Enums.TextAlignment textAlignment = Enums.TextAlignment.Left,
+            bool isOverStrike, bool isNewLine, float maxWidth, TextRenderStyle textRenderStyle, Enums.TextAlignment textAlignment = Enums.TextAlignment.Left,
             bool isPartOfBlock = false, DrawingBlock block = null)
         {
             Type = DrawingObjectType.DrawingMtextSegment;
@@ -72,6 +74,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             IsOverStrike = isOverStrike;
             IsNewLine = isNewLine;
             MaxWidth = maxWidth;
+            TextRenderStyle = textRenderStyle;
             TextAlignment = textAlignment;
             IsPartOfBlock = isPartOfBlock;
             DrawingBlock = block;
@@ -148,48 +151,41 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         public override void MouseEnter()
         {
             this.IsMouseOver = true;
-            SetMouseOver(true);
         }
         public override void MouseLeave()
         {
             this.IsMouseOver = false;
-            SetMouseOver(false);
         }
-        private void SetMouseOver(bool isMouseOver)
-        {
-            Span<TextVertex> vertexSpan = TextVertices.AsSpan();
 
-            for (int i = 0; i < vertexSpan.Length; i++)
-            {
-                vertexSpan[i].SetIsMouseOver(isMouseOver);
-            }
-        }
         public override void Select()
         {
             this.IsSelected = true;
-            SetIsSelected(true);
         }
         public override void Deselect()
         {
             this.IsSelected = false;
-            SetIsSelected(false);
         }
-        private void SetIsSelected(bool isSelected)
-        {
-            Span<TextVertex> vertexSpan = TextVertices.AsSpan();
 
-            for (int i = 0; i < vertexSpan.Length; i++)
-            {
-                vertexSpan[i].SetIsSelected(isSelected);
-            }
-        }
         public override double DistanceToPoint(System.Windows.Point p)
         {
             return 0;
         }
         public override void UpdateBounds()
         {
-
+            if (TextRenderStyle == TextRenderStyle.Stroke)
+            {
+                for (int i = 0; i < LineVertices.Length; i++)
+                {
+                    Bounds = Rect.Union(Bounds, (System.Windows.Point)LineVertices[i]);
+                }
+            }
+            else
+            {
+                for (int i = 0; i < TextVertices.Length; i++)
+                {
+                    Bounds = Rect.Union(Bounds, (System.Windows.Point)TextVertices[i]);
+                }
+            }
         }
 
         public void GetTextLayout(Factory1 factory)
@@ -206,13 +202,53 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             SpaceWidth = TextHeight * GlobalHelperProperties.TextHeightToSpaceWidthFactor;
         }
 
-        public void Tesselate(ResCache resCache, uint layerId, uint objectId)
+        public void UpdateVertices(ResCache resCache, uint layerId, uint objectId)
         {
             UpdateFontFace(resCache);
             FontSizeFactor = TextRenderingHelpers.GetFontSizeFactor(resCache, TextLayout, _fontFace);
-            (List<Vector2> vertices, RawRectangleF bounds) = TextRenderingHelpers.TesselateTextLayout(resCache, TextLayout, Text, _fontFace);
-            UpdateBounds(bounds);
-            TextVertices = GetVertices(vertices, layerId, objectId);
+
+            if (TextRenderStyle == TextRenderStyle.Stroke)
+            {
+                (List<Vector2> vertices,
+                 RawRectangleF bounds)
+                    = TextRenderingHelpers
+                        .GetLineRepresentationOfTextLayout(
+                            resCache,
+                            TextLayout,
+                            Text,
+                            _fontFace);
+
+                UpdateBounds(bounds);
+
+                LineVertices =
+                    GetLineVertices(
+                        vertices,
+                        layerId,
+                        objectId);
+
+                TextVertices = [];
+            }
+            else
+            {
+                (List<Vector2> vertices,
+                 RawRectangleF bounds)
+                    = TextRenderingHelpers
+                        .TesselateTextLayout(
+                            resCache,
+                            TextLayout,
+                            Text,
+                            _fontFace);
+
+                UpdateBounds(bounds);
+
+                TextVertices =
+                    GetTextVertices(
+                        vertices,
+                        layerId,
+                        objectId);
+
+                LineVertices = [];
+            }
         }
 
         private void UpdateBounds(RawRectangleF textGeometryBounds)
@@ -253,7 +289,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             return matrix;
         }
 
-        public TextVertex[] GetVertices(List<Vector2> vertices, uint layerId, uint objectId)
+        public TextVertex[] GetTextVertices(List<Vector2> vertices, uint layerId, uint objectId)
         {
             List<TextVertex> textVertices = [];
 
@@ -272,6 +308,28 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
             return textVertices.ToArray();
         }
+        private LineVertex[] GetLineVertices(
+            List<Vector2> vertices,
+            uint layerId,
+            uint objectId)
+        {
+            var result = new LineVertex[vertices.Count];
+
+            for (int i = 0; i < vertices.Count; i++)
+            {
+                Vector2 v = vertices[i];
+
+                result[i] = new LineVertex(
+                    new Vector3(
+                        v.X,
+                        v.Y,
+                        Position.Z),
+                    layerId,
+                    objectId);
+            }
+
+            return result;
+        }
 
         public void ApplyTranslate(Vector3 rowTransform)
         {
@@ -284,6 +342,10 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             for (int i = 0; i < TextVertices.Length; i++)
             {
                 TextVertices[i] = TextVertices[i].Translate(offset);
+            }
+            for (int i = 0; i < LineVertices.Length; i++)
+            {
+                LineVertices[i] = LineVertices[i].Translate(offset);
             }
         }
 

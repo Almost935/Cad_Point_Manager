@@ -1,5 +1,10 @@
 ﻿namespace Cad_Point_Manager.Models.DrawingObjects
 {
+    public enum TextRenderStyle
+    {
+        Stroke,
+        Triangle
+    }
     public enum DrawingObjectType
     {
         DrawingLine,
@@ -11,7 +16,8 @@
         DrawingMtext,
         DrawingMtextSegment,
         DrawingSpline,
-        DrawingDimension
+        DrawingDimension,
+        DrawingSolid
     }
 
     public enum ColorType

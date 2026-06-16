@@ -3,6 +3,7 @@ using Cad_Point_Manager.Controls.D3DControl;
 using Cad_Point_Manager.Controls.D3DControl.Rendering.Text;
 using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Helpers;
+using Cad_Point_Manager.Models.DxfImport;
 using Cad_Point_Manager.Services.Exporting;
 using netDxf.Entities;
 using PdfSharpCore.Drawing;
@@ -25,8 +26,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         #endregion
 
         #region Properties
-        public override List<TextVertex> TextVertices { get; set; } = [];
-
         public Text DxfText { get; set; }
         public float Rotation { get; set; } = 0;
         public float TextHeight { get; set; }
@@ -79,6 +78,14 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 TextHeight = (float)text.Height;
                 FontFamilyName = text.Style.FontFamilyName;
                 Transform = GetTransform(text.Position);
+
+                var dxfFontFamilyName = text.Style.FontFamilyName;
+                if (string.IsNullOrWhiteSpace(dxfFontFamilyName))
+                {
+                    dxfFontFamilyName = text.Style.FontFile;
+                }
+                FontFamilyName = AutoCadFontResolver.Resolve(dxfFontFamilyName);
+                TextRenderStyle = TextRenderStyleResolver.Resolve(FontFamilyName);
             }
             else
             {
@@ -176,59 +183,99 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             return adjustedPos;
         }
 
-        public override void UpdateTextVertices(ResCache resCache, uint layerId, SceneIdMap sceneIdMap, D3dStateBuffers stateBuffers)
+        public override void UpdateVertices(ResCache resCache, uint layerId, SceneIdMap sceneIdMap, D3dStateBuffers stateBuffers)
         {
             var objectId = sceneIdMap.GetOrAddObjectId(this, out var isNewObject);
             if (isNewObject) { stateBuffers.InitializeObjectState(sceneIdMap.MaxObjectId, this, objectId); }
             GetTextFormat(resCache.WriteFactory);
             GetTextLayout(resCache.WriteFactory);
-            Tesselate(resCache, layerId, objectId);
+            UpdateFontFace(resCache);
+
+            if (TextRenderStyle == TextRenderStyle.Stroke)
+            {
+                (List<Vector2> vertices,
+                RawRectangleF bounds)
+                   = TextRenderingHelpers
+                       .GetLineRepresentationOfTextLayout(
+                           resCache,
+                           TextLayout,
+                           Text,
+                           _fontFace);
+                Bounds = bounds.ToRect();
+
+                LineVertices =
+                    GetLineVertices(
+                        vertices,
+                        layerId,
+                        objectId);
+
+                TextVertices = [];
+            }
+            else
+            {
+                FontSizeFactor = TextRenderingHelpers.GetFontSizeFactor(resCache, TextLayout, _fontFace);
+                (List<Vector2> vertices, RawRectangleF bounds) = TextRenderingHelpers.TesselateTextLayout(resCache, TextLayout, Text, _fontFace);
+                Bounds = bounds.ToRect();
+
+                TextVertices = GetTextVertices(vertices, layerId, objectId);
+
+                LineVertices = [];
+            }
         }
         public override void MouseEnter()
         {
-            throw new NotImplementedException();
+            this.IsMouseOver = true;
         }
         public override void MouseLeave()
         {
-            throw new NotImplementedException();
+            this.IsMouseOver = false;
         }
 
         public override void Select()
         {
             this.IsSelected = true;
-            SetIsSelected(true);
         }
         public override void Deselect()
         {
             this.IsSelected = false;
-            SetIsSelected(false);
         }
-        private void SetIsSelected(bool isSelected)
-        {
-            for (int i = 0; i < TextVertices.Count; i++)
-            {
-                TextVertices[i].SetIsSelected(isSelected);
-            }
-        }
-
+       
         public override double DistanceToPoint(Point p)
         {
             return 1000;
         }
         public override void UpdateBounds()
         {
-            if (TextVertices.Count == 0)
+            if (TextRenderStyle == TextRenderStyle.Stroke)
             {
-                Bounds = System.Windows.Rect.Empty;
-                return;
+                if (LineVertices.Count == 0)
+                {
+                    Bounds = System.Windows.Rect.Empty;
+                    return;
+                }
+
+                float minX = LineVertices.Min(v => v.Position.X);
+                float maxX = LineVertices.Max(v => v.Position.X);
+                float minY = LineVertices.Min(v => v.Position.Y);
+                float maxY = LineVertices.Max(v => v.Position.Y);
+
+                Bounds = new System.Windows.Rect(minX, minY, maxX - minX, maxY - minY);
             }
+            else
+            {
+                if (TextVertices.Count == 0)
+                {
+                    Bounds = System.Windows.Rect.Empty;
+                    return;
+                }
 
-            float minX = TextVertices.Min(v => v.Position.X);
-            float maxX = TextVertices.Max(v => v.Position.X);
-            float minY = TextVertices.Min(v => v.Position.Y);
-            float maxY = TextVertices.Max(v => v.Position.Y);
+                float minX = TextVertices.Min(v => v.Position.X);
+                float maxX = TextVertices.Max(v => v.Position.X);
+                float minY = TextVertices.Min(v => v.Position.Y);
+                float maxY = TextVertices.Max(v => v.Position.Y);
 
-            Bounds = new System.Windows.Rect(minX, minY, maxX - minX, maxY - minY);
+                Bounds = new System.Windows.Rect(minX, minY, maxX - minX, maxY - minY);
+            }
         }
 
         private protected Enums.TextAttachmentPoint GetAttachmentPoint(MTextAttachmentPoint mTextAttachment)
@@ -272,16 +319,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             return matrix;
         }
 
-        //private protected TextQuadVertex CreateTextVertex(Vector3 position, char c, float xOffset, float lineHeight, Vector4 color)
-        //{
-        //    Vector3 vertexPosition = new(position.X + xOffset, position.Y, 0);
-        //    Vector3 texCoord = GetTextureCoordinatesForChar(c); // You'll need a font texture atlas
-        //    float isVisible = 1.0f;  // Set this based on visibility rules
-        //    Matrix rotation = Matrix.RotationZ(Rotation);
-
-        //    return new TextQuadVertex(vertexPosition, color, texCoord, isVisible, rotation);
-        //}
-
         public void GetTextFormat(SharpDX.DirectWrite.Factory1 factory)
         {
             _textFormat = new(factory, FontFamilyName, TextHeight);
@@ -292,18 +329,20 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             TextLayout = new(factory, Text, _textFormat, (float)Bounds.Width, (float)Bounds.Height, 96, true);
         }
 
-        public void Tesselate(ResCache resCache, uint layerId, uint objectId)
+        public List<LineVertex> GetLineVertices(List<Vector2> vertices, uint layerId, uint objectId)
         {
-            UpdateFontFace(resCache);
-
-            FontSizeFactor = TextRenderingHelpers.GetFontSizeFactor(resCache, TextLayout, _fontFace);
-            (List<Vector2> vertices, RawRectangleF bounds) = TextRenderingHelpers.TesselateTextLayout(resCache, TextLayout, Text, _fontFace);
-
-            TextVertices = GetVertices(vertices, layerId, objectId);
-            UpdateBounds();
+            List<LineVertex> lineVertices = [];
+            Matrix translationTransform = Matrix.Translation((float)Transform.OffsetX, (float)Transform.OffsetY, 0);
+            for (int i = 0; i < vertices.Count; i++)
+            {
+                var v = vertices[i];
+                var scaledVector = Vector2.TransformCoordinate(v, translationTransform);
+                LineVertex lineVertex = new(new Vector3(scaledVector.X, scaledVector.Y, 0), layerId, objectId);
+                lineVertices.Add(lineVertex);
+            }
+            return lineVertices;
         }
-
-        public List<TextVertex> GetVertices(List<Vector2> vertices, uint layerId, uint objectId)
+        public List<TextVertex> GetTextVertices(List<Vector2> vertices, uint layerId, uint objectId)
         {
             List<TextVertex> textVertices = [];
             Matrix translationTransform = Matrix.Translation((float)Transform.OffsetX, (float)Transform.OffsetY, 0);

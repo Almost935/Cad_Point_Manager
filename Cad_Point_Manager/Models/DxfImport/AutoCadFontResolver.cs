@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Cad_Point_Manager.Models.DrawingObjects;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -48,7 +49,9 @@ namespace Cad_Point_Manager.Models.DxfImport
                 ["calibri"] = "Calibri",
 
                 ["times.ttf"] = "Times New Roman",
-                ["times"] = "Times New Roman"
+                ["times"] = "Times New Roman",
+
+                ["monotxt"] = "Monotxt"
             };
 
         public static string Resolve(string? fontName)
@@ -60,7 +63,7 @@ namespace Cad_Point_Manager.Models.DxfImport
 
             fontName = fontName.Trim();
 
-            if (_fontMap.TryGetValue(fontName, out string? mapped))
+            if (_fontMap.TryGetValue(fontName, out var mapped))
             {
                 return mapped;
             }

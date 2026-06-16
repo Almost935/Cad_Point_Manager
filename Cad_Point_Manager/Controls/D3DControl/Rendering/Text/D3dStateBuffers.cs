@@ -142,6 +142,10 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
             EnsureLayerCapacity(count);
             uint baseFlags = 0;
             if (layer.IsVisible) { baseFlags |= (uint)LayerFlags.Visible; }
+
+            var color = layer.Color;
+            if (color.X == 1f && color.Y == 1f && color.Z == 1f) { color = new Vector4(0, 0, 0, 1); } // white layers converted to black like autocad does
+
             LayerSpan[(int)lId] = new LayerState { Color = layer.Color, Flags = baseFlags };
         }
         public void InitializeObjectState(int count, DrawingObject obj, uint oId)
@@ -160,6 +164,8 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
             {
                 color = obj.BlockColor;
             }
+
+            if (color.X == 1f && color.Y == 1f && color.Z == 1f) { color = new Vector4(0, 0, 0, 1); } // white objects converted to black like autocad doesS
 
             ObjectSpan[(int)oId] = new ObjectState { Color = color, Flags = baseFlags };
         }

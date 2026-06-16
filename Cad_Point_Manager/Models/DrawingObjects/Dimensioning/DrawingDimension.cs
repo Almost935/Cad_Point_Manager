@@ -129,12 +129,12 @@ namespace Cad_Point_Manager.Models.DrawingObjects.Dimensioning
                 }
                 if (obj is DrawingSText text)
                 {
-                    text.UpdateTextVertices(resCache, layerId, sceneIdMap, stateBuffers);
+                    text.UpdateVertices(resCache, layerId, sceneIdMap, stateBuffers);
                     _textVertices.AddRange(text.TextVertices);
                 }
                 if (obj is DrawingMtext mtext)
                 {
-                    mtext.UpdateTextVertices(resCache, layerId, sceneIdMap, stateBuffers);
+                    mtext.UpdateVertices(resCache, layerId, sceneIdMap, stateBuffers);
 
                     foreach (var segment in mtext.Segments)
                     {

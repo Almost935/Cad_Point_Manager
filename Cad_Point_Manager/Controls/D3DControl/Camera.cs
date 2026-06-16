@@ -234,7 +234,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             {
                 var halfW = Viewport.Width / 2f;
                 var halfH = Viewport.Height / 2f;
-                var ndcToPixel = Matrix.Scaling(halfW, -halfH, 1) * Matrix.Translation(halfW, halfH, 0);
+                Matrix ndcToPixel = Matrix.Scaling(halfW, -halfH, 1) * Matrix.Translation(halfW, halfH, 0);
                 Matrix final = ViewProjectionMatrix * ndcToPixel;
                 D2dMatrix = new(
                    final.M11, final.M12,
@@ -479,6 +479,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             }
         }
         #endregion
+
         #region INotifyPropertyChanged Implementation
         public event PropertyChangedEventHandler PropertyChanged;
         protected void OnPropertyChanged([CallerMemberName] string propertyName = null)

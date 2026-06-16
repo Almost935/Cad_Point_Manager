@@ -1,5 +1,6 @@
 ﻿using Cad_Point_Manager.Common;
 using Cad_Point_Manager.Controls.D3DControl;
+using Cad_Point_Manager.Controls.D3DControl.Rendering.Text;
 using netDxf.Entities;
 using SharpDX;
 using SharpDX.Direct2D1;
@@ -18,6 +19,46 @@ namespace Cad_Point_Manager.Helpers
 
         public static ConcurrentDictionary<(string fontName, FontWeight fontWeight, FontStyle fontstyle), float> FontSizeFactorDict
         { get; } = new ConcurrentDictionary<(string fontName, FontWeight fontWeight, FontStyle fontstyle), float>();
+
+        public static (List<Vector2> vertices, RawRectangleF bounds) GetLineRepresentationOfTextLayout(
+            ResCache resCache,
+            TextLayout textLayout,
+            string text,
+            FontFace fontFace)
+        {
+            var fontSizeFactor =
+                GetFontSizeFactor(
+                    resCache,
+                    textLayout,
+                    fontFace);
+
+            var geometry =
+                TextLayoutToGeometry(
+                    resCache,
+                    textLayout,
+                    text,
+                    fontFace,
+                    fontSizeFactor);
+
+            var bounds = geometry.GetBounds();
+
+            List<Vector2> vertices;
+
+            using (var sink = new CustomLineSink())
+            {
+                geometry.Simplify(
+                    GeometrySimplificationOption.Lines,
+                    Matrix3x2.Identity,
+                    _flatteningTolerance,
+                    sink);
+
+                vertices = sink.Vertices;
+            }
+
+            geometry.Dispose();
+
+            return (vertices, bounds);
+        }
 
         public static (List<Vector2> vertices, RawRectangleF bounds) TesselateTextLayout(ResCache resCache, TextLayout textLayout,
             string text, FontFace fontFace)
@@ -101,7 +142,7 @@ namespace Cad_Point_Manager.Helpers
                     false,
                     glyphSink);
                 glyphSink.Close();
-
+                
                 var combinedMatrix = Matrix3x2.Scaling(scaleFactor, -scaleFactor) * Matrix3x2.Translation(charOffset, 0);
 
                 using TransformedGeometry transformedGlyph = new(resCache.D2dFactory, glyphGeometry, combinedMatrix);

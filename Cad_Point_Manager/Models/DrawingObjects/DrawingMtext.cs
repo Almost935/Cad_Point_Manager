@@ -44,8 +44,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         public Vector3 TextAttachmentOffset { get; set; } = Vector3.Zero;
         public bool AllowsWrapping { get; set; }
 
-        public override List<TextVertex> TextVertices { get; set; } = [];
-
         public IEnumerable<DrawingMtextSegment> Segments =>
             MtextBlock?.Rows.SelectMany(r => r.Segments) ?? Enumerable.Empty<DrawingMtextSegment>();
         #endregion
@@ -70,7 +68,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         #endregion
 
         #region Methods
-        public override void UpdateTextVertices(ResCache resCache, uint layerId, SceneIdMap sceneIdMap, D3dStateBuffers stateBuffers)
+        public override void UpdateVertices(ResCache resCache, uint layerId, SceneIdMap sceneIdMap, D3dStateBuffers stateBuffers)
         {
             if (DxfMtext is null) { return; }
 
@@ -79,52 +77,29 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             MtextBlock.GetTextBox(MtextBlock.Height);
             SetRotation();
             UpdateBounds();
+
             TextVertices = Segments.SelectMany(s => s.TextVertices).ToList();
+            LineVertices = Segments.SelectMany(s => s.LineVertices).ToList();
+
+            //Debug.WriteLine($"\nText: {Text} TextRenderStyle: {TextRenderStyle} FontFamilyName: {FontFamilyName}" +
+            //    $"\nTextVertices.Count(): {TextVertices.Count()} LineVertices.Count(): {LineVertices.Count()}");
         }
         public override void MouseEnter()
         {
             this.IsMouseOver = true;
-            SetMouseOver(true);
         }
         public override void MouseLeave()
         {
             this.IsMouseOver = false;
-            SetMouseOver(false);
         }
-        private void SetMouseOver(bool isMouseOver)
-        {
-            foreach (var segment in Segments)
-            {
-                Span<TextVertex> vertexSpan = segment.TextVertices.AsSpan();
 
-                for (int i = 0; i < vertexSpan.Length; i++)
-                {
-                    vertexSpan[i].SetIsMouseOver(isMouseOver);
-                }
-            }
-        }
         public override void Select()
         {
             this.IsSelected = true;
-            SetIsSelected(true);
         }
         public override void Deselect()
         {
             this.IsSelected = false;
-            SetIsSelected(false);
-        }
-
-        private void SetIsSelected(bool isSelected)
-        {
-            foreach (var segment in Segments)
-            {
-                Span<TextVertex> vertexSpan = segment.TextVertices.AsSpan();
-
-                for (int i = 0; i < vertexSpan.Length; i++)
-                {
-                    vertexSpan[i].SetIsSelected(isSelected);
-                }
-            }
         }
 
         public override double DistanceToPoint(Point p)
@@ -195,8 +170,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                     dxfFontFamilyName = mText.Style.FontFile;
                 }
                 FontFamilyName = AutoCadFontResolver.Resolve(dxfFontFamilyName);
-
-                Debug.WriteLine($"mText.Style.FontFamilyName: {mText.Style.FontFamilyName} FontFamilyName: {FontFamilyName}");
+                TextRenderStyle = TextRenderStyleResolver.Resolve(FontFamilyName);
             }
             else
             {
@@ -242,24 +216,11 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
             foreach (var segment in Segments)
             {
-                for (int i = 0; i < segment.TextVertices.Length; i++)
-                {
-                    Bounds = Rect.Union(Bounds, (Point)segment.TextVertices[i]);
-                }
+                segment.UpdateBounds();
+                Bounds = Rect.Union(Bounds, segment.Bounds);
             }
         }
 
-        public List<TextVertex> GetTextVertices()
-        {
-            List<TextVertex> textVertices = [];
-
-            foreach (var segment in Segments)
-            {
-                textVertices.AddRange(segment.TextVertices);
-            }
-
-            return textVertices;
-        }
         public void UpdateMtextBlock(ResCache resCache, uint layerId, SceneIdMap sceneIdMap, D3dStateBuffers stateBuffers)
         {
             MtextBlock?.Dispose();
@@ -531,16 +492,22 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             SceneIdMap sceneIdMap,
             D3dStateBuffers stateBuffers)
         {
+            var fontFamily = AutoCadFontResolver.Resolve(segmentInfo.Font);
+            var renderStyle = TextRenderStyleResolver.Resolve(fontFamily);
+
+            Debug.WriteLine($"\nText: {Text} ColorType: {ColorType} ObjectColor: {ObjectColor}");
+            Debug.WriteLine($"segmentInfo.Text: {segmentInfo.Text} segmentInfo.ColorType: {segmentInfo.ColorType} segmentInfo.ObjectColor: {segmentInfo.ObjectColor}");
+
             DrawingMtextSegment segment = new(this, Layer, segmentInfo.Text, segmentInfo.ObjectColor, segmentInfo.ColorType,
-                Vector3.Zero, 0, (float)segmentInfo.TextHeight, segmentInfo.Font, segmentInfo.IsItalic, segmentInfo.IsBold,
+                Vector3.Zero, 0, (float)segmentInfo.TextHeight, fontFamily, segmentInfo.IsItalic, segmentInfo.IsBold,
                 segmentInfo.IsUnderlined, segmentInfo.IsStrikethrough, segmentInfo.IsOverstriked, segmentInfo.IsNewLine,
-                0, segmentInfo.TextAlignment, IsPartOfBlock, DrawingBlock);
+                0, renderStyle, segmentInfo.TextAlignment, IsPartOfBlock, DrawingBlock);
 
             var objectId = sceneIdMap.GetOrAddObjectId(segment, out bool isNewObj);
 
             if (isNewObj) { stateBuffers.InitializeObjectState(sceneIdMap.MaxObjectId, segment, objectId); }
             segment.GetTextLayout(resCache.WriteFactory);
-            segment.Tesselate(resCache, layerId, objectId);
+            segment.UpdateVertices(resCache, layerId, objectId);
 
             return segment;
         }

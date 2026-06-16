@@ -31,8 +31,6 @@ struct VSInput
     float3 Position : POSITION;
     uint LayerId : LAYERID; // Layer index for indirection
     uint ObjectId : OBJECTID; // Object index for indirection
-    float IsMouseOver : ISMOUSEOVER;
-    float IsSelected : ISSELECTED;
 };
 
 struct PSInput
@@ -100,10 +98,19 @@ PSInput VSMain(VSInput input)
         col = ls.Color;
     }
 
-    if (input.IsSelected > 0.5)
-        col = (input.IsMouseOver > 0.5) ? selectedMouseOverColor : selectedColor;
+    // Selection / hover
+    float sel = ((os.Flags & OBJ_SELECTED) != 0u) ? 1.0f : 0.0f;
+    float mo = ((os.Flags & OBJ_MOUSEOVER) != 0u) ? 1.0f : 0.0f;
+    
+    if (sel > 0.5)
+    {
+        col = (mo > 0.5) ? selectedMouseOverColor : selectedColor;
+    }
+    
     if (!visLayer)
+    {
         col.a = 0.0;
+    }
 
     // --- uniform snap (same offset for all vertices in this draw) ---
     float2 snapNdc = ComputeSnapDeltaNdc(ViewportSize);

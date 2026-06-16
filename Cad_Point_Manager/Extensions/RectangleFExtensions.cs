@@ -1,4 +1,5 @@
 ﻿using SharpDX;
+using SharpDX.Mathematics.Interop;
 using System.Windows;
 
 namespace Cad_Point_Manager.Extensions
@@ -42,6 +43,11 @@ namespace Cad_Point_Manager.Extensions
         public static Rect ToRect(this RectangleF rectF)
         {
             return new Rect(rectF.Left, rectF.Top, rectF.Width, rectF.Height);
+        }
+
+        public static RawRectangleF ToRawRectangleF(this RectangleF rectangleF)
+        {
+            return new RawRectangleF(rectangleF.Left, rectangleF.Top, rectangleF.Left + rectangleF.Width, rectangleF.Top + rectangleF.Height);
         }
     }
 }
