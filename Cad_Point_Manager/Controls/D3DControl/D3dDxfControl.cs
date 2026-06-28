@@ -85,7 +85,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         // Line shader related fields
         private ResizableBuffer<LineVertex> _lineVertexBuffer;
-        private Buffer _lineSettingsBuffer;
+        private Buffer _dxfObjectSettingsBuffer;
         private Buffer _lineRenderModeBuffer;
         private int _lineVertexCount;
         private VertexShader _lineVertexShader;
@@ -108,6 +108,15 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private InputLayout _textInputLayout;
         private bool _textShaderLoaded = false;
         private bool _textVerticesDirty = false;
+
+        // Solid shader related fields
+        private ResizableBuffer<SolidVertex> _solidVertexBuffer;
+        private int _solidVertexCount;
+        private VertexShader _solidVertexShader;
+        private PixelShader _solidPixelShader;
+        private InputLayout _solidInputLayout;
+        private bool _solidShaderLoaded = false;
+        private bool _solidVerticesDirty = false;
 
         // CogoPoint shader related fields
         private bool _cogoPointShadersLoaded = false;
@@ -134,7 +143,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         // Point circle shader related fields
         private ResizableBuffer<PointMarkerInstance> _pointCircleVertexBuffer;
-        private Buffer _pointCircleSettings;
         private InputLayout _pointCircleInputLayout;
         private VertexShader _pointCircleVS;
         private PixelShader _pointCirclePS;
@@ -508,6 +516,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             if (_lineVerticesDirty) { UpdateLineVertices(); }
             if (_textVerticesDirty) { UpdateTextVertices(); }
+            if (_solidVerticesDirty) { UpdateSolidVertices(); }
             if (_glyphVerticesDirty) { UpdateGlyphBatches(); }
             if (_pointCircleVerticesDirty) { UpdatePointCircleVertices(); }
             if (_cogoHoverVerticesDirty) { UpdateCogoHoverVertices(); }
@@ -518,6 +527,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             if (!_lineShadersLoaded) { InitializeLineShaders(); }
             if (!_textShaderLoaded) { InitializeTextShaders(); }
+            if (!_solidShaderLoaded) { InitializeSolidShaders(); }
             if (!_overlayShaderLoaded) { InitializeOverlayShaders(); }
             if (!_cogoPointShadersLoaded) { InitializeCogoPointShaders(); }
             if (!_cogoHoverShadersLoaded) { InitializeCogoPointHoverShaders(); }
@@ -565,6 +575,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             DrawLines(ctx);
             DrawText(ctx);
+            DrawSolids(ctx);
             DrawPointCircles(ctx);
             DrawGlyphBatches(ctx, ResCache.AsciiGlyphAtlas, _glyphBatches);
         }
@@ -595,7 +606,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             ctx.PixelShader.Set(_linePixelShader);
             ctx.InputAssembler.InputLayout = _lineInputLayout;
             ctx.VertexShader.SetConstantBuffer(0, _transformationBuffer);
-            ctx.VertexShader.SetConstantBuffer(1, _lineSettingsBuffer);
+            ctx.VertexShader.SetConstantBuffer(1, _dxfObjectSettingsBuffer);
             ctx.VertexShader.SetConstantBuffer(2, _lineRenderModeBuffer);
             ctx.VertexShader.SetShaderResource(0, StateBuffers.LayerSRV);
             ctx.VertexShader.SetShaderResource(1, StateBuffers.ObjectSRV);
@@ -624,6 +635,23 @@ namespace Cad_Point_Manager.Controls.D3DControl
                  _textVertexBuffer.Buffer, _textVertexBuffer.Stride, 0));
 
             ctx.Draw(_textVertexCount, 0);
+        }
+        private void DrawSolids(DeviceContext ctx)
+        {
+            if (_solidVertexBuffer is null) { return; }
+
+            ctx.VertexShader.Set(_solidVertexShader);
+            ctx.PixelShader.Set(_solidPixelShader);
+            ctx.InputAssembler.InputLayout = _solidInputLayout;
+            ctx.VertexShader.SetConstantBuffer(0, _transformationBuffer);
+            ctx.VertexShader.SetConstantBuffer(1, _dxfObjectSettingsBuffer);
+            ctx.VertexShader.SetShaderResource(0, StateBuffers.LayerSRV);
+            ctx.VertexShader.SetShaderResource(1, StateBuffers.ObjectSRV);
+            ctx.InputAssembler.PrimitiveTopology = PrimitiveTopology.TriangleList;
+            ctx.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding(
+                 _solidVertexBuffer.Buffer, _solidVertexBuffer.Stride, 0));
+
+            ctx.Draw(_solidVertexCount, 0);
         }
         private void DrawGlyphBatches(DeviceContext ctx, GlyphAtlas atlas, Dictionary<short, List<GlyphInstance>> batches)
         {
@@ -678,7 +706,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             ctx.InputAssembler.InputLayout = _pointCircleInputLayout;
             ctx.VertexShader.SetConstantBuffer(0, _transformationBuffer);
             ctx.GeometryShader.SetConstantBuffer(0, _transformationBuffer);
-            ctx.GeometryShader.SetConstantBuffer(1, _pointCircleSettings);
+            ctx.GeometryShader.SetConstantBuffer(1, _dxfObjectSettingsBuffer);
 
             ctx.VertexShader.SetShaderResource(0, StateBuffers.PointSRV);
             ctx.VertexShader.SetShaderResource(1, StateBuffers.GroupSRV);
@@ -846,6 +874,23 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             StateBuffers.FlushAll();
             _textVerticesDirty = false;
+            _dxfDirty = true;
+        }
+        private void UpdateSolidVertices()
+        {
+            if (_solidVertexBuffer is null || CadManager is null)
+            {
+                _solidVerticesDirty = false;
+                return;
+            }
+
+            var context = ResCache.DeviceContext;
+            var vertexSpan = CadManager.UpdateSolidVerticesList(ResCache, SceneIdMap, StateBuffers);
+            _solidVertexBuffer.Update(context, vertexSpan);
+            _solidVertexCount = vertexSpan.Length;
+
+            StateBuffers.FlushAll();
+            _solidVerticesDirty = false;
             _dxfDirty = true;
         }
         private void UpdateGlyphBatches()
@@ -1205,6 +1250,36 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             _textShaderLoaded = true;
         }
+        private void InitializeSolidShaders()
+        {
+            var path = AppDomain.CurrentDomain.BaseDirectory;
+            while (Path.GetFileName(path) != "Cad_Point_Manager")
+            {
+                path = Path.GetDirectoryName(path) ?? throw new DirectoryNotFoundException("The 'Cad_Point_Manager' directory could not be found in the path.");
+            }
+
+            string shaderPath = Path.Combine(path, @"Controls\D3DControl\Shaders\SolidShader.hlsl");
+
+            // Main shaders
+            var textVSBytecode = ShaderBytecode.CompileFromFile(shaderPath, "VSMain", "vs_5_0");
+            _solidVertexShader = new VertexShader(ResCache.Device, textVSBytecode);
+
+            var solidPSBytecode = ShaderBytecode.CompileFromFile(shaderPath, "PSMain", "ps_5_0");
+            _solidPixelShader = new PixelShader(ResCache.Device, solidPSBytecode);
+
+            // Layout
+            _solidInputLayout = new InputLayout(
+                ResCache.Device,
+                ShaderSignature.GetInputSignature(textVSBytecode),
+                new[]
+                {
+                    new InputElement("POSITION", 0, Format.R32G32B32_Float, 0, 0),
+                    new InputElement("LAYERID", 0, Format.R32_UInt, 12, 0),
+                    new InputElement("OBJECTID", 0, Format.R32_UInt, 16, 0),
+                 });
+
+            _solidShaderLoaded = true;
+        }
         private void InitializeCogoPointShaders()
         {
             var path = AppDomain.CurrentDomain.BaseDirectory;
@@ -1465,6 +1540,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _textVertexBuffer?.Dispose();
             _textVertexBuffer = new(device, GlobalHelperProperties.InitialTextVertices);
 
+            _solidVertexBuffer?.Dispose();
+            _solidVertexBuffer = new(device, GlobalHelperProperties.InitialLineVertices);
+
             _pointCircleVertexBuffer?.Dispose();
             _pointCircleVertexBuffer = new(device, GlobalHelperProperties.InitialCircleVertices);
 
@@ -1518,15 +1596,15 @@ namespace Cad_Point_Manager.Controls.D3DControl
             };
             _viewportBuffer = new Buffer(ResCache.Device, viewportBufferDesc);
 
-            var lineBufferDesc = new BufferDescription
+            var dxfObjectBufferDesc = new BufferDescription
             {
                 Usage = ResourceUsage.Default,
-                SizeInBytes = Utilities.SizeOf<LineSettingsBuffer>(),
+                SizeInBytes = Utilities.SizeOf<DxfObjectSettingsBuffer>(),
                 BindFlags = BindFlags.ConstantBuffer,
                 CpuAccessFlags = CpuAccessFlags.None,
                 OptionFlags = ResourceOptionFlags.None
             };
-            _lineSettingsBuffer = new Buffer(ResCache.Device, lineBufferDesc);
+            _dxfObjectSettingsBuffer = new Buffer(ResCache.Device, dxfObjectBufferDesc);
 
             var lineRenderModeBufferDesc = new BufferDescription
             {
@@ -1557,16 +1635,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 OptionFlags = ResourceOptionFlags.None
             };
             _cogoPointSettingsBuffer = new Buffer(ResCache.Device, pointTextBufferDesc);
-
-            var circleBufferDesc = new BufferDescription
-            {
-                Usage = ResourceUsage.Default,
-                SizeInBytes = Utilities.SizeOf<CircleSettingsBuffer>(),
-                BindFlags = BindFlags.ConstantBuffer,
-                CpuAccessFlags = CpuAccessFlags.None,
-                OptionFlags = ResourceOptionFlags.None
-            };
-            _pointCircleSettings = new Buffer(ResCache.Device, circleBufferDesc);
 
             var hoverCircleBufferDesc = new BufferDescription
             {
@@ -1648,12 +1716,12 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             var worldUnitsPerPixel = CadManager.Camera.GetWorldUnitsPerPixel();
 
-            var lineSettings = new LineSettingsBuffer
+            var dxfObjectSettings = new DxfObjectSettingsBuffer
             {
                 SelectedColor = GlobalHelperProperties.SelectedObjectColor,
                 SelectedMouseOverColor = GlobalHelperProperties.SelectedMouseOverObjectColor
             };
-            ResCache.DeviceContext.UpdateSubresource(ref lineSettings, _lineSettingsBuffer);
+            ResCache.DeviceContext.UpdateSubresource(ref dxfObjectSettings, _dxfObjectSettingsBuffer);
 
             var lineGlowSettings = new LineGlowSettingsBuffer
             {
@@ -1669,13 +1737,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 SelectedColor = GlobalHelperProperties.SelectedObjectColor,
             };
             ResCache.DeviceContext.UpdateSubresource(ref cogoPointTextSettings, _cogoPointSettingsBuffer);
-
-            var pointCircleSettings = new CircleSettingsBuffer
-            {
-                SelectedColor = GlobalHelperProperties.SelectedObjectColor,
-                SelectedMouseOverColor = GlobalHelperProperties.SelectedMouseOverGlowColor
-            };
-            ResCache.DeviceContext.UpdateSubresource(ref pointCircleSettings, _pointCircleSettings);
 
             var cogoPointGlowSettingsBuffer = new CogoPointGlowSettingsBuffer
             {
@@ -3183,6 +3244,13 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     _textVerticesDirty = true;
                 }
             }
+            if (e.PropertyName == nameof(CadManager.SolidVerticesDirty))
+            {
+                if (CadManager.SolidVerticesDirty)
+                {
+                    _solidVerticesDirty = true;
+                }
+            }
             if (e.PropertyName == nameof(CadManager.CogoPointTextVerticesDirty))
             {
                 if (CadManager.CogoPointTextVerticesDirty)
@@ -3520,7 +3588,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             {
                 if (disposing)
                 {
-                    if (_attachedWindow != null) { _attachedWindow.KeyUp -= Window_KeyUp; }
+                    _attachedWindow?.KeyUp -= Window_KeyUp;
 
                     _textVertexBuffer?.Dispose(); _textVertexBuffer = null;
                     _textVertexShader?.Dispose(); _textVertexShader = null;
@@ -3528,7 +3596,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     _textInputLayout?.Dispose(); _textInputLayout = null;
 
                     _lineVertexBuffer?.Dispose(); _lineVertexBuffer = null;
-                    _lineSettingsBuffer?.Dispose(); _lineSettingsBuffer = null;
+                    _dxfObjectSettingsBuffer?.Dispose(); _dxfObjectSettingsBuffer = null;
                     _lineRenderModeBuffer?.Dispose(); _lineRenderModeBuffer = null;
                     _lineGlowSettingsBuffer?.Dispose(); _lineGlowSettingsBuffer = null;
                     _lineVertexShader?.Dispose(); _lineVertexShader = null;
@@ -3537,6 +3605,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     _lineGlowPixelShader?.Dispose(); _lineGlowPixelShader = null;
                     _lineGlowGeometryShader?.Dispose(); _lineGlowGeometryShader = null;
                     _lineInputLayout?.Dispose(); _lineInputLayout = null;
+
+                    _solidInputLayout?.Dispose(); _solidInputLayout = null;
+                    _solidPixelShader?.Dispose(); _solidPixelShader = null;
+                    _solidVertexBuffer?.Dispose(); _solidVertexBuffer = null;
+                    _solidVertexShader?.Dispose(); _solidVertexShader = null;
 
                     _transformationBuffer?.Dispose(); _transformationBuffer = null;
 

@@ -40,9 +40,16 @@ namespace Cad_Point_Manager.Models
         #region Fields
         private const float _pointSizeToExtentsFactor = 0.001f;
 
+        private readonly List<LineVertex> _cachedLineVertices = [];
+        private readonly List<TextVertex> _cachedTextVertices = [];
+        private readonly List<SolidVertex> _cachedSolidVertices = [];
+        private readonly List<TextVertex> _cachedPointTextVertices = [];
+        private readonly List<PointMarkerInstance> _cachedPointMarkerVertices = [];
+
         private bool _dxfLoaded = false;
         private bool _lineVerticesDirty = false;
         private bool _textVerticesDirty = false;
+        private bool _solidVerticesDirty = false;
         private bool _cogoPointTextVerticesDirty = false;
         private bool _cogoPointCircleVerticesDirty = false;
         private bool _drawingObjectTreeDirty = false;
@@ -65,11 +72,6 @@ namespace Cad_Point_Manager.Models
         private Camera _camera;
         private PointGroup _activePointGroup;
         private double _pointBaseScale = 1;
-
-        private readonly List<LineVertex> _cachedLineVertices = [];
-        private readonly List<TextVertex> _cachedTextVertices = [];
-        private readonly List<TextVertex> _cachedPointTextVertices = [];
-        private readonly List<PointMarkerInstance> _cachedPointMarkerVertices = [];
         #endregion
 
         #region Properties
@@ -98,6 +100,15 @@ namespace Cad_Point_Manager.Models
             {
                 _textVerticesDirty = value;
                 OnPropertyChanged(nameof(TextVerticesDirty));
+            }
+        }
+        public bool SolidVerticesDirty
+        {
+            get => _solidVerticesDirty;
+            set
+            {
+                _solidVerticesDirty = value;
+                OnPropertyChanged(nameof(SolidVerticesDirty));
             }
         }
         public bool CogoPointTextVerticesDirty
@@ -365,6 +376,11 @@ namespace Cad_Point_Manager.Models
 
             foreach (var mleader in dxfImportResult.MLeaders)
             {
+                if (dxfImportResult.MLeaderStyles.TryGetValue(mleader.LeaderStyleId, out var style))
+                {
+                    mleader.Style = style;
+                }
+
                 var textStyle = dxfImportResult.DxfDocument.TextStyles.FirstOrDefault(ts => ts.Handle == mleader.TextStyleId);
 
                 if (!dxfImportResult.DxfDocument.Layers.TryGetValue(mleader.LayerName, out Layer dxfLayer))
@@ -374,11 +390,19 @@ namespace Cad_Point_Manager.Models
                 else
                 {
                     var layer = GetLayer(dxfLayer);
-                    DrawingMleader drawingmleader = new(mleader, layer, textStyle, false, null);
 
-                    if (layer is not null && drawingmleader is not null)
+                    var blockExists = ArrowheadToNetDxfBlockNameResolver.ResolveArrowhead(mleader.Style.ArrowheadType, out string blockName);
+                    DrawingBlock? arrowHeadBlock = null;
+                    if (blockExists && dxfImportResult.DxfDocument.Blocks.TryGetValue(blockName, out var dxfBlock))
                     {
-                        layer.AddDrawingObject(drawingmleader);
+                        Insert insert = new(dxfBlock);
+                        arrowHeadBlock = DxfHelpers.GetDrawingObject(insert, layer, DxfHelpers.GetEntityObjectColor(insert), DxfHelpers.GetColorType(insert)) as DrawingBlock;
+                    }
+                    DrawingMleader drawingMleader = new(mleader, layer, textStyle, false, null, arrowHeadBlock);
+
+                    if (layer is not null && drawingMleader is not null)
+                    {
+                        layer.AddDrawingObject(drawingMleader);
                     }
                 }
             }
@@ -389,6 +413,7 @@ namespace Cad_Point_Manager.Models
             DxfLoaded = true;
             LineVerticesDirty = true;
             TextVerticesDirty = true;
+            SolidVerticesDirty = true;
             CogoPointTextVerticesDirty = true;
             CogoPointCircleVerticesDirty = true;
             HitTestableObjectTreeDirty = true;
@@ -1247,6 +1272,7 @@ namespace Cad_Point_Manager.Models
             DxfLoaded = false;
             LineVerticesDirty = true;
             TextVerticesDirty = true;
+            SolidVerticesDirty = true;
         }
         public void ClearDxfPoints()
         {
@@ -1404,6 +1430,52 @@ namespace Cad_Point_Manager.Models
             }
 
             return CollectionsMarshal.AsSpan(_cachedTextVertices);
+        }
+        public ReadOnlySpan<SolidVertex> UpdateSolidVerticesList(ResCache resCache, SceneIdMap sceneIdMap, D3dStateBuffers stateBuffers)
+        {
+            if (SolidVerticesDirty)
+            {
+                _cachedSolidVertices.Clear();
+
+                foreach (var keyValuePair in Layers)
+                {
+                    var layer = keyValuePair.Value;
+                    var lId = sceneIdMap.GetOrAddLayerId(layer, out var isNewLayer);
+                    if (isNewLayer) { stateBuffers.InitializeLayerState(sceneIdMap.MaxLayerId, layer, lId); }
+
+                    foreach (var obj in layer.DrawingObjects)
+                    {
+                        var objectId = sceneIdMap.GetOrAddObjectId(obj, out var isNewObj);
+                        if (isNewObj) { stateBuffers.InitializeObjectState(sceneIdMap.MaxObjectId, obj, objectId); }
+
+                        if (obj is DrawingSolid drawingSolid)
+                        {
+                            drawingSolid.UpdateVertices(lId, objectId);
+                            drawingSolid.StartVertexIndex = _cachedSolidVertices.Count;
+                            _cachedSolidVertices.AddRange(drawingSolid.Vertices);
+                            drawingSolid.EndVertexIndex = _cachedSolidVertices.Count - 1;
+                        }
+
+                        if (obj is DrawingMleader mleader)
+                        {
+                            mleader.UpdateSolidVertices(lId, objectId);
+                            mleader.StartSolidVertexIndex = _cachedSolidVertices.Count;
+                            _cachedSolidVertices.AddRange(mleader.SolidVertices);
+                            mleader.EndSolidVertexIndex = _cachedSolidVertices.Count - 1;
+                        }
+
+                        if (obj is DrawingBlock drawingBlock)
+                        {
+                            drawingBlock.UpdateSolidVertices(lId, objectId);
+                            drawingBlock.StartSolidVertexIndex = _cachedSolidVertices.Count;
+                            _cachedSolidVertices.AddRange(drawingBlock.SolidVertices);
+                            drawingBlock.EndSolidVertexIndex = _cachedSolidVertices.Count - 1;
+                        }
+                    }
+                }
+                SolidVerticesDirty = false;
+            }
+            return CollectionsMarshal.AsSpan(_cachedSolidVertices);
         }
         public ReadOnlySpan<PointMarkerInstance> UpdatePointCircleVerticesList(SceneIdMap sceneIdMap, D3dStateBuffers stateBuffers)
         {

@@ -78,5 +78,55 @@ namespace Cad_Point_Manager.Helpers
             Vector2 closest = a + t * ab;
             return Vector2.Distance(p, closest);
         }
+        public static Vector2 GetIntersection(Vector3 p1, Vector3 p2, Vector3 p3, Vector3 p4)
+        {
+            float x1 = p1.X;
+            float y1 = p1.Y;
+
+            float x2 = p2.X;
+            float y2 = p2.Y;
+
+            float x3 = p3.X;
+            float y3 = p3.Y;
+
+            float x4 = p4.X;
+            float y4 = p4.Y;
+
+            float denom =
+                (x1 - x2) * (y3 - y4) -
+                (y1 - y2) * (x3 - x4);
+
+            float px =
+                ((x1 * y2 - y1 * x2) * (x3 - x4) -
+                 (x1 - x2) * (x3 * y4 - y3 * x4))
+                / denom;
+
+            float py =
+                ((x1 * y2 - y1 * x2) * (y3 - y4) -
+                 (y1 - y2) * (x3 * y4 - y3 * x4))
+                / denom;
+
+            return new Vector2(px, py);
+        }
+        public static bool LineSegmentsIntersect(Vector3 p1, Vector3 p2, Vector3 p3, Vector3 p4)
+        {
+            float d1 = Direction(p3, p4, p1);
+            float d2 = Direction(p3, p4, p2);
+            float d3 = Direction(p1, p2, p3);
+            float d4 = Direction(p1, p2, p4);
+
+            return ((d1 > 0 && d2 < 0) || (d1 < 0 && d2 > 0))
+                && ((d3 > 0 && d4 < 0) || (d3 < 0 && d4 > 0));
+        }
+
+        public static float Direction(
+            Vector3 a,
+            Vector3 b,
+            Vector3 c)
+        {
+            return
+                (c.X - a.X) * (b.Y - a.Y)
+              - (c.Y - a.Y) * (b.X - a.X);
+        }
     }
 }

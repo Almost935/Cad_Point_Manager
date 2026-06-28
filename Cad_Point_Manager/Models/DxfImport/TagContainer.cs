@@ -13,6 +13,7 @@ namespace Cad_Point_Manager.Models.DxfImport
 {
     public abstract class TagContainer
     {
+        public string Handle => GetString(5) ?? string.Empty;
         public List<MLeaderTag> Tags { get; } = [];
 
         protected List<MLeaderTag> GetAll(int code)

@@ -17,7 +17,8 @@
         DrawingMtextSegment,
         DrawingSpline,
         DrawingDimension,
-        DrawingSolid
+        DrawingSolid,
+        DrawingMleader
     }
 
     public enum ColorType

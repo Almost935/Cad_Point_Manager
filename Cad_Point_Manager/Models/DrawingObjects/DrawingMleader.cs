@@ -1,7 +1,11 @@
 ﻿using Cad_Point_Manager.Controls.D3DControl;
 using Cad_Point_Manager.Controls.D3DControl.Rendering.Text;
 using Cad_Point_Manager.Extensions;
+using Cad_Point_Manager.Models.DrawingObjects.HelperClasses;
 using Cad_Point_Manager.Models.DxfImport;
+using DocumentFormat.OpenXml.Drawing.Charts;
+using DocumentFormat.OpenXml.Office2016.Drawing.ChartDrawing;
+using DocumentFormat.OpenXml.Presentation;
 using netDxf.Entities;
 using netDxf.Tables;
 using PdfSharpCore.Drawing;
@@ -14,8 +18,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Media;
-
+using static System.Runtime.InteropServices.JavaScript.JSType;
 using Brush = SharpDX.Direct2D1.Brush;
 
 namespace Cad_Point_Manager.Models.DrawingObjects
@@ -31,17 +34,22 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         public List<DrawingObject> DrawingObjects { get; set; } = [];
         public List<LineVertex> LineVertices { get; set; } = [];
         public List<TextVertex> TextVertices { get; set; } = [];
+        public List<SolidVertex> SolidVertices { get; set; } = [];
         public int StartLineVertexIndex { get; set; }
         public int EndLineVertexIndex { get; set; }
         public int StartTextVertexIndex { get; set; }
         public int EndTextVertexIndex { get; set; }
+        public int StartSolidVertexIndex { get; set; }
+        public int EndSolidVertexIndex { get; set; }
         public TextStyle TextStyle { get; set; }
+        public List<ArrowheadInstance> Arrowheads { get; } = [];
+        public DrawingObject? Arrowhead { get; set; } = null;
         #endregion
 
         #region Constructors
-        public DrawingMleader(ParsedMLeader parsedMLeader, ObjectLayer layer, TextStyle textStyle, bool isPartOfBlock = false, DrawingBlock block = null)
+        public DrawingMleader(ParsedMLeader parsedMLeader, ObjectLayer layer, TextStyle textStyle, bool isPartOfBlock = false, DrawingBlock block = null, DrawingBlock? arrowHeadBlock = null)
         {
-            Type = DrawingObjectType.DrawingLine;
+            Type = DrawingObjectType.DrawingMleader;
 
             ParsedMLeader = parsedMLeader;
             Text = parsedMLeader.Context.Text;
@@ -51,9 +59,19 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             ColorType = parsedMLeader.Color.colorType;
             IsPartOfBlock = isPartOfBlock;
             DrawingBlock = block;
+            Arrowhead = arrowHeadBlock;
 
             UpdateColor();
             UpdateData();
+
+            //if (Arrowhead is not null && Arrowhead is DrawingBlock arrowheadBlock)
+            //{
+            //    Debug.WriteLine($"\nParsedMLeader.Style.ArrowheadType: {ParsedMLeader.Style.ArrowheadType}");
+            //    foreach(var obj in arrowheadBlock.DrawingObjects)
+            //    {
+            //        Debug.WriteLine($"obj.GetType(): {obj.GetType()}");
+            //    }
+            //}
         }
         #endregion
 
@@ -82,6 +100,8 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
             DrawingMtext drawingMtext = new(mtext, Layer, ObjectColor, ColorType, false, IsPartOfBlock, DrawingBlock);
             DrawingObjects.Add(drawingMtext);
+
+            GetArrowheadBlocks();
         }
         public override void UpdateBounds()
         {
@@ -140,6 +160,25 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                     }
                 }
             }
+
+            if (Arrowhead is not null)
+            {
+                if (Arrowhead is DrawingBlock block)
+                {
+                    block.UpdateGeometryVertices(layerId, objectId);
+
+                    foreach (var arrowhead in Arrowheads)
+                    {
+                        var transform = arrowhead.Transform;
+
+                        foreach (var vertex in block.LineVertices)
+                        {
+                            var transformed = vertex.Transform(transform);
+                            LineVertices.Add(transformed);
+                        }
+                    }
+                }
+            }
         }
         public void UpdateTextVertices(ResCache resCache, uint layerId, SceneIdMap sceneIdMap, D3dStateBuffers stateBuffers)
         {
@@ -154,6 +193,132 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                     foreach (var segment in mtext.Segments)
                     {
                         TextVertices.AddRange(segment.TextVertices);
+                    }
+                }
+            }
+
+            if (Arrowhead is not null)
+            {
+                if (Arrowhead is DrawingBlock block)
+                {
+                    block.UpdateTextVertices(resCache, layerId, sceneIdMap, stateBuffers);
+
+                    foreach (var arrowhead in Arrowheads)
+                    {
+                        var transform = arrowhead.Transform;
+
+                        foreach (var vertex in block.TextVertices)
+                        {
+                            var transformed = vertex.Transform(transform);
+                            TextVertices.Add(transformed);
+                        }
+                    }
+                }
+            }
+        }
+        public void UpdateSolidVertices(uint layerId, uint objectId)
+        {
+            SolidVertices.Clear();
+
+            foreach (var obj in DrawingObjects)
+            {
+                if (obj is DrawingSolid solid)
+                {
+                    solid.UpdateVertices(layerId, objectId);
+                    SolidVertices.AddRange(solid.Vertices);
+                }
+            }
+            if (Arrowhead is not null)
+            {
+                if (Arrowhead is DrawingBlock block)
+                {
+                    block.UpdateSolidVertices(layerId, objectId);
+
+                    foreach (var arrowhead in Arrowheads)
+                    {
+                        var transform = arrowhead.Transform;
+
+                        foreach (var vertex in block.SolidVertices)
+                        {
+                            var transformed = vertex.Transform(transform);
+                            SolidVertices.Add(transformed);
+                        }
+                    }
+                }
+                else if (Arrowhead is DrawingSolid solid)
+                {
+                    solid.UpdateVertices(layerId, objectId);
+
+                    foreach (var arrowhead in Arrowheads)
+                    {
+                        var transform = arrowhead.Transform;
+
+                        foreach (var vertex in solid.Vertices)
+                        {
+                            var transformed = vertex.Transform(transform);
+                            SolidVertices.Add(transformed);
+                        }
+                    }
+                }
+            }
+        }
+        public void GetArrowheadBlocks()
+        {
+            if (ParsedMLeader.Style.ArrowheadType == ArrowheadType.ClosedFilled)
+            {
+                foreach (var leader in ParsedMLeader.Context.Leaders)
+                {
+                    Vector2 dogLegStart = leader.LastLeaderLinePoint.ToSharpDXVector2();
+
+                    foreach (var leaderLine in leader.LeaderLines)
+                    {
+                        var vertex = leaderLine.Vertex.ToSharpDXVector2();
+                        Vector2 dir = Vector2.Normalize(dogLegStart - vertex);
+
+                        float length = ParsedMLeader.Style.ArrowheadSize;
+                        float halfWidth = length / 6f;
+
+                        Vector2 baseCenter = vertex + dir * length;
+                        Vector2 perp = new(-dir.Y, dir.X);
+
+                        Vector2 leftBase = baseCenter + perp * halfWidth;
+                        Vector2 rightBase = baseCenter - perp * halfWidth;
+
+                        Solid dxfSolid = new(
+                            vertex.ToNetDxfVector2(), leftBase.ToNetDxfVector2(), rightBase.ToNetDxfVector2(), rightBase.ToNetDxfVector2());
+                        DrawingSolid solid = new(dxfSolid, Layer, ObjectColor, ColorType, IsPartOfBlock, DrawingBlock);
+                        ArrowheadInstance arrowheadInstance = new()
+                        {
+                            DrawingObject = solid,
+                            Translation = Vector3.Zero,
+                            RotationRadians = 0f,
+                            Scale = 1f
+                        };
+                        Arrowhead = solid;
+                        Arrowheads.Add(arrowheadInstance);
+                    }
+                }
+            }
+            else
+            {
+                foreach (var leader in ParsedMLeader.Context.Leaders)
+                {
+                    Vector2 dogLegStart = leader.LastLeaderLinePoint.ToSharpDXVector2();
+                    foreach (var leaderLine in leader.LeaderLines)
+                    {
+                        var tip = leaderLine.Vertex.ToSharpDXVector2();
+                        Vector2 dir = Vector2.Normalize(tip - dogLegStart);
+
+                        float rotation = MathF.Atan2(dir.Y, dir.X);
+
+                        ArrowheadInstance arrowheadInstance = new()
+                        {
+                            DrawingObject = Arrowhead,
+                            Translation = new Vector3(tip.X, tip.Y, 0f),
+                            RotationRadians = rotation,
+                            Scale = ParsedMLeader.Style.ArrowheadSize
+                        };
+                        Arrowheads.Add(arrowheadInstance);
                     }
                 }
             }

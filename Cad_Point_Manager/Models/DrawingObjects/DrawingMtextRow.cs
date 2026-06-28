@@ -1,6 +1,7 @@
 ﻿using Cad_Point_Manager.Common;
 using Cad_Point_Manager.Extensions;
 using SharpDX;
+using System.Diagnostics;
 
 namespace Cad_Point_Manager.Models.DrawingObjects
 {
@@ -66,12 +67,16 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             for (int i = 0; i < Segments.Count; i++)
             {
                 var segment = Segments[i];
-                var prevSpaceWidth = prevSegment?.SpaceWidth ?? 0;
-                var prevSegmentWidth = (float)(prevSegment?.Bounds.Width ?? 0);
-                if (i != 0)
-                {
-                    currentXOffset += prevSegmentWidth + segment.SpaceWidth;
-                }
+
+                //var prevSegmentWidth = (float)(prevSegment?.Bounds.Width ?? 0);
+                //if (i != 0)
+                //{
+                //    currentXOffset += prevSegmentWidth + segment.SpaceWidth;
+                //}
+
+                var prevAdvanceWidth = prevSegment?.AdvanceWidth ?? 0;
+                currentXOffset += prevAdvanceWidth;
+
                 segment.RowXOffset = currentXOffset;
                 prevSegment = segment;
             }

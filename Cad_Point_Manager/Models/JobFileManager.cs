@@ -405,6 +405,7 @@ namespace Cad_Point_Manager.Models
 
             CadManager.LineVerticesDirty = true;
             CadManager.TextVerticesDirty = true;
+            CadManager.SolidVerticesDirty = true;
             CadManager.CogoPointTextVerticesDirty = true;
             CadManager.CogoPointCircleVerticesDirty = true;
             CadManager.HitTestableObjectTreeDirty = true;

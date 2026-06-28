@@ -6,17 +6,16 @@ using Matrix = SharpDX.Matrix;
 namespace Cad_Point_Manager.Controls.D3DControl
 {
     [StructLayout(LayoutKind.Sequential)]
-    public struct SolidVertex
+    public struct SolidVertex(Vector3 pos, uint layerId, uint objectId)
     {
-        public Vector3 Position;
-        public uint LayerId;
-        public uint ObjectId;
+        public Vector3 Position = pos;
+        public uint LayerId = layerId;
+        public uint ObjectId = objectId;
 
-        public SolidVertex(Vector3 pos, uint layerId, uint objectId)
+        public readonly SolidVertex Transform(Matrix transform)
         {
-            Position = pos;
-            LayerId = layerId;
-            ObjectId = objectId;
+            Vector3 transformedPosition = Vector3.TransformCoordinate(Position, transform);
+            return new SolidVertex(transformedPosition, LayerId, ObjectId);
         }
     }
     [StructLayout(LayoutKind.Sequential)]
@@ -240,12 +239,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
     }
     [StructLayout(LayoutKind.Sequential)]
-    public struct CircleSettingsBuffer
-    {
-        public Vector4 SelectedColor;
-        public Vector4 SelectedMouseOverColor;
-    }
-    [StructLayout(LayoutKind.Sequential)]
     public struct CogoPointGlowSettingsBuffer
     {
         public float GlowOffset;
@@ -268,13 +261,19 @@ namespace Cad_Point_Manager.Controls.D3DControl
             return new LineVertex(Position + offset, LayerId, ObjectId);
         }
 
+        public readonly LineVertex Transform(Matrix transform)
+        {
+            Vector3 transformedPosition = Vector3.TransformCoordinate(Position, transform);
+            return new LineVertex(transformedPosition, LayerId, ObjectId);
+        }
+
         public static implicit operator System.Windows.Point(LineVertex v)
         {
             return new System.Windows.Point(v.Position.X, v.Position.Y);
         }
     }
     [StructLayout(LayoutKind.Sequential)]
-    public struct LineSettingsBuffer
+    public struct DxfObjectSettingsBuffer
     {
         public Vector4 SelectedColor;
         public Vector4 SelectedMouseOverColor;
@@ -297,7 +296,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct TextVertex(Vector3 position, uint layerId, uint objectId, float isMouseOver = 0, float isSelected = 0)
+    public struct TextVertex(Vector3 position, uint layerId, uint objectId)
     {
         public Vector3 Position { get; set; } = position;
         public uint LayerId { get; set; } = layerId;   // Layer index
@@ -308,17 +307,10 @@ namespace Cad_Point_Manager.Controls.D3DControl
         {
             return new TextVertex(Position + offset, LayerId, ObjectId);
         }
-        public readonly TextVertex Translate(Vector2 offset)
+        public readonly TextVertex Transform(Matrix transform)
         {
-            return new TextVertex(new Vector3(Position.X + offset.X, Position.Y + offset.Y, Position.Z), LayerId, ObjectId);
-        }
-        public readonly TextVertex Translate(float x, float y, float z)
-        {
-            return new TextVertex(new Vector3(Position.X + x, Position.Y + y, Position.Z + z), LayerId, ObjectId);
-        }
-        public void Transform(Matrix transform)
-        {
-            Position = Vector3.TransformCoordinate(Position, transform);
+            Vector3 transformedPosition = Vector3.TransformCoordinate(Position, transform);
+            return new TextVertex(transformedPosition, LayerId, ObjectId);
         }
 
         public static TextVertex RotateAroundPoint(TextVertex textVertex, Vector2 basePoint, float radians)

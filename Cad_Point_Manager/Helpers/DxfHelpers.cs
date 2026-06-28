@@ -58,6 +58,7 @@ namespace Cad_Point_Manager.Helpers
                 Text text => new DrawingSText(text, layer, color, colorType, ownerBlock is not null, ownerBlock),
                 Spline spline => new DrawingSpline(spline, layer, color, colorType, ownerBlock is not null, ownerBlock),
                 Dimension dimension => new DrawingDimension(dimension, layer, color, colorType, ownerBlock is not null, ownerBlock),
+                Solid solid => new DrawingSolid(solid, layer, color, colorType, ownerBlock is not null, ownerBlock),
                 _ => null,
             };
         }
@@ -134,12 +135,10 @@ namespace Cad_Point_Manager.Helpers
                 }
                 else
                 {
-                    // If the block reference is not provided, default to black
                     color = new(0, 0, 0, 1);
                 }
             }
 
-            // if the color is white, set it to black
             if (color.X == 1 && color.Y == 1 && color.Z == 1)
             {
                 color = new(0, 0, 0, 1);
@@ -192,6 +191,11 @@ namespace Cad_Point_Manager.Helpers
 
 
             return (r, g, b, a);
+        }
+
+        public static Polyline2D PolylineResolver(Polyline2D polyLine2D)
+        {
+            // Implementation for PolylineResolver
         }
     }
 }

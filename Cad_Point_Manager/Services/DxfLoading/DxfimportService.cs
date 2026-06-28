@@ -1,5 +1,6 @@
 ﻿using Cad_Point_Manager.Models.DxfImport;
 using netDxf;
+using System.Diagnostics;
 using System.IO;
 
 namespace Cad_Point_Manager.Services.DxfLoading
@@ -8,10 +9,15 @@ namespace Cad_Point_Manager.Services.DxfLoading
     {
         public static DxfImportResult Load(string path)
         {
+            var mleaderData = MleaderParser.Read(path);
+
             return new DxfImportResult
             {
                 DxfDocument = DxfDocument.Load(path),
-                MLeaders = MleaderParser.Read(path)
+
+                MLeaders = mleaderData.MLeaders,
+
+                MLeaderStyles = mleaderData.MLeaderStyles
             };
         }
     }

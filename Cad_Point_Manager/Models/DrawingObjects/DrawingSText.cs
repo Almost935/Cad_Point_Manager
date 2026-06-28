@@ -354,11 +354,11 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 var v3 = vertices[i + 2];
 
                 var scaledVector1 = Vector2.TransformCoordinate(v1, translationTransform);
-                TextVertex textVertex1 = new(new Vector3(scaledVector1.X, scaledVector1.Y, 0), layerId, objectId, isMouseOver: 0, isSelected: 0);
+                TextVertex textVertex1 = new(new Vector3(scaledVector1.X, scaledVector1.Y, 0), layerId, objectId);
                 var scaledVector2 = Vector2.TransformCoordinate(v2, translationTransform);
-                TextVertex textVertex2 = new(new Vector3(scaledVector2.X, scaledVector2.Y, 0), layerId, objectId, isMouseOver: 0, isSelected: 0);
+                TextVertex textVertex2 = new(new Vector3(scaledVector2.X, scaledVector2.Y, 0), layerId, objectId);
                 var scaledVector3 = Vector2.TransformCoordinate(v3, translationTransform);
-                TextVertex textVertex3 = new(new Vector3(scaledVector3.X, scaledVector3.Y, 0), layerId, objectId, isMouseOver: 0, isSelected: 0);
+                TextVertex textVertex3 = new(new Vector3(scaledVector3.X, scaledVector3.Y, 0), layerId, objectId);
 
                 textVertices.AddRange([textVertex1, textVertex2, textVertex3]);
             }

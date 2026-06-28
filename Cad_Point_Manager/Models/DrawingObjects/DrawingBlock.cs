@@ -18,6 +18,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         private List<DrawingObject> _drawingObjects = [];
         private List<LineVertex> _geometryVertices = [];
         private List<TextVertex> _textVertices = [];
+        private List<SolidVertex> _solidVertices = [];
         #endregion
 
         #region Properties
@@ -49,12 +50,23 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 OnPropertyChanged(nameof(TextVertices));
             }
         }
+        public List<SolidVertex> SolidVertices
+        {
+            get => _solidVertices;
+            set
+            {
+                _solidVertices = value;
+                OnPropertyChanged(nameof(SolidVertices));
+            }
+        }
 
         public Vector3 InsertionPoint { get; set; }
         public int StartLineVertexIndex { get; set; }
         public int EndLineVertexIndex { get; set; }
         public int StartTextVertexIndex { get; set; }
         public int EndTextVertexIndex { get; set; }
+        public int StartSolidVertexIndex { get; set; }
+        public int EndSolidVertexIndex { get; set; }
         public bool IsPartOfDimension { get; set; } = false;
 
         public int NumberOfDrawingObjects => DrawingObjects.Count;
@@ -219,6 +231,23 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                     {
                         TextVertices.AddRange(segment.TextVertices);
                     }
+                }
+            }
+        }
+        public void UpdateSolidVertices(uint layerId, uint objectId)
+        {
+            SolidVertices.Clear();
+            foreach (var obj in DrawingObjects)
+            {
+                if (obj is DrawingBlock block)
+                {
+                    block.UpdateSolidVertices(layerId, objectId);
+                    SolidVertices.AddRange(block.SolidVertices);
+                }
+                if (obj is DrawingSolid solid)
+                {
+                    solid.UpdateVertices(layerId, objectId);
+                    SolidVertices.AddRange(solid.Vertices);
                 }
             }
         }

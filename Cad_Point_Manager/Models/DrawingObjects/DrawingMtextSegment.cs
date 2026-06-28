@@ -48,6 +48,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         public float GlowOffset { get; set; }
         public float FontSizeFactor { get; set; } = 1;
         public TextRenderStyle TextRenderStyle { get; set; }
+        public float AdvanceWidth { get; set; }
         #endregion
 
         #region Constructors
@@ -82,6 +83,9 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
             UpdateColor();
             UpdateTransform();
+
+            //Debug.WriteLine($"\nText: {Text} ColorType: {ColorType}" +
+            //    $"\nObjectColor: {ObjectColor} BlockColor: {BlockColor} Layer.Color: {Layer.Color}");
         }
         #endregion
 
@@ -199,13 +203,18 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             _textFormat = new(factory, FontFamilyName, fontWeight, fontStyle, TextHeight);
             TextLayout = new(factory, Text, _textFormat, float.MaxValue, float.MaxValue, 96, true);
 
-            SpaceWidth = TextHeight * GlobalHelperProperties.TextHeightToSpaceWidthFactor;
+            SpaceWidth = TextRenderingHelpers.GetSpaceWidth(
+                factory,
+                FontFamilyName,
+                TextHeight);
         }
 
         public void UpdateVertices(ResCache resCache, uint layerId, uint objectId)
         {
             UpdateFontFace(resCache);
             FontSizeFactor = TextRenderingHelpers.GetFontSizeFactor(resCache, TextLayout, _fontFace);
+
+            AdvanceWidth = TextLayout.Metrics.WidthIncludingTrailingWhitespace * FontSizeFactor;
 
             if (TextRenderStyle == TextRenderStyle.Stroke)
             {
@@ -299,9 +308,9 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 var v2 = vertices[i + 1];
                 var v3 = vertices[i + 2];
 
-                TextVertex textVertex1 = new(new Vector3(v1.X, v1.Y, 0), layerId, objectId, isMouseOver: 0, isSelected: 0);
-                TextVertex textVertex2 = new(new Vector3(v2.X, v2.Y, 0), layerId, objectId, isMouseOver: 0, isSelected: 0);
-                TextVertex textVertex3 = new(new Vector3(v3.X, v3.Y, 0), layerId, objectId, isMouseOver: 0, isSelected: 0);
+                TextVertex textVertex1 = new(new Vector3(v1.X, v1.Y, 0), layerId, objectId);
+                TextVertex textVertex2 = new(new Vector3(v2.X, v2.Y, 0), layerId, objectId);
+                TextVertex textVertex3 = new(new Vector3(v3.X, v3.Y, 0), layerId, objectId);
 
                 textVertices.AddRange([textVertex1, textVertex2, textVertex3]);
             }

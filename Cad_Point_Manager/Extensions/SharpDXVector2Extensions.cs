@@ -31,6 +31,11 @@ namespace Cad_Point_Manager.Extensions
             return new Vector(v.X, v.Y);
         }
 
+        public static netDxf.Vector2 ToNetDxfVector2(this Vector2 v)
+        {
+            return new netDxf.Vector2(v.X, v.Y);
+        }
+
         public static bool EqualsWithTolerance(this Vector2 v1, Vector2 v2, float tolerance)
         {
             return Math.Abs(v1.X - v2.X) <= tolerance &&

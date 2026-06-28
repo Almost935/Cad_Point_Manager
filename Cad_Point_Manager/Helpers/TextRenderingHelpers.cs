@@ -7,6 +7,7 @@ using SharpDX.Direct2D1;
 using SharpDX.DirectWrite;
 using SharpDX.Mathematics.Interop;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 
 namespace Cad_Point_Manager.Helpers
 {
@@ -76,13 +77,13 @@ namespace Cad_Point_Manager.Helpers
             return (vertices, bounds);
         }
 
-        public static float GetSpaceWidth(ResCache resCache, string fontFamily, float fontSize)
+        public static float GetSpaceWidth(SharpDX.DirectWrite.Factory1 writeFactory, string fontFamily, float fontSize)
         {
-            using (var textFormat = new TextFormat(resCache.WriteFactory, fontFamily, fontSize))
+            using (var textFormat = new TextFormat(writeFactory, fontFamily, fontSize))
             {
                 // Measure width of "A A" and subtract width of "AA" to get accurate space width.
-                using var layoutWithSpace = new TextLayout(resCache.WriteFactory, "A A", textFormat, float.MaxValue, float.MaxValue);
-                using var layoutWithoutSpace = new TextLayout(resCache.WriteFactory, "AA", textFormat, float.MaxValue, float.MaxValue);
+                using var layoutWithSpace = new TextLayout(writeFactory, "A A", textFormat, float.MaxValue, float.MaxValue);
+                using var layoutWithoutSpace = new TextLayout(writeFactory, "AA", textFormat, float.MaxValue, float.MaxValue);
                 var widthWithSpace = layoutWithSpace.Metrics.Width;
                 var widthWithoutSpace = layoutWithoutSpace.Metrics.Width;
 

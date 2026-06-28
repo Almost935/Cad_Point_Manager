@@ -75,20 +75,17 @@ float2 ComputeSnapDeltaNdc(float2 viewportSize)
     return (deltaPix / viewportSize) * 2.0f;
 }
 
-PSInput VSMain(VSInput input)
+float4 GetObjectColor(VSInput input)
 {
-    PSInput o;
+    float4 col;
 
-    float4 clip = mul(float4(input.Position, 1.0), transformationMatrix);
-    
     LayerState ls = LayerStates[input.LayerId];
     ObjectState os = ObjectStates[input.ObjectId];
     
     float visLayer = ((ls.Flags & LAYER_VISIBLE) != 0u) ? 1.0f : 0.0f;
     float visObject = ((os.Flags & OBJ_VISIBLE) != 0u) ? 1.0f : 0.0f;
     float colorByLayer = ((os.Flags & OBJ_COLOR_BY_LAYER) != 0u) ? 1.0f : 0.0f;
-
-    float4 col;
+    
     if (colorByLayer < 0.5)
     {
         col = os.Color;
@@ -111,6 +108,17 @@ PSInput VSMain(VSInput input)
     {
         col.a = 0.0;
     }
+    
+    return col;
+}
+
+PSInput VSMain(VSInput input)
+{
+    PSInput o;
+
+    float4 clip = mul(float4(input.Position, 1.0), transformationMatrix);
+    
+    float4 col = GetObjectColor(input);
 
     // --- uniform snap (same offset for all vertices in this draw) ---
     float2 snapNdc = ComputeSnapDeltaNdc(ViewportSize);

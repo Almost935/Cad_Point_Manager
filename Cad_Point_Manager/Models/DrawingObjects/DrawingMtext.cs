@@ -5,6 +5,7 @@ using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Helpers;
 using Cad_Point_Manager.Models.DxfImport;
 using Cad_Point_Manager.Services.Exporting;
+using DocumentFormat.OpenXml.ExtendedProperties;
 using netDxf;
 using netDxf.Entities;
 using PdfSharpCore.Drawing;
@@ -27,11 +28,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 {
     public class DrawingMtext : DrawingText
     {
-        #region Fields
-        // Debugging
-        public const string _debugTextFilter = "3'-2 3/8";
-        #endregion
-
         #region Properties
         public MText DxfMtext { get; set; }
         public float Rotation { get; set; } = 0;
@@ -80,9 +76,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
             TextVertices = Segments.SelectMany(s => s.TextVertices).ToList();
             LineVertices = Segments.SelectMany(s => s.LineVertices).ToList();
-
-            //Debug.WriteLine($"\nText: {Text} TextRenderStyle: {TextRenderStyle} FontFamilyName: {FontFamilyName}" +
-            //    $"\nTextVertices.Count(): {TextVertices.Count()} LineVertices.Count(): {LineVertices.Count()}");
         }
         public override void MouseEnter()
         {
@@ -227,32 +220,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             MtextBlock = new((float)MaxWidth, Position, DxfMtext.AttachmentPoint, Rotation, AllowsWrapping);
 
             string rawText = DxfMtext.Value;
-            Vector4 baseColor = DxfHelpers.GetDrawingObjectColor(this);
-
-            if (!rawText.Contains('\\'))
-            {
-                var segmentTexts = rawText.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-
-                foreach (var text in segmentTexts)
-                {
-                    Enums.TextAlignment alignment;
-                    if (AttachmentPoint == Enums.TextAttachmentPoint.TopRight ||
-                        AttachmentPoint == Enums.TextAttachmentPoint.MiddleRight ||
-                        AttachmentPoint == Enums.TextAttachmentPoint.BottomRight)
-                    { alignment = Enums.TextAlignment.Right; }
-                    else if (AttachmentPoint == Enums.TextAttachmentPoint.TopCenter ||
-                        AttachmentPoint == Enums.TextAttachmentPoint.MiddleCenter ||
-                        AttachmentPoint == Enums.TextAttachmentPoint.BottomCenter)
-                    { alignment = Enums.TextAlignment.Center; }
-                    else { alignment = Enums.TextAlignment.Left; }
-
-                    TextSegmentInformation segmentInfo = new(text, baseColor, ColorType, FontFamilyName, DxfMtext.Height,
-                        IsBold, IsItalic, false, false, false, false, alignment);
-                    var textSegment = CreateMtextSegment(segmentInfo, resCache, layerId, sceneIdMap, stateBuffers);
-                    MtextBlock.AddSegment(textSegment);
-                }
-                return;
-            }
+            Vector4 baseColor = ObjectColor;
 
             var texts = rawText.Split(new[] { '{', '}' }, StringSplitOptions.RemoveEmptyEntries);
 
@@ -275,8 +243,9 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             string paraAlignDistributedPattern = @"\\pxqd;";
             string paragraphIndentPattern = @"\\pi([\d.]+);";
             string alignmentPattern = @"\\A([012]);";
+            string paragraphPropertiesPattern = @"\\pxi[-\d.]+,l[-\d.]+,t[-\d.]+;";
 
-            string pattern = $@"((\\[LOkoK])|{aciColorPattern}|{trueTypeColorPattern}|{fontPattern}|{heightPattern}|{lineBreakPattern}|{paragraphIndentPattern}|{underlineStartPattern}|{underlineEndPattern}|{overstrikeStartPattern}|{overstrikeEndPattern}|{strikethroughStartPattern}|{strikethroughEndPattern}|{paraAlignLeftPattern}|{paraAlignCenterPattern}|{paraAlignRightPattern}|{paraAlignJustifyPattern}|{paraAlignDistributedPattern}|{alignmentPattern}|[^{{}}\\]+)";
+            string pattern = $@"((\\[LOkoK])|{aciColorPattern}|{trueTypeColorPattern}|{fontPattern}|{heightPattern}|{lineBreakPattern}|{paragraphIndentPattern}|{underlineStartPattern}|{underlineEndPattern}|{overstrikeStartPattern}|{overstrikeEndPattern}|{strikethroughStartPattern}|{strikethroughEndPattern}|{paraAlignLeftPattern}|{paraAlignCenterPattern}|{paraAlignRightPattern}|{paraAlignJustifyPattern}|{paraAlignDistributedPattern}|{alignmentPattern}|{paragraphPropertiesPattern}|[^{{}}\\]+)";
 
             Enums.TextAlignment baseAlignment;
             if (AttachmentPoint == Enums.TextAttachmentPoint.TopRight ||
@@ -413,13 +382,15 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                     }
                     else if (Regex.IsMatch(value, alignmentPattern))
                     {
-                        int alignment =
-                            int.Parse(Regex.Match(value, alignmentPattern).Groups[1].Value);
+                        int alignment = int.Parse(Regex.Match(value, alignmentPattern).Groups[1].Value);
+                    }
+                    else if (Regex.IsMatch(value, paragraphPropertiesPattern))
+                    {
                     }
                     else
                     {
                         currentSegment.Text += value;
-                        currentSegment.Text = currentSegment.Text.TrimEnd();
+                        //currentSegment.Text = currentSegment.Text.TrimEnd();
 
                         if (currentSegment.HasValue) { textSegments.Add(currentSegment); }
 
@@ -439,14 +410,10 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
                     if (AllowsWrapping)
                     {
-                        segmentTexts =
-                            segmentInfo.Text.Split(
-                                new[] { ' ' },
-                                StringSplitOptions.RemoveEmptyEntries);
+                        segmentTexts = SplitIntoWordsPreservingSpaces(segmentInfo.Text).ToArray();
                     }
                     else
                     {
-
                         segmentTexts = [segmentInfo.Text];
                     }
 
@@ -495,9 +462,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             var fontFamily = AutoCadFontResolver.Resolve(segmentInfo.Font);
             var renderStyle = TextRenderStyleResolver.Resolve(fontFamily);
 
-            Debug.WriteLine($"\nText: {Text} ColorType: {ColorType} ObjectColor: {ObjectColor}");
-            Debug.WriteLine($"segmentInfo.Text: {segmentInfo.Text} segmentInfo.ColorType: {segmentInfo.ColorType} segmentInfo.ObjectColor: {segmentInfo.ObjectColor}");
-
             DrawingMtextSegment segment = new(this, Layer, segmentInfo.Text, segmentInfo.ObjectColor, segmentInfo.ColorType,
                 Vector3.Zero, 0, (float)segmentInfo.TextHeight, fontFamily, segmentInfo.IsItalic, segmentInfo.IsBold,
                 segmentInfo.IsUnderlined, segmentInfo.IsStrikethrough, segmentInfo.IsOverstriked, segmentInfo.IsNewLine,
@@ -506,10 +470,18 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             var objectId = sceneIdMap.GetOrAddObjectId(segment, out bool isNewObj);
 
             if (isNewObj) { stateBuffers.InitializeObjectState(sceneIdMap.MaxObjectId, segment, objectId); }
+
             segment.GetTextLayout(resCache.WriteFactory);
             segment.UpdateVertices(resCache, layerId, objectId);
 
             return segment;
+        }
+
+        private static IEnumerable<string> SplitIntoWordsPreservingSpaces(string text)
+        {
+            return Regex.Matches(text, @"\S+\s*")
+                .Cast<Match>()
+                .Select(m => m.Value);
         }
         #endregion
     }

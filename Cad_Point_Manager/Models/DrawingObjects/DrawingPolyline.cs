@@ -4,7 +4,9 @@ using PdfSharpCore.Drawing;
 using SharpDX;
 using SharpDX.Direct2D1;
 using SharpDX.Mathematics.Interop;
+using System.Diagnostics;
 using System.Windows;
+
 using Vector3 = SharpDX.Vector3;
 
 namespace Cad_Point_Manager.Models.DrawingObjects

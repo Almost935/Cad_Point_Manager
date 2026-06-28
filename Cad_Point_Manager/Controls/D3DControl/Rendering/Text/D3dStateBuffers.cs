@@ -146,7 +146,7 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
             var color = layer.Color;
             if (color.X == 1f && color.Y == 1f && color.Z == 1f) { color = new Vector4(0, 0, 0, 1); } // white layers converted to black like autocad does
 
-            LayerSpan[(int)lId] = new LayerState { Color = layer.Color, Flags = baseFlags };
+            LayerSpan[(int)lId] = new LayerState { Color = color, Flags = baseFlags };
         }
         public void InitializeObjectState(int count, DrawingObject obj, uint oId)
         {
@@ -157,7 +157,6 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
             if (obj.IsSelected) { baseFlags |= (uint)ObjectFlags.Selected; }
             if (obj.IsMouseOver) { baseFlags |= (uint)ObjectFlags.MouseOver; }
 
-            //Vector4 color = obj.ObjectColor;
             Vector4 color = obj.GetColor();
             if (obj.ColorType == ColorType.ByLayer) { color = obj.Layer.Color; baseFlags |= (uint)ObjectFlags.ColorByLayer; }
             else if (obj.ColorType == ColorType.ByBlock)
