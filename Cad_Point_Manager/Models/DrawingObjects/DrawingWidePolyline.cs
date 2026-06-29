@@ -18,6 +18,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         public bool IsClosed { get; set; }
         public float Length { get; set; }
         public List<DrawingSolid> DrawingSolids { get; } = [];
+        public List<DrawingObject> DrawObjects { get; } = [];
         public int StartVertexIndex { get; set; }
         public int EndVertexIndex { get; set; }
         #endregion
