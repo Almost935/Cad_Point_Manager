@@ -1,8 +1,10 @@
 ﻿using Cad_Point_Manager.Models.DrawingObjects;
 using Cad_Point_Manager.Models.DrawingObjects.Dimensioning;
+using DocumentFormat.OpenXml.Drawing.Charts;
 using netDxf;
 using netDxf.Entities;
 using netDxf.Header;
+using System.Diagnostics;
 using System.Windows;
 
 using Vector3 = netDxf.Vector3;
@@ -44,13 +46,19 @@ namespace Cad_Point_Manager.Helpers
         }
 
         // DrawingObject3D getters
-        public static DrawingObject GetDrawingObject(EntityObject e, ObjectLayer layer, SharpDX.Vector4 color, ColorType colorType, DrawingBlock ownerBlock = null, bool isPartOfDimension = false)
+        public static DrawingObject GetDrawingObject(
+            EntityObject e,
+            ObjectLayer layer,
+            SharpDX.Vector4 color,
+            ColorType colorType,
+            DrawingBlock ownerBlock = null,
+            bool isPartOfDimension = false)
         {
             return e switch
             {
                 Line line => new DrawingLine(line, layer, color, colorType, ownerBlock is not null, ownerBlock),
                 Arc arc => new DrawingArc(arc, layer, color, colorType, ownerBlock is not null, ownerBlock),
-                Polyline2D polyline2D => new DrawingPolyline(polyline2D, layer, color, colorType, ownerBlock is not null, ownerBlock),
+                Polyline2D polyline2D => PolylineResolver(polyline2D, layer, color, colorType, ownerBlock, isPartOfDimension),
                 Polyline3D polyline3D => new DrawingPolyline(polyline3D, layer, color, colorType, ownerBlock is not null, ownerBlock),
                 Circle circle => new DrawingCircle(circle, layer, color, colorType, ownerBlock is not null, ownerBlock),
                 Insert block => new DrawingBlock(block, layer, color, colorType, ownerBlock is not null, ownerBlock, isPartOfDimension: isPartOfDimension),
@@ -193,9 +201,22 @@ namespace Cad_Point_Manager.Helpers
             return (r, g, b, a);
         }
 
-        public static Polyline2D PolylineResolver(Polyline2D polyLine2D)
+        public static DrawingObject PolylineResolver(
+            Polyline2D polyline2D,
+            ObjectLayer layer,
+            SharpDX.Vector4 color,
+            ColorType colorType,
+            DrawingBlock ownerBlock = null,
+            bool isPartOfDimension = false)
         {
-            // Implementation for PolylineResolver
+            if (polyline2D == null) { return null; }
+
+            if (polyline2D.Vertexes.Any(v => v.StartWidth > 0 || v.EndWidth > 0))
+            {
+                return new DrawingWidePolyline(polyline2D, layer, color, colorType, isPartOfDimension, ownerBlock);
+            }
+
+            return new DrawingPolyline(polyline2D, layer, color, colorType, ownerBlock is not null, ownerBlock);
         }
     }
 }

@@ -1471,6 +1471,14 @@ namespace Cad_Point_Manager.Models
                             _cachedSolidVertices.AddRange(drawingBlock.SolidVertices);
                             drawingBlock.EndSolidVertexIndex = _cachedSolidVertices.Count - 1;
                         }
+
+                        if (obj is DrawingWidePolyline drawingWidePolyline)
+                        {
+                            drawingWidePolyline.UpdateVertices(lId, objectId);
+                            drawingWidePolyline.StartVertexIndex = _cachedSolidVertices.Count;
+                            _cachedSolidVertices.AddRange(drawingWidePolyline.SolidVertices);
+                            drawingWidePolyline.EndVertexIndex = _cachedSolidVertices.Count - 1;
+                        }
                     }
                 }
                 SolidVerticesDirty = false;

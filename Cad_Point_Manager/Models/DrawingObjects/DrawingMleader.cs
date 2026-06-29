@@ -63,15 +63,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
             UpdateColor();
             UpdateData();
-
-            //if (Arrowhead is not null && Arrowhead is DrawingBlock arrowheadBlock)
-            //{
-            //    Debug.WriteLine($"\nParsedMLeader.Style.ArrowheadType: {ParsedMLeader.Style.ArrowheadType}");
-            //    foreach(var obj in arrowheadBlock.DrawingObjects)
-            //    {
-            //        Debug.WriteLine($"obj.GetType(): {obj.GetType()}");
-            //    }
-            //}
         }
         #endregion
 

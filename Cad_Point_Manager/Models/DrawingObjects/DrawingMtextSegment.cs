@@ -83,9 +83,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
             UpdateColor();
             UpdateTransform();
-
-            //Debug.WriteLine($"\nText: {Text} ColorType: {ColorType}" +
-            //    $"\nObjectColor: {ObjectColor} BlockColor: {BlockColor} Layer.Color: {Layer.Color}");
         }
         #endregion
 
