@@ -13,7 +13,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         public int EndVertexIndex { get; set; }
         public uint ObjectId { get; set; }
 
-        public abstract void UpdateVertices(uint layerId, uint objectId);
+        public abstract void UpdateVertices(ResCache resCache, uint layerId, uint objectId);
 
         public override void MouseEnter()
         {

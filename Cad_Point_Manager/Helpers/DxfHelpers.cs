@@ -1,4 +1,5 @@
-﻿using Cad_Point_Manager.Models.DrawingObjects;
+﻿using Cad_Point_Manager.Extensions;
+using Cad_Point_Manager.Models.DrawingObjects;
 using Cad_Point_Manager.Models.DrawingObjects.Dimensioning;
 using DocumentFormat.OpenXml.Drawing.Charts;
 using netDxf;
@@ -213,7 +214,8 @@ namespace Cad_Point_Manager.Helpers
 
             if (polyline2D.Vertexes.Any(v => v.StartWidth > 0 || v.EndWidth > 0))
             {
-                return new DrawingWidePolyline(polyline2D, layer, color, colorType, isPartOfDimension, ownerBlock);
+                var width = polyline2D.Vertexes.Max(v => Math.Max(v.StartWidth, v.EndWidth)).ToFloat();
+                return new DrawingWidePolyline(polyline2D, layer, color, colorType, width, isPartOfDimension, ownerBlock);
             }
 
             return new DrawingPolyline(polyline2D, layer, color, colorType, ownerBlock is not null, ownerBlock);

@@ -1,4 +1,5 @@
-﻿using netDxf.Entities;
+﻿using Cad_Point_Manager.Controls.D3DControl;
+using netDxf.Entities;
 using PdfSharpCore.Drawing;
 using SharpDX;
 using SharpDX.Direct2D1;
@@ -61,9 +62,9 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             }
         }
 
-        public override void UpdateVertices(uint layerId, uint objectId)
+        public override void UpdateVertices(ResCache resCache, uint layerId, uint objectId)
         {
-            PolylineApproximation.UpdateVertices(layerId, objectId);
+            PolylineApproximation.UpdateVertices(resCache, layerId, objectId);
             Vertices = PolylineApproximation.Vertices;
         }
 

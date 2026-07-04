@@ -1,4 +1,7 @@
-﻿namespace Cad_Point_Manager.Models.DrawingObjects
+﻿
+using SharpDX;
+
+namespace Cad_Point_Manager.Models.DrawingObjects
 {
     public abstract class DrawingSegment : DrawingGeometry
     {

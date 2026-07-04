@@ -1,4 +1,5 @@
 ﻿using SharpDX;
+using SharpDX.Mathematics.Interop;
 using System.Windows;
 
 namespace Cad_Point_Manager.Extensions
@@ -8,6 +9,11 @@ namespace Cad_Point_Manager.Extensions
         public static Vector2 ToSharpDXVector2(this Vector3 v)
         {
             return new Vector2(v.X, v.Y);
+        }
+
+        public static RawVector2 ToRawVector2(this Vector3 v)
+        {
+            return new RawVector2(v.X, v.Y);
         }
 
         public static System.Windows.Point ToPoint(this Vector3 v)

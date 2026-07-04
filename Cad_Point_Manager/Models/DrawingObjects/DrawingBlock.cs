@@ -189,7 +189,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             }
         }
 
-        public void UpdateGeometryVertices(uint layerId, uint objectId)
+        public void UpdateGeometryVertices(ResCache resCache, uint layerId, uint objectId)
         {
             LineVertices.Clear();
 
@@ -197,12 +197,12 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             {
                 if (obj is DrawingBlock block)
                 {
-                    block.UpdateGeometryVertices(layerId, objectId);
+                    block.UpdateGeometryVertices(resCache, layerId, objectId);
                     LineVertices.AddRange(block.LineVertices);
                 }
                 if (obj is DrawingGeometry geometry)
                 {
-                    geometry.UpdateVertices(layerId, objectId);
+                    geometry.UpdateVertices(resCache, layerId, objectId);
                     LineVertices.AddRange(geometry.Vertices);
                 }
             }

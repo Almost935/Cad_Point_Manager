@@ -139,7 +139,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             {
                 if (obj is DrawingGeometry geometry)
                 {
-                    geometry.UpdateVertices(layerId, objectId);
+                    geometry.UpdateVertices(resCache, layerId, objectId);
                     LineVertices.AddRange(geometry.Vertices);
                 }
                 if (obj is DrawingMtext mtext)
@@ -156,7 +156,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             {
                 if (Arrowhead is DrawingBlock block)
                 {
-                    block.UpdateGeometryVertices(layerId, objectId);
+                    block.UpdateGeometryVertices(resCache, layerId, objectId);
 
                     foreach (var arrowhead in Arrowheads)
                     {

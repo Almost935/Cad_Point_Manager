@@ -1,4 +1,5 @@
 ﻿using Cad_Point_Manager.Controls.D3DControl;
+using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Helpers;
 using netDxf.Entities;
 using PdfSharpCore.Drawing;
@@ -13,13 +14,11 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 {
     public class DrawingArc : DrawingCurve
     {
-        #region Fields
-        private Arc _dxfArc => EntityObject as Arc;
-        #endregion
-
         #region Properties
         public bool IsLargeArc { get; set; }
         public Vector3 MidPoint { get; set; }
+
+        private Arc DxfArc => EntityObject as Arc;
         #endregion
 
         #region Constructor
@@ -53,9 +52,13 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 if (Sweep < 0) { Sweep += 360; }
                 IsLargeArc = Sweep >= 180;
                 Length = (float)((Sweep * (Math.PI / 180)) * Radius);
-                SamplePoints = arc.ToPolyline2D(10).Vertexes
+
+                var vertices = arc.ToPolyline2D(10).Vertexes;
+                SamplePoints = vertices
                     .Select(v => new System.Windows.Point(v.Position.X, v.Position.Y)).ToList();
                 UpdateArcMidpoint();
+                Start = vertices.First().Position.ToSharpDXVector3();
+                End = vertices.Last().Position.ToSharpDXVector3();
             }
             else
             {
@@ -113,7 +116,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
             gfx.DrawArc(pen, rect, start, sweep);
         }
-        public override void UpdateVertices(uint layerId, uint objectId)
+        public override void UpdateVertices(ResCache resCache, uint layerId, uint objectId)
         {
             if (EntityObject is Arc arc)
             {
@@ -137,8 +140,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 }
 
                 Vertices = lineVertices.ToArray();
-                Start = Vertices.First().Position;
-                End = Vertices.Last().Position;
+
                 UpdateBounds();
             }
             else
@@ -188,7 +190,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         {
             Bounds = Rect.Empty;
 
-            if (_dxfArc is not null)
+            if (DxfArc is not null)
             {
                 foreach (var point in SamplePoints)
                 {
@@ -204,7 +206,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             }
             return false;
         }
-
         public void UpdateArcMidpoint()
         {
             // Calculate the midpoint angle

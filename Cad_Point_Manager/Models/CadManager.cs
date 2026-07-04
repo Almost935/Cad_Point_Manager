@@ -1312,7 +1312,7 @@ namespace Cad_Point_Manager.Models
 
                         if (obj is DrawingGeometry drawingGeometry)
                         {
-                            drawingGeometry.UpdateVertices(lId, objectId);
+                            drawingGeometry.UpdateVertices(resCache, lId, objectId);
                             drawingGeometry.StartVertexIndex = _cachedLineVertices.Count;
                             _cachedLineVertices.AddRange(drawingGeometry.Vertices);
                             drawingGeometry.EndVertexIndex = _cachedLineVertices.Count - 1;
@@ -1333,14 +1333,14 @@ namespace Cad_Point_Manager.Models
                         }
                         if (obj is DrawingBlock drawingBlock)
                         {
-                            drawingBlock.UpdateGeometryVertices(lId, objectId);
+                            drawingBlock.UpdateGeometryVertices(resCache, lId, objectId);
                             drawingBlock.StartLineVertexIndex = _cachedLineVertices.Count;
                             _cachedLineVertices.AddRange(drawingBlock.LineVertices);
                             drawingBlock.EndLineVertexIndex = _cachedLineVertices.Count - 1;
                         }
                         if (obj is DrawingDimension dimension)
                         {
-                            dimension.UpdateGeometryVertices(lId, objectId);
+                            dimension.UpdateGeometryVertices(resCache, lId, objectId);
                             dimension.StartLineVertexIndex = _cachedLineVertices.Count;
                             _cachedLineVertices.AddRange(dimension.LineVertices);
                             dimension.EndLineVertexIndex = _cachedLineVertices.Count - 1;
@@ -1455,7 +1455,6 @@ namespace Cad_Point_Manager.Models
                             _cachedSolidVertices.AddRange(drawingSolid.Vertices);
                             drawingSolid.EndVertexIndex = _cachedSolidVertices.Count - 1;
                         }
-
                         if (obj is DrawingMleader mleader)
                         {
                             mleader.UpdateSolidVertices(lId, objectId);
@@ -1463,7 +1462,6 @@ namespace Cad_Point_Manager.Models
                             _cachedSolidVertices.AddRange(mleader.SolidVertices);
                             mleader.EndSolidVertexIndex = _cachedSolidVertices.Count - 1;
                         }
-
                         if (obj is DrawingBlock drawingBlock)
                         {
                             drawingBlock.UpdateSolidVertices(lId, objectId);
@@ -1471,10 +1469,9 @@ namespace Cad_Point_Manager.Models
                             _cachedSolidVertices.AddRange(drawingBlock.SolidVertices);
                             drawingBlock.EndSolidVertexIndex = _cachedSolidVertices.Count - 1;
                         }
-
                         if (obj is DrawingWidePolyline drawingWidePolyline)
                         {
-                            drawingWidePolyline.UpdateVertices(lId, objectId);
+                            drawingWidePolyline.UpdateVertices(resCache, lId, objectId);
                             drawingWidePolyline.StartVertexIndex = _cachedSolidVertices.Count;
                             _cachedSolidVertices.AddRange(drawingWidePolyline.SolidVertices);
                             drawingWidePolyline.EndVertexIndex = _cachedSolidVertices.Count - 1;

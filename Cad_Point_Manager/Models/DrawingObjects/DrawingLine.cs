@@ -65,7 +65,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             gfx.DrawLine(pen, p0, p1);
         }
 
-        public override void UpdateVertices(uint layerId, uint objectId)
+        public override void UpdateVertices(ResCache resCache, uint layerId, uint objectId)
         {
             LineVertex startVertex = new(Start, layerId, objectId);
             LineVertex endVertex = new(End, layerId, objectId);

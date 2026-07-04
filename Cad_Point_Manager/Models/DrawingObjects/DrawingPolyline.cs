@@ -1,4 +1,5 @@
-﻿using Cad_Point_Manager.Helpers;
+﻿using Cad_Point_Manager.Controls.D3DControl;
+using Cad_Point_Manager.Helpers;
 using netDxf.Entities;
 using PdfSharpCore.Drawing;
 using SharpDX;
@@ -150,7 +151,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             return false;
         }
 
-        public override void UpdateVertices(uint layerId, uint objectId)
+        public override void UpdateVertices(ResCache resCache, uint layerId, uint objectId)
         {
             if (EntityObject is Polyline2D polyline2D)
             {
@@ -170,7 +171,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
                     if (obj is not null)
                     {
-                        obj.UpdateVertices(layerId, objectId);
+                        obj.UpdateVertices(resCache, layerId, objectId);
                         DrawingSegments.Add(obj);
                     }
                 }
@@ -212,7 +213,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
                     if (obj is not null)
                     {
-                        obj.UpdateVertices(layerId, objectId);
+                        obj.UpdateVertices(resCache, layerId, objectId);
                         DrawingSegments.Add(obj);
                     }
                 }

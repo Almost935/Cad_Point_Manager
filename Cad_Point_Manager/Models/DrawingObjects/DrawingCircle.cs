@@ -97,7 +97,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             gfx.DrawEllipse(pen, rect);
         }
 
-        public override void UpdateVertices(uint layerId, uint objectId)
+        public override void UpdateVertices(ResCache resCache, uint layerId, uint objectId)
         {
             if (EntityObject is Circle circle)
             {
