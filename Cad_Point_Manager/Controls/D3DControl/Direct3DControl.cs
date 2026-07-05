@@ -5,7 +5,6 @@ using SharpDX.DXGI;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Windows;
-using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Threading;
 using FeatureLevel = SharpDX.Direct3D.FeatureLevel;

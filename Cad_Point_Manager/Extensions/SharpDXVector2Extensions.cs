@@ -41,5 +41,10 @@ namespace Cad_Point_Manager.Extensions
             return Math.Abs(v1.X - v2.X) <= tolerance &&
                    Math.Abs(v1.Y - v2.Y) <= tolerance;
         }
+
+        public static string ToFormattedString(this Vector2 v)
+        {
+            return $"(x, y): ({v.X:F3}, {v.Y:F3})";
+        }
     }
 }

@@ -1,7 +1,5 @@
 ﻿using Cad_Point_Manager.Models;
 using Cad_Point_Manager.Models.Importing;
-using Cad_Point_Manager.Models.PointRendering;
-using ClosedXML.Excel;
 using CsvHelper;
 using System.Globalization;
 using System.IO;

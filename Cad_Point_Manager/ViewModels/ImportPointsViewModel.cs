@@ -1,13 +1,11 @@
 ﻿using Cad_Point_Manager.Commands;
 using Cad_Point_Manager.Models;
 using Cad_Point_Manager.Models.Importing;
-using Cad_Point_Manager.Services;
 using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Input;
 using Cad_Point_Manager.Views.InputWindows;
 using Cad_Point_Manager.Extensions;
-using Cad_Point_Manager.Models.PointRendering;
 using Cad_Point_Manager.Services.Importing;
 
 namespace Cad_Point_Manager.ViewModels

@@ -1,16 +1,11 @@
-﻿using Cad_Point_Manager.Controls;
-using Cad_Point_Manager.Controls.D3DControl;
+﻿using Cad_Point_Manager.Controls.D3DControl;
 using Cad_Point_Manager.Helpers;
 using Cad_Point_Manager.Models;
-using Cad_Point_Manager.Models.PointRendering;
 using Cad_Point_Manager.Models.Printing;
 using Cad_Point_Manager.Services;
 using Cad_Point_Manager.Views.Assorted;
-using MaterialDesignThemes.Wpf;
-using System.Collections;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;

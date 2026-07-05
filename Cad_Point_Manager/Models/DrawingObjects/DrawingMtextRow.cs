@@ -1,7 +1,5 @@
 ﻿using Cad_Point_Manager.Common;
-using Cad_Point_Manager.Extensions;
 using SharpDX;
-using System.Diagnostics;
 
 namespace Cad_Point_Manager.Models.DrawingObjects
 {

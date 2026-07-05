@@ -1,12 +1,5 @@
-﻿using Cad_Point_Manager.Helpers;
-using Cad_Point_Manager.Models.DrawingObjects;
+﻿using Cad_Point_Manager.Models.DrawingObjects;
 using SharpDX;
-using System;
-using System.Collections.Generic;
-using System.Globalization;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Cad_Point_Manager.Models.DxfImport
 {

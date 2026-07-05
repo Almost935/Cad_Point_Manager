@@ -3,22 +3,12 @@ using Cad_Point_Manager.Controls.D3DControl.Rendering.Text;
 using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Models.DrawingObjects.HelperClasses;
 using Cad_Point_Manager.Models.DxfImport;
-using DocumentFormat.OpenXml.Drawing.Charts;
-using DocumentFormat.OpenXml.Office2016.Drawing.ChartDrawing;
-using DocumentFormat.OpenXml.Presentation;
 using netDxf.Entities;
 using netDxf.Tables;
 using PdfSharpCore.Drawing;
 using SharpDX;
 using SharpDX.Direct2D1;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 using Brush = SharpDX.Direct2D1.Brush;
 
 namespace Cad_Point_Manager.Models.DrawingObjects
@@ -47,7 +37,8 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         #endregion
 
         #region Constructors
-        public DrawingMleader(ParsedMLeader parsedMLeader, ObjectLayer layer, TextStyle textStyle, bool isPartOfBlock = false, DrawingBlock block = null, DrawingBlock? arrowHeadBlock = null)
+        public DrawingMleader(ParsedMLeader parsedMLeader, ObjectLayer layer, TextStyle textStyle,
+            bool isPartOfBlock = false, DrawingBlock block = null, DrawingBlock? arrowHeadBlock = null)
         {
             Type = DrawingObjectType.DrawingMleader;
 
@@ -207,7 +198,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 }
             }
         }
-        public void UpdateSolidVertices(uint layerId, uint objectId)
+        public void UpdateSolidVertices(ResCache resCache, uint layerId, uint objectId)
         {
             SolidVertices.Clear();
 
@@ -223,7 +214,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             {
                 if (Arrowhead is DrawingBlock block)
                 {
-                    block.UpdateSolidVertices(layerId, objectId);
+                    block.UpdateSolidVertices(resCache, layerId, objectId);
 
                     foreach (var arrowhead in Arrowheads)
                     {
@@ -311,6 +302,33 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                         };
                         Arrowheads.Add(arrowheadInstance);
                     }
+
+                    //if (Arrowhead is DrawingBlock block)
+                    //{
+                    //    var widePolylines = block.DrawingObjects.OfType<DrawingWidePolyline>();
+                    //    if (widePolylines.Any())
+                    //    {
+                    //        Debug.WriteLine($"Mleader Text: {Text}");
+                    //        foreach (var widePolyline in widePolylines)
+                    //        {
+                    //            foreach (var segment in widePolyline.DrawingSegments)
+                    //            {
+                    //                switch (segment)
+                    //                {
+                    //                    case DrawingLine lineSegment:
+                    //                        break;
+
+                    //                    case DrawingArc arcSegment:
+                    //                        Debug.WriteLine($"arcSegment.Radius: {arcSegment.Radius}");
+                    //                        break;
+
+                    //                    default:
+                    //                        break;
+                    //                }
+                    //            }
+                    //        }
+                    //    }
+                    //}
                 }
             }
         }

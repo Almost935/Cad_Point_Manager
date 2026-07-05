@@ -1,15 +1,4 @@
-﻿using netDxf.Entities;
-using SharpDX;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Globalization;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Cad_Point_Manager.Models.DxfImport
+﻿namespace Cad_Point_Manager.Models.DxfImport
 {
     public static class MleaderParser
     {

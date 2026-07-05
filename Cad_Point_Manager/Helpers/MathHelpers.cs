@@ -1,6 +1,4 @@
 ﻿using SharpDX;
-using SharpDX.Direct2D1;
-using SharpDX.Mathematics.Interop;
 using System.Windows;
 using Point = System.Windows.Point;
 

@@ -5,7 +5,6 @@ using netDxf.Entities;
 using PdfSharpCore.Drawing;
 using SharpDX;
 using SharpDX.Direct2D1;
-using System.Diagnostics;
 using System.Windows;
 
 namespace Cad_Point_Manager.Models.DrawingObjects.Dimensioning

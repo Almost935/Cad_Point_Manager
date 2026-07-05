@@ -7,7 +7,6 @@ using SharpDX.Direct2D1;
 using SharpDX.DirectWrite;
 using SharpDX.Mathematics.Interop;
 using System.Collections.Concurrent;
-using System.Diagnostics;
 
 namespace Cad_Point_Manager.Helpers
 {

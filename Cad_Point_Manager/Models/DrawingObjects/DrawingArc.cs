@@ -22,8 +22,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         #endregion
 
         #region Constructor
-        //private DrawingArc() { Type = DrawingObject3dType.DrawingLine; }
-
         public DrawingArc(Arc arc, ObjectLayer layer, Vector4 objectColor, ColorType colorType, bool isPartOfBlock = false, DrawingBlock block = null)
         {
             Type = DrawingObjectType.DrawingArc;
@@ -147,7 +145,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             {
                 throw new ArgumentException("entity must be of type Arc");
             }
-        }
+        }                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
         public override double DistanceToPoint(System.Windows.Point point)
         {
             // Convert angles to radians

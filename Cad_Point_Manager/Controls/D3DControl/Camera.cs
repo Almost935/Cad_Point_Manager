@@ -1,5 +1,4 @@
 ﻿using Cad_Point_Manager.Extensions;
-using Cad_Point_Manager.Helpers;
 using Cad_Point_Manager.Models.Printing;
 using SharpDX;
 using System.Collections.ObjectModel;

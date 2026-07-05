@@ -1,13 +1,10 @@
 ﻿using Cad_Point_Manager.Controls.D3DControl;
 using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Helpers;
-using Cad_Point_Manager.Models.DrawingObjects.Dimensioning;
-using DocumentFormat.OpenXml.Drawing;
 using netDxf.Entities;
 using PdfSharpCore.Drawing;
 using SharpDX;
 using SharpDX.Direct2D1;
-using System.Diagnostics;
 using System.Windows;
 
 namespace Cad_Point_Manager.Models.DrawingObjects
@@ -15,6 +12,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
     public class DrawingWidePolyline : DrawingGeometry
     {
         #region Properties
+        public Polyline2D Polyline2D => EntityObject as Polyline2D;
         public List<SolidVertex> SolidVertices { get; } = [];
         public bool IsClosed { get; set; }
         public float Length { get; set; }

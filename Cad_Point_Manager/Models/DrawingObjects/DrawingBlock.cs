@@ -5,9 +5,7 @@ using netDxf.Entities;
 using PdfSharpCore.Drawing;
 using SharpDX;
 using SharpDX.Direct2D1;
-using System.Diagnostics;
 using System.Windows;
-using static netDxf.Entities.HatchBoundaryPath;
 using Vector3 = SharpDX.Vector3;
 
 namespace Cad_Point_Manager.Models.DrawingObjects
@@ -16,50 +14,10 @@ namespace Cad_Point_Manager.Models.DrawingObjects
     {
         #region Fields
         private List<DrawingObject> _drawingObjects = [];
-        private List<LineVertex> _geometryVertices = [];
-        private List<TextVertex> _textVertices = [];
-        private List<SolidVertex> _solidVertices = [];
         #endregion
 
         #region Properties
         public Insert DxfInsert { get; set; }
-        public List<DrawingObject> DrawingObjects
-        {
-            get => _drawingObjects;
-            set
-            {
-                _drawingObjects = value;
-                OnPropertyChanged(nameof(DrawingObjects));
-            }
-        }
-        public List<LineVertex> LineVertices
-        {
-            get => _geometryVertices;
-            set
-            {
-                _geometryVertices = value;
-                OnPropertyChanged(nameof(LineVertices));
-            }
-        }
-        public List<TextVertex> TextVertices
-        {
-            get => _textVertices;
-            set
-            {
-                _textVertices = value;
-                OnPropertyChanged(nameof(TextVertices));
-            }
-        }
-        public List<SolidVertex> SolidVertices
-        {
-            get => _solidVertices;
-            set
-            {
-                _solidVertices = value;
-                OnPropertyChanged(nameof(SolidVertices));
-            }
-        }
-
         public Vector3 InsertionPoint { get; set; }
         public int StartLineVertexIndex { get; set; }
         public int EndLineVertexIndex { get; set; }
@@ -68,6 +26,10 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         public int StartSolidVertexIndex { get; set; }
         public int EndSolidVertexIndex { get; set; }
         public bool IsPartOfDimension { get; set; } = false;
+        public List<DrawingObject> DrawingObjects { get; set; } = [];
+        public List<LineVertex> LineVertices { get; set; } = [];
+        public List<TextVertex> TextVertices { get; set; } = [];
+        public List<SolidVertex> SolidVertices { get; set; } = [];
 
         public int NumberOfDrawingObjects => DrawingObjects.Count;
 
@@ -75,7 +37,8 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         #endregion
 
         #region Constructors
-        public DrawingBlock(Insert insert, ObjectLayer layer, Vector4 objectColor, ColorType colorType, bool isPartOfBlock = false, DrawingBlock block = null, bool isPartOfDimension = false)
+        public DrawingBlock(Insert insert, ObjectLayer layer, Vector4 objectColor, ColorType colorType, 
+            bool isPartOfBlock = false, DrawingBlock block = null, bool isPartOfDimension = false)
         {
             Type = DrawingObjectType.DrawingBlock;
             DxfInsert = insert;
@@ -234,20 +197,25 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 }
             }
         }
-        public void UpdateSolidVertices(uint layerId, uint objectId)
+        public void UpdateSolidVertices(ResCache resCache, uint layerId, uint objectId)
         {
             SolidVertices.Clear();
             foreach (var obj in DrawingObjects)
             {
                 if (obj is DrawingBlock block)
                 {
-                    block.UpdateSolidVertices(layerId, objectId);
+                    block.UpdateSolidVertices(resCache, layerId, objectId);
                     SolidVertices.AddRange(block.SolidVertices);
                 }
                 if (obj is DrawingSolid solid)
                 {
                     solid.UpdateVertices(layerId, objectId);
                     SolidVertices.AddRange(solid.Vertices);
+                }
+                if (obj is DrawingWidePolyline widePolyline)
+                {
+                    widePolyline.UpdateVertices(resCache, layerId, objectId);
+                    SolidVertices.AddRange(widePolyline.SolidVertices);
                 }
             }
         }

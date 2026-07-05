@@ -3,7 +3,6 @@ using Cad_Point_Manager.Controls.D3DControl.Rendering.Text;
 using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Helpers;
 using Cad_Point_Manager.Models;
-using Cad_Point_Manager.Models.DrawingObjects;
 using Cad_Point_Manager.Models.PointRendering;
 using Cad_Point_Manager.Models.Printing;
 using PdfSharpCore.Drawing;
@@ -76,8 +75,6 @@ namespace Cad_Point_Manager.Services.Exporting
             string outputPdfPath,
             bool openAfterExport = false)
         {
-            Stopwatch sw = Stopwatch.StartNew();
-
             Directory.CreateDirectory(Path.GetDirectoryName(outputPdfPath)!);
 
             double pageWpts = layout.PageWidth * PdfPointsPerInch;
@@ -132,9 +129,6 @@ namespace Cad_Point_Manager.Services.Exporting
             {
                 FileHelpers.TryOpenFile(outputPdfPath);
             }
-
-            sw.Stop();
-            Debug.WriteLine($"PDF export completed in {sw.Elapsed.TotalSeconds:F2} seconds.");
         }
 
         public static MemoryStream ExportToStream(

@@ -1,9 +1,7 @@
 ﻿using Cad_Point_Manager.Extensions;
-using Cad_Point_Manager.Models;
 using Cad_Point_Manager.Models.DxfImport;
 using Cad_Point_Manager.Models.PointRendering;
 using Cad_Point_Manager.Services.DxfLoading;
-using netDxf;
 using System.IO;
 using System.IO.Compression;
 using System.Text.Json;

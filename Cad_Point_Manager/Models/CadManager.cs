@@ -12,14 +12,10 @@ using Cad_Point_Manager.Models.HitTesting;
 using Cad_Point_Manager.Models.Importing;
 using Cad_Point_Manager.Models.PointRendering;
 using Cad_Point_Manager.Models.Printing;
-using Cad_Point_Manager.Services.DxfLoading;
-using netDxf;
 using netDxf.Entities;
 using netDxf.Tables;
 using SharpDX;
-using SharpDX.Direct3D9;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -393,10 +389,11 @@ namespace Cad_Point_Manager.Models
 
                     var blockExists = ArrowheadToNetDxfBlockNameResolver.ResolveArrowhead(mleader.Style.ArrowheadType, out string blockName);
                     DrawingBlock? arrowHeadBlock = null;
+
                     if (blockExists && dxfImportResult.DxfDocument.Blocks.TryGetValue(blockName, out var dxfBlock))
                     {
                         Insert insert = new(dxfBlock);
-                        arrowHeadBlock = DxfHelpers.GetDrawingObject(insert, layer, DxfHelpers.GetEntityObjectColor(insert), DxfHelpers.GetColorType(insert)) as DrawingBlock;
+                        arrowHeadBlock = DxfHelpers.GetDrawingObject(insert, layer, DxfHelpers.GetEntityObjectColor(insert), DxfHelpers.GetColorType(insert)) as DrawingBlock;                        
                     }
                     DrawingMleader drawingMleader = new(mleader, layer, textStyle, false, null, arrowHeadBlock);
 
@@ -1457,14 +1454,14 @@ namespace Cad_Point_Manager.Models
                         }
                         if (obj is DrawingMleader mleader)
                         {
-                            mleader.UpdateSolidVertices(lId, objectId);
+                            mleader.UpdateSolidVertices(resCache, lId, objectId);
                             mleader.StartSolidVertexIndex = _cachedSolidVertices.Count;
                             _cachedSolidVertices.AddRange(mleader.SolidVertices);
                             mleader.EndSolidVertexIndex = _cachedSolidVertices.Count - 1;
                         }
                         if (obj is DrawingBlock drawingBlock)
                         {
-                            drawingBlock.UpdateSolidVertices(lId, objectId);
+                            drawingBlock.UpdateSolidVertices(resCache, lId, objectId);
                             drawingBlock.StartSolidVertexIndex = _cachedSolidVertices.Count;
                             _cachedSolidVertices.AddRange(drawingBlock.SolidVertices);
                             drawingBlock.EndSolidVertexIndex = _cachedSolidVertices.Count - 1;

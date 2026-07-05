@@ -2,7 +2,6 @@
 using Cad_Point_Manager.Controls.D3DControl.Rendering.Text;
 using Cad_Point_Manager.Models;
 using Cad_Point_Manager.Models.Printing;
-using System.Windows;
 
 namespace Cad_Point_Manager.Services.Exporting
 {

@@ -4,16 +4,10 @@ using Cad_Point_Manager.Controls.D3DControl.Rendering.Text;
 using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Helpers;
 using Cad_Point_Manager.Models.DxfImport;
-using Cad_Point_Manager.Services.Exporting;
-using DocumentFormat.OpenXml.ExtendedProperties;
 using netDxf;
 using netDxf.Entities;
 using PdfSharpCore.Drawing;
-using PdfSharpCore.Drawing.Layout;
 using SharpDX.Direct2D1;
-using System.Collections.Generic;
-using System.Data.SqlClient;
-using System.Diagnostics;
 using System.Text.RegularExpressions;
 using System.Windows;
 

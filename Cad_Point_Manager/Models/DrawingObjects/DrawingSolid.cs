@@ -5,11 +5,6 @@ using netDxf.Entities;
 using PdfSharpCore.Drawing;
 using SharpDX;
 using SharpDX.Direct2D1;
-using SharpDX.Mathematics.Interop;
-using System.Windows;
-using System.Diagnostics;
-
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Cad_Point_Manager.Models.DrawingObjects
 {

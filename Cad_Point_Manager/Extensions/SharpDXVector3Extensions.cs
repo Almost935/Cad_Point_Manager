@@ -60,5 +60,10 @@ namespace Cad_Point_Manager.Extensions
         {
             return Vector2.Distance(v1.ToSharpDXVector2(), v2.ToSharpDXVector2());
         }
+
+        public static string ToFormattedString(this Vector3 v)
+        {
+            return $"(x, y, z): ({v.X:F3}, {v.Y:F3}, {v.Z:F3})";
+        }
     }
 }

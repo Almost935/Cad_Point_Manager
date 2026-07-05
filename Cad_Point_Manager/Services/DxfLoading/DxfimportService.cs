@@ -1,7 +1,5 @@
 ﻿using Cad_Point_Manager.Models.DxfImport;
 using netDxf;
-using System.Diagnostics;
-using System.IO;
 
 namespace Cad_Point_Manager.Services.DxfLoading
 {

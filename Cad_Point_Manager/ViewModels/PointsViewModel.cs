@@ -1,20 +1,12 @@
 ﻿using Cad_Point_Manager.Commands;
 using Cad_Point_Manager.Common;
-using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Models;
-using Cad_Point_Manager.Models.DrawingObjects;
 using Cad_Point_Manager.Models.Filtering;
 using Cad_Point_Manager.Models.PointRendering;
 using Cad_Point_Manager.ViewModels.Editors;
-using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
 using System.Windows.Input;
 using System.Windows.Threading;
 

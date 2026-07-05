@@ -1,9 +1,5 @@
-﻿using Cad_Point_Manager.Extensions;
-using Cad_Point_Manager.Models;
-using Cad_Point_Manager.Models.PointRendering;
+﻿using Cad_Point_Manager.Models;
 using Cad_Point_Manager.Models.Printing;
-using System.Diagnostics;
-using System.Windows.Media;
 
 namespace Cad_Point_Manager.Commands.UndoRedo
 {

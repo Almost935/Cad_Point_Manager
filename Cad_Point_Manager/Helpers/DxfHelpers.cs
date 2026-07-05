@@ -1,11 +1,9 @@
 ﻿using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Models.DrawingObjects;
 using Cad_Point_Manager.Models.DrawingObjects.Dimensioning;
-using DocumentFormat.OpenXml.Drawing.Charts;
 using netDxf;
 using netDxf.Entities;
 using netDxf.Header;
-using System.Diagnostics;
 using System.Windows;
 
 using Vector3 = netDxf.Vector3;
@@ -46,7 +44,6 @@ namespace Cad_Point_Manager.Helpers
             return Rect.Empty;
         }
 
-        // DrawingObject3D getters
         public static DrawingObject GetDrawingObject(
             EntityObject e,
             ObjectLayer layer,

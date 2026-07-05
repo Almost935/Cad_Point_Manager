@@ -1,10 +1,5 @@
 ﻿using SharpDX;
 using SharpDX.Mathematics.Interop;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 
 namespace Cad_Point_Manager.Extensions

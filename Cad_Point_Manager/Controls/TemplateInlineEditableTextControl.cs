@@ -1,5 +1,4 @@
 ﻿using Cad_Point_Manager.Helpers;
-using Cad_Point_Manager.Models.Printing;
 using Cad_Point_Manager.Views.UserControls;
 using System.Windows;
 using System.Windows.Controls;

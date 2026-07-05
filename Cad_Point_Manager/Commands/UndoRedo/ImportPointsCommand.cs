@@ -1,12 +1,6 @@
 ﻿using Cad_Point_Manager.Models;
 using Cad_Point_Manager.Models.Importing;
 using SharpDX;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Media;
 
 namespace Cad_Point_Manager.Commands.UndoRedo
 {
