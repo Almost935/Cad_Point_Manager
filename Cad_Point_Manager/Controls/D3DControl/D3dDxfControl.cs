@@ -2118,8 +2118,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             {
                 case Common.Enums.SelectionMode.Geometries:
                     {
-                        Stopwatch stopwatch = Stopwatch.StartNew();
-
                         SelectedGeometries.DeferNotifications();
                         var newSel = new HashSet<DrawingGeometry>(_mouseOverHitTestableObjects.OfType<DrawingGeometry>());
                         if (IsDragging)
@@ -2138,16 +2136,10 @@ namespace Cad_Point_Manager.Controls.D3DControl
                                 else { SelectObject(g); }
                             }
                         }
+
                         SelectedGeometries.EndDefer();
-
                         geometryVerticesDirty = true;
-
-                        Debug.WriteLine($"1: {stopwatch.ElapsedMilliseconds} ms");
-
                         StateController.FlushObjectUpdates();
-
-                        stopwatch.Stop();
-                        Debug.WriteLine($"2: {stopwatch.ElapsedMilliseconds} ms");
 
                         break;
                     }
@@ -2982,7 +2974,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                         if (geometry.IsSelected) { return; }
                         geometry.Select();
                         StateController.SetObjectSelected(geometry, true);
-                        //SelectedGeometries.Add(geometry);
+                        SelectedGeometries.Add(geometry);
                     }
                 }
                 if (hitTestableObject is CogoPoint dxfPoint)

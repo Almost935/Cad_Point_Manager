@@ -3,7 +3,7 @@ using Cad_Point_Manager.Controls.D3DControl;
 using Cad_Point_Manager.Controls.D3DControl.Rendering.Text;
 using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Helpers;
-using Cad_Point_Manager.Models.DxfImport;
+using Cad_Point_Manager.Models.LffFontRendering;
 using Cad_Point_Manager.Services.Exporting;
 using netDxf.Entities;
 using PdfSharpCore.Drawing;
@@ -11,6 +11,8 @@ using SharpDX;
 using SharpDX.Direct2D1;
 using SharpDX.DirectWrite;
 using SharpDX.Mathematics.Interop;
+using System.Diagnostics;
+using static Cad_Point_Manager.Common.Enums;
 using Point = System.Windows.Point;
 
 namespace Cad_Point_Manager.Models.DrawingObjects
@@ -18,25 +20,19 @@ namespace Cad_Point_Manager.Models.DrawingObjects
     public class DrawingSText : DrawingText
     {
         #region Fields
-        private const float _flatteningTolerance = 0.001f;
-        private const int _fontRenderingMinimumSize = 50;
-
         private protected TextFormat _textFormat;
         private protected FontFace _fontFace;
         #endregion
 
         #region Properties
         public Text DxfText { get; set; }
-        public float Rotation { get; set; } = 0;
-        public float TextHeight { get; set; }
         public string FontFamilyName { get; set; }
         public float WidthFactor { get; set; } = 1.0f;
         public bool IsBold { get; set; }
         public bool IsItalic { get; set; }
-        public System.Windows.Media.Matrix Transform { get; set; }
-        public Enums.TextAttachmentPoint AttachmentPoint { get; set; }
         public TextLayout TextLayout { get; set; }
         public float FontSizeFactor { get; set; } = 1;
+        public LffFont LffFont { get; set; }
 
         public bool TextFormatCreated => _textFormat != null;
         public bool TextLayoutCreated => TextLayout != null;
@@ -72,20 +68,18 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
                 Bounds = new(text.Position.X, text.Position.Y, textWidth * 2, text.Height * 2);
                 Rotation = (float)text.Rotation;
-                AttachmentPoint = GetAttachmentPoint(text.Alignment);
-                Position = GetTextOrigin(AttachmentPoint, new RectangleF((float)Bounds.Left, (float)Bounds.Top, (float)Bounds.Width, (float)Bounds.Height),
-                    new Vector3((float)text.Position.X, (float)text.Position.Y, 0));
+                AttachmentPoint = TextRenderingHelpers.GetAttachmentPoint(text.Alignment);
+                Position = text.Position.ToSharpDXVector3();
                 TextHeight = (float)text.Height;
                 FontFamilyName = text.Style.FontFamilyName;
-                Transform = GetTransform(text.Position);
 
                 var dxfFontFamilyName = text.Style.FontFamilyName;
                 if (string.IsNullOrWhiteSpace(dxfFontFamilyName))
                 {
                     dxfFontFamilyName = text.Style.FontFile;
                 }
-                FontFamilyName = AutoCadFontResolver.Resolve(dxfFontFamilyName);
-                TextRenderStyle = TextRenderStyleResolver.Resolve(FontFamilyName);
+
+                (FontFamilyName, TextRenderStyle) = AutoCadFontResolver.Resolve(dxfFontFamilyName);
             }
             else
             {
@@ -118,71 +112,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             gfx.DrawPath(brush, path);
         }
 
-        /// <summary>
-        /// Gets the upper left point of the MText.
-        /// </summary>
-        /// <param name="mText"></param>
-        /// <param name="rect"></param>
-        /// <param name="position"></param>
-        /// <returns></returns>
-        public Vector3 GetTextOrigin(Enums.TextAttachmentPoint attachmentPoint, RectangleF rect, Vector3 position)
-        {
-            Vector3 adjustedPos = Vector3.Zero;
-
-            switch (attachmentPoint)
-            {
-                case Enums.TextAttachmentPoint.TopLeft:
-                    adjustedPos = position;
-                    break;
-
-                case Enums.TextAttachmentPoint.TopCenter:
-                    adjustedPos = new Vector3(position.X - (rect.Width) / 2,
-                        position.Y, 0);
-                    break;
-
-                case Enums.TextAttachmentPoint.TopRight:
-                    adjustedPos = new Vector3(position.X - (rect.Width),
-                        position.Y, 0);
-                    break;
-
-                case Enums.TextAttachmentPoint.MiddleLeft:
-                    adjustedPos = new Vector3(position.X,
-                        position.Y - (rect.Height / 2), 0);
-                    break;
-
-                case Enums.TextAttachmentPoint.MiddleCenter:
-                    adjustedPos = new Vector3(position.X - (rect.Width) / 2,
-                        position.Y - (rect.Height / 2), 0);
-                    break;
-
-                case Enums.TextAttachmentPoint.MiddleRight:
-                    adjustedPos = new Vector3(position.X - (rect.Width),
-                        position.Y - (rect.Height / 2), 0);
-                    break;
-
-                case Enums.TextAttachmentPoint.BottomLeft:
-                    adjustedPos = new Vector3(position.X,
-                        position.Y - (rect.Height), 0);
-                    break;
-
-                case Enums.TextAttachmentPoint.BottomCenter:
-                    adjustedPos = new Vector3(position.X - (rect.Width) / 2,
-                        position.Y - (rect.Height), 0);
-                    break;
-
-                case Enums.TextAttachmentPoint.BottomRight:
-                    adjustedPos = new Vector3(position.X - (rect.Width),
-                        position.Y - (rect.Height), 0);
-                    break;
-
-                default:
-                    adjustedPos = position;
-                    break;
-            }
-
-            return adjustedPos;
-        }
-
         public override void UpdateVertices(ResCache resCache, uint layerId, SceneIdMap sceneIdMap, D3dStateBuffers stateBuffers)
         {
             var objectId = sceneIdMap.GetOrAddObjectId(this, out var isNewObject);
@@ -193,21 +122,8 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
             if (TextRenderStyle == TextRenderStyle.Stroke)
             {
-                (List<Vector2> vertices,
-                RawRectangleF bounds)
-                   = TextRenderingHelpers
-                       .GetLineRepresentationOfTextLayout(
-                           resCache,
-                           TextLayout,
-                           Text,
-                           _fontFace);
-                Bounds = bounds.ToRect();
-
-                LineVertices =
-                    GetLineVertices(
-                        vertices,
-                        layerId,
-                        objectId);
+                List<Vector2> vertices = GetLffVertices();
+                LineVertices = GetLineVertices(vertices, layerId, objectId);
 
                 TextVertices = [];
             }
@@ -216,7 +132,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 FontSizeFactor = TextRenderingHelpers.GetFontSizeFactor(resCache, TextLayout, _fontFace);
                 (List<Vector2> vertices, RawRectangleF bounds) = TextRenderingHelpers.TesselateTextLayout(resCache, TextLayout, Text, _fontFace);
                 Bounds = bounds.ToRect();
-
                 TextVertices = GetTextVertices(vertices, layerId, objectId);
 
                 LineVertices = [];
@@ -239,7 +154,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         {
             this.IsSelected = false;
         }
-       
+
         public override double DistanceToPoint(Point p)
         {
             return 1000;
@@ -278,47 +193,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             }
         }
 
-        private protected Enums.TextAttachmentPoint GetAttachmentPoint(MTextAttachmentPoint mTextAttachment)
-        {
-            return mTextAttachment switch
-            {
-                MTextAttachmentPoint.TopLeft => Enums.TextAttachmentPoint.TopLeft,
-                MTextAttachmentPoint.TopCenter => Enums.TextAttachmentPoint.TopCenter,
-                MTextAttachmentPoint.TopRight => Enums.TextAttachmentPoint.TopRight,
-                MTextAttachmentPoint.MiddleLeft => Enums.TextAttachmentPoint.MiddleLeft,
-                MTextAttachmentPoint.MiddleCenter => Enums.TextAttachmentPoint.MiddleCenter,
-                MTextAttachmentPoint.MiddleRight => Enums.TextAttachmentPoint.MiddleRight,
-                MTextAttachmentPoint.BottomLeft => Enums.TextAttachmentPoint.BottomLeft,
-                MTextAttachmentPoint.BottomCenter => Enums.TextAttachmentPoint.BottomCenter,
-                MTextAttachmentPoint.BottomRight => Enums.TextAttachmentPoint.BottomRight,
-                _ => Enums.TextAttachmentPoint.MiddleCenter,
-            };
-        }
-        private protected Enums.TextAttachmentPoint GetAttachmentPoint(netDxf.Entities.TextAlignment mTextAttachment)
-        {
-            return mTextAttachment switch
-            {
-                netDxf.Entities.TextAlignment.TopLeft => Enums.TextAttachmentPoint.TopLeft,
-                netDxf.Entities.TextAlignment.TopCenter => Enums.TextAttachmentPoint.TopCenter,
-                netDxf.Entities.TextAlignment.TopRight => Enums.TextAttachmentPoint.TopRight,
-                netDxf.Entities.TextAlignment.MiddleLeft => Enums.TextAttachmentPoint.MiddleLeft,
-                netDxf.Entities.TextAlignment.MiddleCenter => Enums.TextAttachmentPoint.MiddleCenter,
-                netDxf.Entities.TextAlignment.MiddleRight => Enums.TextAttachmentPoint.MiddleRight,
-                netDxf.Entities.TextAlignment.BottomLeft => Enums.TextAttachmentPoint.BottomLeft,
-                netDxf.Entities.TextAlignment.BottomCenter => Enums.TextAttachmentPoint.BottomCenter,
-                netDxf.Entities.TextAlignment.BottomRight => Enums.TextAttachmentPoint.BottomRight,
-                _ => Enums.TextAttachmentPoint.MiddleCenter,
-            };
-        }
-
-        private protected System.Windows.Media.Matrix GetTransform(netDxf.Vector3 dxfPos)
-        {
-            System.Windows.Media.Matrix matrix = new();
-            //matrix.ScaleAt(1, 1, dxfPos.X, dxfPos.Y);
-            matrix.Translate(dxfPos.X, dxfPos.Y);
-            return matrix;
-        }
-
         public void GetTextFormat(SharpDX.DirectWrite.Factory1 factory)
         {
             _textFormat = new(factory, FontFamilyName, TextHeight);
@@ -332,11 +206,24 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         public List<LineVertex> GetLineVertices(List<Vector2> vertices, uint layerId, uint objectId)
         {
             List<LineVertex> lineVertices = [];
-            Matrix translationTransform = Matrix.Translation((float)Transform.OffsetX, (float)Transform.OffsetY, 0);
+
+            if (TextRenderStyle == TextRenderStyle.Triangle) { return lineVertices; }
+
+            if (LffFont is null)
+            {
+                throw new Exception("LffFont is null.");
+            }
+
+            Bounds = MathHelpers.GetLocalBounds(vertices);
+            TextHeightScaleFactor = TextHeight / LffFont.DesignHeight;
+            AttachmentOffset = UpdateAttachmentOffset();
+
+            var transform = Transform;
+
             for (int i = 0; i < vertices.Count; i++)
             {
                 var v = vertices[i];
-                var scaledVector = Vector2.TransformCoordinate(v, translationTransform);
+                var scaledVector = Vector2.TransformCoordinate(v, transform);
                 LineVertex lineVertex = new(new Vector3(scaledVector.X, scaledVector.Y, 0), layerId, objectId);
                 lineVertices.Add(lineVertex);
             }
@@ -345,7 +232,13 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         public List<TextVertex> GetTextVertices(List<Vector2> vertices, uint layerId, uint objectId)
         {
             List<TextVertex> textVertices = [];
-            Matrix translationTransform = Matrix.Translation((float)Transform.OffsetX, (float)Transform.OffsetY, 0);
+
+            if (TextRenderStyle == TextRenderStyle.Stroke) { return textVertices; }
+
+            AttachmentOffset = TextRenderingHelpers.GetAttachmentOffset(Bounds.ToRectangeF(), AttachmentPoint);
+            TextHeightScaleFactor = 1;
+
+            var transform = Transform;
 
             for (int i = 0; i < vertices.Count; i += 3)
             {
@@ -353,11 +246,11 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 var v2 = vertices[i + 1];
                 var v3 = vertices[i + 2];
 
-                var scaledVector1 = Vector2.TransformCoordinate(v1, translationTransform);
+                var scaledVector1 = Vector2.TransformCoordinate(v1, transform);
                 TextVertex textVertex1 = new(new Vector3(scaledVector1.X, scaledVector1.Y, 0), layerId, objectId);
-                var scaledVector2 = Vector2.TransformCoordinate(v2, translationTransform);
+                var scaledVector2 = Vector2.TransformCoordinate(v2, transform);
                 TextVertex textVertex2 = new(new Vector3(scaledVector2.X, scaledVector2.Y, 0), layerId, objectId);
-                var scaledVector3 = Vector2.TransformCoordinate(v3, translationTransform);
+                var scaledVector3 = Vector2.TransformCoordinate(v3, transform);
                 TextVertex textVertex3 = new(new Vector3(scaledVector3.X, scaledVector3.Y, 0), layerId, objectId);
 
                 textVertices.AddRange([textVertex1, textVertex2, textVertex3]);
@@ -382,6 +275,86 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             FontWeight fontWeight = IsBold ? FontWeight.Bold : FontWeight.Normal;
             FontStyle fontStyle = IsItalic ? FontStyle.Italic : FontStyle.Normal;
             _fontFace = resCache.GetFontFace(FontFamilyName, fontWeight, FontStretch.Normal, fontStyle);
+        }
+
+        private List<Vector2> GetLffVertices()
+        {
+            LffFont = LffFontManager.GetFont(FontFamilyName);
+
+            if (LffFont == null)
+            {
+                throw new Exception($"Font '{FontFamilyName}' not found in LffFontManager.");
+            }
+
+            List<Vector2> vertices = [];
+
+            float penX = 0;
+
+            foreach (char c in Text)
+            {
+                if (!LffFont.Glyphs.TryGetValue(c, out var glyph))
+                {
+                    penX += LffFont.WordSpacing;
+                    continue;
+                }
+
+                foreach (var stroke in glyph.Strokes)
+                {
+                    foreach (var segment in stroke.Segments)
+                    {
+                        var pts = MathHelpers.TessellateBulge(segment.Start, segment.End, segment.Bulge);
+
+                        for (int i = 1; i < pts.Count; i++)
+                        {
+                            vertices.Add(new Vector2(pts[i - 1].X + penX, pts[i - 1].Y));
+                            vertices.Add(new Vector2(pts[i].X + penX, pts[i].Y));
+                        }
+                    }
+                }
+
+                penX += glyph.AdvanceWidth;
+            }
+
+            return vertices;
+        }
+
+        private Vector2 UpdateAttachmentOffset()
+        {
+            var xOffset = Bounds.Width.ToFloat();
+            var yOffset = TextHeight / TextHeightScaleFactor;
+            var bottomOffset = Bounds.Height.ToFloat() - yOffset;
+
+            return AttachmentPoint switch
+            {
+                TextAttachmentPoint.TopLeft =>
+                    new Vector2(0, -yOffset),
+
+                TextAttachmentPoint.TopCenter =>
+                    new Vector2(-(xOffset / 2), -yOffset),
+
+                TextAttachmentPoint.TopRight =>
+                    new Vector2(-xOffset, -yOffset),
+
+                TextAttachmentPoint.MiddleLeft =>
+                    new Vector2(0, -yOffset / 2),
+
+                TextAttachmentPoint.MiddleCenter =>
+                    new Vector2(-(xOffset / 2), -yOffset / 2),
+
+                TextAttachmentPoint.MiddleRight =>
+                    new Vector2(-xOffset, -yOffset / 2),
+
+                TextAttachmentPoint.BottomLeft =>
+                    new Vector2(0, bottomOffset),
+
+                TextAttachmentPoint.BottomCenter =>
+                    new Vector2(-(xOffset / 2), bottomOffset),
+
+                TextAttachmentPoint.BottomRight =>
+                    new Vector2(-xOffset, bottomOffset),
+
+                _ => Vector2.Zero
+            };
         }
         #endregion
 

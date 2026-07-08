@@ -1,5 +1,7 @@
-﻿using Cad_Point_Manager.Controls.D3DControl;
+﻿using Cad_Point_Manager.Common;
+using Cad_Point_Manager.Controls.D3DControl;
 using Cad_Point_Manager.Controls.D3DControl.Rendering.Text;
+using Cad_Point_Manager.Extensions;
 using SharpDX;
 
 namespace Cad_Point_Manager.Models.DrawingObjects
@@ -12,12 +14,23 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         public TextRenderStyle TextRenderStyle { get; set; } = TextRenderStyle.Triangle;
 
         public string Text { get; set; }
+        public float TextHeight { get; set; }
         public float MaxWidth { get; set; }
         public int StartLineVertexIndex { get; set; }
         public int EndLineVertexIndex { get; set; }
         public int StartTextVertexIndex { get; set; }
         public int EndTextVertexIndex { get; set; }
         public Vector3 Position { get; set; }
+        public float Rotation { get; set; } = 0;
+        public Enums.TextAttachmentPoint AttachmentPoint { get; set; }
+        public Vector2 AttachmentOffset { get; set; } = new Vector2(0, 0);
+        public float TextHeightScaleFactor { get; set; } = 1.0f;
+
+        public Matrix LocalTranslationTransform => Matrix.Translation(AttachmentOffset.X, AttachmentOffset.Y, 0);
+        public Matrix WorldTranslationTransform => Matrix.Translation(Position);
+        public Matrix RotationTransform => Matrix.RotationZ(MathUtil.DegreesToRadians(Rotation));
+        public Matrix ScaleTransform => Matrix.Scaling(TextHeightScaleFactor, TextHeightScaleFactor, 1.0f);
+        public Matrix Transform => LocalTranslationTransform * ScaleTransform * RotationTransform * WorldTranslationTransform;
         #endregion
 
         #region Methods

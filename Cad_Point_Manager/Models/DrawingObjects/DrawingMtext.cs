@@ -3,7 +3,7 @@ using Cad_Point_Manager.Controls.D3DControl;
 using Cad_Point_Manager.Controls.D3DControl.Rendering.Text;
 using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Helpers;
-using Cad_Point_Manager.Models.DxfImport;
+using Cad_Point_Manager.Models.LffFontRendering;
 using netDxf;
 using netDxf.Entities;
 using PdfSharpCore.Drawing;
@@ -24,14 +24,10 @@ namespace Cad_Point_Manager.Models.DrawingObjects
     {
         #region Properties
         public MText DxfMtext { get; set; }
-        public float Rotation { get; set; } = 0;
-        public float FontHeight { get; set; }
         public string FontFamilyName { get; set; }
         public bool IsBold { get; set; }
         public bool IsItalic { get; set; }
-        public Enums.TextAttachmentPoint AttachmentPoint { get; set; }
         public DrawingMtextBlock MtextBlock { get; set; }
-        public Vector3 TextAttachmentOffset { get; set; } = Vector3.Zero;
         public bool AllowsWrapping { get; set; }
 
         public IEnumerable<DrawingMtextSegment> Segments =>
@@ -149,15 +145,15 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 UpdateBounds();
                 IsBold = mText.Style.FontStyle == FontStyle.Bold;
                 IsItalic = mText.Style.FontStyle == FontStyle.Italic;
-                FontHeight = (float)mText.Height;
+                TextHeight = (float)mText.Height;
 
                 var dxfFontFamilyName = mText.Style.FontFamilyName;
                 if (string.IsNullOrWhiteSpace(dxfFontFamilyName))
                 {
                     dxfFontFamilyName = mText.Style.FontFile;
                 }
-                FontFamilyName = AutoCadFontResolver.Resolve(dxfFontFamilyName);
-                TextRenderStyle = TextRenderStyleResolver.Resolve(FontFamilyName);
+
+                (FontFamilyName, TextRenderStyle) = AutoCadFontResolver.Resolve(dxfFontFamilyName);
             }
             else
             {
@@ -453,8 +449,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             SceneIdMap sceneIdMap,
             D3dStateBuffers stateBuffers)
         {
-            var fontFamily = AutoCadFontResolver.Resolve(segmentInfo.Font);
-            var renderStyle = TextRenderStyleResolver.Resolve(fontFamily);
+            (var fontFamily, var renderStyle) = AutoCadFontResolver.Resolve(segmentInfo.Font);
 
             DrawingMtextSegment segment = new(this, Layer, segmentInfo.Text, segmentInfo.ObjectColor, segmentInfo.ColorType,
                 Vector3.Zero, 0, (float)segmentInfo.TextHeight, fontFamily, segmentInfo.IsItalic, segmentInfo.IsBold,

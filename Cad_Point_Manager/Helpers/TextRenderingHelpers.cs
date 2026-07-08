@@ -7,6 +7,7 @@ using SharpDX.Direct2D1;
 using SharpDX.DirectWrite;
 using SharpDX.Mathematics.Interop;
 using System.Collections.Concurrent;
+using static Cad_Point_Manager.Common.Enums;
 
 namespace Cad_Point_Manager.Helpers
 {
@@ -27,18 +28,10 @@ namespace Cad_Point_Manager.Helpers
             FontFace fontFace)
         {
             var fontSizeFactor =
-                GetFontSizeFactor(
-                    resCache,
-                    textLayout,
-                    fontFace);
+                GetFontSizeFactor(resCache, textLayout, fontFace);
 
             var geometry =
-                TextLayoutToGeometry(
-                    resCache,
-                    textLayout,
-                    text,
-                    fontFace,
-                    fontSizeFactor);
+                TextLayoutToGeometry(resCache, textLayout, text, fontFace, fontSizeFactor);
 
             var bounds = geometry.GetBounds();
 
@@ -46,11 +39,7 @@ namespace Cad_Point_Manager.Helpers
 
             using (var sink = new CustomLineSink())
             {
-                geometry.Simplify(
-                    GeometrySimplificationOption.Lines,
-                    Matrix3x2.Identity,
-                    _flatteningTolerance,
-                    sink);
+                geometry.Simplify(GeometrySimplificationOption.Lines, Matrix3x2.Identity, _flatteningTolerance, sink);
 
                 vertices = sink.Vertices;
             }
@@ -142,7 +131,7 @@ namespace Cad_Point_Manager.Helpers
                     false,
                     glyphSink);
                 glyphSink.Close();
-                
+
                 var combinedMatrix = Matrix3x2.Scaling(scaleFactor, -scaleFactor) * Matrix3x2.Translation(charOffset, 0);
 
                 using TransformedGeometry transformedGlyph = new(resCache.D2dFactory, glyphGeometry, combinedMatrix);
@@ -192,37 +181,59 @@ namespace Cad_Point_Manager.Helpers
                 _ => Enums.TextAttachmentPoint.MiddleCenter,
             };
         }
-
-        public class CustomTessellationSink : CallbackBase, TessellationSink
+        public static Enums.TextAttachmentPoint GetAttachmentPoint(netDxf.Entities.TextAlignment mTextAttachment)
         {
-            public List<Vector2> Vertices = [];
-
-            public void AddTriangles(Triangle[] triangles)
+            return mTextAttachment switch
             {
-                foreach (var triangle in triangles)
-                {
-                    Vertices.Add(new Vector2(triangle.Point1.X, triangle.Point1.Y));
-                    Vertices.Add(new Vector2(triangle.Point2.X, triangle.Point2.Y));
-                    Vertices.Add(new Vector2(triangle.Point3.X, triangle.Point3.Y));
-                }
-            }
+                netDxf.Entities.TextAlignment.TopLeft => Enums.TextAttachmentPoint.TopLeft,
+                netDxf.Entities.TextAlignment.TopCenter => Enums.TextAttachmentPoint.TopCenter,
+                netDxf.Entities.TextAlignment.TopRight => Enums.TextAttachmentPoint.TopRight,
+                netDxf.Entities.TextAlignment.MiddleLeft => Enums.TextAttachmentPoint.MiddleLeft,
+                netDxf.Entities.TextAlignment.MiddleCenter => Enums.TextAttachmentPoint.MiddleCenter,
+                netDxf.Entities.TextAlignment.MiddleRight => Enums.TextAttachmentPoint.MiddleRight,
+                netDxf.Entities.TextAlignment.BottomLeft => Enums.TextAttachmentPoint.BottomLeft,
+                netDxf.Entities.TextAlignment.BottomCenter => Enums.TextAttachmentPoint.BottomCenter,
+                netDxf.Entities.TextAlignment.BottomRight => Enums.TextAttachmentPoint.BottomRight,
+                _ => Enums.TextAttachmentPoint.MiddleCenter,
+            };
+        }
 
-            public void Close() { }
+        public static Vector2 GetAttachmentOffset(RectangleF bounds, TextAttachmentPoint attachmentPoint)
+        {
+            var xOffset = bounds.Width;
+            var yOffset = bounds.Height;
 
-            public new void QueryInterface(ref Guid guid, out IntPtr comObject)
+            return attachmentPoint switch
             {
-                comObject = IntPtr.Zero;
-            }
+                TextAttachmentPoint.TopLeft =>
+                    new Vector2(0, -yOffset),
 
-            public new int AddRef()
-            {
-                return 1;
-            }
+                TextAttachmentPoint.TopCenter =>
+                    new Vector2(-(xOffset / 2), -yOffset),
 
-            public new int Release()
-            {
-                return 1;
-            }
+                TextAttachmentPoint.TopRight =>
+                    new Vector2(-xOffset, -yOffset),
+
+                TextAttachmentPoint.MiddleLeft =>
+                    new Vector2(0, -yOffset / 2),
+
+                TextAttachmentPoint.MiddleCenter =>
+                    new Vector2(-(xOffset / 2), -yOffset / 2),
+
+                TextAttachmentPoint.MiddleRight =>
+                    new Vector2(-xOffset, -yOffset / 2),
+
+                TextAttachmentPoint.BottomLeft =>
+                    new Vector2(0, 0),
+
+                TextAttachmentPoint.BottomCenter =>
+                    new Vector2(-(xOffset / 2), 0),
+
+                TextAttachmentPoint.BottomRight =>
+                    new Vector2(-xOffset, 0),
+
+                _ => Vector2.Zero
+            };
         }
     }
 }

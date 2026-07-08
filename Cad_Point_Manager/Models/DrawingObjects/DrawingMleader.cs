@@ -302,33 +302,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                         };
                         Arrowheads.Add(arrowheadInstance);
                     }
-
-                    //if (Arrowhead is DrawingBlock block)
-                    //{
-                    //    var widePolylines = block.DrawingObjects.OfType<DrawingWidePolyline>();
-                    //    if (widePolylines.Any())
-                    //    {
-                    //        Debug.WriteLine($"Mleader Text: {Text}");
-                    //        foreach (var widePolyline in widePolylines)
-                    //        {
-                    //            foreach (var segment in widePolyline.DrawingSegments)
-                    //            {
-                    //                switch (segment)
-                    //                {
-                    //                    case DrawingLine lineSegment:
-                    //                        break;
-
-                    //                    case DrawingArc arcSegment:
-                    //                        Debug.WriteLine($"arcSegment.Radius: {arcSegment.Radius}");
-                    //                        break;
-
-                    //                    default:
-                    //                        break;
-                    //                }
-                    //            }
-                    //        }
-                    //    }
-                    //}
                 }
             }
         }

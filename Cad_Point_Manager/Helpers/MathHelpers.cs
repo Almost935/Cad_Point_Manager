@@ -1,4 +1,5 @@
-﻿using SharpDX;
+﻿using Cad_Point_Manager.Models.DrawingObjects;
+using SharpDX;
 using System.Windows;
 using Point = System.Windows.Point;
 
@@ -125,6 +126,90 @@ namespace Cad_Point_Manager.Helpers
             return
                 (c.X - a.X) * (b.Y - a.Y)
               - (c.Y - a.Y) * (b.X - a.X);
+        }
+
+        public static List<Vector2> TessellateBulge(
+            Vector2 start,
+            Vector2 end,
+            float bulge,
+            double tolerance = 0.001)
+        {
+            List<Vector2> points = [];
+
+            if (Math.Abs(bulge) < 1e-6f)
+            {
+                points.Add(start);
+                points.Add(end);
+                return points;
+            }
+
+            float chord = Vector2.Distance(start, end);
+
+            float includedAngle = 4f * MathF.Atan(MathF.Abs(bulge));
+
+            float radius = chord / (2f * MathF.Sin(includedAngle / 2f));
+
+            Vector2 chordDir = Vector2.Normalize(end - start);
+
+            Vector2 perp = new Vector2(-chordDir.Y, chordDir.X);
+
+            // Sagitta
+            float sagitta = bulge * chord / 2f;
+
+            // Distance from midpoint to center
+            float h = radius - MathF.Abs(sagitta);
+
+            if (bulge < 0)
+                perp = -perp;
+
+            Vector2 midpoint = (start + end) * 0.5f;
+
+            Vector2 center = midpoint + perp * h;
+
+            float startAngle = MathF.Atan2(start.Y - center.Y,
+                                           start.X - center.X);
+
+            float endAngle = MathF.Atan2(end.Y - center.Y,
+                                         end.X - center.X);
+
+            float sweep = endAngle - startAngle;
+
+            if (bulge > 0 && sweep < 0)
+                sweep += MathF.PI * 2;
+
+            if (bulge < 0 && sweep > 0)
+                sweep -= MathF.PI * 2;
+
+            int segments = DrawingArc.CalculateSegments(
+                radius,
+                Math.Abs(sweep * 180f / MathF.PI),
+                tolerance);
+
+            for (int i = 0; i <= segments; i++)
+            {
+                float t = (float)i / segments;
+
+                float angle = startAngle + sweep * t;
+
+                points.Add(new Vector2(
+                    center.X + radius * MathF.Cos(angle),
+                    center.Y + radius * MathF.Sin(angle)));
+            }
+
+            return points;
+        }
+
+        public static Rect GetLocalBounds(List<Vector2> vertices)
+        {
+            if (vertices.Count == 0) { return Rect.Empty; }
+
+            float minX = vertices.Min(v => v.X);
+            float minY = vertices.Min(v => v.Y);
+
+            float maxX = vertices.Max(v => v.X);
+            float maxY = vertices.Max(v => v.Y);
+
+            return new Rect(minX, minY, maxX - minX, maxY - minY);
         }
     }
 }
