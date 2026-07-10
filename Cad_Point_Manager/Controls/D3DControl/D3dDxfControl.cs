@@ -1988,40 +1988,37 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 return;
             }
 
-            if (Vector2.Distance(currentMousePos, _prevMousePos) > _panThreshold)
+            if (!_isPanning)
             {
-                if (!_isPanning)
+                UpdateDxfCoords(currentMousePos);
+            }
+            // Begin drag when crossing system threshold
+            if (e.LeftButton == MouseButtonState.Pressed && !IsDragging)
+            {
+                if (Math.Abs(_pointerCoords.X - _dragStartScreen.X) >= SystemParameters.MinimumHorizontalDragDistance ||
+                    Math.Abs(_pointerCoords.Y - _dragStartScreen.Y) >= SystemParameters.MinimumVerticalDragDistance)
                 {
-                    UpdateDxfCoords(currentMousePos);
-                }
-                // Begin drag when crossing system threshold
-                if (e.LeftButton == MouseButtonState.Pressed && !IsDragging)
-                {
-                    if (Math.Abs(_pointerCoords.X - _dragStartScreen.X) >= SystemParameters.MinimumHorizontalDragDistance ||
-                        Math.Abs(_pointerCoords.Y - _dragStartScreen.Y) >= SystemParameters.MinimumVerticalDragDistance)
-                    {
-                        IsDragging = true;
-                        UpdateDragRect();
-                    }
-                }
-                if (IsDragging)
-                {
-                    if (_isPanning)
-                    {
-                        var translate = currentMousePos - _prevMousePos;
-                        _dragStart = new(_dragStart.X + translate.X, _dragStart.Y + translate.Y);
-                    }
+                    IsDragging = true;
                     UpdateDragRect();
                 }
-
-                if (e.MiddleButton == MouseButtonState.Pressed)
-                {
-                    CadManager.Camera.Pan(currentMousePos, _prevMousePos);
-                    ConstantBuffersDirty = true;
-                    e.Handled = true;
-                }
-                _prevMousePos = currentMousePos;
             }
+            if (IsDragging)
+            {
+                if (_isPanning)
+                {
+                    var translate = currentMousePos - _prevMousePos;
+                    _dragStart = new(_dragStart.X + translate.X, _dragStart.Y + translate.Y);
+                }
+                UpdateDragRect();
+            }
+
+            if (e.MiddleButton == MouseButtonState.Pressed)
+            {
+                CadManager.Camera.Pan(currentMousePos, _prevMousePos);
+                ConstantBuffersDirty = true;
+                e.Handled = true;
+            }
+            _prevMousePos = currentMousePos;
         }
         protected override void OnMouseWheel(MouseWheelEventArgs e)
         {
@@ -3385,19 +3382,10 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
                     if (obj is DrawingMtext drawingMtext)
                     {
-                        //var oId = SceneIdMap.GetOrAddObjectId(drawingObj, out isNew);
-                        //if (isNew) { StateBuffers.InitializeObjectState(SceneIdMap.MaxObjectId, drawingObj, oId); }
-
-                        if (drawingMtext.MtextBlock is null) 
-                        { 
-                            drawingMtext.UpdateMtextBlock(ResCache, drawingMtext.Layer.Id, SceneIdMap, StateBuffers); 
+                        if (drawingMtext.MtextBlock is null)
+                        {
+                            drawingMtext.UpdateMtextBlock(ResCache, drawingMtext.Layer.Id, SceneIdMap, StateBuffers);
                         }
-                        //foreach (var seg in drawingMtext.Segments)
-                        //{
-                        //    var segId = SceneIdMap.GetOrAddObjectId(seg, out isNew);
-                        //    if (isNew) { StateBuffers.InitializeObjectState(SceneIdMap.MaxObjectId, seg, segId); }
-                        //    continue;
-                        //}
                     }
                 }
             }

@@ -15,6 +15,13 @@ namespace Cad_Point_Manager.Controls.D3DControl
     public abstract class Direct3DControl : System.Windows.Controls.Image
     {
         #region Fields
+
+        // Testing
+        private readonly Stopwatch _frameTimer = new();
+        private readonly Stopwatch _printTimer = Stopwatch.StartNew();
+        // End Testing
+
+
         private const int WM_DISPLAYCHANGE = 0x007E;
 
         private SharpDX.Direct3D11.Device _device;
@@ -159,12 +166,18 @@ namespace Cad_Point_Manager.Controls.D3DControl
         {
             if (!_renderTimer.IsRunning || !_d3DSurface.IsFrontBufferAvailable) { return; }
 
+            var sw = Stopwatch.StartNew();
+
             _d3DSurface.Lock();
+
             PrepareAndCallRender();
+
             _d3DSurface.InvalidateD3DImage();
+
             _d3DSurface.Unlock();
 
             _device.ImmediateContext.Flush();
+
             _lastRenderTime = _renderTimer.ElapsedMilliseconds;
         }
 
