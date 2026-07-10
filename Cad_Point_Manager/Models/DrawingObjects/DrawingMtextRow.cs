@@ -1,5 +1,7 @@
 ﻿using Cad_Point_Manager.Common;
+using DocumentFormat.OpenXml.Drawing;
 using SharpDX;
+using System.Diagnostics;
 
 namespace Cad_Point_Manager.Models.DrawingObjects
 {
@@ -12,7 +14,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         #region Properties
         public float Height { get; set; } = 0;
         public float MaxWidth { get; set; }
-        //public List<DrawingMtextSegment> Segments { get; set; } = [];
         public Enums.TextAlignment TextAlignment { get; set; }
         public Vector3 BaseRowPosition { get; set; } = Vector3.Zero;
 
@@ -34,6 +35,13 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         #endregion
 
         #region Methods
+        public void UpdateBounds()
+        {
+            foreach (var segment in Segments)
+            {
+                segment.UpdateBounds();
+            }
+        }
         public void AddSegment(DrawingMtextSegment segment)
         {
             Segments.Add(segment);
@@ -66,16 +74,15 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             {
                 var segment = Segments[i];
 
-                //var prevSegmentWidth = (float)(prevSegment?.Bounds.Width ?? 0);
-                //if (i != 0)
+                //if (prevSegment is not null) 
                 //{
-                //    currentXOffset += prevSegmentWidth + segment.SpaceWidth;
+                //    if (prevSegment.TextRenderStyle == Text)
                 //}
 
                 var prevAdvanceWidth = prevSegment?.AdvanceWidth ?? 0;
                 currentXOffset += prevAdvanceWidth;
 
-                segment.RowXOffset = currentXOffset;
+                segment.XOffset = currentXOffset;
                 prevSegment = segment;
             }
         }

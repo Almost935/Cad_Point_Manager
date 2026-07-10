@@ -80,6 +80,11 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 }
 
                 (FontFamilyName, TextRenderStyle) = AutoCadFontResolver.Resolve(dxfFontFamilyName);
+                if (TextRenderStyle == TextRenderStyle.Stroke)
+                {
+                    LffFont = LffFontManager.GetFont(FontFamilyName);
+
+                }
             }
             else
             {
@@ -90,26 +95,38 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         {
             //deviceContext.DrawTextLayout(new RawVector2((float)Position.X, -(float)Position.Y), TextLayout, brush);
         }
-        public override void DrawToPdf(
-           XGraphics gfx,
-           System.Windows.Media.Matrix worldToPdf,
-           XPen pen)
+        public override void DrawToPdf(XGraphics gfx, System.Windows.Media.Matrix worldToPdf, XPen pen)
         {
-            var verts = TextVertices;
-            if (verts == null || verts.Count < 3) { return; }
-
-            var brush = new XSolidBrush(PdfTransform.ToXColor(ObjectColor.ToVector4()));
-            var path = new XGraphicsPath();
-
-            for (int i = 0; i + 2 < verts.Count; i += 3)
+            if (TextRenderStyle is TextRenderStyle.Stroke)
             {
-                var p0 = PdfTransform.WorldToPdf(verts[i].Position.ToVector3(), worldToPdf);
-                var p1 = PdfTransform.WorldToPdf(verts[i + 1].Position.ToVector3(), worldToPdf);
-                var p2 = PdfTransform.WorldToPdf(verts[i + 2].Position.ToVector3(), worldToPdf);
-                path.AddPolygon(new[] { p0, p1, p2 });
-            }
+                for (int i = 0; i < LineVertices.Count; i += 2)
+                {
+                    var v1 = LineVertices[i];
+                    var v2 = LineVertices[i + 1];
+                    var p1Pdf = PdfDrawingHelpers.WorldToPdf(new Vector2(v1.Position.X, v1.Position.Y), worldToPdf);
+                    var p2Pdf = PdfDrawingHelpers.WorldToPdf(new Vector2(v2.Position.X, v2.Position.Y), worldToPdf);
 
-            gfx.DrawPath(brush, path);
+                    gfx.DrawLine(pen, new XPoint(p1Pdf.X, p1Pdf.Y), new XPoint(p2Pdf.X, p2Pdf.Y));
+                }
+            }
+            else
+            {
+                var verts = TextVertices;
+                if (verts == null || verts.Count < 3) { return; }
+
+                var brush = new XSolidBrush(PdfTransform.ToXColor(ObjectColor.ToVector4()));
+                var path = new XGraphicsPath();
+
+                for (int i = 0; i + 2 < verts.Count; i += 3)
+                {
+                    var p0 = PdfTransform.WorldToPdf(verts[i].Position.ToVector3(), worldToPdf);
+                    var p1 = PdfTransform.WorldToPdf(verts[i + 1].Position.ToVector3(), worldToPdf);
+                    var p2 = PdfTransform.WorldToPdf(verts[i + 2].Position.ToVector3(), worldToPdf);
+                    path.AddPolygon(new[] { p0, p1, p2 });
+                }
+
+                gfx.DrawPath(brush, path);
+            }
         }
 
         public override void UpdateVertices(ResCache resCache, uint layerId, SceneIdMap sceneIdMap, D3dStateBuffers stateBuffers)
@@ -279,8 +296,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
         private List<Vector2> GetLffVertices()
         {
-            LffFont = LffFontManager.GetFont(FontFamilyName);
-
             if (LffFont == null)
             {
                 throw new Exception($"Font '{FontFamilyName}' not found in LffFontManager.");

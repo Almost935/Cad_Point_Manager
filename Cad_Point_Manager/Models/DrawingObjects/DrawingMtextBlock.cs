@@ -1,8 +1,10 @@
 ﻿using Cad_Point_Manager.Common;
 using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Helpers;
+using DocumentFormat.OpenXml.Drawing;
 using netDxf.Entities;
 using SharpDX;
+using System.Diagnostics;
 using Point = System.Windows.Point;
 
 namespace Cad_Point_Manager.Models.DrawingObjects
@@ -70,6 +72,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             foreach (var row in _rows)
             {
                 row.ApplyTranslate(); // Apply the translation to each row's segments based on the current offsets
+                row.UpdateBounds(); // Update the bounds of each row after translation
             }
         }
 
@@ -307,6 +310,8 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
         public void AddSegment(DrawingMtextSegment segment)
         {
+            segment.UpdateBounds();
+
             if (NumberOfRows == 0)
             {
                 DrawingMtextRow newRow = new([segment], BasePosition, MaxWidth);

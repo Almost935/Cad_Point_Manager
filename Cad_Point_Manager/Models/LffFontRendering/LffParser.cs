@@ -181,13 +181,8 @@ namespace Cad_Point_Manager.Models.LffFontRendering
 
                 glyph.Bounds = new RectangleF(minX, minY, maxX - minX, maxY - minY);
 
-                //glyph.AdvanceWidth = glyph.Bounds.Width + font.LetterSpacing;
                 glyph.AdvanceWidth = maxX + font.LetterSpacing;
-
-                //Debug.WriteLineIf(_debugHits.Contains(glyph.Character.ToString()), $"{glyph.Character} minX={minX} maxX={maxX} width={maxX - minX}");
             }
-
-            // Get the overall design height of the font by finding the min and max Y values across all glyphs.
 
             if (font.Glyphs.TryGetValue('I', out var testGlyph))
             {

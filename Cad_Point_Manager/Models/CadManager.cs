@@ -1305,6 +1305,7 @@ namespace Cad_Point_Manager.Models
                     foreach (var obj in layer.DrawingObjects)
                     {
                         var objectId = sceneIdMap.GetOrAddObjectId(obj, out var isNewObj);
+
                         if (isNewObj) { stateBuffers.InitializeObjectState(sceneIdMap.MaxObjectId, obj, objectId); }
 
                         if (obj is DrawingGeometry drawingGeometry)

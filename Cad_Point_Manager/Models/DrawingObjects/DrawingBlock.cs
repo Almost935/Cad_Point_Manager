@@ -168,6 +168,16 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                     geometry.UpdateVertices(resCache, layerId, objectId);
                     LineVertices.AddRange(geometry.Vertices);
                 }
+                if (obj is DrawingMtext mtext)
+                {
+                    mtext.UpdateVertices(resCache, layerId, objectId);
+                    LineVertices.AddRange(mtext.LineVertices);
+                }
+                if (obj is DrawingText text)
+                {
+                    mtext.UpdateVertices(resCache, layerId, objectId);
+                    LineVertices.AddRange(mtext.LineVertices);
+                }
             }
         }
         public void UpdateTextVertices(ResCache resCache, uint layerId, SceneIdMap sceneIdMap, D3dStateBuffers stateBuffers)

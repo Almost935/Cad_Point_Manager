@@ -436,7 +436,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         {
             foreach (var segment in Segments)
             {
-                for (int i = 0; i < segment.TextVertices.Length; i++)
+                for (int i = 0; i < segment.TextVertices.Count; i++)
                 {
                     segment.TextVertices[i] = TextVertex.RotateAroundPoint(segment.TextVertices[i], new Vector2(Position.X, Position.Y), (float)(MathHelper.DegToRad * Rotation));
                 }
@@ -456,12 +456,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 segmentInfo.IsUnderlined, segmentInfo.IsStrikethrough, segmentInfo.IsOverstriked, segmentInfo.IsNewLine,
                 0, renderStyle, segmentInfo.TextAlignment, IsPartOfBlock, DrawingBlock);
 
-            var objectId = sceneIdMap.GetOrAddObjectId(segment, out bool isNewObj);
-
-            if (isNewObj) { stateBuffers.InitializeObjectState(sceneIdMap.MaxObjectId, segment, objectId); }
-
-            segment.GetTextLayout(resCache.WriteFactory);
-            segment.UpdateVertices(resCache, layerId, objectId);
+            segment.UpdateVertices(resCache, layerId, sceneIdMap, stateBuffers);
 
             return segment;
         }
