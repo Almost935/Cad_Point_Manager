@@ -380,7 +380,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                     else
                     {
                         currentSegment.Text += value;
-                        //currentSegment.Text = currentSegment.Text.TrimEnd();
 
                         if (currentSegment.HasValue) { textSegments.Add(currentSegment); }
 

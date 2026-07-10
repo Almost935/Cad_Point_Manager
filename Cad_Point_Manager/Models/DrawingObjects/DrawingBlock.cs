@@ -152,7 +152,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             }
         }
 
-        public void UpdateGeometryVertices(ResCache resCache, uint layerId, uint objectId)
+        public void UpdateGeometryVertices(ResCache resCache, uint layerId, SceneIdMap sceneIdMap, D3dStateBuffers stateBuffers)
         {
             LineVertices.Clear();
 
@@ -160,23 +160,26 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             {
                 if (obj is DrawingBlock block)
                 {
-                    block.UpdateGeometryVertices(resCache, layerId, objectId);
+                    block.UpdateGeometryVertices(resCache, layerId, sceneIdMap, stateBuffers);
                     LineVertices.AddRange(block.LineVertices);
                 }
                 if (obj is DrawingGeometry geometry)
                 {
+                    var objectId = sceneIdMap.GetOrAddObjectId(obj, out var isNewObj);
+                    if (isNewObj) { stateBuffers.InitializeObjectState(sceneIdMap.MaxObjectId, obj, objectId); }
+
                     geometry.UpdateVertices(resCache, layerId, objectId);
                     LineVertices.AddRange(geometry.Vertices);
                 }
                 if (obj is DrawingMtext mtext)
                 {
-                    mtext.UpdateVertices(resCache, layerId, objectId);
+                    mtext.UpdateVertices(resCache, layerId, sceneIdMap, stateBuffers);
                     LineVertices.AddRange(mtext.LineVertices);
                 }
                 if (obj is DrawingText text)
                 {
-                    mtext.UpdateVertices(resCache, layerId, objectId);
-                    LineVertices.AddRange(mtext.LineVertices);
+                    text.UpdateVertices(resCache, layerId, sceneIdMap, stateBuffers);
+                    LineVertices.AddRange(text.LineVertices);
                 }
             }
         }

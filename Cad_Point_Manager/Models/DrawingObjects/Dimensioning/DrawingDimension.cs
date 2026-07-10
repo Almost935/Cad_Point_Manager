@@ -97,7 +97,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects.Dimensioning
             throw new NotImplementedException();
         }
 
-        public void UpdateGeometryVertices(ResCache resCache, uint layerId, uint objectId)
+        public void UpdateGeometryVertices(ResCache resCache, uint layerId, SceneIdMap sceneIdMap, D3dStateBuffers stateBuffers)
         {
             _lineVertices.Clear();
 
@@ -105,13 +105,26 @@ namespace Cad_Point_Manager.Models.DrawingObjects.Dimensioning
             {
                 if (obj is DrawingBlock block)
                 {
-                    block.UpdateGeometryVertices(resCache, layerId, objectId);
+                    block.UpdateGeometryVertices(resCache, layerId, sceneIdMap, stateBuffers);
                     _lineVertices.AddRange(block.LineVertices);
                 }
                 if (obj is DrawingGeometry geometry)
                 {
+                    var objectId = sceneIdMap.GetOrAddObjectId(obj, out var isNewObj);
+                    if (isNewObj) { stateBuffers.InitializeObjectState(sceneIdMap.MaxObjectId, obj, objectId); }
+
                     geometry.UpdateVertices(resCache, layerId, objectId);
                     _lineVertices.AddRange(geometry.Vertices);
+                }
+                if (obj is DrawingSText text)
+                {
+                    text.UpdateVertices(resCache, layerId, sceneIdMap, stateBuffers);
+                    _lineVertices.AddRange(text.LineVertices);
+                }
+                if (obj is DrawingMtext mtext)
+                {
+                    mtext.UpdateVertices(resCache, layerId, sceneIdMap, stateBuffers);
+                    _lineVertices.AddRange(mtext.LineVertices);
                 }
             }
         }

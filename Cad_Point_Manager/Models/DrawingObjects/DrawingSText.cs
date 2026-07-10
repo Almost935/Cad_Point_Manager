@@ -131,17 +131,17 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
         public override void UpdateVertices(ResCache resCache, uint layerId, SceneIdMap sceneIdMap, D3dStateBuffers stateBuffers)
         {
-            var objectId = sceneIdMap.GetOrAddObjectId(this, out var isNewObject);
-            if (isNewObject) { stateBuffers.InitializeObjectState(sceneIdMap.MaxObjectId, this, objectId); }
             GetTextFormat(resCache.WriteFactory);
             GetTextLayout(resCache.WriteFactory);
             UpdateFontFace(resCache);
+
+            var objectId = sceneIdMap.GetOrAddObjectId(this, out var isNewObj);
+            if (isNewObj) { stateBuffers.InitializeObjectState(sceneIdMap.MaxObjectId, this, objectId); }
 
             if (TextRenderStyle == TextRenderStyle.Stroke)
             {
                 List<Vector2> vertices = GetLffVertices();
                 LineVertices = GetLineVertices(vertices, layerId, objectId);
-
                 TextVertices = [];
             }
             else

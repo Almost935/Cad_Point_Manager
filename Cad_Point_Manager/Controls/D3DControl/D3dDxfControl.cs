@@ -3385,16 +3385,20 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
                     if (obj is DrawingMtext drawingMtext)
                     {
-                        if (drawingMtext.MtextBlock is null) { drawingMtext.UpdateMtextBlock(ResCache, drawingMtext.Layer.Id, SceneIdMap, StateBuffers); }
-                        foreach (var seg in drawingMtext.Segments)
-                        {
-                            var segId = SceneIdMap.GetOrAddObjectId(seg, out isNew);
-                            if (isNew) { StateBuffers.InitializeObjectState(SceneIdMap.MaxObjectId, seg, segId); }
-                            continue;
+                        //var oId = SceneIdMap.GetOrAddObjectId(drawingObj, out isNew);
+                        //if (isNew) { StateBuffers.InitializeObjectState(SceneIdMap.MaxObjectId, drawingObj, oId); }
+
+                        if (drawingMtext.MtextBlock is null) 
+                        { 
+                            drawingMtext.UpdateMtextBlock(ResCache, drawingMtext.Layer.Id, SceneIdMap, StateBuffers); 
                         }
+                        //foreach (var seg in drawingMtext.Segments)
+                        //{
+                        //    var segId = SceneIdMap.GetOrAddObjectId(seg, out isNew);
+                        //    if (isNew) { StateBuffers.InitializeObjectState(SceneIdMap.MaxObjectId, seg, segId); }
+                        //    continue;
+                        //}
                     }
-                    var oId = SceneIdMap.GetOrAddObjectId(drawingObj, out isNew);
-                    if (isNew) { StateBuffers.InitializeObjectState(SceneIdMap.MaxObjectId, drawingObj, oId); }
                 }
             }
         }
