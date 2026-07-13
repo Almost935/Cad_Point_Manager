@@ -2,6 +2,7 @@
 using Cad_Point_Manager.Models.DrawingObjects;
 using Cad_Point_Manager.Models.PointRendering;
 using SharpDX;
+using static Cad_Point_Manager.Controls.D3DControl.Rendering.Text.D3dStateBuffers;
 
 namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
 {
@@ -31,6 +32,25 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
         public ReadOnlySpan<GroupState> GetGroupStates() => _bufs.GroupSpan;
         public ReadOnlySpan<LayerState> GetLayerStates() => _bufs.LayerSpan;
         public ReadOnlySpan<ObjectState> GetObjectStates() => _bufs.ObjectSpan;
+
+        public PointRegistration EnsurePointRegistered(CogoPoint p)
+        {
+            uint pId = _ids.GetOrAddPointId(p, out var isNewPoint);
+            uint gId = _ids.GetOrAddGroupId(p.PointGroup, out var isNewGroup);
+            if (isNewGroup) { _bufs.InitializeGroupState(_ids.MaxGroupId, p.PointGroup, gId); }
+            if (isNewPoint) { _bufs.InitializePointState(_ids.MaxPointId, p, pId, gId); }
+
+            uint idPN = _ids.GetOrAddLabelId(p, 0, out var isNew);
+            if (isNew) { _bufs.InitializeLabelState(_ids.MaxLabelCount, p.PointNumberOffset, idPN); }
+
+            uint idElev = _ids.GetOrAddLabelId(p, 1, out isNew);
+            if (isNew) { _bufs.InitializeLabelState(_ids.MaxLabelCount, p.ElevationOffset, idElev); }
+
+            uint idDesc = _ids.GetOrAddLabelId(p, 2, out isNew);
+            if (isNew) { _bufs.InitializeLabelState(_ids.MaxLabelCount, p.DescriptionOffset, idDesc); }
+
+            return new PointRegistration(pId, gId, idPN, idElev, idDesc);
+        }
 
         public LabelState[] GetLabelStatesSnapshot()
         {
@@ -248,5 +268,12 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
             _dirtyLayers.Clear();
         }
         #endregion
+
+        public readonly record struct PointRegistration(
+           uint PointId,
+           uint GroupId,
+           uint PointNumberLabelId,
+           uint ElevationLabelId,
+           uint DescriptionLabelId);
     }
 }

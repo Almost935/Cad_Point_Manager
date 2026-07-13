@@ -351,6 +351,8 @@ namespace Cad_Point_Manager.Models
             Extents = DxfHelpers.GetBoundsFromHeader(DxfImportResult.DxfDocument);
             GetPointScale();
 
+            GetTestDxfPoints();
+
             foreach (var layer in dxfImportResult.DxfDocument.Layers)
             {
                 GetLayer(layer);
@@ -393,7 +395,7 @@ namespace Cad_Point_Manager.Models
                     if (blockExists && dxfImportResult.DxfDocument.Blocks.TryGetValue(blockName, out var dxfBlock))
                     {
                         Insert insert = new(dxfBlock);
-                        arrowHeadBlock = DxfHelpers.GetDrawingObject(insert, layer, DxfHelpers.GetEntityObjectColor(insert), DxfHelpers.GetColorType(insert)) as DrawingBlock;                        
+                        arrowHeadBlock = DxfHelpers.GetDrawingObject(insert, layer, DxfHelpers.GetEntityObjectColor(insert), DxfHelpers.GetColorType(insert)) as DrawingBlock;
                     }
                     DrawingMleader drawingMleader = new(mleader, layer, textStyle, false, null, arrowHeadBlock);
 
@@ -462,8 +464,8 @@ namespace Cad_Point_Manager.Models
             out List<CogoPoint> createdPoints,
             out List<string> errorMessages)
         {
-            createdPoints = new List<CogoPoint>();
-            errorMessages = new List<string>();
+            createdPoints = [];
+            errorMessages = [];
             var commands = new List<IUndoableCommand>();
 
             foreach (var p in pointData)
@@ -1511,11 +1513,13 @@ namespace Cad_Point_Manager.Models
             ClearDxfPoints();
 
             var inflatedExtents = Rect.Inflate(Extents, Extents.Width * 0.1, Extents.Height * 0.1);
+            int maxPoints = 1;
             float rows = 15;
             float cols = 15;
             float yIncrement = (inflatedExtents.Height / (rows - 1)).ToFloat();
             float xIncrement = (inflatedExtents.Width / (cols - 1)).ToFloat();
             int pointNum = 1;
+            int testPointCount = 0;
             string description = "Test Point";
             Random random = new();
 
@@ -1533,12 +1537,24 @@ namespace Cad_Point_Manager.Models
                     for (int j = 0; j < cols; j++)
                     {
                         float x = inflatedExtents.Left.ToFloat() + (xIncrement * j);
-                        var pointCreated = TryAddPointToActiveGroup(pointNum, new Vector3(x, y, 0), out _,
-                            (Math.Round(300 + random.NextDouble() * 100, 3)).ToFloat(), description);
-                        if (pointCreated) { pointNum++; continue; }
+
+                        if (CreateTestPoint(pointNum, x, y, description, random))
+                        {
+                            pointNum++;
+                            testPointCount++;
+
+                            if (testPointCount >= maxPoints) { return; }
+
+                            continue;
+                        }
                     }
                 }
             }
+        }
+        public bool CreateTestPoint(int pointNum, float x, float y, string description, Random random)
+        {
+            return TryAddPointToActiveGroup(pointNum, new Vector3(x, y, 0), out _,
+                            (Math.Round(300 + random.NextDouble() * 100, 3)).ToFloat(), description);
         }
 
         // Hit testing tree related methods

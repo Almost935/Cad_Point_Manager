@@ -93,6 +93,7 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
         public Span<LayerState> LayerSpan => _layerCpu.AsSpan(0, _layerCap);
         public Span<ObjectState> ObjectSpan => _objectCpu.AsSpan(0, _objectCap);
 
+
         public void InitializeLabelState(int count, Vector2 offset, uint lId)
         {
             EnsureLabelCapacity(count);

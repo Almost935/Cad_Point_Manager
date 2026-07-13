@@ -179,21 +179,14 @@ namespace Cad_Point_Manager.Controls.D3DControl
         /// <param name="screenSpaceEnd">The end pan location in screen space coordinates.</param>
         public void Pan(Vector2 screenSpaceStart, Vector2 screenSpaceEnd)
         {
-            // Convert screen coordinates to normalized device coordinates (NDC)
-            Vector2 startNDC = ScreenToNDC(screenSpaceStart);
-            Vector2 endNDC = ScreenToNDC(screenSpaceEnd);
+            Vector2 deltaPixels = screenSpaceEnd - screenSpaceStart;
 
-            // Convert NDC to world coordinates
-            Vector3 startWorld = Unproject(startNDC);
-            Vector3 endWorld = Unproject(endNDC);
+            float worldPerPixel = GetWorldUnitsPerPixel();
 
-            // Calculate the world-space delta
-            Vector3 delta = endWorld - startWorld;
+            Translate += new Vector2(
+                -deltaPixels.X * worldPerPixel,
+                 deltaPixels.Y * worldPerPixel);
 
-            // Update the translation vector
-            Translate -= new Vector2(delta.X, delta.Y);
-
-            // Update the view matrix
             UpdateView();
             UpdateViewProjection();
         }

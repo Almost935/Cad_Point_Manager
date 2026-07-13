@@ -646,7 +646,7 @@ namespace Cad_Point_Manager.ViewModels
             {
                 if (SelectedCogoPoints.Count > 0)
                 {
-                    
+
                 }
             }
         }
@@ -850,10 +850,10 @@ namespace Cad_Point_Manager.ViewModels
 
         public IEnumerable GetErrors(string propertyName)
         {
-            if (string.IsNullOrWhiteSpace(propertyName))
-                return _errors.SelectMany(kvp => kvp.Value);
-            if (_errors.ContainsKey(propertyName))
-                return _errors[propertyName];
+            if (string.IsNullOrWhiteSpace(propertyName)) { return _errors.SelectMany(kvp => kvp.Value); }
+
+            if (_errors.ContainsKey(propertyName)) { return _errors[propertyName]; }
+
             return null;
         }
 

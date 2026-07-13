@@ -48,10 +48,10 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
         }
         public uint GetOrAddPointId(CogoPoint cp, out bool isNew)
         {
-            if (_pointOf.TryGetValue(cp, out var id)) 
-            { 
+            if (_pointOf.TryGetValue(cp, out var id))
+            {
                 isNew = false;
-                return id; 
+                return id;
             }
             id = _nextPointId++;
             _pointOf[cp] = id;
@@ -108,6 +108,10 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
             _objectOf.Clear();
 
             _nextLabelId = 0;
+            _nextPointId = 0;
+            _nextGroupId = 0;
+            _nextLayerId = 0;
+            _nextObjectId = 0;
         }
 
         public int MaxLabelCount => (int)_nextLabelId;

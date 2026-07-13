@@ -562,6 +562,18 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
                 _combinedDirty = false;
             }
+
+
+            //ctx.CopyResource(ResCache.DxfTexture, ResCache.Texture2D);
+            //ctx.OutputMerger.SetRenderTargets(ResCache.RenderTargetView);
+
+            ////if (IsDragging && _dragFillVertexCount > 0) { DrawDragOverlay(ctx); }
+            //if (_hoverRectInstanceCount > 0 || _hoverCircleVertices.Count > 0) { DrawCogoPointHover(ctx); }
+            //if (_leaderLineInstanceCount > 0) { DrawLeaderLines(ctx); }
+            //if (_anchorVerticesCount > 0) { DrawCogoPointAnchors(ctx); }
+            //if (_sigPointVertexCount > 0) { DrawSignificantPoints(ctx); }
+
+            //if (IsDragging && _dragFillVertexCount > 0) { DrawDragOverlay(ctx); }
         }
 
         private void DrawDxf(DeviceContext ctx)
@@ -907,22 +919,31 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 var isGroupVisible = pg.IsVisible ? 1f : 0f;
 
                 uint gId = SceneIdMap.GetOrAddGroupId(pg, out var isNewGroup);
-                if (isNewGroup) { StateBuffers.EnsureGroupCapacity(SceneIdMap.GroupCount); }
+                if (isNewGroup) { StateBuffers.InitializeGroupState(SceneIdMap.MaxGroupId, pg, gId); }
 
                 foreach (var p in pg.Points)
                 {
                     if (p == null) { continue; }
 
                     uint pId = SceneIdMap.GetOrAddPointId(p, out var isNewPoint);
-                    if (isNewPoint) { StateBuffers.EnsurePointCapacity(SceneIdMap.PointCount); }
+                    if (isNewPoint) { StateBuffers.InitializePointState(SceneIdMap.MaxPointId, p, pId, gId); }
 
                     var isMO = p.IsMouseOver ? 1f : 0f;
                     var isSel = p.IsSelected ? 1f : 0f;
                     var ySign = -1f;
 
+                    //uint idPN = SceneIdMap.GetOrAddLabelId(p, 0, out var isNew);
+                    //uint idElev = SceneIdMap.GetOrAddLabelId(p, 1, out isNew);
+                    //uint idDesc = p.HasDescription ? SceneIdMap.GetOrAddLabelId(p, 2, out isNew) : 0xFFFFFFFF;
+
                     uint idPN = SceneIdMap.GetOrAddLabelId(p, 0, out var isNew);
+                    if (isNew) { StateBuffers.InitializeLabelState(SceneIdMap.MaxLabelCount, p.PointNumberOffset, idPN); }
+
                     uint idElev = SceneIdMap.GetOrAddLabelId(p, 1, out isNew);
-                    uint idDesc = p.HasDescription ? SceneIdMap.GetOrAddLabelId(p, 2, out isNew) : 0xFFFFFFFF;
+                    if (isNew) { StateBuffers.InitializeLabelState(SceneIdMap.MaxLabelCount, p.ElevationOffset, idElev); }
+
+                    uint idDesc = SceneIdMap.GetOrAddLabelId(p, 2, out isNew);
+                    if (isNew) { StateBuffers.InitializeLabelState(SceneIdMap.MaxLabelCount, p.DescriptionOffset, idDesc); }
 
                     AddCogoTextLabelLine(
                         s: p.PointNumber.ToString(),
@@ -1785,9 +1806,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _combinedDirty = true;
         }
 
-        private void SetLineRenderMode(DeviceContext ctx,
-            bool selectedOnly,
-            bool glowPass)
+        private void SetLineRenderMode(DeviceContext ctx, bool selectedOnly, bool glowPass)
         {
             var data = new LineRenderModeBuffer
             {
@@ -3338,6 +3357,35 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     cogoPoint.PropertyChanged -= CogoPoint_PropertyChanged;
                 }
             }
+            //if (e.Action == NotifyCollectionChangedAction.Reset)
+            //{
+            //    foreach (var cp in CadManager.CogoPoints)
+            //    {
+            //        cp.PropertyChanged -= CogoPoint_PropertyChanged;
+            //        cp.PropertyChanged += CogoPoint_PropertyChanged;
+
+            //        uint pId = SceneIdMap.GetOrAddPointId(cp, out var isNewPoint);
+            //        uint gId = SceneIdMap.GetOrAddGroupId(cp.PointGroup, out var isNewGroup);
+
+            //        if (isNewGroup)
+            //        { StateBuffers.InitializeGroupState(SceneIdMap.MaxGroupId, cp.PointGroup, gId); }
+
+            //        if (isNewPoint)
+            //        { StateBuffers.InitializePointState(SceneIdMap.MaxPointId, cp, pId, gId); }
+
+            //        uint idPN = SceneIdMap.GetOrAddLabelId(cp, 0, out var isNew);
+            //        if (isNew)
+            //        { StateBuffers.InitializeLabelState(SceneIdMap.MaxLabelCount, cp.PointNumberOffset, idPN); }
+
+            //        uint idElev = SceneIdMap.GetOrAddLabelId(cp, 1, out isNew);
+            //        if (isNew)
+            //        { StateBuffers.InitializeLabelState(SceneIdMap.MaxLabelCount, cp.ElevationOffset, idElev); }
+
+            //        uint idDesc = SceneIdMap.GetOrAddLabelId(cp, 2, out isNew);
+            //        if (isNew)
+            //        { StateBuffers.InitializeLabelState(SceneIdMap.MaxLabelCount, cp.DescriptionOffset, idDesc); }
+            //    }
+            //}
         }
         private void Layers_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
         {
