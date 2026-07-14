@@ -918,32 +918,18 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 var color = pg.Color.ToSharpDXVector4();
                 var isGroupVisible = pg.IsVisible ? 1f : 0f;
 
-                uint gId = SceneIdMap.GetOrAddGroupId(pg, out var isNewGroup);
-                if (isNewGroup) { StateBuffers.InitializeGroupState(SceneIdMap.MaxGroupId, pg, gId); }
-
                 foreach (var p in pg.Points)
                 {
                     if (p == null) { continue; }
-
-                    uint pId = SceneIdMap.GetOrAddPointId(p, out var isNewPoint);
-                    if (isNewPoint) { StateBuffers.InitializePointState(SceneIdMap.MaxPointId, p, pId, gId); }
 
                     var isMO = p.IsMouseOver ? 1f : 0f;
                     var isSel = p.IsSelected ? 1f : 0f;
                     var ySign = -1f;
 
-                    //uint idPN = SceneIdMap.GetOrAddLabelId(p, 0, out var isNew);
-                    //uint idElev = SceneIdMap.GetOrAddLabelId(p, 1, out isNew);
-                    //uint idDesc = p.HasDescription ? SceneIdMap.GetOrAddLabelId(p, 2, out isNew) : 0xFFFFFFFF;
+                    p.PropertyChanged -= CogoPoint_PropertyChanged;
+                    p.PropertyChanged += CogoPoint_PropertyChanged;
 
-                    uint idPN = SceneIdMap.GetOrAddLabelId(p, 0, out var isNew);
-                    if (isNew) { StateBuffers.InitializeLabelState(SceneIdMap.MaxLabelCount, p.PointNumberOffset, idPN); }
-
-                    uint idElev = SceneIdMap.GetOrAddLabelId(p, 1, out isNew);
-                    if (isNew) { StateBuffers.InitializeLabelState(SceneIdMap.MaxLabelCount, p.ElevationOffset, idElev); }
-
-                    uint idDesc = SceneIdMap.GetOrAddLabelId(p, 2, out isNew);
-                    if (isNew) { StateBuffers.InitializeLabelState(SceneIdMap.MaxLabelCount, p.DescriptionOffset, idDesc); }
+                    var ids = StateController.EnsurePointRegistered(p);
 
                     AddCogoTextLabelLine(
                         s: p.PointNumber.ToString(),
@@ -952,7 +938,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                         duToWorld: duToWorld,
                         color: color,
                         isVisible: isGroupVisible, isMouseOver: isMO, isSelected: isSel, ySign: ySign,
-                        labelId: idPN, groupId: gId, pointId: pId);
+                        labelId: ids.PointNumberLabelId, groupId: ids.GroupId, pointId: ids.PointId);
                     AddCogoTextLabelLine(
                         s: p.Elevation.ToString("F3"),
                         lineOffset: p.ElevationOffset,
@@ -960,7 +946,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                         duToWorld: duToWorld,
                         color: color,
                         isVisible: isGroupVisible, isMouseOver: isMO, isSelected: isSel, ySign: ySign,
-                        labelId: idElev, groupId: gId, pointId: pId);
+                        labelId: ids.ElevationLabelId, groupId: ids.GroupId, pointId: ids.PointId);
                     if (p.HasDescription)
                     {
                         AddCogoTextLabelLine(
@@ -970,7 +956,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                             duToWorld: duToWorld,
                             color: color,
                             isVisible: isGroupVisible, isMouseOver: isMO, isSelected: isSel, ySign: ySign,
-                            labelId: idDesc, groupId: gId, pointId: pId);
+                            labelId: ids.DescriptionLabelId, groupId: ids.GroupId, pointId: ids.PointId);
                     }
                     RecomputeCogoPointBoundsFast(p);
 
@@ -989,7 +975,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             if (_pointCircleVertexBuffer is null) { return; }
 
             var context = ResCache.DeviceContext;
-            var vertexSpan = CadManager.UpdatePointCircleVerticesList(SceneIdMap, StateBuffers);
+            var vertexSpan = CadManager.UpdatePointCircleVerticesList(StateController);
             _pointCircleVertexBuffer.Update(context, vertexSpan);
             _pointCircleVertexCount = vertexSpan.Length;
 
@@ -3334,19 +3320,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     cp.PropertyChanged -= CogoPoint_PropertyChanged;
                     cp.PropertyChanged += CogoPoint_PropertyChanged;
 
-                    uint pId = SceneIdMap.GetOrAddPointId(cp, out var isNewPoint);
-                    uint gId = SceneIdMap.GetOrAddGroupId(cp.PointGroup, out var isNewGroup);
-                    if (isNewGroup) { StateBuffers.InitializeGroupState(SceneIdMap.MaxGroupId, cp.PointGroup, gId); }
-                    if (isNewPoint) { StateBuffers.InitializePointState(SceneIdMap.MaxPointId, cp, pId, gId); }
-
-                    uint idPN = SceneIdMap.GetOrAddLabelId(cp, 0, out var isNew);
-                    if (isNew) { StateBuffers.InitializeLabelState(SceneIdMap.MaxLabelCount, cp.PointNumberOffset, idPN); }
-
-                    uint idElev = SceneIdMap.GetOrAddLabelId(cp, 1, out isNew);
-                    if (isNew) { StateBuffers.InitializeLabelState(SceneIdMap.MaxLabelCount, cp.ElevationOffset, idElev); }
-
-                    uint idDesc = SceneIdMap.GetOrAddLabelId(cp, 2, out isNew);
-                    if (isNew) { StateBuffers.InitializeLabelState(SceneIdMap.MaxLabelCount, cp.DescriptionOffset, idDesc); }
+                    StateController.EnsurePointRegistered(cp);
                 }
             }
             if (e.Action == NotifyCollectionChangedAction.Remove)

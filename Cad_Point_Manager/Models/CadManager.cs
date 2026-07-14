@@ -1481,26 +1481,23 @@ namespace Cad_Point_Manager.Models
             }
             return CollectionsMarshal.AsSpan(_cachedSolidVertices);
         }
-        public ReadOnlySpan<PointMarkerInstance> UpdatePointCircleVerticesList(SceneIdMap sceneIdMap, D3dStateBuffers stateBuffers)
+        public ReadOnlySpan<PointMarkerInstance> UpdatePointCircleVerticesList(D3dStateController stateController)
         {
             _cachedPointMarkerVertices.Clear();
 
             foreach (var pg in PointGroups)
             {
                 if (!pg.IsVisible || pg is null) { continue; }
-                uint gid = sceneIdMap.GetOrAddGroupId(pg, out var isNewGroup);
-                if (isNewGroup) { stateBuffers.InitializeGroupState(sceneIdMap.MaxGroupId, pg, gid); }
 
                 foreach (CogoPoint p in pg.Points)
                 {
-                    uint pid = sceneIdMap.GetOrAddPointId(p, out var isNewPoint);
-                    if (isNewPoint) { stateBuffers.InitializePointState(sceneIdMap.MaxPointId, p, pid, gid); }
+                    var pointRegistration = stateController.EnsurePointRegistered(p);
 
                     _cachedPointMarkerVertices.Add(new PointMarkerInstance
                     {
                         Position = Vector3.Zero,
                         Radius = GlobalHelperProperties.CogoPointCirclePixelRadius,
-                        PointId = pid,
+                        PointId = pointRegistration.PointId,
                     });
                 }
             }
