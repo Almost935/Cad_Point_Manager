@@ -18,7 +18,7 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
 
         /// <param name="d2dFactory">Direct2D factory (to create PathGeometry)</param>
         /// <param name="flatteningTolerance">Passed to Geometry.Tessellate</param>
-        public DWriteGlyphTessellator(Factory d2dFactory, float flatteningTolerance = 0.25f)
+        public DWriteGlyphTessellator(Factory d2dFactory, float flatteningTolerance = 15.0f)
         {
             _d2dFactory = d2dFactory ?? throw new ArgumentNullException(nameof(d2dFactory));
             _flatteningTolerance = flatteningTolerance;
@@ -91,7 +91,7 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
             return new RectangleF(minX, minY, maxX - minX, maxY - minY);
         }
 
-        public static List<Vector2> TessellateGeometry(Geometry geometry, float flatteningTolerance = 0.001f, float tesselationFactor = 1)
+        public static List<Vector2> TessellateGeometry(Geometry geometry, float flatteningTolerance = 25.0f, float tesselationFactor = 1)
         {
             var vertices = new List<Vector2>();
 

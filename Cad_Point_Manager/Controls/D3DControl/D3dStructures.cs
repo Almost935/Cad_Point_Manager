@@ -79,6 +79,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
     }
 
     [StructLayout(LayoutKind.Sequential)]
+    public struct GlyphVertexQuad
+    {
+        public Vector2 PosDU; // design-unit vertex (triangle-list)
+    }
+    [StructLayout(LayoutKind.Sequential)]
     public struct GlyphVertexDU
     {
         public Vector2 PosDU; // design-unit vertex (triangle-list)

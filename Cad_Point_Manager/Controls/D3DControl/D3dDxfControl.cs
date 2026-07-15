@@ -10,6 +10,7 @@ using Cad_Point_Manager.Models.HitTesting;
 using Cad_Point_Manager.Models.PointRendering;
 using SharpDX;
 using SharpDX.D3DCompiler;
+using SharpDX.Direct2D1.Effects;
 using SharpDX.Direct3D;
 using SharpDX.Direct3D11;
 using SharpDX.DXGI;
@@ -135,6 +136,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private VertexShader _glyphVS;
         private PixelShader _glyphPS;
         private readonly Dictionary<short, List<GlyphInstance>> _glyphBatches = [];
+        private readonly List<GlyphInstance> _flattenedGlyphInstances = [];
+        private readonly List<GlyphDrawRange> _glyphDrawRanges = [];
         private bool _glyphVerticesDirty = false;
 
         // Point circle shader related fields
@@ -241,6 +244,15 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private CogoPoint _mouseOverToggleButtonPoint = null;
         private CogoPoint _pressedToggleButtonPoint = null;
         private bool _cogoPointTextBeingMoved => _pressedToggleButtonPoint is not null;
+        #endregion
+
+        #region Structures
+        private struct GlyphDrawRange
+        {
+            public short GlyphId;
+            public int StartInstance;
+            public int InstanceCount;
+        }
         #endregion
 
         #region Properties 
@@ -562,18 +574,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
                 _combinedDirty = false;
             }
-
-
-            //ctx.CopyResource(ResCache.DxfTexture, ResCache.Texture2D);
-            //ctx.OutputMerger.SetRenderTargets(ResCache.RenderTargetView);
-
-            ////if (IsDragging && _dragFillVertexCount > 0) { DrawDragOverlay(ctx); }
-            //if (_hoverRectInstanceCount > 0 || _hoverCircleVertices.Count > 0) { DrawCogoPointHover(ctx); }
-            //if (_leaderLineInstanceCount > 0) { DrawLeaderLines(ctx); }
-            //if (_anchorVerticesCount > 0) { DrawCogoPointAnchors(ctx); }
-            //if (_sigPointVertexCount > 0) { DrawSignificantPoints(ctx); }
-
-            //if (IsDragging && _dragFillVertexCount > 0) { DrawDragOverlay(ctx); }
         }
 
         private void DrawDxf(DeviceContext ctx)
@@ -581,11 +581,27 @@ namespace Cad_Point_Manager.Controls.D3DControl
             ctx.OutputMerger.SetRenderTargets(ResCache.DxfRenderTargetView);
             ctx.ClearRenderTargetView(ResCache.DxfRenderTargetView, new RawColor4(1, 1, 1, 1));
 
+            Stopwatch sw = Stopwatch.StartNew();
+            Debug.WriteLine($"\n");
+
             DrawLines(ctx);
+            //Debug.WriteLine($"Lines {sw.ElapsedMilliseconds} ms");
+            sw.Restart();
+
             DrawText(ctx);
+            //Debug.WriteLine($"Text {sw.ElapsedMilliseconds} ms");
+            sw.Restart();
+
             DrawSolids(ctx);
+            //Debug.WriteLine($"Solids {sw.ElapsedMilliseconds} ms");
+            sw.Restart();
+
             DrawPointCircles(ctx);
-            DrawGlyphBatches(ctx, ResCache.AsciiGlyphAtlas, _glyphBatches);
+            //Debug.WriteLine($"Circles {sw.ElapsedMilliseconds} ms");
+            sw.Restart();
+
+            DrawGlyphBatches(ctx, ResCache.AsciiGlyphAtlas);
+            //Debug.WriteLine($"Glyphs {sw.ElapsedMilliseconds} ms");
         }
 
         private void DrawLines(DeviceContext ctx)
@@ -661,17 +677,24 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             ctx.Draw(_solidVertexCount, 0);
         }
-        private void DrawGlyphBatches(DeviceContext ctx, GlyphAtlas atlas, Dictionary<short, List<GlyphInstance>> batches)
+        private void DrawGlyphBatches(DeviceContext ctx, GlyphAtlas atlas)
         {
-            if (atlas == null || atlas.VertexBuffer == null) { return; }
+            if (atlas == null ||
+                atlas.VertexBuffer == null ||
+                _flattenedGlyphInstances.Count == 0)
+            {
+                return;
+            }
 
-            // Bind shaders + constant buffers
             ctx.VertexShader.Set(_glyphVS);
             ctx.PixelShader.Set(_glyphPS);
+
             ctx.InputAssembler.InputLayout = _glyphLayout;
+
             ctx.VertexShader.SetConstantBuffer(0, _transformationBuffer);
             ctx.VertexShader.SetConstantBuffer(1, _cogoPointSettingsBuffer);
             ctx.VertexShader.SetConstantBuffer(2, _viewportBuffer);
+
             ctx.InputAssembler.PrimitiveTopology = PrimitiveTopology.TriangleList;
 
             ctx.VertexShader.SetShaderResource(0, StateBuffers.LabelSRV);
@@ -680,30 +703,37 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             ctx.PixelShader.SetShaderResource(1, StateBuffers.GroupSRV);
 
-            // Bind slot 0 (glyph vertex buffer) once
-            var vbGlyph = new VertexBufferBinding(atlas.VertexBuffer, Utilities.SizeOf<GlyphVertexDU>(), 0);
+            var vbGlyph =
+                new VertexBufferBinding(
+                    atlas.VertexBuffer,
+                    Utilities.SizeOf<GlyphVertexDU>(),
+                    0);
 
-            foreach (var kvp in batches)
+            var vbInst =
+                new VertexBufferBinding(
+                    _glyphInstanceBuffer.Buffer,
+                    _glyphInstanceBuffer.Stride,
+                    0);
+
+            ctx.InputAssembler.SetVertexBuffers(0, vbGlyph, vbInst);
+
+            //Debug.WriteLine($"\n_glyphDrawRanges.Count: {_glyphDrawRanges.Count}");
+            //Debug.WriteLine($"_flattenedGlyphInstances.Count: {_flattenedGlyphInstances.Count}");
+            Debug.WriteLine($"\n");
+            foreach (var kvp in atlas.Ranges)
             {
-                short glyphId = kvp.Key;
-                var instances = kvp.Value;
-                if (instances == null || instances.Count == 0) { continue; }
+                Debug.WriteLine($"{kvp.Key}: {kvp.Value.VertexCount}");
+            }
 
-                if (!atlas.Ranges.TryGetValue(glyphId, out var range)) { continue; }
-                if (range.VertexCount <= 0) { continue; }
+            foreach (var batch in _glyphDrawRanges)
+            {
+                if (!atlas.Ranges.TryGetValue(batch.GlyphId, out var range)) { continue; }
 
-                // Update instance buffer (slot 1)
-                _glyphInstanceBuffer.Update(ctx, CollectionsMarshal.AsSpan(instances));
-                var vbInst = new VertexBufferBinding(_glyphInstanceBuffer.Buffer, _glyphInstanceBuffer.Stride, 0);
-
-                ctx.InputAssembler.SetVertexBuffers(0, vbGlyph, vbInst);
-
-                // One draw per glyph id
                 ctx.DrawInstanced(
                     vertexCountPerInstance: range.VertexCount,
-                    instanceCount: instances.Count,
+                    instanceCount: batch.InstanceCount,
                     startVertexLocation: range.StartVertex,
-                    startInstanceLocation: 0);
+                    startInstanceLocation: batch.StartInstance);
             }
         }
         private void DrawPointCircles(DeviceContext ctx)
@@ -903,6 +933,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
         private void UpdateGlyphBatches()
         {
+            Debug.WriteLine("UpdateGlyphBatches");
+
             _glyphBatches.Clear();
 
             foreach (var pg in PointGroups)
@@ -964,9 +996,12 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 }
             }
 
+            BuildFlattenedGlyphBuffers();
+
             CadManager.UpdateCogoPointTree();
 
             StateBuffers.FlushAll();
+
             _glyphVerticesDirty = false;
             _dxfDirty = true;
         }
@@ -1814,6 +1849,30 @@ namespace Cad_Point_Manager.Controls.D3DControl
             stream.Dispose();
         }
 
+        private void BuildFlattenedGlyphBuffers()
+        {
+            _flattenedGlyphInstances.Clear();
+            _glyphDrawRanges.Clear();
+
+            foreach (var kvp in _glyphBatches)
+            {
+                if (kvp.Value.Count == 0)
+                    continue;
+
+                _glyphDrawRanges.Add(new GlyphDrawRange
+                {
+                    GlyphId = kvp.Key,
+                    StartInstance = _flattenedGlyphInstances.Count,
+                    InstanceCount = kvp.Value.Count
+                });
+
+                _flattenedGlyphInstances.AddRange(kvp.Value);
+            }
+
+            _glyphInstanceBuffer.Update(
+                ResCache.DeviceContext,
+                CollectionsMarshal.AsSpan(_flattenedGlyphInstances));
+        }
         private void AddCogoTextLabelLine(string s, float duToWorldBase,
             float duToWorld, Vector4 color, float isVisible, float isMouseOver,
             float isSelected, float ySign, uint labelId, uint groupId, uint pointId,

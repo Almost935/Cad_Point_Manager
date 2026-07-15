@@ -15,8 +15,7 @@ namespace Cad_Point_Manager.Helpers
     {
         private const float _dictBaseTextSize = 10.00f;
         private const float _flatteningTolerance = 0.001f;
-        private const float _textHeightToFontSizeFactor = 1.5f;
-        private const float _tesselationFactor = 5.0f;
+        private const float _tesselationFactor = 1.0f;
 
         public static ConcurrentDictionary<(string fontName, FontWeight fontWeight, FontStyle fontstyle), float> FontSizeFactorDict
         { get; } = new ConcurrentDictionary<(string fontName, FontWeight fontWeight, FontStyle fontstyle), float>();
