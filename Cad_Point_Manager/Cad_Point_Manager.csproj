@@ -102,53 +102,55 @@
     <None Remove="Controls\D3DControl\Shaders\SigPointShader.hlsl" />
     <None Remove="Controls\D3DControl\Shaders\TestShader.hlsl" />
     <None Remove="Controls\D3DControl\Shaders\TextGlowShader.hlsl" />
-    <None Remove="Resources\Fonts\amiri-regular.lff" />
-    <None Remove="Resources\Fonts\azomix.lff" />
-    <None Remove="Resources\Fonts\azomix_i.lff" />
-    <None Remove="Resources\Fonts\cursive.lff" />
-    <None Remove="Resources\Fonts\cyrillic_ii.lff" />
-    <None Remove="Resources\Fonts\gothgbt.lff" />
-    <None Remove="Resources\Fonts\gothgrt.lff" />
-    <None Remove="Resources\Fonts\gothitt.lff" />
-    <None Remove="Resources\Fonts\greekc.lff" />
-    <None Remove="Resources\Fonts\greekcs.lff" />
-    <None Remove="Resources\Fonts\greekp.lff" />
-    <None Remove="Resources\Fonts\greeks.lff" />
-    <None Remove="Resources\Fonts\greek_ol.lff" />
-    <None Remove="Resources\Fonts\hershey.readme" />
-    <None Remove="Resources\Fonts\iso.lff" />
-    <None Remove="Resources\Fonts\iso3098.lff" />
-    <None Remove="Resources\Fonts\iso3098_i.lff" />
-    <None Remove="Resources\Fonts\italicc.lff" />
-    <None Remove="Resources\Fonts\italiccs.lff" />
-    <None Remove="Resources\Fonts\italict.lff" />
-    <None Remove="Resources\Fonts\kochigothic.lff" />
-    <None Remove="Resources\Fonts\kochimincho.lff" />
-    <None Remove="Resources\Fonts\kst32b.lff" />
-    <None Remove="Resources\Fonts\lc_opengost-ar.lff" />
-    <None Remove="Resources\Fonts\lc_opengost-br.lff" />
-    <None Remove="Resources\Fonts\opengosttypea-regular.lff" />
-    <None Remove="Resources\Fonts\opengosttypeb-regular.lff" />
-    <None Remove="Resources\Fonts\romanc.lff" />
-    <None Remove="Resources\Fonts\romancs.lff" />
-    <None Remove="Resources\Fonts\romand.lff" />
-    <None Remove="Resources\Fonts\romanp.lff" />
-    <None Remove="Resources\Fonts\romans.lff" />
-    <None Remove="Resources\Fonts\romansi.lff" />
-    <None Remove="Resources\Fonts\romant.lff" />
-    <None Remove="Resources\Fonts\scriptc.lff" />
-    <None Remove="Resources\Fonts\scripts.lff" />
-    <None Remove="Resources\Fonts\simplex.lff" />
-    <None Remove="Resources\Fonts\standard.lff" />
-    <None Remove="Resources\Fonts\syastro.lff" />
-    <None Remove="Resources\Fonts\symap.lff" />
-    <None Remove="Resources\Fonts\symath.lff" />
-    <None Remove="Resources\Fonts\symbol.lff" />
-    <None Remove="Resources\Fonts\symbol_misc1.lff" />
-    <None Remove="Resources\Fonts\symbol_misc2.lff" />
-    <None Remove="Resources\Fonts\symeteo.lff" />
-    <None Remove="Resources\Fonts\symusic.lff" />
-    <None Remove="Resources\Fonts\unicode.lff" />
+    <None Remove="Resources\CogoAtlasFonts\CogoFont.json" />
+    <None Remove="Resources\CogoAtlasFonts\CogoFont.png" />
+    <None Remove="Resources\LffFonts\amiri-regular.lff" />
+    <None Remove="Resources\LffFonts\azomix.lff" />
+    <None Remove="Resources\LffFonts\azomix_i.lff" />
+    <None Remove="Resources\LffFonts\cursive.lff" />
+    <None Remove="Resources\LffFonts\cyrillic_ii.lff" />
+    <None Remove="Resources\LffFonts\gothgbt.lff" />
+    <None Remove="Resources\LffFonts\gothgrt.lff" />
+    <None Remove="Resources\LffFonts\gothitt.lff" />
+    <None Remove="Resources\LffFonts\greekc.lff" />
+    <None Remove="Resources\LffFonts\greekcs.lff" />
+    <None Remove="Resources\LffFonts\greekp.lff" />
+    <None Remove="Resources\LffFonts\greeks.lff" />
+    <None Remove="Resources\LffFonts\greek_ol.lff" />
+    <None Remove="Resources\LffFonts\hershey.readme" />
+    <None Remove="Resources\LffFonts\iso.lff" />
+    <None Remove="Resources\LffFonts\iso3098.lff" />
+    <None Remove="Resources\LffFonts\iso3098_i.lff" />
+    <None Remove="Resources\LffFonts\italicc.lff" />
+    <None Remove="Resources\LffFonts\italiccs.lff" />
+    <None Remove="Resources\LffFonts\italict.lff" />
+    <None Remove="Resources\LffFonts\kochigothic.lff" />
+    <None Remove="Resources\LffFonts\kochimincho.lff" />
+    <None Remove="Resources\LffFonts\kst32b.lff" />
+    <None Remove="Resources\LffFonts\lc_opengost-ar.lff" />
+    <None Remove="Resources\LffFonts\lc_opengost-br.lff" />
+    <None Remove="Resources\LffFonts\opengosttypea-regular.lff" />
+    <None Remove="Resources\LffFonts\opengosttypeb-regular.lff" />
+    <None Remove="Resources\LffFonts\romanc.lff" />
+    <None Remove="Resources\LffFonts\romancs.lff" />
+    <None Remove="Resources\LffFonts\romand.lff" />
+    <None Remove="Resources\LffFonts\romanp.lff" />
+    <None Remove="Resources\LffFonts\romans.lff" />
+    <None Remove="Resources\LffFonts\romansi.lff" />
+    <None Remove="Resources\LffFonts\romant.lff" />
+    <None Remove="Resources\LffFonts\scriptc.lff" />
+    <None Remove="Resources\LffFonts\scripts.lff" />
+    <None Remove="Resources\LffFonts\simplex.lff" />
+    <None Remove="Resources\LffFonts\standard.lff" />
+    <None Remove="Resources\LffFonts\syastro.lff" />
+    <None Remove="Resources\LffFonts\symap.lff" />
+    <None Remove="Resources\LffFonts\symath.lff" />
+    <None Remove="Resources\LffFonts\symbol.lff" />
+    <None Remove="Resources\LffFonts\symbol_misc1.lff" />
+    <None Remove="Resources\LffFonts\symbol_misc2.lff" />
+    <None Remove="Resources\LffFonts\symeteo.lff" />
+    <None Remove="Resources\LffFonts\symusic.lff" />
+    <None Remove="Resources\LffFonts\unicode.lff" />
     <None Remove="Resources\Images\IQ Contracting - Logo %28Square%29.jpg" />
   </ItemGroup>
 
@@ -162,145 +164,151 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="Resources\Fonts\amiri-regular.lff">
+    <Content Include="Resources\CogoAtlasFonts\CogoFont.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Resources\Fonts\azomix.lff">
+    <Content Include="Resources\CogoAtlasFonts\CogoFont.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Resources\Fonts\azomix_i.lff">
+    <Content Include="Resources\LffFonts\amiri-regular.lff">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Resources\Fonts\cursive.lff">
+    <Content Include="Resources\LffFonts\azomix.lff">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Resources\Fonts\cyrillic_ii.lff">
+    <Content Include="Resources\LffFonts\azomix_i.lff">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Resources\Fonts\gothgbt.lff">
+    <Content Include="Resources\LffFonts\cursive.lff">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Resources\Fonts\gothgrt.lff">
+    <Content Include="Resources\LffFonts\cyrillic_ii.lff">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Resources\Fonts\gothitt.lff">
+    <Content Include="Resources\LffFonts\gothgbt.lff">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Resources\Fonts\greekc.lff">
+    <Content Include="Resources\LffFonts\gothgrt.lff">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Resources\Fonts\greekcs.lff">
+    <Content Include="Resources\LffFonts\gothitt.lff">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Resources\Fonts\greekp.lff">
+    <Content Include="Resources\LffFonts\greekc.lff">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Resources\Fonts\greeks.lff">
+    <Content Include="Resources\LffFonts\greekcs.lff">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Resources\Fonts\greek_ol.lff">
+    <Content Include="Resources\LffFonts\greekp.lff">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Resources\Fonts\hershey.readme">
+    <Content Include="Resources\LffFonts\greeks.lff">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Resources\Fonts\iso.lff">
+    <Content Include="Resources\LffFonts\greek_ol.lff">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Resources\Fonts\iso3098.lff">
+    <Content Include="Resources\LffFonts\hershey.readme">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Resources\Fonts\iso3098_i.lff">
+    <Content Include="Resources\LffFonts\iso.lff">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Resources\Fonts\italicc.lff">
+    <Content Include="Resources\LffFonts\iso3098.lff">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Resources\Fonts\italiccs.lff">
+    <Content Include="Resources\LffFonts\iso3098_i.lff">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Resources\Fonts\italict.lff">
+    <Content Include="Resources\LffFonts\italicc.lff">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Resources\Fonts\kochigothic.lff">
+    <Content Include="Resources\LffFonts\italiccs.lff">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Resources\Fonts\kochimincho.lff">
+    <Content Include="Resources\LffFonts\italict.lff">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Resources\Fonts\kst32b.lff">
+    <Content Include="Resources\LffFonts\kochigothic.lff">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Resources\Fonts\lc_opengost-ar.lff">
+    <Content Include="Resources\LffFonts\kochimincho.lff">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Resources\Fonts\lc_opengost-br.lff">
+    <Content Include="Resources\LffFonts\kst32b.lff">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Resources\Fonts\opengosttypea-regular.lff">
+    <Content Include="Resources\LffFonts\lc_opengost-ar.lff">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Resources\Fonts\opengosttypeb-regular.lff">
+    <Content Include="Resources\LffFonts\lc_opengost-br.lff">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Resources\Fonts\romanc.lff">
+    <Content Include="Resources\LffFonts\opengosttypea-regular.lff">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Resources\Fonts\romancs.lff">
+    <Content Include="Resources\LffFonts\opengosttypeb-regular.lff">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Resources\Fonts\romand.lff">
+    <Content Include="Resources\LffFonts\romanc.lff">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Resources\Fonts\romanp.lff">
+    <Content Include="Resources\LffFonts\romancs.lff">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Resources\Fonts\romans.lff">
+    <Content Include="Resources\LffFonts\romand.lff">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Resources\Fonts\romansi.lff">
+    <Content Include="Resources\LffFonts\romanp.lff">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Resources\Fonts\romant.lff">
+    <Content Include="Resources\LffFonts\romans.lff">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Resources\Fonts\scriptc.lff">
+    <Content Include="Resources\LffFonts\romansi.lff">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Resources\Fonts\scripts.lff">
+    <Content Include="Resources\LffFonts\romant.lff">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Resources\Fonts\simplex.lff">
+    <Content Include="Resources\LffFonts\scriptc.lff">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Resources\Fonts\standard.lff">
+    <Content Include="Resources\LffFonts\scripts.lff">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Resources\Fonts\syastro.lff">
+    <Content Include="Resources\LffFonts\simplex.lff">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Resources\Fonts\symap.lff">
+    <Content Include="Resources\LffFonts\standard.lff">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Resources\Fonts\symath.lff">
+    <Content Include="Resources\LffFonts\syastro.lff">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Resources\Fonts\symbol.lff">
+    <Content Include="Resources\LffFonts\symap.lff">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Resources\Fonts\symbol_misc1.lff">
+    <Content Include="Resources\LffFonts\symath.lff">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Resources\Fonts\symbol_misc2.lff">
+    <Content Include="Resources\LffFonts\symbol.lff">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Resources\Fonts\symeteo.lff">
+    <Content Include="Resources\LffFonts\symbol_misc1.lff">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Resources\Fonts\symusic.lff">
+    <Content Include="Resources\LffFonts\symbol_misc2.lff">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Resources\Fonts\unicode.lff">
+    <Content Include="Resources\LffFonts\symeteo.lff">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\LffFonts\symusic.lff">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\LffFonts\unicode.lff">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

@@ -69,6 +69,11 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
         private Buffer _objectBuf;
         private ShaderResourceView _objectSrv;
 
+        private Buffer _glyphMetricBuffer;
+        private ShaderResourceView _glyphMetricSRV;
+        private Buffer _glyphTextureBuffer;
+        private ShaderResourceView _glyphTextureSRV;
+
         private LabelState[] _labelCpu = [];
         private PointState[] _pointCpu = [];
         private GroupState[] _groupCpu = [];
@@ -92,6 +97,9 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
         public Span<GroupState> GroupSpan => _groupCpu.AsSpan(0, _groupCap);
         public Span<LayerState> LayerSpan => _layerCpu.AsSpan(0, _layerCap);
         public Span<ObjectState> ObjectSpan => _objectCpu.AsSpan(0, _objectCap);
+
+        public ShaderResourceView GlyphMetricSRV => _glyphMetricSRV;
+        public ShaderResourceView GlyphTextureSRV => _glyphTextureSRV;
 
 
         public void InitializeLabelState(int count, Vector2 offset, uint lId)

@@ -21,7 +21,7 @@ namespace Cad_Point_Manager.Models.LffFontRendering
             string path = Path.Combine(
                 AppDomain.CurrentDomain.BaseDirectory,
                 "Resources",
-                "Fonts",
+                "LffFonts",
                 filename);
 
             if (!File.Exists(path))

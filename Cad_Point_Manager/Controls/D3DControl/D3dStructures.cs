@@ -79,9 +79,66 @@ namespace Cad_Point_Manager.Controls.D3DControl
     }
 
     [StructLayout(LayoutKind.Sequential)]
+    public struct MsdfVertex
+    {
+        public Vector2 Corner;
+        public MsdfVertex(float x, float y)
+        {
+            Corner = new Vector2(x, y);
+        }
+    }
+    [StructLayout(LayoutKind.Sequential)]
+    public struct MsdfGlyphInstance
+    {
+        // Existing data
+        public float EmToWorld;
+        public float PenX;
+        public float YSign;
+
+        public uint LabelId;
+        public uint PointId;
+
+        // Glyph rectangle in EM space
+        public Vector2 PlaneOrigin;
+        public Vector2 PlaneSize;
+
+        // Atlas rectangle
+        public Vector2 UvOrigin;
+        public Vector2 UvSize;
+    }
+    [StructLayout(LayoutKind.Sequential)]
+    public struct GlyphMetricGpu
+    {
+        public Vector2 PlaneMin;
+
+        public Vector2 PlaneMax;
+
+        public Vector2 UvMin;
+
+        public Vector2 UvMax;
+
+        public float Advance;
+
+        private Vector3 _padding;
+    }
+    [StructLayout(LayoutKind.Sequential)]
+    public struct MsdfSettingsBuffer
+    {
+        public float AtlasWidth;
+        public float AtlasHeight;
+        public float DistanceRange;
+        private float _padding;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
     public struct GlyphVertexQuad
     {
         public Vector2 PosDU; // design-unit vertex (triangle-list)
+    }
+    [StructLayout(LayoutKind.Sequential)]
+    public struct GlyphVertex
+    {
+        public Vector2 Corner;
     }
     [StructLayout(LayoutKind.Sequential)]
     public struct GlyphVertexDU
@@ -91,11 +148,14 @@ namespace Cad_Point_Manager.Controls.D3DControl
     [StructLayout(LayoutKind.Sequential)]
     public struct GlyphInstance
     {
-        public float DuToWorld; // scale: DU -> world
-        public float PenDU;     // accumulated advance in DU for this glyph
-        public float YSign;     // typically -1 when world Y is up and font Y is down
-        public uint LabelId;   // stable per text line: PN/Elev/Desc for a cogo point
-        public uint PointId;   // Point index
+        public float DuToWorld;
+        public float PenDU;
+        public float YSign;
+
+        public uint GlyphIndex;      // NEW
+
+        public uint LabelId;
+        public uint PointId;
     }
     [StructLayout(LayoutKind.Sequential)]
     public struct GlyphSettingsBuffer

@@ -1,4 +1,5 @@
-﻿using Cad_Point_Manager.Controls.D3DControl.Rendering.Text;
+﻿using Cad_Point_Manager.Controls.D3DControl.Rendering.Msdf;
+using Cad_Point_Manager.Controls.D3DControl.Rendering.Text;
 using SharpDX.Direct2D1;
 using SharpDX.Direct3D11;
 using SharpDX.DirectWrite;
@@ -151,6 +152,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public BlendState BaseBlendState { get; set; }
         public BlendState MaxBlendState { get; set; }
         public GlyphAtlas AsciiGlyphAtlas { get; set; }
+        public MsdfAtlas CogoPointMsdfAtlas { get; set; }
         public DWriteGlyphTessellator GlyphTessellator { get; set; }
         public AdvanceWidthCache AdvanceWidthCache { get; set; }
 
@@ -313,6 +315,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     AsciiGlyphAtlas?.Dispose();
                     GlyphTessellator?.Dispose();
                     CogoPointFontFace.Dispose();
+                    CogoPointMsdfAtlas?.Dispose();
 
                     foreach (var fontFace in FontFaceDict.Values)
                     {

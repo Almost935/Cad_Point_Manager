@@ -1,4 +1,5 @@
-﻿using Cad_Point_Manager.Controls.D3DControl.Rendering.Text;
+﻿using Cad_Point_Manager.Controls.D3DControl.Rendering.Msdf;
+using Cad_Point_Manager.Controls.D3DControl.Rendering.Text;
 using SharpDX.Direct3D;
 using SharpDX.Direct3D11;
 using SharpDX.DXGI;
@@ -271,7 +272,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             CreateAndBindTargets();
 
             InitializeDirect2D();
-            InitializeGlyphAtlas();
+            InitializeTextResources();
             Source = _d3DSurface;
         }
 
@@ -393,7 +394,12 @@ namespace Cad_Point_Manager.Controls.D3DControl
             }
         }
 
-        private void InitializeGlyphAtlas()
+        private void InitializeTextResources()
+        {
+            InitializeLegacyGlyphAtlas();
+            InitializeMsdfAtlas();
+        }
+        private void InitializeLegacyGlyphAtlas()
         {
             ResCache.GlyphTessellator?.Dispose();
             ResCache.GlyphTessellator = new DWriteGlyphTessellator(ResCache.D2dFactory);
@@ -402,6 +408,16 @@ namespace Cad_Point_Manager.Controls.D3DControl
             ResCache.AsciiGlyphAtlas?.Dispose();
             ResCache.AsciiGlyphAtlas = GlyphAtlas.CreateForAscii(ResCache.Device, ResCache.CogoPointFontFace, ResCache.GlyphTessellator);
             ResCache.AdvanceWidthCache = AdvanceWidthCache.CreateForAscii(ResCache.CogoPointFontFace);
+        }
+        private void InitializeMsdfAtlas()
+        {
+            ResCache.CogoPointMsdfAtlas?.Dispose();
+
+            ResCache.CogoPointMsdfAtlas =
+                MsdfAtlasLoader.Load(
+                    ResCache.Device,
+                    @"Resources\CogoAtlasFonts\CogoFont.png",
+                    @"Resources\CogoAtlasFonts\CogoFont.json");
         }
 
         private void StartRendering()

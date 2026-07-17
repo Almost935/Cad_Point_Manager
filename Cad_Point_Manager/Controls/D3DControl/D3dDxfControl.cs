@@ -1,5 +1,6 @@
 ﻿using Cad_Point_Manager.Common.Collections;
 using Cad_Point_Manager.Controls.D3DControl.Buffers;
+using Cad_Point_Manager.Controls.D3DControl.Rendering.Msdf;
 using Cad_Point_Manager.Controls.D3DControl.Rendering.Text;
 using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Helpers;
@@ -115,9 +116,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private bool _solidShaderLoaded = false;
         private bool _solidVerticesDirty = false;
 
-        // CogoPoint shader related fields
-        private bool _cogoPointShadersLoaded = false;
-
         // Significant point rendering fields
         private ResizableBuffer<SignificantPointVertex> _sigPointVertexBuffer;
         private Buffer _sigPointSettingsBuffer;
@@ -128,6 +126,21 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private bool _sigPointVerticesDirty = false;
         private bool _sigPointShadersLoaded = false;
         private int _sigPointVertexCount;
+
+        // CogoPoint shader related fields
+        private bool _cogoPointShadersLoaded = false;
+
+        // MSDF rendering
+        private VertexShader _msdfVS;
+        private PixelShader _msdfPS;
+        private InputLayout _msdfLayout;
+        private Buffer _msdfQuadBuffer;
+        private ResizableBuffer<MsdfGlyphInstance> _msdfInstanceBuffer;
+        private bool _msdfShadersLoaded;
+        private int _msdfInstanceCount;
+        private SamplerState _msdfSampler;
+        private readonly List<MsdfGlyphInstance> _msdfInstances = [];
+        private Buffer _msdfSettingsBuffer;
 
         // Point glyph rendering
         private ResizableBuffer<GlyphInstance> _glyphInstanceBuffer;
@@ -526,6 +539,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             if (_textVerticesDirty) { UpdateTextVertices(); }
             if (_solidVerticesDirty) { UpdateSolidVertices(); }
             if (_glyphVerticesDirty) { UpdateGlyphBatches(); }
+            if (_glyphVerticesDirty) { UpdateMsdfInstances(); }
             if (_pointCircleVerticesDirty) { UpdatePointCircleVertices(); }
             if (_cogoHoverVerticesDirty) { UpdateCogoHoverVertices(); }
             if (HitTestableObjectTreeDirty) { LoadHitTestableObjectTree(); }
@@ -537,6 +551,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             if (!_textShaderLoaded) { InitializeTextShaders(); }
             if (!_solidShaderLoaded) { InitializeSolidShaders(); }
             if (!_overlayShaderLoaded) { InitializeOverlayShaders(); }
+            if (!_msdfShadersLoaded) { InitializeMsdfShaders(); }
             if (!_cogoPointShadersLoaded) { InitializeCogoPointShaders(); }
             if (!_cogoHoverShadersLoaded) { InitializeCogoPointHoverShaders(); }
             if (!_anchorShaderLoaded) { InitializeToggleAnchorShaders(); }
@@ -581,26 +596,27 @@ namespace Cad_Point_Manager.Controls.D3DControl
             ctx.OutputMerger.SetRenderTargets(ResCache.DxfRenderTargetView);
             ctx.ClearRenderTargetView(ResCache.DxfRenderTargetView, new RawColor4(1, 1, 1, 1));
 
-            Stopwatch sw = Stopwatch.StartNew();
-            Debug.WriteLine($"\n");
+            //Stopwatch sw = Stopwatch.StartNew();
+            //Debug.WriteLine($"\n");
 
             DrawLines(ctx);
             //Debug.WriteLine($"Lines {sw.ElapsedMilliseconds} ms");
-            sw.Restart();
+            //sw.Restart();
 
             DrawText(ctx);
             //Debug.WriteLine($"Text {sw.ElapsedMilliseconds} ms");
-            sw.Restart();
+            //sw.Restart();
 
             DrawSolids(ctx);
             //Debug.WriteLine($"Solids {sw.ElapsedMilliseconds} ms");
-            sw.Restart();
+            //sw.Restart();
 
             DrawPointCircles(ctx);
             //Debug.WriteLine($"Circles {sw.ElapsedMilliseconds} ms");
-            sw.Restart();
+            //sw.Restart();
 
-            DrawGlyphBatches(ctx, ResCache.AsciiGlyphAtlas);
+            DrawMsdfGlyphs(ctx);
+            //DrawGlyphBatches(ctx, ResCache.AsciiGlyphAtlas);
             //Debug.WriteLine($"Glyphs {sw.ElapsedMilliseconds} ms");
         }
 
@@ -677,6 +693,40 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             ctx.Draw(_solidVertexCount, 0);
         }
+        private void DrawMsdfGlyphs(DeviceContext ctx)
+        {
+            if (_msdfInstanceCount == 0) { return; }
+
+            ctx.VertexShader.Set(_msdfVS);
+            ctx.PixelShader.Set(_msdfPS);
+
+            ctx.PixelShader.SetShaderResource(3, ResCache.CogoPointMsdfAtlas.ShaderResourceView);
+            ctx.PixelShader.SetSampler(0, _msdfSampler);
+
+            ctx.InputAssembler.InputLayout = _msdfLayout;
+            ctx.InputAssembler.PrimitiveTopology = PrimitiveTopology.TriangleList;
+
+            ctx.VertexShader.SetConstantBuffer(0, _transformationBuffer);
+            ctx.VertexShader.SetConstantBuffer(1, _cogoPointSettingsBuffer);
+            ctx.VertexShader.SetConstantBuffer(2, _viewportBuffer);
+            ctx.VertexShader.SetConstantBuffer(3, _msdfSettingsBuffer);
+
+            ctx.PixelShader.SetConstantBuffer(3, _msdfSettingsBuffer);
+
+            ctx.VertexShader.SetShaderResource(0, StateBuffers.LabelSRV);
+            ctx.VertexShader.SetShaderResource(1, StateBuffers.PointSRV);
+            ctx.VertexShader.SetShaderResource(2, StateBuffers.GroupSRV);
+
+            ctx.PixelShader.SetShaderResource(0, ResCache.CogoPointMsdfAtlas.ShaderResourceView);
+            ctx.PixelShader.SetShaderResource(1, StateBuffers.GroupSRV);
+
+            var quadBinding = new VertexBufferBinding(_msdfQuadBuffer, Utilities.SizeOf<MsdfVertex>(), 0);
+            var instanceBinding = new VertexBufferBinding(_msdfInstanceBuffer.Buffer, _msdfInstanceBuffer.Stride, 0);
+
+            ctx.InputAssembler.SetVertexBuffers(0, quadBinding, instanceBinding);
+
+            ctx.DrawInstanced(6, _msdfInstanceCount, 0, 0);
+        }
         private void DrawGlyphBatches(DeviceContext ctx, GlyphAtlas atlas)
         {
             if (atlas == null ||
@@ -716,14 +766,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     0);
 
             ctx.InputAssembler.SetVertexBuffers(0, vbGlyph, vbInst);
-
-            //Debug.WriteLine($"\n_glyphDrawRanges.Count: {_glyphDrawRanges.Count}");
-            //Debug.WriteLine($"_flattenedGlyphInstances.Count: {_flattenedGlyphInstances.Count}");
-            Debug.WriteLine($"\n");
-            foreach (var kvp in atlas.Ranges)
-            {
-                Debug.WriteLine($"{kvp.Key}: {kvp.Value.VertexCount}");
-            }
 
             foreach (var batch in _glyphDrawRanges)
             {
@@ -931,10 +973,39 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _solidVerticesDirty = false;
             _dxfDirty = true;
         }
+        private void UpdateMsdfInstances()
+        {
+            _msdfInstances.Clear();
+
+            foreach (var pointGroup in PointGroups)
+            {
+                if (pointGroup is null || !pointGroup.IsVisible)
+                {
+                    continue;
+                }
+
+                foreach (var point in pointGroup.Points)
+                {
+                    if (point is null)
+                    {
+                        continue;
+                    }
+
+                    AddCogoPoint(point);
+                }
+            }
+
+            StateBuffers.FlushAll();
+
+            _msdfInstanceBuffer.Update(
+                ResCache.DeviceContext,
+                CollectionsMarshal.AsSpan(_msdfInstances));
+
+            _msdfInstanceCount = _msdfInstances.Count;
+            _glyphVerticesDirty = false;
+        }
         private void UpdateGlyphBatches()
         {
-            Debug.WriteLine("UpdateGlyphBatches");
-
             _glyphBatches.Clear();
 
             foreach (var pg in PointGroups)
@@ -1002,7 +1073,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             StateBuffers.FlushAll();
 
-            _glyphVerticesDirty = false;
+            //_glyphVerticesDirty = false;
             _dxfDirty = true;
         }
         private void UpdatePointCircleVertices()
@@ -1046,7 +1117,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             // fill color (ARGB #3300FFFF like your XAML)
             var fill = new Vector4(0f, 1f, 1f, 0.2f); // DeepSkyBlue-ish with alpha
 
-            var fillVerts = new OverlayVertex[6]
+            var fillVerts = new OverlayVertex [6]
             {
                 new() { Position = lt, Color = fill },
                 new() { Position = lb, Color = fill },
@@ -1221,9 +1292,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             var path = AppDomain.CurrentDomain.BaseDirectory;
             while (Path.GetFileName(path) != "Cad_Point_Manager")
             {
-                path = Path.GetDirectoryName(path);
-                if (path == null)
-                    throw new DirectoryNotFoundException("The 'Cad_Point_Manager' directory could not be found in the path.");
+                path = Path.GetDirectoryName(path) ?? throw new DirectoryNotFoundException("The 'Cad_Point_Manager' directory could not be found in the path.");
             }
 
             string shaderPath = Path.Combine(path, @"Controls\D3DControl\Shaders\LineShader.hlsl");
@@ -1249,7 +1318,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _lineInputLayout = new InputLayout(
                 ResCache.Device,
                 ShaderSignature.GetInputSignature(lineVSBytecode),
-                new[]
+                new []
                 {
                     new InputElement("POSITION", 0, Format.R32G32B32_Float, 0, 0),
                     new InputElement("LAYERID", 0, Format.R32_UInt, 12, 0),
@@ -1279,7 +1348,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _textInputLayout = new InputLayout(
                 ResCache.Device,
                 ShaderSignature.GetInputSignature(textVSBytecode),
-                new[]
+                new []
                 {
                     new InputElement("POSITION", 0, Format.R32G32B32_Float, 0, 0),
                     new InputElement("LAYERID", 0, Format.R32_UInt, 12, 0),
@@ -1309,7 +1378,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _solidInputLayout = new InputLayout(
                 ResCache.Device,
                 ShaderSignature.GetInputSignature(textVSBytecode),
-                new[]
+                new []
                 {
                     new InputElement("POSITION", 0, Format.R32G32B32_Float, 0, 0),
                     new InputElement("LAYERID", 0, Format.R32_UInt, 12, 0),
@@ -1317,6 +1386,68 @@ namespace Cad_Point_Manager.Controls.D3DControl
                  });
 
             _solidShaderLoaded = true;
+        }
+        private void InitializeMsdfShaders()
+        {
+            var path = AppDomain.CurrentDomain.BaseDirectory;
+
+            while (Path.GetFileName(path) != "Cad_Point_Manager")
+            {
+                path = Path.GetDirectoryName(path) ?? throw new DirectoryNotFoundException("The 'Cad_Point_Manager' directory could not be found.");
+            }
+
+            string shaderPath = Path.Combine(path, @"Controls\D3DControl\Shaders\MsdfShader.hlsl");
+
+            var vsBytecode = ShaderBytecode.CompileFromFile(shaderPath, "VSMain", "vs_5_0");
+
+            var psBytecode = ShaderBytecode.CompileFromFile(shaderPath, "PSMain", "ps_5_0");
+
+            _msdfVS = new VertexShader(ResCache.Device, vsBytecode);
+
+            _msdfPS = new PixelShader(ResCache.Device, psBytecode);
+
+            _msdfLayout = new InputLayout(ResCache.Device, ShaderSignature.GetInputSignature(vsBytecode),
+                new []
+                {
+                    new InputElement("POSITION",0,Format.R32G32_Float,0,0,InputClassification.PerVertexData,0),
+                    new InputElement("EM_TO_WORLD", 0, Format.R32_Float,0,1,InputClassification.PerInstanceData,1),
+                    new InputElement("PEN_X",0,Format.R32_Float,4,1,InputClassification.PerInstanceData,1),
+                    new InputElement("YSIGN",0,Format.R32_Float,8,1,InputClassification.PerInstanceData,1),
+                    new InputElement("LABEL_ID",0,Format.R32_UInt,12,1,InputClassification.PerInstanceData,1),
+                    new InputElement("POINT_ID",0,Format.R32_UInt,16,1,InputClassification.PerInstanceData,1),
+                    new InputElement("PLANE_ORIGIN",0,Format.R32G32_Float,20,1,InputClassification.PerInstanceData,1),
+                    new InputElement("PLANE_SIZE",0,Format.R32G32_Float,28,1,InputClassification.PerInstanceData,1),
+                    new InputElement("UV_ORIGIN",0,Format.R32G32_Float,36,1,InputClassification.PerInstanceData,1),
+                    new InputElement("UV_SIZE",0,Format.R32G32_Float,44,1,InputClassification.PerInstanceData,1),});
+
+            MsdfVertex [] quad =
+            {
+                new(-0.5f,-0.5f),
+                new( 0.5f,-0.5f),
+                new( 0.5f, 0.5f),
+
+                new(-0.5f,-0.5f),
+                new( 0.5f, 0.5f),
+                new(-0.5f, 0.5f)
+            };
+
+            _msdfQuadBuffer = Buffer.Create(ResCache.Device, BindFlags.VertexBuffer, quad);
+
+            _msdfInstanceBuffer = new ResizableBuffer<MsdfGlyphInstance>(ResCache.Device, 1024);
+
+            _msdfSampler = new SamplerState(ResCache.Device, new SamplerStateDescription
+            {
+                Filter = Filter.MinMagMipLinear,
+                AddressU = TextureAddressMode.Clamp,
+                AddressV = TextureAddressMode.Clamp,
+                AddressW = TextureAddressMode.Clamp,
+                ComparisonFunction = Comparison.Never,
+                MinimumLod = 0,
+                MaximumLod = float.MaxValue,
+                BorderColor = new RawColor4(0, 0, 0, 0)
+            });
+
+            _msdfShadersLoaded = true;
         }
         private void InitializeCogoPointShaders()
         {
@@ -1335,7 +1466,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _pointCirclePS = new PixelShader(ResCache.Device, pointCirclePsb);
             _pointCircleGS = new GeometryShader(ResCache.Device, pointCircleGsb);
             _pointCircleInputLayout = new InputLayout(ResCache.Device, ShaderSignature.GetInputSignature(pointCircleVsb),
-                new[]
+                new []
                 {
                     new InputElement("POSITION", 0, Format.R32G32B32_Float, 0, 0),
                     new InputElement("RADIUS",   0, Format.R32_Float,       12, 0),
@@ -1349,7 +1480,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _glyphVS = new VertexShader(ResCache.Device, glyphMeshVsb);
             _glyphPS = new PixelShader(ResCache.Device, glyphMeshPsb);
             _glyphLayout = new InputLayout(ResCache.Device, ShaderSignature.GetInputSignature(glyphMeshVsb),
-                new[]
+                new []
                 {
                     // Slot 0
                     new InputElement("POSITION",      0, Format.R32G32_Float,       0, 0, InputClassification.PerVertexData,   0),
@@ -1387,7 +1518,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _hoverCircleLayout = new InputLayout(
                 ResCache.Device,
                 ShaderSignature.GetInputSignature(circleVSBytecode),
-                new[]
+                new []
                 {
                     new InputElement("POSITION", 0, Format.R32G32B32_Float, 0, 0),
                     new InputElement("RADIUS", 0, Format.R32_Float, 12, 0),
@@ -1402,7 +1533,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _hoverRectLayout = new InputLayout(
                 ResCache.Device,
                 ShaderSignature.GetInputSignature(rectVSBytecode),
-                new[]
+                new []
                 {
                     // STREAM 0
                     new InputElement("POSITION", 0, Format.R32G32_Float,      0, 0, InputClassification.PerVertexData,   0),
@@ -1415,7 +1546,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 });
 
             _hoverRectInstanceBuffer ??= new(ResCache.Device, 6);
-            var quad = new[]
+            var quad = new []
             {
                 new OverlayQuadVertex{ Local = new(-1,-1) },
                 new OverlayQuadVertex{ Local = new(-1, 1) },
@@ -1447,7 +1578,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _overlayLayout = new InputLayout(
                 ResCache.Device,
                 ShaderSignature.GetInputSignature(vs),
-                new[] {
+                new [] {
                     new InputElement("POSITION", 0, Format.R32G32B32_Float, 0, 0),
                     new InputElement("COLOR",    0, Format.R32G32B32A32_Float, 12, 0),
                 });
@@ -1483,7 +1614,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _toggleLayout = new InputLayout(
                 ResCache.Device,
                 ShaderSignature.GetInputSignature(vs),
-                new[]
+                new []
                 {
                     // stream 0
                     new InputElement("POSITION", 0, Format.R32G32_Float, 0, 0),
@@ -1495,7 +1626,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             // Dedicated unit quad for this shader
             _toggleQuadVB ??= new(ResCache.Device, 6);
-            var quad = new[]
+            var quad = new []
             {
                 new OverlayQuadVertex{ Local = new(-1,-1) },
                 new OverlayQuadVertex{ Local = new(-1, 1) },
@@ -1526,7 +1657,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             var lineGSBytecode = ShaderBytecode.CompileFromFile(lineShaderPath, "GSMain", "gs_5_0");
             _leaderLineGS = new GeometryShader(ResCache.Device, lineGSBytecode);
 
-            _leaderLineInputLayout = new InputLayout(ResCache.Device, ShaderSignature.GetInputSignature(lineVSBytecode), new[]
+            _leaderLineInputLayout = new InputLayout(ResCache.Device, ShaderSignature.GetInputSignature(lineVSBytecode), new []
             {
                 new InputElement("POSITION", 0, Format.R32G32_Float,     0, 0), // A
                 new InputElement("END", 0, Format.R32G32_Float,          8, 0), // BBase
@@ -1560,7 +1691,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _sigPointPS = new PixelShader(ResCache.Device, significantPointPsb);
             _sigPointGS = new GeometryShader(ResCache.Device, significantPointGsb);
             _sigPointLayout = new InputLayout(ResCache.Device, ShaderSignature.GetInputSignature(significantPointVsb),
-                new[]
+                new []
                 {
                     new InputElement("POSITION", 0, Format.R32G32B32_Float, 0, 0),
                 });
@@ -1581,9 +1712,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _solidVertexBuffer?.Dispose();
             _solidVertexBuffer = new(device, GlobalHelperProperties.InitialLineVertices);
 
-            _pointCircleVertexBuffer?.Dispose();
-            _pointCircleVertexBuffer = new(device, GlobalHelperProperties.InitialCircleVertices);
-
             _hoverRectBuffer?.Dispose();
             _hoverRectBuffer = new(device, 64);
 
@@ -1600,6 +1728,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
             StateBuffers?.Dispose();
             StateBuffers = new(device, device.ImmediateContext);
             StateController = new(SceneIdMap, StateBuffers);
+
+            _pointCircleVertexBuffer?.Dispose();
+            _pointCircleVertexBuffer = new(device, GlobalHelperProperties.InitialCircleVertices);
 
             _anchorInstanceBuffer?.Dispose();
             _anchorInstanceBuffer = new(device, 64);
@@ -1663,6 +1794,16 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 OptionFlags = ResourceOptionFlags.None
             };
             _lineGlowSettingsBuffer = new Buffer(ResCache.Device, lineGlowBufferDesc);
+
+            var msdfBufferDesc = new BufferDescription
+            {
+                Usage = ResourceUsage.Default,
+                SizeInBytes = Utilities.SizeOf<MsdfSettingsBuffer>(),
+                BindFlags = BindFlags.ConstantBuffer,
+                CpuAccessFlags = CpuAccessFlags.None,
+                OptionFlags = ResourceOptionFlags.None
+            };
+            _msdfSettingsBuffer = new Buffer(ResCache.Device, msdfBufferDesc);
 
             var pointTextBufferDesc = new BufferDescription
             {
@@ -1770,6 +1911,14 @@ namespace Cad_Point_Manager.Controls.D3DControl
             };
             ResCache.DeviceContext.UpdateSubresource(ref lineGlowSettings, _lineGlowSettingsBuffer);
 
+            var msdfSettings = new MsdfSettingsBuffer
+            {
+                AtlasHeight = ResCache.CogoPointMsdfAtlas.Height,
+                AtlasWidth = ResCache.CogoPointMsdfAtlas.Width,
+                DistanceRange = ResCache.CogoPointMsdfAtlas.DistanceRange
+            };
+            ResCache.DeviceContext.UpdateSubresource(ref msdfSettings, _msdfSettingsBuffer);
+
             var cogoPointTextSettings = new GlyphSettingsBuffer
             {
                 SelectedColor = GlobalHelperProperties.SelectedObjectColor,
@@ -1827,6 +1976,87 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _combinedDirty = true;
         }
 
+        // Msdf
+        private void AddCogoPoint(CogoPoint point)
+        {
+            float emToWorld = (float)(point.PointGroup.FontBaseSize);
+
+            var ids = StateController.EnsurePointRegistered(point);
+
+            AddMsdfString(
+                point.PointNumber.ToString(),
+                point.PointNumberOffset,
+                point,
+                ids.PointNumberLabelId,
+                ids.PointId,
+                emToWorld);
+
+            AddMsdfString(
+                point.Elevation.ToString("F3"),
+                point.ElevationOffset,
+                point,
+                ids.ElevationLabelId,
+                ids.PointId,
+                emToWorld);
+
+            if (point.HasDescription)
+            {
+                AddMsdfString(
+                    point.Description,
+                    point.DescriptionOffset,
+                    point,
+                    ids.DescriptionLabelId,
+                    ids.PointId,
+                    emToWorld);
+            }
+        }
+        private void AddMsdfString(string text, Vector2 lineOffset, CogoPoint point, uint labelId, uint pointId, float emToWorld)
+        {
+            if (string.IsNullOrEmpty(text))
+            {
+                return;
+            }
+
+            var atlas = ResCache.CogoPointMsdfAtlas;
+
+            float penX = 0;
+
+            for (int i = 0; i < text.Length; i++)
+            {
+                char c = text [i];
+
+                if (!atlas.Glyphs.TryGetValue(c, out var glyph))
+                {
+                    continue;
+                }
+
+                _msdfInstances.Add(new MsdfGlyphInstance
+                { 
+                    EmToWorld = emToWorld,
+                    PenX = penX,
+                    YSign = -1,
+                    LabelId = labelId,
+                    PointId = pointId,
+                    PlaneOrigin = new Vector2(glyph.PlaneMin.X, glyph.PlaneMax.Y),
+                    PlaneSize = glyph.PlaneSize,
+                    UvOrigin = glyph.UvMin,
+                    UvSize = glyph.UvMax - glyph.UvMin
+                });
+
+                penX += glyph.Advance;
+
+                if (i + 1 < text.Length)
+                {
+                    uint key = ((uint)c << 16) | text [i + 1];
+
+                    if (atlas.Kernings.TryGetValue(key, out float kern))
+                    {
+                        penX += kern;
+                    }
+                }
+            }
+        }
+
         private void SetLineRenderMode(DeviceContext ctx, bool selectedOnly, bool glowPass)
         {
             var data = new LineRenderModeBuffer
@@ -1880,14 +2110,14 @@ namespace Cad_Point_Manager.Controls.D3DControl
         {
             if (string.IsNullOrEmpty(s)) { return; }
 
-            Span<int> cps = stackalloc int[s.Length];
-            for (int i = 0; i < s.Length; i++) { cps[i] = s[i]; }
+            Span<int> cps = stackalloc int [s.Length];
+            for (int i = 0; i < s.Length; i++) { cps [i] = s [i]; }
             var gids = ResCache.CogoPointFontFace.GetGlyphIndices(cps.ToArray());
             float penDU = 0f;
 
             for (int i = 0; i < gids.Length; i++)
             {
-                short gid = gids[i];
+                short gid = gids [i];
                 if (gid <= 0) { continue; }
 
                 var inst = new GlyphInstance
@@ -1899,10 +2129,10 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     PointId = pointId,
                 };
 
-                if (!_glyphBatches.TryGetValue(gid, out var list)) { _glyphBatches[gid] = list = new List<GlyphInstance>(32); }
+                if (!_glyphBatches.TryGetValue(gid, out var list)) { _glyphBatches [gid] = list = new List<GlyphInstance>(32); }
 
                 list.Add(inst);
-                penDU += ResCache.AdvanceWidthCache[gid];
+                penDU += ResCache.AdvanceWidthCache [gid];
             }
             float widthWorld = penDU * duToWorld;
         }
@@ -1946,16 +2176,16 @@ namespace Cad_Point_Manager.Controls.D3DControl
             if (string.IsNullOrEmpty(s)) return Rect.Empty;
 
             // Same glyph ID lookup + advances you do in AddLineAndGetRect
-            Span<int> cps = stackalloc int[s.Length];
-            for (int i = 0; i < s.Length; i++) cps[i] = s[i];
+            Span<int> cps = stackalloc int [s.Length];
+            for (int i = 0; i < s.Length; i++) cps [i] = s [i];
             var gids = ResCache.CogoPointFontFace.GetGlyphIndices(cps.ToArray());
 
             float widthDU = 0f;
             for (int i = 0; i < gids.Length; i++)
             {
-                short gid = gids[i];
+                short gid = gids [i];
                 if (gid <= 0) continue;
-                widthDU += ResCache.AdvanceWidthCache[gid];
+                widthDU += ResCache.AdvanceWidthCache [gid];
             }
 
             // Shader applies origin + ls.Offset (+ ps.Offset) and scales DU by group
@@ -3692,8 +3922,14 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     _hoverCircleVertexShader?.Dispose(); _hoverCircleVertexShader = null;
                     _hoverCirclePixelShader?.Dispose(); _hoverCirclePixelShader = null;
                     _hoverCircleGeometryShader?.Dispose(); _hoverCircleGeometryShader = null;
-                    _cogoPointGlowSettingsBuffer?.Dispose(); _cogoPointGlowSettingsBuffer = null;
                     _hoverCircleLayout?.Dispose(); _hoverCircleLayout = null;
+
+                    _glyphInstanceBuffer?.Dispose(); _glyphInstanceBuffer = null;
+                    _cogoPointGlowSettingsBuffer?.Dispose(); _cogoPointGlowSettingsBuffer = null;
+                    _cogoPointSettingsBuffer?.Dispose(); _cogoPointSettingsBuffer = null;
+
+                    _msdfInstanceBuffer?.Dispose(); _msdfInstanceBuffer = null;
+                    _msdfSettingsBuffer?.Dispose(); _msdfSettingsBuffer = null;
 
                     _leaderLineBuffer?.Dispose(); _leaderLineBuffer = null;
                     _leaderLineGS?.Dispose(); _leaderLineGS = null;
