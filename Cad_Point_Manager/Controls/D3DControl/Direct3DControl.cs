@@ -415,8 +415,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
             ResCache.CogoPointMsdfAtlas =
                 MsdfAtlasLoader.Load(
                     ResCache.Device,
-                    @"Resources\CogoAtlasFonts\arial_msdf.png",
-                    @"Resources\CogoAtlasFonts\arial_msdf.json");
+                    @"Resources\CogoAtlasFonts\arial_msdf_16.png",
+                    @"Resources\CogoAtlasFonts\arial_msdf_16.json");
         }
 
         private void StartRendering()

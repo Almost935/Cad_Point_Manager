@@ -113,16 +113,16 @@ static const uint GROUP_VISIBLE = 1u << 0;
 VSOut VSMain(VSVertex v, VSInstance inst)
 {
     VSOut o;
-    
+
     LabelState ls = LabelStates[inst.LabelId];
     PointState ps = PointStates[inst.PointId];
     GroupState gs = GroupStates[ps.GroupId];
-    
+
     float visLbl = ((ls.Flags & LABEL_VISIBLE) != 0u) ? 1.0f : 0.0f;
     float visPt = ((ps.Flags & POINT_VISIBLE) != 0u) ? 1.0f : 0.0f;
     float visGrp = ((gs.Flags & GROUP_VISIBLE) != 0u) ? 1.0f : 0.0f;
     float visible = visLbl * visGrp * visPt;
-    
+
     if (visible < 0.5f)
     {
         o.Position = float4(0, 0, 0, 0);
@@ -131,55 +131,90 @@ VSOut VSMain(VSVertex v, VSInstance inst)
         o.Visible = 0;
         return o;
     }
-    
+
     o.Visible = visible;
-    
-     // Selection / hover
-    float sel = ((ps.Flags & POINT_SELECTED) != 0u) ? 1.0f : 0.0f;
-    o.MouseOver = ((ps.Flags & POINT_MOUSEOVER) != 0u) ? 1.0f : 0.0f;
-    
-    // Flipped axis
-    float isFlippedY = ((ps.Flags & POINT_ISFLIPPEDY) != 0u) ? -1.0f : 1.0f;
+
+    o.MouseOver =
+        ((ps.Flags & POINT_MOUSEOVER) != 0u) ? 1.0f : 0.0f;
+
+    float isFlippedY =
+        ((ps.Flags & POINT_ISFLIPPEDY) != 0u) ? -1.0f : 1.0f;
 
     float2 corner = v.Corner + 0.5;
 
-    float2 local = inst.PlaneOrigin + corner * inst.PlaneSize;
-    
+    float2 local =
+        inst.PlaneOrigin +
+        corner * inst.PlaneSize;
+
     local.x += inst.PenX;
     local.y *= inst.YSign;
-    
+
     local *= (inst.EmToWorld * gs.Scale);
-    
-    float textInfoOffset = gs.TextInfoBaseXoffset * isFlippedY;
+
+    float textInfoOffset =
+        gs.TextInfoBaseXoffset * isFlippedY;
+
     float2 origin;
-    origin.x = ps.Offset.x + ps.PointInfoOffset.x + ls.Offset.x + textInfoOffset;
-    origin.y = ps.Offset.y + ps.PointInfoOffset.y + ls.Offset.y * gs.Scale;
-    
+    origin.x =
+        ps.Offset.x +
+        ps.PointInfoOffset.x +
+        ls.Offset.x +
+        textInfoOffset;
+
+    origin.y =
+        ps.Offset.y +
+        ps.PointInfoOffset.y +
+        ls.Offset.y * gs.Scale;
+
     local += origin;
 
-    o.Position = mul(float4(local, 0, 1), transformationMatrix);
-    o.UV = lerp(inst.UvOrigin, inst.UvOrigin + inst.UvSize, corner);
+    o.Position =
+        mul(float4(local, 0, 1),
+            transformationMatrix);
+
+    o.UV =
+        lerp(inst.UvOrigin,
+             inst.UvOrigin + inst.UvSize,
+             corner);
+
     o.Color = gs.Color;
 
     return o;
 }
+
 
 float4 PSMain(VSOut input) : SV_Target
 {
     if (input.Visible < 0.5f)
         clip(-1);
 
-    float3 msd = FontAtlas.Sample(FontSampler, input.UV, 0);
+    float3 msd = FontAtlas.Sample(FontSampler, input.UV).rgb;
 
     float sd = Median(msd.r, msd.g, msd.b);
 
-    float d = (sd - 0.5) * DistanceRange;
+    float d = (sd - 0.5f) * DistanceRange;
 
-    const float GlowRadius = 2.0;
+    //---------------------------------------
+    // Outside glow
+    //---------------------------------------
 
-    float glow = smoothstep(-GlowRadius, 0.0, d);
-    
-    glow *= 1.0 - smoothstep(0.25, 1.25, d);
+    const float GlowRadius = 6.0f;
 
-    return float4(0, 0, 0, glow * 0.5);
+    float halo = smoothstep(-GlowRadius, 0.25f, d);
+
+    //---------------------------------------
+    // Interior
+    //---------------------------------------
+
+    float fill = smoothstep(-0.25f, 0.5f, d);
+
+    //---------------------------------------
+    // Combine
+    //---------------------------------------
+
+    float alpha = halo * 0.45 + fill * 0.20;
+
+    alpha = saturate(alpha);
+
+    return float4(0, 0, 0, alpha);
 }

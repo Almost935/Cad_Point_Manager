@@ -1974,9 +1974,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     UvSize = placement.Glyph.UvMax - placement.Glyph.UvMin
                 };
 
-                Debug.WriteLine($"instance.UvOrigin: {instance.UvOrigin}");
-                Debug.WriteLine($"instance.UvSize: {instance.UvSize}");
-
                 destination.Add(instance);
             }
         }
