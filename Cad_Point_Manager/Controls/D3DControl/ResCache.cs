@@ -150,7 +150,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         public int MaxSize { get; set; }
         public BlendState BaseBlendState { get; set; }
-        public BlendState MaxBlendState { get; set; }
         public GlyphAtlas AsciiGlyphAtlas { get; set; }
         public MsdfAtlas CogoPointMsdfAtlas { get; set; }
         public DWriteGlyphTessellator GlyphTessellator { get; set; }

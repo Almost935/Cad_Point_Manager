@@ -198,6 +198,7 @@ namespace Cad_Point_Manager.Models.PointRendering
             if (PointNumberBounds != Rect.Empty) { Bounds = Rect.Union(Bounds, PointNumberBounds); }
             if (ElevationBounds != Rect.Empty) { Bounds = Rect.Union(Bounds, ElevationBounds); }
             if (DescriptionBounds != Rect.Empty) { Bounds = Rect.Union(Bounds, DescriptionBounds); }
+            if (ToggleBounds != Rect.Empty) { Bounds = Rect.Union(Bounds, ToggleBounds); }
         }
 
         public bool CogoPointIntersectsRect(Rect rect)

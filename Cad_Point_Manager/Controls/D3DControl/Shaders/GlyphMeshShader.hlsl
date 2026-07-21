@@ -83,7 +83,7 @@ static const uint LABEL_VISIBLE = 1u << 0;
 
 static const uint POINT_VISIBLE = 1u << 0;
 static const uint POINT_SELECTED = 1u << 1;
-static const uint POINT_MOUSEOVR = 1u << 2;
+static const uint POINT_MOUSEOVER = 1u << 2;
 static const uint POINT_ISFLIPPEDY = 1u << 6;
 static const uint POINT_ISFLIPPEDX = 1u << 7;
 
@@ -105,7 +105,7 @@ VSOut VSMain(VSInPerVertex v, VSInPerInstance inst)
     
     // Selection / hover
     float sel = ((ps.Flags & POINT_SELECTED) != 0u) ? 1.0f : 0.0f;
-    float mo = ((ps.Flags & POINT_MOUSEOVR) != 0u) ? 1.0f : 0.0f;
+    float mo = ((ps.Flags & POINT_MOUSEOVER) != 0u) ? 1.0f : 0.0f;
     
     // Flipped axis
     float isFlippedY = ((ps.Flags & POINT_ISFLIPPEDY) != 0u) ? -1.0f : 1.0f;

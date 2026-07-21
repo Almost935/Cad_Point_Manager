@@ -86,31 +86,16 @@ float Median(float r, float g, float b)
 {
     return max(min(r, g), min(max(r, g), b));
 }
-//float ScreenPxRange(float2 uv)
-//{
-//    float2 texelSize = float2(AtlasWidth, AtlasHeight);
 
-//    float2 dx = ddx(uv * texelSize);
-//    float2 dy = ddy(uv * texelSize);
-
-//    float deriv = max(length(dx), length(dy));
-
-//    return DistanceRange / deriv;
-//}
-float ScreenPxRange(float2 uv)
+float4 ScreenPxRange(float2 uv)
 {
-    // Distance field range in texture UV units
-    float2 unitRange = float2(DistanceRange, DistanceRange) /
-                       float2(AtlasWidth, AtlasHeight);
+    float2 fw = fwidth(uv);
 
-    // Number of texture pixels covered by one screen pixel
-    float2 screenTexSize = 1.0 / fwidth(uv);
-
-    // Canonical MSDF calculation
-    float pxRange = 0.5 * dot(unitRange, screenTexSize);
-
-    // Prevent collapse when zoomed far away
-    return max(pxRange, 1.0);
+    return float4(
+    fw.x * 1000,
+    fw.y * 1000,
+    0,
+    1);
 }
 
 // Bit masks for flags (keep in sync with CPU)
@@ -159,6 +144,7 @@ VSOut VSMain(VSVertex v, VSInstance inst)
     float2 corner = v.Corner + 0.5;
 
     float2 local = inst.PlaneOrigin + corner * inst.PlaneSize;
+    
     local.x += inst.PenX;
     local.y *= inst.YSign;
     
@@ -172,15 +158,8 @@ VSOut VSMain(VSVertex v, VSInstance inst)
     local += origin;
 
     o.Position = mul(float4(local, 0, 1), transformationMatrix);
-
     o.UV = lerp(inst.UvOrigin, inst.UvOrigin + inst.UvSize, corner);
-
     o.Color = gs.Color;
-    
-    if (sel > 0.5f)
-    {
-        o.Color = selectedColor;
-    }
 
     return o;
 }
@@ -190,15 +169,17 @@ float4 PSMain(VSOut input) : SV_Target
     if (input.Visible < 0.5f)
         clip(-1);
 
-    float3 msd = FontAtlas.Sample(FontSampler, input.UV).rgb;
+    float3 msd = FontAtlas.Sample(FontSampler, input.UV, 0);
 
     float sd = Median(msd.r, msd.g, msd.b);
 
-    float screenPxDistance =
-        ScreenPxRange(input.UV) * (sd - 0.5);
+    float d = (sd - 0.5) * DistanceRange;
 
-    float opacity =
-        smoothstep(-0.5, 0.5, screenPxDistance);
+    const float GlowRadius = 2.0;
 
-    return float4(input.Color.rgb, opacity);
+    float glow = smoothstep(-GlowRadius, 0.0, d);
+    
+    glow *= 1.0 - smoothstep(0.25, 1.25, d);
+
+    return float4(0, 0, 0, glow * 0.5);
 }

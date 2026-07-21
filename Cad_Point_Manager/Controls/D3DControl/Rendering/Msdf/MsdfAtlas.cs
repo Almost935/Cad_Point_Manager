@@ -38,10 +38,6 @@ public sealed class MsdfAtlas : IDisposable
         Height = height;
         DistanceRange = distanceRange;
 
-        Debug.WriteLine($"\nAscender: {Ascender}");
-        Debug.WriteLine($"Descender: {Descender}");
-        Debug.WriteLine($"LineHeight: {LineHeight}");
-
         Texture = texture;
         ShaderResourceView = shaderResourceView;
     }

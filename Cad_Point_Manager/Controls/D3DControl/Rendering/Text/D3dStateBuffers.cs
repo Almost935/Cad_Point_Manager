@@ -107,7 +107,6 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
             EnsureLabelCapacity(count);
 
             uint baseFlags = 0;
-            //if (pg.IsVisible) { baseFlags |= (uint)LabelFlags.Visible; }
             baseFlags |= (uint)LabelFlags.Visible;
 
             LabelSpan[(int)lId] = new LabelState { Offset = offset, Flags = baseFlags };

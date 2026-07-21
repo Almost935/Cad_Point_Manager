@@ -1517,7 +1517,7 @@ namespace Cad_Point_Manager.Models
             float xIncrement = (inflatedExtents.Width / (cols - 1)).ToFloat();
             int pointNum = 1;
             int testPointCount = 0;
-            string description = "TgaR.pP";
+            string description = "Test Point";
             Random random = new();
 
             for (int i = 0; i < rows; i++)

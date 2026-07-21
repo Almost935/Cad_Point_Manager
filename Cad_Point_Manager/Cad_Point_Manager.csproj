@@ -102,6 +102,8 @@
     <None Remove="Controls\D3DControl\Shaders\SigPointShader.hlsl" />
     <None Remove="Controls\D3DControl\Shaders\TestShader.hlsl" />
     <None Remove="Controls\D3DControl\Shaders\TextGlowShader.hlsl" />
+    <None Remove="Resources\CogoAtlasFonts\arial_msdf.json" />
+    <None Remove="Resources\CogoAtlasFonts\arial_msdf.png" />
     <None Remove="Resources\CogoAtlasFonts\CogoFont.json" />
     <None Remove="Resources\CogoAtlasFonts\CogoFont.png" />
     <None Remove="Resources\LffFonts\amiri-regular.lff" />
@@ -164,6 +166,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Content Include="Resources\CogoAtlasFonts\arial_msdf.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\CogoAtlasFonts\arial_msdf.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="Resources\CogoAtlasFonts\CogoFont.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>

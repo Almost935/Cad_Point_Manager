@@ -262,7 +262,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             rt.DestinationAlphaBlend = BlendOption.One;
             rt.AlphaBlendOperation = BlendOperation.Maximum;
             rt.RenderTargetWriteMask = ColorWriteMaskFlags.All;
-            ResCache.MaxBlendState = new BlendState(_device, maxDesc);
 
             _deviceContext.OutputMerger.SetBlendState(ResCache.BaseBlendState);
 
@@ -416,8 +415,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
             ResCache.CogoPointMsdfAtlas =
                 MsdfAtlasLoader.Load(
                     ResCache.Device,
-                    @"Resources\CogoAtlasFonts\CogoFont.png",
-                    @"Resources\CogoAtlasFonts\CogoFont.json");
+                    @"Resources\CogoAtlasFonts\arial_msdf.png",
+                    @"Resources\CogoAtlasFonts\arial_msdf.json");
         }
 
         private void StartRendering()
