@@ -53,9 +53,18 @@ VS_INPUT VSMain(VS_INPUT input)
 void GSMain(point VS_INPUT input[1], inout TriangleStream<GS_OUTPUT> output)
 {
     float4 position = mul(float4(input[0].position, 1), transformationMatrix);
-    float radiusX = input[0].radius * transformationMatrix._11;
-    float radiusY = input[0].radius * transformationMatrix._22;
+    //float radiusX = input[0].radius * transformationMatrix._11;
+    //float radiusY = input[0].radius * transformationMatrix._22;
 
+    //EmitCorner(input[0], float4(position.x - radiusX, position.y + radiusY, 0, 1), float2(-1, 1), hoverColor, output); // TL
+    //EmitCorner(input[0], float4(position.x - radiusX, position.y - radiusY, 0, 1), float2(-1, -1), hoverColor, output); // BL
+    //EmitCorner(input[0], float4(position.x + radiusX, position.y + radiusY, 0, 1), float2(1, 1), hoverColor, output); // TR
+    //EmitCorner(input[0], float4(position.x + radiusX, position.y - radiusY, 0, 1), float2(1, -1), hoverColor, output); // BR
+    
+    float radius = input[0].radius + glowOffset / 2;
+    float radiusX = radius * transformationMatrix._11;
+    float radiusY = radius * transformationMatrix._22;
+    
     EmitCorner(input[0], float4(position.x - radiusX, position.y + radiusY, 0, 1), float2(-1, 1), hoverColor, output); // TL
     EmitCorner(input[0], float4(position.x - radiusX, position.y - radiusY, 0, 1), float2(-1, -1), hoverColor, output); // BL
     EmitCorner(input[0], float4(position.x + radiusX, position.y + radiusY, 0, 1), float2(1, 1), hoverColor, output); // TR

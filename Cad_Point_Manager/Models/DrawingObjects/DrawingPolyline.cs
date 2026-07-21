@@ -100,7 +100,9 @@ namespace Cad_Point_Manager.Models.DrawingObjects
            System.Windows.Media.Matrix worldToPdf,
            XPen pen)
         {
-            foreach (var segment in DrawingSegments)
+            var segments = DrawingSegments.ToArray();
+
+            foreach (var segment in segments)
             {
                 segment.DrawToPdf(gfx, worldToPdf, pen);
             }

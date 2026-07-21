@@ -127,7 +127,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public float AtlasWidth;
         public float AtlasHeight;
         public float DistanceRange;
-        private float _padding;
+        public float CameraZoom;
     }
 
     [StructLayout(LayoutKind.Sequential)]

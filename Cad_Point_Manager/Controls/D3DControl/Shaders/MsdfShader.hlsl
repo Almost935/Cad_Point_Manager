@@ -19,7 +19,7 @@ cbuffer MsdfSettings : register(b3)
     float AtlasWidth;
     float AtlasHeight;
     float DistanceRange;
-    float Padding;
+    float CameraZoom;
 }
 
 struct LabelState
@@ -100,8 +100,7 @@ float Median(float r, float g, float b)
 float ScreenPxRange(float2 uv)
 {
     // Distance field range in texture UV units
-    float2 unitRange = float2(DistanceRange, DistanceRange) /
-                       float2(AtlasWidth, AtlasHeight);
+    float2 unitRange = float2(DistanceRange, DistanceRange) / float2(AtlasWidth, AtlasHeight);
 
     // Number of texture pixels covered by one screen pixel
     float2 screenTexSize = 1.0 / fwidth(uv);
@@ -194,11 +193,9 @@ float4 PSMain(VSOut input) : SV_Target
 
     float sd = Median(msd.r, msd.g, msd.b);
 
-    float screenPxDistance =
-        ScreenPxRange(input.UV) * (sd - 0.5);
+    float screenPxDistance = ScreenPxRange(input.UV) * (sd - 0.5);
 
-    float opacity =
-        smoothstep(-0.5, 0.5, screenPxDistance);
+    float opacity = smoothstep(-0.5, 0.5, screenPxDistance);
 
     return float4(input.Color.rgb, opacity);
 }

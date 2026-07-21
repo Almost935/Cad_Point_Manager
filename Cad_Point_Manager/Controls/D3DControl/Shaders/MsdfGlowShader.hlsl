@@ -19,7 +19,7 @@ cbuffer MsdfSettings : register(b3)
     float AtlasWidth;
     float AtlasHeight;
     float DistanceRange;
-    float Padding;
+    float CameraZoom;
 }
 
 struct LabelState
@@ -198,9 +198,9 @@ float4 PSMain(VSOut input) : SV_Target
     // Outside glow
     //---------------------------------------
 
-    const float GlowRadius = 6.0f;
+    float glowRadius = clamp(120.0f / CameraZoom, 0.01f, DistanceRange - 6.0f);
 
-    float halo = smoothstep(-GlowRadius, 0.25f, d);
+    float halo = smoothstep(-glowRadius, 0.25f, d);
 
     //---------------------------------------
     // Interior
@@ -212,7 +212,7 @@ float4 PSMain(VSOut input) : SV_Target
     // Combine
     //---------------------------------------
 
-    float alpha = halo * 0.45 + fill * 0.20;
+    float alpha = halo * 0.55 + fill * 0.20;
 
     alpha = saturate(alpha);
 

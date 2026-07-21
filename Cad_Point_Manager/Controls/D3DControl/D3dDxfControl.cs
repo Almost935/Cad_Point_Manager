@@ -9,6 +9,7 @@ using Cad_Point_Manager.Models;
 using Cad_Point_Manager.Models.DrawingObjects;
 using Cad_Point_Manager.Models.HitTesting;
 using Cad_Point_Manager.Models.PointRendering;
+using DocumentFormat.OpenXml.Office2010.Drawing;
 using PdfSharpCore.Pdf.Advanced;
 using SharpDX;
 using SharpDX.D3DCompiler;
@@ -183,13 +184,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
         // Cogo point hover rendering
         private bool _cogoHoverShadersLoaded = false;
         private bool _cogoHoverVerticesDirty = false;
-
-        private ResizableBuffer<OverlayQuadVertex> _hoverRectBuffer;
-        private ResizableBuffer<RoundedHoverRectInstance> _hoverRectInstanceBuffer;
-        private VertexShader _hoverRectVertexShader;
-        private PixelShader _hoverRectPixelShader;
-        private InputLayout _hoverRectLayout;
-        private int _hoverRectInstanceCount = 0;
 
         private ResizableBuffer<CircleHoverVertex> _hoverCircleBuffer;
         private VertexShader _hoverCircleVertexShader;
@@ -583,7 +577,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 ctx.OutputMerger.SetRenderTargets(ResCache.RenderTargetView);
 
                 if (IsDragging && _dragFillVertexCount > 0) { DrawDragOverlay(ctx); }
-                if (_hoverRectInstanceCount > 0 || _hoverCircleVertices.Count > 0) { DrawCogoPointHover(ctx); }
+                if (_hoverCircleVertices.Count > 0) { DrawCogoPointHover(ctx); }
                 if (_leaderLineInstanceCount > 0) { DrawLeaderLines(ctx); }
                 if (_anchorVerticesCount > 0) { DrawCogoPointAnchors(ctx); }
                 if (_sigPointVertexCount > 0) { DrawSignificantPoints(ctx); }
@@ -867,17 +861,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
         private void DrawCogoPointHover(DeviceContext ctx)
         {
-            //if (_hoverRectInstanceCount > 0)
-            //{
-            //    ctx.VertexShader.Set(_hoverRectVertexShader);
-            //    ctx.PixelShader.Set(_hoverRectPixelShader);
-            //    ctx.InputAssembler.InputLayout = _hoverRectLayout;
-            //    ctx.VertexShader.SetConstantBuffer(0, _transformationBuffer);
-            //    ctx.InputAssembler.PrimitiveTopology = PrimitiveTopology.TriangleList;
-            //    ctx.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding(_hoverRectBuffer.Buffer, _hoverRectBuffer.Stride, 0));
-            //    ctx.InputAssembler.SetVertexBuffers(1, new VertexBufferBinding(_hoverRectInstanceBuffer.Buffer, _hoverRectInstanceBuffer.Stride, 0));
-            //    ctx.DrawInstanced(6, _hoverRectInstanceCount, 0, 0);
-            //}
             if (_hoverCircleVertices.Count > 0)
             {
                 ctx.VertexShader.Set(_hoverCircleVertexShader);
@@ -1115,12 +1098,10 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 }
 
                 // circle
-                CircleHoverVertex circleHoverVertex = new(cp.Position.ToSharpDXVector3(), GlobalHelperProperties.CogoPointCircleMouseOverPixelRadius * cp.PointGroup.PointScale.ToFloat());
+                CircleHoverVertex circleHoverVertex = new(
+                    cp.Position.ToSharpDXVector3(), GlobalHelperProperties.CogoPointCircleMouseOverPixelRadius * cp.PointGroup.PointScale.ToFloat());
                 _hoverCircleVertices.Add(circleHoverVertex);
             }
-
-            _hoverRectInstanceBuffer.Update(ctx, CollectionsMarshal.AsSpan(rectInstances));
-            _hoverRectInstanceCount = rectInstances.Count;
 
             _hoverCircleBuffer.Update(ctx, _hoverCircleVertices.ToArray());
 
@@ -1445,38 +1426,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     new InputElement("ISSELECTED", 0, Format.R32_Float, 16, 0),
                 });
 
-            var rectVSBytecode = ShaderBytecode.CompileFromFile(rectHoverShaderPath, "VSMain", "vs_5_0");
-            _hoverRectVertexShader = new VertexShader(ResCache.Device, rectVSBytecode);
-            var rectPSBytecode = ShaderBytecode.CompileFromFile(rectHoverShaderPath, "PSMain", "ps_5_0");
-            _hoverRectPixelShader = new PixelShader(ResCache.Device, rectPSBytecode);
-
-            _hoverRectLayout = new InputLayout(
-                ResCache.Device,
-                ShaderSignature.GetInputSignature(rectVSBytecode),
-                new []
-                {
-                    // STREAM 0
-                    new InputElement("POSITION", 0, Format.R32G32_Float,      0, 0, InputClassification.PerVertexData,   0),
-
-                    // STREAM 1
-                    new InputElement("CENTER",   0, Format.R32G32_Float,       0, 1, InputClassification.PerInstanceData, 1),
-                    new InputElement("HALFSIZE", 0, Format.R32G32_Float,       8, 1, InputClassification.PerInstanceData, 1),
-                    new InputElement("RF",       0, Format.R32G32_Float,      16, 1, InputClassification.PerInstanceData, 1),
-                    new InputElement("COLOR",    0, Format.R32G32B32A32_Float,24, 1, InputClassification.PerInstanceData, 1),
-                });
-
-            _hoverRectInstanceBuffer ??= new(ResCache.Device, 6);
-            var quad = new []
-            {
-                new OverlayQuadVertex{ Local = new(-1,-1) },
-                new OverlayQuadVertex{ Local = new(-1, 1) },
-                new OverlayQuadVertex{ Local = new( 1, 1) },
-                new OverlayQuadVertex{ Local = new(-1,-1) },
-                new OverlayQuadVertex{ Local = new( 1, 1) },
-                new OverlayQuadVertex{ Local = new( 1,-1) },
-            };
-            _hoverRectBuffer.Update(ResCache.DeviceContext, quad);
-
             _cogoHoverShadersLoaded = true;
         }
         private void InitializeOverlayShaders()
@@ -1631,12 +1580,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             _solidVertexBuffer?.Dispose();
             _solidVertexBuffer = new(device, GlobalHelperProperties.InitialLineVertices);
-
-            _hoverRectBuffer?.Dispose();
-            _hoverRectBuffer = new(device, 64);
-
-            _hoverRectInstanceBuffer?.Dispose();
-            _hoverRectInstanceBuffer = new(device, 64);
 
             _hoverCircleBuffer?.Dispose();
             _hoverCircleBuffer = new(device, 16);
@@ -1835,7 +1778,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
             {
                 AtlasHeight = ResCache.CogoPointMsdfAtlas.Height,
                 AtlasWidth = ResCache.CogoPointMsdfAtlas.Width,
-                DistanceRange = ResCache.CogoPointMsdfAtlas.DistanceRange
+                DistanceRange = ResCache.CogoPointMsdfAtlas.DistanceRange,
+                CameraZoom = CadManager.Camera.CurrentZoom
             };
             ResCache.DeviceContext.UpdateSubresource(ref msdfSettings, _msdfSettingsBuffer);
 
@@ -1853,6 +1797,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 SelectedMouseOverColor = GlobalHelperProperties.SelectedMouseOverGlowColor
             };
             ResCache.DeviceContext.UpdateSubresource(ref cogoPointGlowSettingsBuffer, _cogoPointGlowSettingsBuffer);
+
+            Debug.WriteLine($"WorldUnitsPerPixel: {worldUnitsPerPixel} GlowOffset: {GlobalHelperProperties.LineGlowPixelWidth * worldUnitsPerPixel}");
 
             var leaderLineSettings = new LeaderLineSettings
             {
@@ -1950,6 +1896,10 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     emToWorld,
                     destination);
             }
+
+            float rW = (float)(GlobalHelperProperties.CogoPointCirclePixelRadius * point.PointGroup.PointScale);
+            var c = point.Position;
+            point.EllipseBounds = new Rect(c.X - rW, c.Y - rW, 2 * rW, 2 * rW);
 
             UpdateToggleAnchorBounds(point);
 
@@ -2091,78 +2041,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             stream.Dispose();
         }
-
-        //private void RecomputeCogoPointBoundsFast(CogoPoint p)
-        //{
-        //    var pg = p.PointGroup;
-        //    var duPerEm = ResCache.CogoPointFontFace.Metrics.DesignUnitsPerEm;
-        //    float duToWorld = (float)(pg.FontBaseSize * pg.PointScale) / duPerEm; // includes group scale
-        //    float ySign = -1f;
-
-        //    var baseOrigin = p.Position.ToSharpDXVector2() + p.TextInfoOffset;
-        //    var baseGroupXoffset = p.IsFlippedY ? -pg.PointInfoBaseXoffset : pg.PointInfoBaseXoffset;
-
-        //    p.PointNumberBounds = MeasureLineRect(
-        //        p.PointNumber.ToString(), baseOrigin, p.PointNumberOffset, baseGroupXoffset,
-        //        duToWorld, ySign, p.PointGroup.PointScale.ToFloat());
-
-        //    p.ElevationBounds = MeasureLineRect(
-        //        p.Elevation.ToString("F3"), baseOrigin, p.ElevationOffset, baseGroupXoffset,
-        //        duToWorld, ySign, p.PointGroup.PointScale.ToFloat());
-
-        //    if (p.HasDescription)
-        //    {
-        //        p.DescriptionBounds = MeasureLineRect(
-        //            p.Description, baseOrigin, p.DescriptionOffset, baseGroupXoffset,
-        //            duToWorld, ySign, p.PointGroup.PointScale.ToFloat());
-        //    }
-        //    else { p.DescriptionBounds = Rect.Empty; }
-
-        //    float rW = (float)(GlobalHelperProperties.CogoPointCirclePixelRadius * p.PointGroup.PointScale);
-        //    var c = p.Position;
-        //    p.EllipseBounds = new Rect(c.X - rW, c.Y - rW, 2 * rW, 2 * rW);
-
-        //    p.UpdateBounds();
-        //}
-        //private Rect MeasureLineRect(string s, Vector2 baseOrigin, Vector2 labelOffset, float baseGroupXoffset,
-        //    float duToWorld, float ySign, float groupScale)
-        //{
-        //    if (string.IsNullOrEmpty(s)) return Rect.Empty;
-
-        //    // Same glyph ID lookup + advances you do in AddLineAndGetRect
-        //    Span<int> cps = stackalloc int [s.Length];
-        //    for (int i = 0; i < s.Length; i++) cps [i] = s [i];
-        //    var gids = ResCache.CogoPointFontFace.GetGlyphIndices(cps.ToArray());
-
-        //    float widthDU = 0f;
-        //    for (int i = 0; i < gids.Length; i++)
-        //    {
-        //        short gid = gids [i];
-        //        if (gid <= 0) continue;
-        //        widthDU += ResCache.AdvanceWidthCache [gid];
-        //    }
-
-        //    // Shader applies origin + ls.Offset (+ ps.Offset) and scales DU by group
-        //    float originX = baseOrigin.X + labelOffset.X + baseGroupXoffset;
-        //    float originY = baseOrigin.Y + (labelOffset.Y * groupScale);
-        //    Vector2 originWorld = new(originX, originY);
-        //    float widthWorld = widthDU * duToWorld;     // duToWorld includes group scale
-
-        //    // Reuse your existing height/top computation (cap-height × duToWorld)
-        //    return ComputeLineRect(originWorld, widthWorld, duToWorld, ySign);
-        //}
-        //private Rect ComputeLineRect(Vector2 originWorld, float widthWorld, float duToWorld, float ySign)
-        //{
-        //    var m = ResCache.CogoPointFontFace.Metrics; // design units (DU)
-        //    float capH = m.CapHeight * duToWorld;
-
-        //    // baseline is originWorld.Y
-        //    float topY = originWorld.Y - ySign * capH;
-        //    float y = Math.Min(topY, originWorld.Y);
-        //    float height = Math.Abs(capH);
-
-        //    return new Rect(originWorld.X, y, widthWorld, height);
-        //}
 
         private void SetInitialMatrix()
         {
@@ -3867,11 +3745,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
                     _hitTestCancellationTokenSource?.Dispose(); _hitTestCancellationTokenSource = null;
 
-                    _hoverRectBuffer?.Dispose(); _hoverRectBuffer = null;
-                    _hoverRectInstanceBuffer?.Dispose(); _hoverRectInstanceBuffer = null;
-                    _hoverRectLayout?.Dispose(); _hoverRectLayout = null;
-                    _hoverRectVertexShader?.Dispose(); _hoverRectVertexShader = null;
-                    _hoverRectPixelShader?.Dispose(); _hoverRectPixelShader = null;
                     _hoverCircleBuffer?.Dispose(); _hoverCircleBuffer = null;
                     _hoverCircleVertexShader?.Dispose(); _hoverCircleVertexShader = null;
                     _hoverCirclePixelShader?.Dispose(); _hoverCirclePixelShader = null;
