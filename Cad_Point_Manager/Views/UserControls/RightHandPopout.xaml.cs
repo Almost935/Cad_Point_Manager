@@ -284,9 +284,9 @@ namespace Cad_Point_Manager.Views.UserControls
             if (layerListColumnWidth > 0)
             {
                 // Set column with name and visibility checkbox to double that of the color picker col
-                layerListGridView.Columns[0].Width = layerListColumnWidth * 1.8;
-                layerListGridView.Columns[1].Width = layerListColumnWidth * 0.6;
-                layerListGridView.Columns[2].Width = layerListColumnWidth * 0.6;
+                layerListGridView.Columns [0].Width = layerListColumnWidth * 1.8;
+                layerListGridView.Columns [1].Width = layerListColumnWidth * 0.6;
+                layerListGridView.Columns [2].Width = layerListColumnWidth * 0.6;
             }
         }
         private void LayersListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -384,7 +384,7 @@ namespace Cad_Point_Manager.Views.UserControls
                 }
                 else if (lv.SelectedItems.Count > 0)
                 {
-                    _pointGroupAnchorIndex = lv.Items.IndexOf(lv.SelectedItems[lv.SelectedItems.Count - 1]);
+                    _pointGroupAnchorIndex = lv.Items.IndexOf(lv.SelectedItems [lv.SelectedItems.Count - 1]);
                 }
                 else
                 {
@@ -412,11 +412,11 @@ namespace Cad_Point_Manager.Views.UserControls
             double pointGroupColumnWidth = pointGroupLTotalWidth / pointGroupGridView.Columns.Count;
             if (pointGroupColumnWidth > 0)
             {
-                pointGroupGridView.Columns[0].Width = pointGroupColumnWidth * 1.3;
-                pointGroupGridView.Columns[1].Width = pointGroupColumnWidth * 0.9;
-                pointGroupGridView.Columns[2].Width = pointGroupColumnWidth * 0.9;
-                pointGroupGridView.Columns[3].Width = pointGroupColumnWidth * 1;
-                pointGroupGridView.Columns[4].Width = pointGroupColumnWidth * 0.9;
+                pointGroupGridView.Columns [0].Width = pointGroupColumnWidth * 1.3;
+                pointGroupGridView.Columns [1].Width = pointGroupColumnWidth * 0.9;
+                pointGroupGridView.Columns [2].Width = pointGroupColumnWidth * 0.9;
+                pointGroupGridView.Columns [3].Width = pointGroupColumnWidth * 1;
+                pointGroupGridView.Columns [4].Width = pointGroupColumnWidth * 0.9;
             }
         }
         private void DeletePointGroupButton_Click(object sender, RoutedEventArgs e)
@@ -520,13 +520,7 @@ namespace Cad_Point_Manager.Views.UserControls
                     // Mark invalid and KEEP focus in the textbox
                     if (binding != null)
                     {
-                        Validation.MarkInvalid(
-                            binding,
-                            new ValidationError(
-                                new DataErrorValidationRule(),  // or a specific rule type
-                                binding,
-                                errorMessage,
-                                null));
+                        Validation.MarkInvalid(binding, new ValidationError(new DataErrorValidationRule(), binding, errorMessage, null));
                     }
 
                     e.Handled = true;
@@ -543,18 +537,14 @@ namespace Cad_Point_Manager.Views.UserControls
                     {
                         case "Name":
                             {
-                                CadManager.ChangePointGroupName(
-                                    pg,
-                                    text);
+                                CadManager.ChangePointGroupName(pg, text);
 
                                 break;
                             }
 
                         case "PointScale":
                             {
-                                CadManager.ChangePointGroupScale(
-                                    _selectedPointGroups,
-                                    double.Parse(text));
+                                CadManager.ChangePointGroupScale(_selectedPointGroups, double.Parse(text));
 
                                 break;
                             }
@@ -566,9 +556,7 @@ namespace Cad_Point_Manager.Views.UserControls
 
                     e.Handled = true;
 
-                    (tb as UIElement)?.MoveFocus(
-                        new TraversalRequest(
-                            FocusNavigationDirection.Next));
+                    (tb as UIElement)?.MoveFocus(new TraversalRequest(FocusNavigationDirection.Next));
 
                     return;
                 }
@@ -644,10 +632,7 @@ namespace Cad_Point_Manager.Views.UserControls
         {
             if (CadManager is null) { return; }
 
-            bool created = TryCreateNewPointGroup(
-                CadManager.GetTempPointGroupName(),
-                Colors.Black,
-                CadManager.PointBaseScale);
+            bool created = TryCreateNewPointGroup(CadManager.GetTempPointGroupName(), Colors.Black, CadManager.PointBaseScale);
         }
         private void EditPGMenuItem_Click(object sender, RoutedEventArgs e)
         {
@@ -720,7 +705,7 @@ namespace Cad_Point_Manager.Views.UserControls
                 int end = Math.Max(anchor, clicked);
 
                 lv.SelectedItems.Clear();
-                for (int i = start; i <= end; i++) { lv.SelectedItems.Add(lv.Items[i]); }
+                for (int i = start; i <= end; i++) { lv.SelectedItems.Add(lv.Items [i]); }
 
                 lvi.Focus();
 
@@ -752,8 +737,8 @@ namespace Cad_Point_Manager.Views.UserControls
         {
             if (PointGroupListColorPickerOpen) { return; }
 
-            if (sender is not PortableColorPicker cp || 
-                VisualTreeHelpers.FindAncestor<ListViewItem>(cp) is not ListViewItem lvi || 
+            if (sender is not PortableColorPicker cp ||
+                VisualTreeHelpers.FindAncestor<ListViewItem>(cp) is not ListViewItem lvi ||
                 ItemsControl.ItemsControlFromItemContainer(lvi) is not ListView lv) { return; }
 
             int clicked = lv.ItemContainerGenerator.IndexFromContainer(lvi);
@@ -775,7 +760,7 @@ namespace Cad_Point_Manager.Views.UserControls
                 int end = Math.Max(anchor, clicked);
 
                 lv.SelectedItems.Clear();
-                for (int i = start; i <= end; i++) { lv.SelectedItems.Add(lv.Items[i]); }
+                for (int i = start; i <= end; i++) { lv.SelectedItems.Add(lv.Items [i]); }
 
                 lvi.Focus();
 
@@ -821,7 +806,7 @@ namespace Cad_Point_Manager.Views.UserControls
                 CadManager.ChangePointGroupColor(
                         _selectedPointGroups,
                         color);
-                
+
                 _openColorPickerPG.Color = color;
                 _openColorPickerPG = null;
 
@@ -866,10 +851,7 @@ namespace Cad_Point_Manager.Views.UserControls
         {
             if (CadManager is null) { return; }
 
-            bool created = TryCreateNewPointGroup(
-                CadManager.GetTempPointGroupName(),
-                Colors.Black,
-                CadManager.PointBaseScale);
+            bool created = TryCreateNewPointGroup(CadManager.GetTempPointGroupName(), Colors.Black, CadManager.PointBaseScale);
         }
         private bool TryCreateNewPointGroup(string name, Color color, double scale)
 

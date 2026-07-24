@@ -11,9 +11,10 @@ namespace Cad_Point_Manager.Helpers
 
         public const float ZoomFactor = 1.3f;
 
-        public const float HoverTransparency = 0.4f;
+        public const float HoverTransparency = 0.5f;
         public static readonly Vector4 HoverColor = new(0, 0, 0, HoverTransparency);
         public const float LineGlowPixelWidth = 5;
+        public const float CogoGlowPixelWidth = 5;
 
         public const float TextHeightToGlowOffsetFactor = 0.05f;
         public const int InitialLineVertices = 5000;

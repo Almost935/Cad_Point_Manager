@@ -7,8 +7,9 @@ namespace Cad_Point_Manager.Commands.UndoRedo
     public class CreatePointGroupCommand : IUndoableCommand
     {
         private readonly CadManager _cadManager;
-        private string _groupName;
-        private Color _color;
+        private readonly string _initialGroupName;
+        private string _finalGroupName;
+        private readonly Color _color;
 
         private PointGroup? _createdPointGroup;
         private bool _succeeded;
@@ -22,13 +23,16 @@ namespace Cad_Point_Manager.Commands.UndoRedo
         public CreatePointGroupCommand(CadManager cadManager, string groupName, Color color)
         {
             _cadManager = cadManager;
-            _groupName = groupName;
+            _initialGroupName = groupName;
+            _finalGroupName = groupName;
             _color = color;
         }
 
         public void Execute()
         {
-            _succeeded = _cadManager.TryCreatePointGroupInternal(_groupName, _color, out _createdPointGroup, out _errorMessage);
+            string name = _createdPointGroup == null ? _initialGroupName : _finalGroupName;
+            _succeeded = _cadManager.TryCreatePointGroupInternal(
+                name, _color, out _createdPointGroup, out _errorMessage);
         }
 
         public void Undo()
@@ -36,6 +40,16 @@ namespace Cad_Point_Manager.Commands.UndoRedo
             if (_createdPointGroup is null) { return; }
 
             _cadManager.DeletePointGroup(_createdPointGroup);
+        }
+
+        public void SetFinalName(string newName)
+        {
+            _finalGroupName = newName;
+
+            if (_createdPointGroup != null)
+            {
+                _createdPointGroup.Name = newName;
+            }
         }
     }
 }

@@ -6,8 +6,10 @@ cbuffer TransformationBuffer : register(b0)
 };
 cbuffer CogoPointGlowSettingsBuffer : register(b1)
 {
-    float glowOffset;
+    float glowRadiusPixels;
     float3 padding;
+    float2 viewportSize;
+    float2 padding2;
     float4 hoverColor;
     float4 selectedColor;
     float4 selectedMouseOverColor;
@@ -16,71 +18,83 @@ cbuffer CogoPointGlowSettingsBuffer : register(b1)
 struct VS_INPUT
 {
     float3 position : POSITION;
-    float radius : RADIUS;
-    float isSelected : ISSELECTED;
+    float pointMarkerRadius : TEXCOORD0; // Radius of the point marker in pixels
+    float isSelected : TEXCOORD1; // Whether the point is selected (1.0) or not (0.0)
 };
 
 struct GS_OUTPUT
 {
     float4 position : SV_POSITION;
     float4 color : COLOR;
-    float2 offset : RADIUS;
-    float isSelected : ISSELECTED;
+    float2 offset : TEXCOORD0;
+    float circleEdge : TEXCOORD1;
 };
 
-void EmitCorner(VS_INPUT input, float4 position, float2 offset, float4 color, inout TriangleStream<GS_OUTPUT> output)
+void EmitCorner(VS_INPUT input, float4 position, float4 color, float2 offset, float2 circleEdge, inout TriangleStream<GS_OUTPUT> output)
 {
     GS_OUTPUT o;
     o.position = position;
-    o.offset = offset;
     o.color = color;
-    o.isSelected = input.isSelected;
+    o.offset = offset;
+    o.circleEdge = circleEdge;
     output.Append(o);
 }
 
-// =======================
-// Vertex Shader
-// =======================
 VS_INPUT VSMain(VS_INPUT input)
 {
     return input;
 }
 
-// =======================
-// Geometry Shader
-// =======================
 [maxvertexcount(4)]
 void GSMain(point VS_INPUT input[1], inout TriangleStream<GS_OUTPUT> output)
 {
-    float4 position = mul(float4(input[0].position, 1), transformationMatrix);
-    //float radiusX = input[0].radius * transformationMatrix._11;
-    //float radiusY = input[0].radius * transformationMatrix._22;
+    float4 center = mul(float4(input[0].position, 1), transformationMatrix);
+    float2 pixelRadiusClip = float2(glowRadiusPixels / viewportSize.x, glowRadiusPixels / viewportSize.y) * 2.0f;
+    
+    float radiusWorld = input[0].pointMarkerRadius;
+    
+    float radiusX = pixelRadiusClip.x + radiusWorld * transformationMatrix._11;
+    float radiusY = pixelRadiusClip.y + radiusWorld * transformationMatrix._22;
+    
+    float circleClipX = radiusWorld * transformationMatrix._11;
+    float circleClipY = radiusWorld * transformationMatrix._22;
 
-    //EmitCorner(input[0], float4(position.x - radiusX, position.y + radiusY, 0, 1), float2(-1, 1), hoverColor, output); // TL
-    //EmitCorner(input[0], float4(position.x - radiusX, position.y - radiusY, 0, 1), float2(-1, -1), hoverColor, output); // BL
-    //EmitCorner(input[0], float4(position.x + radiusX, position.y + radiusY, 0, 1), float2(1, 1), hoverColor, output); // TR
-    //EmitCorner(input[0], float4(position.x + radiusX, position.y - radiusY, 0, 1), float2(1, -1), hoverColor, output); // BR
+    float quadClipX = radiusX;
+    float quadClipY = radiusY;
+
+    float2 circleEdge = float2(circleClipX / quadClipX, circleClipY / quadClipY);
     
-    float radius = input[0].radius + glowOffset / 2;
-    float radiusX = radius * transformationMatrix._11;
-    float radiusY = radius * transformationMatrix._22;
-    
-    EmitCorner(input[0], float4(position.x - radiusX, position.y + radiusY, 0, 1), float2(-1, 1), hoverColor, output); // TL
-    EmitCorner(input[0], float4(position.x - radiusX, position.y - radiusY, 0, 1), float2(-1, -1), hoverColor, output); // BL
-    EmitCorner(input[0], float4(position.x + radiusX, position.y + radiusY, 0, 1), float2(1, 1), hoverColor, output); // TR
-    EmitCorner(input[0], float4(position.x + radiusX, position.y - radiusY, 0, 1), float2(1, -1), hoverColor, output); // BR
+    EmitCorner(input[0], float4(center.x - radiusX, center.y + radiusY, 0, 1), hoverColor, float2(-1, 1), circleEdge, output); // TL
+    EmitCorner(input[0], float4(center.x - radiusX, center.y - radiusY, 0, 1), hoverColor, float2(-1, -1), circleEdge, output); // BL
+    EmitCorner(input[0], float4(center.x + radiusX, center.y + radiusY, 0, 1), hoverColor, float2(1, 1), circleEdge, output); // TR
+    EmitCorner(input[0], float4(center.x + radiusX, center.y - radiusY, 0, 1), hoverColor, float2(1, -1), circleEdge, output); // BR
 }
 
-// =======================
-// Pixel Shader
-// =======================
 float4 PSMain(GS_OUTPUT input) : SV_TARGET
 {
-    float dist = length(input.offset);
-    if (dist > 1.0f)
+    float2 p = input.offset / input.circleEdge;
+
+    float dist = length(p);
+
+    // Outside the outer glow
+    if (length(input.offset) > 1.0f)
     {
         discard;
     }
 
-    return input.color;
+    // Inside the original ellipse
+    if (dist <= 1.0f)
+    {
+        return input.color;
+    }
+
+    // Glow region
+    float glowDist = length(input.offset);
+
+    float t = (glowDist - length(input.circleEdge)) / (1.0f - length(input.circleEdge));
+
+    float alpha = pow(1.0f - smoothstep(0.0f, 1.0f, t), 0.5f);
+
+    return float4(input.color.rgb, input.color.a * alpha);
 }
+

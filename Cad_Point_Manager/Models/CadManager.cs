@@ -16,6 +16,7 @@ using netDxf.Entities;
 using netDxf.Tables;
 using SharpDX;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -317,7 +318,7 @@ namespace Cad_Point_Manager.Models
 
         public DxfImportResult DxfImportResult { get; private set; }
         public HitTestableObjectTree HitTestableObjectTree { get; private set; }
-        public TextVertex[] NumberVertices { get; set; } = [];
+        public TextVertex [] NumberVertices { get; set; } = [];
         public UndoRedoManager UndoRedoManager { get; } = new();
         public CogoPointTree CogoPointTree { get; set; }
 
@@ -374,6 +375,16 @@ namespace Cad_Point_Manager.Models
 
             foreach (var mleader in dxfImportResult.MLeaders)
             {
+                //Debug.WriteLine($"\nmleader.Context.Text: {mleader.Context.Text}");
+                //Debug.WriteLine($"mleader.TextAlignmentPoint: {mleader.TextAlignmentPoint}");
+                //Debug.WriteLine($"mleader.TextAlignmentType: {mleader.TextAlignmentType}");
+                //Debug.WriteLine($"mleader.TextLeftAttachmentType:: {mleader.TextLeftAttachmentType}");
+                //Debug.WriteLine($"mleader.TextRightAttachmentType: {mleader.TextRightAttachmentType}");
+                //Debug.WriteLine($"mleader.Context.TextAttachment: {mleader.Context.TextAttachment}");
+                //Debug.WriteLine($"mleader.Style.TextAlignmentType: {mleader.Style.TextAlignmentType}");
+                //Debug.WriteLine($"mleader.TextLeftAttachmentType: {mleader.TextLeftAttachmentType}");
+                //Debug.WriteLine($"mleader.TextRightAttachmentType: {mleader.TextRightAttachmentType}");
+
                 if (dxfImportResult.MLeaderStyles.TryGetValue(mleader.LeaderStyleId, out var style))
                 {
                     mleader.Style = style;
@@ -738,7 +749,7 @@ namespace Cad_Point_Manager.Models
             name = name.Trim();
 
             // Disallowed characters
-            char[] invalidChars = Path.GetInvalidFileNameChars(); // includes \ / : * ? " < > | and control characters
+            char [] invalidChars = Path.GetInvalidFileNameChars(); // includes \ / : * ? " < > | and control characters
             if (name.IndexOfAny(invalidChars) >= 0)
             {
                 errorMessage = $"Name contains invalid characters: {string.Join(" ", invalidChars)}";
@@ -791,6 +802,12 @@ namespace Cad_Point_Manager.Models
                     newName,
                     out string error))
             {
+                return;
+            }
+
+            if (UndoRedoManager.LastCommand is CreatePointGroupCommand createCmd && createCmd.CreatedPointGroup == group)
+            {
+                createCmd.SetFinalName(newName);
                 return;
             }
 
@@ -1061,7 +1078,7 @@ namespace Cad_Point_Manager.Models
             name = name.Trim();
 
             // Disallowed characters
-            char[] invalidChars = Path.GetInvalidFileNameChars(); // includes \ / : * ? " < > | and control characters
+            char [] invalidChars = Path.GetInvalidFileNameChars(); // includes \ / : * ? " < > | and control characters
             if (name.IndexOfAny(invalidChars) >= 0)
             {
                 errorMessage = $"Name contains invalid characters: {string.Join(" ", invalidChars)}";
@@ -1113,6 +1130,7 @@ namespace Cad_Point_Manager.Models
             Rect viewportBounds = new(0.5, 0.5, 28.938, 23);
             LayoutViewport viewport = new(viewportBounds, Camera.OverviewScene);
             TryCreateLayout(GetNextAvailableLayoutName(), viewport, out _);
+            UndoRedoManager.Clear();
         }
 
         public void GetPointScale()
@@ -1590,7 +1608,7 @@ namespace Cad_Point_Manager.Models
             if (PointGroups == null || PointGroups.Count == 0) { PointExtents = Rect.Empty; }
 
             int processorCount = Environment.ProcessorCount;
-            var partialResults = new Rect[processorCount];
+            var partialResults = new Rect [processorCount];
 
             Parallel.For(0, processorCount, i =>
             {
@@ -1599,7 +1617,7 @@ namespace Cad_Point_Manager.Models
                 // Use stride to balance uneven group sizes
                 for (int g = i; g < PointGroups.Count; g += processorCount)
                 {
-                    var group = PointGroups[g];
+                    var group = PointGroups [g];
                     if (group?.Points == null) { continue; }
 
                     foreach (var point in group.Points)
@@ -1607,7 +1625,7 @@ namespace Cad_Point_Manager.Models
                         localUnion.Union(point.Bounds);
                     }
                 }
-                partialResults[i] = localUnion;
+                partialResults [i] = localUnion;
             });
 
             Rect finalUnion = Rect.Empty;

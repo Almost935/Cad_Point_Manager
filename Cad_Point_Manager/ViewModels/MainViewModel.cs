@@ -475,8 +475,11 @@ namespace Cad_Point_Manager.ViewModels
 
             ZoomToExtentsCommand = new RelayCommand<RoutedEventArgs>(ZoomToExtents);
 
-            UndoCommand = new RelayCommand<RoutedEventArgs>(Undo);
-            RedoCommand = new RelayCommand<RoutedEventArgs>(Redo);
+            UndoCommand = new RelayCommand<RoutedEventArgs>(Undo,
+                _ => JobFileManager?.CadManager?.UndoRedoManager.CanUndo == true);
+
+            RedoCommand = new RelayCommand<RoutedEventArgs>(Redo,
+                _ => JobFileManager?.CadManager?.UndoRedoManager.CanRedo == true);
 
             SelectedGeometries.CollectionChanged += SelectedGeometries_CollectionChanged;
         }
@@ -775,7 +778,7 @@ namespace Cad_Point_Manager.ViewModels
                             {
                                 pointNum++;
                             }
-                            pointsToCreate.Add((pointNum, coords[i].ToSharpDXVector3(), ActivePointGroup, NewCogoPointsElevation.ToFloat(), NewCogoPointsDescription));
+                            pointsToCreate.Add((pointNum, coords [i].ToSharpDXVector3(), ActivePointGroup, NewCogoPointsElevation.ToFloat(), NewCogoPointsDescription));
                             pointNum++;
                         }
 
@@ -852,7 +855,7 @@ namespace Cad_Point_Manager.ViewModels
         {
             if (string.IsNullOrWhiteSpace(propertyName)) { return _errors.SelectMany(kvp => kvp.Value); }
 
-            if (_errors.ContainsKey(propertyName)) { return _errors[propertyName]; }
+            if (_errors.ContainsKey(propertyName)) { return _errors [propertyName]; }
 
             return null;
         }
@@ -860,11 +863,11 @@ namespace Cad_Point_Manager.ViewModels
         protected void AddError(string propertyName, string error)
         {
             if (!_errors.ContainsKey(propertyName))
-                _errors[propertyName] = [];
+                _errors [propertyName] = [];
 
-            if (!_errors[propertyName].Contains(error))
+            if (!_errors [propertyName].Contains(error))
             {
-                _errors[propertyName].Add(error);
+                _errors [propertyName].Add(error);
                 ErrorsChanged?.Invoke(this, new DataErrorsChangedEventArgs(propertyName));
             }
         }

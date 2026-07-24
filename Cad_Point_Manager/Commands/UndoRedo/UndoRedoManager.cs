@@ -50,6 +50,8 @@ namespace Cad_Point_Manager.Commands.UndoRedo
             RaiseStateChanged();
         }
 
+        public IUndoableCommand? LastCommand => _undoStack.TryPeek(out var cmd) ? cmd : null;
+
         private void RaiseStateChanged()
         {
             OnPropertyChanged(nameof(CanUndo));

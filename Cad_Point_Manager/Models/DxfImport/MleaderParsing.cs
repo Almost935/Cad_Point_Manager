@@ -27,6 +27,27 @@ namespace Cad_Point_Manager.Models.DxfImport
         None
     }
 
+    public enum TextAlignmentType
+    {
+        Left = 1,
+        Center = 2,
+        Right = 3
+    }
+
+    public enum TextAttachmentType
+    {
+        ByStyle = -1,
+        TopOfTopLine = 0,
+        MiddleOfTopLine = 1,
+        MiddleOfText = 2,
+        MiddleOfBottomLine = 3,
+        BottomOfBottomLine = 4,
+        UnderlineBottomLine = 5,
+        UnderlineTopLine = 6,
+        BottomOfTopLine = 7,
+        UnderlineAllText = 8
+    }
+
     public class ParsedMLeader : TagContainer
     {
         public ParsedMLeaderContext Context { get; } = new();
@@ -47,6 +68,27 @@ namespace Cad_Point_Manager.Models.DxfImport
         public string ArrowheadId => GetString(342) ?? string.Empty;
         public float? ArrowheadSize => GetFloat(42);
         public int? ArrowheadIndex => GetInt(94);
+
+        /// <summary>
+        /// Gets the text attachment type for the left side of the text.
+        /// -1 = By Style, 0 = Top of Top Line, 1 = Middle of Top Line, 2 = Middle of Text, 3 = Middle of Bottom Line, 4 = Bottom of Bottom Line, 5 = Underline Bottom Line, 6 = Underline Top Line, 7 = Bottom of Top Line, 8 = Underline All Text
+        /// </summary>
+        public TextAttachmentType TextLeftAttachmentType => (TextAttachmentType)(GetInt(173) ?? 0);
+
+        /// <summary>
+        /// Gets the text attachment type for the left side of the text.
+        /// -1 = By Style, 0 = Top of Top Line, 1 = Middle of Top Line, 2 = Middle of Text, 3 = Middle of Bottom Line, 4 = Bottom of Bottom Line, 5 = Underline Bottom Line, 6 = Underline Top Line, 7 = Bottom of Top Line, 8 = Underline All Text
+        /// </summary>
+        public TextAttachmentType TextRightAttachmentType => (TextAttachmentType)(GetInt(95) ?? 0);
+
+        /// <summary>
+        /// Gets the text alignment type.
+        /// 1 = Left, 2 = Center, 3 = Right
+        /// </summary>
+        public TextAlignmentType TextAlignmentPoint => (TextAlignmentType)(GetInt(179) ?? 0);
+
+        public int TextAlignmentType => GetInt(175) ?? 0;
+
         public (Vector4 color, ColorType colorType) Color
         {
             get
@@ -175,6 +217,7 @@ namespace Cad_Point_Manager.Models.DxfImport
         public int? TextBackgroundColor => GetInt(91);
         public bool HasMtext => GetBool(290);
         public float TextWidth => GetFloat(43) ?? 0f;
+        public int TextAttachment => GetInt(171) ?? 1;
         public Vector3 TextLocation
         {
             get
@@ -205,6 +248,9 @@ namespace Cad_Point_Manager.Models.DxfImport
         public string ArrowheadHandle => GetString(341) ?? "";
         public float ArrowheadSize => GetFloat(44) ?? 0f;
         public string TextStyleHandle => GetString(342) ?? "";
+        public TextAttachmentType TextLeftAttachmentType => (TextAttachmentType)(GetInt(174) ?? 0);
+        public TextAttachmentType TextRightAttachmentType => (TextAttachmentType)(GetInt(178) ?? 0);
+        public TextAlignmentType TextAlignmentType => (TextAlignmentType)(GetInt(176) ?? 0);
 
         public ArrowheadType ArrowheadType { get; set; }
     }

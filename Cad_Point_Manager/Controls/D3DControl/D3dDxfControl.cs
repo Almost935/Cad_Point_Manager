@@ -190,12 +190,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private PixelShader _hoverCirclePixelShader;
         private GeometryShader _hoverCircleGeometryShader;
         private readonly List<CircleHoverVertex> _hoverCircleVertices = [];
-        private CircleHoverSettingsBuffer _hoverCircleSettings = new()
-        {
-            GlowOffset = 1.5f,
-            SelectedColor = GlobalHelperProperties.SelectedObjectColor,
-            HoverColor = GlobalHelperProperties.HoverColor
-        };
         private Buffer _cogoPointGlowSettingsBuffer;
         private InputLayout _hoverCircleLayout;
 
@@ -1099,7 +1093,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
                 // circle
                 CircleHoverVertex circleHoverVertex = new(
-                    cp.Position.ToSharpDXVector3(), GlobalHelperProperties.CogoPointCircleMouseOverPixelRadius * cp.PointGroup.PointScale.ToFloat());
+                    cp.Position.ToSharpDXVector3(),
+                    GlobalHelperProperties.CogoPointCirclePixelRadius * cp.PointGroup.PointScale.ToFloat());
                 _hoverCircleVertices.Add(circleHoverVertex);
             }
 
@@ -1422,8 +1417,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 new []
                 {
                     new InputElement("POSITION", 0, Format.R32G32B32_Float, 0, 0),
-                    new InputElement("RADIUS", 0, Format.R32_Float, 12, 0),
-                    new InputElement("ISSELECTED", 0, Format.R32_Float, 16, 0),
+                    new InputElement("TEXCOORD", 0, Format.R32_Float, 12, 0),
+                    new InputElement("TEXCOORD", 1, Format.R32_Float, 16, 0),
                 });
 
             _cogoHoverShadersLoaded = true;
@@ -1791,14 +1786,13 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             var cogoPointGlowSettingsBuffer = new CogoPointGlowSettingsBuffer
             {
-                GlowOffset = GlobalHelperProperties.LineGlowPixelWidth * worldUnitsPerPixel,
+                GlowRadiusPixels = GlobalHelperProperties.CogoGlowPixelWidth,
+                ViewportSize = new Vector2(Viewport.Width, Viewport.Height),
                 HoverColor = GlobalHelperProperties.HoverColor,
                 SelectedColor = GlobalHelperProperties.SelectedObjectColor,
                 SelectedMouseOverColor = GlobalHelperProperties.SelectedMouseOverGlowColor
             };
             ResCache.DeviceContext.UpdateSubresource(ref cogoPointGlowSettingsBuffer, _cogoPointGlowSettingsBuffer);
-
-            Debug.WriteLine($"WorldUnitsPerPixel: {worldUnitsPerPixel} GlowOffset: {GlobalHelperProperties.LineGlowPixelWidth * worldUnitsPerPixel}");
 
             var leaderLineSettings = new LeaderLineSettings
             {

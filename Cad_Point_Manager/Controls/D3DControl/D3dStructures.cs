@@ -63,22 +63,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public Vector4 Color;        // rgba
     }
     [StructLayout(LayoutKind.Sequential)]
-    struct CircleHoverVertex(Vector3 position, float radius, float isSelected = 0)
-    {
-        public Vector3 Position = position;
-        public float Radius = radius;
-        public float IsSelected = isSelected;
-    }
-    [StructLayout(LayoutKind.Sequential)]
-    public struct CircleHoverSettingsBuffer
-    {
-        public float GlowOffset;
-        private Vector3 Padding;
-        public Vector4 HoverColor;
-        public Vector4 SelectedColor;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
     public struct MsdfVertex
     {
         public Vector2 Corner;
@@ -249,7 +233,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public float MaxHalfBase; // world units (pre-scale)
     }
     [StructLayout(LayoutKind.Sequential)]
-    readonly struct AnchorDraw   // for CPU hit-test & mapping
+    readonly struct AnchorDraw
     {
         public readonly Vector2 Center;
         public readonly Vector2 Half;
@@ -272,42 +256,19 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public Vector4 Color;
     }
     [StructLayout(LayoutKind.Sequential)]
-    public struct CircleVertex(Vector3 position, Vector4 color, float radius, float isVisible = 1.0f, float isMouseOver = 0, float isSelected = 0)
+    struct CircleHoverVertex(Vector3 position, float radius, float isSelected = 0)
     {
         public Vector3 Position = position;
-        public Vector4 Color = color;
-        public float Radius = radius;
-
-        /// <summary>
-        /// float value indicating whether the vertex is visible or not. 1.0f is visible, 0.0f is not visible.
-        /// </summary>
-        public float IsVisible = isVisible;
-
-        /// <summary>
-        /// float value indicating whether the mouse is currently over the text object. 1.0f is true, 0.0f is false.
-        /// </summary>
-        public float IsMouseOver = isMouseOver;
-
-        /// <summary>
-        /// float value indicating whether the line is currently selected. 1.0f is true, 0.0f is false.
-        /// </summary>
+        public float PointMarkerRadiusWorld = radius;
         public float IsSelected = isSelected;
-
-        public void SetIsMouseOver(bool isMouseOver)
-        {
-            IsMouseOver = isMouseOver ? 1 : 0;
-        }
-
-        public void SetIsSelected(bool isSelected)
-        {
-            IsSelected = isSelected ? 1 : 0;
-        }
     }
     [StructLayout(LayoutKind.Sequential)]
     public struct CogoPointGlowSettingsBuffer
     {
-        public float GlowOffset;
-        private Vector3 Padding;
+        public float GlowRadiusPixels;
+        private Vector3 padding;
+        public Vector2 ViewportSize;
+        private Vector2 padding2;
         public Vector4 HoverColor;
         public Vector4 SelectedColor;
         public Vector4 SelectedMouseOverColor;
