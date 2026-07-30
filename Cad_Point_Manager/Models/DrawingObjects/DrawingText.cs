@@ -22,7 +22,8 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         public int EndTextVertexIndex { get; set; }
         public Vector3 Position { get; set; }
         public float Rotation { get; set; } = 0;
-        public Enums.TextAttachmentPoint AttachmentPoint { get; set; }
+        public TextAttachmentPoint AttachmentPoint { get; set; }
+        public TextAlignment TextAlignment { get; set; } = TextAlignment.Left;
         public Vector2 AttachmentOffset { get; set; } = new Vector2(0, 0);
         public float TextHeightScaleFactor { get; set; } = 1.0f;
 

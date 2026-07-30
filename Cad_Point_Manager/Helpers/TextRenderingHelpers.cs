@@ -7,7 +7,6 @@ using SharpDX.Direct2D1;
 using SharpDX.DirectWrite;
 using SharpDX.Mathematics.Interop;
 using System.Collections.Concurrent;
-using static Cad_Point_Manager.Common.Enums;
 
 namespace Cad_Point_Manager.Helpers
 {
@@ -164,36 +163,36 @@ namespace Cad_Point_Manager.Helpers
             return vertices;
         }
 
-        public static Enums.TextAttachmentPoint GetAttachmentPoint(MTextAttachmentPoint mTextAttachment)
+        public static TextAttachmentPoint GetAttachmentPoint(MTextAttachmentPoint mTextAttachment)
         {
             return mTextAttachment switch
             {
-                MTextAttachmentPoint.TopLeft => Enums.TextAttachmentPoint.TopLeft,
-                MTextAttachmentPoint.TopCenter => Enums.TextAttachmentPoint.TopCenter,
-                MTextAttachmentPoint.TopRight => Enums.TextAttachmentPoint.TopRight,
-                MTextAttachmentPoint.MiddleLeft => Enums.TextAttachmentPoint.MiddleLeft,
-                MTextAttachmentPoint.MiddleCenter => Enums.TextAttachmentPoint.MiddleCenter,
-                MTextAttachmentPoint.MiddleRight => Enums.TextAttachmentPoint.MiddleRight,
-                MTextAttachmentPoint.BottomLeft => Enums.TextAttachmentPoint.BottomLeft,
-                MTextAttachmentPoint.BottomCenter => Enums.TextAttachmentPoint.BottomCenter,
-                MTextAttachmentPoint.BottomRight => Enums.TextAttachmentPoint.BottomRight,
-                _ => Enums.TextAttachmentPoint.MiddleCenter,
+                MTextAttachmentPoint.TopLeft => TextAttachmentPoint.TopLeft,
+                MTextAttachmentPoint.TopCenter => TextAttachmentPoint.TopCenter,
+                MTextAttachmentPoint.TopRight => TextAttachmentPoint.TopRight,
+                MTextAttachmentPoint.MiddleLeft => TextAttachmentPoint.MiddleLeft,
+                MTextAttachmentPoint.MiddleCenter => TextAttachmentPoint.MiddleCenter,
+                MTextAttachmentPoint.MiddleRight => TextAttachmentPoint.MiddleRight,
+                MTextAttachmentPoint.BottomLeft => TextAttachmentPoint.BottomLeft,
+                MTextAttachmentPoint.BottomCenter => TextAttachmentPoint.BottomCenter,
+                MTextAttachmentPoint.BottomRight => TextAttachmentPoint.BottomRight,
+                _ => TextAttachmentPoint.MiddleCenter,
             };
         }
-        public static Enums.TextAttachmentPoint GetAttachmentPoint(netDxf.Entities.TextAlignment mTextAttachment)
+        public static TextAttachmentPoint GetAttachmentPoint(netDxf.Entities.TextAlignment mTextAttachment)
         {
             return mTextAttachment switch
             {
-                netDxf.Entities.TextAlignment.TopLeft => Enums.TextAttachmentPoint.TopLeft,
-                netDxf.Entities.TextAlignment.TopCenter => Enums.TextAttachmentPoint.TopCenter,
-                netDxf.Entities.TextAlignment.TopRight => Enums.TextAttachmentPoint.TopRight,
-                netDxf.Entities.TextAlignment.MiddleLeft => Enums.TextAttachmentPoint.MiddleLeft,
-                netDxf.Entities.TextAlignment.MiddleCenter => Enums.TextAttachmentPoint.MiddleCenter,
-                netDxf.Entities.TextAlignment.MiddleRight => Enums.TextAttachmentPoint.MiddleRight,
-                netDxf.Entities.TextAlignment.BottomLeft => Enums.TextAttachmentPoint.BottomLeft,
-                netDxf.Entities.TextAlignment.BottomCenter => Enums.TextAttachmentPoint.BottomCenter,
-                netDxf.Entities.TextAlignment.BottomRight => Enums.TextAttachmentPoint.BottomRight,
-                _ => Enums.TextAttachmentPoint.MiddleCenter,
+                netDxf.Entities.TextAlignment.TopLeft => TextAttachmentPoint.TopLeft,
+                netDxf.Entities.TextAlignment.TopCenter => TextAttachmentPoint.TopCenter,
+                netDxf.Entities.TextAlignment.TopRight => TextAttachmentPoint.TopRight,
+                netDxf.Entities.TextAlignment.MiddleLeft => TextAttachmentPoint.MiddleLeft,
+                netDxf.Entities.TextAlignment.MiddleCenter => TextAttachmentPoint.MiddleCenter,
+                netDxf.Entities.TextAlignment.MiddleRight => TextAttachmentPoint.MiddleRight,
+                netDxf.Entities.TextAlignment.BottomLeft => TextAttachmentPoint.BottomLeft,
+                netDxf.Entities.TextAlignment.BottomCenter => TextAttachmentPoint.BottomCenter,
+                netDxf.Entities.TextAlignment.BottomRight => TextAttachmentPoint.BottomRight,
+                _ => TextAttachmentPoint.MiddleCenter,
             };
         }
 

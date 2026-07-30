@@ -13,7 +13,7 @@ namespace Cad_Point_Manager.Models.HitTesting
         private const float _boundsSize = 1.0f;
 
         private Point _position;
-        private Enums.SignificantPointType _pointType;
+        private SignificantPointType _pointType;
         #endregion
 
         #region Properties
@@ -26,7 +26,7 @@ namespace Cad_Point_Manager.Models.HitTesting
                 OnPropertyChanged(nameof(Position));
             }
         }
-        public Enums.SignificantPointType PointType
+        public SignificantPointType PointType
         {
             get { return _pointType; }
             set
@@ -40,7 +40,7 @@ namespace Cad_Point_Manager.Models.HitTesting
         #endregion
 
         #region Constructors
-        public HitTestablePoint(Point position, Enums.SignificantPointType pointType)
+        public HitTestablePoint(Point position, SignificantPointType pointType)
         {
             Position = position;
             PointType = pointType;

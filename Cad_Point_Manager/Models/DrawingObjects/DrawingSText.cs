@@ -12,7 +12,6 @@ using SharpDX.Direct2D1;
 using SharpDX.DirectWrite;
 using SharpDX.Mathematics.Interop;
 using System.Diagnostics;
-using static Cad_Point_Manager.Common.Enums;
 using Point = System.Windows.Point;
 
 namespace Cad_Point_Manager.Models.DrawingObjects

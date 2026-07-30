@@ -8,11 +8,11 @@ namespace Cad_Point_Manager.Helpers
 {
     public static class GeometryHelpers
     {
-        public static List<(Enums.SignificantPointType pointType, Vector position)> GetSignificantPointsList(List<DrawingSegment> segments)
+        public static List<(SignificantPointType pointType, Vector position)> GetSignificantPointsList(List<DrawingSegment> segments)
         {
-            var allPoints = new ConcurrentBag<(Enums.SignificantPointType, Vector)>();
+            var allPoints = new ConcurrentBag<(SignificantPointType, Vector)>();
 
-            Parallel.ForEach(Enumerable.Range(0, segments.Count), () => new List<(Enums.SignificantPointType, Vector)>(),
+            Parallel.ForEach(Enumerable.Range(0, segments.Count), () => new List<(SignificantPointType, Vector)>(),
                 (i, state, localList) =>
                 {
                     var segment1 = segments[i];
@@ -21,15 +21,15 @@ namespace Cad_Point_Manager.Helpers
                     {
                         case DrawingLine line:
                             localList.AddRange(new[] {
-                                (Enums.SignificantPointType.EndPoint, line.Start.ToVector()),
-                                (Enums.SignificantPointType.EndPoint, line.End.ToVector()),
-                                (Enums.SignificantPointType.MidPoint, line.MidPoint.ToVector()) });
+                                (SignificantPointType.EndPoint, line.Start.ToVector()),
+                                (SignificantPointType.EndPoint, line.End.ToVector()),
+                                (SignificantPointType.MidPoint, line.MidPoint.ToVector()) });
                             break;
                         case DrawingArc arc:
                             localList.AddRange(new[] {
-                                (Enums.SignificantPointType.EndPoint, arc.Start.ToVector()),
-                                (Enums.SignificantPointType.EndPoint, arc.End.ToVector()),
-                                (Enums.SignificantPointType.MidPoint, arc.MidPoint.ToVector()) });
+                                (SignificantPointType.EndPoint, arc.Start.ToVector()),
+                                (SignificantPointType.EndPoint, arc.End.ToVector()),
+                                (SignificantPointType.MidPoint, arc.MidPoint.ToVector()) });
                             break;
                     }
 
@@ -42,7 +42,7 @@ namespace Cad_Point_Manager.Helpers
                         {
                             foreach (var vector in intersectionPoints)
                             {
-                                localList.Add((Enums.SignificantPointType.Intersection, vector));
+                                localList.Add((SignificantPointType.Intersection, vector));
                             }
                         }
                     }

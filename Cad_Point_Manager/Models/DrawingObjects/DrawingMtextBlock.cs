@@ -6,6 +6,7 @@ using netDxf.Entities;
 using SharpDX;
 using System.Diagnostics;
 using Point = System.Windows.Point;
+using TextAlignment = Cad_Point_Manager.Common.TextAlignment;
 
 namespace Cad_Point_Manager.Models.DrawingObjects
 {
@@ -26,7 +27,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         public float Rotation { get; set; } = 0;
         public int NumberOfRows => Rows.Count;
         public TextBox TextBox { get; set; } = TextBox.Empty;
-        public Enums.TextAttachmentPoint AttachmentPoint { get; set; }
+        public TextAttachmentPoint AttachmentPoint { get; set; }
         public Vector3 AttachmentOffset { get; set; } = Vector3.Zero; // This will be used to offset the attachment point from the base position
         public bool AllowsWrapping { get; set; } // This can be used to determine whether to allow text wrapping when adding segments
         #endregion
@@ -85,22 +86,22 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
                 switch (AttachmentPoint)
                 {
-                    case Enums.TextAttachmentPoint.TopLeft:
+                    case TextAttachmentPoint.TopLeft:
                         {
                             AttachmentOffset = new(0, -firstRowHeight, 0);
                             break;
                         }
-                    case Enums.TextAttachmentPoint.TopCenter:
+                    case TextAttachmentPoint.TopCenter:
                         {
                             AttachmentOffset = new(-width / 2, -firstRowHeight, 0);
                             break;
                         }
-                    case Enums.TextAttachmentPoint.TopRight:
+                    case TextAttachmentPoint.TopRight:
                         {
                             AttachmentOffset = new(-width, -firstRowHeight, 0);
                             break;
                         }
-                    case Enums.TextAttachmentPoint.MiddleLeft:
+                    case TextAttachmentPoint.MiddleLeft:
                         {
                             if (_rows.Count > 1)
                             {
@@ -112,7 +113,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                             }
                             break;
                         }
-                    case Enums.TextAttachmentPoint.MiddleCenter:
+                    case TextAttachmentPoint.MiddleCenter:
                         {
                             if (_rows.Count > 1)
                             {
@@ -124,7 +125,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                             }
                             break;
                         }
-                    case Enums.TextAttachmentPoint.MiddleRight:
+                    case TextAttachmentPoint.MiddleRight:
                         {
                             if (_rows.Count > 1)
                             {
@@ -136,7 +137,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                             }
                             break;
                         }
-                    case Enums.TextAttachmentPoint.BottomLeft:
+                    case TextAttachmentPoint.BottomLeft:
                         {
                             if (_rows.Count > 1)
                             {
@@ -148,7 +149,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                             }
                             break;
                         }
-                    case Enums.TextAttachmentPoint.BottomCenter:
+                    case TextAttachmentPoint.BottomCenter:
                         {
                             if (_rows.Count > 1)
                             {
@@ -160,7 +161,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                             }
                             break;
                         }
-                    case Enums.TextAttachmentPoint.BottomRight:
+                    case TextAttachmentPoint.BottomRight:
                         {
                             if (_rows.Count > 1)
                             {
@@ -178,11 +179,11 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
                 foreach (var row in _rows)
                 {
-                    if (row.TextAlignment == Enums.TextAlignment.Right)
+                    if (row.TextAlignment == TextAlignment.Right)
                     {
                         row.UpdateTranslate(new Vector3((TextBox.Width - row.Width).ToFloat(), 0, 0));
                     }
-                    if (row.TextAlignment == Enums.TextAlignment.Center)
+                    if (row.TextAlignment == TextAlignment.Center)
                     {
                         row.UpdateTranslate(new Vector3((TextBox.Width - row.Width).ToFloat() / 2, 0, 0));
                     }
@@ -194,47 +195,47 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         {
             switch (AttachmentPoint)
             {
-                case Enums.TextAttachmentPoint.TopLeft:
+                case TextAttachmentPoint.TopLeft:
                     TextBox = new TextBox(new Point(BasePosition.X, BasePosition.Y), new Point(BasePosition.X, BasePosition.Y),
                         new Point(BasePosition.X + MaxWidth, BasePosition.Y - textBoxHeight));
                     break;
 
-                case Enums.TextAttachmentPoint.TopCenter:
+                case TextAttachmentPoint.TopCenter:
                     TextBox = new TextBox(new Point(BasePosition.X, BasePosition.Y), new Point(BasePosition.X - MaxWidth * 0.5f, BasePosition.Y),
                         new Point(BasePosition.X + MaxWidth * 0.5f, BasePosition.Y - textBoxHeight));
                     break;
 
-                case Enums.TextAttachmentPoint.TopRight:
+                case TextAttachmentPoint.TopRight:
                     TextBox = new TextBox(new Point(BasePosition.X, BasePosition.Y), new Point(BasePosition.X - MaxWidth, BasePosition.Y),
                         new Point(BasePosition.X, BasePosition.Y - textBoxHeight));
                     break;
 
-                case Enums.TextAttachmentPoint.MiddleLeft:
+                case TextAttachmentPoint.MiddleLeft:
                     TextBox = new TextBox(new Point(BasePosition.X, BasePosition.Y), new Point(BasePosition.X, BasePosition.Y + textBoxHeight * 0.5f),
                         new Point(BasePosition.X + MaxWidth, BasePosition.Y - textBoxHeight * 0.5f));
                     break;
 
-                case Enums.TextAttachmentPoint.MiddleCenter:
+                case TextAttachmentPoint.MiddleCenter:
                     TextBox = new TextBox(new Point(BasePosition.X, BasePosition.Y), new Point(BasePosition.X - MaxWidth * 0.5f, BasePosition.Y + textBoxHeight * 0.5f),
                         new Point(BasePosition.X + MaxWidth * 0.5f, BasePosition.Y - textBoxHeight * 0.5f));
                     break;
 
-                case Enums.TextAttachmentPoint.MiddleRight:
+                case TextAttachmentPoint.MiddleRight:
                     TextBox = new TextBox(new Point(BasePosition.X, BasePosition.Y), new Point(BasePosition.X - MaxWidth, BasePosition.Y + textBoxHeight * 0.5f),
                         new Point(BasePosition.X, BasePosition.Y - textBoxHeight * 0.5f));
                     break;
 
-                case Enums.TextAttachmentPoint.BottomLeft:
+                case TextAttachmentPoint.BottomLeft:
                     TextBox = new TextBox(new Point(BasePosition.X, BasePosition.Y), new Point(BasePosition.X, BasePosition.Y + textBoxHeight),
                         new Point(BasePosition.X + MaxWidth, BasePosition.Y));
                     break;
 
-                case Enums.TextAttachmentPoint.BottomCenter:
+                case TextAttachmentPoint.BottomCenter:
                     TextBox = new TextBox(new Point(BasePosition.X, BasePosition.Y), new Point(BasePosition.X - MaxWidth * 0.5f, BasePosition.Y + textBoxHeight),
                         new Point(BasePosition.X + MaxWidth * 0.5f, BasePosition.Y));
                     break;
 
-                case Enums.TextAttachmentPoint.BottomRight:
+                case TextAttachmentPoint.BottomRight:
                     TextBox = new TextBox(new Point(BasePosition.X, BasePosition.Y), new Point(BasePosition.X - MaxWidth, BasePosition.Y + textBoxHeight),
                         new Point(BasePosition.X, BasePosition.Y));
                     break;

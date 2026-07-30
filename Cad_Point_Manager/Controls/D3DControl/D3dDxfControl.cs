@@ -1,4 +1,5 @@
-﻿using Cad_Point_Manager.Common.Collections;
+﻿using Cad_Point_Manager.Common;
+using Cad_Point_Manager.Common.Collections;
 using Cad_Point_Manager.Controls.D3DControl.Buffers;
 using Cad_Point_Manager.Controls.D3DControl.Rendering.Msdf;
 using Cad_Point_Manager.Controls.D3DControl.Rendering.Text;
@@ -2234,7 +2235,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             switch (CadManager.SnapSelectionMode)
             {
-                case Common.Enums.SelectionMode.Geometries:
+                case SelectionMode.Geometries:
                     {
                         SelectedGeometries.DeferNotifications();
                         var newSel = new HashSet<DrawingGeometry>(_mouseOverHitTestableObjects.OfType<DrawingGeometry>());
@@ -2262,7 +2263,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                         break;
                     }
 
-                case Common.Enums.SelectionMode.CogoPoints:
+                case SelectionMode.CogoPoints:
                     {
                         SelectedCogoPoints.DeferNotifications();
 
@@ -2309,7 +2310,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                         break;
                     }
 
-                case Common.Enums.SelectionMode.Points:
+                case SelectionMode.Points:
                     {
                         if (SnappedHitTestablePoint is not null)
                         {
@@ -2382,7 +2383,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             }
             if (e.Key == Key.Delete)
             {
-                if (CadManager.SnapSelectionMode == Common.Enums.SelectionMode.CogoPoints &&
+                if (CadManager.SnapSelectionMode == SelectionMode.CogoPoints &&
                     SelectedCogoPoints.Count > 0)
                 {
                     DeleteCogoPoints(SelectedCogoPoints.ToList());
@@ -2591,16 +2592,16 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 {
                     switch (CadManager.SnapSelectionMode)
                     {
-                        case Common.Enums.SelectionMode.Points:
+                        case SelectionMode.Points:
                             RunPointsHitTest(_hitTestCancellationTokenSource.Token);
                             break;
 
-                        case Common.Enums.SelectionMode.Geometries:
+                        case SelectionMode.Geometries:
                             if (IsDragging) { RunDragGeometriesHittest(_hitTestCancellationTokenSource.Token); }
                             else { RunGeometriesHitTest(_hitTestCancellationTokenSource.Token); }
                             break;
 
-                        case Common.Enums.SelectionMode.CogoPoints:
+                        case SelectionMode.CogoPoints:
                             if (_cogoPointTextBeingMoved) { break; }
                             else
                             {

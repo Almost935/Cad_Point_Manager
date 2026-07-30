@@ -54,17 +54,30 @@ namespace Cad_Point_Manager.Helpers
         {
             return e switch
             {
-                Line line => new DrawingLine(line, layer, color, colorType, ownerBlock is not null, ownerBlock),
-                Arc arc => new DrawingArc(arc, layer, color, colorType, ownerBlock is not null, ownerBlock),
-                Polyline2D polyline2D => PolylineResolver(polyline2D, layer, color, colorType, ownerBlock, isPartOfDimension),
-                Polyline3D polyline3D => new DrawingPolyline(polyline3D, layer, color, colorType, ownerBlock is not null, ownerBlock),
-                Circle circle => new DrawingCircle(circle, layer, color, colorType, ownerBlock is not null, ownerBlock),
-                Insert block => new DrawingBlock(block, layer, color, colorType, ownerBlock is not null, ownerBlock, isPartOfDimension: isPartOfDimension),
-                MText mtext => new DrawingMtext(mtext, layer, color, colorType, !isPartOfDimension, ownerBlock is not null, ownerBlock),
-                Text text => new DrawingSText(text, layer, color, colorType, ownerBlock is not null, ownerBlock),
-                Spline spline => new DrawingSpline(spline, layer, color, colorType, ownerBlock is not null, ownerBlock),
-                Dimension dimension => new DrawingDimension(dimension, layer, color, colorType, ownerBlock is not null, ownerBlock),
-                Solid solid => new DrawingSolid(solid, layer, color, colorType, ownerBlock is not null, ownerBlock),
+                Line line => new DrawingLine(
+                    line, layer, color, colorType, ownerBlock is not null, ownerBlock),
+                Arc arc => new DrawingArc(
+                    arc, layer, color, colorType, ownerBlock is not null, ownerBlock),
+                Polyline2D polyline2D => PolylineResolver(
+                    polyline2D, layer, color, colorType, ownerBlock, isPartOfDimension),
+                Polyline3D polyline3D => new DrawingPolyline(
+                    polyline3D, layer, color, colorType, ownerBlock is not null, ownerBlock),
+                Circle circle => new DrawingCircle(
+                    circle, layer, color, colorType, ownerBlock is not null, ownerBlock),
+                Insert block => new DrawingBlock(
+                    block, layer, color, colorType, ownerBlock is not null, ownerBlock, isPartOfDimension: isPartOfDimension),
+                MText mtext => new DrawingMtext(
+                    mtext, layer, color, colorType, !isPartOfDimension, 
+                    TextRenderingHelpers.GetAttachmentPoint(mtext.AttachmentPoint),
+                    Common.TextAlignment.Left, ownerBlock is not null, ownerBlock),
+                Text text => new DrawingSText(
+                    text, layer, color, colorType, ownerBlock is not null, ownerBlock),
+                Spline spline => new DrawingSpline(
+                    spline, layer, color, colorType, ownerBlock is not null, ownerBlock),
+                Dimension dimension => new DrawingDimension(
+                    dimension, layer, color, colorType, ownerBlock is not null, ownerBlock),
+                Solid solid => new DrawingSolid(
+                    solid, layer, color, colorType, ownerBlock is not null, ownerBlock),
                 _ => null,
             };
         }

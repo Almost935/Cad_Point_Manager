@@ -11,19 +11,19 @@ namespace Cad_Point_Manager.Converters
         {
             if (values.Length != 2 ||
                 values[0] is not string tag ||
-                values[1] is not Enums.SelectionMode selectionMode)
+                values[1] is not SelectionMode selectionMode)
             {
                 return DependencyProperty.UnsetValue;
             }
 
             if (tag.Contains("Point"))
             {
-                if (selectionMode == Enums.SelectionMode.Points) { return true; }
+                if (selectionMode == SelectionMode.Points) { return true; }
                 return false;
             }
             else
             {
-                if (selectionMode == Enums.SelectionMode.Geometries) { return true; }
+                if (selectionMode == SelectionMode.Geometries) { return true; }
                 return false;
             }
         }
@@ -31,7 +31,7 @@ namespace Cad_Point_Manager.Converters
         public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
         {
             // ConvertBack is only needed if you want two-way binding.
-            if (value is bool isChecked && isChecked && parameter is Enums.SelectionMode selectionMode)
+            if (value is bool isChecked && isChecked && parameter is SelectionMode selectionMode)
             {
                 return new object[] { Binding.DoNothing, selectionMode };
             }

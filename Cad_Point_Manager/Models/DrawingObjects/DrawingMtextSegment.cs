@@ -15,6 +15,7 @@ using System.Windows;
 using FontStretch = SharpDX.DirectWrite.FontStretch;
 using FontStyle = SharpDX.DirectWrite.FontStyle;
 using FontWeight = SharpDX.DirectWrite.FontWeight;
+using TextAlignment = Cad_Point_Manager.Common.TextAlignment;
 
 namespace Cad_Point_Manager.Models.DrawingObjects
 {
@@ -35,7 +36,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         public bool IsStrikeOut { get; set; } = false;
         public bool IsOverStrike { get; set; } = false;
         public bool IsNewLine { get; set; } = false;
-        public Enums.TextAlignment TextAlignment { get; set; }
+        public TextAlignment TextAlignment { get; set; }
         public float SpaceWidth { get; set; }
         public float XOffset { get; set; } = 0;
         public float YOffset { get; set; } = 0;
@@ -48,7 +49,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         #region Constructors
         public DrawingMtextSegment(DrawingMtext drawingMtext, ObjectLayer layer, string text, Vector4 objectColor, ColorType colorType, Vector3 position,
             float rotation, float fontHeight, string fontFamilyName, bool isItalic, bool isBold, bool isUnderlined, bool isStrikeOut,
-            bool isOverStrike, bool isNewLine, float maxWidth, TextRenderStyle textRenderStyle, Enums.TextAlignment textAlignment = Enums.TextAlignment.Left,
+            bool isOverStrike, bool isNewLine, float maxWidth, TextRenderStyle textRenderStyle, TextAlignment textAlignment = TextAlignment.Left,
             bool isPartOfBlock = false, DrawingBlock block = null)
         {
             Type = DrawingObjectType.DrawingMtextSegment;

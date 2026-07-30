@@ -1,5 +1,7 @@
-﻿using Cad_Point_Manager.Models.DrawingObjects;
+﻿using Cad_Point_Manager.Common;
+using Cad_Point_Manager.Models.DrawingObjects;
 using SharpDX;
+using System.Diagnostics;
 
 namespace Cad_Point_Manager.Models.DxfImport
 {
@@ -48,6 +50,14 @@ namespace Cad_Point_Manager.Models.DxfImport
         UnderlineAllText = 8
     }
 
+    public enum TextAttachmentSide
+    {
+        Left,
+        Right,
+        Center
+    }
+
+
     public class ParsedMLeader : TagContainer
     {
         public ParsedMLeaderContext Context { get; } = new();
@@ -85,9 +95,7 @@ namespace Cad_Point_Manager.Models.DxfImport
         /// Gets the text alignment type.
         /// 1 = Left, 2 = Center, 3 = Right
         /// </summary>
-        public TextAlignmentType TextAlignmentPoint => (TextAlignmentType)(GetInt(179) ?? 0);
-
-        public int TextAlignmentType => GetInt(175) ?? 0;
+        public TextAlignmentType TextAlignmentType => (TextAlignmentType)(GetInt(179) ?? 0);
 
         public (Vector4 color, ColorType colorType) Color
         {
@@ -114,6 +122,196 @@ namespace Cad_Point_Manager.Models.DxfImport
                 }
 
                 return (new Vector4(0, 0, 0, 1), ColorType.ByLayer);
+            }
+        }
+
+        public TextAttachmentSide TextAttachmentSide
+        {
+            get
+            {
+                var leader = Context.Leaders.FirstOrDefault();
+                if (leader == null)
+                    return TextAttachmentSide.Right;
+
+                return leader.LastLeaderLinePoint.X < Context.TextLocation.X
+                    ? TextAttachmentSide.Left
+                    : TextAttachmentSide.Right;
+            }
+        }
+
+        public TextAttachmentPoint TextAttachment
+        {
+            get
+            {
+                var leader = Context.Leaders.FirstOrDefault();
+                if (leader == null)
+                {
+                    return TextAttachmentPoint.MiddleLeft;
+                }
+
+                var textAttachmentSide = TextAttachmentSide;
+                var textAlignmentType = TextAlignmentType;
+
+                if (leader.LastLeaderLinePoint.X < Context.TextLocation.X)
+                {
+                    switch (TextLeftAttachmentType)
+                    {
+                        case TextAttachmentType.TopOfTopLine:
+                            if (textAlignmentType == TextAlignmentType.Left)
+                                return TextAttachmentPoint.TopLeft;
+                            else if (textAlignmentType == TextAlignmentType.Center)
+                                return TextAttachmentPoint.TopCenter;
+                            else
+                                return TextAttachmentPoint.TopRight;
+
+                        case TextAttachmentType.MiddleOfTopLine:
+                            if (textAlignmentType == TextAlignmentType.Left)
+                                return TextAttachmentPoint.TopLeft;
+                            else if (textAlignmentType == TextAlignmentType.Center)
+                                return TextAttachmentPoint.TopCenter;
+                            else
+                                return TextAttachmentPoint.TopRight;
+
+                        case TextAttachmentType.BottomOfTopLine:
+                            if (textAlignmentType == TextAlignmentType.Left)
+                                return TextAttachmentPoint.TopLeft;
+                            else if (textAlignmentType == TextAlignmentType.Center)
+                                return TextAttachmentPoint.TopCenter;
+                            else
+                                return TextAttachmentPoint.TopRight;
+
+                        case TextAttachmentType.UnderlineTopLine:
+                            if (textAlignmentType == TextAlignmentType.Left)
+                                return TextAttachmentPoint.TopLeft;
+                            else if (textAlignmentType == TextAlignmentType.Center)
+                                return TextAttachmentPoint.TopCenter;
+                            else
+                                return TextAttachmentPoint.TopRight;
+
+                        case TextAttachmentType.MiddleOfText:
+                            if (textAlignmentType == TextAlignmentType.Left)
+                                return TextAttachmentPoint.MiddleLeft;
+                            else if (textAlignmentType == TextAlignmentType.Center)
+                                return TextAttachmentPoint.MiddleCenter;
+                            else
+                                return TextAttachmentPoint.MiddleRight;
+
+                        case TextAttachmentType.MiddleOfBottomLine:
+                            if (textAlignmentType == TextAlignmentType.Left)
+                                return TextAttachmentPoint.BottomLeft;
+                            else if (textAlignmentType == TextAlignmentType.Center)
+                                return TextAttachmentPoint.BottomCenter;
+                            else
+                                return TextAttachmentPoint.BottomRight;
+
+                        case TextAttachmentType.BottomOfBottomLine:
+                            if (textAlignmentType == TextAlignmentType.Left)
+                                return TextAttachmentPoint.BottomLeft;
+                            else if (textAlignmentType == TextAlignmentType.Center)
+                                return TextAttachmentPoint.BottomCenter;
+                            else
+                                return TextAttachmentPoint.BottomRight;
+
+                        case TextAttachmentType.UnderlineBottomLine:
+                            if (textAlignmentType == TextAlignmentType.Left)
+                                return TextAttachmentPoint.BottomLeft;
+                            else if (textAlignmentType == TextAlignmentType.Center)
+                                return TextAttachmentPoint.BottomCenter;
+                            else
+                                return TextAttachmentPoint.BottomRight;
+
+                        case TextAttachmentType.UnderlineAllText:
+                            if (textAlignmentType == TextAlignmentType.Left)
+                                return TextAttachmentPoint.MiddleLeft;
+                            else if (textAlignmentType == TextAlignmentType.Center)
+                                return TextAttachmentPoint.MiddleCenter;
+                            else
+                                return TextAttachmentPoint.MiddleRight;
+
+                        default:
+                            return TextAttachmentPoint.MiddleLeft;
+                    }
+                }
+                else
+                {
+                    switch (TextRightAttachmentType)
+                    {
+                        case TextAttachmentType.TopOfTopLine:
+                            if (textAlignmentType == TextAlignmentType.Left)
+                                return TextAttachmentPoint.TopLeft;
+                            else if (textAlignmentType == TextAlignmentType.Center)
+                                return TextAttachmentPoint.TopCenter;
+                            else
+                                return TextAttachmentPoint.TopRight;
+
+                        case TextAttachmentType.MiddleOfTopLine:
+                            if (textAlignmentType == TextAlignmentType.Left)
+                                return TextAttachmentPoint.TopLeft;
+                            else if (textAlignmentType == TextAlignmentType.Center)
+                                return TextAttachmentPoint.TopCenter;
+                            else
+                                return TextAttachmentPoint.TopRight;
+
+                        case TextAttachmentType.BottomOfTopLine:
+                            if (textAlignmentType == TextAlignmentType.Left)
+                                return TextAttachmentPoint.TopLeft;
+                            else if (textAlignmentType == TextAlignmentType.Center)
+                                return TextAttachmentPoint.TopCenter;
+                            else
+                                return TextAttachmentPoint.TopRight;
+
+                        case TextAttachmentType.UnderlineTopLine:
+                            if (textAlignmentType == TextAlignmentType.Left)
+                                return TextAttachmentPoint.TopLeft;
+                            else if (textAlignmentType == TextAlignmentType.Center)
+                                return TextAttachmentPoint.TopCenter;
+                            else
+                                return TextAttachmentPoint.TopRight;
+
+                        case TextAttachmentType.MiddleOfText:
+                            if (textAlignmentType == TextAlignmentType.Left)
+                                return TextAttachmentPoint.MiddleLeft;
+                            else if (textAlignmentType == TextAlignmentType.Center)
+                                return TextAttachmentPoint.MiddleCenter;
+                            else
+                                return TextAttachmentPoint.MiddleRight;
+
+                        case TextAttachmentType.MiddleOfBottomLine:
+                            if (textAlignmentType == TextAlignmentType.Left)
+                                return TextAttachmentPoint.BottomLeft;
+                            else if (textAlignmentType == TextAlignmentType.Center)
+                                return TextAttachmentPoint.BottomCenter;
+                            else
+                                return TextAttachmentPoint.BottomRight;
+
+                        case TextAttachmentType.BottomOfBottomLine:
+                            if (textAlignmentType == TextAlignmentType.Left)
+                                return TextAttachmentPoint.BottomLeft;
+                            else if (textAlignmentType == TextAlignmentType.Center)
+                                return TextAttachmentPoint.BottomCenter;
+                            else
+                                return TextAttachmentPoint.BottomRight;
+
+                        case TextAttachmentType.UnderlineBottomLine:
+                            if (textAlignmentType == TextAlignmentType.Left)
+                                return TextAttachmentPoint.BottomLeft;
+                            else if (textAlignmentType == TextAlignmentType.Center)
+                                return TextAttachmentPoint.BottomCenter;
+                            else
+                                return TextAttachmentPoint.BottomRight;
+
+                        case TextAttachmentType.UnderlineAllText:
+                            if (textAlignmentType == TextAlignmentType.Left)
+                                return TextAttachmentPoint.MiddleLeft;
+                            else if (textAlignmentType == TextAlignmentType.Center)
+                                return TextAttachmentPoint.MiddleCenter;
+                            else
+                                return TextAttachmentPoint.MiddleRight;
+
+                        default:
+                            return TextAttachmentPoint.MiddleLeft;
+                    }
+                }
             }
         }
     }
@@ -250,7 +448,6 @@ namespace Cad_Point_Manager.Models.DxfImport
         public string TextStyleHandle => GetString(342) ?? "";
         public TextAttachmentType TextLeftAttachmentType => (TextAttachmentType)(GetInt(174) ?? 0);
         public TextAttachmentType TextRightAttachmentType => (TextAttachmentType)(GetInt(178) ?? 0);
-        public TextAlignmentType TextAlignmentType => (TextAlignmentType)(GetInt(176) ?? 0);
 
         public ArrowheadType ArrowheadType { get; set; }
     }

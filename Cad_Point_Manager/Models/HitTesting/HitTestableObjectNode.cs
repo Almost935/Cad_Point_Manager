@@ -103,7 +103,7 @@ namespace Cad_Point_Manager.Models.HitTesting
             }
             return geometries;
         }
-        public List<(Enums.SignificantPointType pointType, double distance, Vector2 coordinate)> HitTestSignificantPoints(Point p, Rect hitTestRange)
+        public List<(SignificantPointType pointType, double distance, Vector2 coordinate)> HitTestSignificantPoints(Point p, Rect hitTestRange)
         {
             Vector2 pos = new((float)p.X, (float)p.Y);
             ConcurrentBag<DrawingSegment> segments = [];
@@ -161,7 +161,7 @@ namespace Cad_Point_Manager.Models.HitTesting
 
             var coords = GeometryHelpers.GetSignificantPointsList(segments.ToList());
 
-            List<(Enums.SignificantPointType pointType, double distance, Vector2 coordinate)> hits = [];
+            List<(SignificantPointType pointType, double distance, Vector2 coordinate)> hits = [];
             foreach (var (pointType, position) in coords)
             {
                 var vector2Pos = position.ToSharpDXVector2();

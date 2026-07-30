@@ -9,7 +9,7 @@ namespace Cad_Point_Manager.Converters
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            if (value is not Enums.SelectionMode selectionMode ||
+            if (value is not SelectionMode selectionMode ||
                 parameter is not string selectionParam)
             {
                 return Visibility.Collapsed;

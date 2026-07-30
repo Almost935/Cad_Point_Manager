@@ -14,6 +14,7 @@ using System.Windows;
 using Brush = SharpDX.Direct2D1.Brush;
 using FontStyle = netDxf.Tables.FontStyle;
 using Point = System.Windows.Point;
+using TextAlignment = Cad_Point_Manager.Common.TextAlignment;
 using Vector2 = SharpDX.Vector2;
 using Vector3 = SharpDX.Vector3;
 using Vector4 = SharpDX.Vector4;
@@ -35,18 +36,20 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         #endregion
 
         #region Constructor
-        public DrawingMtext(MText mtext, ObjectLayer layer, Vector4 objectColor, ColorType colorType, bool allowsWrapping, bool isPartOfBlock = false, DrawingBlock block = null)
+        public DrawingMtext(MText mtext, ObjectLayer layer, Vector4 objectColor, ColorType colorType, bool allowsWrapping, 
+            TextAttachmentPoint attachmentPoint, TextAlignment textAlignment = TextAlignment.Left, bool isPartOfBlock = false, DrawingBlock block = null)
         {
             Type = DrawingObjectType.DrawingMtext;
             DxfMtext = mtext;
             EntityObject = mtext;
             Layer = layer;
-            ObjectColor = objectColor;
+            ObjectColor = objectColor; 
             ColorType = colorType;
             AllowsWrapping = allowsWrapping;
             IsPartOfBlock = isPartOfBlock;
             DrawingBlock = block;
-            AttachmentPoint = TextRenderingHelpers.GetAttachmentPoint(DxfMtext.AttachmentPoint);
+            AttachmentPoint = attachmentPoint;
+            TextAlignment = textAlignment;
 
             UpdateColor();
             UpdateData();
@@ -237,16 +240,17 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
             string pattern = $@"((\\[LOkoK])|{aciColorPattern}|{trueTypeColorPattern}|{fontPattern}|{heightPattern}|{lineBreakPattern}|{paragraphIndentPattern}|{underlineStartPattern}|{underlineEndPattern}|{overstrikeStartPattern}|{overstrikeEndPattern}|{strikethroughStartPattern}|{strikethroughEndPattern}|{paraAlignLeftPattern}|{paraAlignCenterPattern}|{paraAlignRightPattern}|{paraAlignJustifyPattern}|{paraAlignDistributedPattern}|{alignmentPattern}|{paragraphPropertiesPattern}|[^{{}}\\]+)";
 
-            Enums.TextAlignment baseAlignment;
-            if (AttachmentPoint == Enums.TextAttachmentPoint.TopRight ||
-                AttachmentPoint == Enums.TextAttachmentPoint.MiddleRight ||
-                AttachmentPoint == Enums.TextAttachmentPoint.BottomRight)
-            { baseAlignment = Enums.TextAlignment.Right; }
-            else if (AttachmentPoint == Enums.TextAttachmentPoint.TopCenter ||
-                AttachmentPoint == Enums.TextAttachmentPoint.MiddleCenter ||
-                AttachmentPoint == Enums.TextAttachmentPoint.BottomCenter)
-            { baseAlignment = Enums.TextAlignment.Center; }
-            else { baseAlignment = Enums.TextAlignment.Left; }
+            TextAlignment baseAlignment;
+            if (AttachmentPoint == TextAttachmentPoint.TopRight ||
+                AttachmentPoint == TextAttachmentPoint.MiddleRight ||
+                AttachmentPoint == TextAttachmentPoint.BottomRight)
+            { baseAlignment = TextAlignment.Right; }
+            else if (AttachmentPoint == TextAttachmentPoint.TopCenter ||
+
+                AttachmentPoint == TextAttachmentPoint.MiddleCenter ||
+                AttachmentPoint == TextAttachmentPoint.BottomCenter)
+            { baseAlignment = TextAlignment.Center; }
+            else { baseAlignment = TextAlignment.Left; }
 
             foreach (var text in texts)
             {
@@ -352,23 +356,23 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                     }
                     else if (Regex.IsMatch(value, paraAlignLeftPattern))
                     {
-                        currentSegment.TextAlignment = Enums.TextAlignment.Left;
+                        currentSegment.TextAlignment = TextAlignment.Left;
                     }
                     else if (Regex.IsMatch(value, paraAlignCenterPattern))
                     {
-                        currentSegment.TextAlignment = Enums.TextAlignment.Center;
+                        currentSegment.TextAlignment = TextAlignment.Center;
                     }
                     else if (Regex.IsMatch(value, paraAlignRightPattern))
                     {
-                        currentSegment.TextAlignment = Enums.TextAlignment.Right;
+                        currentSegment.TextAlignment = TextAlignment.Right;
                     }
                     else if (Regex.IsMatch(value, paraAlignJustifyPattern))
                     {
-                        currentSegment.TextAlignment = Enums.TextAlignment.Justified;
+                        currentSegment.TextAlignment = TextAlignment.Justified;
                     }
                     else if (Regex.IsMatch(value, paraAlignDistributedPattern))
                     {
-                        currentSegment.TextAlignment = Enums.TextAlignment.Distributed;
+                        currentSegment.TextAlignment = TextAlignment.Distributed;
                     }
                     else if (Regex.IsMatch(value, alignmentPattern))
                     {
@@ -480,10 +484,10 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         public bool IsBold { get; set; }
         public bool IsItalic { get; set; }
         public bool IsOverstriked { get; set; }
-        public bool IsStrikethrough { get; set; }
+        public bool IsStrikethrough { get; set; } 
         public bool IsUnderlined { get; set; }
         public bool IsNewLine { get; set; }
-        public Enums.TextAlignment TextAlignment { get; set; }
+        public TextAlignment TextAlignment { get; set; }
 
         public bool HasValue => !string.IsNullOrEmpty(Text);
         #endregion
@@ -491,7 +495,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         #region Constructors
         public TextSegmentInformation(string text = "", Vector4? objectColor = null, ColorType colorType = ColorType.ByObject, string font = "Arial",
             double textHeight = 0, bool isBold = false, bool isItalic = false, bool isUnderlined = false, bool isOverstrike = false,
-            bool isStrikethrough = false, bool isNewLine = false, Enums.TextAlignment textAlignment = Enums.TextAlignment.Left)
+            bool isStrikethrough = false, bool isNewLine = false, TextAlignment textAlignment = TextAlignment.Left)
         {
             Text = text;
             ObjectColor = objectColor ?? new Vector4(0, 0, 0, 1);

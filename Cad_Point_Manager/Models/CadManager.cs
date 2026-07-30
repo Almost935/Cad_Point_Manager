@@ -62,7 +62,7 @@ namespace Cad_Point_Manager.Models
         private ICollectionView _pointsView;
         private ICollectionView _groupedPointsView;
         private Size2F _viewportSize = Size2F.Empty;
-        private Enums.SelectionMode _snapSelectionMode = Enums.SelectionMode.CogoPoints;
+        private SelectionMode _snapSelectionMode = SelectionMode.CogoPoints;
         private bool _hitTestingEnabled = true;
         private BatchableObservableCollection<Layout> _layouts = [];
         private ICollectionView _layoutsView;
@@ -246,7 +246,7 @@ namespace Cad_Point_Manager.Models
                 OnPropertyChanged(nameof(ViewportSize));
             }
         }
-        public Enums.SelectionMode SnapSelectionMode
+        public SelectionMode SnapSelectionMode
         {
             get => _snapSelectionMode;
             set
@@ -375,16 +375,6 @@ namespace Cad_Point_Manager.Models
 
             foreach (var mleader in dxfImportResult.MLeaders)
             {
-                //Debug.WriteLine($"\nmleader.Context.Text: {mleader.Context.Text}");
-                //Debug.WriteLine($"mleader.TextAlignmentPoint: {mleader.TextAlignmentPoint}");
-                //Debug.WriteLine($"mleader.TextAlignmentType: {mleader.TextAlignmentType}");
-                //Debug.WriteLine($"mleader.TextLeftAttachmentType:: {mleader.TextLeftAttachmentType}");
-                //Debug.WriteLine($"mleader.TextRightAttachmentType: {mleader.TextRightAttachmentType}");
-                //Debug.WriteLine($"mleader.Context.TextAttachment: {mleader.Context.TextAttachment}");
-                //Debug.WriteLine($"mleader.Style.TextAlignmentType: {mleader.Style.TextAlignmentType}");
-                //Debug.WriteLine($"mleader.TextLeftAttachmentType: {mleader.TextLeftAttachmentType}");
-                //Debug.WriteLine($"mleader.TextRightAttachmentType: {mleader.TextRightAttachmentType}");
-
                 if (dxfImportResult.MLeaderStyles.TryGetValue(mleader.LeaderStyleId, out var style))
                 {
                     mleader.Style = style;
@@ -1182,7 +1172,7 @@ namespace Cad_Point_Manager.Models
             Rect rect = new(p.X - tolerance, p.Y - tolerance, tolerance * 2, tolerance * 2);
             var nodes = HitTestableObjectTree.GetIntersectingNodes(rect);
 
-            List<(Enums.SignificantPointType pointType, double distance, Vector2 vector)> significantPoints = [];
+            List<(SignificantPointType pointType, double distance, Vector2 vector)> significantPoints = [];
             foreach (var node in nodes)
             {
                 significantPoints.AddRange(node.HitTestSignificantPoints(p, rect));

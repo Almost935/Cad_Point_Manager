@@ -14,7 +14,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         #region Properties
         public float Height { get; set; } = 0;
         public float MaxWidth { get; set; }
-        public Enums.TextAlignment TextAlignment { get; set; }
+        public TextAlignment TextAlignment { get; set; }
         public Vector3 BaseRowPosition { get; set; } = Vector3.Zero;
 
         public List<DrawingMtextSegment> Segments => _segments;
@@ -60,7 +60,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         {
             for (int i = 0; i < Segments.Count; i++)
             {
-                var segment = Segments[i];
+                var segment = Segments [i];
                 float rowHeight = segment.TextHeight;
 
                 if (rowHeight > Height) { Height = rowHeight; }
@@ -72,12 +72,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             float currentXOffset = 0;
             for (int i = 0; i < Segments.Count; i++)
             {
-                var segment = Segments[i];
-
-                //if (prevSegment is not null) 
-                //{
-                //    if (prevSegment.TextRenderStyle == Text)
-                //}
+                var segment = Segments [i];
 
                 var prevAdvanceWidth = prevSegment?.AdvanceWidth ?? 0;
                 currentXOffset += prevAdvanceWidth;

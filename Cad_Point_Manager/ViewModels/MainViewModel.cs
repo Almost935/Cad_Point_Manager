@@ -55,7 +55,7 @@ namespace Cad_Point_Manager.ViewModels
         private double _vertexSnapTolerance = 1e-4;
         private Point _mousePosition = new();
         private ResCache _resCache = new ResCache();
-        private Enums.SelectionMode SelectionMode;
+        private SelectionMode SelectionMode;
 
         // CogoPoint Creation Fields
         private int _newCogoPointsStartCount = 1;
@@ -643,17 +643,6 @@ namespace Cad_Point_Manager.ViewModels
             }
         }
 
-        public void Delete(RoutedEventArgs e)
-        {
-            if (JobFileManager.CadManager.SnapSelectionMode == Enums.SelectionMode.CogoPoints)
-            {
-                if (SelectedCogoPoints.Count > 0)
-                {
-
-                }
-            }
-        }
-
         public void ZoomToExtents(RoutedEventArgs e)
         {
             if (LayoutsVisible)
@@ -677,15 +666,15 @@ namespace Cad_Point_Manager.ViewModels
                 switch (name)
                 {
                     case "PointCogoCreation":
-                        if (!isChecked) { JobFileManager.CadManager.SnapSelectionMode = Enums.SelectionMode.CogoPoints; }
-                        else { JobFileManager.CadManager.SnapSelectionMode = Enums.SelectionMode.Points; }
+                        if (!isChecked) { JobFileManager.CadManager.SnapSelectionMode = SelectionMode.CogoPoints; }
+                        else { JobFileManager.CadManager.SnapSelectionMode = SelectionMode.Points; }
                         break;
                     case "GeometryCogoCreation":
-                        if (!isChecked) { JobFileManager.CadManager.SnapSelectionMode = Enums.SelectionMode.CogoPoints; }
-                        else { JobFileManager.CadManager.SnapSelectionMode = Enums.SelectionMode.Geometries; }
+                        if (!isChecked) { JobFileManager.CadManager.SnapSelectionMode = SelectionMode.CogoPoints; }
+                        else { JobFileManager.CadManager.SnapSelectionMode = SelectionMode.Geometries; }
                         break;
                     default:
-                        JobFileManager.CadManager.SnapSelectionMode = Enums.SelectionMode.CogoPoints;
+                        JobFileManager.CadManager.SnapSelectionMode = SelectionMode.CogoPoints;
                         break;
                 }
             }
@@ -694,7 +683,7 @@ namespace Cad_Point_Manager.ViewModels
         // Point Creation Methods
         private void OnSubmitCogoPointClicked()
         {
-            if (JobFileManager.CadManager.SnapSelectionMode == Enums.SelectionMode.Points)
+            if (JobFileManager.CadManager.SnapSelectionMode == SelectionMode.Points)
             {
                 if (SelectedHitTestablePoints.Count > 0)
                 {
@@ -739,7 +728,7 @@ namespace Cad_Point_Manager.ViewModels
                     }
                 }
             }
-            else if (JobFileManager.CadManager.SnapSelectionMode == Enums.SelectionMode.Geometries)
+            else if (JobFileManager.CadManager.SnapSelectionMode == SelectionMode.Geometries)
             {
                 if (ChainPaths.Count > 0)
                 {

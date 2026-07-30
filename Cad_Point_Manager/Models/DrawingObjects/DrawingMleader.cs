@@ -1,6 +1,8 @@
-﻿using Cad_Point_Manager.Controls.D3DControl;
+﻿using Cad_Point_Manager.Common;
+using Cad_Point_Manager.Controls.D3DControl;
 using Cad_Point_Manager.Controls.D3DControl.Rendering.Text;
 using Cad_Point_Manager.Extensions;
+using Cad_Point_Manager.Helpers;
 using Cad_Point_Manager.Models.DrawingObjects.HelperClasses;
 using Cad_Point_Manager.Models.DxfImport;
 using netDxf.Entities;
@@ -8,8 +10,10 @@ using netDxf.Tables;
 using PdfSharpCore.Drawing;
 using SharpDX;
 using SharpDX.Direct2D1;
+using System.Diagnostics;
 using System.Windows;
 using Brush = SharpDX.Direct2D1.Brush;
+using TextAlignment = Cad_Point_Manager.Common.TextAlignment;
 
 namespace Cad_Point_Manager.Models.DrawingObjects
 {
@@ -34,6 +38,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         public TextStyle TextStyle { get; set; }
         public List<ArrowheadInstance> Arrowheads { get; } = [];
         public DrawingObject? Arrowhead { get; set; } = null;
+        public TextAttachmentSide TextAttachmentSide { get; set; } = TextAttachmentSide.Right;
         #endregion
 
         #region Constructors
@@ -60,6 +65,8 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         #region Methods
         public override void UpdateData()
         {
+            var leaderOffset = ArrowheadToNetDxfBlockNameResolver.ResolveArrowheadOffset(ParsedMLeader.Style.ArrowheadType);
+
             foreach (var leader in ParsedMLeader.Context.Leaders)
             {
                 var dogLegStart = leader.LastLeaderLinePoint.ToNetDxfVector2();
@@ -70,7 +77,16 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
                 foreach (var leaderLine in leader.LeaderLines)
                 {
-                    Line line = new(dogLegStart, leaderLine.Vertex.ToNetDxfVector2());
+                    var endPoint = new netDxf.Vector2(leaderLine.Vertex.X, leaderLine.Vertex.Y);
+
+                    var dir = dogLegStart - endPoint;
+                    dir.Normalize();
+
+                    double trim = leaderOffset * ParsedMLeader.Style.ArrowheadSize;
+
+                    var trimmedEndPoint = endPoint + dir * trim;
+
+                    Line line = new(dogLegStart, trimmedEndPoint);
                     DrawingLine drawingLine = new(line, Layer, ObjectColor, ColorType, IsPartOfBlock, DrawingBlock);
                     DrawingObjects.Add(drawingLine);
                 }
@@ -80,7 +96,11 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 Layer = Layer.DxfLayer
             };
 
-            DrawingMtext drawingMtext = new(mtext, Layer, ObjectColor, ColorType, false, IsPartOfBlock, DrawingBlock);
+            var alignment = GetTextAlignment(ParsedMLeader.TextAlignmentType);
+
+            DrawingMtext drawingMtext = new(mtext, Layer, ObjectColor, ColorType, false,
+                ParsedMLeader.TextAttachment, alignment, IsPartOfBlock, DrawingBlock);
+
             DrawingObjects.Add(drawingMtext);
 
             GetArrowheadBlocks();
@@ -120,7 +140,11 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         }
         public override void DrawToPdf(XGraphics gfx, System.Windows.Media.Matrix worldToPdf, XPen pen)
         {
-
+            var copy = DrawingObjects.ToList();
+            foreach (var obj in copy)
+            {
+                obj.DrawToPdf(gfx, worldToPdf, pen);
+            }
         }
         public void UpdateGeometryVertices(ResCache resCache, uint layerId, SceneIdMap sceneIdMap, D3dStateBuffers stateBuffers)
         {
@@ -307,6 +331,33 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                     }
                 }
             }
+        }
+        public void AdjustToAlignment()
+        {
+            switch (ParsedMLeader.TextAttachmentSide)
+            {
+                case TextAttachmentSide.Left:
+                    break;
+
+                case TextAttachmentSide.Right:
+                    break;
+
+
+
+                default:
+                    break;
+            }
+        }
+
+        public static TextAlignment GetTextAlignment(TextAlignmentType side)
+        {
+            return side switch
+            {
+                TextAlignmentType.Left => TextAlignment.Left,
+                TextAlignmentType.Right => TextAlignment.Right,
+                TextAlignmentType.Center => TextAlignment.Center,
+                _ => TextAlignment.Left,
+            };
         }
         #endregion
     }

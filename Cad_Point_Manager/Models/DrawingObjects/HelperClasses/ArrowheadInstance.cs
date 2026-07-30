@@ -9,6 +9,8 @@ namespace Cad_Point_Manager.Models.DrawingObjects.HelperClasses
         public float RotationRadians { get; init; }
         public float Scale { get; init; }
 
+        public float LeaderTrimDistance { get; init; }
+
         public Matrix Transform =>
             Matrix.Scaling(Scale)
             * Matrix.RotationZ(RotationRadians)

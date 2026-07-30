@@ -22,64 +22,62 @@ namespace Cad_Point_Manager.Common
         [Description("Point Group Filter")]
         PointGroupFilter,
     }
-    public class Enums
+
+    public enum LineType
     {
-        public enum LineType
-        {
-            Solid,
-            Dash,
-            Dot,
-            DashDot,
-            DashDotDot
-        }
+        Solid,
+        Dash,
+        Dot,
+        DashDot,
+        DashDotDot
+    }
 
-        public enum SelectionMode
-        {
-            Points,
-            Geometries,
-            All,
-            CogoPoints
-        }
+    public enum SelectionMode
+    {
+        Points,
+        Geometries,
+        All,
+        CogoPoints
+    }
 
-        /// <summary>
-        /// Represents the type of significant point on the CAD geometry. Midpoint represents midway along a geometry between two endpoints, 
-        /// EndPoint represents the end of a geometry, Intersection represents the point where two geometries cross, and MousePosition 
-        /// represents the current position of the mouse cursor when no other significant point is within range.
-        /// </summary>
-        public enum SignificantPointType
-        {
-            MidPoint,
-            EndPoint,
-            Intersection,
-            MousePosition
-        }
+    /// <summary>
+    /// Represents the type of significant point on the CAD geometry. Midpoint represents midway along a geometry between two endpoints, 
+    /// EndPoint represents the end of a geometry, Intersection represents the point where two geometries cross, and MousePosition 
+    /// represents the current position of the mouse cursor when no other significant point is within range.
+    /// </summary>
+    public enum SignificantPointType
+    {
+        MidPoint,
+        EndPoint,
+        Intersection,
+        MousePosition
+    }
 
-        public enum EllipseType
-        {
-            FullEllipse,
-            Arc
-        }
+    public enum EllipseType
+    {
+        FullEllipse,
+        Arc
+    }
 
-        public enum TextAttachmentPoint
-        {
-            TopLeft,
-            TopCenter,
-            TopRight,
-            MiddleLeft,
-            MiddleCenter,
-            MiddleRight,
-            BottomLeft,
-            BottomCenter,
-            BottomRight
-        }
+    public enum TextAttachmentPoint
+    {
+        TopLeft,
+        TopCenter,
+        TopRight,
+        MiddleLeft,
+        MiddleCenter,
+        MiddleRight,
+        BottomLeft,
+        BottomCenter,
+        BottomRight
+    }
 
-        public enum TextAlignment
-        {
-            Left,
-            Center,
-            Right,
-            Justified,
-            Distributed
-        }
+    public enum TextAlignment
+    {
+        Left,
+        Center,
+        Right,
+        Justified,
+        Distributed
     }
 }
