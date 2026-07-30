@@ -16,15 +16,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
     public abstract class Direct3DControl : System.Windows.Controls.Image
     {
         #region Fields
-
-        // Testing
-        private readonly Stopwatch _frameTimer = new();
-        private readonly Stopwatch _printTimer = Stopwatch.StartNew();
-        // End Testing
-
-
-        private const int WM_DISPLAYCHANGE = 0x007E;
-
         private SharpDX.Direct3D11.Device _device;
         private DeviceContext _deviceContext;
         private Texture2D _texture2D;
@@ -238,20 +229,20 @@ namespace Cad_Point_Manager.Controls.D3DControl
             ResCache.WriteFactory = new();
 
             var baseBlendDesc = new BlendStateDescription();
-            baseBlendDesc.RenderTarget[0].IsBlendEnabled = true; // Enable blending
-            baseBlendDesc.RenderTarget[0].SourceBlend = BlendOption.SourceAlpha;
-            baseBlendDesc.RenderTarget[0].DestinationBlend = BlendOption.InverseSourceAlpha;
-            baseBlendDesc.RenderTarget[0].BlendOperation = BlendOperation.Add;
-            baseBlendDesc.RenderTarget[0].SourceAlphaBlend = BlendOption.One;
-            baseBlendDesc.RenderTarget[0].DestinationAlphaBlend = BlendOption.Zero;
-            baseBlendDesc.RenderTarget[0].AlphaBlendOperation = BlendOperation.Add;
-            baseBlendDesc.RenderTarget[0].RenderTargetWriteMask = ColorWriteMaskFlags.All;
+            baseBlendDesc.RenderTarget [0].IsBlendEnabled = true; // Enable blending
+            baseBlendDesc.RenderTarget [0].SourceBlend = BlendOption.SourceAlpha;
+            baseBlendDesc.RenderTarget [0].DestinationBlend = BlendOption.InverseSourceAlpha;
+            baseBlendDesc.RenderTarget [0].BlendOperation = BlendOperation.Add;
+            baseBlendDesc.RenderTarget [0].SourceAlphaBlend = BlendOption.One;
+            baseBlendDesc.RenderTarget [0].DestinationAlphaBlend = BlendOption.Zero;
+            baseBlendDesc.RenderTarget [0].AlphaBlendOperation = BlendOperation.Add;
+            baseBlendDesc.RenderTarget [0].RenderTargetWriteMask = ColorWriteMaskFlags.All;
             var baseBlendState = new BlendState(_device, baseBlendDesc);
             ResCache.BaseBlendState = baseBlendState;
 
             // Create the max blend state for hover objects to avoid additive alpha
             var maxDesc = new BlendStateDescription();
-            var rt = maxDesc.RenderTarget[0];
+            var rt = maxDesc.RenderTarget [0];
             rt.IsBlendEnabled = true;
             // Color channels: One + One with MAX op -> per-pixel maximum
             rt.SourceBlend = BlendOption.One;
@@ -349,7 +340,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
                 var rtvDesc = new RenderTargetViewDescription
                 {
-                    Dimension = RenderTargetViewDimension.Texture2D,
+                    Dimension = RenderTargetViewDimension.Texture2DMultisampled,
                     Format = texture2DRenderDesc.Format,
                     Texture2D = { MipSlice = 0 }
                 };

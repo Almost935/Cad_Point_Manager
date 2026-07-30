@@ -49,17 +49,11 @@ public static class TextureLoader
             Height = height,
             ArraySize = 1,
             MipLevels = 1,
-
             Format = Format.B8G8R8A8_UNorm,
-
             Usage = ResourceUsage.Immutable,
-
             BindFlags = BindFlags.ShaderResource,
-
             CpuAccessFlags = CpuAccessFlags.None,
-
             OptionFlags = ResourceOptionFlags.None,
-
             SampleDescription = new SampleDescription(1, 0)
         };
 

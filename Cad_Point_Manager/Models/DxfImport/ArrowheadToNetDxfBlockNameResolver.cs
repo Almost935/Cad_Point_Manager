@@ -34,7 +34,7 @@ namespace Cad_Point_Manager.Models.DxfImport
             [ArrowheadType.ClosedBlank] = 1,
             [ArrowheadType.Closed] = 1,
             [ArrowheadType.Dot] = 0.3f,
-            [ArrowheadType.DotSmall] = 0.3f,
+            [ArrowheadType.DotSmall] = 0.25f,
             [ArrowheadType.DotBlank] = 0.5f,
             [ArrowheadType.DotSmallBlank] = 0.3f,
             [ArrowheadType.ArchitecturalTick] = 0,
