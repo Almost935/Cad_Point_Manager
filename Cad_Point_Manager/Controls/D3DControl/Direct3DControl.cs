@@ -340,7 +340,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
                 var rtvDesc = new RenderTargetViewDescription
                 {
-                    Dimension = RenderTargetViewDimension.Texture2DMultisampled,
+                    Dimension = RenderTargetViewDimension.Texture2D,
                     Format = texture2DRenderDesc.Format,
                     Texture2D = { MipSlice = 0 }
                 };

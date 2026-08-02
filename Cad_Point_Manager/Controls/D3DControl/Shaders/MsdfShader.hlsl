@@ -86,17 +86,7 @@ float Median(float r, float g, float b)
 {
     return max(min(r, g), min(max(r, g), b));
 }
-//float ScreenPxRange(float2 uv)
-//{
-//    float2 texelSize = float2(AtlasWidth, AtlasHeight);
 
-//    float2 dx = ddx(uv * texelSize);
-//    float2 dy = ddy(uv * texelSize);
-
-//    float deriv = max(length(dx), length(dy));
-
-//    return DistanceRange / deriv;
-//}
 float ScreenPxRange(float2 uv)
 {
     // Distance field range in texture UV units

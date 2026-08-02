@@ -37,7 +37,7 @@ namespace Cad_Point_Manager.Models
         #region Fields
         private const float _pointSizeToExtentsFactor = 0.001f;
 
-        private readonly List<LineVertex> _cachedLineVertices = [];
+        private readonly List<LineInstance> _cachedLineInstanceVertices = [];
         private readonly List<TextVertex> _cachedTextVertices = [];
         private readonly List<SolidVertex> _cachedSolidVertices = [];
         private readonly List<TextVertex> _cachedPointTextVertices = [];
@@ -1271,8 +1271,8 @@ namespace Cad_Point_Manager.Models
             DxfImportResult = null;
 
             Layers.Clear();
-            _cachedLineVertices.Clear();
-            _cachedLineVertices.TrimExcess();
+            _cachedLineInstanceVertices.Clear();
+            _cachedLineInstanceVertices.TrimExcess();
             _cachedTextVertices.Clear();
             _cachedTextVertices.TrimExcess();
 
@@ -1300,11 +1300,11 @@ namespace Cad_Point_Manager.Models
             ZoomToExtentsRequested?.Invoke();
         }
 
-        public ReadOnlySpan<LineVertex> UpdateLineVerticesList(ResCache resCache, SceneIdMap sceneIdMap, D3dStateBuffers stateBuffers)
+        public ReadOnlySpan<LineInstance> UpdateLineVerticesList(ResCache resCache, SceneIdMap sceneIdMap, D3dStateBuffers stateBuffers)
         {
             if (LineVerticesDirty)
             {
-                _cachedLineVertices.Clear();
+                _cachedLineInstanceVertices.Clear();
 
                 foreach (var keyValuePair in Layers)
                 {
@@ -1320,44 +1320,44 @@ namespace Cad_Point_Manager.Models
                             if (isNewObj) { stateBuffers.InitializeObjectState(sceneIdMap.MaxObjectId, obj, objectId); }
 
                             drawingGeometry.UpdateVertices(resCache, lId, objectId);
-                            drawingGeometry.StartVertexIndex = _cachedLineVertices.Count;
-                            _cachedLineVertices.AddRange(drawingGeometry.Vertices);
-                            drawingGeometry.EndVertexIndex = _cachedLineVertices.Count - 1;
+                            drawingGeometry.StartVertexIndex = _cachedLineInstanceVertices.Count;
+                            _cachedLineInstanceVertices.AddRange(drawingGeometry.LineInstances);
+                            drawingGeometry.EndVertexIndex = _cachedLineInstanceVertices.Count - 1;
                         }
                         if (obj is DrawingMtext drawingMtext)
                         {
                             drawingMtext.UpdateVertices(resCache, lId, sceneIdMap, stateBuffers);
-                            drawingMtext.StartLineVertexIndex = _cachedLineVertices.Count;
-                            _cachedLineVertices.AddRange(drawingMtext.LineVertices);
-                            drawingMtext.EndLineVertexIndex = _cachedLineVertices.Count - 1;
+                            drawingMtext.StartLineVertexIndex = _cachedLineInstanceVertices.Count;
+                            _cachedLineInstanceVertices.AddRange(drawingMtext.LineInstances);
+                            drawingMtext.EndLineVertexIndex = _cachedLineInstanceVertices.Count - 1;
                         }
                         if (obj is DrawingSText drawingSText)
                         {
                             drawingSText.UpdateVertices(resCache, lId, sceneIdMap, stateBuffers);
-                            drawingSText.StartLineVertexIndex = _cachedLineVertices.Count;
-                            _cachedLineVertices.AddRange(drawingSText.LineVertices);
-                            drawingSText.EndLineVertexIndex = _cachedLineVertices.Count - 1;
+                            drawingSText.StartLineVertexIndex = _cachedLineInstanceVertices.Count;
+                            _cachedLineInstanceVertices.AddRange(drawingSText.LineInstances);
+                            drawingSText.EndLineVertexIndex = _cachedLineInstanceVertices.Count - 1;
                         }
                         if (obj is DrawingBlock drawingBlock)
                         {
                             drawingBlock.UpdateGeometryVertices(resCache, lId, sceneIdMap, stateBuffers);
-                            drawingBlock.StartLineVertexIndex = _cachedLineVertices.Count;
-                            _cachedLineVertices.AddRange(drawingBlock.LineVertices);
-                            drawingBlock.EndLineVertexIndex = _cachedLineVertices.Count - 1;
+                            drawingBlock.StartLineVertexIndex = _cachedLineInstanceVertices.Count;
+                            _cachedLineInstanceVertices.AddRange(drawingBlock.LineInstances);
+                            drawingBlock.EndLineVertexIndex = _cachedLineInstanceVertices.Count - 1;
                         }
                         if (obj is DrawingDimension drawingDimension)
                         {
                             drawingDimension.UpdateGeometryVertices(resCache, lId, sceneIdMap, stateBuffers);
-                            drawingDimension.StartLineVertexIndex = _cachedLineVertices.Count;
-                            _cachedLineVertices.AddRange(drawingDimension.LineVertices);
-                            drawingDimension.EndLineVertexIndex = _cachedLineVertices.Count - 1;
+                            drawingDimension.StartLineVertexIndex = _cachedLineInstanceVertices.Count;
+                            _cachedLineInstanceVertices.AddRange(drawingDimension.LineInstances);
+                            drawingDimension.EndLineVertexIndex = _cachedLineInstanceVertices.Count - 1;
                         }
                         if (obj is DrawingMleader drawingMleader)
                         {
                             drawingMleader.UpdateGeometryVertices(resCache, lId, sceneIdMap, stateBuffers);
-                            drawingMleader.StartLineVertexIndex = _cachedLineVertices.Count;
-                            _cachedLineVertices.AddRange(drawingMleader.LineVertices);
-                            drawingMleader.EndLineVertexIndex = _cachedLineVertices.Count - 1;
+                            drawingMleader.StartLineVertexIndex = _cachedLineInstanceVertices.Count;
+                            _cachedLineInstanceVertices.AddRange(drawingMleader.LineInstances);
+                            drawingMleader.EndLineVertexIndex = _cachedLineInstanceVertices.Count - 1;
                         }
                     }
                 }
@@ -1374,7 +1374,7 @@ namespace Cad_Point_Manager.Models
                 //_cachedLineVertices.Add(br); _cachedLineVertices.Add(tr);
                 //_cachedLineVertices.Add(bl); _cachedLineVertices.Add(tl);
             }
-            return CollectionsMarshal.AsSpan(_cachedLineVertices);
+            return CollectionsMarshal.AsSpan(_cachedLineInstanceVertices);
         }
         public ReadOnlySpan<TextVertex> UpdateTextVerticesList(ResCache d3DResCache, SceneIdMap sceneIdMap, D3dStateBuffers stateBuffers)
         {

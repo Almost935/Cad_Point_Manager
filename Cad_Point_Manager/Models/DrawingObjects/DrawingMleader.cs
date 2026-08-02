@@ -26,7 +26,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         public ParsedMLeader ParsedMLeader { get; set; }
         public string Text { get; set; }
         public List<DrawingObject> DrawingObjects { get; set; } = [];
-        public List<LineVertex> LineVertices { get; set; } = [];
+        public List<LineInstance> LineInstances { get; set; } = [];
         public List<TextVertex> TextVertices { get; set; } = [];
         public List<SolidVertex> SolidVertices { get; set; } = [];
         public int StartLineVertexIndex { get; set; }
@@ -148,7 +148,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         }
         public void UpdateGeometryVertices(ResCache resCache, uint layerId, SceneIdMap sceneIdMap, D3dStateBuffers stateBuffers)
         {
-            LineVertices.Clear();
+            LineInstances.Clear();
 
             foreach (var obj in DrawingObjects)
             {
@@ -158,14 +158,14 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                     if (isNewObj) { stateBuffers.InitializeObjectState(sceneIdMap.MaxObjectId, obj, objectId); }
 
                     geometry.UpdateVertices(resCache, layerId, objectId);
-                    LineVertices.AddRange(geometry.Vertices);
+                    LineInstances.AddRange(geometry.LineInstances);
                 }
                 if (obj is DrawingMtext mtext)
                 {
                     mtext.UpdateVertices(resCache, layerId, sceneIdMap, stateBuffers);
                     foreach (var segment in mtext.Segments)
                     {
-                        LineVertices.AddRange(segment.LineVertices);
+                        LineInstances.AddRange(segment.LineInstances);
                     }
                 }
             }
@@ -180,10 +180,10 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                     {
                         var transform = arrowhead.Transform;
 
-                        foreach (var vertex in block.LineVertices)
+                        foreach (var lineInstance in block.LineInstances)
                         {
-                            var transformed = vertex.Transform(transform);
-                            LineVertices.Add(transformed);
+                            var transformed = lineInstance.Transform(transform);
+                            LineInstances.Add(transformed);
                         }
                     }
                 }

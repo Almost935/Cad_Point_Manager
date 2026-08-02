@@ -8,7 +8,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
     {
         public Vector3 Start { get; set; }
         public Vector3 End { get; set; }
-        public LineVertex[] Vertices { get; set; } = [];
+        public LineInstance[] LineInstances { get; set; } = [];
         public int StartVertexIndex { get; set; }
         public int EndVertexIndex { get; set; }
         public uint ObjectId { get; set; }

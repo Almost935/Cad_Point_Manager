@@ -9,6 +9,8 @@ cbuffer CircleSettingsBuffer : register(b1)
 {
     float4 selectedColor;
     float4 selectedMouseOverColor;
+    float HalfWidth;
+    float3 Padding;
 };
 
 struct PointState

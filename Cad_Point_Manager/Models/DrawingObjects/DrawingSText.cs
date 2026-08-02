@@ -98,12 +98,11 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         {
             if (TextRenderStyle is TextRenderStyle.Stroke)
             {
-                for (int i = 0; i < LineVertices.Count; i += 2)
+                for (int i = 0; i < LineInstances.Count; i++)
                 {
-                    var v1 = LineVertices[i];
-                    var v2 = LineVertices[i + 1];
-                    var p1Pdf = PdfDrawingHelpers.WorldToPdf(new Vector2(v1.Position.X, v1.Position.Y), worldToPdf);
-                    var p2Pdf = PdfDrawingHelpers.WorldToPdf(new Vector2(v2.Position.X, v2.Position.Y), worldToPdf);
+                    var v = LineInstances[i];
+                    var p1Pdf = PdfDrawingHelpers.WorldToPdf(new Vector2(v.Start.X, v.Start.Y), worldToPdf);
+                    var p2Pdf = PdfDrawingHelpers.WorldToPdf(new Vector2(v.End.X, v.End.Y), worldToPdf);
 
                     gfx.DrawLine(pen, new XPoint(p1Pdf.X, p1Pdf.Y), new XPoint(p2Pdf.X, p2Pdf.Y));
                 }
@@ -140,7 +139,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             if (TextRenderStyle == TextRenderStyle.Stroke)
             {
                 List<Vector2> vertices = GetLffVertices();
-                LineVertices = GetLineVertices(vertices, layerId, objectId);
+                LineInstances = GetLineVertices(vertices, layerId, objectId);
                 TextVertices = [];
             }
             else
@@ -150,7 +149,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 Bounds = bounds.ToRect();
                 TextVertices = GetTextVertices(vertices, layerId, objectId);
 
-                LineVertices = [];
+                LineInstances = [];
             }
         }
         public override void MouseEnter()
@@ -179,16 +178,16 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         {
             if (TextRenderStyle == TextRenderStyle.Stroke)
             {
-                if (LineVertices.Count == 0)
+                if (LineInstances.Count == 0)
                 {
                     Bounds = System.Windows.Rect.Empty;
                     return;
                 }
 
-                float minX = LineVertices.Min(v => v.Position.X);
-                float maxX = LineVertices.Max(v => v.Position.X);
-                float minY = LineVertices.Min(v => v.Position.Y);
-                float maxY = LineVertices.Max(v => v.Position.Y);
+                float minX = Math.Min(LineInstances.Min(v => v.Start.X), LineInstances.Min(v => v.End.X));
+                float maxX = Math.Max(LineInstances.Max(v => v.Start.X), LineInstances.Max(v => v.End.X));
+                float minY = Math.Min(LineInstances.Min(v => v.Start.Y), LineInstances.Min(v => v.End.Y));
+                float maxY = Math.Max(LineInstances.Max(v => v.Start.Y), LineInstances.Max(v => v.End.Y));
 
                 Bounds = new System.Windows.Rect(minX, minY, maxX - minX, maxY - minY);
             }
@@ -219,11 +218,11 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             TextLayout = new(factory, Text, _textFormat, (float)Bounds.Width, (float)Bounds.Height, 96, true);
         }
 
-        public List<LineVertex> GetLineVertices(List<Vector2> vertices, uint layerId, uint objectId)
+        public List<LineInstance> GetLineVertices(List<Vector2> vertices, uint layerId, uint objectId)
         {
-            List<LineVertex> lineVertices = [];
+            List<LineInstance> lineInstances = [];
 
-            if (TextRenderStyle == TextRenderStyle.Triangle) { return lineVertices; }
+            if (TextRenderStyle == TextRenderStyle.Triangle) { return lineInstances; }
 
             if (LffFont is null)
             {
@@ -236,14 +235,15 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
             var transform = Transform;
 
-            for (int i = 0; i < vertices.Count; i++)
+            for (int i = 0; i < vertices.Count; i += 2)
             {
-                var v = vertices[i];
-                var scaledVector = Vector2.TransformCoordinate(v, transform);
-                LineVertex lineVertex = new(new Vector3(scaledVector.X, scaledVector.Y, 0), layerId, objectId);
-                lineVertices.Add(lineVertex);
+                var s = vertices[i];
+                var e = vertices[i + 1];
+
+                LineInstance lineInstance = new(Vector2.TransformCoordinate(s, transform), Vector2.TransformCoordinate(e, transform), layerId, objectId);
+                lineInstances.Add(lineInstance);
             }
-            return lineVertices;
+            return lineInstances;
         }
         public List<TextVertex> GetTextVertices(List<Vector2> vertices, uint layerId, uint objectId)
         {

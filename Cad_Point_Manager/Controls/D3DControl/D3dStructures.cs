@@ -299,10 +299,40 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
     }
     [StructLayout(LayoutKind.Sequential)]
+    public struct LineCornerVertex(float side, float along)
+    {
+        public Vector2 Corner = new(side, along);
+    }
+    [StructLayout(LayoutKind.Sequential)]
+    public struct LineInstance(Vector2 start, Vector2 end, uint layerId, uint objectId)
+    {
+        public Vector2 Start = start;
+        public Vector2 End = end;
+
+        public uint LayerId = layerId;
+        public uint ObjectId = objectId;
+
+        public readonly LineInstance Translate(Vector2 offset)
+        {
+            return new LineInstance(Start + offset, End + offset, LayerId, ObjectId);
+        }
+
+        public readonly LineInstance Transform(Matrix transform)
+        {
+            return new LineInstance(
+                Vector2.TransformCoordinate(Start, transform),
+                Vector2.TransformCoordinate(End, transform),
+                LayerId, ObjectId);
+        }
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
     public struct DxfObjectSettingsBuffer
     {
         public Vector4 SelectedColor;
         public Vector4 SelectedMouseOverColor;
+        public float HalfWidth;
+        private Vector3 _padding; // Padding to ensure the structure is 16-byte aligned
     }
     [StructLayout(LayoutKind.Sequential)]
     public struct LineRenderModeBuffer

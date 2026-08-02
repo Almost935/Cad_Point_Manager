@@ -65,19 +65,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         }
         public override void DrawToD2dDeviceContext(DeviceContext1 deviceContext, Factory2 factory, Brush brush, float thickness, StrokeStyle1 strokeStyle)
         {
-            PathGeometry pathGeometry = new(factory);
-            using (var geometrySink = pathGeometry.Open())
-            {
-                geometrySink.BeginFigure(new RawVector2(Vertices[0].Position.X, Vertices[0].Position.Y), FigureBegin.Hollow);
-                for (int i = 0; i < Vertices.Length / 2; i++)
-                {
-                    int index = 2 * i + 1;
-                    geometrySink.AddLine(new RawVector2(Vertices[index].Position.X, Vertices[index].Position.Y));
-                }
-                geometrySink.EndFigure(FigureEnd.Open);
-                geometrySink.Close();
-            }
-            deviceContext.DrawGeometry(pathGeometry, brush, thickness, strokeStyle);
+            
         }
         public override void DrawToPdf(
             XGraphics gfx,
@@ -118,26 +106,28 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         {
             if (EntityObject is Arc arc)
             {
-                Array.Clear(Vertices);
+                Array.Clear(LineInstances);
 
                 NumberOfSegments = CalculateSegments(Radius, Sweep);
                 var vertices = arc.ToPolyline2D(NumberOfSegments).Vertexes;
-                List<LineVertex> lineVertices = [];
+                List<LineInstance> lineInstances = [];
 
                 for (int i = 0; i < vertices.Count; i++)
                 {
                     if (i == vertices.Count - 1) { break; }
 
-                    LineVertex s = new(
-                        new Vector3((float)vertices[i].Position.X, (float)vertices[i].Position.Y, 0), layerId, objectId);
-                    LineVertex e = new(
-                        new Vector3((float)vertices[i + 1].Position.X, (float)vertices[i + 1].Position.Y, 0), layerId, objectId);
+                    LineInstance lineInstance = new()
+                    {
+                        Start = new((float)vertices [i].Position.X, (float)vertices [i].Position.Y),
+                        End = new((float)vertices [i + 1].Position.X, (float)vertices [i + 1].Position.Y),
+                        LayerId = layerId,
+                        ObjectId = objectId,
+                    };
 
-                    lineVertices.Add(s);
-                    lineVertices.Add(e);
+                    lineInstances.Add(lineInstance);
                 }
 
-                Vertices = lineVertices.ToArray();
+                LineInstances = lineInstances.ToArray();
 
                 UpdateBounds();
             }

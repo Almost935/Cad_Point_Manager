@@ -10,7 +10,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
     {
         #region Properties
         public List<TextVertex> TextVertices { get; set; } = [];
-        public List<LineVertex> LineVertices { get; set; } = [];
+        public List<LineInstance> LineInstances { get; set; } = [];
         public TextRenderStyle TextRenderStyle { get; set; } = TextRenderStyle.Triangle;
 
         public string Text { get; set; }

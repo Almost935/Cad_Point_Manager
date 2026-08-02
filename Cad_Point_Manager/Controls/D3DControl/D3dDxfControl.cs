@@ -10,7 +10,6 @@ using Cad_Point_Manager.Models;
 using Cad_Point_Manager.Models.DrawingObjects;
 using Cad_Point_Manager.Models.HitTesting;
 using Cad_Point_Manager.Models.PointRendering;
-using DocumentFormat.OpenXml.Office2010.Drawing;
 using PdfSharpCore.Pdf.Advanced;
 using SharpDX;
 using SharpDX.D3DCompiler;
@@ -86,13 +85,14 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public bool _buffersInitialized = false;
 
         // Line shader related fields
-        private ResizableBuffer<LineVertex> _lineVertexBuffer;
+        private ResizableBuffer<LineInstance> _lineInstanceBuffer;
+        private Buffer _lineQuadBuffer;
         private Buffer _dxfObjectSettingsBuffer;
         private Buffer _lineRenderModeBuffer;
-        private int _lineVertexCount;
+        private int _lineInstanceCount;
         private VertexShader _lineVertexShader;
         private PixelShader _linePixelShader;
-        private InputLayout _lineInputLayout;
+        private InputLayout _lineInstanceInputLayout;
         private bool _lineShadersLoaded = false;
         private bool _lineVerticesDirty = false;
 
@@ -614,42 +614,55 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         private void DrawLines(DeviceContext ctx)
         {
-            if (_lineVertexBuffer is null) { return; }
+            if (_lineInstanceBuffer is null) { return; }
 
-            ctx.VertexShader.Set(_lineGlowVertexShader);
-            ctx.GeometryShader.Set(_lineGlowGeometryShader);
-            ctx.PixelShader.Set(_lineGlowPixelShader);
-            ctx.InputAssembler.InputLayout = _lineInputLayout;
-            ctx.VertexShader.SetConstantBuffer(0, _transformationBuffer);
-            ctx.VertexShader.SetShaderResource(0, StateBuffers.LayerSRV);
-            ctx.GeometryShader.SetConstantBuffer(0, _transformationBuffer);
-            ctx.GeometryShader.SetConstantBuffer(1, _lineGlowSettingsBuffer);
-            ctx.GeometryShader.SetShaderResource(0, StateBuffers.LayerSRV);
-            ctx.GeometryShader.SetShaderResource(1, StateBuffers.ObjectSRV);
-            ctx.InputAssembler.PrimitiveTopology = PrimitiveTopology.LineList;
-            ctx.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding(
-                _lineVertexBuffer.Buffer, _lineVertexBuffer.Stride, 0));
-            ctx.Draw(_lineVertexCount, 0);
-            ctx.GeometryShader.Set(null);
+            //ctx.VertexShader.Set(_lineGlowVertexShader);
+            //ctx.GeometryShader.Set(_lineGlowGeometryShader);
+            //ctx.PixelShader.Set(_lineGlowPixelShader);
+            //ctx.InputAssembler.InputLayout = _lineInputLayout;
+            //ctx.VertexShader.SetConstantBuffer(0, _transformationBuffer);
+            //ctx.VertexShader.SetShaderResource(0, StateBuffers.LayerSRV);
+            //ctx.GeometryShader.SetConstantBuffer(0, _transformationBuffer);
+            //ctx.GeometryShader.SetConstantBuffer(1, _lineGlowSettingsBuffer);
+            //ctx.GeometryShader.SetShaderResource(0, StateBuffers.LayerSRV);
+            //ctx.GeometryShader.SetShaderResource(1, StateBuffers.ObjectSRV);
+            //ctx.InputAssembler.PrimitiveTopology = PrimitiveTopology.LineList;
+            //ctx.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding(
+            //    _lineInstanceBuffer.Buffer, _lineInstanceBuffer.Stride, 0));
+            //ctx.Draw(_lineInstanceCount, 0);
+            //ctx.GeometryShader.Set(null);
 
             // First pass for all non selected lines
             SetLineRenderMode(ctx, false, false);
             ctx.VertexShader.Set(_lineVertexShader);
             ctx.PixelShader.Set(_linePixelShader);
-            ctx.InputAssembler.InputLayout = _lineInputLayout;
+            ctx.InputAssembler.InputLayout = _lineInstanceInputLayout;
+
             ctx.VertexShader.SetConstantBuffer(0, _transformationBuffer);
             ctx.VertexShader.SetConstantBuffer(1, _dxfObjectSettingsBuffer);
             ctx.VertexShader.SetConstantBuffer(2, _lineRenderModeBuffer);
+            ctx.VertexShader.SetConstantBuffer(3, _viewportBuffer);
             ctx.VertexShader.SetShaderResource(0, StateBuffers.LayerSRV);
             ctx.VertexShader.SetShaderResource(1, StateBuffers.ObjectSRV);
+
+            ctx.PixelShader.SetShaderResource(0, StateBuffers.LayerSRV);
+            ctx.PixelShader.SetShaderResource(1, StateBuffers.ObjectSRV);
+
             ctx.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding(
-                _lineVertexBuffer.Buffer, _lineVertexBuffer.Stride, 0));
-            ctx.InputAssembler.PrimitiveTopology = PrimitiveTopology.LineList;
-            ctx.Draw(_lineVertexCount, 0);
+                _lineInstanceBuffer.Buffer, _lineInstanceBuffer.Stride, 0));
+            ctx.InputAssembler.PrimitiveTopology = PrimitiveTopology.TriangleList;
+
+            var quadBinding = new VertexBufferBinding(_lineQuadBuffer, Utilities.SizeOf<LineCornerVertex>(), 0);
+
+            var instanceBinding = new VertexBufferBinding(_lineInstanceBuffer.Buffer, _lineInstanceBuffer.Stride, 0);
+
+            ctx.InputAssembler.SetVertexBuffers(0, quadBinding, instanceBinding);
+
+            ctx.DrawInstanced(6, _lineInstanceCount, 0, 0);
 
             // Second pass for all selected lines
             SetLineRenderMode(ctx, true, false);
-            ctx.Draw(_lineVertexCount, 0);
+            ctx.DrawInstanced(6, _lineInstanceCount, 0, 0);
         }
         private void DrawText(DeviceContext ctx)
         {
@@ -659,7 +672,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             ctx.PixelShader.Set(_textPixelShader);
             ctx.InputAssembler.InputLayout = _textInputLayout;
             ctx.VertexShader.SetConstantBuffer(0, _transformationBuffer);
-            ctx.VertexShader.SetConstantBuffer(2, _viewportBuffer);
+            ctx.VertexShader.SetConstantBuffer(1, _viewportBuffer);
             ctx.VertexShader.SetShaderResource(0, StateBuffers.LayerSRV);
             ctx.VertexShader.SetShaderResource(1, StateBuffers.ObjectSRV);
             ctx.InputAssembler.PrimitiveTopology = PrimitiveTopology.TriangleList;
@@ -888,13 +901,14 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         private void UpdateLineVertices()
         {
-            if (_lineVertexBuffer is null || CadManager is null) { return; }
+            if (_lineInstanceBuffer is null || CadManager is null) { return; }
 
             var context = ResCache.DeviceContext;
             var vertexSpan = CadManager.UpdateLineVerticesList(ResCache, SceneIdMap, StateBuffers);
+
             StateBuffers.EnsureObjectCapacity(SceneIdMap.ObjectCount);
-            _lineVertexBuffer.Update(context, vertexSpan);
-            _lineVertexCount = vertexSpan.Length;
+            _lineInstanceBuffer.Update(context, vertexSpan);
+            _lineInstanceCount = vertexSpan.Length;
 
             StateBuffers.FlushAll();
             _lineVerticesDirty = false;
@@ -1025,7 +1039,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             // fill color (ARGB #3300FFFF like your XAML)
             var fill = new Vector4(0f, 1f, 1f, 0.2f); // DeepSkyBlue-ish with alpha
 
-            var fillVerts = new OverlayVertex [6]
+            var fillVerts = new OverlayVertex[6]
             {
                 new() { Position = lt, Color = fill },
                 new() { Position = lb, Color = fill },
@@ -1196,6 +1210,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         private void InitializeLineShaders()
         {
+            var device = ResCache.Device;
+
             var path = AppDomain.CurrentDomain.BaseDirectory;
             while (Path.GetFileName(path) != "Cad_Point_Manager")
             {
@@ -1207,30 +1223,36 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             // Main shaders
             var lineVSBytecode = ShaderBytecode.CompileFromFile(shaderPath, "VSMain", "vs_5_0");
-            _lineVertexShader = new VertexShader(ResCache.Device, lineVSBytecode);
+            _lineVertexShader = new VertexShader(device, lineVSBytecode);
 
             var linePSBytecode = ShaderBytecode.CompileFromFile(shaderPath, "PSMain", "ps_5_0");
-            _linePixelShader = new PixelShader(ResCache.Device, linePSBytecode);
+            _linePixelShader = new PixelShader(device, linePSBytecode);
 
             // Glow shaders
             var lineGlowVSBytecode = ShaderBytecode.CompileFromFile(glowShaderPath, "VSMain", "vs_5_0");
-            _lineGlowVertexShader = new VertexShader(ResCache.Device, lineGlowVSBytecode);
+            _lineGlowVertexShader = new VertexShader(device, lineGlowVSBytecode);
 
             var lineGlowGSBytecode = ShaderBytecode.CompileFromFile(glowShaderPath, "GSMain", "gs_5_0");
-            _lineGlowGeometryShader = new GeometryShader(ResCache.Device, lineGlowGSBytecode);
+            _lineGlowGeometryShader = new GeometryShader(device, lineGlowGSBytecode);
 
             var lineGlowPSBytecode = ShaderBytecode.CompileFromFile(glowShaderPath, "PSMain", "ps_5_0");
-            _lineGlowPixelShader = new PixelShader(ResCache.Device, lineGlowPSBytecode);
+            _lineGlowPixelShader = new PixelShader(device, lineGlowPSBytecode);
 
-            _lineInputLayout = new InputLayout(
-                ResCache.Device,
-                ShaderSignature.GetInputSignature(lineVSBytecode),
-                new []
+            _lineInstanceInputLayout = new InputLayout(device, ShaderSignature.GetInputSignature(lineVSBytecode),
+                new[]
                 {
-                    new InputElement("POSITION", 0, Format.R32G32B32_Float, 0, 0),
-                    new InputElement("LAYERID", 0, Format.R32_UInt, 12, 0),
-                    new InputElement("OBJECTID", 0, Format.R32_UInt, 16, 0)
+                    new InputElement("LOCAL", 0, Format.R32G32_Float, 0, 0, InputClassification.PerVertexData, 0),
+
+                    new InputElement("START", 0, Format.R32G32_Float, 0, 1,InputClassification.PerInstanceData, 1),
+                    new InputElement("END", 0, Format.R32G32_Float, 8, 1,InputClassification.PerInstanceData, 1),
+                    new InputElement("LAYERID", 0, Format.R32_UInt, 16, 1,InputClassification.PerInstanceData, 1),
+                    new InputElement("OBJECTID", 0, Format.R32_UInt, 20, 1,InputClassification.PerInstanceData, 1)
                 });
+
+            LineCornerVertex[]
+                quad = { new(-1, 0), new(1, 0), new(1, 1), new(-1, 0), new(1, 1), new(-1, 1) };
+
+            _lineQuadBuffer = Buffer.Create(device, BindFlags.VertexBuffer, quad);
 
             _lineShadersLoaded = true;
         }
@@ -1255,7 +1277,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _textInputLayout = new InputLayout(
                 ResCache.Device,
                 ShaderSignature.GetInputSignature(textVSBytecode),
-                new []
+                new[]
                 {
                     new InputElement("POSITION", 0, Format.R32G32B32_Float, 0, 0),
                     new InputElement("LAYERID", 0, Format.R32_UInt, 12, 0),
@@ -1285,7 +1307,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _solidInputLayout = new InputLayout(
                 ResCache.Device,
                 ShaderSignature.GetInputSignature(textVSBytecode),
-                new []
+                new[]
                 {
                     new InputElement("POSITION", 0, Format.R32G32B32_Float, 0, 0),
                     new InputElement("LAYERID", 0, Format.R32_UInt, 12, 0),
@@ -1311,7 +1333,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _msdfPS = new PixelShader(ResCache.Device, psBytecode);
 
             _msdfLayout = new InputLayout(ResCache.Device, ShaderSignature.GetInputSignature(vsBytecode),
-                new []
+                new[]
                 {
                     new InputElement("POSITION",0,Format.R32G32_Float,0,0,InputClassification.PerVertexData,0),
                     new InputElement("EM_TO_WORLD", 0, Format.R32_Float,0,1,InputClassification.PerInstanceData,1),
@@ -1325,7 +1347,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     new InputElement("UV_SIZE",0,Format.R32G32_Float,44,1,InputClassification.PerInstanceData,1),
                 });
 
-            MsdfVertex [] quad =
+            MsdfVertex[] quad =
             {
                 new(-0.5f,-0.5f),
                 new( 0.5f,-0.5f),
@@ -1383,7 +1405,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _pointMarkerPS = new PixelShader(ResCache.Device, pointMarkerPsb);
             _pointMarkerGS = new GeometryShader(ResCache.Device, pointMarkerGsb);
             _pointMarkerInputLayout = new InputLayout(ResCache.Device, ShaderSignature.GetInputSignature(pointMarkerVsb),
-                new []
+                new[]
                 {
                     new InputElement("POSITION", 0, Format.R32G32B32_Float, 0, 0),
                     new InputElement("RADIUS",   0, Format.R32_Float,       12, 0),
@@ -1415,7 +1437,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _hoverCircleLayout = new InputLayout(
                 ResCache.Device,
                 ShaderSignature.GetInputSignature(circleVSBytecode),
-                new []
+                new[]
                 {
                     new InputElement("POSITION", 0, Format.R32G32B32_Float, 0, 0),
                     new InputElement("TEXCOORD", 0, Format.R32_Float, 12, 0),
@@ -1443,7 +1465,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _overlayLayout = new InputLayout(
                 ResCache.Device,
                 ShaderSignature.GetInputSignature(vs),
-                new [] {
+                new[] {
                     new InputElement("POSITION", 0, Format.R32G32B32_Float, 0, 0),
                     new InputElement("COLOR",    0, Format.R32G32B32A32_Float, 12, 0),
                 });
@@ -1479,7 +1501,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _toggleLayout = new InputLayout(
                 ResCache.Device,
                 ShaderSignature.GetInputSignature(vs),
-                new []
+                new[]
                 {
                     // stream 0
                     new InputElement("POSITION", 0, Format.R32G32_Float, 0, 0),
@@ -1491,7 +1513,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             // Dedicated unit quad for this shader
             _toggleQuadVB ??= new(ResCache.Device, 6);
-            var quad = new []
+            var quad = new[]
             {
                 new OverlayQuadVertex{ Local = new(-1,-1) },
                 new OverlayQuadVertex{ Local = new(-1, 1) },
@@ -1522,7 +1544,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             var lineGSBytecode = ShaderBytecode.CompileFromFile(lineShaderPath, "GSMain", "gs_5_0");
             _leaderLineGS = new GeometryShader(ResCache.Device, lineGSBytecode);
 
-            _leaderLineInputLayout = new InputLayout(ResCache.Device, ShaderSignature.GetInputSignature(lineVSBytecode), new []
+            _leaderLineInputLayout = new InputLayout(ResCache.Device, ShaderSignature.GetInputSignature(lineVSBytecode), new[]
             {
                 new InputElement("POSITION", 0, Format.R32G32_Float,     0, 0), // A
                 new InputElement("END", 0, Format.R32G32_Float,          8, 0), // BBase
@@ -1556,7 +1578,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _sigPointPS = new PixelShader(ResCache.Device, significantPointPsb);
             _sigPointGS = new GeometryShader(ResCache.Device, significantPointGsb);
             _sigPointLayout = new InputLayout(ResCache.Device, ShaderSignature.GetInputSignature(significantPointVsb),
-                new []
+                new[]
                 {
                     new InputElement("POSITION", 0, Format.R32G32B32_Float, 0, 0),
                 });
@@ -1568,8 +1590,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
         {
             var device = ResCache.Device;
 
-            _lineVertexBuffer?.Dispose();
-            _lineVertexBuffer = new(device, GlobalHelperProperties.InitialLineVertices);
+            _lineInstanceBuffer?.Dispose();
+            _lineInstanceBuffer = new ResizableBuffer<LineInstance>(device, GlobalHelperProperties.InitialLineVertices / 2);
 
             _textVertexBuffer?.Dispose();
             _textVertexBuffer = new(device, GlobalHelperProperties.InitialTextVertices);
@@ -1757,8 +1779,10 @@ namespace Cad_Point_Manager.Controls.D3DControl
             var dxfObjectSettings = new DxfObjectSettingsBuffer
             {
                 SelectedColor = GlobalHelperProperties.SelectedObjectColor,
-                SelectedMouseOverColor = GlobalHelperProperties.SelectedMouseOverObjectColor
+                SelectedMouseOverColor = GlobalHelperProperties.SelectedMouseOverObjectColor,
+                HalfWidth = 10
             };
+
             ResCache.DeviceContext.UpdateSubresource(ref dxfObjectSettings, _dxfObjectSettingsBuffer);
 
             var lineGlowSettings = new LineGlowSettingsBuffer
@@ -1970,7 +1994,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             for (int i = 0; i < text.Length; i++)
             {
-                char c = text [i];
+                char c = text[i];
 
                 if (!atlas.Glyphs.TryGetValue(c, out var glyph)) { continue; }
 
@@ -2007,7 +2031,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
                 if (i + 1 < text.Length)
                 {
-                    uint key = ((uint)c << 16) | text [i + 1];
+                    uint key = ((uint)c << 16) | text[i + 1];
 
                     if (atlas.Kernings.TryGetValue(key, out float kern)) { penX += kern; }
                 }
@@ -3720,7 +3744,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     _textPixelShader?.Dispose(); _textPixelShader = null;
                     _textInputLayout?.Dispose(); _textInputLayout = null;
 
-                    _lineVertexBuffer?.Dispose(); _lineVertexBuffer = null;
+                    _lineInstanceBuffer?.Dispose(); _lineInstanceBuffer = null;
                     _dxfObjectSettingsBuffer?.Dispose(); _dxfObjectSettingsBuffer = null;
                     _lineRenderModeBuffer?.Dispose(); _lineRenderModeBuffer = null;
                     _lineGlowSettingsBuffer?.Dispose(); _lineGlowSettingsBuffer = null;
@@ -3729,7 +3753,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     _lineGlowVertexShader?.Dispose(); _lineGlowVertexShader = null;
                     _lineGlowPixelShader?.Dispose(); _lineGlowPixelShader = null;
                     _lineGlowGeometryShader?.Dispose(); _lineGlowGeometryShader = null;
-                    _lineInputLayout?.Dispose(); _lineInputLayout = null;
+                    _lineInstanceInputLayout?.Dispose(); _lineInstanceInputLayout = null;
 
                     _solidInputLayout?.Dispose(); _solidInputLayout = null;
                     _solidPixelShader?.Dispose(); _solidPixelShader = null;

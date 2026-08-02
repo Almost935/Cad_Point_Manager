@@ -13,7 +13,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects.Dimensioning
     {
         #region Fields
         protected DrawingBlock _dimensionBlock;
-        protected readonly List<LineVertex> _lineVertices = [];
+        protected readonly List<LineInstance> _lineInstances= [];
         protected readonly List<TextVertex> _textVertices = [];
         #endregion
 
@@ -26,7 +26,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects.Dimensioning
         public int EndTextVertexIndex { get; set; }
 
         public DrawingBlock DimensionBlock => _dimensionBlock;
-        public IReadOnlyList<LineVertex> LineVertices => _lineVertices;
+        public IReadOnlyList<LineInstance> LineInstances => _lineInstances;
         public IReadOnlyList<TextVertex> TextVertices => _textVertices;
         #endregion
 
@@ -99,14 +99,14 @@ namespace Cad_Point_Manager.Models.DrawingObjects.Dimensioning
 
         public void UpdateGeometryVertices(ResCache resCache, uint layerId, SceneIdMap sceneIdMap, D3dStateBuffers stateBuffers)
         {
-            _lineVertices.Clear();
+            _lineInstances.Clear();
 
             foreach (var obj in _dimensionBlock.DrawingObjects)
             {
                 if (obj is DrawingBlock block)
                 {
                     block.UpdateGeometryVertices(resCache, layerId, sceneIdMap, stateBuffers);
-                    _lineVertices.AddRange(block.LineVertices);
+                    _lineInstances.AddRange(block.LineInstances);
                 }
                 if (obj is DrawingGeometry geometry)
                 {
@@ -114,17 +114,17 @@ namespace Cad_Point_Manager.Models.DrawingObjects.Dimensioning
                     if (isNewObj) { stateBuffers.InitializeObjectState(sceneIdMap.MaxObjectId, obj, objectId); }
 
                     geometry.UpdateVertices(resCache, layerId, objectId);
-                    _lineVertices.AddRange(geometry.Vertices);
+                    _lineInstances.AddRange(geometry.LineInstances);
                 }
                 if (obj is DrawingSText text)
                 {
                     text.UpdateVertices(resCache, layerId, sceneIdMap, stateBuffers);
-                    _lineVertices.AddRange(text.LineVertices);
+                    _lineInstances.AddRange(text.LineInstances);
                 }
                 if (obj is DrawingMtext mtext)
                 {
                     mtext.UpdateVertices(resCache, layerId, sceneIdMap, stateBuffers);
-                    _lineVertices.AddRange(mtext.LineVertices);
+                    _lineInstances.AddRange(mtext.LineInstances);
                 }
             }
         }

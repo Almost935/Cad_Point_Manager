@@ -94,12 +94,11 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
             if (TextRenderStyle is TextRenderStyle.Stroke)
             {
-                for (int i = 0; i < LineVertices.Count; i += 2)
+                for (int i = 0; i < LineInstances.Count; i++)
                 {
-                    var v1 = LineVertices[i];
-                    var v2 = LineVertices[i + 1];
-                    var p1Pdf = PdfDrawingHelpers.WorldToPdf(new Vector2(v1.Position.X, v1.Position.Y), worldToPdf);
-                    var p2Pdf = PdfDrawingHelpers.WorldToPdf(new Vector2(v2.Position.X, v2.Position.Y), worldToPdf);
+                    var v = LineInstances[i];
+                    var p1Pdf = PdfDrawingHelpers.WorldToPdf(new Vector2(v.Start.X, v.Start.Y), worldToPdf);
+                    var p2Pdf = PdfDrawingHelpers.WorldToPdf(new Vector2(v.End.X, v.End.Y), worldToPdf);
 
                     gfx.DrawLine(pen, new XPoint(p1Pdf.X, p1Pdf.Y), new XPoint(p2Pdf.X, p2Pdf.Y));
                 }
@@ -181,16 +180,16 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         {
             if (TextRenderStyle == TextRenderStyle.Stroke)
             {
-                if (LineVertices.Count == 0)
+                if (LineInstances.Count == 0)
                 {
                     Bounds = Rect.Empty;
                     return;
                 }
 
-                float minX = LineVertices.Min(v => v.Position.X);
-                float maxX = LineVertices.Max(v => v.Position.X);
-                float minY = LineVertices.Min(v => v.Position.Y);
-                float maxY = LineVertices.Max(v => v.Position.Y);
+                float minX = Math.Min(LineInstances.Min(v => v.Start.X), LineInstances.Min(v => v.End.X));
+                float maxX = Math.Max(LineInstances.Max(v => v.Start.X), LineInstances.Max(v => v.End.X));
+                float minY = Math.Min(LineInstances.Min(v => v.Start.Y), LineInstances.Min(v => v.End.Y));
+                float maxY = Math.Max(LineInstances.Max(v => v.Start.Y), LineInstances.Max(v => v.End.Y));
 
                 Bounds = new Rect(minX, minY, maxX - minX, maxY - minY);
             }
@@ -228,7 +227,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             if (TextRenderStyle == TextRenderStyle.Stroke)
             {
                 List<Vector2> vertices = GetLffVertices();
-                LineVertices = GetLineVertices(vertices, layerId, objectId);
+                LineInstances = GetLineVertices(vertices, layerId, objectId);
 
                 UpdateBounds();
                 SpaceWidth = LffFont.WordSpacing * TextHeightScaleFactor;
@@ -248,7 +247,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 UpdateBounds();
                 TextVertices = GetTextVertices(vertices, layerId, objectId);
 
-                LineVertices = [];
+                LineInstances = [];
             }
         }
 
@@ -271,11 +270,11 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
             return textVertices;
         }
-        private List<LineVertex> GetLineVertices(List<Vector2> vertices, uint layerId, uint objectId)
+        private List<LineInstance> GetLineVertices(List<Vector2> vertices, uint layerId, uint objectId)
         {
-            List<LineVertex> lineVertices = [];
+            List<LineInstance> lineInstances = [];
 
-            if (TextRenderStyle == TextRenderStyle.Triangle) { return lineVertices; }
+            if (TextRenderStyle == TextRenderStyle.Triangle) { return lineInstances; }
 
             if (LffFont is null)
             {
@@ -286,15 +285,17 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
             var transform = Transform;
 
-            for (int i = 0; i < vertices.Count; i++)
+            for (int i = 0; i < vertices.Count; i += 2)
             {
-                var v = vertices[i];
-                var scaledVector = Vector2.TransformCoordinate(v, transform);
-                LineVertex lineVertex = new(new Vector3(scaledVector.X, scaledVector.Y, 0), layerId, objectId);
-                lineVertices.Add(lineVertex);
+                var v1 = vertices[i];
+                var v2 = vertices[i + 1];
+                var scaledVector1 = Vector2.TransformCoordinate(v1, transform);
+                var scaledVector2 = Vector2.TransformCoordinate(v2, transform);
+                LineInstance lineInstance = new(scaledVector1, scaledVector2, layerId, objectId);
+                lineInstances.Add(lineInstance);
             }
 
-            return lineVertices;
+            return lineInstances;
         }
 
         public void ApplyTranslate(Vector3 rowTransform)
@@ -309,9 +310,9 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             {
                 TextVertices[i] = TextVertices[i].Translate(offset);
             }
-            for (int i = 0; i < LineVertices.Count; i++)
+            for (int i = 0; i < LineInstances.Count; i++)
             {
-                LineVertices[i] = LineVertices[i].Translate(offset);
+                LineInstances[i] = LineInstances[i].Translate(offset.ToSharpDXVector2());
             }
         }
 

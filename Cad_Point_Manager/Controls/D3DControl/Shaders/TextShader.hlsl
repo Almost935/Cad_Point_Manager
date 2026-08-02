@@ -5,14 +5,8 @@ cbuffer TransformationBuffer : register(b0)
     row_major matrix transformationMatrix; // world*view*proj (to CLIP space)
 };
 
-cbuffer TextSettingsBuffer : register(b1)
-{
-    float4 selectedColor;
-    float4 selectedMouseOverColor;
-};
-
 // NEW: viewport size in pixels (width,height)
-cbuffer ViewportBuffer : register(b2)
+cbuffer ViewportBuffer : register(b1)
 {
     float2 ViewportSize; // e.g., {renderTargetWidth, renderTargetHeight}
     float2 _padViewport;
@@ -98,11 +92,6 @@ float4 GetObjectColor(VSInput input)
     // Selection / hover
     float sel = ((os.Flags & OBJ_SELECTED) != 0u) ? 1.0f : 0.0f;
     float mo = ((os.Flags & OBJ_MOUSEOVER) != 0u) ? 1.0f : 0.0f;
-    
-    if (sel > 0.5)
-    {
-        col = (mo > 0.5) ? selectedMouseOverColor : selectedColor;
-    }
     
     if (!visLayer)
     {

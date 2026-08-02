@@ -1,4 +1,5 @@
 ﻿using Cad_Point_Manager.Controls.D3DControl;
+using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Helpers;
 using netDxf.Entities;
 using PdfSharpCore.Drawing;
@@ -80,20 +81,20 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         }
         public override void DrawToD2dDeviceContext(DeviceContext1 deviceContext, Factory2 factory, Brush brush, float thickness, StrokeStyle1 strokeStyle)
         {
-            PathGeometry pathGeometry = new(factory);
-            using (var geometrySink = pathGeometry.Open())
-            {
-                geometrySink.BeginFigure(new RawVector2(Vertices[0].Position.X, Vertices[0].Position.Y), FigureBegin.Hollow);
-                for (int i = 0; i < Vertices.Length / 2; i++)
-                {
-                    int index = 2 * i + 1;
-                    geometrySink.AddLine(new RawVector2(Vertices[index].Position.X, Vertices[index].Position.Y));
-                }
-                geometrySink.EndFigure(FigureEnd.Open);
-                geometrySink.Close();
-            }
+            //PathGeometry pathGeometry = new(factory);
+            //using (var geometrySink = pathGeometry.Open())
+            //{
+            //    geometrySink.BeginFigure(new RawVector2(Vertices[0].Position.X, Vertices[0].Position.Y), FigureBegin.Hollow);
+            //    for (int i = 0; i < Vertices.Length / 2; i++)
+            //    {
+            //        int index = 2 * i + 1;
+            //        geometrySink.AddLine(new RawVector2(Vertices[index].Position.X, Vertices[index].Position.Y));
+            //    }
+            //    geometrySink.EndFigure(FigureEnd.Open);
+            //    geometrySink.Close();
+            //}
 
-            deviceContext.DrawGeometry(pathGeometry, brush, thickness, strokeStyle);
+            //deviceContext.DrawGeometry(pathGeometry, brush, thickness, strokeStyle);
         }
         public override void DrawToPdf(
            XGraphics gfx,
@@ -182,17 +183,17 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                     var segment = DrawingSegments[i];
                     if (segment is DrawingArc arc)
                     {
-                        var startArcVertex = arc.Vertices.First().Position;
+                        var startArcVertex = arc.LineInstances.First().Start.ToSharpDXVector3();
                         Vector3 dxfStartVertex = new((float)vertices[i].Position.X, (float)vertices[i].Position.Y, 0);
                         var d = Vector3.Distance(startArcVertex, dxfStartVertex);
 
                         if (d > 0)
                         {
-                            arc.Vertices.Reverse();
+                            arc.LineInstances.Reverse();
                         }
                     }
                 }
-                Vertices = DrawingSegments.SelectMany(s => s.Vertices).ToArray();
+                LineInstances = DrawingSegments.SelectMany(s => s.LineInstances).ToArray();
                 UpdateBounds();
             }
 
@@ -224,17 +225,17 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                     var segment = DrawingSegments[i];
                     if (segment is DrawingArc arc)
                     {
-                        var startArcVertex = arc.Vertices.First().Position;
+                        var startArcVertex = arc.LineInstances.First().Start.ToSharpDXVector3();
                         Vector3 dxfStartVertex = new((float)vertices[i].X, (float)vertices[i].Y, 0);
                         var d = Vector3.Distance(startArcVertex, dxfStartVertex);
 
                         if (d > 0)
                         {
-                            arc.Vertices.Reverse();
+                            arc.LineInstances.Reverse();
                         }
                     }
                 }
-                Vertices = DrawingSegments.SelectMany(s => s.Vertices).ToArray();
+                LineInstances = DrawingSegments.SelectMany(s => s.LineInstances).ToArray();
                 UpdateBounds();
             }
             else

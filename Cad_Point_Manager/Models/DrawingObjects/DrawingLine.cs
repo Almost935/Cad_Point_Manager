@@ -67,9 +67,13 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
         public override void UpdateVertices(ResCache resCache, uint layerId, uint objectId)
         {
-            LineVertex startVertex = new(Start, layerId, objectId);
-            LineVertex endVertex = new(End, layerId, objectId);
-            Vertices = new[] { startVertex, endVertex };
+            LineInstances = new [] { new LineInstance
+            {
+                Start = Start.ToSharpDXVector2(),
+                End = End.ToSharpDXVector2(),
+                LayerId = layerId,
+                ObjectId = objectId
+            }};
         }
 
         public override void UpdateBounds()

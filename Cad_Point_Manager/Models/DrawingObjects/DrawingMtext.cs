@@ -68,7 +68,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             UpdateBounds();
 
             TextVertices = Segments.SelectMany(s => s.TextVertices).ToList();
-            LineVertices = Segments.SelectMany(s => s.LineVertices).ToList();
+            LineInstances = Segments.SelectMany(s => s.LineInstances).ToList();
         }
         public override void MouseEnter()
         {

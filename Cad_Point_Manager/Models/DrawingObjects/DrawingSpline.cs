@@ -65,7 +65,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         public override void UpdateVertices(ResCache resCache, uint layerId, uint objectId)
         {
             PolylineApproximation.UpdateVertices(resCache, layerId, objectId);
-            Vertices = PolylineApproximation.Vertices;
+            LineInstances = PolylineApproximation.LineInstances;
         }
 
         public override void UpdateBounds()

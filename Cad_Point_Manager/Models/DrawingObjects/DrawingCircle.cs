@@ -1,4 +1,5 @@
 ﻿using Cad_Point_Manager.Controls.D3DControl;
+using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Helpers;
 using netDxf.Entities;
 using PdfSharpCore.Drawing;
@@ -52,21 +53,9 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 throw new ArgumentException("entity must be of type Circle");
             }
         }
-        public override void DrawToD2dDeviceContext(DeviceContext1 deviceContext, Factory2 factory, Brush brush, float thickness, StrokeStyle1 strokeStyle)
+        public override void DrawToD2dDeviceContext(DeviceContext1 deviceContext, Factory2 factory, 
+            Brush brush, float thickness, StrokeStyle1 strokeStyle)
         {
-            PathGeometry pathGeometry = new(factory);
-            using (var geometrySink = pathGeometry.Open())
-            {
-                geometrySink.BeginFigure(new RawVector2(Vertices[0].Position.X, Vertices[0].Position.Y), FigureBegin.Hollow);
-                for (int i = 0; i < Vertices.Length / 2; i++)
-                {
-                    int index = 2 * i + 1;
-                    geometrySink.AddLine(new RawVector2(Vertices[index].Position.X, Vertices[index].Position.Y));
-                }
-                geometrySink.EndFigure(FigureEnd.Open);
-                geometrySink.Close();
-            }
-            deviceContext.DrawGeometry(pathGeometry, brush, thickness, strokeStyle);
         }
         public override void DrawToPdf(
            XGraphics gfx,
@@ -101,39 +90,35 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         {
             if (EntityObject is Circle circle)
             {
-                Array.Clear(Vertices);
+                Array.Clear(LineInstances);
 
                 NumberOfSegments = CalculateSegments(Radius, Sweep);
 
                 var vertices = circle.ToPolyline2D(NumberOfSegments).Vertexes;
-                List<LineVertex> lineVertices = [];
+                List<LineInstance> lineInstances = [];
 
                 for (int i = 0; i < vertices.Count; i++)
                 {
-                    if (i == vertices.Count - 1)
+                    int next = (i + 1) % vertices.Count;
+
+                    lineInstances.Add(new LineInstance
                     {
-                        LineVertex start = new(
-                            new Vector3((float)vertices[i].Position.X, (float)vertices[i].Position.Y, 0), layerId, objectId);
-                        LineVertex end = new(
-                            new Vector3((float)vertices[0].Position.X, (float)vertices[0].Position.Y, 0), layerId, objectId);
-                        lineVertices.Add(start);
-                        lineVertices.Add(end);
+                        Start = new(
+                            (float)vertices[i].Position.X,
+                            (float)vertices[i].Position.Y),
 
-                        break;
-                    }
+                        End = new(
+                            (float)vertices[next].Position.X,
+                            (float)vertices[next].Position.Y),
 
-                    LineVertex s = new(
-                        new Vector3((float)vertices[i].Position.X, (float)vertices[i].Position.Y, 0), layerId, objectId);
-                    LineVertex e = new(
-                        new Vector3((float)vertices[i + 1].Position.X, (float)vertices[i + 1].Position.Y, 0), layerId, objectId);
-
-                    lineVertices.Add(s);
-                    lineVertices.Add(e);
+                        LayerId = layerId,
+                        ObjectId = objectId,
+                    });
                 }
 
-                Vertices = lineVertices.ToArray();
-                Start = Vertices.First().Position;
-                End = Vertices.Last().Position;
+                LineInstances = lineInstances.ToArray();
+                Start = LineInstances.First().Start.ToSharpDXVector3();
+                End = LineInstances.Last().End.ToSharpDXVector3();
 
                 UpdateBounds();
             }
