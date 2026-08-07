@@ -54,11 +54,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 throw new ArgumentException("entity must be of type Line");
             }
         }
-        public override void DrawToD2dDeviceContext(DeviceContext1 deviceContext, 
-            Factory2 factory, Brush brush, float thickness, StrokeStyle1 strokeStyle)
-        {
-            deviceContext.DrawLine(new RawVector2(Start.X, Start.Y), new RawVector2(End.X, End.Y), brush, thickness, strokeStyle);
-        }
         public override void DrawToPdf(
            XGraphics gfx,
            System.Windows.Media.Matrix worldToPdf,

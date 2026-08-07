@@ -7,6 +7,7 @@ using PdfSharpCore.Drawing;
 using SharpDX;
 using SharpDX.Direct2D1;
 using SharpDX.Mathematics.Interop;
+using System.Diagnostics;
 using System.Windows;
 
 using Vector3 = SharpDX.Vector3;
@@ -67,10 +68,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 throw new ArgumentException("entity must be of type Arc");
             }
         }
-        public override void DrawToD2dDeviceContext(DeviceContext1 deviceContext, Factory2 factory, Brush brush, float thickness, StrokeStyle1 strokeStyle)
-        {
-            
-        }
         public override void DrawToPdf(
             XGraphics gfx,
             System.Windows.Media.Matrix worldToPdf,
@@ -113,6 +110,10 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 Array.Clear(LineInstances);
 
                 NumberOfSegments = CalculateSegments(Radius, Sweep);
+
+                Debug.WriteLine($"\nArc: Radius: {Radius} Sweep: {Sweep}" +
+                $"\nNumberOfSegments: {NumberOfSegments}");
+
                 var vertices = arc.ToPolyline2D(NumberOfSegments).Vertexes;
                 List<LineInstance> lineInstances = [];
 

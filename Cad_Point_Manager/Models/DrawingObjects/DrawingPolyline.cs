@@ -81,23 +81,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 throw new ArgumentException("entity must be of type Polyline2D or Polyline3D");
             }
         }
-        public override void DrawToD2dDeviceContext(DeviceContext1 deviceContext, Factory2 factory, Brush brush, float thickness, StrokeStyle1 strokeStyle)
-        {
-            //PathGeometry pathGeometry = new(factory);
-            //using (var geometrySink = pathGeometry.Open())
-            //{
-            //    geometrySink.BeginFigure(new RawVector2(Vertices[0].Position.X, Vertices[0].Position.Y), FigureBegin.Hollow);
-            //    for (int i = 0; i < Vertices.Length / 2; i++)
-            //    {
-            //        int index = 2 * i + 1;
-            //        geometrySink.AddLine(new RawVector2(Vertices[index].Position.X, Vertices[index].Position.Y));
-            //    }
-            //    geometrySink.EndFigure(FigureEnd.Open);
-            //    geometrySink.Close();
-            //}
-
-            //deviceContext.DrawGeometry(pathGeometry, brush, thickness, strokeStyle);
-        }
+     
         public override void DrawToPdf(
            XGraphics gfx,
            System.Windows.Media.Matrix worldToPdf,

@@ -28,7 +28,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         }
 
         public abstract void UpdateData();
-        public abstract void DrawToD2dDeviceContext(DeviceContext1 deviceContext, Factory2 factory, Brush brush, float thickness, StrokeStyle1 strokeStyle);
         public abstract void DrawToPdf(
             XGraphics gfx,
             System.Windows.Media.Matrix worldToPdf,

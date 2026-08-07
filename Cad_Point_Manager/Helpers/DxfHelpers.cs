@@ -60,6 +60,8 @@ namespace Cad_Point_Manager.Helpers
                     polyline3D, layer, color, colorType, lineType, ownerBlock is not null, ownerBlock),
                 Circle circle => new DrawingCircle(
                     circle, layer, color, colorType, lineType, ownerBlock is not null, ownerBlock),
+                Ellipse ellipse => new DrawingEllipse(
+                    ellipse, layer, color, colorType, lineType, ownerBlock is not null, ownerBlock),
                 Insert block => new DrawingBlock(
                     block, layer, color, colorType, lineType, ownerBlock is not null, ownerBlock, isPartOfDimension: isPartOfDimension),
                 MText mtext => new DrawingMtext(
@@ -85,6 +87,7 @@ namespace Cad_Point_Manager.Helpers
                 Line line => new DrawingLine(line, layer, color, colorType, lineType, ownerBlock is not null, ownerBlock),
                 Arc arc => new DrawingArc(arc, layer, color, colorType, lineType, ownerBlock is not null, ownerBlock),
                 Circle circle => new DrawingCircle(circle, layer, color, colorType, lineType, ownerBlock is not null, ownerBlock),
+                Ellipse ellipse => new DrawingEllipse(ellipse, layer, color, colorType, lineType, ownerBlock is not null, ownerBlock),
                 _ => null,
             };
         }
@@ -232,7 +235,7 @@ namespace Cad_Point_Manager.Helpers
             return (r, g, b, a);
         }
 
-        public static DrawingObject PolylineResolver(Polyline2D polyline2D, ObjectLayer layer, SharpDX.Vector4 color, 
+        public static DrawingObject PolylineResolver(Polyline2D polyline2D, ObjectLayer layer, SharpDX.Vector4 color,
             ColorType colorType, LineType lineType, DrawingBlock ownerBlock = null, bool isPartOfDimension = false)
         {
             if (polyline2D == null) { return null; }

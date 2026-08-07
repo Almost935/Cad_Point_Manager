@@ -85,11 +85,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         #region Methods
         public override void UpdateData() { }
 
-        public override void DrawToD2dDeviceContext(SharpDX.Direct2D1.DeviceContext1 deviceContext, SharpDX.Direct2D1.Factory2 factory,
-            SharpDX.Direct2D1.Brush brush, float thickness, SharpDX.Direct2D1.StrokeStyle1 strokeStyle)
-        {
-
-        }
         public override void DrawToPdf(XGraphics gfx, System.Windows.Media.Matrix worldToPdf, XPen pen)
         {
             if (string.IsNullOrWhiteSpace(Text)) { return; }

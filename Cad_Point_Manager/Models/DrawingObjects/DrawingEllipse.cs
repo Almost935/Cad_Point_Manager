@@ -5,6 +5,7 @@ using Cad_Point_Manager.Models.DrawingObjects.HelperClasses;
 using netDxf.Entities;
 using PdfSharpCore.Drawing;
 using SharpDX;
+using System.Diagnostics;
 using System.Windows;
 
 namespace Cad_Point_Manager.Models.DrawingObjects
@@ -16,6 +17,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         public float MajorAxis { get; private set; }
         public float MinorAxis { get; private set; }
         public bool IsLargeArc { get; private set; }
+        public Vector3 MidPoint { get; set; }
 
         private Ellipse DxfEllipse => EntityObject as Ellipse;
         #endregion
@@ -51,25 +53,21 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             StartAngle = (float)ellipse.StartAngle;
             EndAngle = (float)ellipse.EndAngle;
             Sweep = EndAngle - StartAngle;
-
+            
             if (Sweep < 0) { Sweep += 360; }
+            if (Math.Abs(Sweep) < 1e-6) { Sweep = 360.0f; }
 
             IsLargeArc = Sweep >= 180;
-            NumberOfSegments = CalculateSegments(MajorAxis, Sweep);
+
+            double effectiveRadius = Math.Min(MajorAxis, MinorAxis);
+            NumberOfSegments = CalculateSegments(effectiveRadius, Sweep);
 
             var vertices = ellipse.ToPolyline2D(NumberOfSegments).Vertexes;
-
             SamplePoints = vertices.Select(v => new System.Windows.Point(v.Position.X, v.Position.Y)).ToList();
-
             Start = vertices.First().Position.ToSharpDXVector3();
-
             End = vertices.Last().Position.ToSharpDXVector3();
 
             UpdateBounds();
-        }
-        public override void DrawToD2dDeviceContext(DeviceContext1 deviceContext, Factory2 factory, Brush brush, float thickness, StrokeStyle1 strokeStyle)
-        {
-
         }
         public override void DrawToPdf(
             XGraphics gfx,
@@ -108,34 +106,34 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         }
         public override void UpdateVertices(ResCache resCache, uint layerId, uint objectId, uint lineTypeId)
         {
-            if (EntityObject is Arc arc)
+            if (EntityObject is not Ellipse ellipse) { throw new ArgumentException(); }
+
+            var vertices = ellipse.ToPolyline2D(NumberOfSegments).Vertexes;
+
+            List<LineInstance> lines = [];
+
+            bool closed = Math.Abs(Sweep - 360f) < 0.001f;
+
+            for (int i = 0; i < vertices.Count - 1; i++)
             {
-                Array.Clear(LineInstances);
-
-                NumberOfSegments = CalculateSegments(Radius, Sweep);
-                var vertices = arc.ToPolyline2D(NumberOfSegments).Vertexes;
-                List<LineInstance> lineInstances = [];
-
-                for (int i = 0; i < vertices.Count; i++)
-                {
-                    if (i == vertices.Count - 1) { break; }
-
-                    int next = (i + 1) % vertices.Count;
-
-                    LineInstance lineInstance = new(
-                        vertices[i].Position.ToSharpDXVector2(), vertices[next].Position.ToSharpDXVector2(), layerId, objectId);
-
-                    lineInstances.Add(lineInstance);
-                }
-
-                LineInstances = lineInstances.ToArray();
-
-                UpdateBounds();
+                lines.Add(new LineInstance(vertices[i].Position.ToSharpDXVector2(),
+                    vertices[i + 1].Position.ToSharpDXVector2(),
+                    layerId,
+                    objectId));
             }
-            else
+
+            if (closed)
             {
-                throw new ArgumentException("entity must be of type Arc");
+                lines.Add(new LineInstance(
+                    vertices[^1].Position.ToSharpDXVector2(),
+                    vertices[0].Position.ToSharpDXVector2(),
+                    layerId,
+                    objectId));
             }
+
+            LineInstances = lines.ToArray();
+
+            UpdateBounds();
         }
         public override double DistanceToPoint(System.Windows.Point point)
         {
@@ -179,12 +177,9 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         {
             Bounds = Rect.Empty;
 
-            if (DxfArc is not null)
+            foreach (var p in SamplePoints)
             {
-                foreach (var point in SamplePoints)
-                {
-                    Bounds = Rect.Union(Bounds, point);
-                }
+                Bounds = Rect.Union(Bounds, p);
             }
         }
         public override bool GeometryInRect(Rect rect)

@@ -72,11 +72,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects.Dimensioning
             throw new NotImplementedException();
         }
 
-        public override void DrawToD2dDeviceContext(DeviceContext1 deviceContext, Factory2 factory, Brush brush, float thickness, StrokeStyle1 strokeStyle)
-        {
-            throw new NotImplementedException();
-        }
-
         public override void DrawToPdf(XGraphics gfx, System.Windows.Media.Matrix worldToPdf, XPen pen)
         {
             DimensionBlock.DrawToPdf(gfx, worldToPdf, pen);

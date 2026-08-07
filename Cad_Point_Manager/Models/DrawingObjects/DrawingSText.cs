@@ -93,10 +93,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 throw new ArgumentException("EntityObject must be of type MText or Text");
             }
         }
-        public override void DrawToD2dDeviceContext(DeviceContext1 deviceContext, SharpDX.Direct2D1.Factory2 factory, Brush brush, float thickness, StrokeStyle1 strokeStyle)
-        {
-            //deviceContext.DrawTextLayout(new RawVector2((float)Position.X, -(float)Position.Y), TextLayout, brush);
-        }
         public override void DrawToPdf(XGraphics gfx, System.Windows.Media.Matrix worldToPdf, XPen pen)
         {
             if (TextRenderStyle is TextRenderStyle.Stroke)

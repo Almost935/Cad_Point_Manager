@@ -72,13 +72,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 throw new ArgumentException("entity must be of type Insert");
             }
         }
-        public override void DrawToD2dDeviceContext(DeviceContext1 deviceContext, Factory2 factory, Brush brush, float thickness, StrokeStyle1 strokeStyle)
-        {
-            foreach (var obj in DrawingObjects)
-            {
-                obj.DrawToD2dDeviceContext(deviceContext, factory, brush, thickness, strokeStyle);
-            }
-        }
         public override void DrawToPdf(
             XGraphics gfx,
             System.Windows.Media.Matrix worldToPdf,
