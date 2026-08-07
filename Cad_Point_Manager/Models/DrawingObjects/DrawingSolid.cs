@@ -1,6 +1,7 @@
 ﻿using Cad_Point_Manager.Controls.D3DControl;
 using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Helpers;
+using Cad_Point_Manager.Models.DrawingObjects.HelperClasses;
 using netDxf.Entities;
 using PdfSharpCore.Drawing;
 using SharpDX;
@@ -24,13 +25,15 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         #endregion
 
         #region Constructors
-        public DrawingSolid(Solid solid, ObjectLayer layer, Vector4 objectColor, ColorType colorType, bool isPartOfBlock = false, DrawingBlock block = null)
+        public DrawingSolid(Solid solid, ObjectLayer layer, Vector4 objectColor, ColorType colorType, 
+            LineType lineType, bool isPartOfBlock = false, DrawingBlock block = null)
         {
             Type = DrawingObjectType.DrawingSolid;
             EntityObject = solid;
             Layer = layer;
             ObjectColor = objectColor;
             ColorType = colorType;
+            LineType = lineType;
             IsPartOfBlock = isPartOfBlock;
             DrawingBlock = block;
 

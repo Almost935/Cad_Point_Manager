@@ -1,7 +1,7 @@
 ﻿using SharpDX;
 using SharpDX.Direct2D1;
 
-namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
+namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Helpers
 {
     public class CustomTessellationSink : CallbackBase, TessellationSink
     {

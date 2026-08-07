@@ -2,9 +2,9 @@
 using Cad_Point_Manager.Models.DrawingObjects;
 using Cad_Point_Manager.Models.PointRendering;
 using SharpDX;
-using static Cad_Point_Manager.Controls.D3DControl.Rendering.Text.D3dStateBuffers;
+using static Cad_Point_Manager.Controls.D3DControl.Rendering.Helpers.D3dStateBuffers;
 
-namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
+namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Helpers
 {
     public sealed class D3dStateController
     {
@@ -16,6 +16,7 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
         private readonly HashSet<uint> _dirtyLabels = [];
         private readonly HashSet<uint> _dirtyPoints = [];
         private readonly HashSet<uint> _dirtyLayers = [];
+        private readonly HashSet<uint> _dirtyLineTypes = [];
         #endregion
 
         #region Constructors
@@ -32,6 +33,7 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
         public ReadOnlySpan<GroupState> GetGroupStates() => _bufs.GroupSpan;
         public ReadOnlySpan<LayerState> GetLayerStates() => _bufs.LayerSpan;
         public ReadOnlySpan<ObjectState> GetObjectStates() => _bufs.ObjectSpan;
+        public ReadOnlySpan<LineTypeInfo> GetLineTypeStates() => _bufs.LineTypeSpan;
 
         public PointRegistration EnsurePointRegistered(CogoPoint p)
         {
@@ -84,6 +86,13 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
         {
             var src = _bufs.ObjectSpan;
             var dst = new ObjectState[src.Length];
+            src.CopyTo(dst);
+            return dst;
+        }
+        public LineTypeInfo[] GetLineTypeStatesSnapshot()
+        {
+            var src = _bufs.LineTypeSpan;
+            var dst = new LineTypeInfo[src.Length];
             src.CopyTo(dst);
             return dst;
         }
@@ -258,6 +267,11 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
             _bufs.FlushLabelSubset(_dirtyLabels);
             _dirtyLabels.Clear();
         }
+        public void FlushLineTypeUpdates()
+        {
+            _bufs.FlushLineTypeSubset(_dirtyLineTypes);
+            _dirtyLineTypes.Clear();
+        }
 
         public void ClearDirty()
         {
@@ -266,6 +280,7 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
             _dirtyLabels.Clear();
             _dirtyPoints.Clear();
             _dirtyLayers.Clear();
+            _dirtyLineTypes.Clear();
         }
         #endregion
 

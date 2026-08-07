@@ -5,6 +5,14 @@ using Matrix = SharpDX.Matrix;
 
 namespace Cad_Point_Manager.Controls.D3DControl
 {
+    public struct DrawingSettingsBuffer
+    {
+        public Vector4 BackgroundColor;
+        public Vector4 GridColor;
+        public Vector2 ViewportSize;
+        public float GridSpacingWorld;
+        private float _pad; // Padding to ensure the structure is 16-byte aligned
+    }
     [StructLayout(LayoutKind.Sequential)]
     public struct SolidVertex(Vector3 pos, uint layerId, uint objectId)
     {
@@ -251,8 +259,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
     [StructLayout(LayoutKind.Sequential)]
     public struct ObjectState
     {
-        public uint Flags; // bit0: visible bit1: selected, bit2: mouseOver, bit3: colorByLayer        
-        public Vector3 Pad;   // 16B stride
+        public uint Flags; // bit0: visible bit1: selected, bit2: mouseOver, bit3: colorByLayer
+        public uint LineTypeId; // LineType index
+        public Vector2 Pad;   // 16B stride
         public Vector4 Color;
     }
     [StructLayout(LayoutKind.Sequential)]
@@ -280,7 +289,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public Vector3 Position = position;
         public uint LayerId = layerId;   // Layer index
         public uint ObjectId = objectId;  // Object index
-        private Vector3 _padding; // Padding to ensure the structure is 16-byte aligned
+        public uint LinetypeId; // Line type index
+        private Vector2 _padding; // Padding to ensure the structure is 16-byte aligned
 
         public readonly LineVertex Translate(Vector3 offset)
         {
@@ -324,6 +334,15 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 Vector2.TransformCoordinate(End, transform),
                 LayerId, ObjectId);
         }
+    }
+    [StructLayout(LayoutKind.Sequential)]
+    public struct LineTypeInfo
+    {
+        public uint FirstPatternIndex;
+        public uint PatternCount;
+
+        public float PatternLength;
+        public float Padding;
     }
 
     [StructLayout(LayoutKind.Sequential)]

@@ -1,4 +1,5 @@
-﻿using Cad_Point_Manager.Models.HitTesting;
+﻿using Cad_Point_Manager.Models.DrawingObjects.HelperClasses;
+using Cad_Point_Manager.Models.HitTesting;
 using netDxf.Entities;
 using PdfSharpCore.Drawing;
 using SharpDX;
@@ -17,7 +18,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         public ColorType ColorType { get; set; }
         public bool IsPartOfBlock { get; set; } = false;
         public DrawingBlock DrawingBlock { get; set; }
-        //public bool ColorByLayer { get; set; }
+        public LineType LineType { get; set; }
         #endregion
 
         #region Methods

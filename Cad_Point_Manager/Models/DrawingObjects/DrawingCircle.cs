@@ -1,6 +1,7 @@
 ﻿using Cad_Point_Manager.Controls.D3DControl;
 using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Helpers;
+using Cad_Point_Manager.Models.DrawingObjects.HelperClasses;
 using netDxf.Entities;
 using PdfSharpCore.Drawing;
 using SharpDX;
@@ -21,12 +22,13 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         #endregion
 
         #region Constructor
-        public DrawingCircle(Circle circle, ObjectLayer layer, Vector4 objectColor, ColorType colorType, bool isPartOfBlock = false, DrawingBlock block = null)
+        public DrawingCircle(Circle circle, ObjectLayer layer, Vector4 objectColor, ColorType colorType, LineType lineType, bool isPartOfBlock = false, DrawingBlock block = null)
         {
             Type = DrawingObjectType.DrawingCircle;
             Layer = layer;
             ObjectColor = objectColor;
             ColorType = colorType;
+            LineType = lineType;
             IsPartOfBlock = isPartOfBlock;
             DrawingBlock = block;
             EntityObject = circle;
@@ -53,7 +55,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 throw new ArgumentException("entity must be of type Circle");
             }
         }
-        public override void DrawToD2dDeviceContext(DeviceContext1 deviceContext, Factory2 factory, 
+        public override void DrawToD2dDeviceContext(DeviceContext1 deviceContext, Factory2 factory,
             Brush brush, float thickness, StrokeStyle1 strokeStyle)
         {
         }
@@ -86,7 +88,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             gfx.DrawEllipse(pen, rect);
         }
 
-        public override void UpdateVertices(ResCache resCache, uint layerId, uint objectId)
+        public override void UpdateVertices(ResCache resCache, uint layerId, uint objectId, uint lineTypeId)
         {
             if (EntityObject is Circle circle)
             {
@@ -101,19 +103,8 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 {
                     int next = (i + 1) % vertices.Count;
 
-                    lineInstances.Add(new LineInstance
-                    {
-                        Start = new(
-                            (float)vertices[i].Position.X,
-                            (float)vertices[i].Position.Y),
-
-                        End = new(
-                            (float)vertices[next].Position.X,
-                            (float)vertices[next].Position.Y),
-
-                        LayerId = layerId,
-                        ObjectId = objectId,
-                    });
+                    lineInstances.Add(new LineInstance(
+                        vertices[i].Position.ToSharpDXVector2(), vertices[next].Position.ToSharpDXVector2(), layerId, objectId));
                 }
 
                 LineInstances = lineInstances.ToArray();

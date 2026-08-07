@@ -1,7 +1,7 @@
 ﻿using SharpDX;
 using SharpDX.DirectWrite;
 
-namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
+namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Helpers
 {
     /// <summary>
     /// Produces and caches glyph triangle meshes (positions in DESIGN UNITS).

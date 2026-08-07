@@ -1,8 +1,9 @@
 ﻿using Cad_Point_Manager.Common;
 using Cad_Point_Manager.Controls.D3DControl;
-using Cad_Point_Manager.Controls.D3DControl.Rendering.Text;
+using Cad_Point_Manager.Controls.D3DControl.Rendering.Helpers;
 using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Helpers;
+using Cad_Point_Manager.Models.DrawingObjects.HelperClasses;
 using Cad_Point_Manager.Models.LffFontRendering;
 using Cad_Point_Manager.Services.Exporting;
 using netDxf.Entities;
@@ -38,7 +39,8 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         #endregion
 
         #region Constructor
-        public DrawingSText(Text text, ObjectLayer layer, Vector4 objectColor, ColorType colorType, bool isPartOfBlock = false, DrawingBlock block = null)
+        public DrawingSText(Text text, ObjectLayer layer, Vector4 objectColor, ColorType colorType, 
+            LineType lineType, bool isPartOfBlock = false, DrawingBlock block = null)
         {
             Type = DrawingObjectType.DrawingSText;
             EntityObject = text;
@@ -46,6 +48,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             Layer = layer;
             ObjectColor = objectColor;
             ColorType = colorType;
+            LineType = lineType;
             IsPartOfBlock = isPartOfBlock;
             DrawingBlock = block;
 
@@ -127,7 +130,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             }
         }
 
-        public override void UpdateVertices(ResCache resCache, uint layerId, SceneIdMap sceneIdMap, D3dStateBuffers stateBuffers)
+        public override void UpdateVertices(ResCache resCache, uint layerId, uint lineTypeId, SceneIdMap sceneIdMap, D3dStateBuffers stateBuffers)
         {
             GetTextFormat(resCache.WriteFactory);
             GetTextLayout(resCache.WriteFactory);
@@ -139,7 +142,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             if (TextRenderStyle == TextRenderStyle.Stroke)
             {
                 List<Vector2> vertices = GetLffVertices();
-                LineInstances = GetLineVertices(vertices, layerId, objectId);
+                LineInstances = GetLineVertices(vertices, layerId, objectId, lineTypeId);
                 TextVertices = [];
             }
             else
@@ -218,7 +221,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             TextLayout = new(factory, Text, _textFormat, (float)Bounds.Width, (float)Bounds.Height, 96, true);
         }
 
-        public List<LineInstance> GetLineVertices(List<Vector2> vertices, uint layerId, uint objectId)
+        public List<LineInstance> GetLineVertices(List<Vector2> vertices, uint layerId, uint objectId, uint lineTypeId)
         {
             List<LineInstance> lineInstances = [];
 
@@ -240,7 +243,11 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 var s = vertices[i];
                 var e = vertices[i + 1];
 
-                LineInstance lineInstance = new(Vector2.TransformCoordinate(s, transform), Vector2.TransformCoordinate(e, transform), layerId, objectId);
+                LineInstance lineInstance = new(
+                    Vector2.TransformCoordinate(s, transform), 
+                    Vector2.TransformCoordinate(e, transform), 
+                    layerId, objectId);
+
                 lineInstances.Add(lineInstance);
             }
             return lineInstances;

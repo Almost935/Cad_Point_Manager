@@ -1,6 +1,7 @@
 ﻿using Cad_Point_Manager.Controls.D3DControl;
 using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Helpers;
+using Cad_Point_Manager.Models.DrawingObjects.HelperClasses;
 using netDxf.Entities;
 using PdfSharpCore.Drawing;
 using SharpDX;
@@ -22,14 +23,14 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         #endregion
 
         #region Constructors
-        //private DrawingPolyline() { Type = DrawingObject3dType.DrawingPolyline; }
-
-        public DrawingPolyline(Polyline2D polyline2D, ObjectLayer layer, Vector4 objectColor, ColorType colorType, bool isPartOfBlock = false, DrawingBlock block = null)
+        public DrawingPolyline(Polyline2D polyline2D, ObjectLayer layer, Vector4 objectColor, 
+            ColorType colorType, LineType lineType, bool isPartOfBlock = false, DrawingBlock block = null)
         {
             Type = DrawingObjectType.DrawingPolyline;
             Layer = layer;
             ObjectColor = objectColor;
             ColorType = colorType;
+            LineType = lineType;
             IsPartOfBlock = isPartOfBlock;
             DrawingBlock = block;
             EntityObject = polyline2D;
@@ -37,13 +38,14 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             UpdateColor();
             UpdateData();
         }
-
-        public DrawingPolyline(Polyline3D polyline3D, ObjectLayer layer, Vector4 objectColor, ColorType colorType, bool isPartOfBlock = false, DrawingBlock block = null)
+        public DrawingPolyline(Polyline3D polyline3D, ObjectLayer layer, Vector4 objectColor, 
+            ColorType colorType, LineType lineType, bool isPartOfBlock = false, DrawingBlock block = null)
         {
             Type = DrawingObjectType.DrawingPolyline;
             Layer = layer;
             ObjectColor = objectColor;
             ColorType = colorType;
+            LineType = lineType;
             IsPartOfBlock = isPartOfBlock;
             DrawingBlock = block;
             EntityObject = polyline3D;
@@ -153,7 +155,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             return false;
         }
 
-        public override void UpdateVertices(ResCache resCache, uint layerId, uint objectId)
+        public override void UpdateVertices(ResCache resCache, uint layerId, uint objectId, uint lineTypeId)
         {
             if (EntityObject is Polyline2D polyline2D)
             {
@@ -169,11 +171,11 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 {
                     var colorType = DxfHelpers.GetColorType(e);
                     Vector4 color = DxfHelpers.GetEntityObjectColor(e, DrawingBlock?.DxfInsert);
-                    var obj = DxfHelpers.GetDrawingSegment(e, Layer, color, colorType, DrawingBlock);
+                    var obj = DxfHelpers.GetDrawingSegment(e, Layer, color, colorType, LineType, DrawingBlock);
 
                     if (obj is not null)
                     {
-                        obj.UpdateVertices(resCache, layerId, objectId);
+                        obj.UpdateVertices(resCache, layerId, objectId, lineTypeId);
                         DrawingSegments.Add(obj);
                     }
                 }
@@ -211,11 +213,11 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 {
                     var colorType = DxfHelpers.GetColorType(e);
                     Vector4 color = DxfHelpers.GetEntityObjectColor(e, DrawingBlock.DxfInsert);
-                    var obj = DxfHelpers.GetDrawingSegment(e, Layer, color, colorType, DrawingBlock);
+                    var obj = DxfHelpers.GetDrawingSegment(e, Layer, color, colorType, LineType, DrawingBlock);
 
                     if (obj is not null)
                     {
-                        obj.UpdateVertices(resCache, layerId, objectId);
+                        obj.UpdateVertices(resCache, layerId, objectId, lineTypeId);
                         DrawingSegments.Add(obj);
                     }
                 }

@@ -10,6 +10,7 @@
         DrawingLine,
         DrawingArc,
         DrawingCircle,
+        DrawingEllipse,
         DrawingPolyline,
         DrawingBlock,
         DrawingSText,

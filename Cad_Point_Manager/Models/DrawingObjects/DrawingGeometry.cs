@@ -1,4 +1,5 @@
 ﻿using Cad_Point_Manager.Controls.D3DControl;
+using Cad_Point_Manager.Models.DrawingObjects.HelperClasses;
 using SharpDX;
 using System.Windows;
 
@@ -11,9 +12,8 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         public LineInstance[] LineInstances { get; set; } = [];
         public int StartVertexIndex { get; set; }
         public int EndVertexIndex { get; set; }
-        public uint ObjectId { get; set; }
 
-        public abstract void UpdateVertices(ResCache resCache, uint layerId, uint objectId);
+        public abstract void UpdateVertices(ResCache resCache, uint layerId, uint objectId, uint lineTypeId);
 
         public override void MouseEnter()
         {

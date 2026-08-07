@@ -1,6 +1,7 @@
 ﻿using Cad_Point_Manager.Controls.D3DControl;
-using Cad_Point_Manager.Controls.D3DControl.Rendering.Text;
+using Cad_Point_Manager.Controls.D3DControl.Rendering.Helpers;
 using Cad_Point_Manager.Helpers;
+using Cad_Point_Manager.Models.DrawingObjects.HelperClasses;
 using netDxf.Entities;
 using PdfSharpCore.Drawing;
 using SharpDX;
@@ -31,7 +32,8 @@ namespace Cad_Point_Manager.Models.DrawingObjects.Dimensioning
         #endregion
 
         #region Constructors
-        public DrawingDimension(Dimension dimension, ObjectLayer layer, Vector4 objectcolor, ColorType colorType, bool isPartOfBlock = false, DrawingBlock block = null)
+        public DrawingDimension(Dimension dimension, ObjectLayer layer, Vector4 objectcolor, ColorType colorType, 
+            LineType lineType, bool isPartOfBlock = false, DrawingBlock block = null)
         {
             EntityObject = dimension;
             Dimension = dimension;
@@ -40,6 +42,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects.Dimensioning
             Layer = layer;
             ObjectColor = objectcolor;
             ColorType = colorType;
+            LineType = lineType;
             IsPartOfBlock = isPartOfBlock;
             DrawingBlock = block;
 
@@ -51,7 +54,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects.Dimensioning
         #region Methods
         public override void UpdateData()
         {
-            _dimensionBlock = DxfHelpers.GetDrawingObject(new Insert(Dimension.Block), Layer, ObjectColor, ColorType, isPartOfDimension: true) as DrawingBlock;
+            _dimensionBlock = DxfHelpers.GetDrawingObject(new Insert(Dimension.Block), Layer, ObjectColor, ColorType, LineType, isPartOfDimension: true) as DrawingBlock;
             UpdateBounds();
         }
         public override void UpdateBounds()
@@ -97,7 +100,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects.Dimensioning
             throw new NotImplementedException();
         }
 
-        public void UpdateGeometryVertices(ResCache resCache, uint layerId, SceneIdMap sceneIdMap, D3dStateBuffers stateBuffers)
+        public void UpdateGeometryVertices(ResCache resCache, uint layerId, uint lineTypeId, SceneIdMap sceneIdMap, D3dStateBuffers stateBuffers)
         {
             _lineInstances.Clear();
 
@@ -105,7 +108,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects.Dimensioning
             {
                 if (obj is DrawingBlock block)
                 {
-                    block.UpdateGeometryVertices(resCache, layerId, sceneIdMap, stateBuffers);
+                    block.UpdateGeometryVertices(resCache, layerId, lineTypeId, sceneIdMap, stateBuffers);
                     _lineInstances.AddRange(block.LineInstances);
                 }
                 if (obj is DrawingGeometry geometry)
@@ -113,22 +116,22 @@ namespace Cad_Point_Manager.Models.DrawingObjects.Dimensioning
                     var objectId = sceneIdMap.GetOrAddObjectId(obj, out var isNewObj);
                     if (isNewObj) { stateBuffers.InitializeObjectState(sceneIdMap.MaxObjectId, obj, objectId); }
 
-                    geometry.UpdateVertices(resCache, layerId, objectId);
+                    geometry.UpdateVertices(resCache, layerId, objectId, lineTypeId);
                     _lineInstances.AddRange(geometry.LineInstances);
                 }
                 if (obj is DrawingSText text)
                 {
-                    text.UpdateVertices(resCache, layerId, sceneIdMap, stateBuffers);
+                    text.UpdateVertices(resCache, layerId, lineTypeId, sceneIdMap, stateBuffers);
                     _lineInstances.AddRange(text.LineInstances);
                 }
                 if (obj is DrawingMtext mtext)
                 {
-                    mtext.UpdateVertices(resCache, layerId, sceneIdMap, stateBuffers);
+                    mtext.UpdateVertices(resCache, layerId, lineTypeId, sceneIdMap, stateBuffers);
                     _lineInstances.AddRange(mtext.LineInstances);
                 }
             }
         }
-        public void UpdateTextVertices(ResCache resCache, uint layerId, SceneIdMap sceneIdMap, D3dStateBuffers stateBuffers)
+        public void UpdateTextVertices(ResCache resCache, uint layerId, uint lineTypeId, SceneIdMap sceneIdMap, D3dStateBuffers stateBuffers)
         {
             _textVertices.Clear();
 
@@ -136,17 +139,17 @@ namespace Cad_Point_Manager.Models.DrawingObjects.Dimensioning
             {
                 if (obj is DrawingBlock block)
                 {
-                    block.UpdateTextVertices(resCache, layerId, sceneIdMap, stateBuffers);
+                    block.UpdateTextVertices(resCache, layerId, lineTypeId, sceneIdMap, stateBuffers);
                     _textVertices.AddRange(block.TextVertices);
                 }
                 if (obj is DrawingSText text)
                 {
-                    text.UpdateVertices(resCache, layerId, sceneIdMap, stateBuffers);
+                    text.UpdateVertices(resCache, layerId, lineTypeId, sceneIdMap, stateBuffers);
                     _textVertices.AddRange(text.TextVertices);
                 }
                 if (obj is DrawingMtext mtext)
                 {
-                    mtext.UpdateVertices(resCache, layerId, sceneIdMap, stateBuffers);
+                    mtext.UpdateVertices(resCache, layerId, lineTypeId, sceneIdMap, stateBuffers);
 
                     foreach (var segment in mtext.Segments)
                     {

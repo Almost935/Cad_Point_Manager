@@ -1,6 +1,7 @@
 ﻿using Cad_Point_Manager.Controls.D3DControl;
 using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Helpers;
+using Cad_Point_Manager.Models.DrawingObjects.HelperClasses;
 using Cad_Point_Manager.Services.Exporting;
 using netDxf.Entities;
 using PdfSharpCore.Drawing;
@@ -19,12 +20,14 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         #endregion
 
         #region Constructors
-        public DrawingLine(Line line, ObjectLayer layer, Vector4 objectColor, ColorType colorType, bool isPartOfBlock = false, DrawingBlock block = null)
+        public DrawingLine(Line line, ObjectLayer layer, Vector4 objectColor, ColorType colorType, 
+            LineType lineType, bool isPartOfBlock = false, DrawingBlock block = null)
         {
             Type = DrawingObjectType.DrawingLine;
             Layer = layer;
             ObjectColor = objectColor;
             ColorType = colorType;
+            LineType = lineType;
             IsPartOfBlock = isPartOfBlock;
             DrawingBlock = block;
             EntityObject = line;
@@ -51,7 +54,8 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 throw new ArgumentException("entity must be of type Line");
             }
         }
-        public override void DrawToD2dDeviceContext(DeviceContext1 deviceContext, Factory2 factory, Brush brush, float thickness, StrokeStyle1 strokeStyle)
+        public override void DrawToD2dDeviceContext(DeviceContext1 deviceContext, 
+            Factory2 factory, Brush brush, float thickness, StrokeStyle1 strokeStyle)
         {
             deviceContext.DrawLine(new RawVector2(Start.X, Start.Y), new RawVector2(End.X, End.Y), brush, thickness, strokeStyle);
         }
@@ -65,15 +69,10 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             gfx.DrawLine(pen, p0, p1);
         }
 
-        public override void UpdateVertices(ResCache resCache, uint layerId, uint objectId)
+        public override void UpdateVertices(ResCache resCache, uint layerId, uint objectId, uint lineTypeId)
         {
-            LineInstances = new [] { new LineInstance
-            {
-                Start = Start.ToSharpDXVector2(),
-                End = End.ToSharpDXVector2(),
-                LayerId = layerId,
-                ObjectId = objectId
-            }};
+            LineInstances = new[] { new LineInstance(
+                Start.ToSharpDXVector2(), End.ToSharpDXVector2(), layerId, objectId) };
         }
 
         public override void UpdateBounds()

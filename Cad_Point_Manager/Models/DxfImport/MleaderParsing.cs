@@ -28,14 +28,12 @@ namespace Cad_Point_Manager.Models.DxfImport
         Integral,
         None
     }
-
     public enum TextAlignmentType
     {
         Left = 1,
         Center = 2,
         Right = 3
     }
-
     public enum TextAttachmentType
     {
         ByStyle = -1,
@@ -49,14 +47,27 @@ namespace Cad_Point_Manager.Models.DxfImport
         BottomOfTopLine = 7,
         UnderlineAllText = 8
     }
-
     public enum TextAttachmentSide
     {
         Left,
         Right,
         Center
     }
+    public enum ParsedLineTypeKind
+    {
+        ByLayer,
+        ByBlock,
+        ByObject
+    }
+    public enum LineTypeReferenceKind
+    {
+        Handle,
+        Name,
+        Null
+    }
 
+    public readonly record struct LineTypeReference(
+        ParsedLineTypeKind ValueType, LineTypeReferenceKind ReferenceType, string? Value);
 
     public class ParsedMLeader : TagContainer
     {
@@ -78,6 +89,9 @@ namespace Cad_Point_Manager.Models.DxfImport
         public string ArrowheadId => GetString(342) ?? string.Empty;
         public float? ArrowheadSize => GetFloat(42);
         public int? ArrowheadIndex => GetInt(94);
+        public int? LeaderLineType => GetInt(170);
+        public string LeaderLineTypeHandle => GetString(341) ?? string.Empty;
+        public string GroupLineTypeName => GetString(6) ?? string.Empty;
 
         /// <summary>
         /// Gets the text attachment type for the left side of the text.
@@ -314,6 +328,24 @@ namespace Cad_Point_Manager.Models.DxfImport
                 }
             }
         }
+
+        public LineTypeReference EffectiveLineTypeReference
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(GroupLineTypeName))
+                {
+                    return new(ParsedLineTypeKind.ByLayer, LineTypeReferenceKind.Null, null);
+                }
+                else if (GroupLineTypeName.Equals("BYBLOCK",
+                    StringComparison.OrdinalIgnoreCase))
+                {
+                    return new(ParsedLineTypeKind.ByBlock, LineTypeReferenceKind.Handle, LeaderLineTypeHandle);
+                }
+
+                return new(ParsedLineTypeKind.ByObject, LineTypeReferenceKind.Name, GroupLineTypeName);
+            }
+        }
     }
     public class ParsedLeaderLine : TagContainer
     {
@@ -448,6 +480,8 @@ namespace Cad_Point_Manager.Models.DxfImport
         public string TextStyleHandle => GetString(342) ?? "";
         public TextAttachmentType TextLeftAttachmentType => (TextAttachmentType)(GetInt(174) ?? 0);
         public TextAttachmentType TextRightAttachmentType => (TextAttachmentType)(GetInt(178) ?? 0);
+        public int? LeaderLineType => GetInt(173);
+        public string LeaderLineTypeId => GetString(340) ?? string.Empty;
 
         public ArrowheadType ArrowheadType { get; set; }
     }

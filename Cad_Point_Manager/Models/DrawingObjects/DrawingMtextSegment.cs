@@ -1,8 +1,9 @@
 ﻿using Cad_Point_Manager.Common;
 using Cad_Point_Manager.Controls.D3DControl;
-using Cad_Point_Manager.Controls.D3DControl.Rendering.Text;
+using Cad_Point_Manager.Controls.D3DControl.Rendering.Helpers;
 using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Helpers;
+using Cad_Point_Manager.Models.DrawingObjects.HelperClasses;
 using Cad_Point_Manager.Models.LffFontRendering;
 using Cad_Point_Manager.Services.Exporting;
 using PdfSharpCore.Drawing;
@@ -47,10 +48,10 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         #endregion
 
         #region Constructors
-        public DrawingMtextSegment(DrawingMtext drawingMtext, ObjectLayer layer, string text, Vector4 objectColor, ColorType colorType, Vector3 position,
-            float rotation, float fontHeight, string fontFamilyName, bool isItalic, bool isBold, bool isUnderlined, bool isStrikeOut,
-            bool isOverStrike, bool isNewLine, float maxWidth, TextRenderStyle textRenderStyle, TextAlignment textAlignment = TextAlignment.Left,
-            bool isPartOfBlock = false, DrawingBlock block = null)
+        public DrawingMtextSegment(DrawingMtext drawingMtext, ObjectLayer layer, string text, Vector4 objectColor, ColorType colorType,
+            LineType lineType, Vector3 position, float rotation, float fontHeight, string fontFamilyName, bool isItalic, bool isBold,
+            bool isUnderlined, bool isStrikeOut, bool isOverStrike, bool isNewLine, float maxWidth, TextRenderStyle textRenderStyle,
+            TextAlignment textAlignment = TextAlignment.Left, bool isPartOfBlock = false, DrawingBlock block = null)
         {
             Type = DrawingObjectType.DrawingMtextSegment;
             DrawingMtext = drawingMtext;
@@ -59,6 +60,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             Text = text;
             ObjectColor = objectColor;
             ColorType = colorType;
+            LineType = lineType;
             Position = position;
             Rotation = rotation;
             TextHeight = fontHeight;
@@ -219,7 +221,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 TextHeight);
         }
 
-        public override void UpdateVertices(ResCache resCache, uint layerId, SceneIdMap sceneIdMap, D3dStateBuffers stateBuffers)
+        public override void UpdateVertices(ResCache resCache, uint layerId, uint lineTypeId, SceneIdMap sceneIdMap, D3dStateBuffers stateBuffers)
         {
             var objectId = sceneIdMap.GetOrAddObjectId(this, out var isNewObj);
             if (isNewObj) { stateBuffers.InitializeObjectState(sceneIdMap.MaxObjectId, this, objectId); }
@@ -227,7 +229,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             if (TextRenderStyle == TextRenderStyle.Stroke)
             {
                 List<Vector2> vertices = GetLffVertices();
-                LineInstances = GetLineVertices(vertices, layerId, objectId);
+                LineInstances = GetLineVertices(vertices, layerId, objectId, lineTypeId);
 
                 UpdateBounds();
                 SpaceWidth = LffFont.WordSpacing * TextHeightScaleFactor;
@@ -270,7 +272,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
             return textVertices;
         }
-        private List<LineInstance> GetLineVertices(List<Vector2> vertices, uint layerId, uint objectId)
+        private List<LineInstance> GetLineVertices(List<Vector2> vertices, uint layerId, uint objectId, uint lineTypeId)
         {
             List<LineInstance> lineInstances = [];
 

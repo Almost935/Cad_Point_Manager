@@ -1,6 +1,6 @@
 ﻿using Cad_Point_Manager.Common;
 using Cad_Point_Manager.Controls.D3DControl;
-using Cad_Point_Manager.Controls.D3DControl.Rendering.Text;
+using Cad_Point_Manager.Controls.D3DControl.Rendering.Helpers;
 using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Helpers;
 using Cad_Point_Manager.Models.DrawingObjects.HelperClasses;
@@ -42,7 +42,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         #endregion
 
         #region Constructors
-        public DrawingMleader(ParsedMLeader parsedMLeader, ObjectLayer layer, TextStyle textStyle,
+        public DrawingMleader(ParsedMLeader parsedMLeader, ObjectLayer layer, TextStyle textStyle, LineType lineType,
             bool isPartOfBlock = false, DrawingBlock block = null, DrawingBlock? arrowHeadBlock = null)
         {
             Type = DrawingObjectType.DrawingMleader;
@@ -51,6 +51,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             Text = parsedMLeader.Context.Text;
             Layer = layer;
             TextStyle = textStyle;
+            LineType = lineType;
             ObjectColor = parsedMLeader.Color.color;
             ColorType = parsedMLeader.Color.colorType;
             IsPartOfBlock = isPartOfBlock;
@@ -72,7 +73,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 var dogLegStart = leader.LastLeaderLinePoint.ToNetDxfVector2();
                 var dogLegEnd = (leader.LastLeaderLinePoint + (leader.DogLegLength * leader.DogLegVector)).ToNetDxfVector2();
                 Line dogLeg = new(dogLegStart, dogLegEnd);
-                DrawingLine drawingLineDogLeg = new(dogLeg, Layer, ObjectColor, ColorType, IsPartOfBlock, DrawingBlock);
+                DrawingLine drawingLineDogLeg = new(dogLeg, Layer, ObjectColor, ColorType, LineType, IsPartOfBlock, DrawingBlock);
                 DrawingObjects.Add(drawingLineDogLeg);
 
                 foreach (var leaderLine in leader.LeaderLines)
@@ -87,7 +88,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                     var trimmedEndPoint = endPoint + dir * trim;
 
                     Line line = new(dogLegStart, trimmedEndPoint);
-                    DrawingLine drawingLine = new(line, Layer, ObjectColor, ColorType, IsPartOfBlock, DrawingBlock);
+                    DrawingLine drawingLine = new(line, Layer, ObjectColor, ColorType, LineType, IsPartOfBlock, DrawingBlock);
                     DrawingObjects.Add(drawingLine);
                 }
             }
@@ -98,8 +99,8 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
             var alignment = GetTextAlignment(ParsedMLeader.TextAlignmentType);
 
-            DrawingMtext drawingMtext = new(mtext, Layer, ObjectColor, ColorType, false,
-                ParsedMLeader.TextAttachment, alignment, IsPartOfBlock, DrawingBlock);
+            DrawingMtext drawingMtext = new(mtext, Layer, ObjectColor, ColorType, LineType, 
+                false, ParsedMLeader.TextAttachment, alignment, IsPartOfBlock, DrawingBlock);
 
             DrawingObjects.Add(drawingMtext);
 
@@ -146,7 +147,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 obj.DrawToPdf(gfx, worldToPdf, pen);
             }
         }
-        public void UpdateGeometryVertices(ResCache resCache, uint layerId, SceneIdMap sceneIdMap, D3dStateBuffers stateBuffers)
+        public void UpdateGeometryVertices(ResCache resCache, uint layerId, uint lineTypeId, SceneIdMap sceneIdMap, D3dStateBuffers stateBuffers)
         {
             LineInstances.Clear();
 
@@ -157,12 +158,12 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                     var objectId = sceneIdMap.GetOrAddObjectId(obj, out var isNewObj);
                     if (isNewObj) { stateBuffers.InitializeObjectState(sceneIdMap.MaxObjectId, obj, objectId); }
 
-                    geometry.UpdateVertices(resCache, layerId, objectId);
+                    geometry.UpdateVertices(resCache, layerId, objectId, lineTypeId);
                     LineInstances.AddRange(geometry.LineInstances);
                 }
                 if (obj is DrawingMtext mtext)
                 {
-                    mtext.UpdateVertices(resCache, layerId, sceneIdMap, stateBuffers);
+                    mtext.UpdateVertices(resCache, layerId, lineTypeId, sceneIdMap, stateBuffers);
                     foreach (var segment in mtext.Segments)
                     {
                         LineInstances.AddRange(segment.LineInstances);
@@ -174,7 +175,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             {
                 if (Arrowhead is DrawingBlock block)
                 {
-                    block.UpdateGeometryVertices(resCache, layerId, sceneIdMap, stateBuffers);
+                    block.UpdateGeometryVertices(resCache, layerId, lineTypeId, sceneIdMap, stateBuffers);
 
                     foreach (var arrowhead in Arrowheads)
                     {
@@ -189,7 +190,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 }
             }
         }
-        public void UpdateTextVertices(ResCache resCache, uint layerId, SceneIdMap sceneIdMap, D3dStateBuffers stateBuffers)
+        public void UpdateTextVertices(ResCache resCache, uint layerId, uint lineTypeId, SceneIdMap sceneIdMap, D3dStateBuffers stateBuffers)
         {
             TextVertices.Clear();
 
@@ -197,7 +198,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             {
                 if (obj is DrawingMtext mtext)
                 {
-                    mtext.UpdateVertices(resCache, layerId, sceneIdMap, stateBuffers);
+                    mtext.UpdateVertices(resCache, layerId, lineTypeId, sceneIdMap, stateBuffers);
 
                     foreach (var segment in mtext.Segments)
                     {
@@ -210,7 +211,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             {
                 if (Arrowhead is DrawingBlock block)
                 {
-                    block.UpdateTextVertices(resCache, layerId, sceneIdMap, stateBuffers);
+                    block.UpdateTextVertices(resCache, layerId, lineTypeId, sceneIdMap, stateBuffers);
 
                     foreach (var arrowhead in Arrowheads)
                     {
@@ -225,7 +226,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 }
             }
         }
-        public void UpdateSolidVertices(ResCache resCache, uint layerId, uint objectId)
+        public void UpdateSolidVertices(ResCache resCache, uint layerId, uint objectId, uint lineTypeId)
         {
             SolidVertices.Clear();
 
@@ -241,7 +242,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             {
                 if (Arrowhead is DrawingBlock block)
                 {
-                    block.UpdateSolidVertices(resCache, layerId, objectId);
+                    block.UpdateSolidVertices(resCache, layerId, objectId, lineTypeId);
 
                     foreach (var arrowhead in Arrowheads)
                     {
@@ -295,7 +296,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
                         Solid dxfSolid = new(
                             vertex.ToNetDxfVector2(), leftBase.ToNetDxfVector2(), rightBase.ToNetDxfVector2(), rightBase.ToNetDxfVector2());
-                        DrawingSolid solid = new(dxfSolid, Layer, ObjectColor, ColorType, IsPartOfBlock, DrawingBlock);
+                        DrawingSolid solid = new(dxfSolid, Layer, ObjectColor, ColorType, LineType, IsPartOfBlock, DrawingBlock);
                         ArrowheadInstance arrowheadInstance = new()
                         {
                             DrawingObject = solid,

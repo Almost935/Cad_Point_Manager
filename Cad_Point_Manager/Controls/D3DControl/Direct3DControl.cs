@@ -1,5 +1,5 @@
 ﻿using Cad_Point_Manager.Controls.D3DControl.Rendering.Msdf;
-using Cad_Point_Manager.Controls.D3DControl.Rendering.Text;
+using Cad_Point_Manager.Controls.D3DControl.Rendering.Helpers;
 using SharpDX.Direct3D;
 using SharpDX.Direct3D11;
 using SharpDX.DXGI;

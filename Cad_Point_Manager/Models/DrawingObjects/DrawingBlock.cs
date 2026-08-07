@@ -1,6 +1,7 @@
 ﻿using Cad_Point_Manager.Controls.D3DControl;
-using Cad_Point_Manager.Controls.D3DControl.Rendering.Text;
+using Cad_Point_Manager.Controls.D3DControl.Rendering.Helpers;
 using Cad_Point_Manager.Helpers;
+using Cad_Point_Manager.Models.DrawingObjects.HelperClasses;
 using netDxf.Entities;
 using PdfSharpCore.Drawing;
 using SharpDX;
@@ -37,7 +38,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         #endregion
 
         #region Constructors
-        public DrawingBlock(Insert insert, ObjectLayer layer, Vector4 objectColor, ColorType colorType, 
+        public DrawingBlock(Insert insert, ObjectLayer layer, Vector4 objectColor, ColorType colorType, LineType lineType, 
             bool isPartOfBlock = false, DrawingBlock block = null, bool isPartOfDimension = false)
         {
             Type = DrawingObjectType.DrawingBlock;
@@ -46,6 +47,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             Layer = layer;
             ObjectColor = objectColor;
             ColorType = colorType;
+            LineType = lineType;
             IsPartOfBlock = isPartOfBlock;
             DrawingBlock = block;
             IsPartOfDimension = isPartOfDimension;
@@ -141,7 +143,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 {
                     var colorType = DxfHelpers.GetColorType(e);
                     Vector4 color = DxfHelpers.GetEntityObjectColor(e, DxfInsert);
-                    var obj = DxfHelpers.GetDrawingObject(e, Layer, color, colorType, this, isPartOfDimension: IsPartOfDimension);
+                    var obj = DxfHelpers.GetDrawingObject(e, Layer, color, colorType, LineType, this, isPartOfDimension: IsPartOfDimension);
 
                     if (obj is not null) { DrawingObjects.Add(obj); }
                 }
@@ -152,7 +154,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             }
         }
 
-        public void UpdateGeometryVertices(ResCache resCache, uint layerId, SceneIdMap sceneIdMap, D3dStateBuffers stateBuffers)
+        public void UpdateGeometryVertices(ResCache resCache, uint layerId, uint lineTypeId, SceneIdMap sceneIdMap, D3dStateBuffers stateBuffers)
         {
             LineInstances.Clear();
 
@@ -160,7 +162,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             {
                 if (obj is DrawingBlock block)
                 {
-                    block.UpdateGeometryVertices(resCache, layerId, sceneIdMap, stateBuffers);
+                    block.UpdateGeometryVertices(resCache, layerId, lineTypeId, sceneIdMap, stateBuffers);
                     LineInstances.AddRange(block.LineInstances);
                 }
                 if (obj is DrawingGeometry geometry)
@@ -168,22 +170,22 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                     var objectId = sceneIdMap.GetOrAddObjectId(obj, out var isNewObj);
                     if (isNewObj) { stateBuffers.InitializeObjectState(sceneIdMap.MaxObjectId, obj, objectId); }
 
-                    geometry.UpdateVertices(resCache, layerId, objectId);
+                    geometry.UpdateVertices(resCache, layerId, objectId, lineTypeId);
                     LineInstances.AddRange(geometry.LineInstances);
                 }
                 if (obj is DrawingMtext mtext)
                 {
-                    mtext.UpdateVertices(resCache, layerId, sceneIdMap, stateBuffers);
+                    mtext.UpdateVertices(resCache, layerId, lineTypeId, sceneIdMap, stateBuffers);
                     LineInstances.AddRange(mtext.LineInstances);
                 }
                 if (obj is DrawingText text)
                 {
-                    text.UpdateVertices(resCache, layerId, sceneIdMap, stateBuffers);
+                    text.UpdateVertices(resCache, layerId, lineTypeId, sceneIdMap, stateBuffers);
                     LineInstances.AddRange(text.LineInstances);
                 }
             }
         }
-        public void UpdateTextVertices(ResCache resCache, uint layerId, SceneIdMap sceneIdMap, D3dStateBuffers stateBuffers)
+        public void UpdateTextVertices(ResCache resCache, uint layerId, uint lineTypeId, SceneIdMap sceneIdMap, D3dStateBuffers stateBuffers)
         {
             TextVertices.Clear();
 
@@ -191,17 +193,17 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             {
                 if (obj is DrawingBlock block)
                 {
-                    block.UpdateTextVertices(resCache, layerId, sceneIdMap, stateBuffers);
+                    block.UpdateTextVertices(resCache, layerId, lineTypeId, sceneIdMap, stateBuffers);
                     TextVertices.AddRange(block.TextVertices);
                 }
                 if (obj is DrawingSText text)
                 {
-                    text.UpdateVertices(resCache, layerId, sceneIdMap, stateBuffers);
+                    text.UpdateVertices(resCache, layerId, lineTypeId, sceneIdMap, stateBuffers);
                     TextVertices.AddRange(text.TextVertices);
                 }
                 if (obj is DrawingMtext mtext)
                 {
-                    mtext.UpdateVertices(resCache, layerId, sceneIdMap, stateBuffers);
+                    mtext.UpdateVertices(resCache, layerId, lineTypeId, sceneIdMap, stateBuffers);
 
                     foreach (var segment in mtext.Segments)
                     {
@@ -210,14 +212,14 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 }
             }
         }
-        public void UpdateSolidVertices(ResCache resCache, uint layerId, uint objectId)
+        public void UpdateSolidVertices(ResCache resCache, uint layerId, uint objectId, uint lineTypeId)
         {
             SolidVertices.Clear();
             foreach (var obj in DrawingObjects)
             {
                 if (obj is DrawingBlock block)
                 {
-                    block.UpdateSolidVertices(resCache, layerId, objectId);
+                    block.UpdateSolidVertices(resCache, layerId, objectId, lineTypeId);
                     SolidVertices.AddRange(block.SolidVertices);
                 }
                 if (obj is DrawingSolid solid)
@@ -227,7 +229,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 }
                 if (obj is DrawingWidePolyline widePolyline)
                 {
-                    widePolyline.UpdateVertices(resCache, layerId, objectId);
+                    widePolyline.UpdateVertices(resCache, layerId, objectId, lineTypeId);
                     SolidVertices.AddRange(widePolyline.SolidVertices);
                 }
             }

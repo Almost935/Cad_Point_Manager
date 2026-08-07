@@ -1,4 +1,5 @@
 ﻿using Cad_Point_Manager.Common.Collections;
+using Cad_Point_Manager.Models.DrawingObjects.HelperClasses;
 using netDxf.Tables;
 using SharpDX;
 using System.ComponentModel;
@@ -19,6 +20,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         public BatchableObservableCollection<DrawingObject> DrawingObjects { get; set; } = [];
         public List<DrawingSText> DrawingText3Ds { get; set; } = [];
         public uint Id { get; set; }
+        public LineType LineType { get; set; }
 
         public bool IsVisible
         {
@@ -43,11 +45,12 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         #region Constructors
         private ObjectLayer() { }
 
-        public ObjectLayer(Layer layer)
+        public ObjectLayer(Layer layer, LineType lineType)
         {
             Name = layer.Name;
             Color = new(layer.Color.R / 255.0f, layer.Color.G / 255.0f, layer.Color.B / 255.0f, 1);
             DxfLayer = layer;
+            LineType = lineType;
         }
         #endregion
 

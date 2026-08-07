@@ -55,7 +55,7 @@ struct PSInput
     float4 Position : SV_POSITION;
 
     float Side : TEXCOORD0;
-    float Along : TEXCOORD1;
+    float Distance : TEXCOORD1;
 
     nointerpolation uint LayerId : TEXCOORD2;
     nointerpolation uint ObjectId : TEXCOORD3;
@@ -69,18 +69,29 @@ struct LayerState
 {
     float4 Color;
     uint Flags;
-    float3 Pad;
+    float3 Padding;
 };
 
 struct ObjectState
 {
     uint Flags;
-    float3 Pad;
+    uint LineTypeId;
+    float2 Padding;
     float4 Color;
+};
+
+struct LineTypeInfo
+{
+    uint FirstPatternIndex;
+    uint PatternCount;
+    float PatternLength;
+    float Padding;
 };
 
 StructuredBuffer<LayerState> LayerStates : register(t0);
 StructuredBuffer<ObjectState> ObjectStates : register(t1);
+StructuredBuffer<LineTypeInfo> LineTypeInfos : register(t2);
+StructuredBuffer<float> PatternData : register(t3);
 
 static const uint LAYER_VISIBLE = 1u << 0;
 
@@ -101,29 +112,21 @@ PSInput VSMain(VSInput vertex, VSInstance instance)
     // Transform endpoints to clip space
     //--------------------------------------------
 
-    float4 clipStart =
-        mul(float4(instance.Start, 0, 1), transformationMatrix);
-
-    float4 clipEnd =
-        mul(float4(instance.End, 0, 1), transformationMatrix);
+    float4 clipStart = mul(float4(instance.Start, 0, 1), transformationMatrix);
+    float4 clipEnd = mul(float4(instance.End, 0, 1), transformationMatrix);
 
     //--------------------------------------------
     // Convert to NDC
     //--------------------------------------------
 
-    float2 ndcStart =
-        clipStart.xy / clipStart.w;
-
-    float2 ndcEnd =
-        clipEnd.xy / clipEnd.w;
+    float2 ndcStart = clipStart.xy / clipStart.w;
+    float2 ndcEnd = clipEnd.xy / clipEnd.w;
 
     //--------------------------------------------
     // Screen-space direction
     //--------------------------------------------
 
-    float2 delta =
-        ndcEnd - ndcStart;
-
+    float2 delta = ndcEnd - ndcStart;
     float len = length(delta);
 
     if (len < 1e-6)
@@ -132,23 +135,17 @@ PSInput VSMain(VSInput vertex, VSInstance instance)
         len = 1;
     }
 
-    float2 pixelScale =
-    float2(
-        ViewportSize.x * 0.5,
-        ViewportSize.y * 0.5);
+    float2 pixelScale = float2(ViewportSize.x * 0.5, ViewportSize.y * 0.5);
 
-// Convert NDC direction into pixel direction
-    float2 dirPixels =
-    (ndcEnd - ndcStart) * pixelScale;
+    // Convert NDC direction into pixel direction
+    float2 dirPixels = (ndcEnd - ndcStart) * pixelScale;
 
     dirPixels = normalize(dirPixels);
 
-    float2 normalPixels =
-    float2(-dirPixels.y, dirPixels.x);
+    float2 normalPixels = float2(-dirPixels.y, dirPixels.x);
 
-// Convert back to NDC
-    float2 offset =
-    float2(
+    // Convert back to NDC
+    float2 offset = float2(
         normalPixels.x * (2.0 / ViewportSize.x),
         normalPixels.y * (2.0 / ViewportSize.y));
 
@@ -160,42 +157,27 @@ PSInput VSMain(VSInput vertex, VSInstance instance)
 
     float t = vertex.Local.y;
 
-    float2 ndc =
-        lerp(
-            ndcStart,
-            ndcEnd,
-            t);
+    float2 ndc = lerp(ndcStart, ndcEnd, t);
 
-    //ndc +=
-    //    offset *
-    //    vertex.Local.x;
+    ndc += offset * vertex.Local.x;
     
-    ndc += offset * (vertex.Local.x * 2.0);
-
     //--------------------------------------------
     // Convert back to clip coordinates
     //--------------------------------------------
 
-    float4 clip =
-        lerp(
-            clipStart,
-            clipEnd,
-            t);
+    float4 clip = lerp(clipStart, clipEnd, t);
 
-    clip.xy =
-        ndc *
-        clip.w;
+    clip.xy = ndc * clip.w;
 
     //--------------------------------------------
 
     output.Position = clip;
-
     output.Side = vertex.Local.x;
 
-    output.Along = t;
+    float lineLength = length(instance.End - instance.Start);
 
+    output.Distance = t * lineLength;
     output.LayerId = instance.LayerId;
-
     output.ObjectId = instance.ObjectId;
 
     return output;
@@ -209,6 +191,7 @@ float4 PSMain(PSInput input) : SV_TARGET
 {
     LayerState ls = LayerStates[input.LayerId];
     ObjectState os = ObjectStates[input.ObjectId];
+    LineTypeInfo lti = LineTypeInfos[os.LineTypeId];
 
     if ((ls.Flags & LAYER_VISIBLE) == 0)
         discard;
@@ -217,6 +200,31 @@ float4 PSMain(PSInput input) : SV_TARGET
         discard;
 
     bool selected = (os.Flags & OBJ_SELECTED) != 0;
+    
+    // LineType Calculations
+    float patternPos = fmod(input.Distance, lti.PatternLength);
+    
+    float accum = 0.0;
+    bool visible = true;
+    
+    for (uint i = 0; i < lti.PatternCount; i++)
+    {
+        float segment = PatternData[lti.FirstPatternIndex + i];
+
+        float length = abs(segment);
+
+        if (patternPos < accum + length)
+        {
+            visible = segment > 0;
+            break;
+        }
+
+        accum += length;
+    }
+    
+    
+    if (!visible)
+        discard;
 
     if (RenderSelectedOnly == 1)
     {
@@ -237,8 +245,6 @@ float4 PSMain(PSInput input) : SV_TARGET
     float d = abs(input.Side);
 
     float w = fwidth(d);
-
-    //float alpha = 1.0 - smoothstep(1.0 - w, 1.0 + w, d);
     
     float visibleSide = abs(input.Side) * 2.0;
 

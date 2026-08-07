@@ -2,7 +2,7 @@
 using Cad_Point_Manager.Common.Collections;
 using Cad_Point_Manager.Controls.D3DControl.Buffers;
 using Cad_Point_Manager.Controls.D3DControl.Rendering.Msdf;
-using Cad_Point_Manager.Controls.D3DControl.Rendering.Text;
+using Cad_Point_Manager.Controls.D3DControl.Rendering.Helpers;
 using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Helpers;
 using Cad_Point_Manager.Helpers.EqualityComparers;
@@ -642,11 +642,16 @@ namespace Cad_Point_Manager.Controls.D3DControl
             ctx.VertexShader.SetConstantBuffer(1, _dxfObjectSettingsBuffer);
             ctx.VertexShader.SetConstantBuffer(2, _lineRenderModeBuffer);
             ctx.VertexShader.SetConstantBuffer(3, _viewportBuffer);
+
             ctx.VertexShader.SetShaderResource(0, StateBuffers.LayerSRV);
             ctx.VertexShader.SetShaderResource(1, StateBuffers.ObjectSRV);
+            ctx.VertexShader.SetShaderResource(2, StateBuffers.LineTypeSRV);
+            ctx.VertexShader.SetShaderResource(3, StateBuffers.PatternSRV);
 
             ctx.PixelShader.SetShaderResource(0, StateBuffers.LayerSRV);
             ctx.PixelShader.SetShaderResource(1, StateBuffers.ObjectSRV);
+            ctx.PixelShader.SetShaderResource(2, StateBuffers.LineTypeSRV);
+            ctx.PixelShader.SetShaderResource(3, StateBuffers.PatternSRV);
 
             ctx.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding(
                 _lineInstanceBuffer.Buffer, _lineInstanceBuffer.Stride, 0));
@@ -1246,11 +1251,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     new InputElement("START", 0, Format.R32G32_Float, 0, 1,InputClassification.PerInstanceData, 1),
                     new InputElement("END", 0, Format.R32G32_Float, 8, 1,InputClassification.PerInstanceData, 1),
                     new InputElement("LAYERID", 0, Format.R32_UInt, 16, 1,InputClassification.PerInstanceData, 1),
-                    new InputElement("OBJECTID", 0, Format.R32_UInt, 20, 1,InputClassification.PerInstanceData, 1)
+                    new InputElement("OBJECTID", 0, Format.R32_UInt, 20, 1,InputClassification.PerInstanceData, 1),
                 });
 
-            LineCornerVertex[]
-                quad = { new(-1, 0), new(1, 0), new(1, 1), new(-1, 0), new(1, 1), new(-1, 1) };
+            LineCornerVertex[] quad =
+                { new(-1, 0), new(1, 0), new(1, 1), new(-1, 0), new(1, 1), new(-1, 1) };
 
             _lineQuadBuffer = Buffer.Create(device, BindFlags.VertexBuffer, quad);
 
@@ -1780,7 +1785,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             {
                 SelectedColor = GlobalHelperProperties.SelectedObjectColor,
                 SelectedMouseOverColor = GlobalHelperProperties.SelectedMouseOverObjectColor,
-                HalfWidth = 10
+                HalfWidth = 1
             };
 
             ResCache.DeviceContext.UpdateSubresource(ref dxfObjectSettings, _dxfObjectSettingsBuffer);
@@ -3537,16 +3542,18 @@ namespace Cad_Point_Manager.Controls.D3DControl
         {
             if (e.Action == NotifyCollectionChangedAction.Add)
             {
-                bool isNew = true;
                 foreach (var obj in e.NewItems)
                 {
-                    if (obj is not DrawingObject drawingObj) { continue; }
+                    if (obj is not DrawingObject) { continue; }
 
                     if (obj is DrawingMtext drawingMtext)
                     {
                         if (drawingMtext.MtextBlock is null)
                         {
-                            drawingMtext.UpdateMtextBlock(ResCache, drawingMtext.Layer.Id, SceneIdMap, StateBuffers);
+                            uint ltId = SceneIdMap.GetOrAddLineTypeId(drawingMtext.LineType, out var isNewLtype);
+                            if (isNewLtype) { StateBuffers.InitializeLineTypeState(SceneIdMap.MaxLineTypeId, drawingMtext.LineType, ltId); }
+
+                            drawingMtext.UpdateMtextBlock(ResCache, drawingMtext.Layer.Id, ltId, SceneIdMap, StateBuffers);
                         }
                     }
                 }

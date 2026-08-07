@@ -2,7 +2,7 @@
 using Cad_Point_Manager.Common;
 using Cad_Point_Manager.Common.Collections;
 using Cad_Point_Manager.Controls.D3DControl;
-using Cad_Point_Manager.Controls.D3DControl.Rendering.Text;
+using Cad_Point_Manager.Controls.D3DControl.Rendering.Helpers;
 using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Helpers;
 using Cad_Point_Manager.Models;

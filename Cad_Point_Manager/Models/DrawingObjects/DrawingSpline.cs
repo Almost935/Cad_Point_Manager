@@ -1,4 +1,5 @@
 ﻿using Cad_Point_Manager.Controls.D3DControl;
+using Cad_Point_Manager.Models.DrawingObjects.HelperClasses;
 using netDxf.Entities;
 using PdfSharpCore.Drawing;
 using SharpDX;
@@ -19,13 +20,15 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         #endregion
 
         #region Constructors
-        public DrawingSpline(Spline spline, ObjectLayer layer, Vector4 objectColor, ColorType colorType, bool isPartOfBlock = false, DrawingBlock block = null)
+        public DrawingSpline(Spline spline, ObjectLayer layer, Vector4 objectColor, ColorType colorType, 
+            LineType lineType, bool isPartOfBlock = false, DrawingBlock block = null)
         {
             Type = DrawingObjectType.DrawingSpline;
             EntityObject = spline;
             Layer = layer;
             ObjectColor = objectColor;
             ColorType = colorType;
+            LineType = lineType;
             IsPartOfBlock = isPartOfBlock;
             DrawingBlock = block;
 
@@ -40,7 +43,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             if (EntityObject is Spline spline)
             {
                 _polyline = spline.ToPolyline2D(_polylineApproximationPrecision);
-                PolylineApproximation = new(_polyline, Layer, ObjectColor, ColorType, isPartOfBlock: IsPartOfBlock, block: DrawingBlock);
+                PolylineApproximation = new(_polyline, Layer, ObjectColor, ColorType, LineType, isPartOfBlock: IsPartOfBlock, block: DrawingBlock);
             }
             else
             {
@@ -62,9 +65,9 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             }
         }
 
-        public override void UpdateVertices(ResCache resCache, uint layerId, uint objectId)
+        public override void UpdateVertices(ResCache resCache, uint layerId, uint objectId, uint lineTypeId)
         {
-            PolylineApproximation.UpdateVertices(resCache, layerId, objectId);
+            PolylineApproximation.UpdateVertices(resCache, layerId, objectId, lineTypeId);
             LineInstances = PolylineApproximation.LineInstances;
         }
 

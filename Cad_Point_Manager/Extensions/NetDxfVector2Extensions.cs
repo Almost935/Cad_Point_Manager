@@ -9,6 +9,10 @@ namespace Cad_Point_Manager.Extensions
         {
             return new SharpDX.Vector3(v.X.ToFloat(), v.Y.ToFloat(), elevation);
         }
+        public static SharpDX.Vector2 ToSharpDXVector2(this Vector2 v)
+        {
+            return new SharpDX.Vector2(v.X.ToFloat(), v.Y.ToFloat());
+        }
         public static RawVector2 ToRawVector2(this Vector2 v)
         {
             return new RawVector2(v.X.ToFloat(), v.Y.ToFloat());

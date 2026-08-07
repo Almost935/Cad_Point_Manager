@@ -1,6 +1,6 @@
 ﻿using Cad_Point_Manager.Common;
 using Cad_Point_Manager.Controls.D3DControl;
-using Cad_Point_Manager.Controls.D3DControl.Rendering.Text;
+using Cad_Point_Manager.Controls.D3DControl.Rendering.Helpers;
 using netDxf.Entities;
 using SharpDX;
 using SharpDX.Direct2D1;

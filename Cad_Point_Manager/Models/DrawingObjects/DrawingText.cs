@@ -1,7 +1,8 @@
 ﻿using Cad_Point_Manager.Common;
 using Cad_Point_Manager.Controls.D3DControl;
-using Cad_Point_Manager.Controls.D3DControl.Rendering.Text;
+using Cad_Point_Manager.Controls.D3DControl.Rendering.Helpers;
 using Cad_Point_Manager.Extensions;
+using Cad_Point_Manager.Models.DrawingObjects.HelperClasses;
 using SharpDX;
 
 namespace Cad_Point_Manager.Models.DrawingObjects
@@ -35,7 +36,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         #endregion
 
         #region Methods
-        public abstract void UpdateVertices(ResCache d3DResCache, uint layerId, SceneIdMap sceneIdMap, D3dStateBuffers stateBuffers);
+        public abstract void UpdateVertices(ResCache d3DResCache, uint layerId , uint lineTypeId, SceneIdMap sceneIdMap, D3dStateBuffers stateBuffers);
         #endregion
     }
 }

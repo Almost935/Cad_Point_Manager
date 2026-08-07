@@ -1,10 +1,10 @@
 ﻿using SharpDX;
 using SharpDX.Direct2D1;
 using SharpDX.DirectWrite;
-using static Cad_Point_Manager.Controls.D3DControl.Rendering.Text.GlyphMeshCache;
+using static Cad_Point_Manager.Controls.D3DControl.Rendering.Helpers.GlyphMeshCache;
 using Factory = SharpDX.Direct2D1.Factory;
 
-namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
+namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Helpers
 {
     // <summary>
     /// Uses DirectWrite to get the glyph outline (in DESIGN UNITS) and your

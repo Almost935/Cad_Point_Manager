@@ -1,6 +1,7 @@
 ﻿using Cad_Point_Manager.Controls.D3DControl;
 using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Helpers;
+using Cad_Point_Manager.Models.DrawingObjects.HelperClasses;
 using netDxf.Entities;
 using PdfSharpCore.Drawing;
 using SharpDX;
@@ -23,8 +24,8 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         #endregion
 
         #region Constructors
-        public DrawingWidePolyline(Polyline2D polyline2D, ObjectLayer layer, Vector4 objectColor,
-            ColorType colorType, float width, bool isPartOfBlock = false, DrawingBlock block = null)
+        public DrawingWidePolyline(Polyline2D polyline2D, ObjectLayer layer, Vector4 objectColor, ColorType colorType, 
+            LineType lineType, float width, bool isPartOfBlock = false, DrawingBlock block = null)
         {
             Type = DrawingObjectType.DrawingPolyline;
 
@@ -32,22 +33,8 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             Layer = layer;
             ObjectColor = objectColor;
             ColorType = colorType;
+            LineType = lineType;
             Width = width;
-            IsPartOfBlock = isPartOfBlock;
-            DrawingBlock = block;
-
-            UpdateColor();
-            UpdateData();
-        }
-        public DrawingWidePolyline(Polyline3D polyline3D, ObjectLayer layer, Vector4 objectColor,
-            ColorType colorType, bool isPartOfBlock = false, DrawingBlock block = null)
-        {
-            Type = DrawingObjectType.DrawingPolyline;
-
-            EntityObject = polyline3D;
-            Layer = layer;
-            ObjectColor = objectColor;
-            ColorType = colorType;
             IsPartOfBlock = isPartOfBlock;
             DrawingBlock = block;
 
@@ -66,7 +53,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
                 foreach (var e in polyline2D.Explode())
                 {
-                    var segment = DxfHelpers.GetDrawingSegment(e, Layer, ObjectColor, ColorType, DrawingBlock);
+                    var segment = DxfHelpers.GetDrawingSegment(e, Layer, ObjectColor, ColorType, LineType, DrawingBlock);
                     DrawingSegments.Add(segment);
                     Length += segment.Length;
                 }
@@ -100,9 +87,9 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         {
             return false;
         }
-        public override void UpdateVertices(ResCache resCache, uint layerId, uint objectId)
+        public override void UpdateVertices(ResCache resCache, uint layerId, uint objectId, uint lineTypeId)
         {
-            var vertices = WidenedGeometryRenderingHelpers.GetWidenedPolylineVertices(resCache, this, Width, out var widenedVertices);
+            var vertices = WidenedGeometryRenderingHelpers.GetWidenedPolylineVertices(resCache, this, Width, out _);
 
             for (int i = 0; i < vertices.Count; i += 3) // Every three vertices represent a triangle
             {

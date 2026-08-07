@@ -5,36 +5,34 @@ using Cad_Point_Manager.Models.DrawingObjects.HelperClasses;
 using netDxf.Entities;
 using PdfSharpCore.Drawing;
 using SharpDX;
-using SharpDX.Direct2D1;
-using SharpDX.Mathematics.Interop;
 using System.Windows;
-
-using Vector3 = SharpDX.Vector3;
 
 namespace Cad_Point_Manager.Models.DrawingObjects
 {
-    public class DrawingArc : DrawingCurve
+    public class DrawingEllipse : DrawingCurve
     {
         #region Properties
-        public bool IsLargeArc { get; set; }
-        public Vector3 MidPoint { get; set; }
+        public float Rotation { get; private set; }
+        public float MajorAxis { get; private set; }
+        public float MinorAxis { get; private set; }
+        public bool IsLargeArc { get; private set; }
 
-        private Arc DxfArc => EntityObject as Arc;
+        private Ellipse DxfEllipse => EntityObject as Ellipse;
         #endregion
 
-        #region Constructor
-        public DrawingArc(
-            Arc arc, ObjectLayer layer, Vector4 objectColor, ColorType colorType, 
+        #region Constructors
+        public DrawingEllipse(
+            Ellipse ellipse, ObjectLayer layer, Vector4 objectColor, ColorType colorType,
             LineType lineType, bool isPartOfBlock = false, DrawingBlock block = null)
         {
-            Type = DrawingObjectType.DrawingArc;
+            Type = DrawingObjectType.DrawingEllipse;
             Layer = layer;
             ObjectColor = objectColor;
             ColorType = colorType;
             LineType = lineType;
             IsPartOfBlock = isPartOfBlock;
             DrawingBlock = block;
-            EntityObject = arc;
+            EntityObject = ellipse;
 
             UpdateColor();
             UpdateData();
@@ -44,32 +42,34 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         #region Methods
         public override void UpdateData()
         {
-            if (EntityObject is Arc arc)
-            {
-                Radius = (float)arc.Radius;
-                StartAngle = (float)arc.StartAngle;
-                EndAngle = (float)arc.EndAngle;
-                RadiusPoint = new Vector3((float)arc.Center.X, (float)arc.Center.Y, (float)arc.Center.Z);
-                Sweep = EndAngle - StartAngle;
-                if (Sweep < 0) { Sweep += 360; }
-                IsLargeArc = Sweep >= 180;
-                Length = (float)((Sweep * (Math.PI / 180)) * Radius);
+            if (EntityObject is not Ellipse ellipse) { throw new ArgumentException(); }
 
-                var vertices = arc.ToPolyline2D(10).Vertexes;
-                SamplePoints = vertices
-                    .Select(v => new System.Windows.Point(v.Position.X, v.Position.Y)).ToList();
-                UpdateArcMidpoint();
-                Start = vertices.First().Position.ToSharpDXVector3();
-                End = vertices.Last().Position.ToSharpDXVector3();
-            }
-            else
-            {
-                throw new ArgumentException("entity must be of type Arc");
-            }
+            RadiusPoint = ellipse.Center.ToSharpDXVector3();
+            Rotation = (float)ellipse.Rotation;
+            MajorAxis = (float)ellipse.MajorAxis;
+            MinorAxis = (float)(ellipse.MinorAxis * ellipse.MajorAxis);
+            StartAngle = (float)ellipse.StartAngle;
+            EndAngle = (float)ellipse.EndAngle;
+            Sweep = EndAngle - StartAngle;
+
+            if (Sweep < 0) { Sweep += 360; }
+
+            IsLargeArc = Sweep >= 180;
+            NumberOfSegments = CalculateSegments(MajorAxis, Sweep);
+
+            var vertices = ellipse.ToPolyline2D(NumberOfSegments).Vertexes;
+
+            SamplePoints = vertices.Select(v => new System.Windows.Point(v.Position.X, v.Position.Y)).ToList();
+
+            Start = vertices.First().Position.ToSharpDXVector3();
+
+            End = vertices.Last().Position.ToSharpDXVector3();
+
+            UpdateBounds();
         }
         public override void DrawToD2dDeviceContext(DeviceContext1 deviceContext, Factory2 factory, Brush brush, float thickness, StrokeStyle1 strokeStyle)
         {
-            
+
         }
         public override void DrawToPdf(
             XGraphics gfx,
@@ -136,7 +136,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             {
                 throw new ArgumentException("entity must be of type Arc");
             }
-        }                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
+        }
         public override double DistanceToPoint(System.Windows.Point point)
         {
             // Convert angles to radians

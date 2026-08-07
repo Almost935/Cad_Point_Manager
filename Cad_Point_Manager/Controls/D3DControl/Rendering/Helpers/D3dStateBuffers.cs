@@ -2,17 +2,20 @@
 // Rendering/D3D/D3dStateBuffers.cs
 using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Models.DrawingObjects;
+using Cad_Point_Manager.Models.DrawingObjects.HelperClasses;
 using Cad_Point_Manager.Models.PointRendering;
 using SharpDX;
 using SharpDX.Direct3D;
 using SharpDX.Direct3D11;
 using SharpDX.DXGI;
+using System.Diagnostics;
 using Buffer = SharpDX.Direct3D11.Buffer;
 using Device = SharpDX.Direct3D11.Device;
 using MapFlags = SharpDX.Direct3D11.MapFlags;
 
-namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
+namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Helpers
 {
+    #region Enums
     [Flags]
     public enum PointGroupFlags : uint
     {
@@ -52,6 +55,7 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
         MouseOver = 1u << 2,
         ColorByLayer = 1u << 3
     }
+    #endregion
 
     public sealed class D3dStateBuffers : IDisposable
     {
@@ -68,10 +72,12 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
         private ShaderResourceView _layerSrv;
         private Buffer _objectBuf;
         private ShaderResourceView _objectSrv;
+        private Buffer _lineTypeBuf;
+        private ShaderResourceView _lineTypeSrv;
+        private Buffer _linePatternBuf;
+        private ShaderResourceView _linePatternSrv;
 
-        private Buffer _glyphMetricBuffer;
         private ShaderResourceView _glyphMetricSRV;
-        private Buffer _glyphTextureBuffer;
         private ShaderResourceView _glyphTextureSRV;
 
         private LabelState[] _labelCpu = [];
@@ -79,7 +85,12 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
         private GroupState[] _groupCpu = [];
         private LayerState[] _layerCpu = [];
         private ObjectState[] _objectCpu = [];
-        private int _labelCap, _groupCap, _pointCap, _layerCap, _objectCap;
+        private LineTypeInfo[] _lineTypeCpu = [];
+        private float[] _linePatternCpu = [];
+
+        private int _labelCap, _groupCap, _pointCap, _layerCap, _objectCap, _lineTypeCap, _linePatternCap;
+
+        private int _nextPatternIndex;
 
         public D3dStateBuffers(Device device, DeviceContext ctx)
         {
@@ -92,11 +103,16 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
         public ShaderResourceView GroupSRV => _groupSrv;
         public ShaderResourceView LayerSRV => _layerSrv;
         public ShaderResourceView ObjectSRV => _objectSrv;
+        public ShaderResourceView LineTypeSRV => _lineTypeSrv;
+        public ShaderResourceView PatternSRV => _linePatternSrv;
+
         public Span<LabelState> LabelSpan => _labelCpu.AsSpan(0, _labelCap);
         public Span<PointState> PointSpan => _pointCpu.AsSpan(0, _pointCap);
         public Span<GroupState> GroupSpan => _groupCpu.AsSpan(0, _groupCap);
         public Span<LayerState> LayerSpan => _layerCpu.AsSpan(0, _layerCap);
         public Span<ObjectState> ObjectSpan => _objectCpu.AsSpan(0, _objectCap);
+        public Span<LineTypeInfo> LineTypeSpan => _lineTypeCpu.AsSpan(0, _lineTypeCap);
+        public Span<float> LinePatternSpan => _linePatternCpu.AsSpan(0, _linePatternCap);
 
         public ShaderResourceView GlyphMetricSRV => _glyphMetricSRV;
         public ShaderResourceView GlyphTextureSRV => _glyphTextureSRV;
@@ -173,7 +189,44 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
 
             if (color.X == 1f && color.Y == 1f && color.Z == 1f) { color = new Vector4(0, 0, 0, 1); } // white objects converted to black like autocad doesS
 
-            ObjectSpan[(int)oId] = new ObjectState { Color = color, Flags = baseFlags };
+            ObjectSpan[(int)oId] = new ObjectState { Color = color, Flags = baseFlags, LineTypeId = obj.LineType.Id };
+        }
+        public void InitializeLineTypeState(int count, LineType lineType, uint lineTypeId)
+        {
+            EnsureLineTypeCapacity(count);
+
+            // Ensure there is room for the new pattern
+            EnsurePatternCapacity(_nextPatternIndex + lineType.Pattern.Count);
+
+            uint firstPatternIndex = (uint)_nextPatternIndex;
+
+            // Copy pattern into the pattern buffer
+            foreach (var segment in lineType.Pattern)
+            {
+                _linePatternCpu[_nextPatternIndex++] = segment;
+            }
+
+            // Create the LineTypeInfo
+            LineTypeSpan[(int)lineTypeId] = new LineTypeInfo
+            {
+                FirstPatternIndex = firstPatternIndex,
+                PatternCount = (uint)lineType.Pattern.Count,
+                PatternLength = lineType.PatternLength
+            };
+        }
+
+        public uint AddPattern(IReadOnlyList<float> pattern)
+        {
+            uint firstIndex = (uint)_nextPatternIndex;
+
+            EnsurePatternCapacity((int)(_nextPatternIndex + (uint)pattern.Count));
+
+            for (int i = 0; i < pattern.Count; i++)
+            {
+                _linePatternCpu[_nextPatternIndex++] = pattern[i];
+            }
+
+            return firstIndex;
         }
 
         public void EnsureLabelCapacity(int count)
@@ -301,6 +354,64 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
                 BufferEx = new ShaderResourceViewDescription.ExtendedBufferResource { FirstElement = 0, ElementCount = _objectCap }
             });
         }
+        public void EnsureLineTypeCapacity(int count)
+        {
+            if (count <= _lineTypeCap) return;
+            _lineTypeCap = NextPow2(count);
+            Array.Resize(ref _lineTypeCpu, _lineTypeCap);
+
+            _lineTypeSrv?.Dispose(); _lineTypeBuf?.Dispose();
+            var desc = new BufferDescription
+            {
+                SizeInBytes = Utilities.SizeOf<LineTypeInfo>() * _lineTypeCap,
+                Usage = ResourceUsage.Dynamic,
+                BindFlags = BindFlags.ShaderResource,
+                CpuAccessFlags = CpuAccessFlags.Write,
+                OptionFlags = ResourceOptionFlags.BufferStructured,
+                StructureByteStride = Utilities.SizeOf<LineTypeInfo>()
+            };
+            _lineTypeBuf = new Buffer(_device, desc);
+            _lineTypeSrv = new ShaderResourceView(_device, _lineTypeBuf, new ShaderResourceViewDescription
+            {
+                Format = Format.Unknown,
+                Dimension = ShaderResourceViewDimension.ExtendedBuffer,
+                BufferEx = new ShaderResourceViewDescription.ExtendedBufferResource { FirstElement = 0, ElementCount = _lineTypeCap }
+            });
+        }
+        public void EnsurePatternCapacity(int count)
+        {
+            if (count <= _linePatternCap) { return; }
+
+            _linePatternCap = NextPow2(count);
+
+            Array.Resize(ref _linePatternCpu, _linePatternCap);
+
+            _linePatternSrv?.Dispose();
+            _linePatternBuf?.Dispose();
+
+            var desc = new BufferDescription
+            {
+                SizeInBytes = sizeof(float) * _linePatternCap,
+                Usage = ResourceUsage.Dynamic,
+                BindFlags = BindFlags.ShaderResource,
+                CpuAccessFlags = CpuAccessFlags.Write,
+                OptionFlags = ResourceOptionFlags.BufferStructured,
+                StructureByteStride = sizeof(float)
+            };
+
+            _linePatternBuf = new Buffer(_device, desc);
+
+            _linePatternSrv = new ShaderResourceView(_device, _linePatternBuf, new ShaderResourceViewDescription
+            {
+                Format = Format.Unknown,
+                Dimension = ShaderResourceViewDimension.ExtendedBuffer,
+                BufferEx = new()
+                {
+                    FirstElement = 0,
+                    ElementCount = _linePatternCap
+                }
+            });
+        }
 
         public void FlushAll()
         {
@@ -346,8 +457,23 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
                 s.WriteRange(_labelCpu, 0, _labelCap);
                 _ctx.UnmapSubresource(_labelBuf, 0);
             }
-        }
 
+            if (_lineTypeBuf is not null)
+            {
+                // line types (few): discard whole
+                _ctx.MapSubresource(_lineTypeBuf, 0, MapMode.WriteDiscard, MapFlags.None, out s);
+                s.WriteRange(_lineTypeCpu, 0, _lineTypeCap);
+                _ctx.UnmapSubresource(_lineTypeBuf, 0);
+            }
+
+            if (_linePatternBuf is not null)
+            {
+                // line patterns (few): discard whole
+                _ctx.MapSubresource(_linePatternBuf, 0, MapMode.WriteDiscard, MapFlags.None, out s);
+                s.WriteRange(_linePatternCpu, 0, _linePatternCap);
+                _ctx.UnmapSubresource(_linePatternBuf, 0);
+            }
+        }
         public void FlushLayerSubset(HashSet<uint> dirty)
         {
             if (dirty == null || dirty.Count == 0) return;
@@ -362,7 +488,6 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
             }
             _ctx.UnmapSubresource(_layerBuf, 0);
         }
-
         public void FlushObjectSubset(HashSet<uint> dirty)
         {
             if (dirty == null || dirty.Count == 0) { return; }
@@ -377,7 +502,6 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
             }
             _ctx.UnmapSubresource(_objectBuf, 0);
         }
-
         public void FlushGroupSubset(HashSet<uint> dirty)
         {
             if (dirty == null || dirty.Count == 0) return;
@@ -392,7 +516,6 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
             }
             _ctx.UnmapSubresource(_groupBuf, 0);
         }
-
         public void FlushPointSubset(HashSet<uint> dirty)
         {
             if (dirty == null || dirty.Count == 0) return;
@@ -407,7 +530,6 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
             }
             _ctx.UnmapSubresource(_pointBuf, 0);
         }
-
         public void FlushLabelSubset(HashSet<uint> dirty)
         {
             if (dirty == null || dirty.Count == 0) return;
@@ -422,10 +544,24 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
             }
             _ctx.UnmapSubresource(_labelBuf, 0);
         }
+        public void FlushLineTypeSubset(HashSet<uint> dirty)
+        {
+            if (dirty == null || dirty.Count == 0) return;
+            DataStream s;
+            _ctx.MapSubresource(_lineTypeBuf, 0, MapMode.WriteNoOverwrite, MapFlags.None, out s);
+            int stride = Utilities.SizeOf<LineTypeInfo>();
+            foreach (var id in dirty)
+            {
+                s.Position = id * stride;
+                s.Write(_lineTypeCpu[id]);
+            }
+            _ctx.UnmapSubresource(_lineTypeBuf, 0);
+        }
+
+
 
         // D3dStateBuffers.cs  (inside class)
-        public void MaybeShrinkAllTo25PctOrLess(
-            int labelUsed, int pointUsed, int groupUsed, int layerUsed, int objectUsed,
+        public void MaybeShrinkAllTo25PctOrLess(int labelUsed, int pointUsed, int groupUsed, int layerUsed, int objectUsed,
             Action<DeviceContext> unbindAllSrvs)
         {
             // We need SRVs unbound before recreating to avoid D3D warnings.
@@ -438,6 +574,7 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
             if (_groupCap > 0 && groupUsed < _groupCap * THRESH) RecreateGroupCap(ToPow2AtLeast(groupUsed));
             if (_layerCap > 0 && layerUsed < _layerCap * THRESH) RecreateLayerCap(ToPow2AtLeast(layerUsed));
             if (_objectCap > 0 && objectUsed < _objectCap * THRESH) RecreateObjectCap(ToPow2AtLeast(objectUsed));
+            if (_lineTypeCap > 0 && objectUsed < _lineTypeCap * THRESH) RecreateLineTypeCap(ToPow2AtLeast(objectUsed));
         }
         private static int ToPow2AtLeast(int n)
         {
@@ -584,6 +721,34 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
                 BufferEx = new ShaderResourceViewDescription.ExtendedBufferResource { FirstElement = 0, ElementCount = _objectCap }
             });
         }
+        private void RecreateLineTypeCap(int newCap)
+        {
+            if (newCap == _lineTypeCap) return;
+            _lineTypeSrv?.Dispose(); _lineTypeSrv = null;
+            _lineTypeBuf?.Dispose(); _lineTypeBuf = null;
+
+            _lineTypeCap = newCap;
+            Array.Resize(ref _lineTypeCpu, _lineTypeCap);
+
+            if (_lineTypeCap == 0) return;
+
+            var desc = new BufferDescription
+            {
+                SizeInBytes = Utilities.SizeOf<LineTypeInfo>() * _lineTypeCap,
+                Usage = ResourceUsage.Dynamic,
+                BindFlags = BindFlags.ShaderResource,
+                CpuAccessFlags = CpuAccessFlags.Write,
+                OptionFlags = ResourceOptionFlags.BufferStructured,
+                StructureByteStride = Utilities.SizeOf<LineTypeInfo>()
+            };
+            _lineTypeBuf = new Buffer(_device, desc);
+            _lineTypeSrv = new ShaderResourceView(_device, _lineTypeBuf, new ShaderResourceViewDescription
+            {
+                Format = Format.Unknown,
+                Dimension = ShaderResourceViewDimension.ExtendedBuffer,
+                BufferEx = new ShaderResourceViewDescription.ExtendedBufferResource { FirstElement = 0, ElementCount = _lineTypeCap }
+            });
+        }
 
         public void ResetFull()
         {
@@ -594,14 +759,15 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
             _groupCap = 0;
             _layerCap = 0;
             _objectCap = 0;
+            _lineTypeCap = 0;
 
             _labelCpu = [];
             _pointCpu = [];
             _groupCpu = [];
             _layerCpu = [];
             _objectCpu = [];
+            _lineTypeCpu = [];
         }
-
 
         public void Dispose()
         {
@@ -634,6 +800,12 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
 
             _objectBuf?.Dispose();
             _objectBuf = null;
+
+            _lineTypeSrv?.Dispose();
+            _lineTypeSrv = null;
+
+            _lineTypeBuf?.Dispose();
+            _lineTypeBuf = null;
         }
 
         private static int NextPow2(int v)

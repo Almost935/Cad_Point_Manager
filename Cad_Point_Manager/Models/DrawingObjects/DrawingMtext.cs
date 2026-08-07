@@ -1,8 +1,9 @@
 ﻿using Cad_Point_Manager.Common;
 using Cad_Point_Manager.Controls.D3DControl;
-using Cad_Point_Manager.Controls.D3DControl.Rendering.Text;
+using Cad_Point_Manager.Controls.D3DControl.Rendering.Helpers;
 using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Helpers;
+using Cad_Point_Manager.Models.DrawingObjects.HelperClasses;
 using Cad_Point_Manager.Models.LffFontRendering;
 using netDxf;
 using netDxf.Entities;
@@ -36,15 +37,17 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         #endregion
 
         #region Constructor
-        public DrawingMtext(MText mtext, ObjectLayer layer, Vector4 objectColor, ColorType colorType, bool allowsWrapping, 
-            TextAttachmentPoint attachmentPoint, TextAlignment textAlignment = TextAlignment.Left, bool isPartOfBlock = false, DrawingBlock block = null)
+        public DrawingMtext(MText mtext, ObjectLayer layer, Vector4 objectColor, ColorType colorType, LineType lineType,
+            bool allowsWrapping, TextAttachmentPoint attachmentPoint, TextAlignment textAlignment = TextAlignment.Left,
+            bool isPartOfBlock = false, DrawingBlock block = null)
         {
             Type = DrawingObjectType.DrawingMtext;
             DxfMtext = mtext;
             EntityObject = mtext;
             Layer = layer;
-            ObjectColor = objectColor; 
+            ObjectColor = objectColor;
             ColorType = colorType;
+            LineType = lineType;
             AllowsWrapping = allowsWrapping;
             IsPartOfBlock = isPartOfBlock;
             DrawingBlock = block;
@@ -57,11 +60,11 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         #endregion
 
         #region Methods
-        public override void UpdateVertices(ResCache resCache, uint layerId, SceneIdMap sceneIdMap, D3dStateBuffers stateBuffers)
+        public override void UpdateVertices(ResCache resCache, uint layerId, uint lineTypeId, SceneIdMap sceneIdMap, D3dStateBuffers stateBuffers)
         {
             if (DxfMtext is null) { return; }
 
-            UpdateMtextBlock(resCache, layerId, sceneIdMap, stateBuffers);
+            UpdateMtextBlock(resCache, layerId, lineTypeId, sceneIdMap, stateBuffers);
             MtextBlock.SetTextPositions();
             MtextBlock.GetTextBox(MtextBlock.Height);
             SetRotation();
@@ -207,7 +210,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             }
         }
 
-        public void UpdateMtextBlock(ResCache resCache, uint layerId, SceneIdMap sceneIdMap, D3dStateBuffers stateBuffers)
+        public void UpdateMtextBlock(ResCache resCache, uint layerId, uint lineTypeId, SceneIdMap sceneIdMap, D3dStateBuffers stateBuffers)
         {
             MtextBlock?.Dispose();
             MtextBlock = new((float)MaxWidth, Position, DxfMtext.AttachmentPoint, Rotation, AllowsWrapping);
@@ -422,14 +425,14 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                             var newSegmentInfo = new TextSegmentInformation(segmentText, segmentInfo.ObjectColor, segmentInfo.ColorType, segmentInfo.Font, segmentInfo.TextHeight,
                                 segmentInfo.IsBold, segmentInfo.IsItalic, segmentInfo.IsUnderlined, segmentInfo.IsOverstriked, segmentInfo.IsStrikethrough,
                                 isNewLine, segmentInfo.TextAlignment);
-                            var newSegment = CreateMtextSegment(newSegmentInfo, resCache, layerId, sceneIdMap, stateBuffers);
+                            var newSegment = CreateMtextSegment(newSegmentInfo, resCache, layerId, lineTypeId, sceneIdMap, stateBuffers);
 
                             MtextBlock.AddSegment(newSegment);
                         }
                     }
                     else
                     {
-                        var segment = CreateMtextSegment(segmentInfo, resCache, layerId, sceneIdMap, stateBuffers);
+                        var segment = CreateMtextSegment(segmentInfo, resCache, layerId, lineTypeId, sceneIdMap, stateBuffers);
                         MtextBlock.AddSegment(segment);
                     }
                 }
@@ -449,17 +452,18 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             TextSegmentInformation segmentInfo,
             ResCache resCache,
             uint layerId,
+            uint lineTypeId,
             SceneIdMap sceneIdMap,
             D3dStateBuffers stateBuffers)
         {
             (var fontFamily, var renderStyle) = AutoCadFontResolver.Resolve(segmentInfo.Font);
 
             DrawingMtextSegment segment = new(this, Layer, segmentInfo.Text, segmentInfo.ObjectColor, segmentInfo.ColorType,
-                Vector3.Zero, 0, (float)segmentInfo.TextHeight, fontFamily, segmentInfo.IsItalic, segmentInfo.IsBold,
+                LineType, Vector3.Zero, 0, (float)segmentInfo.TextHeight, fontFamily, segmentInfo.IsItalic, segmentInfo.IsBold,
                 segmentInfo.IsUnderlined, segmentInfo.IsStrikethrough, segmentInfo.IsOverstriked, segmentInfo.IsNewLine,
                 0, renderStyle, segmentInfo.TextAlignment, IsPartOfBlock, DrawingBlock);
 
-            segment.UpdateVertices(resCache, layerId, sceneIdMap, stateBuffers);
+            segment.UpdateVertices(resCache, layerId, lineTypeId, sceneIdMap, stateBuffers);
 
             return segment;
         }
@@ -484,7 +488,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         public bool IsBold { get; set; }
         public bool IsItalic { get; set; }
         public bool IsOverstriked { get; set; }
-        public bool IsStrikethrough { get; set; } 
+        public bool IsStrikethrough { get; set; }
         public bool IsUnderlined { get; set; }
         public bool IsNewLine { get; set; }
         public TextAlignment TextAlignment { get; set; }

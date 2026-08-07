@@ -1,6 +1,7 @@
 ﻿using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Models.DrawingObjects;
 using Cad_Point_Manager.Models.DrawingObjects.Dimensioning;
+using Cad_Point_Manager.Models.DrawingObjects.HelperClasses;
 using netDxf;
 using netDxf.Entities;
 using netDxf.Header;
@@ -44,50 +45,46 @@ namespace Cad_Point_Manager.Helpers
             return Rect.Empty;
         }
 
-        public static DrawingObject GetDrawingObject(
-            EntityObject e,
-            ObjectLayer layer,
-            SharpDX.Vector4 color,
-            ColorType colorType,
-            DrawingBlock ownerBlock = null,
-            bool isPartOfDimension = false)
+        public static DrawingObject GetDrawingObject(EntityObject e, ObjectLayer layer, SharpDX.Vector4 color,
+            ColorType colorType, LineType lineType, DrawingBlock ownerBlock = null, bool isPartOfDimension = false)
         {
             return e switch
             {
                 Line line => new DrawingLine(
-                    line, layer, color, colorType, ownerBlock is not null, ownerBlock),
+                    line, layer, color, colorType, lineType, ownerBlock is not null, ownerBlock),
                 Arc arc => new DrawingArc(
-                    arc, layer, color, colorType, ownerBlock is not null, ownerBlock),
+                    arc, layer, color, colorType, lineType, ownerBlock is not null, ownerBlock),
                 Polyline2D polyline2D => PolylineResolver(
-                    polyline2D, layer, color, colorType, ownerBlock, isPartOfDimension),
+                    polyline2D, layer, color, colorType, lineType, ownerBlock, isPartOfDimension),
                 Polyline3D polyline3D => new DrawingPolyline(
-                    polyline3D, layer, color, colorType, ownerBlock is not null, ownerBlock),
+                    polyline3D, layer, color, colorType, lineType, ownerBlock is not null, ownerBlock),
                 Circle circle => new DrawingCircle(
-                    circle, layer, color, colorType, ownerBlock is not null, ownerBlock),
+                    circle, layer, color, colorType, lineType, ownerBlock is not null, ownerBlock),
                 Insert block => new DrawingBlock(
-                    block, layer, color, colorType, ownerBlock is not null, ownerBlock, isPartOfDimension: isPartOfDimension),
+                    block, layer, color, colorType, lineType, ownerBlock is not null, ownerBlock, isPartOfDimension: isPartOfDimension),
                 MText mtext => new DrawingMtext(
-                    mtext, layer, color, colorType, !isPartOfDimension, 
+                    mtext, layer, color, colorType, lineType, !isPartOfDimension,
                     TextRenderingHelpers.GetAttachmentPoint(mtext.AttachmentPoint),
                     Common.TextAlignment.Left, ownerBlock is not null, ownerBlock),
                 Text text => new DrawingSText(
-                    text, layer, color, colorType, ownerBlock is not null, ownerBlock),
+                    text, layer, color, colorType, lineType, ownerBlock is not null, ownerBlock),
                 Spline spline => new DrawingSpline(
-                    spline, layer, color, colorType, ownerBlock is not null, ownerBlock),
+                    spline, layer, color, colorType, lineType, ownerBlock is not null, ownerBlock),
                 Dimension dimension => new DrawingDimension(
-                    dimension, layer, color, colorType, ownerBlock is not null, ownerBlock),
+                    dimension, layer, color, colorType, lineType, ownerBlock is not null, ownerBlock),
                 Solid solid => new DrawingSolid(
-                    solid, layer, color, colorType, ownerBlock is not null, ownerBlock),
+                    solid, layer, color, colorType, lineType, ownerBlock is not null, ownerBlock),
                 _ => null,
             };
         }
-        public static DrawingSegment GetDrawingSegment(EntityObject e, ObjectLayer layer, SharpDX.Vector4 color, ColorType colorType, DrawingBlock ownerBlock = null)
+        public static DrawingSegment GetDrawingSegment(EntityObject e, ObjectLayer layer, SharpDX.Vector4 color,
+            ColorType colorType, LineType lineType, DrawingBlock ownerBlock = null)
         {
             return e switch
             {
-                Line line => new DrawingLine(line, layer, color, colorType, ownerBlock is not null, ownerBlock),
-                Arc arc => new DrawingArc(arc, layer, color, colorType, ownerBlock is not null, ownerBlock),
-                Circle circle => new DrawingCircle(circle, layer, color, colorType, ownerBlock is not null, ownerBlock),
+                Line line => new DrawingLine(line, layer, color, colorType, lineType, ownerBlock is not null, ownerBlock),
+                Arc arc => new DrawingArc(arc, layer, color, colorType, lineType, ownerBlock is not null, ownerBlock),
+                Circle circle => new DrawingCircle(circle, layer, color, colorType, lineType, ownerBlock is not null, ownerBlock),
                 _ => null,
             };
         }
@@ -166,6 +163,29 @@ namespace Cad_Point_Manager.Helpers
             return color;
         }
 
+        public static netDxf.Tables.Linetype GetLineType(EntityObject entity, DxfDocument doc, Insert owner = null)
+        {
+            if (entity.Linetype.IsByLayer)
+            {
+                return entity.Layer.Linetype;
+            }
+            else if (entity.Linetype.IsByBlock)
+            {
+                if (owner is not null)
+                {
+                    return GetLineType(owner, doc, owner);
+                }
+                else
+                {
+                    return doc.Linetypes["Continuous"];
+                }
+            }
+            else
+            {
+                return entity.Linetype;
+            }
+        }
+
         public static (byte r, byte g, byte b, byte a) GetRGBAColor(EntityObject entity)
         {
             byte r, g, b, a;
@@ -212,23 +232,20 @@ namespace Cad_Point_Manager.Helpers
             return (r, g, b, a);
         }
 
-        public static DrawingObject PolylineResolver(
-            Polyline2D polyline2D,
-            ObjectLayer layer,
-            SharpDX.Vector4 color,
-            ColorType colorType,
-            DrawingBlock ownerBlock = null,
-            bool isPartOfDimension = false)
+        public static DrawingObject PolylineResolver(Polyline2D polyline2D, ObjectLayer layer, SharpDX.Vector4 color, 
+            ColorType colorType, LineType lineType, DrawingBlock ownerBlock = null, bool isPartOfDimension = false)
         {
             if (polyline2D == null) { return null; }
 
             if (polyline2D.Vertexes.Any(v => v.StartWidth > 0 || v.EndWidth > 0))
             {
                 var width = polyline2D.Vertexes.Max(v => Math.Max(v.StartWidth, v.EndWidth)).ToFloat();
-                return new DrawingWidePolyline(polyline2D, layer, color, colorType, width, isPartOfDimension, ownerBlock);
+                return new DrawingWidePolyline(
+                    polyline2D, layer, color, colorType, lineType, width, isPartOfDimension, ownerBlock);
             }
 
-            return new DrawingPolyline(polyline2D, layer, color, colorType, ownerBlock is not null, ownerBlock);
+            return new DrawingPolyline(
+                polyline2D, layer, color, colorType, lineType, ownerBlock is not null, ownerBlock);
         }
     }
 }

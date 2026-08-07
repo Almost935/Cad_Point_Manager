@@ -1,7 +1,9 @@
-﻿using Cad_Point_Manager.Models.DrawingObjects;
+﻿using Cad_Point_Manager.Common;
+using Cad_Point_Manager.Models.DrawingObjects;
+using Cad_Point_Manager.Models.DrawingObjects.HelperClasses;
 using Cad_Point_Manager.Models.PointRendering;
 
-namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
+namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Helpers
 {
     public sealed class SceneIdMap
     {
@@ -10,35 +12,39 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
         private readonly Dictionary<PointGroup, uint> _groupOf = [];
         private readonly Dictionary<ObjectLayer, uint> _layerOf = [];
         private readonly Dictionary<DrawingObject, uint> _objectOf = [];
+        private readonly Dictionary<LineType, uint> _lineTypeOf = [];
 
         private uint _nextLabelId;
         private uint _nextPointId;
         private uint _nextGroupId;
         private uint _nextLayerId;
         private uint _nextObjectId;
-
+        private uint _nextLineTypeId;
         public int MaxPointId => (int)_nextPointId;
         public int MaxGroupId => (int)_nextGroupId;
         public int MaxLayerId => (int)_nextLayerId;
         public int MaxObjectId => (int)_nextObjectId;
+        public int MaxLineTypeId => (int)_nextLineTypeId;
 
         public bool TryGetLabelId(CogoPoint cp, int line, out uint id) => _labelOf.TryGetValue((cp, line), out id);
         public bool TryGetPointId(CogoPoint p, out uint id) => _pointOf.TryGetValue(p, out id);
         public bool TryGetGroupId(PointGroup pg, out uint id) => _groupOf.TryGetValue(pg, out id);
         public bool TryGetLayerId(ObjectLayer layer, out uint id) => _layerOf.TryGetValue(layer, out id);
         public bool TryGetObjectId(DrawingObject obj, out uint id) => _objectOf.TryGetValue(obj, out id);
+        public bool TryGetLineTypeId(LineType lineType, out uint id) => _lineTypeOf.TryGetValue(lineType, out id);
 
         public bool TryRemoveLabelId(CogoPoint cp, int line) => _labelOf.Remove((cp, line));
         public bool TryRemovePointId(CogoPoint cp) => _pointOf.Remove(cp);
         public bool TryRemoveGroupId(PointGroup pg) => _groupOf.Remove(pg);
         public bool TryRemoveLayerId(ObjectLayer layer) => _layerOf.Remove(layer);
+        public bool TryRemoveLineTypeId(LineType lineType) => _lineTypeOf.Remove(lineType);
 
         public uint GetOrAddLabelId(CogoPoint cp, int line, out bool isNew)
         {
-            if (_labelOf.TryGetValue((cp, line), out var id)) 
+            if (_labelOf.TryGetValue((cp, line), out var id))
             {
                 isNew = false;
-                return id; 
+                return id;
             }
             id = _nextLabelId++;
             _labelOf[(cp, line)] = id;
@@ -61,10 +67,10 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
         }
         public uint GetOrAddGroupId(PointGroup pg, out bool isNew)
         {
-            if (_groupOf.TryGetValue(pg, out var id)) 
+            if (_groupOf.TryGetValue(pg, out var id))
             {
                 isNew = false;
-                return id; 
+                return id;
             }
             id = _nextGroupId++;
             _groupOf[pg] = id;
@@ -74,10 +80,10 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
         }
         public uint GetOrAddLayerId(ObjectLayer layer, out bool isNew)
         {
-            if (_layerOf.TryGetValue(layer, out var id)) 
+            if (_layerOf.TryGetValue(layer, out var id))
             {
                 isNew = false;
-                return id; 
+                return id;
             }
             id = _nextLayerId++;
             _layerOf[layer] = id;
@@ -87,15 +93,29 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
         }
         public uint GetOrAddObjectId(DrawingObject obj, out bool isNew)
         {
-            if (_objectOf.TryGetValue(obj, out var id)) 
+            if (_objectOf.TryGetValue(obj, out var id))
             {
                 isNew = false;
-                return id; 
+                return id;
             }
             id = _nextObjectId++;
             _objectOf[obj] = id;
 
             isNew = true;
+            return id;
+        }
+        public uint GetOrAddLineTypeId(LineType lineType, out bool isNew)
+        {
+            if (_lineTypeOf.TryGetValue(lineType, out var id))
+            {
+                isNew = false;
+                return id;
+            }
+            id = _nextLineTypeId++;
+            _lineTypeOf[lineType] = id;
+            isNew = true;
+            lineType.Id = id; // Assign the generated ID to the LineType instance
+
             return id;
         }
 
@@ -119,11 +139,13 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Text
         public int GroupCount => _groupOf.Count;
         public int LayerCount => _layerOf.Count;
         public int ObjectCount => _objectOf.Count;
+        public int LineTypeCount => _lineTypeOf.Count;
 
         public void ClearLabels() { _labelOf.Clear(); _nextLabelId = 0; }
         public void ClearPoints() { _pointOf.Clear(); }
         public void ClearGroups() { _groupOf.Clear(); }
         public void ClearLayers() { _layerOf.Clear(); }
         public void ClearObjects() { _objectOf.Clear(); }
+        public void ClearLineTypes() { _lineTypeOf.Clear(); }
     }
 }

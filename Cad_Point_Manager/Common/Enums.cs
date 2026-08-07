@@ -23,15 +23,6 @@ namespace Cad_Point_Manager.Common
         PointGroupFilter,
     }
 
-    public enum LineType
-    {
-        Solid,
-        Dash,
-        Dot,
-        DashDot,
-        DashDotDot
-    }
-
     public enum SelectionMode
     {
         Points,
