@@ -5,13 +5,20 @@ cbuffer TransformationBuffer : register(b0)
     row_major matrix transformationMatrix; // 2D transformation matrix
 };
 
-cbuffer SolidSettingsBuffer : register(b1)
+cbuffer DrawingSettingsBuffer : register(b1)
 {
-    float4 selectedColor;
-    float4 selectedMouseOverColor;
-    float HalfWidth;
-    float3 Padding;
+    float2 ViewportSize;
+    float2 _pad1;
+
+    float LineHalfWidthPixels;
+    float GlobalLineTypeScale;
+    float AnnotationScale;
+    float GlowPixelOffset;
+
+    float4 SelectedColor;
+    float4 SelectedMouseOverColor;
 };
+
 
 struct VSInput
 {

@@ -324,6 +324,7 @@ namespace Cad_Point_Manager.Models
         public TextVertex[] NumberVertices { get; set; } = [];
         public UndoRedoManager UndoRedoManager { get; } = new();
         public CogoPointTree CogoPointTree { get; set; }
+        public float OverallDrawingLineTypeScale { get; set; }
 
         public List<int> UsedPointNumbers => PointGroups.SelectMany(pg => pg.Points).Select(p => p.PointNumber).ToList();
         #endregion
@@ -357,6 +358,10 @@ namespace Cad_Point_Manager.Models
             GetPointScale();
             
             GetTestDxfPoints();
+
+            OverallDrawingLineTypeScale = DxfImportResult.DxfDocument.DrawingVariables.LtScale.ToFloat();
+
+            Debug.WriteLine($"\nOverallDrawingLineTypeScale: {OverallDrawingLineTypeScale}");
             
             foreach (var layer in dxfImportResult.DxfDocument.Layers)
             {

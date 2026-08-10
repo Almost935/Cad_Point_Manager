@@ -211,7 +211,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         {
             _textFormat = new(factory, FontFamilyName, TextHeight);
         }
-
         public void GetTextLayout(SharpDX.DirectWrite.Factory1 factory)
         {
             TextLayout = new(factory, Text, _textFormat, (float)Bounds.Width, (float)Bounds.Height, 96, true);

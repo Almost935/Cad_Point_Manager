@@ -4,15 +4,18 @@ cbuffer TransformationBuffer : register(b0)
 {
     row_major matrix transformationMatrix; // 2D transformation matrix
 };
-cbuffer CogoPointGlowSettingsBuffer : register(b1)
+cbuffer DrawingSettingsBuffer : register(b1)
 {
-    float glowRadiusPixels;
-    float3 padding;
-    float2 viewportSize;
-    float2 padding2;
-    float4 hoverColor;
-    float4 selectedColor;
-    float4 selectedMouseOverColor;
+    float2 ViewportSize;
+    float2 _pad1;
+
+    float LineHalfWidthPixels;
+    float GlobalLineTypeScale;
+    float AnnotationScale;
+    float GlowPixelOffset;
+
+    float4 SelectedColor;
+    float4 SelectedMouseOverColor;
 };
 
 struct VS_INPUT
@@ -49,7 +52,7 @@ VS_INPUT VSMain(VS_INPUT input)
 void GSMain(point VS_INPUT input[1], inout TriangleStream<GS_OUTPUT> output)
 {
     float4 center = mul(float4(input[0].position, 1), transformationMatrix);
-    float2 pixelRadiusClip = float2(glowRadiusPixels / viewportSize.x, glowRadiusPixels / viewportSize.y) * 2.0f;
+    float2 pixelRadiusClip = float2(GlowPixelOffset / ViewportSize.x, GlowPixelOffset / ViewportSize.y) * 2.0f;
     
     float radiusWorld = input[0].pointMarkerRadius;
     
@@ -63,6 +66,8 @@ void GSMain(point VS_INPUT input[1], inout TriangleStream<GS_OUTPUT> output)
     float quadClipY = radiusY;
 
     float2 circleEdge = float2(circleClipX / quadClipX, circleClipY / quadClipY);
+    
+    float4 hoverColor = float4(0, 0, 0, 0.4);
     
     EmitCorner(input[0], float4(center.x - radiusX, center.y + radiusY, 0, 1), hoverColor, float2(-1, 1), circleEdge, output); // TL
     EmitCorner(input[0], float4(center.x - radiusX, center.y - radiusY, 0, 1), hoverColor, float2(-1, -1), circleEdge, output); // BL

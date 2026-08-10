@@ -111,9 +111,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
                 NumberOfSegments = CalculateSegments(Radius, Sweep);
 
-                Debug.WriteLine($"\nArc: Radius: {Radius} Sweep: {Sweep}" +
-                $"\nNumberOfSegments: {NumberOfSegments}");
-
                 var vertices = arc.ToPolyline2D(NumberOfSegments).Vertexes;
                 List<LineInstance> lineInstances = [];
 

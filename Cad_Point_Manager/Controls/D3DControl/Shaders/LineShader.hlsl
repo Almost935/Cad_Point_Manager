@@ -7,12 +7,18 @@ cbuffer TransformationBuffer : register(b0)
     row_major matrix transformationMatrix;
 };
 
-cbuffer LineSettingsBuffer : register(b1)
+cbuffer DrawingSettingsBuffer : register(b1)
 {
+    float2 ViewportSize;
+    float2 _pad1;
+
+    float LineHalfWidthPixels;
+    float GlobalLineTypeScale;
+    float AnnotationScale;
+    float GlowPixelOffset;
+
     float4 SelectedColor;
     float4 SelectedMouseOverColor;
-    float HalfWidth;
-    float3 _padding1;
 };
 
 cbuffer LineRenderModeBuffer : register(b2)
@@ -20,12 +26,6 @@ cbuffer LineRenderModeBuffer : register(b2)
     uint RenderSelectedOnly;
     uint RenderGlowPass;
     float2 _padding2;
-};
-
-cbuffer ViewportBuffer : register(b3)
-{
-    float2 ViewportSize;
-    float2 _padding3;
 };
 
 //-----------------------------------------------------------------------------
@@ -56,9 +56,13 @@ struct PSInput
 
     float Side : TEXCOORD0;
     float Distance : TEXCOORD1;
+    float LineLength : TEXCOORD2;
 
-    nointerpolation uint LayerId : TEXCOORD2;
-    nointerpolation uint ObjectId : TEXCOORD3;
+    nointerpolation uint LayerId : TEXCOORD3;
+    nointerpolation uint ObjectId : TEXCOORD4;
+
+    float AlongPixels : TEXCOORD5;
+    nointerpolation float LineLengthPixels : TEXCOORD6;
 };
 
 //-----------------------------------------------------------------------------
@@ -137,46 +141,105 @@ PSInput VSMain(VSInput vertex, VSInstance instance)
 
     float2 pixelScale = float2(ViewportSize.x * 0.5, ViewportSize.y * 0.5);
 
-    // Convert NDC direction into pixel direction
     float2 dirPixels = (ndcEnd - ndcStart) * pixelScale;
-
     dirPixels = normalize(dirPixels);
 
     float2 normalPixels = float2(-dirPixels.y, dirPixels.x);
 
-    // Convert back to NDC
-    float2 offset = float2(
+    //--------------------------------------------
+    // Pixel directions -> NDC directions
+    //--------------------------------------------
+
+    float2 normalNdc = float2(
         normalPixels.x * (2.0 / ViewportSize.x),
         normalPixels.y * (2.0 / ViewportSize.y));
 
-    offset *= HalfWidth;
+    float2 directionNdc = float2(
+        dirPixels.x * (2.0 / ViewportSize.x),
+        dirPixels.y * (2.0 / ViewportSize.y));
 
     //--------------------------------------------
-    // Position along the segment
+    // Determine width
+    //--------------------------------------------
+
+    // Normal line rendering only displays approximately half of the
+    // LineHalfWidthPixels geometry because the PS uses Side * 2.
+    float visibleLineHalfWidth = LineHalfWidthPixels * 0.5;
+
+    float halfWidthPixels = LineHalfWidthPixels;
+
+    if (RenderGlowPass == 1)
+        halfWidthPixels = visibleLineHalfWidth + GlowPixelOffset;
+
+    float2 offset = normalNdc * halfWidthPixels;
+
+    //--------------------------------------------
+    // Screen-space line length
+    //--------------------------------------------
+
+    float lineLengthPixels = length((ndcEnd - ndcStart) * pixelScale);
+
+    //--------------------------------------------
+    // Position along segment
     //--------------------------------------------
 
     float t = vertex.Local.y;
-
     float2 ndc = lerp(ndcStart, ndcEnd, t);
 
+    //--------------------------------------------
+    // Extend glow beyond physical entity endpoints
+    //--------------------------------------------
+
+    if (RenderGlowPass == 1)
+    {
+        float endDirection = vertex.Local.y * 2.0 - 1.0;
+
+        ndc += directionNdc * GlowPixelOffset * endDirection;
+
+        output.AlongPixels = lerp(
+            -GlowPixelOffset,
+            lineLengthPixels + GlowPixelOffset,
+            vertex.Local.y);
+    }
+    else
+    {
+        output.AlongPixels = vertex.Local.y * lineLengthPixels;
+    }
+
+    //--------------------------------------------
+    // Expand perpendicular to line
+    //--------------------------------------------
+
     ndc += offset * vertex.Local.x;
-    
+
     //--------------------------------------------
     // Convert back to clip coordinates
     //--------------------------------------------
 
     float4 clip = lerp(clipStart, clipEnd, t);
-
     clip.xy = ndc * clip.w;
 
+    //--------------------------------------------
+    // Output
     //--------------------------------------------
 
     output.Position = clip;
     output.Side = vertex.Local.x;
+    output.LineLengthPixels = lineLengthPixels;
 
     float lineLength = length(instance.End - instance.Start);
+    output.LineLength = lineLength;
 
-    output.Distance = t * lineLength;
+    if (RenderGlowPass == 1)
+    {
+        float pixelsToWorld = lineLength / max(lineLengthPixels, 1e-6);
+        output.Distance = output.AlongPixels * pixelsToWorld;
+    }
+    else
+    {
+        output.Distance = t * lineLength;
+    }
+
     output.LayerId = instance.LayerId;
     output.ObjectId = instance.ObjectId;
 
@@ -193,6 +256,10 @@ float4 PSMain(PSInput input) : SV_TARGET
     ObjectState os = ObjectStates[input.ObjectId];
     LineTypeInfo lti = LineTypeInfos[os.LineTypeId];
 
+    //--------------------------------------------
+    // Visibility
+    //--------------------------------------------
+
     if ((ls.Flags & LAYER_VISIBLE) == 0)
         discard;
 
@@ -200,33 +267,78 @@ float4 PSMain(PSInput input) : SV_TARGET
         discard;
 
     bool selected = (os.Flags & OBJ_SELECTED) != 0;
-    
-    // LineType Calculations
-    float patternPos = fmod(input.Distance, lti.PatternLength);
-    
+    bool mouseOver = (os.Flags & OBJ_MOUSEOVER) != 0;
+
+    //--------------------------------------------
+// Linetype
+//--------------------------------------------
+
+    float scaledDistance = input.Distance / GlobalLineTypeScale;
+    float patternPos = fmod(scaledDistance, lti.PatternLength);
+
+    if (patternPos < 0.0)
+        patternPos += lti.PatternLength;
+
     float accum = 0.0;
     bool visible = true;
-    
+    float distanceToVisibleAlong = 0.0;
+
     for (uint i = 0; i < lti.PatternCount; i++)
     {
         float segment = PatternData[lti.FirstPatternIndex + i];
+        float segmentLength = abs(segment);
 
-        float length = abs(segment);
-
-        if (patternPos < accum + length)
+        if (patternPos < accum + segmentLength)
         {
-            visible = segment > 0;
+            visible = segment > 0.0;
+
+            if (!visible)
+            {
+                float distanceToGapStart = patternPos - accum;
+                float distanceToGapEnd = (accum + segmentLength) - patternPos;
+
+                distanceToVisibleAlong = min(distanceToGapStart, distanceToGapEnd);
+            }
+
             break;
         }
 
-        accum += length;
+        accum += segmentLength;
     }
-    
-    
-    if (!visible)
+
+    //--------------------------------------------
+    // Always expose physical line endpoints
+    //--------------------------------------------
+
+    float endpointLength = 2.0 * LineHalfWidthPixels;
+    endpointLength /= GlobalLineTypeScale;
+
+    if (input.Distance < endpointLength)
+        visible = true;
+
+    if ((input.LineLength - input.Distance) < endpointLength)
+        visible = true;
+
+    //--------------------------------------------
+    // Normal passes discard linetype gaps.
+    //
+    // Glow pass keeps gap pixels because they are needed to
+    // generate the rounded fade around individual dash ends.
+    //--------------------------------------------
+
+    if (RenderGlowPass == 0 && !visible)
         discard;
 
-    if (RenderSelectedOnly == 1)
+    //--------------------------------------------
+    // Determine render pass
+    //--------------------------------------------
+
+    if (RenderGlowPass == 1)
+    {
+        if (!mouseOver)
+            discard;
+    }
+    else if (RenderSelectedOnly == 1)
     {
         if (!selected)
             discard;
@@ -237,20 +349,114 @@ float4 PSMain(PSInput input) : SV_TARGET
             discard;
     }
 
+    //-------------------------------------------------------------------------
+    // Mouseover glow
+    //-------------------------------------------------------------------------
+
+    if (RenderGlowPass == 1)
+    {
+        float visibleLineHalfWidth = LineHalfWidthPixels * 0.5;
+        float glowHalfWidth = visibleLineHalfWidth + GlowPixelOffset;
+
+        //--------------------------------------------
+        // Perpendicular distance from line center
+        //--------------------------------------------
+
+        float perpendicularDistance = abs(input.Side) * glowHalfWidth;
+
+        //--------------------------------------------
+        // Convert linetype distance to screen pixels
+        //--------------------------------------------
+
+        float worldToPixels = input.LineLengthPixels / max(input.LineLength, 1e-6);
+
+        float distanceToVisiblePixels =
+            distanceToVisibleAlong * GlobalLineTypeScale * worldToPixels;
+
+        //--------------------------------------------
+        // Longitudinal distance from nearest visible
+        // portion of the line
+        //--------------------------------------------
+
+        float alongDistance = 0.0;
+
+        if (input.AlongPixels < 0.0)
+        {
+            // Before physical LineInstance start.
+            alongDistance = -input.AlongPixels;
+        }
+        else if (input.AlongPixels > input.LineLengthPixels)
+        {
+            // After physical LineInstance end.
+            alongDistance = input.AlongPixels - input.LineLengthPixels;
+        }
+        else if (!visible)
+        {
+            // Inside a linetype gap.
+            alongDistance = distanceToVisiblePixels;
+        }
+
+        //--------------------------------------------
+        // 2D distance from nearest visible centerline
+        //--------------------------------------------
+
+        float distanceFromCenterline =
+            length(float2(perpendicularDistance, alongDistance));
+
+        //--------------------------------------------
+        // Do not paint over the actual visible line
+        //--------------------------------------------
+
+        if (visible && distanceFromCenterline <= visibleLineHalfWidth)
+            discard;
+
+        //--------------------------------------------
+        // Distance outside actual line
+        //--------------------------------------------
+
+        float distanceFromLine =
+            max(distanceFromCenterline - visibleLineHalfWidth, 0.0);
+
+        if (distanceFromLine >= GlowPixelOffset)
+            discard;
+
+        //--------------------------------------------
+        // Fade from dark at line edge to transparent
+        // at outside edge of glow
+        //--------------------------------------------
+
+        float glowT = saturate(distanceFromLine / GlowPixelOffset);
+        float glowAlpha = 1.0 - smoothstep(0.0, 1.0, glowT);
+
+        const float MaxGlowAlpha = 0.45;
+        glowAlpha *= MaxGlowAlpha;
+
+        return float4(0.0, 0.0, 0.0, glowAlpha);
+    }
+
+    //-------------------------------------------------------------------------
+    // Normal line rendering
+    //-------------------------------------------------------------------------
+
     float4 color = ((os.Flags & OBJ_COLOR_BY_LAYER) != 0) ? ls.Color : os.Color;
 
     if (selected)
         color = SelectedColor;
 
+    //--------------------------------------------
+    // Normal line antialiasing
+    //
+    // Kept unchanged so the normal line thickness remains
+    // exactly the same as before adding the glow.
+    //--------------------------------------------
+
     float d = abs(input.Side);
-
     float w = fwidth(d);
-    
-    float visibleSide = abs(input.Side) * 2.0;
 
+    float visibleSide = abs(input.Side) * 2.0;
     float alpha = 1.0 - smoothstep(1.0 - w, 1.0 + w, visibleSide);
 
     color.a *= alpha;
-    
+
     return color;
 }

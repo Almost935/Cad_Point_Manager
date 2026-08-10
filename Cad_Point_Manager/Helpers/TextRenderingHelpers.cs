@@ -7,14 +7,14 @@ using SharpDX.Direct2D1;
 using SharpDX.DirectWrite;
 using SharpDX.Mathematics.Interop;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 
 namespace Cad_Point_Manager.Helpers
 {
     public static class TextRenderingHelpers
     {
         private const float _dictBaseTextSize = 10.00f;
-        private const float _flatteningTolerance = 0.001f;
-        private const float _tesselationFactor = 1.0f;
+        private const float _flatteningTolerance = 0.0001f;
 
         public static ConcurrentDictionary<(string fontName, FontWeight fontWeight, FontStyle fontstyle), float> FontSizeFactorDict
         { get; } = new ConcurrentDictionary<(string fontName, FontWeight fontWeight, FontStyle fontstyle), float>();
@@ -25,12 +25,8 @@ namespace Cad_Point_Manager.Helpers
             string text,
             FontFace fontFace)
         {
-            var fontSizeFactor =
-                GetFontSizeFactor(resCache, textLayout, fontFace);
-
-            var geometry =
-                TextLayoutToGeometry(resCache, textLayout, text, fontFace, fontSizeFactor);
-
+            var fontSizeFactor = GetFontSizeFactor(resCache, textLayout, fontFace);
+            var geometry = TextLayoutToGeometry(resCache, textLayout, text, fontFace, fontSizeFactor);
             var bounds = geometry.GetBounds();
 
             List<Vector2> vertices;
@@ -53,11 +49,12 @@ namespace Cad_Point_Manager.Helpers
             var fontSizeFactor = GetFontSizeFactor(resCache, textLayout, fontFace); // Multiply by a factor to smoothen curves
             var geometry = TextLayoutToGeometry(resCache, textLayout, text, fontFace, fontSizeFactor);
             var bounds = geometry.GetBounds();
+            var tesselationFactor = GetTessellationFactor(textLayout.FontSize);
 
-            var matrix = Matrix3x2.Scaling(_tesselationFactor, _tesselationFactor);
+            var matrix = Matrix3x2.Scaling(tesselationFactor, tesselationFactor);
             TransformedGeometry transformedGeometry = new(resCache.D2dFactory, geometry, matrix);
 
-            var vertices = TessellateGeometry(transformedGeometry, _flatteningTolerance, 1 / _tesselationFactor);
+            var vertices = TessellateGeometry(transformedGeometry, _flatteningTolerance, 1 / tesselationFactor);
             geometry.Dispose();
 
             return (vertices, bounds);
@@ -232,6 +229,22 @@ namespace Cad_Point_Manager.Helpers
 
                 _ => Vector2.Zero
             };
+        }
+
+        private static float GetTessellationFactor(float textHeight)
+        {
+            const float minFactor = 1.0f;
+
+            const float referenceHeight = 0.05f;
+            const float referenceFactor = 60.0f;
+
+            // Controls how aggressively tessellation falls as text gets larger.
+            const float exponent = 0.75f;
+
+            float factor = referenceFactor *
+                           MathF.Pow(referenceHeight / textHeight, exponent);
+
+            return Math.Max(minFactor, factor);
         }
     }
 }

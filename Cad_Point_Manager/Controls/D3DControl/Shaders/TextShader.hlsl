@@ -5,12 +5,20 @@ cbuffer TransformationBuffer : register(b0)
     row_major matrix transformationMatrix; // world*view*proj (to CLIP space)
 };
 
-// NEW: viewport size in pixels (width,height)
-cbuffer ViewportBuffer : register(b1)
+cbuffer DrawingSettingsBuffer : register(b1)
 {
-    float2 ViewportSize; // e.g., {renderTargetWidth, renderTargetHeight}
-    float2 _padViewport;
-}
+    float2 ViewportSize;
+    float2 _pad1;
+
+    float LineHalfWidthPixels;
+    float GlobalLineTypeScale;
+    float AnnotationScale;
+    float GlowPixelOffset;
+
+    float4 SelectedColor;
+    float4 SelectedMouseOverColor;
+};
+
 
 float4 GetSnappedColor(float4 color)
 {

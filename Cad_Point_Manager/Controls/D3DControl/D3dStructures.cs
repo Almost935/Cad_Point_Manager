@@ -5,13 +5,22 @@ using Matrix = SharpDX.Matrix;
 
 namespace Cad_Point_Manager.Controls.D3DControl
 {
+    [StructLayout(LayoutKind.Sequential)]
     public struct DrawingSettingsBuffer
     {
-        public Vector4 BackgroundColor;
-        public Vector4 GridColor;
+        // View
         public Vector2 ViewportSize;
-        public float GridSpacingWorld;
-        private float _pad; // Padding to ensure the structure is 16-byte aligned
+        private Vector2 _pad1;
+
+        // Line rendering
+        public float LineHalfWidthPixels;
+        public float GlobalLineTypeScale;
+        public float AnnotationScale;
+        public float GlowPixelOffset;
+
+        // Colors
+        public Vector4 SelectedColor;
+        public Vector4 SelectedMouseOverColor;
     }
     [StructLayout(LayoutKind.Sequential)]
     public struct SolidVertex(Vector3 pos, uint layerId, uint objectId)

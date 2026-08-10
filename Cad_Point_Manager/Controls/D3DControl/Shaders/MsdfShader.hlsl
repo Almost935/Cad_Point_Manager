@@ -3,18 +3,21 @@
     row_major float4x4 transformationMatrix;
 }
 
-cbuffer TextSettingsBuffer : register(b1)
-{
-    float4 selectedColor;
-}
-
-cbuffer ViewportBuffer : register(b2)
+cbuffer DrawingSettingsBuffer : register(b1)
 {
     float2 ViewportSize;
-    float2 _viewportPad;
-}
+    float2 _pad1;
 
-cbuffer MsdfSettings : register(b3)
+    float LineHalfWidthPixels;
+    float GlobalLineTypeScale;
+    float AnnotationScale;
+    float GlowPixelOffset;
+
+    float4 SelectedColor;
+    float4 SelectedMouseOverColor;
+};
+
+cbuffer MsdfSettings : register(b2)
 {
     float AtlasWidth;
     float AtlasHeight;
@@ -168,7 +171,7 @@ VSOut VSMain(VSVertex v, VSInstance inst)
     
     if (sel > 0.5f)
     {
-        o.Color = selectedColor;
+        o.Color = SelectedColor;
     }
 
     return o;

@@ -5,12 +5,18 @@ cbuffer TransformationBuffer : register(b0)
     row_major matrix transformationMatrix;
 };
 
-cbuffer CircleSettingsBuffer : register(b1)
+cbuffer DrawingSettingsBuffer : register(b1)
 {
-    float4 selectedColor;
-    float4 selectedMouseOverColor;
-    float HalfWidth;
-    float3 Padding;
+    float2 ViewportSize;
+    float2 _pad1;
+
+    float LineHalfWidthPixels;
+    float GlobalLineTypeScale;
+    float AnnotationScale;
+    float GlowPixelOffset;
+
+    float4 SelectedColor;
+    float4 SelectedMouseOverColor;
 };
 
 struct PointState
@@ -89,7 +95,7 @@ void GSMain(point VS_INPUT input[1], inout TriangleStream<GS_OUTPUT> output)
     bool over = (ps.Flags & POINT_MOUSEOVR) != 0u;
     bool sel = (ps.Flags & POINT_SELECTED) != 0u;
 
-    if (sel) { color = over ? selectedMouseOverColor : selectedColor; }
+    if (sel) { color = over ? SelectedMouseOverColor : SelectedColor; }
 
     // Scale radius by group scale (Option A)
     float radiusWorld = input[0].radius * gs.Scale;
