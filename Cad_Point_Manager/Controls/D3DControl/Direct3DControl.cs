@@ -228,31 +228,30 @@ namespace Cad_Point_Manager.Controls.D3DControl
             ResCache.DeviceContext = _deviceContext;
             ResCache.WriteFactory = new();
 
+            // Normal alpha blending
             var baseBlendDesc = new BlendStateDescription();
-            baseBlendDesc.RenderTarget [0].IsBlendEnabled = true; // Enable blending
-            baseBlendDesc.RenderTarget [0].SourceBlend = BlendOption.SourceAlpha;
-            baseBlendDesc.RenderTarget [0].DestinationBlend = BlendOption.InverseSourceAlpha;
-            baseBlendDesc.RenderTarget [0].BlendOperation = BlendOperation.Add;
-            baseBlendDesc.RenderTarget [0].SourceAlphaBlend = BlendOption.One;
-            baseBlendDesc.RenderTarget [0].DestinationAlphaBlend = BlendOption.Zero;
-            baseBlendDesc.RenderTarget [0].AlphaBlendOperation = BlendOperation.Add;
-            baseBlendDesc.RenderTarget [0].RenderTargetWriteMask = ColorWriteMaskFlags.All;
+            baseBlendDesc.RenderTarget[0].IsBlendEnabled = true; // Enable blending
+            baseBlendDesc.RenderTarget[0].SourceBlend = BlendOption.SourceAlpha;
+            baseBlendDesc.RenderTarget[0].DestinationBlend = BlendOption.InverseSourceAlpha;
+            baseBlendDesc.RenderTarget[0].BlendOperation = BlendOperation.Add;
+            baseBlendDesc.RenderTarget[0].SourceAlphaBlend = BlendOption.One;
+            baseBlendDesc.RenderTarget[0].DestinationAlphaBlend = BlendOption.Zero;
+            baseBlendDesc.RenderTarget[0].AlphaBlendOperation = BlendOperation.Add;
+            baseBlendDesc.RenderTarget[0].RenderTargetWriteMask = ColorWriteMaskFlags.All;
             var baseBlendState = new BlendState(_device, baseBlendDesc);
             ResCache.BaseBlendState = baseBlendState;
 
-            // Create the max blend state for hover objects to avoid additive alpha
-            var maxDesc = new BlendStateDescription();
-            var rt = maxDesc.RenderTarget [0];
-            rt.IsBlendEnabled = true;
-            // Color channels: One + One with MAX op -> per-pixel maximum
-            rt.SourceBlend = BlendOption.One;
-            rt.DestinationBlend = BlendOption.One;
-            rt.BlendOperation = BlendOperation.Maximum;
-            // Alpha channels mirror color (we store alpha in the mask too)
-            rt.SourceAlphaBlend = BlendOption.One;
-            rt.DestinationAlphaBlend = BlendOption.One;
-            rt.AlphaBlendOperation = BlendOperation.Maximum;
-            rt.RenderTargetWriteMask = ColorWriteMaskFlags.All;
+            // MAX blending for hover glow
+            var maxBlendDesc = new BlendStateDescription();
+            maxBlendDesc.RenderTarget[0].IsBlendEnabled = true;
+            maxBlendDesc.RenderTarget[0].SourceBlend = BlendOption.One;
+            maxBlendDesc.RenderTarget[0].DestinationBlend = BlendOption.One;
+            maxBlendDesc.RenderTarget[0].BlendOperation = BlendOperation.Maximum;
+            maxBlendDesc.RenderTarget[0].SourceAlphaBlend = BlendOption.One;
+            maxBlendDesc.RenderTarget[0].DestinationAlphaBlend = BlendOption.One;
+            maxBlendDesc.RenderTarget[0].AlphaBlendOperation = BlendOperation.Maximum;
+            maxBlendDesc.RenderTarget[0].RenderTargetWriteMask = ColorWriteMaskFlags.All;
+            ResCache.MaxBlendState = new BlendState(_device, maxBlendDesc);
 
             _deviceContext.OutputMerger.SetBlendState(ResCache.BaseBlendState);
 
@@ -337,6 +336,22 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
                 _dxfTexture = new Texture2D(_device, offscreenRenderDesc);
                 ResCache.DxfTexture = _dxfTexture;
+
+                ResCache.GlowTexture = new Texture2D(_device, new Texture2DDescription
+                {
+                    BindFlags = BindFlags.RenderTarget | BindFlags.ShaderResource,
+                    Format = Format.B8G8R8A8_UNorm,
+                    Width = width,
+                    Height = height,
+                    MipLevels = 1,
+                    SampleDescription = new SampleDescription(1, 0),
+                    Usage = ResourceUsage.Default,
+                    OptionFlags = ResourceOptionFlags.None,
+                    CpuAccessFlags = CpuAccessFlags.None,
+                    ArraySize = 1
+                });
+                ResCache.GlowRenderTargetView = new RenderTargetView(_device, ResCache.GlowTexture);
+                ResCache.GlowShaderResourceView = new ShaderResourceView(_device, ResCache.GlowTexture);
 
                 var rtvDesc = new RenderTargetViewDescription
                 {

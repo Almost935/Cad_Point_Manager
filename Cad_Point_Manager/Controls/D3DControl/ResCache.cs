@@ -150,13 +150,20 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         public int MaxSize { get; set; }
         public BlendState BaseBlendState { get; set; }
+        public BlendState MaxBlendState { get; set; }
         public GlyphAtlas AsciiGlyphAtlas { get; set; }
         public MsdfAtlas CogoPointMsdfAtlas { get; set; }
         public DWriteGlyphTessellator GlyphTessellator { get; set; }
         public AdvanceWidthCache AdvanceWidthCache { get; set; }
 
+        public Texture2D GlowTexture { get; set; }
+        public RenderTargetView GlowRenderTargetView { get; set; }
+        public ShaderResourceView GlowShaderResourceView { get; set; }
+
         public FontFace CogoPointFontFace { get; set; }
-        public ConcurrentDictionary<(string fontName, FontWeight fontWeight, FontStretch fontStretch, FontStyle fontStyle), FontFace> FontFaceDict = [];
+        public ConcurrentDictionary<
+            (string fontName, FontWeight fontWeight, FontStretch fontStretch, 
+            FontStyle fontStyle), FontFace> FontFaceDict = [];
         #endregion
 
         #region Events
@@ -311,10 +318,15 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     _writeFactory?.Dispose();
 
                     BaseBlendState?.Dispose();
+                    MaxBlendState?.Dispose();
                     AsciiGlyphAtlas?.Dispose();
                     GlyphTessellator?.Dispose();
                     CogoPointFontFace.Dispose();
                     CogoPointMsdfAtlas?.Dispose();
+
+                    GlowRenderTargetView?.Dispose();
+                    GlowShaderResourceView?.Dispose();
+                    GlowTexture?.Dispose();
 
                     foreach (var fontFace in FontFaceDict.Values)
                     {

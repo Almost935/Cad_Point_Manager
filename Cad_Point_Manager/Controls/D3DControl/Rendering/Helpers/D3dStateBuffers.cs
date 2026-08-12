@@ -546,7 +546,7 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Helpers
         }
         public void FlushLineTypeSubset(HashSet<uint> dirty)
         {
-            if (dirty == null || dirty.Count == 0) return;
+            if (dirty == null || dirty.Count == 0) { return; }
             DataStream s;
             _ctx.MapSubresource(_lineTypeBuf, 0, MapMode.WriteNoOverwrite, MapFlags.None, out s);
             int stride = Utilities.SizeOf<LineTypeInfo>();

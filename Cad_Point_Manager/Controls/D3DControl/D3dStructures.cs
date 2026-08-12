@@ -353,6 +353,18 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public float PatternLength;
         public float Padding;
     }
+    [StructLayout(LayoutKind.Sequential)]
+    public struct GlowCompositeVertex
+    {
+        public Vector2 Position;
+        public Vector2 TexCoord;
+
+        public GlowCompositeVertex(Vector2 position, Vector2 texCoord)
+        {
+            Position = position;
+            TexCoord = texCoord;
+        }
+    }
 
     [StructLayout(LayoutKind.Sequential)]
     public struct DxfObjectSettingsBuffer
