@@ -22,131 +22,24 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private Texture2D? _readbackStaging;
         private int _readbackW, _readbackH;
         private Format _readbackFmt;
-
-        private Device _device = null;
-        private DeviceContext _deviceContext = null;
-        private Texture2D _texture2D = null;
-        private Texture2D _dxfTexture = null;
-        private RenderTargetView _renderTargetView = null;
-        private RenderTargetView _dxfRenderTargetView = null;
-        private SharpDX.Direct2D1.Device1 _d2DDevice = null;
-        private SharpDX.Direct2D1.DeviceContext1 _d2DDeviceContext = null;
-        private RenderTarget _d2dRenderTarget = null;
-        private Factory2 _d2DFactory = null;
-        private Bitmap1 _d2dTargetBitmap = null;
-        private SharpDX.DirectWrite.Factory1 _writeFactory = null;
         #endregion
 
         #region Properties
-        public Device Device
-        {
-            get { return _device; }
-            set
-            {
-                _device = value;
-                OnPropertyChanged(nameof(Device));
-            }
-        }
-        public DeviceContext DeviceContext
-        {
-            get { return _deviceContext; }
-            set
-            {
-                _deviceContext = value;
-                OnPropertyChanged(nameof(DeviceContext));
-            }
-        }
-        public Texture2D Texture2D
-        {
-            get { return _texture2D; }
-            set
-            {
-                _texture2D = value;
-                OnPropertyChanged(nameof(Texture2D));
-            }
-        }
-        public Texture2D DxfTexture
-        {
-            get { return _dxfTexture; }
-            set
-            {
-                _dxfTexture = value;
-                OnPropertyChanged(nameof(DxfTexture));
-            }
-        }
-        public RenderTargetView RenderTargetView
-        {
-            get { return _renderTargetView; }
-            set
-            {
-                _renderTargetView = value;
-                OnPropertyChanged(nameof(RenderTargetView));
-            }
-        }
-        public RenderTargetView DxfRenderTargetView
-        {
-            get { return _dxfRenderTargetView; }
-            set
-            {
-                _dxfRenderTargetView = value;
-                OnPropertyChanged(nameof(DxfRenderTargetView));
-            }
-        }
+        public Device Device { get; set; }
+        public DeviceContext DeviceContext { get; set; }
+        public Texture2D Texture2D { get; set; }
+        public Texture2D DxfTexture { get; set; }
+        public Texture2D FrameTexture { get; set; }
+        public RenderTargetView RenderTargetView { get; set; }
+        public RenderTargetView DxfRenderTargetView { get; set; }
+        public RenderTargetView FrameRenderTargetView { get; set; }
 
-        public SharpDX.Direct2D1.Device1 D2DDevice
-        {
-            get { return _d2DDevice; }
-            set
-            {
-                _d2DDevice = value;
-                OnPropertyChanged(nameof(D2DDevice));
-            }
-        }
-        public SharpDX.Direct2D1.DeviceContext1 D2DDeviceContext
-        {
-            get { return _d2DDeviceContext; }
-            set
-            {
-                _d2DDeviceContext = value;
-                OnPropertyChanged(nameof(D2DDeviceContext));
-            }
-        }
-        public RenderTarget D2DRenderTarget
-        {
-            get { return _d2dRenderTarget; }
-            set
-            {
-                _d2dRenderTarget = value;
-                OnPropertyChanged(nameof(D2DRenderTarget));
-            }
-        }
-        public Factory2 D2dFactory
-        {
-            get { return _d2DFactory; }
-            set
-            {
-                _d2DFactory = value;
-                OnPropertyChanged(nameof(D2dFactory));
-            }
-        }
-        public Bitmap1 D2DTargetBitmap
-        {
-            get { return _d2dTargetBitmap; }
-            set
-            {
-                _d2dTargetBitmap = value;
-                OnPropertyChanged(nameof(D2DTargetBitmap));
-            }
-        }
-        public SharpDX.DirectWrite.Factory1 WriteFactory
-        {
-            get { return _writeFactory; }
-            set
-            {
-                _writeFactory = value;
-                OnPropertyChanged(nameof(WriteFactory));
-            }
-        }
+        public SharpDX.Direct2D1.Device1 D2DDevice { get; set; }
+        public SharpDX.Direct2D1.DeviceContext1 D2DDeviceContext { get; set; }
+        public RenderTarget D2DRenderTarget { get; set; }
+        public Factory2 D2dFactory { get; set; }
+        public Bitmap1 D2DTargetBitmap { get; set; }
+        public SharpDX.DirectWrite.Factory1 WriteFactory { get; set; }
 
         public int MaxSize { get; set; }
         public BlendState BaseBlendState { get; set; }
@@ -304,18 +197,20 @@ namespace Cad_Point_Manager.Controls.D3DControl
             {
                 if (disposing)
                 {
-                    _device?.Dispose();
-                    _deviceContext?.Dispose();
-                    _texture2D?.Dispose();
-                    _dxfTexture?.Dispose();
-                    _renderTargetView?.Dispose();
-                    _dxfRenderTargetView?.Dispose(); // Fixed null check
-                    _d2DDevice?.Dispose();
-                    _d2DDeviceContext?.Dispose();
-                    _d2DFactory?.Dispose();
-                    _d2dRenderTarget?.Dispose();
-                    _d2dTargetBitmap?.Dispose();
-                    _writeFactory?.Dispose();
+                    Device?.Dispose();
+                    DeviceContext?.Dispose();
+                    Texture2D?.Dispose();
+                    DxfTexture?.Dispose();
+                    FrameTexture?.Dispose();
+                    RenderTargetView?.Dispose();
+                    DxfRenderTargetView?.Dispose(); // Fixed null check
+                    FrameRenderTargetView?.Dispose();
+                    D2DDevice?.Dispose();
+                    D2DDeviceContext?.Dispose();
+                    D2dFactory?.Dispose();
+                    D2DRenderTarget?.Dispose();
+                    D2DTargetBitmap?.Dispose();
+                    WriteFactory?.Dispose();
 
                     BaseBlendState?.Dispose();
                     MaxBlendState?.Dispose();

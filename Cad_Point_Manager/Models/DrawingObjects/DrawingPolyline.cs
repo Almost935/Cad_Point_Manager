@@ -7,6 +7,7 @@ using PdfSharpCore.Drawing;
 using SharpDX;
 using SharpDX.Direct2D1;
 using SharpDX.Mathematics.Interop;
+using System.Diagnostics;
 using System.Windows;
 
 using Vector3 = SharpDX.Vector3;
@@ -58,6 +59,8 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         #region Methods
         public override void UpdateData()
         {
+            bool isDash = LineType.Name == "Dash";
+
             if (EntityObject is Polyline2D polyline2d)
             {
                 IsClosed = polyline2d.IsClosed;

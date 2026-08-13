@@ -20,8 +20,10 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private DeviceContext _deviceContext;
         private Texture2D _texture2D;
         private Texture2D _dxfTexture;
+        private Texture2D _frameTexture;
         private RenderTargetView _renderTargetView;
         private RenderTargetView _dxfRenderTargetView;
+        private RenderTargetView _frameRenderTargetView;
         private Dx11ImageSource _d3DSurface;
         private SharpDX.Direct2D1.Factory2 _d2dFactory;
         private SharpDX.Direct2D1.Device1 _d2dDevice;
@@ -142,7 +144,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             StartD3D();
             StartRendering();
         }
-
         private void Window_Closing(object sender, RoutedEventArgs e)
         {
             if (IsInDesignMode)
@@ -158,17 +159,15 @@ namespace Cad_Point_Manager.Controls.D3DControl
         {
             if (!_renderTimer.IsRunning || !_d3DSurface.IsFrontBufferAvailable) { return; }
 
-            var sw = Stopwatch.StartNew();
-
             _d3DSurface.Lock();
 
             PrepareAndCallRender();
 
-            _d3DSurface.InvalidateD3DImage();
-
             _d3DSurface.Unlock();
 
             _device.ImmediateContext.Flush();
+
+            _d3DSurface.InvalidateD3DImage();
 
             _lastRenderTime = _renderTimer.ElapsedMilliseconds;
         }
@@ -280,6 +279,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
             Disposer.SafeDispose(ref _d2dFactory);
             Disposer.SafeDispose(ref _d2dDevice);
             Disposer.SafeDispose(ref _d2dDeviceContext);
+            Disposer.SafeDispose(ref _frameTexture);
+            Disposer.SafeDispose(ref _frameRenderTargetView);
         }
 
         private void CreateAndBindTargets()
@@ -299,11 +300,12 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
                 _d3DSurface.SetRenderTarget(null);
 
-                Disposer.SafeDispose(ref _dxfRenderTargetView);
-                Disposer.SafeDispose(ref _renderTargetView);
-
                 Disposer.SafeDispose(ref _dxfTexture);
                 Disposer.SafeDispose(ref _texture2D);
+                Disposer.SafeDispose(ref _frameTexture);
+                Disposer.SafeDispose(ref _dxfRenderTargetView);
+                Disposer.SafeDispose(ref _renderTargetView);
+                Disposer.SafeDispose(ref _frameRenderTargetView);
 
                 var texture2DRenderDesc = new Texture2DDescription
                 {
@@ -319,6 +321,22 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     ArraySize = 1
                 };
                 _texture2D = new Texture2D(_device, texture2DRenderDesc);
+
+                //_frameTexture = new Texture2D(
+                //    _device,
+                //    new Texture2DDescription
+                //    {
+                //        BindFlags = BindFlags.RenderTarget | BindFlags.ShaderResource,
+                //        Format = Format.B8G8R8A8_UNorm,
+                //        Width = width,
+                //        Height = height,
+                //        MipLevels = 1,
+                //        ArraySize = 1,
+                //        SampleDescription = new SampleDescription(1, 0),
+                //        Usage = ResourceUsage.Default,
+                //        OptionFlags = ResourceOptionFlags.None,
+                //        CpuAccessFlags = CpuAccessFlags.None
+                //    });
 
                 var offscreenRenderDesc = new Texture2DDescription
                 {
@@ -362,10 +380,13 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
                 _renderTargetView = new RenderTargetView(_device, _texture2D, rtvDesc);
                 _dxfRenderTargetView = new RenderTargetView(_device, _dxfTexture, rtvDesc);
+                //_frameRenderTargetView = new RenderTargetView(_device, _frameTexture, rtvDesc);
 
                 ResCache.Texture2D = _texture2D;
                 ResCache.RenderTargetView = _renderTargetView;
                 ResCache.DxfRenderTargetView = _dxfRenderTargetView;
+                //ResCache.FrameTexture = _frameTexture;
+                //ResCache.FrameRenderTargetView = _frameRenderTargetView;
 
                 _deviceContext.OutputMerger.SetRenderTargets(_renderTargetView);
 
@@ -374,12 +395,10 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 OnTargetsResized(width, height);
             }
 
-            // ✅ IMPORTANT: Always rebind the D3DImage backbuffer, even if size didn't change
             _d3DSurface.Lock();
             _d3DSurface.SetRenderTarget(_texture2D);
             _d3DSurface.Unlock();
 
-            // Optional but recommended: ensure you clear and redraw after restore
             OnFrontBufferRestored();
         }
 
@@ -436,7 +455,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             CompositionTarget.Rendering += OnRendering;
             _renderTimer.Start();
         }
-
         private void StopRendering()
         {
             if (!_renderTimer.IsRunning)

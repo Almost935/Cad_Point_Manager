@@ -1,117 +1,230 @@
 ﻿// LineGlowShader.hlsl
 
+//-----------------------------------------------------------------------------
+// Constant buffers
+//-----------------------------------------------------------------------------
+
 cbuffer TransformationBuffer : register(b0)
 {
     row_major matrix transformationMatrix;
 };
-cbuffer LineGlowSettingsBuffer : register(b1)
+
+cbuffer DrawingSettingsBuffer : register(b1)
 {
-    float glowOffset;
-    float glowTransparency;
-    float2 padding;
-    float4 selectedColor;
-    float4 selectedMouseOverColor;
+    float2 ViewportSize;
+    float2 _pad1;
+
+    float LineHalfWidthPixels;
+    float GlobalLineTypeScale;
+    float AnnotationScale;
+    float GlowPixelOffset;
+
+    float4 SelectedColor;
+    float4 SelectedMouseOverColor;
 };
 
-// Input structure for the Vertex Shader
+//-----------------------------------------------------------------------------
+// Vertex input
+//-----------------------------------------------------------------------------
+
 struct VSInput
 {
-    float3 Position : POSITION; // 3D position of the vertex
-    uint LayerId : LAYERID; // Layer index for indirection
-    uint ObjectId : OBJECTID; // Object index for indirection
+    float2 Local : LOCAL;
 };
 
-struct GSInput
+struct VSInstance
+{
+    float2 Start : START;
+    float2 End : END;
+
+    uint LayerId : LAYERID;
+    uint LineTypeId : LINETYPEID;
+};
+
+//-----------------------------------------------------------------------------
+// Pixel input
+//-----------------------------------------------------------------------------
+
+struct PSInput
 {
     float4 Position : SV_POSITION;
-    float4 Color : COLOR;
+
+    // -1 at one edge of the expanded glow quad,
+    // +1 at the opposite edge.
+    float Side : TEXCOORD0;
+
+    // Distance along the original line in world units.
+    float Distance : TEXCOORD1;
+
+    // Original line length in world units.
+    float LineLength : TEXCOORD2;
+
+    nointerpolation uint LayerId : TEXCOORD3;
+    nointerpolation uint LineTypeId : TEXCOORD4;
 };
+
+//-----------------------------------------------------------------------------
+// GPU state
+//-----------------------------------------------------------------------------
 
 struct LayerState
 {
     float4 Color;
     uint Flags;
-    float3 Pad;
+    float3 Padding;
 };
-struct ObjectState
+
+struct LineTypeInfo
 {
-    uint Flags; // bit0: visible, bit1: selected, bit2: mouseOver
-    float3 Pad;
-    float4 Color;
+    uint FirstPatternIndex;
+    uint PatternCount;
+    float PatternLength;
+    float Padding;
 };
 
 StructuredBuffer<LayerState> LayerStates : register(t0);
-StructuredBuffer<ObjectState> ObjectStates : register(t1);
+StructuredBuffer<LineTypeInfo> LineTypeInfos : register(t1);
+StructuredBuffer<float> PatternData : register(t2);
 
 static const uint LAYER_VISIBLE = 1u << 0;
 
-static const uint OBJ_VISIBLE = 1u << 0;
-static const uint OBJ_SELECTED = 1u << 1;
-static const uint OBJ_MOUSEOVER = 1u << 2;
+//-----------------------------------------------------------------------------
+// Vertex shader
+//-----------------------------------------------------------------------------
 
-VSInput VSMain(VSInput input)
+PSInput VSMain(VSInput vertex, VSInstance instance)
 {
-    return input;
-}
+    PSInput output;
 
-[maxvertexcount(6)]
-void GSMain(line VSInput input[2], inout TriangleStream<GSInput> triStream)
-{
-    LayerState ls = LayerStates[input[0].LayerId];
-    ObjectState os = ObjectStates[input[0].ObjectId];
+    float4 clipStart = mul(float4(instance.Start, 0.0, 1.0), transformationMatrix);
 
-    float visLayer = ((ls.Flags & LAYER_VISIBLE) != 0u) ? 1.0f : 0.0f;
-    float visObject = ((os.Flags & OBJ_VISIBLE) != 0u) ? 1.0f : 0.0f;
-    float isSelected = ((os.Flags & OBJ_SELECTED) != 0u) ? 1.0f : 0.0f;
-    float isMouseOver = ((os.Flags & OBJ_MOUSEOVER) != 0u) ? 1.0f : 0.0f;
-    
-    if (!visLayer || !isMouseOver) { return; }
+    float4 clipEnd = mul(float4(instance.End, 0.0, 1.0), transformationMatrix);
 
-    float halfGlowOffset = glowOffset / 2;
-    
-    float2 dir = normalize(input[1].Position.xy - input[0].Position.xy);
-    float2 normal = float2(-dir.y, dir.x);
-    
-    // Extend the line endpoints
-    float3 start = input[0].Position - float3(dir * halfGlowOffset, 0.0f);
-    float3 end = input[1].Position + float3(dir * halfGlowOffset, 0.0f);
+    float2 ndcStart = clipStart.xy / clipStart.w;
+    float2 ndcEnd = clipEnd.xy / clipEnd.w;
 
-    float3 offset = float3(normal * halfGlowOffset, 0.0f);
+    float2 pixelScale = float2(
+        ViewportSize.x * 0.5,
+        ViewportSize.y * 0.5);
 
-    float3 p0 = start + offset;
-    float3 p1 = end + offset;
-    float3 p2 = end - offset;
-    float3 p3 = start - offset;
+    float2 dirPixels = (ndcEnd - ndcStart) * pixelScale;
 
-    float4 color;
-    if (isSelected > 0.5)
+    float pixelLength = length(dirPixels);
+
+    if (pixelLength < 1e-6)
     {
-        color = selectedMouseOverColor;
+        dirPixels = float2(1.0, 0.0);
     }
     else
     {
-        color = float4(0, 0, 0, glowTransparency);
+        dirPixels /= pixelLength;
     }
 
-    GSInput out0 = { mul(float4(p0, 1.0), transformationMatrix), color };
-    GSInput out1 = { mul(float4(p1, 1.0), transformationMatrix), color };
-    GSInput out2 = { mul(float4(p2, 1.0), transformationMatrix), color };
-    GSInput out3 = { mul(float4(p3, 1.0), transformationMatrix), color };
+    // Perpendicular direction in screen space.
+    float2 normalPixels = float2(-dirPixels.y, dirPixels.x);
 
-    // First triangle (p0, p1, p2)
-    triStream.Append(out0);
-    triStream.Append(out1);
-    triStream.Append(out2);
-    triStream.RestartStrip();
+    float2 normalNdc = float2(
+        normalPixels.x * (2.0 / ViewportSize.x),
+        normalPixels.y * (2.0 / ViewportSize.y));
 
-    // Second triangle (p2, p3, p0)
-    triStream.Append(out2);
-    triStream.Append(out3);
-    triStream.Append(out0);
-    triStream.RestartStrip();
+    float glowHalfWidthPixels = LineHalfWidthPixels + GlowPixelOffset;
+
+    float2 sideOffset = normalNdc * glowHalfWidthPixels;
+
+    float t = vertex.Local.y;
+
+    float2 ndc = lerp(ndcStart, ndcEnd, t);
+
+    // Expand perpendicular to the line.
+    ndc += sideOffset * vertex.Local.x;
+
+    float4 clip = lerp(clipStart, clipEnd, t);
+
+    clip.xy = ndc * clip.w;
+
+    output.Position = clip;
+    output.Side = vertex.Local.x;
+
+    float lineLength = length(instance.End - instance.Start);
+
+    output.Distance = t * lineLength;
+
+    output.LineLength = lineLength;
+
+    output.LayerId = instance.LayerId;
+
+    output.LineTypeId = instance.LineTypeId;
+
+    return output;
 }
 
-float4 PSMain(GSInput input) : SV_Target
+//-----------------------------------------------------------------------------
+// Pixel shader
+//-----------------------------------------------------------------------------
+
+float4 PSMain(PSInput input) : SV_TARGET
 {
-    return input.Color;
+    LayerState ls = LayerStates[input.LayerId];
+
+    if ((ls.Flags & LAYER_VISIBLE) == 0)
+        discard;
+    
+    LineTypeInfo lti = LineTypeInfos[input.LineTypeId];
+    bool visible = true;
+
+    // Protect against malformed/empty patterns.
+    if (lti.PatternCount > 0 &&
+        lti.PatternLength > 1e-6)
+    {
+        float scaledDistance = input.Distance / GlobalLineTypeScale;
+
+        float patternPos = fmod(scaledDistance, lti.PatternLength);
+
+        if (patternPos < 0.0)
+            patternPos += lti.PatternLength;
+
+        float accum = 0.0;
+
+        visible = true;
+
+        for (uint i = 0; i < lti.PatternCount; i++)
+        {
+            float segment = PatternData[lti.FirstPatternIndex + i];
+
+            float segmentLength = abs(segment);
+
+            if (patternPos < accum + segmentLength)
+            {
+                visible = segment > 0.0;
+                break;
+            }
+
+            accum += segmentLength;
+        }
+    }
+
+    if (!visible)
+        discard;
+
+    float glowHalfWidthPixels = LineHalfWidthPixels + GlowPixelOffset;
+
+    float distanceFromCenterPixels = abs(input.Side) * glowHalfWidthPixels;
+
+    if (distanceFromCenterPixels <= LineHalfWidthPixels)
+        discard;
+    
+    float distanceFromLineEdge = distanceFromCenterPixels - LineHalfWidthPixels;
+
+    float glowT = saturate(distanceFromLineEdge / GlowPixelOffset);
+    float glowAlpha = 1.0 - smoothstep(0.0, 1.0, glowT);
+    const float MaxGlowAlpha = 0.45;
+
+    glowAlpha *= MaxGlowAlpha;
+
+    float edgeWidth = max(fwidth(glowT), 1e-5);
+    float outerAA = 1.0 - smoothstep(1.0 - edgeWidth, 1.0, glowT);
+
+    glowAlpha *= outerAA;
+
+    return float4(0.0, 0.0, 0.0, glowAlpha);
 }
