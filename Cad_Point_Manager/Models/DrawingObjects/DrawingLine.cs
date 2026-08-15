@@ -20,7 +20,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         #endregion
 
         #region Constructors
-        public DrawingLine(Line line, ObjectLayer layer, Vector4 objectColor, ColorType colorType, 
+        public DrawingLine(Line line, ObjectLayer layer, Vector4 objectColor, ColorType colorType,
             LineType lineType, bool isPartOfBlock = false, DrawingBlock block = null)
         {
             Type = DrawingObjectType.DrawingLine;
@@ -67,7 +67,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         public override void UpdateVertices(ResCache resCache, uint layerId, uint objectId, uint lineTypeId)
         {
             LineInstances = new[] { new LineInstance(
-                Start.ToSharpDXVector2(), End.ToSharpDXVector2(), layerId, objectId) };
+                Start.ToSharpDXVector2(), End.ToSharpDXVector2(), layerId, objectId, 0, (uint)LineInstanceFlags.None) };
         }
 
         public override void UpdateBounds()

@@ -5,6 +5,17 @@ using Matrix = SharpDX.Matrix;
 
 namespace Cad_Point_Manager.Controls.D3DControl
 {
+    #region Enums
+    [Flags]
+    public enum LineInstanceFlags : uint
+    {
+        None = 0,
+        ForceStartVisible = 1u << 0,
+        ForceEndVisible = 1u << 1
+    }
+    #endregion
+
+    #region Structures
     [StructLayout(LayoutKind.Sequential)]
     public struct DrawingSettingsBuffer
     {
@@ -323,7 +334,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public Vector2 Corner = new(side, along);
     }
     [StructLayout(LayoutKind.Sequential)]
-    public struct LineInstance(Vector2 start, Vector2 end, uint layerId, uint objectId)
+    public struct LineInstance(Vector2 start, Vector2 end, uint layerId, uint objectId, float startDistance, uint flags)
     {
         public Vector2 Start = start;
         public Vector2 End = end;
@@ -331,9 +342,19 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public uint LayerId = layerId;
         public uint ObjectId = objectId;
 
+        public float StartDistance = startDistance;
+
+        public uint Flags = flags;
+
         public readonly LineInstance Translate(Vector2 offset)
         {
-            return new LineInstance(Start + offset, End + offset, LayerId, ObjectId);
+            return new LineInstance(
+                Start + offset, 
+                End + offset, 
+                LayerId, 
+                ObjectId, 
+                StartDistance, 
+                Flags);
         }
 
         public readonly LineInstance Transform(Matrix transform)
@@ -341,7 +362,10 @@ namespace Cad_Point_Manager.Controls.D3DControl
             return new LineInstance(
                 Vector2.TransformCoordinate(Start, transform),
                 Vector2.TransformCoordinate(End, transform),
-                LayerId, ObjectId);
+                LayerId, 
+                ObjectId,
+                StartDistance,
+                Flags);
         }
     }
     [StructLayout(LayoutKind.Sequential)]
@@ -473,4 +497,5 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public Vector2 ViewportSize;
         public Vector2 Padding;
     }
+    #endregion
 }

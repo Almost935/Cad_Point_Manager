@@ -55,7 +55,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 throw new ArgumentException("entity must be of type Circle");
             }
         }
-      
+
         public override void DrawToPdf(
            XGraphics gfx,
            System.Windows.Media.Matrix worldToPdf,
@@ -95,13 +95,28 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
                 var vertices = circle.ToPolyline2D(NumberOfSegments).Vertexes;
                 List<LineInstance> lineInstances = [];
+                double accumulatedDistance = 0.0;
 
                 for (int i = 0; i < vertices.Count; i++)
                 {
+                    LineInstanceFlags flags = LineInstanceFlags.None;
+
+                    if (i == 0)
+                    {
+                        flags |= LineInstanceFlags.ForceStartVisible;
+                    }
+                    if (i == vertices.Count - 2)
+                    {
+                        flags |= LineInstanceFlags.ForceEndVisible;
+                    }
+
                     int next = (i + 1) % vertices.Count;
 
                     lineInstances.Add(new LineInstance(
-                        vertices[i].Position.ToSharpDXVector2(), vertices[next].Position.ToSharpDXVector2(), layerId, objectId));
+                        vertices[i].Position.ToSharpDXVector2(), vertices[next].Position.ToSharpDXVector2(), layerId, objectId, (float)accumulatedDistance, (uint)flags));
+                    
+                    double segmentLength = Vector2.Distance(vertices[next].Position.ToSharpDXVector2(), vertices[i].Position.ToSharpDXVector2());
+                    accumulatedDistance += segmentLength;
                 }
 
                 LineInstances = lineInstances.ToArray();

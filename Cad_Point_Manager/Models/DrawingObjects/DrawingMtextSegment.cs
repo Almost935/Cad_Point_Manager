@@ -282,14 +282,30 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
             var transform = Transform;
 
+            double accumulatedDistance = 0.0;
+
             for (int i = 0; i < vertices.Count; i += 2)
             {
+                LineInstanceFlags flags = LineInstanceFlags.None;
+                if (i == 0)
+                {
+                    flags |= LineInstanceFlags.ForceStartVisible;
+                }
+                if (i == vertices.Count - 2)
+                {
+                    flags |= LineInstanceFlags.ForceEndVisible;
+                }
+
                 var v1 = vertices[i];
                 var v2 = vertices[i + 1];
                 var scaledVector1 = Vector2.TransformCoordinate(v1, transform);
                 var scaledVector2 = Vector2.TransformCoordinate(v2, transform);
-                LineInstance lineInstance = new(scaledVector1, scaledVector2, layerId, objectId);
+                LineInstance lineInstance = new(
+                    scaledVector1, scaledVector2, layerId, objectId, (float)accumulatedDistance, (uint)flags);
                 lineInstances.Add(lineInstance);
+
+                double segmentLength = Vector2.Distance(scaledVector2, scaledVector1);
+                accumulatedDistance += segmentLength;
             }
 
             return lineInstances;

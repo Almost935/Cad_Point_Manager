@@ -25,7 +25,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
         #region Constructor
         public DrawingArc(
-            Arc arc, ObjectLayer layer, Vector4 objectColor, ColorType colorType, 
+            Arc arc, ObjectLayer layer, Vector4 objectColor, ColorType colorType,
             LineType lineType, bool isPartOfBlock = false, DrawingBlock block = null)
         {
             Type = DrawingObjectType.DrawingArc;
@@ -103,38 +103,49 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
             gfx.DrawArc(pen, rect, start, sweep);
         }
-        public override void UpdateVertices(ResCache resCache, uint layerId, uint objectId, uint lineTypeId)
+        public override void UpdateVertices(
+    ResCache resCache,
+    uint layerId,
+    uint objectId,
+    uint lineTypeId)
         {
-            if (EntityObject is Arc arc)
+            if (EntityObject is not Arc arc)
+                throw new ArgumentException("entity must be of type Arc");
+
+            Array.Clear(LineInstances);
+
+            NumberOfSegments = CalculateSegments(Radius, Sweep);
+            var vertices = arc.ToPolyline2D(NumberOfSegments).Vertexes;
+
+            List<LineInstance> lineInstances = [];
+            double accumulatedDistance = 0.0;
+
+            for (int i = 0; i < vertices.Count - 1; i++)
             {
-                Array.Clear(LineInstances);
+                Vector2 start = vertices[i].Position.ToSharpDXVector2();
+                Vector2 end = vertices[i + 1].Position.ToSharpDXVector2();
 
-                NumberOfSegments = CalculateSegments(Radius, Sweep);
-
-                var vertices = arc.ToPolyline2D(NumberOfSegments).Vertexes;
-                List<LineInstance> lineInstances = [];
-
-                for (int i = 0; i < vertices.Count; i++)
+                LineInstanceFlags flags = LineInstanceFlags.None;
+                if (i == 0)
                 {
-                    if (i == vertices.Count - 1) { break; }
-
-                    int next = (i + 1) % vertices.Count;
-
-                    LineInstance lineInstance = new(
-                        vertices[i].Position.ToSharpDXVector2(), vertices[next].Position.ToSharpDXVector2(), layerId, objectId);
-
-                    lineInstances.Add(lineInstance);
+                    flags |= LineInstanceFlags.ForceStartVisible;
+                }
+                if (i == vertices.Count - 2)
+                {
+                    flags |= LineInstanceFlags.ForceEndVisible;
                 }
 
-                LineInstances = lineInstances.ToArray();
+                LineInstance lineInstance = new(start, end, layerId, objectId, (float)accumulatedDistance, (uint)flags);
+                lineInstances.Add(lineInstance);
 
-                UpdateBounds();
+                double segmentLength = Vector2.Distance(end, start);
+                accumulatedDistance += segmentLength;
             }
-            else
-            {
-                throw new ArgumentException("entity must be of type Arc");
-            }
-        }                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
+
+            LineInstances = lineInstances.ToArray();
+
+            UpdateBounds();
+        }
         public override double DistanceToPoint(System.Windows.Point point)
         {
             // Convert angles to radians

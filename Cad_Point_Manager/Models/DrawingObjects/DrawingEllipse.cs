@@ -53,7 +53,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             StartAngle = (float)ellipse.StartAngle;
             EndAngle = (float)ellipse.EndAngle;
             Sweep = EndAngle - StartAngle;
-            
+
             if (Sweep < 0) { Sweep += 360; }
             if (Math.Abs(Sweep) < 1e-6) { Sweep = 360.0f; }
 
@@ -109,26 +109,60 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             if (EntityObject is not Ellipse ellipse) { throw new ArgumentException(); }
 
             var vertices = ellipse.ToPolyline2D(NumberOfSegments).Vertexes;
-
             List<LineInstance> lines = [];
+
+            if (vertices.Count < 2)
+            {
+                LineInstances = [];
+                UpdateBounds();
+                return;
+            }
+
+            double accumulatedDistance = 0.0;
 
             bool closed = Math.Abs(Sweep - 360f) < 0.001f;
 
             for (int i = 0; i < vertices.Count - 1; i++)
             {
-                lines.Add(new LineInstance(vertices[i].Position.ToSharpDXVector2(),
-                    vertices[i + 1].Position.ToSharpDXVector2(),
-                    layerId,
-                    objectId));
+                Vector2 start = vertices[i].Position.ToSharpDXVector2();
+                Vector2 end = vertices[i + 1].Position.ToSharpDXVector2();
+
+                LineInstanceFlags flags = LineInstanceFlags.None;
+
+                if (!closed)
+                {
+                    if (i == 0)
+                    {
+                        flags |= LineInstanceFlags.ForceStartVisible;
+                    }
+
+                    if (i == vertices.Count - 2)
+                    {
+                        flags |= LineInstanceFlags.ForceEndVisible;
+                    }
+                }
+
+                lines.Add(
+                    new LineInstance(start, end, layerId, objectId, (float)accumulatedDistance, (uint)flags));
+
+                double dx = (double)end.X - start.X;
+                double dy = (double)end.Y - start.Y;
+
+                double segmentLength = Math.Sqrt(dx * dx + dy * dy);
+
+                accumulatedDistance += segmentLength;
             }
 
             if (closed)
             {
-                lines.Add(new LineInstance(
-                    vertices[^1].Position.ToSharpDXVector2(),
-                    vertices[0].Position.ToSharpDXVector2(),
-                    layerId,
-                    objectId));
+                Vector2 first = vertices[0].Position.ToSharpDXVector2();
+                Vector2 last = vertices[^1].Position.ToSharpDXVector2();
+
+                if (Vector2.DistanceSquared(first, last) > 1e-12f)
+                {
+                    lines.Add(
+                        new LineInstance(last, first, layerId, objectId, (float)accumulatedDistance, (uint)LineInstanceFlags.None));
+                }
             }
 
             LineInstances = lines.ToArray();

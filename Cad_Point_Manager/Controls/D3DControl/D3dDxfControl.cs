@@ -544,6 +544,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             if (_anchorVerticesDirty) { UpdateToggleAnchorVertices(); }
             if (_leaderLineVerticesDirty) { UpdateLeaderLineVertices(); }
             if (_sigPointVerticesDirty) { UpdateSignificantPointVertices(); }
+            if (_dragOverlayDirty) { UpdateDragOverlayVertices(DragRect); }
 
             if (!_lineShadersLoaded) { InitializeLineShaders(); }
             if (!_lineGlowShadersLoaded) { InitializeLineGlowShaders(); }
@@ -1009,9 +1010,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
                         Start = line.Start,
                         End = line.End,
                         LayerId = line.LayerId,
-                        LineTypeId = geometry.Layer.LineType.Id
+                        LineTypeId = geometry.LineType.Id
                     });
-                }
+                } 
             }
 
             _lineGlowInstanceCount = instances.Count;
@@ -1162,6 +1163,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _dragFillBuffer.Update(ResCache.DeviceContext, fillVerts);
             _dragFillVertexCount = 6;
 
+            _dragOverlayDirty = false;
             _combinedDirty = true;
         }
         private void UpdateCogoHoverVertices()
@@ -1347,6 +1349,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     new InputElement("END", 0, Format.R32G32_Float, 8, 1,InputClassification.PerInstanceData, 1),
                     new InputElement("LAYERID", 0, Format.R32_UInt, 16, 1,InputClassification.PerInstanceData, 1),
                     new InputElement("OBJECTID", 0, Format.R32_UInt, 20, 1,InputClassification.PerInstanceData, 1),
+
+                    new InputElement("STARTDISTANCE",0,Format.R32_Float,24,1,InputClassification.PerInstanceData,1),
+                    new InputElement("FLAGS",0,Format.R32_UInt,28,1,InputClassification.PerInstanceData,1),
                 });
 
             LineCornerVertex[] quad = { new(-1, 0), new(1, 0), new(1, 1), new(-1, 0), new(1, 1), new(-1, 1) };
@@ -2391,6 +2396,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             bool cogoHoverVerticesDirty = false;
             bool cogoPointVerticesDirty = false;
             bool sigPointsVerticesDirty = false;
+            bool lineGlowVerticesDirty = false;
 
             switch (CadManager.SnapSelectionMode)
             {
@@ -2417,6 +2423,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
                         SelectedGeometries.EndDefer();
                         geometryVerticesDirty = true;
+                        lineGlowVerticesDirty = true;
                         StateController.FlushObjectUpdates();
 
                         break;
@@ -2492,6 +2499,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             if (sigPointsVerticesDirty) { _sigPointVerticesDirty = true; }
             if (geometryVerticesDirty) { _dxfDirty = true; }
+            if (lineGlowVerticesDirty) { _lineGlowVerticesDirty = true; }
             if (cogoHoverVerticesDirty) { _cogoHoverVerticesDirty = true; _msdfGlowVerticesDirty = true; }
             if (cogoPointVerticesDirty) { _combinedDirty = true; _dxfDirty = true; }
 
@@ -2500,7 +2508,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
         {
             BeginDrag(e.GetPosition(this));
-            UpdateDragOverlayVertices(DragRect);
+            UpdateDragRect();
 
             if (_mouseOverToggleButtonPoint is not null)
             {
@@ -2713,16 +2721,23 @@ namespace Cad_Point_Manager.Controls.D3DControl
             if (!IsDragging)
             {
                 DragRect = new(0, 0, 0, 0);
-                UpdateDragOverlayVertices(DragRect);
+
+                _dragOverlayDirty = true;
+                _combinedDirty = true;
+
                 return;
             }
+
             double width = Math.Abs(_dragStart.X - DxfCoords.X);
             double height = Math.Abs(_dragStart.Y - DxfCoords.Y);
+
             double left = Math.Min(_dragStart.X, DxfCoords.X);
             double top = Math.Min(_dragStart.Y, DxfCoords.Y);
+
             DragRect = new(left, top, width, height);
 
-            UpdateDragOverlayVertices(DragRect);
+            _dragOverlayDirty = true;
+            _combinedDirty = true;
         }
         public void EndDrag()
         {
@@ -3129,7 +3144,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 removedRegions = [];
             }
 
-            bool flushObjectStates = false;
             bool lineGlowVerticesDirty = false;
 
             foreach (var region in addedRegions)
@@ -3142,7 +3156,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     {
                         _mouseOverHitTestableObjects.Add(geometry);
                         HoverObject(geometry);
-                        flushObjectStates = true;
                         lineGlowVerticesDirty = true;
                     }
                 }
@@ -3158,7 +3171,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     {
                         _mouseOverHitTestableObjects.Remove(geometry);
                         DehoverObject(geometry);
-                        flushObjectStates = true;
                         lineGlowVerticesDirty = true;
                     }
                 }
