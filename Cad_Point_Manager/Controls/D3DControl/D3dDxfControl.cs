@@ -59,7 +59,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private bool _dxfDirty = true;
         private bool _combinedDirty = true;
         private Buffer _transformationBuffer;
-        private Buffer _viewportBuffer;
 
         private Point _pointerCoords;
         private Vector2 _dxfCoords;
@@ -528,6 +527,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 CadManager.ResetTemplates();
 
                 ConstantBuffersDirty = true;
+                TransformationBufferDirty = true;
                 DxfNeedsReload = false;
                 CadManager.DxfNeedsReload = false;
             }
@@ -560,7 +560,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
             if (!_sigPointShadersLoaded) { InitializeSignificantPointsShaders(); }
 
             if (!ConstantBuffersInitialized) { InitializeConstantBuffers(); }
-            if (ConstantBuffersDirty || CadManager.Camera.IsDirty) { UpdateConstantBuffers(); }
+            if (ConstantBuffersDirty) { UpdateConstantBuffers(); }
+            if (TransformationBufferDirty || CadManager.Camera.IsDirty) { UpdateTransformationBuffer(); }
 
             if (!_hitTestIsRunning)
             {
@@ -1818,16 +1819,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             };
             _transformationBuffer = new Buffer(ResCache.Device, transformationBufferDesc);
 
-            var viewportBufferDesc = new BufferDescription
-            {
-                Usage = ResourceUsage.Default,
-                SizeInBytes = Utilities.SizeOf<ViewportBuffer>(),
-                BindFlags = BindFlags.ConstantBuffer,
-                CpuAccessFlags = CpuAccessFlags.None,
-                OptionFlags = ResourceOptionFlags.None
-            };
-            _viewportBuffer = new Buffer(ResCache.Device, viewportBufferDesc);
-
             var drawingSettingsBufferDesc = new BufferDescription
             {
                 Usage = ResourceUsage.Default,
@@ -1923,19 +1914,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
         private void UpdateConstantBuffers()
         {
-            var transformation = CadManager.Camera.ViewProjectionMatrix;
-            var transformationBuffer = new TransformationBuffer
-            {
-                WorldViewProjection = transformation
-            };
-            ResCache.DeviceContext.UpdateSubresource(ref transformationBuffer, _transformationBuffer);
-
-            var viewportBuffer = new ViewportBuffer
-            {
-                ViewportSize = new(Viewport.Width, Viewport.Height)
-            };
-            ResCache.DeviceContext.UpdateSubresource(ref viewportBuffer, _viewportBuffer);
-
             var drawingSettings = new DrawingSettingsBuffer
             {
                 ViewportSize = new(Viewport.Width, Viewport.Height),
@@ -1979,18 +1957,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             };
             ResCache.DeviceContext.UpdateSubresource(ref leaderLineGlowSettings, _leaderLineGlowSettings);
 
-            var toggleSettings = new ToggleAnchorSettingsBuffer
-            {
-                BaseColor = AnchorBaseColor, // Vector4
-                SelectedColor = AnchorPressedColor,// Vector4
-                MouseOverColor = AnchorHoverColor, // Vector4
-                DesiredHalf = _desiredHalfWorldForAnchors,
-                CornerFracOfHalf = CornerFracOfHalf, // 0..1
-                Feather = _featherWorldForAnchors,
-                MaxHalfBase = _maxHalfBaseForAnchors
-            };
-            ResCache.DeviceContext.UpdateSubresource(ref toggleSettings, _toggleSettingsBuffer);
-
             var sigPointSettings = new SignificantPointSettingsBuffer
             {
                 Color = GlobalHelperProperties.SelectedSigPointColor,
@@ -2005,6 +1971,33 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _combinedDirty = true;
         }
         private void UpdateTransformationBuffer()
+        {
+            var transformation = CadManager.Camera.ViewProjectionMatrix;
+            var transformationBuffer = new TransformationBuffer
+            {
+                WorldViewProjection = transformation
+            };
+            ResCache.DeviceContext.UpdateSubresource(ref transformationBuffer, _transformationBuffer);
+
+            // CogoPoint toggle button settings must also be updated when the transformation buffer is updated,
+            // because the toggle button size is in world units and depends on the current zoom level.
+            var toggleSettings = new ToggleAnchorSettingsBuffer
+            {
+                BaseColor = AnchorBaseColor, // Vector4
+                SelectedColor = AnchorPressedColor,// Vector4
+                MouseOverColor = AnchorHoverColor, // Vector4
+                DesiredHalf = _desiredHalfWorldForAnchors,
+                CornerFracOfHalf = CornerFracOfHalf, // 0..1
+                Feather = _featherWorldForAnchors,
+                MaxHalfBase = _maxHalfBaseForAnchors
+            };
+            ResCache.DeviceContext.UpdateSubresource(ref toggleSettings, _toggleSettingsBuffer);
+
+            TransformationBufferDirty = false;
+            CadManager.Camera.IsDirty = false;
+
+            _dxfDirty = true;
+        }
 
         // Msdf
         private void AddCogoPoint(CogoPoint point, List<MsdfGlyphInstance> destination)
@@ -2219,7 +2212,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     CadManager.Camera.ResetView(_dxfInitialMatrix, CadManager.Extents);
                     _hittestStrokeThickness = 7.0f / (CadManager.Camera.InitialViewMatrix.M11 * CadManager.Camera.CurrentZoom);
                     UpdateToggleAnchorDimensions();
-                    ConstantBuffersDirty = true;
+
+                    //ConstantBuffersDirty = true;
+                    TransformationBufferDirty = true;
                 }
             }
         }
@@ -2229,7 +2224,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             CadManager.UpdateExtents();
             _dxfInitialMatrix = GetExtentsFittingMatrix(Viewport, CadManager.Extents);
-            ConstantBuffersDirty = true;
+
+            //ConstantBuffersDirty = true;
+            TransformationBufferDirty = true;
         }
         private Matrix GetExtentsFittingMatrix(ViewportF viewport, Rect extents)
         {
@@ -2305,7 +2302,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
             if (e.MiddleButton == MouseButtonState.Pressed)
             {
                 CadManager.Camera.Pan(currentMousePos, _prevMousePos);
-                ConstantBuffersDirty = true;
+                //ConstantBuffersDirty = true;
+                TransformationBufferDirty = true;
+
                 e.Handled = true;
             }
             _prevMousePos = currentMousePos;
@@ -2329,7 +2328,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
             UpdateToggleAnchorDimensions();
 
             _cogoHoverVerticesDirty = true;
-            ConstantBuffersDirty = true;
+            //ConstantBuffersDirty = true;
+            TransformationBufferDirty = true;
+
             e.Handled = true;
         }
         protected override void OnMouseEnter(MouseEventArgs e)
@@ -2592,10 +2593,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
             {
                 CadManager.Camera.UpdateViewportSize(Viewport);
                 CadManager.ResetTemplates();
-                ConstantBuffersDirty = true;
+                //ConstantBuffersDirty = true;
+                TransformationBufferDirty = true;
             }
-            _dxfDirty = true;
-            _combinedDirty = true;
+            //_dxfDirty = true;
+            //_combinedDirty = true;
         }
 
         protected override void OnFrontBufferRestored()
@@ -2715,7 +2717,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
             CadManager.Camera.ResetView(_dxfInitialMatrix, CadManager.Extents);
             ResetHoverObjects();
             UpdateToggleAnchorDimensions();
-            ConstantBuffersDirty = true;
+            //ConstantBuffersDirty = true;
+            TransformationBufferDirty = true;
         }
         public void ZoomToPoint()
         {
