@@ -39,6 +39,13 @@ struct VSInstance
 
     uint LayerId : LAYERID;
     uint LineTypeId : LINETYPEID;
+
+    // Continuous distance along the parent geometry
+    // where this GPU segment begins.
+    float StartDistance : STARTDISTANCE;
+
+    // FORCE_START_VISIBLE / FORCE_END_VISIBLE
+    uint Flags : FLAGS;
 };
 
 //-----------------------------------------------------------------------------
@@ -49,17 +56,36 @@ struct PSInput
 {
     float4 Position : SV_POSITION;
 
+    // -1 -> +1 across expanded glow quad.
     float Side : TEXCOORD0;
 
+    // Local distance along glow-expanded segment.
+    // Can be < 0 or > LineLength because glow extends past endpoints.
     float Distance : TEXCOORD1;
+
+    // Physical world-space length of this GPU segment.
     float LineLength : TEXCOORD2;
 
     nointerpolation uint LayerId : TEXCOORD3;
     nointerpolation uint LineTypeId : TEXCOORD4;
 
+    // Pixel position along expanded glow segment.
+    // -GlowPixelOffset -> LineLengthPixels + GlowPixelOffset.
     float AlongPixels : TEXCOORD5;
 
+    // Physical length of this GPU segment in pixels.
     nointerpolation float LineLengthPixels : TEXCOORD6;
+
+    // Continuous distance along parent DXF geometry.
+    float PathDistance : TEXCOORD7;
+
+    // Local distance along physical GPU segment.
+    // 0 -> SegmentLength.
+    float SegmentDistance : TEXCOORD8;
+
+    nointerpolation float SegmentLength : TEXCOORD9;
+
+    nointerpolation uint Flags : TEXCOORD10;
 };
 
 //-----------------------------------------------------------------------------
@@ -87,6 +113,9 @@ StructuredBuffer<float> PatternData : register(t2);
 
 static const uint LAYER_VISIBLE = 1u << 0;
 
+static const uint FORCE_START_VISIBLE = 1u << 0;
+static const uint FORCE_END_VISIBLE = 1u << 1;
+
 //-----------------------------------------------------------------------------
 // Vertex shader
 //-----------------------------------------------------------------------------
@@ -99,10 +128,11 @@ PSInput VSMain(VSInput vertex, VSInstance instance)
     // Transform endpoints
     //--------------------------------------------
 
-    float4 clipStart = mul(float4(instance.Start, 0.0, 1.0), transformationMatrix);
+    float4 clipStart =
+        mul(float4(instance.Start, 0.0, 1.0), transformationMatrix);
 
-    float4 clipEnd = mul(float4(instance.End, 0.0, 1.0), transformationMatrix);
-
+    float4 clipEnd =
+        mul(float4(instance.End, 0.0, 1.0), transformationMatrix);
     float2 ndcStart = clipStart.xy / clipStart.w;
     float2 ndcEnd = clipEnd.xy / clipEnd.w;
 
@@ -115,7 +145,6 @@ PSInput VSMain(VSInput vertex, VSInstance instance)
         ViewportSize.y * 0.5);
 
     float2 dirPixels = (ndcEnd - ndcStart) * pixelScale;
-
     float lineLengthPixels = length(dirPixels);
 
     if (lineLengthPixels < 1e-6)
@@ -145,42 +174,34 @@ PSInput VSMain(VSInput vertex, VSInstance instance)
     // Glow dimensions
     //--------------------------------------------
 
-    // Match actual visible thickness from LineShader.
     float visibleLineHalfWidth = LineHalfWidthPixels * 0.5;
-
     float glowHalfWidth = visibleLineHalfWidth + GlowPixelOffset;
 
     //--------------------------------------------
-    // Position along line
+    // Position along physical segment
     //--------------------------------------------
 
     float t = vertex.Local.y;
-
     float2 ndc = lerp(ndcStart, ndcEnd, t);
 
     //--------------------------------------------
-    // Extend glow past BOTH physical endpoints
+    // Extend glow beyond BOTH physical endpoints
     //--------------------------------------------
 
     float endDirection = vertex.Local.y * 2.0 - 1.0;
-
     ndc += directionNdc * GlowPixelOffset * endDirection;
 
     //--------------------------------------------
     // Expand sideways
     //--------------------------------------------
 
-    ndc +=
-        normalNdc *
-        glowHalfWidth *
-        vertex.Local.x;
+    ndc += normalNdc * glowHalfWidth * vertex.Local.x;
 
     //--------------------------------------------
-    // Convert back to clip
+    // Convert back to clip space
     //--------------------------------------------
 
-    float4 clip =
-        lerp(clipStart, clipEnd, t);
+    float4 clip = lerp(clipStart, clipEnd, t);
 
     clip.xy = ndc * clip.w;
 
@@ -188,24 +209,44 @@ PSInput VSMain(VSInput vertex, VSInstance instance)
     output.Side = vertex.Local.x;
 
     //--------------------------------------------
-    // Line distances
+    // Pixel-space distances
     //--------------------------------------------
 
-    output.AlongPixels = lerp(
-        -GlowPixelOffset, lineLengthPixels + GlowPixelOffset, t);
-
+    output.AlongPixels = t * lineLengthPixels;
     output.LineLengthPixels = lineLengthPixels;
+
+    //--------------------------------------------
+    // World-space physical segment distances
+    //--------------------------------------------
 
     float lineLength = length(instance.End - instance.Start);
 
     output.LineLength = lineLength;
+    output.SegmentLength = lineLength;
+    output.SegmentDistance = t * lineLength;
+
+    //--------------------------------------------
+    // Glow-expanded local distance
+    //--------------------------------------------
 
     float pixelsToWorld = lineLength / max(lineLengthPixels, 1e-6);
+    float glowLocalDistance = output.AlongPixels * pixelsToWorld;
 
-    output.Distance = output.AlongPixels * pixelsToWorld;
+    output.Distance = glowLocalDistance;
+
+    //--------------------------------------------
+    // Continuous parent-path distance
+    //--------------------------------------------
+
+    output.PathDistance = instance.StartDistance + glowLocalDistance;
+
+    //--------------------------------------------
+    // IDs / flags
+    //--------------------------------------------
 
     output.LayerId = instance.LayerId;
     output.LineTypeId = instance.LineTypeId;
+    output.Flags = instance.Flags;
 
     return output;
 }
@@ -216,30 +257,40 @@ PSInput VSMain(VSInput vertex, VSInstance instance)
 
 float4 PSMain(PSInput input) : SV_TARGET
 {
+    //--------------------------------------------
+    // Layer visibility
+    //--------------------------------------------
+
     LayerState ls = LayerStates[input.LayerId];
 
     if ((ls.Flags & LAYER_VISIBLE) == 0)
         discard;
 
+    //--------------------------------------------
+    // Linetype
+    //--------------------------------------------
+
     LineTypeInfo lti = LineTypeInfos[input.LineTypeId];
 
     bool visible = true;
-
     float distanceToVisibleAlong = 0.0;
 
-    if (lti.PatternCount > 0 && lti.PatternLength > 1e-6)
+    if (lti.PatternCount > 0 && lti.PatternLength > 1e-6 && GlobalLineTypeScale > 1e-6)
     {
-        float scaledDistance = input.Distance / GlobalLineTypeScale;
+        float scaledDistance = input.PathDistance / GlobalLineTypeScale;
         float patternPos = fmod(scaledDistance, lti.PatternLength);
 
         if (patternPos < 0.0)
+        {
             patternPos += lti.PatternLength;
+        }
 
         float accum = 0.0;
 
         for (uint i = 0; i < lti.PatternCount; i++)
         {
             float segment = PatternData[lti.FirstPatternIndex + i];
+
             float segmentLength = abs(segment);
 
             if (patternPos < accum + segmentLength)
@@ -249,9 +300,7 @@ float4 PSMain(PSInput input) : SV_TARGET
                 if (!visible)
                 {
                     float distanceToGapStart = patternPos - accum;
-
                     float distanceToGapEnd = (accum + segmentLength) - patternPos;
-
                     distanceToVisibleAlong = min(distanceToGapStart, distanceToGapEnd);
                 }
 
@@ -261,64 +310,108 @@ float4 PSMain(PSInput input) : SV_TARGET
             accum += segmentLength;
         }
     }
-    
-    float endpointLength = 2.0 * LineHalfWidthPixels;
-    endpointLength /= GlobalLineTypeScale;
 
-    if (input.Distance < endpointLength)
-    {
-        visible = true;
-        distanceToVisibleAlong = 0.0;
-    }
-
-    if ((input.LineLength - input.Distance) < endpointLength)
-    {
-        visible = true;
-        distanceToVisibleAlong = 0.0;
-    }
+    //--------------------------------------------
+    // Visible line / glow dimensions
+    //--------------------------------------------
 
     float visibleLineHalfWidth = LineHalfWidthPixels * 0.5;
     float glowHalfWidth = visibleLineHalfWidth + GlowPixelOffset;
 
-    float perpendicularDistance = abs(input.Side) * glowHalfWidth;
+    //--------------------------------------------
+    // Convert linetype gap distance to pixels
+    //--------------------------------------------
 
     float worldToPixels = input.LineLengthPixels / max(input.LineLength, 1e-6);
     float distanceToVisiblePixels = distanceToVisibleAlong * GlobalLineTypeScale * worldToPixels;
+    float patternAlongDistance;
 
-    float alongDistance = 0.0;
-
+// Are we physically before/after this GPU segment?
     if (input.AlongPixels < 0.0)
     {
-        alongDistance = -input.AlongPixels;
+        patternAlongDistance =
+        -input.AlongPixels;
     }
     else if (input.AlongPixels > input.LineLengthPixels)
     {
-        alongDistance = input.AlongPixels - input.LineLengthPixels;
+        patternAlongDistance =
+        input.AlongPixels -
+        input.LineLengthPixels;
     }
-    else if (!visible)
+    else if (visible)
     {
-        alongDistance = distanceToVisiblePixels;
+    // We are directly beside a visible dash.
+        patternAlongDistance = 0.0;
+    }
+    else
+    {
+    // We are inside a linetype gap.
+        patternAlongDistance =
+        distanceToVisiblePixels;
     }
 
-    float distanceFromCenterline = length(float2(perpendicularDistance, alongDistance));
+//--------------------------------------------
+// Intentional geometry endpoints
+//--------------------------------------------
 
-    if (visible && distanceFromCenterline <= visibleLineHalfWidth)
+    bool forceStartVisible =
+    (input.Flags & FORCE_START_VISIBLE) != 0;
+
+    bool forceEndVisible =
+    (input.Flags & FORCE_END_VISIBLE) != 0;
+
+    float distanceToForcedEndpointPixels =
+    1e20;
+
+    if (forceStartVisible)
+    {
+        distanceToForcedEndpointPixels =
+        min(
+            distanceToForcedEndpointPixels,
+            abs(input.AlongPixels));
+    }
+
+    if (forceEndVisible)
+    {
+        distanceToForcedEndpointPixels =
+        min(
+            distanceToForcedEndpointPixels,
+            abs(
+                input.AlongPixels -
+                input.LineLengthPixels));
+    }
+
+//--------------------------------------------
+// Distance to nearest visible centerline
+//--------------------------------------------
+
+    float alongDistance = min(patternAlongDistance, distanceToForcedEndpointPixels);
+    float perpendicularDistance = abs(input.Side) * glowHalfWidth;
+    float centerlineDistance = length(float2(perpendicularDistance, alongDistance));
+
+    //--------------------------------------------
+    // Distance to outside of stroke
+    //--------------------------------------------
+
+    float distanceFromStroke = centerlineDistance - visibleLineHalfWidth;
+    float glowDistance = max(distanceFromStroke, 0.0);
+
+    //--------------------------------------------
+    // Outside glow radius
+    //--------------------------------------------
+
+    if (glowDistance >= GlowPixelOffset)
     {
         discard;
     }
 
-    float distanceFromLine = max(distanceFromCenterline - visibleLineHalfWidth, 0.0);
+    //--------------------------------------------
+    // Glow
+    //--------------------------------------------
 
-    if (distanceFromLine >= GlowPixelOffset)
-    {
-        discard;
-    }
-
-    float glowT = saturate(distanceFromLine / GlowPixelOffset);
+    float glowT = saturate(glowDistance / GlowPixelOffset);
     float glowAlpha = 1.0 - smoothstep(0.0, 1.0, glowT);
-
     const float MaxGlowAlpha = 0.45;
-
     glowAlpha *= MaxGlowAlpha;
 
     return float4(0.0, 0.0, 0.0, glowAlpha);

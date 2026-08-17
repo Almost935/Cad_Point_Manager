@@ -277,6 +277,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public bool HitTestableObjectTreeDirty { get; set; }
         public bool ConstantBuffersInitialized { get; set; }
         public bool ConstantBuffersDirty { get; set; }
+        public bool TransformationBufferDirty { get; set; } = false;
         public ViewportF Viewport { get; set; }
         public SnapMode CurrentSnapMode { get; set; } = SnapMode.Object;
 
@@ -1010,9 +1011,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
                         Start = line.Start,
                         End = line.End,
                         LayerId = line.LayerId,
-                        LineTypeId = geometry.LineType.Id
+                        LineTypeId = geometry.LineType.Id,
+                        StartDistance = line.StartDistance,
+                        Flags = line.Flags
                     });
-                } 
+                }
             }
 
             _lineGlowInstanceCount = instances.Count;
@@ -1390,6 +1393,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 new InputElement("END",0,Format.R32G32_Float,8,1,InputClassification.PerInstanceData,1),
                 new InputElement("LAYERID",0,Format.R32_UInt,16,1,InputClassification.PerInstanceData,1),
                 new InputElement("LINETYPEID",0,Format.R32_UInt,20,1,InputClassification.PerInstanceData,1),
+                new InputElement("STARTDISTANCE",0,Format.R32_Float,24,1,InputClassification.PerInstanceData,1),
+                new InputElement("FLAGS",0,Format.R32_UInt,28,1,InputClassification.PerInstanceData,1),
             });
 
             // Load Composite Shaders
@@ -1402,19 +1407,19 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             _lineGlowCompositeLayout = new InputLayout(device, ShaderSignature.GetInputSignature(compositeVsBytecode), new[]
             {
-            new InputElement("POSITION",0,Format.R32G32_Float,0,0),
-            new InputElement("TEXCOORD",0,Format.R32G32_Float,8,0)});
+                new InputElement("POSITION",0,Format.R32G32_Float,0,0),
+                new InputElement("TEXCOORD",0,Format.R32G32_Float,8,0)});
 
             GlowCompositeVertex[] compositeVertices =
             {
-                new(new Vector2(-1, -1), new Vector2(0, 1)),
-                new(new Vector2(-1,  1), new Vector2(0, 0)),
-                new(new Vector2( 1,  1), new Vector2(1, 0)),
+                    new(new Vector2(-1, -1), new Vector2(0, 1)),
+                    new(new Vector2(-1,  1), new Vector2(0, 0)),
+                    new(new Vector2( 1,  1), new Vector2(1, 0)),
 
-                new(new Vector2(-1, -1), new Vector2(0, 1)),
-                new(new Vector2( 1,  1), new Vector2(1, 0)),
-                new(new Vector2( 1, -1), new Vector2(1, 1))
-            };
+                    new(new Vector2(-1, -1), new Vector2(0, 1)),
+                    new(new Vector2( 1,  1), new Vector2(1, 0)),
+                    new(new Vector2( 1, -1), new Vector2(1, 1))
+                };
 
             _lineGlowCompositeVertexBuffer = Buffer.Create(device, BindFlags.VertexBuffer, compositeVertices);
 
@@ -1999,6 +2004,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _dxfDirty = true;
             _combinedDirty = true;
         }
+        private void UpdateTransformationBuffer()
 
         // Msdf
         private void AddCogoPoint(CogoPoint point, List<MsdfGlyphInstance> destination)
