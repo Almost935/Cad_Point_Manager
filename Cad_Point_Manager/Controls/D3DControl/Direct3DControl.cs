@@ -522,6 +522,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             return (w, h);
         }
+
         protected virtual void OnTargetsResized(int wPx, int hPx) { }
         #endregion
     }

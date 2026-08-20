@@ -190,6 +190,29 @@ namespace Cad_Point_Manager.Controls.D3DControl
             UpdateView();
             UpdateViewProjection();
         }
+
+        /// <summary>
+        /// Sets the camera translation based on the total screen-space movement
+        /// from the beginning of a pan.
+        /// </summary>
+        /// <param name="panStartTranslate">
+        /// Camera Translate value when the pan began.
+        /// </param>
+        /// <param name="panStartScreen">
+        /// Mouse position when the pan began, in screen pixels.
+        /// </param>
+        /// <param name="currentScreen">
+        /// Current mouse position, in screen pixels.
+        /// </param>
+        public void PanFromStart(Vector2 panStartTranslate, Vector2 panStartScreen, Vector2 currentScreen, float worldPerPixel)
+        {
+            Vector2 deltaPixels = panStartScreen - currentScreen;
+            Translate = 
+                panStartTranslate + new Vector2(-deltaPixels.X * worldPerPixel, deltaPixels.Y * worldPerPixel);
+
+            UpdateView();
+            UpdateViewProjection();
+        }
         public void Zoom(int zoomStepDelta, Vector2 mousePosition)
         {
             CurrentZoomStep += zoomStepDelta;

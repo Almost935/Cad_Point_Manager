@@ -29,7 +29,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public DeviceContext DeviceContext { get; set; }
         public Texture2D Texture2D { get; set; }
         public Texture2D DxfTexture { get; set; }
-        public Texture2D FrameTexture { get; set; }
         public RenderTargetView RenderTargetView { get; set; }
         public RenderTargetView DxfRenderTargetView { get; set; }
         public RenderTargetView FrameRenderTargetView { get; set; }
@@ -55,7 +54,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         public FontFace CogoPointFontFace { get; set; }
         public ConcurrentDictionary<
-            (string fontName, FontWeight fontWeight, FontStretch fontStretch, 
+            (string fontName, FontWeight fontWeight, FontStretch fontStretch,
             FontStyle fontStyle), FontFace> FontFaceDict = [];
         #endregion
 
@@ -201,9 +200,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     DeviceContext?.Dispose();
                     Texture2D?.Dispose();
                     DxfTexture?.Dispose();
-                    FrameTexture?.Dispose();
                     RenderTargetView?.Dispose();
-                    DxfRenderTargetView?.Dispose(); // Fixed null check
+                    DxfRenderTargetView?.Dispose();
                     FrameRenderTargetView?.Dispose();
                     D2DDevice?.Dispose();
                     D2DDeviceContext?.Dispose();

@@ -216,22 +216,36 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private VertexShader _overlayOutlineVS;
         private PixelShader _overlayOutlinePS;
         private InputLayout _overlayOutlineLayout;
-        private bool _overlayOutlineShadersLoaded = false;
         private Buffer _overlayOutlineSettingsBuffer;
-
         private ResizableBuffer<OverlayVertex> _dragFillBuffer;
         private int _dragFillVertexCount;
-
         private VertexShader _overlayVS;
         private PixelShader _overlayPS;
         private InputLayout _overlayLayout;
         private bool _overlayShaderLoaded;
 
+        // Cached pan rendering
+        private VertexShader _panVertexShader;
+        private PixelShader _panPixelShader;
+        private InputLayout _panInputLayout;
+        private Buffer _panVertexBuffer;
+        private Buffer _panSettingsBuffer;
+        private SamplerState _panSampler;
+        private bool _panShadersLoaded;
+        private Vector2 _panCurrentMousePos;
+        private Texture2D _panCacheTexture;
+        private RenderTargetView _panCacheRtv;
+        private ShaderResourceView _panCacheSrv;
+        private int _panCacheWidth;
+        private int _panCacheHeight;
+        private bool _panCacheValid;
+
         // Panning and Zooming Fields
         private bool _isPanning;
-
-        // Camera based fields
+        private Vector2 _panStartMousePos;
+        private Vector2 _panStartCameraTranslate;
         private Vector2 _prevMousePos;
+        private float _panWorldUnitsPerPixel;
 
         // Interaction Fields
         private Task _hittestTask;
@@ -253,15 +267,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private CogoPoint _mouseOverToggleButtonPoint = null;
         private CogoPoint _pressedToggleButtonPoint = null;
         private bool _cogoPointTextBeingMoved => _pressedToggleButtonPoint is not null;
-        #endregion
-
-        #region Structures
-        private struct GlyphDrawRange
-        {
-            public short GlyphId;
-            public int StartInstance;
-            public int InstanceCount;
-        }
         #endregion
 
         #region Properties 
@@ -558,6 +563,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             if (!_anchorShaderLoaded) { InitializeToggleAnchorShaders(); }
             if (!_leaderLineShadersLoaded) { InitializeLeaderLineShaders(); }
             if (!_sigPointShadersLoaded) { InitializeSignificantPointsShaders(); }
+            if (!_panShadersLoaded) { InitializePanShaders(); }
 
             if (!ConstantBuffersInitialized) { InitializeConstantBuffers(); }
             if (ConstantBuffersDirty) { UpdateConstantBuffers(); }
@@ -571,6 +577,13 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             var ctx = ResCache.DeviceContext;
 
+            // Only Draw the cached pan if the user is actively panning, otherwise draw the full scene
+            if (_isPanning)
+            {
+                DrawCachedPan(ResCache.DeviceContext);
+                return;
+            }
+
             if (_dxfDirty)
             {
                 DrawDxf(ctx);
@@ -582,8 +595,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             {
                 ctx.CopyResource(ResCache.DxfTexture, ResCache.Texture2D);
                 ctx.OutputMerger.SetRenderTargets(ResCache.RenderTargetView);
-                //ctx.CopyResource(ResCache.DxfTexture, ResCache.FrameTexture);
-                //ctx.OutputMerger.SetRenderTargets(ResCache.FrameRenderTargetView);
 
                 DrawLineGlows(ctx);
                 CompositeGlowTexture(ctx);
@@ -980,6 +991,43 @@ namespace Cad_Point_Manager.Controls.D3DControl
             ctx.InputAssembler.PrimitiveTopology = PrimitiveTopology.PointList;
             ctx.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding(_sigPointVertexBuffer.Buffer, _sigPointVertexBuffer.Stride, 0));
             ctx.Draw(_sigPointVertexCount, 0);
+        }
+        private void DrawCachedPan(DeviceContext ctx)
+        {
+            if (!_panCacheValid || _panCacheSrv is null || _panCacheSrv.IsDisposed)
+            {
+                return;
+            }
+
+            Vector2 deltaPixels = _panCurrentMousePos - _panStartMousePos;
+            float offsetU = -deltaPixels.X / _panCacheWidth;
+            float offsetV = -deltaPixels.Y / _panCacheHeight;
+
+            var settings = new PanSettings
+            {
+                OffsetUv = new Vector2(offsetU, offsetV),
+                Padding = Vector2.Zero
+            };
+
+            ctx.UpdateSubresource(ref settings, _panSettingsBuffer);
+            ctx.OutputMerger.SetRenderTargets(ResCache.RenderTargetView);
+            ctx.ClearRenderTargetView(ResCache.RenderTargetView, new RawColor4(1, 1, 1, 1));
+
+            ctx.VertexShader.Set(_panVertexShader);
+            ctx.GeometryShader.Set(null);
+            ctx.PixelShader.Set(_panPixelShader);
+            ctx.InputAssembler.InputLayout = _panInputLayout;
+            ctx.InputAssembler.PrimitiveTopology = PrimitiveTopology.TriangleStrip;
+            ctx.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding(_panVertexBuffer, Utilities.SizeOf<PanVertex>(), 0));
+
+            ctx.VertexShader.SetConstantBuffer(0, _panSettingsBuffer);
+
+            ctx.PixelShader.SetShaderResource(0, _panCacheSrv);
+            ctx.PixelShader.SetSampler(0, _panSampler);
+
+            ctx.Draw(4, 0);
+
+            ctx.PixelShader.SetShaderResource(0, null);
         }
 
         private void UpdateLineVertices()
@@ -1765,6 +1813,63 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             _sigPointShadersLoaded = true;
         }
+        private void InitializePanShaders()
+        {
+            var path = AppDomain.CurrentDomain.BaseDirectory;
+
+            while (Path.GetFileName(path) != "Cad_Point_Manager")
+            {
+                path =
+                    Path.GetDirectoryName(path) ?? throw new DirectoryNotFoundException("The 'Cad_Point_Manager' directory could not be found.");
+            }
+
+            string shaderPath = Path.Combine(path, @"Controls\D3DControl\Shaders\PanShader.hlsl");
+
+            var vsBytecode = ShaderBytecode.CompileFromFile(shaderPath, "VSMain", "vs_5_0");
+            var psBytecode = ShaderBytecode.CompileFromFile(shaderPath, "PSMain", "ps_5_0");
+
+            _panVertexShader = new VertexShader(ResCache.Device, vsBytecode);
+            _panPixelShader = new PixelShader(ResCache.Device, psBytecode);
+
+            _panInputLayout = new InputLayout(ResCache.Device, ShaderSignature.GetInputSignature(vsBytecode),
+                new[]
+                {
+                    new InputElement("POSITION",0,Format.R32G32_Float,0,0),
+                    new InputElement("TEXCOORD",0,Format.R32G32_Float,8,0)
+                });
+
+            var vertices = new[]
+            {
+                new PanVertex(new Vector2(-1f,  1f),new Vector2(0f, 0f)),
+                new PanVertex(new Vector2( 1f,  1f),new Vector2(1f, 0f)),
+                new PanVertex(new Vector2(-1f, -1f),new Vector2(0f, 1f)),
+                new PanVertex(new Vector2( 1f, -1f),new Vector2(1f, 1f))
+            };
+
+            _panVertexBuffer =
+                Buffer.Create(
+                    ResCache.Device,
+                    BindFlags.VertexBuffer,
+                    vertices);
+
+            _panSettingsBuffer = new Buffer(
+                ResCache.Device, Utilities.SizeOf<PanSettings>(), ResourceUsage.Default,
+                BindFlags.ConstantBuffer, CpuAccessFlags.None, ResourceOptionFlags.None, 0);
+
+            _panSampler = new SamplerState(ResCache.Device, new SamplerStateDescription
+            {
+                Filter = Filter.MinMagMipPoint,
+                AddressU = TextureAddressMode.Border,
+                AddressV = TextureAddressMode.Border,
+                AddressW = TextureAddressMode.Border,
+                BorderColor = new RawColor4(1, 1, 1, 1),
+                ComparisonFunction = Comparison.Never,
+                MinimumLod = 0,
+                MaximumLod = float.MaxValue
+            });
+
+            _panShadersLoaded = true;
+        }
 
         private void InitializeBuffers()
         {
@@ -1997,6 +2102,88 @@ namespace Cad_Point_Manager.Controls.D3DControl
             CadManager.Camera.IsDirty = false;
 
             _dxfDirty = true;
+        }
+
+        private void EnsurePanCache()
+        {
+            int width = RenderPixelWidth * 2;
+            int height = RenderPixelHeight * 2;
+
+            if (_panCacheTexture is not null && !_panCacheTexture.IsDisposed &&
+                _panCacheWidth == width && _panCacheHeight == height)
+            {
+                return;
+            }
+
+            _panCacheSrv?.Dispose();
+            _panCacheRtv?.Dispose();
+            _panCacheTexture?.Dispose();
+
+            _panCacheWidth = width;
+            _panCacheHeight = height;
+
+            var description = new Texture2DDescription
+            {
+                Width = width,
+                Height = height,
+                MipLevels = 1,
+                ArraySize = 1,
+                Format = Format.B8G8R8A8_UNorm,
+                SampleDescription = new SampleDescription(1, 0),
+                Usage = ResourceUsage.Default,
+                BindFlags = BindFlags.RenderTarget | BindFlags.ShaderResource,
+                CpuAccessFlags = CpuAccessFlags.None,
+                OptionFlags = ResourceOptionFlags.None
+            };
+
+            _panCacheTexture = new Texture2D(ResCache.Device, description);
+            _panCacheRtv = new RenderTargetView(ResCache.Device, _panCacheTexture);
+            _panCacheSrv = new ShaderResourceView(ResCache.Device, _panCacheTexture);
+
+            _panCacheValid = false;
+        }
+        private void BuildPanCache()
+        {
+            EnsurePanCache();
+
+            if (_panCacheTexture is null ||
+                _panCacheRtv is null)
+            {
+                return;
+            }
+
+            var ctx = ResCache.DeviceContext;
+            var normalTransformation = CadManager.Camera.ViewProjectionMatrix;
+
+            var panCacheTransformation =
+                normalTransformation * Matrix.Scaling(0.5f, 0.5f, 1.0f);
+
+            var transformationBuffer = new TransformationBuffer
+            {
+                WorldViewProjection = panCacheTransformation
+            };
+
+            ctx.UpdateSubresource(ref transformationBuffer, _transformationBuffer);
+            ctx.Rasterizer.SetViewport(0, 0, _panCacheWidth, _panCacheHeight);
+            ctx.OutputMerger.SetRenderTargets(_panCacheRtv);
+
+            ctx.ClearRenderTargetView(_panCacheRtv, new RawColor4(1, 1, 1, 1));
+
+            DrawLines(ctx);
+            DrawText(ctx);
+            DrawSolids(ctx);
+            DrawPointCircles(ctx);
+            DrawMsdfGlyphs(ctx);
+
+            ctx.Rasterizer.SetViewport(0, 0, RenderPixelWidth, RenderPixelHeight);
+            transformationBuffer = new TransformationBuffer
+            {
+                WorldViewProjection = normalTransformation
+            };
+
+            ctx.UpdateSubresource(ref transformationBuffer, _transformationBuffer);
+
+            _panCacheValid = true;
         }
 
         // Msdf
@@ -2242,20 +2429,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             DxfCoordsString = formatVectorString(DxfCoords);
         }
 
-        protected override void OnMouseDown(MouseButtonEventArgs e)
-        {
-            if (e.MiddleButton == MouseButtonState.Pressed)
-            {
-                _isPanning = true;
-            }
-        }
-        protected override void OnMouseUp(MouseButtonEventArgs e)
-        {
-            if (e.MiddleButton == MouseButtonState.Released)
-            {
-                _isPanning = false;
-            }
-        }
         protected override void OnMouseMove(MouseEventArgs e)
         {
             _pointerCoords = e.GetPosition(this);
@@ -2266,8 +2439,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 var mousePx = GetMousePx(e);
                 var w = CadManager.Camera.ScreenToWorld(mousePx);
 
-                var delta = new Vector2(w.X - _pressedToggleButtonPoint.Position.X.ToFloat(),
-                    w.Y - _pressedToggleButtonPoint.Position.Y.ToFloat());
+                var delta = new Vector2(
+                    w.X - _pressedToggleButtonPoint.Position.X.ToFloat(), w.Y - _pressedToggleButtonPoint.Position.Y.ToFloat());
 
                 UpdateCogoPointInfoOffset(_pressedToggleButtonPoint, delta);
 
@@ -2299,14 +2472,15 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 UpdateDragRect();
             }
 
-            if (e.MiddleButton == MouseButtonState.Pressed)
+            if (_isPanning && e.MiddleButton == MouseButtonState.Pressed)
             {
-                CadManager.Camera.Pan(currentMousePos, _prevMousePos);
-                //ConstantBuffersDirty = true;
-                TransformationBufferDirty = true;
+                _panCurrentMousePos = GetMousePx(e);
+                CadManager.Camera.PanFromStart(
+                    _panStartCameraTranslate, _panStartMousePos, _panCurrentMousePos, _panWorldUnitsPerPixel);
 
                 e.Handled = true;
             }
+
             _prevMousePos = currentMousePos;
         }
         protected override void OnMouseWheel(MouseWheelEventArgs e)
@@ -2535,9 +2709,54 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 _msdfGlowVerticesDirty = true;
 
                 CaptureMouse();
+
                 e.Handled = true;
                 return;
             }
+        }
+        protected override void OnMouseDown(MouseButtonEventArgs e)
+        {
+            if (e.ChangedButton == MouseButton.Middle)
+            {
+                BuildPanCache();
+
+                _isPanning = true;
+
+                _panStartMousePos = GetMousePx(e);
+                _panCurrentMousePos = _panStartMousePos;
+                _panStartCameraTranslate = CadManager.Camera.Translate;
+                _panWorldUnitsPerPixel = CadManager.Camera.GetWorldUnitsPerPixel();
+                _prevMousePos = _panStartMousePos;
+
+                CaptureMouse();
+
+                e.Handled = true;
+                return;
+            }
+
+            base.OnMouseDown(e);
+        }
+        protected override void OnMouseUp(MouseButtonEventArgs e)
+        {
+            if (e.MiddleButton == MouseButtonState.Released && e.ChangedButton == MouseButton.Middle)
+            {
+                _isPanning = false;
+
+                if (IsMouseCaptured)
+                {
+                    ReleaseMouseCapture();
+                }
+
+                TransformationBufferDirty = true;
+
+                e.Handled = true;
+            }
+        }
+        protected override void OnLostMouseCapture(MouseEventArgs e)
+        {
+            base.OnLostMouseCapture(e);
+
+            _isPanning = false;
         }
 
         private void Window_KeyUp(object sender, KeyEventArgs e)
@@ -3969,6 +4188,16 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     _toggleQuadVB?.Dispose(); _toggleQuadVB = null;
                     _toggleVS?.Dispose(); _toggleVS = null;
                     _togglePS?.Dispose(); _togglePS = null;
+
+                    _panCacheSrv?.Dispose(); _panCacheSrv = null;
+                    _panCacheRtv?.Dispose(); _panCacheRtv = null;
+                    _panCacheTexture?.Dispose(); _panCacheTexture = null;
+                    _panVertexShader?.Dispose(); _panVertexShader = null;
+                    _panPixelShader?.Dispose(); _panPixelShader = null;
+                    _panInputLayout?.Dispose(); _panInputLayout = null;
+                    _panVertexBuffer?.Dispose(); _panVertexBuffer = null;
+                    _panSettingsBuffer?.Dispose(); _panSettingsBuffer = null;
+                    _panSampler?.Dispose(); _panSampler = null;
 
                     StateBuffers.Dispose(); StateBuffers = null;
                 }

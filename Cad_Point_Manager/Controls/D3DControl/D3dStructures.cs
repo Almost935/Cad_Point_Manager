@@ -499,5 +499,25 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public Vector2 ViewportSize;
         public Vector2 Padding;
     }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct PanVertex
+    {
+        public Vector2 Position;
+        public Vector2 TexCoord;
+
+        public PanVertex(Vector2 position, Vector2 texCoord)
+        {
+            Position = position;
+            TexCoord = texCoord;
+        }
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct PanSettings
+    {
+        public Vector2 OffsetUv;
+        public Vector2 Padding;
+    }
     #endregion
 }
