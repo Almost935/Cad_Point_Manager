@@ -234,7 +234,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             baseBlendDesc.RenderTarget[0].DestinationBlend = BlendOption.InverseSourceAlpha;
             baseBlendDesc.RenderTarget[0].BlendOperation = BlendOperation.Add;
             baseBlendDesc.RenderTarget[0].SourceAlphaBlend = BlendOption.One;
-            baseBlendDesc.RenderTarget[0].DestinationAlphaBlend = BlendOption.Zero;
+            baseBlendDesc.RenderTarget[0].DestinationAlphaBlend = BlendOption.InverseSourceAlpha;
             baseBlendDesc.RenderTarget[0].AlphaBlendOperation = BlendOperation.Add;
             baseBlendDesc.RenderTarget[0].RenderTargetWriteMask = ColorWriteMaskFlags.All;
             var baseBlendState = new BlendState(_device, baseBlendDesc);

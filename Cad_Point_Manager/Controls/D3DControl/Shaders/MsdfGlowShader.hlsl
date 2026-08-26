@@ -93,12 +93,7 @@ float Median(float r, float g, float b)
 float4 ScreenPxRange(float2 uv)
 {
     float2 fw = fwidth(uv);
-
-    return float4(
-    fw.x * 1000,
-    fw.y * 1000,
-    0,
-    1);
+    return float4(fw.x * 1000, fw.y * 1000, 0, 1);
 }
 
 // Bit masks for flags (keep in sync with CPU)
@@ -136,55 +131,32 @@ VSOut VSMain(VSVertex v, VSInstance inst)
     }
 
     o.Visible = visible;
+    o.MouseOver = ((ps.Flags & POINT_MOUSEOVER) != 0u) ? 1.0f : 0.0f;
 
-    o.MouseOver =
-        ((ps.Flags & POINT_MOUSEOVER) != 0u) ? 1.0f : 0.0f;
-
-    float isFlippedY =
-        ((ps.Flags & POINT_ISFLIPPEDY) != 0u) ? -1.0f : 1.0f;
+    float isFlippedY = ((ps.Flags & POINT_ISFLIPPEDY) != 0u) ? -1.0f : 1.0f;
 
     float2 corner = v.Corner + 0.5;
-
-    float2 local =
-        inst.PlaneOrigin +
-        corner * inst.PlaneSize;
+    float2 local = inst.PlaneOrigin + corner * inst.PlaneSize;
 
     local.x += inst.PenX;
     local.y *= inst.YSign;
 
     local *= (inst.EmToWorld * gs.Scale);
 
-    float textInfoOffset =
-        gs.TextInfoBaseXoffset * isFlippedY;
+    float textInfoOffset = gs.TextInfoBaseXoffset * isFlippedY;
 
     float2 origin;
-    origin.x =
-        ps.Offset.x +
-        ps.PointInfoOffset.x +
-        ls.Offset.x +
-        textInfoOffset;
-
-    origin.y =
-        ps.Offset.y +
-        ps.PointInfoOffset.y +
-        ls.Offset.y * gs.Scale;
+    origin.x = ps.Offset.x + ps.PointInfoOffset.x + ls.Offset.x + textInfoOffset;
+    origin.y = ps.Offset.y + ps.PointInfoOffset.y + ls.Offset.y * gs.Scale;
 
     local += origin;
 
-    o.Position =
-        mul(float4(local, 0, 1),
-            transformationMatrix);
-
-    o.UV =
-        lerp(inst.UvOrigin,
-             inst.UvOrigin + inst.UvSize,
-             corner);
-
+    o.Position = mul(float4(local, 0, 1), transformationMatrix);
+    o.UV = lerp(inst.UvOrigin, inst.UvOrigin + inst.UvSize, corner);
     o.Color = gs.Color;
 
     return o;
 }
-
 
 float4 PSMain(VSOut input) : SV_Target
 {
@@ -192,18 +164,24 @@ float4 PSMain(VSOut input) : SV_Target
         clip(-1);
 
     float3 msd = FontAtlas.Sample(FontSampler, input.UV).rgb;
-
     float sd = Median(msd.r, msd.g, msd.b);
-
     float d = (sd - 0.5f) * DistanceRange;
 
     //---------------------------------------
     // Outside glow
     //---------------------------------------
 
-    float glowRadius = clamp(120.0f / CameraZoom, 0.01f, DistanceRange - 6.0f);
+    float glowRadius = clamp(120.0f / CameraZoom, 0.01f, DistanceRange * 0.5f);
 
-    float halo = smoothstep(-glowRadius, 0.25f, d);
+    // Positive distance going OUTWARD from the glyph boundary.
+    float outsideDistance = max(-d, 0.0f);
+
+    // 1 at glyph boundary -> 0 at glowRadius.
+    float halo = 1.0f - smoothstep(0.0f, glowRadius, outsideDistance);
+
+    // Keep this contribution outside the glyph.
+    float outsideMask = 1.0f - smoothstep(-0.25f, 0.25f, d);
+    halo *= outsideMask;
 
     //---------------------------------------
     // Interior
@@ -215,9 +193,41 @@ float4 PSMain(VSOut input) : SV_Target
     // Combine
     //---------------------------------------
 
-    float alpha = halo * 0.55 + fill * 0.20;
-
+    float alpha = halo * 0.55f + fill * 0.20f;
     alpha = saturate(alpha);
 
     return float4(0, 0, 0, alpha);
 }
+
+//float4 PSMain(VSOut input) : SV_Target
+//{
+//    if (input.Visible < 0.5f)
+//        clip(-1);
+
+//    float3 msd = FontAtlas.Sample(FontSampler, input.UV).rgb;
+//    float sd = Median(msd.r, msd.g, msd.b);
+//    float d = (sd - 0.5f) * DistanceRange;
+
+//    //---------------------------------------
+//    // Outside glow
+//    //---------------------------------------
+
+//    //float glowRadius = clamp(120.0f / CameraZoom, 0.01f, DistanceRange - 6.0f);
+//    float glowRadius = clamp(120.0f / CameraZoom, 0.01f, DistanceRange * 0.5f);
+//    float halo = smoothstep(-glowRadius, 0.25f, d);
+
+//    //---------------------------------------
+//    // Interior
+//    //---------------------------------------
+
+//    float fill = smoothstep(-0.25f, 0.5f, d);
+
+//    //---------------------------------------
+//    // Combine
+//    //---------------------------------------
+
+//    float alpha = halo * 0.55 + fill * 0.20;
+//    alpha = saturate(alpha);
+
+//    return float4(0, 0, 0, alpha);
+//}

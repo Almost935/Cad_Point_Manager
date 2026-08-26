@@ -695,8 +695,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             ctx.ClearRenderTargetView(ResCache.GlowRenderTargetView, new RawColor4(0, 0, 0, 0));
 
-            if (_lineGlowInstanceBuffer is null ||
-                _lineGlowInstanceCount == 0)
+            if (_lineGlowInstanceBuffer is null || _lineGlowInstanceCount == 0)
             {
                 return;
             }
@@ -841,6 +840,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             ctx.VertexShader.SetConstantBuffer(1, _drawingSettingsBuffer);
             ctx.VertexShader.SetConstantBuffer(2, _msdfSettingsBuffer);
 
+            ctx.PixelShader.SetConstantBuffer(1, _drawingSettingsBuffer);
             ctx.PixelShader.SetConstantBuffer(2, _msdfSettingsBuffer);
 
             ctx.VertexShader.SetShaderResource(0, StateBuffers.LabelSRV);
@@ -1474,7 +1474,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             _lineGlowCompositeSampler = new SamplerState(device, new SamplerStateDescription
             {
-                Filter = Filter.MinMagMipLinear,
+                Filter = Filter.MinMagMipPoint,
                 AddressU = TextureAddressMode.Clamp,
                 AddressV = TextureAddressMode.Clamp,
                 AddressW = TextureAddressMode.Clamp,
@@ -1846,16 +1846,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 new PanVertex(new Vector2( 1f, -1f),new Vector2(1f, 1f))
             };
 
-            _panVertexBuffer =
-                Buffer.Create(
-                    ResCache.Device,
-                    BindFlags.VertexBuffer,
-                    vertices);
-
+            _panVertexBuffer = Buffer.Create(ResCache.Device, BindFlags.VertexBuffer, vertices);
             _panSettingsBuffer = new Buffer(
-                ResCache.Device, Utilities.SizeOf<PanSettings>(), ResourceUsage.Default,
-                BindFlags.ConstantBuffer, CpuAccessFlags.None, ResourceOptionFlags.None, 0);
-
+                ResCache.Device, Utilities.SizeOf<PanSettings>(), ResourceUsage.Default, BindFlags.ConstantBuffer, CpuAccessFlags.None, ResourceOptionFlags.None, 0);
             _panSampler = new SamplerState(ResCache.Device, new SamplerStateDescription
             {
                 Filter = Filter.MinMagMipPoint,
@@ -2019,17 +2012,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
         private void UpdateConstantBuffers()
         {
-            var drawingSettings = new DrawingSettingsBuffer
-            {
-                ViewportSize = new(Viewport.Width, Viewport.Height),
-                LineHalfWidthPixels = GlobalHelperProperties.CogoPointLeaderLinePixelWidth,
-                GlobalLineTypeScale = CadManager.OverallDrawingLineTypeScale,
-                AnnotationScale = 1,
-                GlowPixelOffset = GlobalHelperProperties.GlowPixelOffset,
-                SelectedColor = GlobalHelperProperties.SelectedObjectColor,
-                SelectedMouseOverColor = GlobalHelperProperties.SelectedMouseOverObjectColor
-            };
-            ResCache.DeviceContext.UpdateSubresource(ref drawingSettings, _drawingSettingsBuffer);
+            //UpdateDrawingSettingsBuffer(Viewport.Width, Viewport.Height);
+            UpdateDrawingSettingsBuffer(RenderPixelWidth, RenderPixelHeight);
 
             var msdfSettings = new MsdfSettingsBuffer
             {
@@ -2103,6 +2087,22 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             _dxfDirty = true;
         }
+        private void UpdateDrawingSettingsBuffer(float viewportWidth, float viewportHeight)
+        {
+            var drawingSettings = new DrawingSettingsBuffer
+            {
+                ViewportSize = new Vector2(viewportWidth, viewportHeight),
+
+                LineHalfWidthPixels = GlobalHelperProperties.CogoPointLeaderLinePixelWidth,
+                GlobalLineTypeScale = CadManager.OverallDrawingLineTypeScale,
+                AnnotationScale = 1,
+                GlowPixelOffset = GlobalHelperProperties.GlowPixelOffset,
+                SelectedColor = GlobalHelperProperties.SelectedObjectColor,
+                SelectedMouseOverColor = GlobalHelperProperties.SelectedMouseOverObjectColor
+            };
+
+            ResCache.DeviceContext.UpdateSubresource(ref drawingSettings, _drawingSettingsBuffer);
+        }
 
         private void EnsurePanCache()
         {
@@ -2154,9 +2154,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             var ctx = ResCache.DeviceContext;
             var normalTransformation = CadManager.Camera.ViewProjectionMatrix;
-
-            var panCacheTransformation =
-                normalTransformation * Matrix.Scaling(0.5f, 0.5f, 1.0f);
+            var panCacheTransformation = normalTransformation * Matrix.Scaling(0.5f, 0.5f, 1.0f);
 
             var transformationBuffer = new TransformationBuffer
             {
@@ -2165,9 +2163,13 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             ctx.UpdateSubresource(ref transformationBuffer, _transformationBuffer);
             ctx.Rasterizer.SetViewport(0, 0, _panCacheWidth, _panCacheHeight);
-            ctx.OutputMerger.SetRenderTargets(_panCacheRtv);
 
+            UpdateDrawingSettingsBuffer(_panCacheWidth, _panCacheHeight);
+
+            ctx.OutputMerger.SetRenderTargets(_panCacheRtv);
             ctx.ClearRenderTargetView(_panCacheRtv, new RawColor4(1, 1, 1, 1));
+
+            ctx.OutputMerger.SetBlendState(ResCache.BaseBlendState);
 
             DrawLines(ctx);
             DrawText(ctx);
@@ -2176,12 +2178,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
             DrawMsdfGlyphs(ctx);
 
             ctx.Rasterizer.SetViewport(0, 0, RenderPixelWidth, RenderPixelHeight);
-            transformationBuffer = new TransformationBuffer
-            {
-                WorldViewProjection = normalTransformation
-            };
-
+            transformationBuffer = new TransformationBuffer { WorldViewProjection = normalTransformation };
             ctx.UpdateSubresource(ref transformationBuffer, _transformationBuffer);
+            UpdateDrawingSettingsBuffer(RenderPixelWidth, RenderPixelHeight);
 
             _panCacheValid = true;
         }

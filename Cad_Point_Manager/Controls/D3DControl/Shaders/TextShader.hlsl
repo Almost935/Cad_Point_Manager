@@ -109,20 +109,30 @@ float4 GetObjectColor(VSInput input)
     return col;
 }
 
+//PSInput VSMain(VSInput input)
+//{
+//    PSInput o;
+
+//    float4 clip = mul(float4(input.Position, 1.0), transformationMatrix);
+    
+//    float4 col = GetObjectColor(input);
+
+//    // --- uniform snap (same offset for all vertices in this draw) ---
+//    float2 snapNdc = ComputeSnapDeltaNdc(ViewportSize);
+//    clip.xy += snapNdc * clip.w;
+
+//    o.Position = clip;
+//    o.Color = col;
+//    return o;
+//}
+
 PSInput VSMain(VSInput input)
 {
     PSInput o;
 
-    float4 clip = mul(float4(input.Position, 1.0), transformationMatrix);
-    
-    float4 col = GetObjectColor(input);
+    o.Position = mul(float4(input.Position, 1.0), transformationMatrix);
+    o.Color = GetObjectColor(input);
 
-    // --- uniform snap (same offset for all vertices in this draw) ---
-    float2 snapNdc = ComputeSnapDeltaNdc(ViewportSize);
-    clip.xy += snapNdc * clip.w;
-
-    o.Position = clip;
-    o.Color = col;
     return o;
 }
 

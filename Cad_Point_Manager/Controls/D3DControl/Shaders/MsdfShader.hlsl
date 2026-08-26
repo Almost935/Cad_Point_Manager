@@ -183,11 +183,8 @@ float4 PSMain(VSOut input) : SV_Target
         clip(-1);
 
     float3 msd = FontAtlas.Sample(FontSampler, input.UV).rgb;
-
     float sd = Median(msd.r, msd.g, msd.b);
-
     float screenPxDistance = ScreenPxRange(input.UV) * (sd - 0.5);
-
     float opacity = smoothstep(-0.5, 0.5, screenPxDistance);
 
     return float4(input.Color.rgb, opacity);
