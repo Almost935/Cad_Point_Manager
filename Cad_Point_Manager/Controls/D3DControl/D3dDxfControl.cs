@@ -1063,7 +1063,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
                         LayerId = line.LayerId,
                         LineTypeId = geometry.LineType.Id,
                         StartDistance = line.StartDistance,
-                        Flags = line.Flags
+                        Flags = line.Flags,
+                        ParentSegmentLength = line.ParentSegmentLength
                     });
                 }
             }
@@ -1682,8 +1683,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             var path = AppDomain.CurrentDomain.BaseDirectory;
             while (Path.GetFileName(path) != "Cad_Point_Manager")
             {
-                path = Path.GetDirectoryName(path);
-                if (path == null) throw new DirectoryNotFoundException("Cad_Point_Manager not found");
+                path = Path.GetDirectoryName(path) ?? throw new DirectoryNotFoundException("Cad_Point_Manager not found");
             }
 
             string fx = Path.Combine(path, @"Controls\D3DControl\Shaders\OverlaySolidShader.hlsl");

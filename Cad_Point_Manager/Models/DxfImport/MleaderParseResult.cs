@@ -9,25 +9,5 @@ namespace Cad_Point_Manager.Models.DxfImport
         public Dictionary<string, ParsedMLeaderStyle> MLeaderStyles { get; } = [];
         public Dictionary<string, ParsedBlockRecord> BlockRecords { get; } = [];
         public Dictionary<string, ParsedDictionary> Dictionaries { get; } = [];
-
-        // Testing
-        public void DumpObject(string handle)
-        {
-            if (!ObjectsByHandle.TryGetValue(
-                    handle,
-                    out var tags))
-            {
-                return;
-            }
-
-            Debug.WriteLine(
-                $"---- HANDLE {handle} ----");
-
-            foreach (var tag in tags)
-            {
-                Debug.WriteLine(
-                    $"{tag.Code}: {tag.Value}");
-            }
-        }
     }
 }

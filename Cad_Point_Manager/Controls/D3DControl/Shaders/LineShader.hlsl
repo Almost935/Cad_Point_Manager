@@ -156,10 +156,8 @@ PSInput VSMain(VSInput vertex, VSInstance instance)
     }
 
     float2 pixelScale = float2(ViewportSize.x * 0.5, ViewportSize.y * 0.5);
-
     float2 dirPixels = (ndcEnd - ndcStart) * pixelScale;
     dirPixels = normalize(dirPixels);
-
     float2 normalPixels = float2(-dirPixels.y, dirPixels.x);
 
     //--------------------------------------------
@@ -179,7 +177,6 @@ PSInput VSMain(VSInput vertex, VSInstance instance)
     //--------------------------------------------
     
     float visibleLineHalfWidth = LineHalfWidthPixels * 0.5;
-
     float halfWidthPixels = LineHalfWidthPixels;
 
     if (RenderGlowPass == 1)
@@ -207,9 +204,7 @@ PSInput VSMain(VSInput vertex, VSInstance instance)
     if (RenderGlowPass == 1)
     {
         float endDirection = vertex.Local.y * 2.0 - 1.0;
-
         ndc += directionNdc * GlowPixelOffset * endDirection;
-
         output.AlongPixels =
             lerp(-GlowPixelOffset, lineLengthPixels + GlowPixelOffset, vertex.Local.y);
     }

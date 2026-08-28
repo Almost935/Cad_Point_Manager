@@ -360,8 +360,6 @@ namespace Cad_Point_Manager.Models
             GetTestDxfPoints();
 
             OverallDrawingLineTypeScale = DxfImportResult.DxfDocument.DrawingVariables.LtScale.ToFloat();
-
-            Debug.WriteLine($"\nOverallDrawingLineTypeScale: {OverallDrawingLineTypeScale}");
             
             foreach (var layer in dxfImportResult.DxfDocument.Layers)
             {
