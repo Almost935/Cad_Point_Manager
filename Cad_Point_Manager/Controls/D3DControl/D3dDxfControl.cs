@@ -602,7 +602,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 if (IsDragging && _dragFillVertexCount > 0) { DrawDragOverlay(ctx); }
 
                 if (_hoverCircleVertices.Count > 0) { DrawCogoPointHover(ctx); }
-                if (_leaderLineInstanceCount > 0) { DrawLeaderLines(ctx); }
                 if (_anchorVerticesCount > 0) { DrawCogoPointAnchors(ctx); }
                 if (_sigPointVertexCount > 0) { DrawSignificantPoints(ctx); }
                 if (_msdfGlowInstanceCount > 0) { DrawMsdfGlowGlyphs(ctx); }
@@ -637,8 +636,10 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             DrawMsdfGlyphs(ctx);
             //Debug.WriteLine($"Glyphs {sw.ElapsedMilliseconds} ms");
+            //sw.Restart();
 
-            //DrawMsdfGlowGlyphs(ctx);
+            DrawLeaderLines(ctx);
+            //Debug.WriteLine($"Glyphs {sw.ElapsedMilliseconds} ms");
         }
 
         private void DrawLines(DeviceContext ctx)
@@ -1401,9 +1402,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     new InputElement("END", 0, Format.R32G32_Float, 8, 1,InputClassification.PerInstanceData, 1),
                     new InputElement("LAYERID", 0, Format.R32_UInt, 16, 1,InputClassification.PerInstanceData, 1),
                     new InputElement("OBJECTID", 0, Format.R32_UInt, 20, 1,InputClassification.PerInstanceData, 1),
-
                     new InputElement("STARTDISTANCE",0,Format.R32_Float,24,1,InputClassification.PerInstanceData,1),
                     new InputElement("FLAGS",0,Format.R32_UInt,28,1,InputClassification.PerInstanceData,1),
+                    new InputElement("PARENTSEGMENTLENGTH",0,Format.R32_Float,32,1,InputClassification.PerInstanceData,1)
                 });
 
             LineCornerVertex[] quad = { new(-1, 0), new(1, 0), new(1, 1), new(-1, 0), new(1, 1), new(-1, 1) };
@@ -1444,6 +1445,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 new InputElement("LINETYPEID",0,Format.R32_UInt,20,1,InputClassification.PerInstanceData,1),
                 new InputElement("STARTDISTANCE",0,Format.R32_Float,24,1,InputClassification.PerInstanceData,1),
                 new InputElement("FLAGS",0,Format.R32_UInt,28,1,InputClassification.PerInstanceData,1),
+                new InputElement("PARENTSEGMENTLENGTH",0,Format.R32_Float,32,1,InputClassification.PerInstanceData,1)
             });
 
             // Load Composite Shaders
@@ -2176,6 +2178,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             DrawSolids(ctx);
             DrawPointCircles(ctx);
             DrawMsdfGlyphs(ctx);
+            DrawLeaderLines(ctx);
 
             ctx.Rasterizer.SetViewport(0, 0, RenderPixelWidth, RenderPixelHeight);
             transformationBuffer = new TransformationBuffer { WorldViewProjection = normalTransformation };

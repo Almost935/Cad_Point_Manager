@@ -301,7 +301,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 var scaledVector1 = Vector2.TransformCoordinate(v1, transform);
                 var scaledVector2 = Vector2.TransformCoordinate(v2, transform);
                 LineInstance lineInstance = new(
-                    scaledVector1, scaledVector2, layerId, objectId, (float)accumulatedDistance, (uint)flags);
+                    scaledVector1, scaledVector2, layerId, objectId, (float)accumulatedDistance, (uint)flags, 0);
                 lineInstances.Add(lineInstance);
 
                 double segmentLength = Vector2.Distance(scaledVector2, scaledVector1);

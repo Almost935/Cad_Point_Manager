@@ -113,7 +113,8 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                     int next = (i + 1) % vertices.Count;
 
                     lineInstances.Add(new LineInstance(
-                        vertices[i].Position.ToSharpDXVector2(), vertices[next].Position.ToSharpDXVector2(), layerId, objectId, (float)accumulatedDistance, (uint)flags));
+                        vertices[i].Position.ToSharpDXVector2(), vertices[next].Position.ToSharpDXVector2(), 
+                        layerId, objectId, (float)accumulatedDistance, (uint)flags, Length));
                     
                     double segmentLength = Vector2.Distance(vertices[next].Position.ToSharpDXVector2(), vertices[i].Position.ToSharpDXVector2());
                     accumulatedDistance += segmentLength;
@@ -127,7 +128,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             }
             else
             {
-                throw new ArgumentException("entity must be of type Arc");
+                throw new ArgumentException("entity must be of type Circle");
             }
         }
 

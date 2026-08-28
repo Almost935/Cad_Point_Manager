@@ -41,12 +41,11 @@ struct VSInstance
 {
     float2 Start : START;
     float2 End : END;
-
     uint LayerId : LAYERID;
     uint ObjectId : OBJECTID;
-
     float StartDistance : STARTDISTANCE;
     uint Flags : FLAGS;
+    float ParentSegmentLength : PARENTSEGMENTLENGTH;
 };
 
 //-----------------------------------------------------------------------------
@@ -78,6 +77,8 @@ struct PSInput
 
     // Tells us whether this GPU segment contains a real entity endpoint.
     nointerpolation uint Flags : TEXCOORD10;
+    
+    nointerpolation float ParentSegmentLength : TEXCOORD11;
 };
 
 //-----------------------------------------------------------------------------
@@ -104,7 +105,7 @@ struct LineTypeInfo
     uint FirstPatternIndex;
     uint PatternCount;
     float PatternLength;
-    float Padding;
+    float DashLength;
 };
 
 StructuredBuffer<LayerState> LayerStates : register(t0);
@@ -118,9 +119,6 @@ static const uint OBJ_VISIBLE = 1u << 0;
 static const uint OBJ_SELECTED = 1u << 1;
 static const uint OBJ_MOUSEOVER = 1u << 2;
 static const uint OBJ_COLOR_BY_LAYER = 1u << 3;
-
-static const uint FORCE_START_VISIBLE = 1u << 0;
-static const uint FORCE_END_VISIBLE = 1u << 1;
 
 //-----------------------------------------------------------------------------
 // Vertex shader
@@ -240,6 +238,7 @@ PSInput VSMain(VSInput vertex, VSInstance instance)
     output.Position = clip;
     output.Side = vertex.Local.x;
     output.LineLengthPixels = lineLengthPixels;
+    output.ParentSegmentLength = instance.ParentSegmentLength;
 
     //--------------------------------------------
     // Segment / path distances
@@ -311,12 +310,59 @@ float4 PSMain(PSInput input) : SV_TARGET
 
     if (lti.PatternCount > 0 && lti.PatternLength > 1e-6 && GlobalLineTypeScale > 1e-6)
     {
-        float scaledDistance = input.PathDistance / GlobalLineTypeScale;
+        float scaledDistance;
+
+        if (input.ParentSegmentLength > 1e-6 && lti.PatternCount == 2)
+        {
+            float dashLength = PatternData[lti.FirstPatternIndex];
+            float gapLength = abs(PatternData[lti.FirstPatternIndex + 1]);
+            float scaledSegmentLength = input.ParentSegmentLength / GlobalLineTypeScale;
+            float halfSegmentLength = scaledSegmentLength * 0.5;
+            float dashCenteredPhase = dashLength * 0.5;
+            float gapCenteredPhase = dashLength + gapLength * 0.5;
+            float dashCenteredEndPos = fmod(halfSegmentLength + dashCenteredPhase, lti.PatternLength);
+            float gapCenteredEndPos = fmod(halfSegmentLength + gapCenteredPhase, lti.PatternLength);
+
+            if (dashCenteredEndPos < 0.0)
+                dashCenteredEndPos += lti.PatternLength;
+
+            if (gapCenteredEndPos < 0.0)
+                gapCenteredEndPos += lti.PatternLength;
+
+            float dashCenteredEndStroke = 0.0;
+
+            if (dashCenteredEndPos < dashLength)
+            {
+                dashCenteredEndStroke =
+            min(
+                dashCenteredEndPos,
+                dashLength - dashCenteredEndPos);
+            }
+
+            float gapCenteredEndStroke = 0.0;
+
+            if (gapCenteredEndPos < dashLength)
+            {
+                gapCenteredEndStroke = min(gapCenteredEndPos, dashLength - gapCenteredEndPos);
+            }
+
+            float centerPhase = gapCenteredEndStroke > dashCenteredEndStroke ? gapCenteredPhase : dashCenteredPhase;
+            float segmentCenter = input.ParentSegmentLength * 0.5;
+            float distanceFromCenter = input.PathDistance - segmentCenter;
+
+            scaledDistance = distanceFromCenter / GlobalLineTypeScale + centerPhase;
+        }
+        else
+        {
+            scaledDistance = input.PathDistance / GlobalLineTypeScale;
+        }
 
         float patternPos = fmod(scaledDistance, lti.PatternLength);
 
         if (patternPos < 0.0)
+        {
             patternPos += lti.PatternLength;
+        }
 
         float accum = 0.0;
 
@@ -344,26 +390,6 @@ float4 PSMain(PSInput input) : SV_TARGET
         }
     }
 
-    //--------------------------------------------
-    // Always expose physical line endpoints
-    //--------------------------------------------
-
-    float worldUnitsPerPixel = input.SegmentLength / max(input.LineLengthPixels, 1e-6);
-    float endpointLength = 2.0 * LineHalfWidthPixels * worldUnitsPerPixel;
-
-    bool forceStartVisible = (input.Flags & FORCE_START_VISIBLE) != 0;
-    bool forceEndVisible = (input.Flags & FORCE_END_VISIBLE) != 0;
-
-    if (forceStartVisible && input.SegmentDistance < endpointLength)
-    {
-        visible = true;
-    }
-
-    if (forceEndVisible && (input.SegmentLength - input.SegmentDistance) < endpointLength)
-    {
-        visible = true;
-    }
-        
     if (RenderGlowPass == 0 && !visible)
         discard;
 
@@ -431,32 +457,15 @@ float4 PSMain(PSInput input) : SV_TARGET
             alongDistance = distanceToVisiblePixels;
         }
 
-        //--------------------------------------------
-        // 2D distance from nearest visible centerline
-        //--------------------------------------------
-
         float distanceFromCenterline = length(float2(perpendicularDistance, alongDistance));
-
-        //--------------------------------------------
-        // Do not paint over the actual visible line
-        //--------------------------------------------
 
         if (visible && distanceFromCenterline <= visibleLineHalfWidth)
             discard;
-
-        //--------------------------------------------
-        // Distance outside actual line
-        //--------------------------------------------
 
         float distanceFromLine = max(distanceFromCenterline - visibleLineHalfWidth, 0.0);
 
         if (distanceFromLine >= GlowPixelOffset)
             discard;
-
-        //--------------------------------------------
-        // Fade from dark at line edge to transparent
-        // at outside edge of glow
-        //--------------------------------------------
 
         float glowT = saturate(distanceFromLine / GlowPixelOffset);
         float glowAlpha = 1.0 - smoothstep(0.0, 1.0, glowT);
@@ -476,16 +485,8 @@ float4 PSMain(PSInput input) : SV_TARGET
     if (selected)
         color = SelectedColor;
 
-    //--------------------------------------------
-    // Normal line antialiasing
-    //
-    // Kept unchanged so the normal line thickness remains
-    // exactly the same as before adding the glow.
-    //--------------------------------------------
-
     float d = abs(input.Side);
     float w = fwidth(d);
-
     float visibleSide = abs(input.Side) * 2.0;
     float alpha = 1.0 - smoothstep(1.0 - w, 1.0 + w, visibleSide);
 

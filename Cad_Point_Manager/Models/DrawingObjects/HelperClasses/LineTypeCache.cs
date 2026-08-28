@@ -25,7 +25,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects.HelperClasses
         {
             _dxfDocument = dxfDocument;
             BuildCache();
-        }   
+        }
         #endregion
 
         #region Methods
@@ -80,6 +80,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects.HelperClasses
                     FirstPatternIndex = (uint)patterns.Count,
                     PatternCount = (uint)lt.Pattern.Count,
                     PatternLength = lt.PatternLength,
+                    DashLength = lt.DashLength,
                 });
 
                 patterns.AddRange(lt.Pattern);

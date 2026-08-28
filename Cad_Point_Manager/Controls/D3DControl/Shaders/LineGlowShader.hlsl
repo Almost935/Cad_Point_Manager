@@ -36,16 +36,11 @@ struct VSInstance
 {
     float2 Start : START;
     float2 End : END;
-
     uint LayerId : LAYERID;
     uint LineTypeId : LINETYPEID;
-
-    // Continuous distance along the parent geometry
-    // where this GPU segment begins.
     float StartDistance : STARTDISTANCE;
-
-    // FORCE_START_VISIBLE / FORCE_END_VISIBLE
-    uint Flags : FLAGS;
+    uint Flags : FLAGS; // FORCE_START_VISIBLE / FORCE_END_VISIBLE
+    float ParentSegmentLength : PARENTSEGMENTLENGTH;
 };
 
 //-----------------------------------------------------------------------------
@@ -86,6 +81,8 @@ struct PSInput
     nointerpolation float SegmentLength : TEXCOORD9;
 
     nointerpolation uint Flags : TEXCOORD10;
+    
+    nointerpolation float ParentSegmentLength : TEXCOORD11;
 };
 
 //-----------------------------------------------------------------------------
@@ -326,7 +323,6 @@ float4 PSMain(PSInput input) : SV_TARGET
     float distanceToVisiblePixels = distanceToVisibleAlong * GlobalLineTypeScale * worldToPixels;
     float patternAlongDistance;
 
-// Are we physically before/after this GPU segment?
     if (input.AlongPixels < 0.0)
     {
         patternAlongDistance =
@@ -350,25 +346,18 @@ float4 PSMain(PSInput input) : SV_TARGET
         distanceToVisiblePixels;
     }
 
-//--------------------------------------------
-// Intentional geometry endpoints
-//--------------------------------------------
+    //--------------------------------------------
+    // Intentional geometry endpoints
+    //--------------------------------------------
 
-    bool forceStartVisible =
-    (input.Flags & FORCE_START_VISIBLE) != 0;
+    bool forceStartVisible = (input.Flags & FORCE_START_VISIBLE) != 0;
+    bool forceEndVisible = (input.Flags & FORCE_END_VISIBLE) != 0;
 
-    bool forceEndVisible =
-    (input.Flags & FORCE_END_VISIBLE) != 0;
-
-    float distanceToForcedEndpointPixels =
-    1e20;
+    float distanceToForcedEndpointPixels = 1e20;
 
     if (forceStartVisible)
     {
-        distanceToForcedEndpointPixels =
-        min(
-            distanceToForcedEndpointPixels,
-            abs(input.AlongPixels));
+        distanceToForcedEndpointPixels = min(distanceToForcedEndpointPixels, abs(input.AlongPixels));
     }
 
     if (forceEndVisible)
@@ -381,9 +370,9 @@ float4 PSMain(PSInput input) : SV_TARGET
                 input.LineLengthPixels));
     }
 
-//--------------------------------------------
-// Distance to nearest visible centerline
-//--------------------------------------------
+    //--------------------------------------------
+    // Distance to nearest visible centerline
+    //--------------------------------------------
 
     float alongDistance = min(patternAlongDistance, distanceToForcedEndpointPixels);
     float perpendicularDistance = abs(input.Side) * glowHalfWidth;

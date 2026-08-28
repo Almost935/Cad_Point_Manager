@@ -24,7 +24,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         #endregion
 
         #region Constructors
-        public DrawingPolyline(Polyline2D polyline2D, ObjectLayer layer, Vector4 objectColor, 
+        public DrawingPolyline(Polyline2D polyline2D, ObjectLayer layer, Vector4 objectColor,
             ColorType colorType, LineType lineType, bool isPartOfBlock = false, DrawingBlock block = null)
         {
             Type = DrawingObjectType.DrawingPolyline;
@@ -39,7 +39,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             UpdateColor();
             UpdateData();
         }
-        public DrawingPolyline(Polyline3D polyline3D, ObjectLayer layer, Vector4 objectColor, 
+        public DrawingPolyline(Polyline3D polyline3D, ObjectLayer layer, Vector4 objectColor,
             ColorType colorType, LineType lineType, bool isPartOfBlock = false, DrawingBlock block = null)
         {
             Type = DrawingObjectType.DrawingPolyline;
@@ -84,7 +84,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 throw new ArgumentException("entity must be of type Polyline2D or Polyline3D");
             }
         }
-     
+
         public override void DrawToPdf(
            XGraphics gfx,
            System.Windows.Media.Matrix worldToPdf,
@@ -182,6 +182,9 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                         }
                     }
                 }
+
+                PrepareLineTypeDistances();
+
                 LineInstances = DrawingSegments.SelectMany(s => s.LineInstances).ToArray();
                 UpdateBounds();
             }
@@ -232,7 +235,37 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 throw new ArgumentException("entity must be of type Polyline2D or Polyline3D");
             }
         }
-        #endregion
 
+        private void PrepareLineTypeDistances()
+        {
+            foreach (var segment in DrawingSegments)
+            {
+                if (segment.LineInstances is null || segment.LineInstances.Length == 0)
+                {
+                    continue;
+                }
+
+                float distance = 0.0f;
+                float parentLength = 0.0f;
+
+                for (int i = 0; i < segment.LineInstances.Length; i++)
+                {
+                    var instance = segment.LineInstances[i];
+                    parentLength += Vector2.Distance(instance.Start, instance.End);
+                }
+
+                for (int i = 0; i < segment.LineInstances.Length; i++)
+                {
+                    var instance = segment.LineInstances[i];
+                    instance.StartDistance = distance;
+                    instance.ParentSegmentLength = parentLength;
+
+                    distance += Vector2.Distance(instance.Start, instance.End);
+
+                    segment.LineInstances[i] = instance;
+                }
+            }
+        }
+        #endregion
     }
 }

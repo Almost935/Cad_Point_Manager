@@ -143,7 +143,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 }
 
                 lines.Add(
-                    new LineInstance(start, end, layerId, objectId, (float)accumulatedDistance, (uint)flags));
+                    new LineInstance(start, end, layerId, objectId, (float)accumulatedDistance, (uint)flags, Length));
 
                 double dx = (double)end.X - start.X;
                 double dy = (double)end.Y - start.Y;
@@ -161,7 +161,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 if (Vector2.DistanceSquared(first, last) > 1e-12f)
                 {
                     lines.Add(
-                        new LineInstance(last, first, layerId, objectId, (float)accumulatedDistance, (uint)LineInstanceFlags.None));
+                        new LineInstance(last, first, layerId, objectId, (float)accumulatedDistance, (uint)LineInstanceFlags.None, Length));
                 }
             }
 

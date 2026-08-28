@@ -241,7 +241,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 LineInstance lineInstance = new(
                     Vector2.TransformCoordinate(s, transform), 
                     Vector2.TransformCoordinate(e, transform), 
-                    layerId, objectId, 0, (uint)LineInstanceFlags.None);
+                    layerId, objectId, 0, (uint)LineInstanceFlags.None, 0);
 
                 lineInstances.Add(lineInstance);
             }

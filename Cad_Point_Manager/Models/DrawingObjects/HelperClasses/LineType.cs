@@ -16,7 +16,8 @@ namespace Cad_Point_Manager.Models.DrawingObjects.HelperClasses
         public netDxf.Tables.Linetype DxfLineType { get; init; }
         public string Name { get; init; } = "";
         public float PatternLength { get; private set; }
-        
+        public float DashLength { get; private set; }
+
         public IReadOnlyList<float> Pattern => _pattern;
 
         public string Description => DxfLineType.Description;
@@ -29,8 +30,14 @@ namespace Cad_Point_Manager.Models.DrawingObjects.HelperClasses
 
             foreach (var segment in linetype.Segments)
             {
-                _pattern.Add((float)segment.Length);
-                PatternLength += MathF.Abs((float)segment.Length);
+                float length = (float)segment.Length;
+                _pattern.Add(length);
+                PatternLength += MathF.Abs(length);
+
+                if (length > 0.0f)
+                {
+                    DashLength = MathF.Max(DashLength, length);
+                }
             }
         }
     }

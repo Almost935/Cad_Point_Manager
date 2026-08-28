@@ -334,72 +334,70 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public Vector2 Corner = new(side, along);
     }
     [StructLayout(LayoutKind.Sequential)]
-    public struct LineInstance(Vector2 start, Vector2 end, uint layerId, uint objectId, float startDistance, uint flags)
+    public struct LineInstance(Vector2 start, Vector2 end, uint layerId, uint objectId, float startDistance, uint flags, float parentSegmentLength)
     {
         public Vector2 Start = start;
         public Vector2 End = end;
-
         public uint LayerId = layerId;
         public uint ObjectId = objectId;
-
         public float StartDistance = startDistance;
-
         public uint Flags = flags;
+        public float ParentSegmentLength = parentSegmentLength;
 
         public readonly LineInstance Translate(Vector2 offset)
         {
             return new LineInstance(
-                Start + offset, 
-                End + offset, 
-                LayerId, 
-                ObjectId, 
-                StartDistance, 
-                Flags);
+                Start + offset,
+                End + offset,
+                LayerId,
+                ObjectId,
+                StartDistance,
+                Flags,
+                ParentSegmentLength);
         }
-
         public readonly LineInstance Transform(Matrix transform)
         {
             return new LineInstance(
                 Vector2.TransformCoordinate(Start, transform),
                 Vector2.TransformCoordinate(End, transform),
-                LayerId, 
+                LayerId,
                 ObjectId,
                 StartDistance,
-                Flags);
+                Flags,
+                ParentSegmentLength);
         }
     }
     [StructLayout(LayoutKind.Sequential)]
-    public struct LineGlowInstance(Vector2 start, Vector2 end, uint layerId, uint lineTypeId, float startDistance, uint flags)
+    public struct LineGlowInstance(Vector2 start, Vector2 end, uint layerId, uint lineTypeId, float startDistance, uint flags, float parentSegmentLength)
     {
         public Vector2 Start = start;
         public Vector2 End = end;
-
         public uint LayerId = layerId;
         public uint LineTypeId = lineTypeId;
-
         public float StartDistance = startDistance;
         public uint Flags = flags;
+        public float ParentSegmentLength = parentSegmentLength;
 
         public readonly LineGlowInstance Translate(Vector2 offset)
         {
-            return new LineGlowInstance(Start + offset, End + offset, LayerId, LineTypeId, StartDistance, Flags);
+            return new LineGlowInstance(Start + offset, End + offset, LayerId, LineTypeId, StartDistance, Flags, ParentSegmentLength);
         }
         public readonly LineGlowInstance Transform(Matrix transform)
         {
             return new LineGlowInstance(
                 Vector2.TransformCoordinate(Start, transform),
                 Vector2.TransformCoordinate(End, transform),
-                LayerId, LineTypeId, StartDistance, Flags);
+                LayerId, LineTypeId, StartDistance, Flags, ParentSegmentLength);
         }
     }
     [StructLayout(LayoutKind.Sequential)]
-    public struct LineTypeInfo
+    public struct LineTypeInfo(uint firstPatternIndex, uint patternCount, float patternLength, float dashLength)
     {
-        public uint FirstPatternIndex;
-        public uint PatternCount;
+        public uint FirstPatternIndex = firstPatternIndex;
+        public uint PatternCount = patternCount;
 
-        public float PatternLength;
-        public float Padding;
+        public float PatternLength = patternLength;
+        public float DashLength = dashLength;
     }
     [StructLayout(LayoutKind.Sequential)]
     public struct GlowCompositeVertex
@@ -501,16 +499,10 @@ namespace Cad_Point_Manager.Controls.D3DControl
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct PanVertex
+    public struct PanVertex(Vector2 position, Vector2 texCoord)
     {
-        public Vector2 Position;
-        public Vector2 TexCoord;
-
-        public PanVertex(Vector2 position, Vector2 texCoord)
-        {
-            Position = position;
-            TexCoord = texCoord;
-        }
+        public Vector2 Position = position;
+        public Vector2 TexCoord = texCoord;
     }
 
     [StructLayout(LayoutKind.Sequential)]

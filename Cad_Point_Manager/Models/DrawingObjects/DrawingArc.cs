@@ -68,10 +68,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 throw new ArgumentException("entity must be of type Arc");
             }
         }
-        public override void DrawToPdf(
-            XGraphics gfx,
-            System.Windows.Media.Matrix worldToPdf,
-            XPen pen)
+        public override void DrawToPdf(XGraphics gfx, System.Windows.Media.Matrix worldToPdf, XPen pen)
         {
             // 1) Center in PDF coords
             var cPdf = PdfDrawingHelpers.WorldToPdf(new SharpDX.Vector2(RadiusPoint.X, RadiusPoint.Y), worldToPdf);
@@ -97,17 +94,9 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             double start = PdfDrawingHelpers.NormalizeDeg(360.0 - StartAngle);
             double sweep = -Sweep;
 
-            // Optional: if you ever store arcs that cross 0 and Sweep got weird, you can recompute sweep:
-            // double end = NormalizeDeg(360.0 - EndAngle);
-            // double sweep = ComputeSweepCW(start, end);
-
             gfx.DrawArc(pen, rect, start, sweep);
         }
-        public override void UpdateVertices(
-    ResCache resCache,
-    uint layerId,
-    uint objectId,
-    uint lineTypeId)
+        public override void UpdateVertices(ResCache resCache, uint layerId, uint objectId, uint lineTypeId)
         {
             if (EntityObject is not Arc arc)
                 throw new ArgumentException("entity must be of type Arc");
@@ -135,7 +124,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                     flags |= LineInstanceFlags.ForceEndVisible;
                 }
 
-                LineInstance lineInstance = new(start, end, layerId, objectId, (float)accumulatedDistance, (uint)flags);
+                LineInstance lineInstance = new(start, end, layerId, objectId, (float)accumulatedDistance, (uint)flags, Length);
                 lineInstances.Add(lineInstance);
 
                 double segmentLength = Vector2.Distance(end, start);

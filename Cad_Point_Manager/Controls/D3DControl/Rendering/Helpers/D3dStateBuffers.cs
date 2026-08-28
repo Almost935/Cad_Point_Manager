@@ -211,7 +211,8 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Helpers
             {
                 FirstPatternIndex = firstPatternIndex,
                 PatternCount = (uint)lineType.Pattern.Count,
-                PatternLength = lineType.PatternLength
+                PatternLength = lineType.PatternLength,
+                DashLength = lineType.DashLength
             };
         }
 
