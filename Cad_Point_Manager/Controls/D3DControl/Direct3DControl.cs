@@ -20,7 +20,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private DeviceContext _deviceContext;
         private Texture2D _texture2D;
         private Texture2D _dxfTexture;
-        private Texture2D _frameTexture;
         private RenderTargetView _renderTargetView;
         private RenderTargetView _dxfRenderTargetView;
         private RenderTargetView _frameRenderTargetView;
@@ -279,7 +278,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             Disposer.SafeDispose(ref _d2dFactory);
             Disposer.SafeDispose(ref _d2dDevice);
             Disposer.SafeDispose(ref _d2dDeviceContext);
-            Disposer.SafeDispose(ref _frameTexture);
             Disposer.SafeDispose(ref _frameRenderTargetView);
         }
 
@@ -302,7 +300,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
                 Disposer.SafeDispose(ref _dxfTexture);
                 Disposer.SafeDispose(ref _texture2D);
-                Disposer.SafeDispose(ref _frameTexture);
                 Disposer.SafeDispose(ref _dxfRenderTargetView);
                 Disposer.SafeDispose(ref _renderTargetView);
                 Disposer.SafeDispose(ref _frameRenderTargetView);
@@ -322,22 +319,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 };
                 _texture2D = new Texture2D(_device, texture2DRenderDesc);
 
-                //_frameTexture = new Texture2D(
-                //    _device,
-                //    new Texture2DDescription
-                //    {
-                //        BindFlags = BindFlags.RenderTarget | BindFlags.ShaderResource,
-                //        Format = Format.B8G8R8A8_UNorm,
-                //        Width = width,
-                //        Height = height,
-                //        MipLevels = 1,
-                //        ArraySize = 1,
-                //        SampleDescription = new SampleDescription(1, 0),
-                //        Usage = ResourceUsage.Default,
-                //        OptionFlags = ResourceOptionFlags.None,
-                //        CpuAccessFlags = CpuAccessFlags.None
-                //    });
-
                 var offscreenRenderDesc = new Texture2DDescription
                 {
                     BindFlags = BindFlags.RenderTarget | BindFlags.ShaderResource,
@@ -355,6 +336,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 _dxfTexture = new Texture2D(_device, offscreenRenderDesc);
                 ResCache.DxfTexture = _dxfTexture;
 
+                ResCache.GlowTexture?.Dispose();
+                ResCache.GlowRenderTargetView?.Dispose();
+                ResCache.GlowShaderResourceView?.Dispose();
                 ResCache.GlowTexture = new Texture2D(_device, new Texture2DDescription
                 {
                     BindFlags = BindFlags.RenderTarget | BindFlags.ShaderResource,
@@ -371,6 +355,13 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 ResCache.GlowRenderTargetView = new RenderTargetView(_device, ResCache.GlowTexture);
                 ResCache.GlowShaderResourceView = new ShaderResourceView(_device, ResCache.GlowTexture);
 
+                ResCache.InteractionRenderTargetView?.Dispose();
+                ResCache.InteractionRenderTargetView = null;
+                ResCache.InteractionTexture?.Dispose();
+                ResCache.InteractionTexture = null;
+                ResCache.InteractionTexture = new Texture2D(_device, offscreenRenderDesc);
+                ResCache.InteractionRenderTargetView = new RenderTargetView(_device, ResCache.InteractionTexture);
+
                 var rtvDesc = new RenderTargetViewDescription
                 {
                     Dimension = RenderTargetViewDimension.Texture2D,
@@ -380,16 +371,12 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
                 _renderTargetView = new RenderTargetView(_device, _texture2D, rtvDesc);
                 _dxfRenderTargetView = new RenderTargetView(_device, _dxfTexture, rtvDesc);
-                //_frameRenderTargetView = new RenderTargetView(_device, _frameTexture, rtvDesc);
 
                 ResCache.Texture2D = _texture2D;
                 ResCache.RenderTargetView = _renderTargetView;
                 ResCache.DxfRenderTargetView = _dxfRenderTargetView;
-                //ResCache.FrameTexture = _frameTexture;
-                //ResCache.FrameRenderTargetView = _frameRenderTargetView;
 
                 _deviceContext.OutputMerger.SetRenderTargets(_renderTargetView);
-
                 _device.ImmediateContext.Rasterizer.SetViewport(0, 0, width, height, 0.0f, 1.0f);
 
                 OnTargetsResized(width, height);

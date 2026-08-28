@@ -56,8 +56,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private static readonly Vector4 AnchorHoverColor = new(0.67f, 1.00f, 1.00f, 1.00f);
         private static readonly Vector4 AnchorPressedColor = new(0.15f, 0.82f, 0.85f, 1.00f);
 
-        private bool _dxfDirty = true;
-        private bool _combinedDirty = true;
+        private bool _baseSceneDirty = true;
+        private bool _interactionDirty = true;
+
         private Buffer _transformationBuffer;
 
         private Point _pointerCoords;
@@ -580,33 +581,65 @@ namespace Cad_Point_Manager.Controls.D3DControl
             // Only Draw the cached pan if the user is actively panning, otherwise draw the full scene
             if (_isPanning)
             {
-                DrawCachedPan(ResCache.DeviceContext);
+                DrawCachedPan(ctx);
                 return;
             }
 
-            if (_dxfDirty)
+            //if (_baseSceneDirty)
+            //{
+            //    DrawDxf(ctx);
+            //    _baseSceneDirty = false;
+            //    _interactionDirty = true;
+            //}
+
+            //if (_interactionDirty)
+            //{
+            //    ctx.CopyResource(ResCache.DxfTexture, ResCache.Texture2D);
+            //    ctx.OutputMerger.SetRenderTargets(ResCache.RenderTargetView);
+
+            //    DrawLineGlows(ctx);
+            //    CompositeGlowTexture(ctx);
+
+            //    if (IsDragging && _dragFillVertexCount > 0) { DrawDragOverlay(ctx); }
+
+            //    if (_hoverCircleVertices.Count > 0) { DrawCogoPointHover(ctx); }
+            //    if (_anchorVerticesCount > 0) { DrawCogoPointAnchors(ctx); }
+            //    if (_sigPointVertexCount > 0) { DrawSignificantPoints(ctx); }
+            //    if (_msdfGlowInstanceCount > 0) { DrawMsdfGlowGlyphs(ctx); }
+
+            //    _interactionDirty = false;
+            //}
+
+            if (_baseSceneDirty)
             {
                 DrawDxf(ctx);
-                _dxfDirty = false;
-                _combinedDirty = true;
+
+                _baseSceneDirty = false;
+                _interactionDirty = true;
             }
 
-            if (_combinedDirty)
+            if (_interactionDirty)
             {
-                ctx.CopyResource(ResCache.DxfTexture, ResCache.Texture2D);
-                ctx.OutputMerger.SetRenderTargets(ResCache.RenderTargetView);
+                ctx.CopyResource(ResCache.DxfTexture, ResCache.InteractionTexture);
+                ctx.OutputMerger.SetRenderTargets(ResCache.InteractionRenderTargetView);
 
                 DrawLineGlows(ctx);
-                CompositeGlowTexture(ctx);
-
-                if (IsDragging && _dragFillVertexCount > 0) { DrawDragOverlay(ctx); }
+                CompositeGlowTexture(ctx, ResCache.InteractionRenderTargetView);
 
                 if (_hoverCircleVertices.Count > 0) { DrawCogoPointHover(ctx); }
                 if (_anchorVerticesCount > 0) { DrawCogoPointAnchors(ctx); }
                 if (_sigPointVertexCount > 0) { DrawSignificantPoints(ctx); }
                 if (_msdfGlowInstanceCount > 0) { DrawMsdfGlowGlyphs(ctx); }
 
-                _combinedDirty = false;
+                _interactionDirty = false;
+            }
+
+            ctx.CopyResource(ResCache.InteractionTexture, ResCache.Texture2D);
+            ctx.OutputMerger.SetRenderTargets(ResCache.RenderTargetView);
+
+            if (IsDragging && _dragFillVertexCount > 0)
+            {
+                DrawDragOverlay(ctx);
             }
         }
 
@@ -727,9 +760,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             ctx.DrawInstanced(6, _lineGlowInstanceCount, 0, 0);
         }
-        private void CompositeGlowTexture(DeviceContext ctx)
+        private void CompositeGlowTexture(DeviceContext ctx, RenderTargetView rtv)
         {
-            ctx.OutputMerger.SetRenderTargets(ResCache.RenderTargetView);
+            ctx.OutputMerger.SetRenderTargets(rtv);
             ctx.OutputMerger.SetBlendState(ResCache.BaseBlendState);
 
             ctx.VertexShader.Set(_lineGlowCompositeVS);
@@ -1044,7 +1077,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             StateBuffers.FlushAll();
             _lineVerticesDirty = false;
-            _dxfDirty = true;
+            _baseSceneDirty = true;
         }
         private void UpdateLineGlowInstances()
         {
@@ -1077,7 +1110,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             }
 
             _lineGlowVerticesDirty = false;
-            _combinedDirty = true;
+            _interactionDirty = true;
         }
         private void UpdateTextVertices()
         {
@@ -1094,7 +1127,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             StateBuffers.FlushAll();
             _textVerticesDirty = false;
-            _dxfDirty = true;
+            _baseSceneDirty = true;
         }
         private void UpdateSolidVertices()
         {
@@ -1111,7 +1144,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             StateBuffers.FlushAll();
             _solidVerticesDirty = false;
-            _dxfDirty = true;
+            _baseSceneDirty = true;
         }
         private void UpdateMsdfInstances()
         {
@@ -1161,7 +1194,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _msdfGlowInstanceCount = _msdfGlowInstances.Count;
 
             _msdfGlowVerticesDirty = false;
-            _combinedDirty = true;
+            _interactionDirty = true;
         }
         private void UpdatePointCircleVertices()
         {
@@ -1174,14 +1207,14 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             StateBuffers.FlushAll();
             _pointCircleVerticesDirty = false;
-            _dxfDirty = true;
+            _baseSceneDirty = true;
         }
         private void UpdateDragOverlayVertices(Rect r)
         {
             if (r.IsEmpty || r.Width <= 0 || r.Height <= 0 || !IsDragging)
             {
                 _dragFillVertexCount = 0;
-                _combinedDirty = true;
+                _dragOverlayDirty = false;
                 return;
             }
 
@@ -1218,7 +1251,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _dragFillVertexCount = 6;
 
             _dragOverlayDirty = false;
-            _combinedDirty = true;
         }
         private void UpdateCogoHoverVertices()
         {
@@ -1282,7 +1314,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _hoverCircleBuffer.Update(ctx, _hoverCircleVertices.ToArray());
 
             _cogoHoverVerticesDirty = false;
-            _combinedDirty = true;
+            _interactionDirty = true;
         }
         private void UpdateToggleAnchorVertices()
         {
@@ -1318,7 +1350,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _anchorInstanceBuffer.Update(ctx, CollectionsMarshal.AsSpan(inst));
             _anchorVerticesCount = inst.Count;
             _anchorVerticesDirty = false;
-            _combinedDirty = true;
+            _interactionDirty = true;
         }
         private void UpdateLeaderLineVertices()
         {
@@ -1350,7 +1382,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _leaderLineInstanceCount = list.Count;
             _leaderLineBuffer.Update(ResCache.DeviceContext, CollectionsMarshal.AsSpan(list));
             _leaderLineVerticesDirty = false;
-            _combinedDirty = true;
+            _interactionDirty = true;
         }
         private void UpdateSignificantPointVertices()
         {
@@ -1371,7 +1403,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _sigPointVertexBuffer.Update(ctx, CollectionsMarshal.AsSpan(vertices));
 
             _sigPointVerticesDirty = false;
-            _combinedDirty = true;
+            _interactionDirty = true;
         }
 
         private void InitializeLineShaders()
@@ -2058,8 +2090,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             ConstantBuffersDirty = false;
             CadManager.Camera.IsDirty = false;
-            _dxfDirty = true;
-            _combinedDirty = true;
+            _baseSceneDirty = true;
+            _interactionDirty = true;
         }
         private void UpdateTransformationBuffer()
         {
@@ -2087,7 +2119,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             TransformationBufferDirty = false;
             CadManager.Camera.IsDirty = false;
 
-            _dxfDirty = true;
+            _baseSceneDirty = true;
         }
         private void UpdateDrawingSettingsBuffer(float viewportWidth, float viewportHeight)
         {
@@ -2519,7 +2551,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 {
                     EndDrag();
                     UpdateDragRect();
-                    _combinedDirty = true;
+                    _interactionDirty = true;
                 }
             }
 
@@ -2569,7 +2601,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 if (IsMouseCaptured) { ReleaseMouseCapture(); }
                 e.Handled = true;
 
-                _combinedDirty = true;
+                _interactionDirty = true;
 
                 return;
             }
@@ -2681,10 +2713,10 @@ namespace Cad_Point_Manager.Controls.D3DControl
             ResetHoverObjects();
 
             if (sigPointsVerticesDirty) { _sigPointVerticesDirty = true; }
-            if (geometryVerticesDirty) { _dxfDirty = true; }
+            if (geometryVerticesDirty) { _baseSceneDirty = true; }
             if (lineGlowVerticesDirty) { _lineGlowVerticesDirty = true; }
             if (cogoHoverVerticesDirty) { _cogoHoverVerticesDirty = true; _msdfGlowVerticesDirty = true; }
-            if (cogoPointVerticesDirty) { _combinedDirty = true; _dxfDirty = true; }
+            if (cogoPointVerticesDirty) { _interactionDirty = true; _baseSceneDirty = true; }
 
             _suspendHitTesting = false;
         }
@@ -2767,8 +2799,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
             {
                 ResetSelectedObjects();
                 EndDrag();
-                _dxfDirty = true;
-                _combinedDirty = true;
+                _baseSceneDirty = true;
+                _interactionDirty = true;
             }
             if (e.Key == Key.Tab)
             {
@@ -2823,8 +2855,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         protected override void OnFrontBufferRestored()
         {
-            _dxfDirty = true;
-            _combinedDirty = true;
+            _baseSceneDirty = true;
+            _interactionDirty = true;
             ConstantBuffersDirty = true;
         }
 
@@ -2873,8 +2905,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             UpdateToggleAnchorBounds(point);
 
-            _combinedDirty = true;
-            _dxfDirty = true;
+            _interactionDirty = true;
+            _baseSceneDirty = true;
         }
         private bool SetCogoPointLabelQuadrant(CogoPoint point, Vector2 offset)
         {
@@ -2953,7 +2985,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 DragRect = new(0, 0, 0, 0);
 
                 _dragOverlayDirty = true;
-                _combinedDirty = true;
+                _interactionDirty = true;
 
                 return;
             }
@@ -2967,7 +2999,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             DragRect = new(left, top, width, height);
 
             _dragOverlayDirty = true;
-            _combinedDirty = true;
+            _interactionDirty = true;
         }
         public void EndDrag()
         {
@@ -3587,7 +3619,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             StateController.FlushPointUpdates();
             StateController.FlushObjectUpdates();
             _sigPointVerticesDirty = true;
-            _dxfDirty = _combinedDirty = true;
+            _baseSceneDirty = _interactionDirty = true;
         }
 
         private void MouseOverCogoToggleButton(CogoPoint cogoPoint)
@@ -3698,8 +3730,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _cogoHoverVerticesDirty = true;
             _msdfGlowVerticesDirty = true;
 
-            _combinedDirty = true;
-            _dxfDirty = true;
+            _interactionDirty = true;
+            _baseSceneDirty = true;
         }
 
         private Vector2 DipToPixel(Vector2 dip)
@@ -3956,7 +3988,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 {
                     StateController.SetLayerVisibility(layer, layer.IsVisible);
                     StateController.FlushLayerUpdates();
-                    _dxfDirty = true;
+                    _baseSceneDirty = true;
                 }
             }
             if (e.PropertyName == nameof(ObjectLayer.Color))
@@ -3965,7 +3997,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 {
                     StateController.SetLayerColor(layer, layer.Color);
                     StateController.FlushLayerUpdates();
-                    _dxfDirty = true;
+                    _baseSceneDirty = true;
                 }
             }
         }
@@ -3977,8 +4009,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 {
                     StateController.SetGroupVisibility(pg, pg.IsVisible);
                     StateController.FlushGroupUpdates();
-                    _dxfDirty = true;
-                    _combinedDirty = true;
+                    _baseSceneDirty = true;
+                    _interactionDirty = true;
                 }
                 if (e.PropertyName == nameof(PointGroup.Color) || e.PropertyName == nameof(PointGroup.PointScale))
                 {
@@ -4009,8 +4041,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
                         UpdateInitialMatrix();
                     }
 
-                    _dxfDirty = true;
-                    _combinedDirty = true;
+                    _baseSceneDirty = true;
+                    _interactionDirty = true;
                 }
                 if (e.PropertyName == nameof(PointGroup.PointInfoBaseXoffset))
                 {
@@ -4018,8 +4050,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     {
                         UpdateToggleAnchorBounds(point);
                     }
-                    _combinedDirty = true;
-                    _dxfDirty = true;
+                    _interactionDirty = true;
+                    _baseSceneDirty = true;
                 }
                 if (e.PropertyName == nameof(PointGroup.Name))
                 {
@@ -4040,7 +4072,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     CadManager.UpdateCogoPointTree();
                     UpdateInitialMatrix();
 
-                    _pointCircleVerticesDirty = true; _dxfDirty = true; _combinedDirty = true;
+                    _pointCircleVerticesDirty = true; _baseSceneDirty = true; _interactionDirty = true;
                 }
             }
             if (e.PropertyName == nameof(CogoPoint.PointGroup))
@@ -4058,7 +4090,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     CadManager.UpdateCogoPointTree();
                     UpdateInitialMatrix();
 
-                    _dxfDirty = true; _combinedDirty = true;
+                    _baseSceneDirty = true; _interactionDirty = true;
                 }
             }
             if (e.PropertyName == nameof(CogoPoint.PointNumber) ||

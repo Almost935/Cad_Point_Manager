@@ -52,6 +52,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public RenderTargetView GlowRenderTargetView { get; set; }
         public ShaderResourceView GlowShaderResourceView { get; set; }
 
+        public Texture2D InteractionTexture { get; set; }
+        public RenderTargetView InteractionRenderTargetView { get; set; }
+
         public FontFace CogoPointFontFace { get; set; }
         public ConcurrentDictionary<
             (string fontName, FontWeight fontWeight, FontStretch fontStretch,
@@ -220,6 +223,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     GlowRenderTargetView?.Dispose();
                     GlowShaderResourceView?.Dispose();
                     GlowTexture?.Dispose();
+
+                    InteractionRenderTargetView?.Dispose();
+                    InteractionTexture?.Dispose();
 
                     foreach (var fontFace in FontFaceDict.Values)
                     {
