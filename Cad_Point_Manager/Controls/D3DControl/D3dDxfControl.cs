@@ -697,10 +697,13 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
         private void DrawLineGlows(DeviceContext ctx)
         {
-            if (_lineInstanceBuffer is null || _lineInstanceCount == 0) { return; }
-
             ctx.OutputMerger.SetRenderTargets(ResCache.GlowRenderTargetView);
             ctx.ClearRenderTargetView(ResCache.GlowRenderTargetView, new RawColor4(0, 0, 0, 0));
+
+            if (_lineGlowInstanceBuffer is null || _lineGlowInstanceCount == 0)
+            {
+                return;
+            }
 
             ctx.OutputMerger.SetBlendState(ResCache.MaxBlendState);
 
@@ -712,14 +715,13 @@ namespace Cad_Point_Manager.Controls.D3DControl
             ctx.InputAssembler.PrimitiveTopology = PrimitiveTopology.TriangleList;
 
             var quadBinding = new VertexBufferBinding(_lineQuadBuffer, Utilities.SizeOf<LineCornerVertex>(), 0);
-
-            var instanceBinding =
-                new VertexBufferBinding(_lineInstanceBuffer.Buffer, _lineInstanceBuffer.Stride, 0);
+            var instanceBinding = new VertexBufferBinding(_lineGlowInstanceBuffer.Buffer, _lineGlowInstanceBuffer.Stride, 0);
 
             ctx.InputAssembler.SetVertexBuffers(0, quadBinding, instanceBinding);
 
             ctx.VertexShader.SetConstantBuffer(0, _transformationBuffer);
             ctx.VertexShader.SetConstantBuffer(1, _drawingSettingsBuffer);
+
             ctx.PixelShader.SetConstantBuffer(1, _drawingSettingsBuffer);
 
             ctx.PixelShader.SetShaderResource(0, StateBuffers.LayerSRV);
@@ -727,7 +729,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             ctx.PixelShader.SetShaderResource(2, StateBuffers.LineTypeSRV);
             ctx.PixelShader.SetShaderResource(3, StateBuffers.PatternSRV);
 
-            ctx.DrawInstanced(6, _lineInstanceCount, 0, 0);
+            ctx.DrawInstanced(6, _lineGlowInstanceCount, 0, 0);
         }
         private void CompositeGlowTexture(DeviceContext ctx, RenderTargetView rtv)
         {
@@ -3173,7 +3175,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             if (lineGlowVerticesDirty)
             {
                 StateController.FlushObjectUpdates();
-                _interactionDirty = true;
+                _lineGlowVerticesDirty = true;
             }
         }
         private void RunCogoPointsHitTest(CancellationToken token)
@@ -3393,15 +3395,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
             if (lineGlowVerticesDirty)
             {
                 StateController.FlushObjectUpdates();
-                _interactionDirty = true;
+                _lineGlowVerticesDirty = true;
             }
-
-            //if (flushObjectStates)
-            //{
-            //    StateController.FlushObjectUpdates();
-            //    //_dxfDirty = true;
-            //    _combinedDirty = true;
-            //}
         }
         public void CancelHitTesting()
         {
@@ -4137,6 +4132,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
                     _lineGlowVertexShader?.Dispose(); _lineGlowVertexShader = null;
                     _lineGlowPixelShader?.Dispose(); _lineGlowPixelShader = null;
+                    _lineGlowInstanceBuffer?.Dispose();
+                    _lineGlowInstanceBuffer = null;
 
                     _solidInputLayout?.Dispose(); _solidInputLayout = null;
                     _solidPixelShader?.Dispose(); _solidPixelShader = null;
