@@ -368,29 +368,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
     }
     [StructLayout(LayoutKind.Sequential)]
-    public struct LineGlowInstance(Vector2 start, Vector2 end, uint layerId, uint lineTypeId, float startDistance, uint flags, float parentSegmentLength)
-    {
-        public Vector2 Start = start;
-        public Vector2 End = end;
-        public uint LayerId = layerId;
-        public uint LineTypeId = lineTypeId;
-        public float StartDistance = startDistance;
-        public uint Flags = flags;
-        public float ParentSegmentLength = parentSegmentLength;
-
-        public readonly LineGlowInstance Translate(Vector2 offset)
-        {
-            return new LineGlowInstance(Start + offset, End + offset, LayerId, LineTypeId, StartDistance, Flags, ParentSegmentLength);
-        }
-        public readonly LineGlowInstance Transform(Matrix transform)
-        {
-            return new LineGlowInstance(
-                Vector2.TransformCoordinate(Start, transform),
-                Vector2.TransformCoordinate(End, transform),
-                LayerId, LineTypeId, StartDistance, Flags, ParentSegmentLength);
-        }
-    }
-    [StructLayout(LayoutKind.Sequential)]
     public struct LineTypeInfo(uint firstPatternIndex, uint patternCount, float patternLength, float dashLength)
     {
         public uint FirstPatternIndex = firstPatternIndex;

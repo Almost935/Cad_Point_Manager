@@ -98,18 +98,17 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private bool _lineVerticesDirty = false;
 
         // Line glow shader related fields
-        private ResizableVertexBuffer<LineGlowInstance> _lineGlowInstanceBuffer;
-        private int _lineGlowInstanceCount;
-        private bool _lineGlowVerticesDirty = false;
         private VertexShader _lineGlowVertexShader;
         private PixelShader _lineGlowPixelShader;
-        private InputLayout _lineGlowInstanceInputLayout;
         private Buffer _lineGlowCompositeVertexBuffer;
         private VertexShader _lineGlowCompositeVS;
         private PixelShader _lineGlowCompositePS;
         private InputLayout _lineGlowCompositeLayout;
         private SamplerState _lineGlowCompositeSampler;
         private bool _lineGlowShadersLoaded = false;
+        private ResizableBuffer<LineInstance> _lineGlowInstanceBuffer;
+        private int _lineGlowInstanceCount = 0;
+        private bool _lineGlowVerticesDirty = false;
 
         // Text shader related fields
         private ResizableBuffer<TextVertex> _textVertexBuffer;
@@ -585,31 +584,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 return;
             }
 
-            //if (_baseSceneDirty)
-            //{
-            //    DrawDxf(ctx);
-            //    _baseSceneDirty = false;
-            //    _interactionDirty = true;
-            //}
-
-            //if (_interactionDirty)
-            //{
-            //    ctx.CopyResource(ResCache.DxfTexture, ResCache.Texture2D);
-            //    ctx.OutputMerger.SetRenderTargets(ResCache.RenderTargetView);
-
-            //    DrawLineGlows(ctx);
-            //    CompositeGlowTexture(ctx);
-
-            //    if (IsDragging && _dragFillVertexCount > 0) { DrawDragOverlay(ctx); }
-
-            //    if (_hoverCircleVertices.Count > 0) { DrawCogoPointHover(ctx); }
-            //    if (_anchorVerticesCount > 0) { DrawCogoPointAnchors(ctx); }
-            //    if (_sigPointVertexCount > 0) { DrawSignificantPoints(ctx); }
-            //    if (_msdfGlowInstanceCount > 0) { DrawMsdfGlowGlyphs(ctx); }
-
-            //    _interactionDirty = false;
-            //}
-
             if (_baseSceneDirty)
             {
                 DrawDxf(ctx);
@@ -677,7 +651,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         private void DrawLines(DeviceContext ctx)
         {
-            if (_lineInstanceBuffer is null) { return; }
+            if (_lineInstanceBuffer is null || _lineInstanceCount == 0) { return; }
 
             // First pass for all non selected lines
             SetLineRenderMode(ctx, false, false);
@@ -726,13 +700,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             if (_lineInstanceBuffer is null || _lineInstanceCount == 0) { return; }
 
             ctx.OutputMerger.SetRenderTargets(ResCache.GlowRenderTargetView);
-
             ctx.ClearRenderTargetView(ResCache.GlowRenderTargetView, new RawColor4(0, 0, 0, 0));
-
-            if (_lineGlowInstanceBuffer is null || _lineGlowInstanceCount == 0)
-            {
-                return;
-            }
 
             ctx.OutputMerger.SetBlendState(ResCache.MaxBlendState);
 
@@ -740,13 +708,13 @@ namespace Cad_Point_Manager.Controls.D3DControl
             ctx.PixelShader.Set(_lineGlowPixelShader);
             ctx.GeometryShader.Set(null);
 
-            ctx.InputAssembler.InputLayout = _lineGlowInstanceInputLayout;
+            ctx.InputAssembler.InputLayout = _lineInstanceInputLayout;
             ctx.InputAssembler.PrimitiveTopology = PrimitiveTopology.TriangleList;
 
             var quadBinding = new VertexBufferBinding(_lineQuadBuffer, Utilities.SizeOf<LineCornerVertex>(), 0);
 
             var instanceBinding =
-                new VertexBufferBinding(_lineGlowInstanceBuffer.Buffer, _lineGlowInstanceBuffer.Stride, 0);
+                new VertexBufferBinding(_lineInstanceBuffer.Buffer, _lineInstanceBuffer.Stride, 0);
 
             ctx.InputAssembler.SetVertexBuffers(0, quadBinding, instanceBinding);
 
@@ -755,10 +723,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
             ctx.PixelShader.SetConstantBuffer(1, _drawingSettingsBuffer);
 
             ctx.PixelShader.SetShaderResource(0, StateBuffers.LayerSRV);
-            ctx.PixelShader.SetShaderResource(1, StateBuffers.LineTypeSRV);
-            ctx.PixelShader.SetShaderResource(2, StateBuffers.PatternSRV);
+            ctx.PixelShader.SetShaderResource(1, StateBuffers.ObjectSRV);
+            ctx.PixelShader.SetShaderResource(2, StateBuffers.LineTypeSRV);
+            ctx.PixelShader.SetShaderResource(3, StateBuffers.PatternSRV);
 
-            ctx.DrawInstanced(6, _lineGlowInstanceCount, 0, 0);
+            ctx.DrawInstanced(6, _lineInstanceCount, 0, 0);
         }
         private void CompositeGlowTexture(DeviceContext ctx, RenderTargetView rtv)
         {
@@ -775,13 +744,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
             ctx.InputAssembler.SetVertexBuffers(
                 0, new VertexBufferBinding(_lineGlowCompositeVertexBuffer, Utilities.SizeOf<GlowCompositeVertex>(), 0));
 
-            ctx.PixelShader.SetShaderResource(
-                0,
-                ResCache.GlowShaderResourceView);
+            ctx.PixelShader.SetShaderResource(0, ResCache.GlowShaderResourceView);
 
-            ctx.PixelShader.SetSampler(
-                0,
-                _lineGlowCompositeSampler);
+            ctx.PixelShader.SetSampler(0, _lineGlowCompositeSampler);
 
             ctx.Draw(6, 0);
             ctx.PixelShader.SetShaderResource(0, null);
@@ -1081,33 +1046,42 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
         private void UpdateLineGlowInstances()
         {
-            var instances = new List<LineGlowInstance>();
-
-            var mouseOver = new HashSet<DrawingGeometry>(_mouseOverHitTestableObjects.OfType<DrawingGeometry>());
-
-            foreach (var geometry in mouseOver)
+            if (_lineGlowInstanceBuffer is null)
             {
-                foreach (var line in geometry.LineInstances)
+                _lineGlowVerticesDirty = false;
+                return;
+            }
+
+            int estimatedCount = 0;
+
+            foreach (var obj in _mouseOverHitTestableObjects)
+            {
+                if (obj is DrawingGeometry geometry)
                 {
-                    instances.Add(new LineGlowInstance
-                    {
-                        Start = line.Start,
-                        End = line.End,
-                        LayerId = line.LayerId,
-                        LineTypeId = geometry.LineType.Id,
-                        StartDistance = line.StartDistance,
-                        Flags = line.Flags,
-                        ParentSegmentLength = line.ParentSegmentLength
-                    });
+                    estimatedCount += geometry.LineInstances.Count();
                 }
             }
 
-            _lineGlowInstanceCount = instances.Count;
-
-            if (_lineGlowInstanceCount > 0)
+            if (estimatedCount == 0)
             {
-                _lineGlowInstanceBuffer.Update(ResCache.DeviceContext, CollectionsMarshal.AsSpan(instances));
+                _lineGlowInstanceCount = 0;
+                _lineGlowVerticesDirty = false;
+                _interactionDirty = true;
+                return;
             }
+
+            var instances = new List<LineInstance>(estimatedCount);
+
+            foreach (var obj in _mouseOverHitTestableObjects)
+            {
+                if (obj is not DrawingGeometry geometry) { continue; }
+
+                instances.AddRange(geometry.LineInstances);
+            }
+
+            _lineGlowInstanceBuffer.Update(ResCache.DeviceContext, CollectionsMarshal.AsSpan(instances));
+
+            _lineGlowInstanceCount = instances.Count;
 
             _lineGlowVerticesDirty = false;
             _interactionDirty = true;
@@ -1464,22 +1438,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             _lineGlowVertexShader = new VertexShader(device, vsBytecode);
             _lineGlowPixelShader = new PixelShader(device, psBytecode);
-
-            _lineGlowInstanceInputLayout = new InputLayout(device, ShaderSignature.GetInputSignature(vsBytecode),
-            new[]
-            {
-                // slot 0 - quad
-                new InputElement("LOCAL",0,Format.R32G32_Float,0,0,InputClassification.PerVertexData,0),
-
-                // slot 1 - LineGlowInstance
-                new InputElement("START",0,Format.R32G32_Float,0,1,InputClassification.PerInstanceData,1),
-                new InputElement("END",0,Format.R32G32_Float,8,1,InputClassification.PerInstanceData,1),
-                new InputElement("LAYERID",0,Format.R32_UInt,16,1,InputClassification.PerInstanceData,1),
-                new InputElement("LINETYPEID",0,Format.R32_UInt,20,1,InputClassification.PerInstanceData,1),
-                new InputElement("STARTDISTANCE",0,Format.R32_Float,24,1,InputClassification.PerInstanceData,1),
-                new InputElement("FLAGS",0,Format.R32_UInt,28,1,InputClassification.PerInstanceData,1),
-                new InputElement("PARENTSEGMENTLENGTH",0,Format.R32_Float,32,1,InputClassification.PerInstanceData,1)
-            });
 
             // Load Composite Shaders
             string compositeShaderPath = Path.Combine(path, @"Controls\D3DControl\Shaders\GlowCompositeShader.hlsl");
@@ -1906,7 +1864,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _lineInstanceBuffer = new ResizableBuffer<LineInstance>(device, GlobalHelperProperties.InitialLineVertices / 2);
 
             _lineGlowInstanceBuffer?.Dispose();
-            _lineGlowInstanceBuffer = new ResizableVertexBuffer<LineGlowInstance>(device, 256);
+            _lineGlowInstanceBuffer = new ResizableBuffer<LineInstance>(device, 256);
 
             _textVertexBuffer?.Dispose();
             _textVertexBuffer = new(device, GlobalHelperProperties.InitialTextVertices);
@@ -2582,7 +2540,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     _lineVerticesDirty = true;
                     _cogoHoverVerticesDirty = true;
                     _msdfGlowVerticesDirty = true;
-                    _lineGlowVerticesDirty = true;
                 }
             }
         }
@@ -2714,7 +2671,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             if (sigPointsVerticesDirty) { _sigPointVerticesDirty = true; }
             if (geometryVerticesDirty) { _baseSceneDirty = true; }
-            if (lineGlowVerticesDirty) { _lineGlowVerticesDirty = true; }
+            if (lineGlowVerticesDirty) { StateController.FlushObjectUpdates(); _interactionDirty = true; }
             if (cogoHoverVerticesDirty) { _cogoHoverVerticesDirty = true; _msdfGlowVerticesDirty = true; }
             if (cogoPointVerticesDirty) { _interactionDirty = true; _baseSceneDirty = true; }
 
@@ -2999,7 +2956,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             DragRect = new(left, top, width, height);
 
             _dragOverlayDirty = true;
-            _interactionDirty = true;
         }
         public void EndDrag()
         {
@@ -3156,7 +3112,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 _hittestStrokeThickness * 2, _hittestStrokeThickness * 2);
             var snappedObjectsCopy = _mouseOverHitTestableObjects.ToList();
 
-            bool flushObjectStates = false;
             bool lineGlowVerticesDirty = false;
 
             if (_mouseOverHitTestableObjects is not null && _mouseOverHitTestableObjects.Count > 0)
@@ -3166,7 +3121,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     if (snappedObj.DistanceToPoint(_lastHitTestCoords) > _hittestStrokeThickness)
                     {
                         ResetHoverObjects();
-                        flushObjectStates = true;
                         lineGlowVerticesDirty = true;
 
                         _nearestHitTestableGeometries = CadManager.HitTestGeometries(_lastHitTestCoords, _hittestStrokeThickness).Take(_maxSelectableObjects).ToList();
@@ -3210,20 +3164,17 @@ namespace Cad_Point_Manager.Controls.D3DControl
                             _mouseOverHitTestableObjects.Add(geometry);
                             HoverObject(geometry);
                             lineGlowVerticesDirty = true;
-                            flushObjectStates = true;
                             _lastSnapHitTestIndex = _currentSnapHitTestIndex;
                         }
                     }
                 }
             }
 
-            if (lineGlowVerticesDirty) { _lineGlowVerticesDirty = true; }
-            //if (flushObjectStates)
-            //{
-            //    //StateController.FlushObjectUpdates();
-            //    _combinedDirty = true;
-            //    //_dxfDirty = true;
-            //}
+            if (lineGlowVerticesDirty)
+            {
+                StateController.FlushObjectUpdates();
+                _interactionDirty = true;
+            }
         }
         private void RunCogoPointsHitTest(CancellationToken token)
         {
@@ -3441,7 +3392,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             if (lineGlowVerticesDirty)
             {
-                _lineGlowVerticesDirty = true;
+                StateController.FlushObjectUpdates();
+                _interactionDirty = true;
             }
 
             //if (flushObjectStates)
@@ -3757,7 +3709,10 @@ namespace Cad_Point_Manager.Controls.D3DControl
         {
             CadManager.Camera.ResetView(Matrix.Identity, CadManager.Extents);
             ResetHoverObjects();
-            _lineVerticesDirty = _textVerticesDirty = _lineGlowVerticesDirty = true;
+
+            StateController.FlushObjectUpdates();
+
+            _lineVerticesDirty = _textVerticesDirty = _interactionDirty = true;
         }
 
         private static void OnCadManagerChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -4180,8 +4135,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     _linePixelShader?.Dispose(); _linePixelShader = null;
                     _lineInstanceInputLayout?.Dispose(); _lineInstanceInputLayout = null;
 
-                    _lineGlowInstanceBuffer?.Dispose(); _lineGlowInstanceBuffer = null;
-                    _lineGlowInstanceInputLayout?.Dispose(); _lineGlowInstanceInputLayout = null;
                     _lineGlowVertexShader?.Dispose(); _lineGlowVertexShader = null;
                     _lineGlowPixelShader?.Dispose(); _lineGlowPixelShader = null;
 

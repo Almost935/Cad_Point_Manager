@@ -55,29 +55,17 @@ struct VSInstance
 struct PSInput
 {
     float4 Position : SV_POSITION;
-
     float Side : TEXCOORD0;
     float Distance : TEXCOORD1;
     float LineLength : TEXCOORD2;
-
     nointerpolation uint LayerId : TEXCOORD3;
     nointerpolation uint ObjectId : TEXCOORD4;
-
     float AlongPixels : TEXCOORD5;
     nointerpolation float LineLengthPixels : TEXCOORD6;
-    
-    // Continuous distance along parent DXF entity.
     float PathDistance : TEXCOORD7;
-
-    // Local distance along this GPU segment.
     float SegmentDistance : TEXCOORD8;
-
-    // Length of this individual GPU segment.
     nointerpolation float SegmentLength : TEXCOORD9;
-
-    // Tells us whether this GPU segment contains a real entity endpoint.
     nointerpolation uint Flags : TEXCOORD10;
-    
     nointerpolation float ParentSegmentLength : TEXCOORD11;
 };
 

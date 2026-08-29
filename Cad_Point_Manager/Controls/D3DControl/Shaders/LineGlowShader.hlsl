@@ -37,7 +37,7 @@ struct VSInstance
     float2 Start : START;
     float2 End : END;
     uint LayerId : LAYERID;
-    uint LineTypeId : LINETYPEID;
+    uint ObjectId : OBJECTID;
     float StartDistance : STARTDISTANCE;
     uint Flags : FLAGS; // FORCE_START_VISIBLE / FORCE_END_VISIBLE
     float ParentSegmentLength : PARENTSEGMENTLENGTH;
@@ -54,7 +54,7 @@ struct PSInput
     float Distance : TEXCOORD1;
     float LineLength : TEXCOORD2;
     nointerpolation uint LayerId : TEXCOORD3;
-    nointerpolation uint LineTypeId : TEXCOORD4;
+    nointerpolation uint ObjectId : TEXCOORD4;
     float AlongPixels : TEXCOORD5;
     nointerpolation float LineLengthPixels : TEXCOORD6;
     float PathDistance : TEXCOORD7;
@@ -74,7 +74,13 @@ struct LayerState
     uint Flags;
     float3 Padding;
 };
-
+struct ObjectState
+{
+    uint Flags;
+    uint LineTypeId;
+    float2 Padding;
+    float4 Color;
+};
 struct LineTypeInfo
 {
     uint FirstPatternIndex;
@@ -84,10 +90,12 @@ struct LineTypeInfo
 };
 
 StructuredBuffer<LayerState> LayerStates : register(t0);
-StructuredBuffer<LineTypeInfo> LineTypeInfos : register(t1);
-StructuredBuffer<float> PatternData : register(t2);
+StructuredBuffer<ObjectState> ObjectStates : register(t1);
+StructuredBuffer<LineTypeInfo> LineTypeInfos : register(t2);
+StructuredBuffer<float> PatternData : register(t3);
 
 static const uint LAYER_VISIBLE = 1u << 0;
+static const uint OBJECT_MOUSEOVER = 1u << 2;
 
 //-----------------------------------------------------------------------------
 // Vertex shader
@@ -204,7 +212,7 @@ PSInput VSMain(VSInput vertex, VSInstance instance)
     //--------------------------------------------
 
     output.LayerId = instance.LayerId;
-    output.LineTypeId = instance.LineTypeId;
+    output.ObjectId = instance.ObjectId;
     output.Flags = instance.Flags;
     output.ParentSegmentLength = instance.ParentSegmentLength;
 
@@ -217,20 +225,22 @@ PSInput VSMain(VSInput vertex, VSInstance instance)
 
 float4 PSMain(PSInput input) : SV_TARGET
 {
-    //--------------------------------------------
-    // Layer visibility
-    //--------------------------------------------
-
     LayerState ls = LayerStates[input.LayerId];
+    ObjectState os = ObjectStates[input.ObjectId];
+    LineTypeInfo lti = LineTypeInfos[os.LineTypeId];
+    
+    //--------------------------------------------
+    // Visibility
+    //--------------------------------------------
 
     if ((ls.Flags & LAYER_VISIBLE) == 0)
+        discard;
+    if ((os.Flags & OBJECT_MOUSEOVER) == 0)
         discard;
 
     //--------------------------------------------
     // Linetype
     //--------------------------------------------
-
-    LineTypeInfo lti = LineTypeInfos[input.LineTypeId];
 
     bool visible = true;
     float distanceToVisibleAlong = 0.0;
