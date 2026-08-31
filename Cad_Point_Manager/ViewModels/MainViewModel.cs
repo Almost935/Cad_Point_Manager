@@ -47,7 +47,6 @@ namespace Cad_Point_Manager.ViewModels
         private BatchableObservableCollection<KeyValuePair<string, ObjectLayer>> _layers = [];
         private BatchableObservableCollection<PointGroup> _pointGroups = [];
         private BatchableObservableCollection<CogoPoint> _cogoPoints = [];
-        private BatchableObservableCollection<CogoPoint> _selectedCogoPoints = [];
         private HitTestablePoint _snappedHitTestablePoint;
         private BatchableObservableCollection<HitTestablePoint> _selectedHitTestablePoints = [];
         private BatchableObservableCollection<DrawingGeometry> _selectedGeometries = [];
@@ -55,7 +54,7 @@ namespace Cad_Point_Manager.ViewModels
         private double _vertexSnapTolerance = 1e-4;
         private Point _mousePosition = new();
         private ResCache _resCache = new ResCache();
-        private SelectionMode SelectionMode;
+        private SelectionMode _selectionMode;
 
         // CogoPoint Creation Fields
         private int _newCogoPointsStartCount = 1;
@@ -163,15 +162,6 @@ namespace Cad_Point_Manager.ViewModels
                     _cogoPoints = value;
                     OnPropertyChanged(nameof(CogoPoints));
                 }
-            }
-        }
-        public BatchableObservableCollection<CogoPoint> SelectedCogoPoints
-        {
-            get => _selectedCogoPoints;
-            set
-            {
-                _selectedCogoPoints = value;
-                OnPropertyChanged(nameof(SelectedCogoPoints));
             }
         }
         public HitTestablePoint SnappedHitTestablePoint

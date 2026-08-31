@@ -159,10 +159,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
         // MSDF glow rendering
         private VertexShader _msdfGlowVS;
         private PixelShader _msdfGlowPS;
-        private ResizableBuffer<MsdfGlyphInstance> _msdfGlowInstanceBuffer;
-        private readonly List<MsdfGlyphInstance> _msdfGlowInstances = [];
-        private int _msdfGlowInstanceCount;
-        private bool _msdfGlowVerticesDirty = false;
 
         // Point circle shader related fields
         private ResizableBuffer<PointMarkerInstance> _pointCircleVertexBuffer;
@@ -543,7 +539,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             if (_textVerticesDirty) { UpdateTextVertices(); }
             if (_solidVerticesDirty) { UpdateSolidVertices(); }
             if (_cogoTextVerticesDirty) { UpdateMsdfInstances(); }
-            if (_msdfGlowVerticesDirty) { UpdateMsdfGlowInstances(); }
             if (_pointCircleVerticesDirty) { UpdatePointCircleVertices(); }
             if (_cogoHoverVerticesDirty) { UpdateCogoHoverVertices(); }
             if (HitTestableObjectTreeDirty) { LoadHitTestableObjectTree(); }
@@ -603,7 +598,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 if (_hoverCircleVertices.Count > 0) { DrawCogoPointHover(ctx); }
                 if (_anchorVerticesCount > 0) { DrawCogoPointAnchors(ctx); }
                 if (_sigPointVertexCount > 0) { DrawSignificantPoints(ctx); }
-                if (_msdfGlowInstanceCount > 0) { DrawMsdfGlowGlyphs(ctx); }
+                if (_msdfInstanceCount > 0) { DrawMsdfGlowGlyphs(ctx); }
 
                 _interactionDirty = false;
             }
@@ -827,7 +822,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
         private void DrawMsdfGlowGlyphs(DeviceContext ctx)
         {
-            if (_msdfGlowInstanceCount == 0) { return; }
+            if (_msdfInstanceCount == 0) { return; }
 
             ctx.VertexShader.Set(_msdfGlowVS);
             ctx.PixelShader.Set(_msdfGlowPS);
@@ -852,11 +847,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
             ctx.PixelShader.SetShaderResource(3, ResCache.CogoPointMsdfAtlas.ShaderResourceView);
 
             var quadBinding = new VertexBufferBinding(_msdfQuadBuffer, Utilities.SizeOf<MsdfVertex>(), 0);
-            var instanceBinding = new VertexBufferBinding(_msdfGlowInstanceBuffer.Buffer, _msdfGlowInstanceBuffer.Stride, 0);
+            var instanceBinding = new VertexBufferBinding(_msdfInstanceBuffer.Buffer, _msdfInstanceBuffer.Stride, 0);
 
             ctx.InputAssembler.SetVertexBuffers(0, quadBinding, instanceBinding);
 
-            ctx.DrawInstanced(6, _msdfGlowInstanceCount, 0, 0);
+            ctx.DrawInstanced(6, _msdfInstanceCount, 0, 0);
         }
         private void DrawPointCircles(DeviceContext ctx)
         {
@@ -1154,23 +1149,23 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
         private void UpdateMsdfGlowInstances()
         {
-            _msdfGlowInstances.Clear();
+            //_msdfGlowInstances.Clear();
 
-            foreach (var point in _mouseOverCogoPoints)
-            {
-                if (point == null) { continue; }
+            //foreach (var point in _mouseOverCogoPoints)
+            //{
+            //    if (point == null) { continue; }
 
-                if (!point.PointGroup.IsVisible) { continue; }
+            //    if (!point.PointGroup.IsVisible) { continue; }
 
-                AddCogoPoint(point, _msdfGlowInstances);
-            }
+            //    AddCogoPoint(point, _msdfGlowInstances);
+            //}
 
-            _msdfGlowInstanceBuffer.Update(ResCache.DeviceContext, CollectionsMarshal.AsSpan(_msdfGlowInstances));
+            //_msdfGlowInstanceBuffer.Update(ResCache.DeviceContext, CollectionsMarshal.AsSpan(_msdfGlowInstances));
 
-            _msdfGlowInstanceCount = _msdfGlowInstances.Count;
+            //_msdfGlowInstanceCount = _msdfGlowInstances.Count;
 
-            _msdfGlowVerticesDirty = false;
-            _interactionDirty = true;
+            //_msdfGlowVerticesDirty = false;
+            //_interactionDirty = true;
         }
         private void UpdatePointCircleVertices()
         {
@@ -1602,13 +1597,10 @@ namespace Cad_Point_Manager.Controls.D3DControl
             var glowVsBytecode = ShaderBytecode.CompileFromFile(glowShaderPath, "VSMain", "vs_5_0");
             var glowPsBytecode = ShaderBytecode.CompileFromFile(glowShaderPath, "PSMain", "ps_5_0");
 
-            var normalReflection = new ShaderReflection(vsBytecode);
             var glowReflection = new ShaderReflection(glowVsBytecode);
 
             _msdfGlowVS = new VertexShader(ResCache.Device, glowVsBytecode);
             _msdfGlowPS = new PixelShader(ResCache.Device, glowPsBytecode);
-
-            _msdfGlowInstanceBuffer = new ResizableBuffer<MsdfGlyphInstance>(ResCache.Device, 64);
 
             _msdfShadersLoaded = true;
         }
@@ -2541,7 +2533,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     ResetHoverObjects();
                     _lineVerticesDirty = true;
                     _cogoHoverVerticesDirty = true;
-                    _msdfGlowVerticesDirty = true;
                 }
             }
         }
@@ -2566,11 +2557,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
             }
 
             _suspendHitTesting = true;
-            bool geometryVerticesDirty = false;
-            bool cogoHoverVerticesDirty = false;
-            bool cogoPointVerticesDirty = false;
-            bool sigPointsVerticesDirty = false;
-            bool lineGlowVerticesDirty = false;
+            bool geometrySelectionChanged = false;
+            bool cogoPointSelectionChanged = false;
+            bool sigPointsSelectionChanged = false;
 
             switch (CadManager.SnapSelectionMode)
             {
@@ -2596,57 +2585,37 @@ namespace Cad_Point_Manager.Controls.D3DControl
                         }
 
                         SelectedGeometries.EndDefer();
-                        geometryVerticesDirty = true;
-                        lineGlowVerticesDirty = true;
-                        StateController.FlushObjectUpdates();
+                        geometrySelectionChanged = true;
 
                         break;
                     }
 
                 case SelectionMode.CogoPoints:
                     {
-                        SelectedCogoPoints.DeferNotifications();
+                        using (SelectedCogoPoints.DeferNotifications())
+                        {
+                            var newSel = new HashSet<CogoPoint>(_mouseOverCogoPoints);
 
-                        var newSel = new HashSet<CogoPoint>(_mouseOverCogoPoints);
-                        if (IsDragging)
-                        {
                             foreach (var p in newSel)
                             {
                                 if (IsShiftPressed)
                                 {
                                     if (!p.IsSelected) { continue; }
-                                    DeselectObject(p); SelectedCogoPoints.Remove(p);
-                                    cogoHoverVerticesDirty = true; cogoPointVerticesDirty = true;
+                                    DeselectObject(p);
+                                    SelectedCogoPoints.Remove(p);
+                                    cogoPointSelectionChanged = true;
                                 }
                                 else
                                 {
                                     if (p.IsSelected) { continue; }
-                                    SelectObject(p); SelectedCogoPoints.Add(p);
-                                    cogoHoverVerticesDirty = true; cogoPointVerticesDirty = true;
+                                    SelectObject(p);
+                                    SelectedCogoPoints.Add(p);
+                                    cogoPointSelectionChanged = true;
                                 }
                             }
+
                             StateController.FlushPointUpdates();
                         }
-                        else
-                        {
-                            foreach (var p in newSel)
-                            {
-                                if (IsShiftPressed)
-                                {
-                                    if (!p.IsSelected) { continue; }
-                                    DeselectObject(p); SelectedCogoPoints.Remove(p);
-                                    cogoHoverVerticesDirty = true; cogoPointVerticesDirty = true;
-                                }
-                                else
-                                {
-                                    if (p.IsSelected) { continue; }
-                                    SelectObject(p); SelectedCogoPoints.Add(p);
-                                    cogoHoverVerticesDirty = true; cogoPointVerticesDirty = true;
-                                }
-                            }
-                            StateController.FlushPointUpdates();
-                        }
-                        SelectedCogoPoints.EndDefer();
                         break;
                     }
 
@@ -2657,12 +2626,12 @@ namespace Cad_Point_Manager.Controls.D3DControl
                             if (!SnappedHitTestablePoint.IsSelected)
                             {
                                 SelectObject(SnappedHitTestablePoint);
-                                sigPointsVerticesDirty = true;
+                                sigPointsSelectionChanged = true;
                             }
                             else
                             {
                                 DeselectObject(SnappedHitTestablePoint);
-                                sigPointsVerticesDirty = true;
+                                sigPointsSelectionChanged = true;
                             }
                         }
                         break;
@@ -2671,11 +2640,20 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             ResetHoverObjects();
 
-            if (sigPointsVerticesDirty) { _sigPointVerticesDirty = true; }
-            if (geometryVerticesDirty) { _baseSceneDirty = true; }
-            if (lineGlowVerticesDirty) { StateController.FlushObjectUpdates(); _interactionDirty = true; }
-            if (cogoHoverVerticesDirty) { _cogoHoverVerticesDirty = true; _msdfGlowVerticesDirty = true; }
-            if (cogoPointVerticesDirty) { _interactionDirty = true; _baseSceneDirty = true; }
+            if (sigPointsSelectionChanged)
+            {
+                _sigPointVerticesDirty = true;
+            }
+            if (geometrySelectionChanged)
+            {
+                StateController.FlushObjectUpdates();
+                _lineVerticesDirty = true;
+            }
+            if (cogoPointSelectionChanged)
+            {
+                StateController.FlushPointUpdates();
+                _cogoHoverVerticesDirty = _leaderLineVerticesDirty = true;
+            }
 
             _suspendHitTesting = false;
         }
@@ -2699,7 +2677,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 _pressedToggleButtonPoint.HasLeaderLine = true;
 
                 _cogoHoverVerticesDirty = true;
-                _msdfGlowVerticesDirty = true;
 
                 CaptureMouse();
 
@@ -2778,7 +2755,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
                     _cogoHoverVerticesDirty = true;
                     _cogoTextVerticesDirty = true;
-                    _msdfGlowVerticesDirty = true;
 
                     e.Handled = true;
                 }
@@ -3180,7 +3156,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
         private void RunCogoPointsHitTest(CancellationToken token)
         {
-            // Check for cancellation
             if (token.IsCancellationRequested) { token.ThrowIfCancellationRequested(); }
             if (!Dispatcher.CheckAccess())
             {
@@ -3192,8 +3167,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _lastHitTestCoords = new(DxfCoords.X, DxfCoords.Y);
 
             var snappedCogoPointsCopy = _mouseOverCogoPoints.ToList();
-            bool hoverVerticesDirty = false;
-            bool pointFlushNeeded = false;
+            bool cogoMouseOverChanged = false;
 
             if (_mouseOverToggleButtonPoint is not null)
             {
@@ -3205,14 +3179,14 @@ namespace Cad_Point_Manager.Controls.D3DControl
                         ResetHoverObjects();
                         MouseOverCogoToggleButton(_mouseOverToggleButtonPoint);
                         _cogoHoverVerticesDirty = true;
-                        _msdfGlowVerticesDirty = true;
+
                         return;
                     }
                 }
                 else
                 {
                     ResetCogoToggleButtonMouseOver();
-                    hoverVerticesDirty = true;
+                    cogoMouseOverChanged = true;
                 }
             }
 
@@ -3226,8 +3200,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                         ResetHoverObjects();
                         MouseOverCogoToggleButton(snappedCogoPoint);
                         _cogoHoverVerticesDirty = true;
-                        _msdfGlowVerticesDirty = true;
-                        StateController.FlushPointUpdates();
+
                         return;
                     }
 
@@ -3235,10 +3208,10 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     {
                         ResetHoverObjects();
                         ResetCogoToggleButtonMouseOver();
-                        hoverVerticesDirty = true;
-                        pointFlushNeeded = true;
+                        cogoMouseOverChanged = true;
 
                         _nearestHitTestableCogoPoints = CadManager.HitTestCogoPoints(_lastHitTestCoords, _hittestStrokeThickness).Take(_maxSelectableObjects).ToList();
+
                         if (_nearestHitTestableCogoPoints.Count > 0)
                         {
                             bool exists = HitTestingHelpers.TryGetNextCogoPoint(_currentSnapHitTestIndex, _nearestHitTestableCogoPoints, out var tup);
@@ -3255,11 +3228,12 @@ namespace Cad_Point_Manager.Controls.D3DControl
                                     {
                                         MouseOverCogoToggleButton(point);
                                         _cogoHoverVerticesDirty = true;
-                                        _msdfGlowVerticesDirty = true;
+
                                         return;
                                     }
                                     _mouseOverCogoPoints.Add(point);
                                     HoverObject(point);
+                                    cogoMouseOverChanged = true;
                                     _lastSnapHitTestIndex = _currentSnapHitTestIndex;
                                 }
                             }
@@ -3287,28 +3261,31 @@ namespace Cad_Point_Manager.Controls.D3DControl
                             {
                                 MouseOverCogoToggleButton(point);
                                 ResetHoverObjects();
-                                _cogoHoverVerticesDirty = true; _msdfGlowVerticesDirty = true; StateController.FlushPointUpdates();
+                                _cogoHoverVerticesDirty = true;
+
                                 return;
                             }
+
                             _mouseOverCogoPoints.Add(point);
                             HoverObject(point);
-                            hoverVerticesDirty = true;
-                            pointFlushNeeded = true;
+                            cogoMouseOverChanged = true;
                             _lastSnapHitTestIndex = _currentSnapHitTestIndex;
                         }
                     }
                 }
             }
 
-            if (hoverVerticesDirty) { _cogoHoverVerticesDirty = true; _msdfGlowVerticesDirty = true; }
-            if (pointFlushNeeded) { StateController.FlushPointUpdates(); }
+            if (cogoMouseOverChanged)
+            {
+                StateController.FlushPointUpdates();
+                _cogoHoverVerticesDirty = true;
+            }
         }
         private async void RunDragCogoPointsHittest(CancellationToken token)
         {
             if (token.IsCancellationRequested) { return; }
             if (!CadManager.DxfLoaded) { return; }
 
-            // Read DragRect safely from UI thread (cheap, single read)
             Rect currentRect = await Dispatcher.InvokeAsync(() => DragRect, DispatcherPriority.Render);
             if (currentRect.IsEmpty || currentRect.Width <= 0 || currentRect.Height <= 0) { return; }
 
@@ -3317,8 +3294,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 .Where(p => currentRect.Contains(p.Bounds))
                 .ToHashSet();
 
-            // 2) Compute diffs off-thread
             List<CogoPoint> adds, removes;
+
             lock (_dragCogoLock)
             {
                 adds = newSet.Except(_dragCogoCurrent).ToList();
@@ -3328,16 +3305,20 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             foreach (var p in adds)
             {
-                p.MouseEnter();
+                HoverObject(p);
                 _mouseOverCogoPoints.Add(p);
             }
             foreach (var p in removes)
             {
-                p.MouseLeave();
+                DehoverObject(p);
                 _mouseOverCogoPoints.Remove(p);
             }
 
-            if (adds.Count > 0 || removes.Count > 0) { _cogoHoverVerticesDirty = true; _msdfGlowVerticesDirty = true; }
+            if (adds.Count > 0 || removes.Count > 0)
+            {
+                StateController.FlushPointUpdates();
+                _cogoHoverVerticesDirty = true;
+            }
         }
         private void RunDragGeometriesHittest(CancellationToken token)
         {
@@ -3675,8 +3656,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _leaderLineVerticesDirty = true;
             _anchorVerticesDirty = true;
             _cogoHoverVerticesDirty = true;
-            _msdfGlowVerticesDirty = true;
-
             _interactionDirty = true;
             _baseSceneDirty = true;
         }

@@ -81,8 +81,8 @@ struct VSOut
     float4 Position : SV_POSITION;
     float2 UV : TEXCOORD0;
     float4 Color : COLOR;
-    float Visible : TEXCOORD1;
-    float MouseOver : TEXCOORD2;
+    nointerpolation float Visible : TEXCOORD1;
+    nointerpolation uint PointFlags : TEXCOORD2;
 };
 
 float Median(float r, float g, float b)
@@ -131,7 +131,7 @@ VSOut VSMain(VSVertex v, VSInstance inst)
     }
 
     o.Visible = visible;
-    o.MouseOver = ((ps.Flags & POINT_MOUSEOVER) != 0u) ? 1.0f : 0.0f;
+    o.PointFlags = ps.Flags;
 
     float isFlippedY = ((ps.Flags & POINT_ISFLIPPEDY) != 0u) ? -1.0f : 1.0f;
 
@@ -160,8 +160,11 @@ VSOut VSMain(VSVertex v, VSInstance inst)
 
 float4 PSMain(VSOut input) : SV_Target
 {
-    if (input.Visible < 0.5f)
+    if (input.Visible < 0.5f ||
+        (input.PointFlags & POINT_MOUSEOVER) == 0u)
+    {
         clip(-1);
+    }
 
     float3 msd = FontAtlas.Sample(FontSampler, input.UV).rgb;
     float sd = Median(msd.r, msd.g, msd.b);
@@ -198,36 +201,3 @@ float4 PSMain(VSOut input) : SV_Target
 
     return float4(0, 0, 0, alpha);
 }
-
-//float4 PSMain(VSOut input) : SV_Target
-//{
-//    if (input.Visible < 0.5f)
-//        clip(-1);
-
-//    float3 msd = FontAtlas.Sample(FontSampler, input.UV).rgb;
-//    float sd = Median(msd.r, msd.g, msd.b);
-//    float d = (sd - 0.5f) * DistanceRange;
-
-//    //---------------------------------------
-//    // Outside glow
-//    //---------------------------------------
-
-//    //float glowRadius = clamp(120.0f / CameraZoom, 0.01f, DistanceRange - 6.0f);
-//    float glowRadius = clamp(120.0f / CameraZoom, 0.01f, DistanceRange * 0.5f);
-//    float halo = smoothstep(-glowRadius, 0.25f, d);
-
-//    //---------------------------------------
-//    // Interior
-//    //---------------------------------------
-
-//    float fill = smoothstep(-0.25f, 0.5f, d);
-
-//    //---------------------------------------
-//    // Combine
-//    //---------------------------------------
-
-//    float alpha = halo * 0.55 + fill * 0.20;
-//    alpha = saturate(alpha);
-
-//    return float4(0, 0, 0, alpha);
-//}

@@ -486,7 +486,6 @@
                                    HorizontalAlignment="Left"
                                    ClipToBounds="False"
                                    CadManager="{Binding JobFileManager.CadManager}"
-                                   SelectedCogoPoints="{Binding SelectedCogoPoints}"
                                    Camera="{Binding JobFileManager.CadManager.Camera}"
                                    ActivePointGroup="{Binding ActivePointGroup}" />
             </Grid>
@@ -610,7 +609,8 @@
                               Style="{StaticResource ValidationComboBox}"
                               ItemsSource="{Binding JobFileManager.CadManager.PointGroupsView}"
                               DisplayMemberPath="Name"
-                              SelectedValue="{Binding ActivePointGroup}" />
+                              SelectedValue="{Binding ActivePointGroup}" 
+                              />
                 </Grid>
                 <WrapPanel Grid.Column="2"
                            Margin="0 5 0 5"

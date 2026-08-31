@@ -356,11 +356,11 @@ namespace Cad_Point_Manager.Models
             Extents = DxfHelpers.GetBoundsFromHeader(DxfImportResult.DxfDocument);
             _lineTypeCache = new(DxfImportResult.DxfDocument);
             GetPointScale();
-            
+
             GetTestDxfPoints();
 
             OverallDrawingLineTypeScale = DxfImportResult.DxfDocument.DrawingVariables.LtScale.ToFloat();
-            
+
             foreach (var layer in dxfImportResult.DxfDocument.Layers)
             {
                 GetLayer(layer);
@@ -439,7 +439,7 @@ namespace Cad_Point_Manager.Models
             DxfNeedsReload = true;
         }
 
-        // CogoPoint related methods
+        #region CogoPoint related methods
         public bool PointExists(int pointNumber) => PointGroups.SelectMany(pg => pg.Points).Any(p => p.PointNumber == pointNumber);
         public bool TryCreatePoint(int pointNumber, Vector3 position, PointGroup pg, out CogoPoint? point, float elevation = 0, string description = "")
         {
@@ -611,8 +611,9 @@ namespace Cad_Point_Manager.Models
             }
             return true;
         }
+        #endregion
 
-        // Point group related methods
+        #region PointGroup Related Methods
         public bool TryCreatePointGroup(string name, Color color, out PointGroup? pointGroup)
         {
             var cmd = new CreatePointGroupCommand(this, name, color);
@@ -928,8 +929,9 @@ namespace Cad_Point_Manager.Models
                     "Edit Point Group Color",
                     commands));
         }
+        #endregion
 
-        // Layer related methods
+        #region Layer related methods
         public void ChangeLayerColor(IEnumerable<ObjectLayer> layers, Vector4 newColor)
         {
             List<IUndoableCommand> commands = [];
@@ -997,8 +999,9 @@ namespace Cad_Point_Manager.Models
                 return layer;
             }
         }
+        #endregion
 
-        // Layout related methods
+        #region Layout related methods
         public bool TryCreateLayout(string layoutName, LayoutViewport viewport, out Layout layout)
         {
             var cmd = new CreateLayoutCommand(this, layoutName, viewport);
@@ -1119,7 +1122,7 @@ namespace Cad_Point_Manager.Models
         {
             return Layouts.Remove(layout);
         }
-
+        #endregion
         public void ZoomToPoint(CogoPoint p, double paddingFactor)
         {
             double centerX = p.Bounds.Left + (p.Bounds.Width * 0.5);
@@ -1554,7 +1557,7 @@ namespace Cad_Point_Manager.Models
             ClearDxfPoints();
 
             var inflatedExtents = Rect.Inflate(Extents, Extents.Width * 0.1, Extents.Height * 0.1);
-            int maxPoints = 1;
+            int maxPoints = 1000;
             float rows = 15;
             float cols = 15;
             float yIncrement = (inflatedExtents.Height / (rows - 1)).ToFloat();
@@ -1665,7 +1668,7 @@ namespace Cad_Point_Manager.Models
 
         // Helper methods
         private static bool GetParsedMleaderLineType(
-            ParsedMLeader parsedMLeader, ObjectLayer layer, IEnumerable<Linetype> lineTypes, 
+            ParsedMLeader parsedMLeader, ObjectLayer layer, IEnumerable<Linetype> lineTypes,
             out Linetype lineType)
         {
             if (parsedMLeader.EffectiveLineTypeReference.ValueType == ParsedLineTypeKind.ByLayer)

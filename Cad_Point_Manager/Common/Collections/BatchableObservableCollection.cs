@@ -1,5 +1,6 @@
 ﻿using System.Collections.ObjectModel;
 using System.Collections.Specialized;
+using System.ComponentModel;
 
 namespace Cad_Point_Manager.Common.Collections
 {
@@ -25,6 +26,18 @@ namespace Cad_Point_Manager.Common.Collections
             base.OnCollectionChanged(e);
         }
 
+
+        protected override void OnPropertyChanged(PropertyChangedEventArgs e)
+        {
+            if (_deferLevel > 0)
+            {
+                _dirty = true;
+                return;
+            }
+
+            base.OnPropertyChanged(e);
+        }
+
         public void EndDefer()
         {
             if (_deferLevel == 0)
@@ -43,9 +56,11 @@ namespace Cad_Point_Manager.Common.Collections
             {
                 _dirty = false;
 
-                base.OnCollectionChanged(
-                    new NotifyCollectionChangedEventArgs(
-                        NotifyCollectionChangedAction.Reset));
+                base.OnPropertyChanged(new PropertyChangedEventArgs(nameof(Count)));
+
+                base.OnPropertyChanged(new PropertyChangedEventArgs("Item[]"));
+
+                base.OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
             }
         }
 
