@@ -1,147 +1,366 @@
-﻿// LeaderLineShader.hlsl
-cbuffer TransformBuffer : register(b0) // same as your other passes
+﻿//-----------------------------------------------------------------------------
+// LeaderLineGlowShader.hlsl
+//-----------------------------------------------------------------------------
+
+cbuffer TransformBuffer : register(b0)
 {
-    row_major float4x4 ViewProj; // world -> clip
-}
+    row_major float4x4 ViewProj;
+};
 
 cbuffer LeaderLineSettings : register(b1)
 {
-    float2 InvViewport; // (1/width, 1/height) in pixels
-    float PixelThickness; // e.g., 1.5
-    float _pad0;
-    float4 HoverColor; // rgba
-}
+    float2 ViewportSize;
+    float PixelThickness;
+    float GlowPixelOffset;
 
-struct VSIn
-{
-    float2 A : POSITION; // world: ellipse center
-    float2 BBase : END; // world: text base (UN-offset)
-    uint PointId : POINT_ID; // index into PointSRV
+    float4 HoverColor;
 };
 
-struct VSOut
+//-----------------------------------------------------------------------------
+// Input
+//-----------------------------------------------------------------------------
+
+struct VSInput
 {
-    float4 aClip : TEXCOORD0; // clip-space A
-    float4 bClip : TEXCOORD1; // clip-space BBase
-    float2 aWorld : TEXCOORD2; // world A
-    float2 bWorld : TEXCOORD3; // world BBase
-    uint pointId : TEXCOORD4; // index into PointSRV
-    float4 pos : SV_POSITION; // dummy (IA = PointList)
+    float2 Local : LOCAL;
 };
+
+struct VSInstance
+{
+    uint PointId : POINT_ID;
+};
+
+struct PSInput
+{
+    float4 Position : SV_POSITION;
+
+    float Side : TEXCOORD0;
+    float AlongPixels : TEXCOORD1;
+
+    nointerpolation float LineLengthPixels : TEXCOORD2;
+    nointerpolation uint PointId : TEXCOORD3;
+};
+
+//-----------------------------------------------------------------------------
+// GPU state
+//-----------------------------------------------------------------------------
 
 struct PointState
 {
-    float2 Offset; // world-space drag delta
-    float2 PointInfoOffset; // Text info offset in world units
-    uint GroupId; // index into GroupState buffer
-    uint Flags; // bit0: visible bit1: selected, bit2: mouseOver, bit3: hasLeaderLine, bit4: mouseOverAnchor, bit5: anchorPressed, bit6: isFlippedY, bit7: isFlippedX
-    float2 _padLS; // keep 16B stride
+    float2 Offset;
+    float2 PointInfoOffset;
+
+    uint GroupId;
+    uint Flags;
+
+    float2 _padLS;
 };
+
 struct GroupState
 {
-    float4 Color; // rgba
-    float Scale; // point-scale
-    uint Flags; // bit0: visible
-    float TextInfoBaseXoffset; // distance between base position and text labels
-    float _padGS; // keep 16B stride
+    float4 Color;
+
+    float Scale;
+    uint Flags;
+
+    float TextInfoBaseXoffset;
+    float _padGS;
 };
 
 StructuredBuffer<PointState> PointSRV : register(t0);
 StructuredBuffer<GroupState> GroupSRV : register(t1);
 
 static const uint POINT_VISIBLE = 1u << 0;
-static const uint POINT_SELECTED = 1u << 1;
 static const uint POINT_MOUSE_OVER = 1u << 2;
 static const uint POINT_HAS_LEADER = 1u << 3;
 
 static const uint GROUP_VISIBLE = 1u << 0;
 
-VSOut VSMain(VSIn v)
+//-----------------------------------------------------------------------------
+// Vertex shader
+//-----------------------------------------------------------------------------
+
+PSInput VSMain(
+    VSInput vertex,
+    VSInstance instance)
 {
-    VSOut o;
-    o.aWorld = v.A;
-    o.bWorld = v.BBase;
-    o.aClip = mul(float4(v.A, 0, 1), ViewProj);
-    o.bClip = mul(float4(v.BBase, 0, 1), ViewProj);
-    o.pointId = v.PointId;
-    o.pos = o.aClip; // not used; required output
-    return o;
+    PSInput output;
+
+    PointState ps =
+        PointSRV[instance.PointId];
+
+    //--------------------------------------------
+    // Live endpoints
+    //--------------------------------------------
+
+    float2 start =
+        ps.Offset;
+
+    float2 end =
+        ps.Offset +
+        ps.PointInfoOffset;
+
+    //--------------------------------------------
+    // Transform
+    //--------------------------------------------
+
+    float4 clipStart =
+        mul(
+            float4(start, 0.0, 1.0),
+            ViewProj);
+
+    float4 clipEnd =
+        mul(
+            float4(end, 0.0, 1.0),
+            ViewProj);
+
+    float2 ndcStart =
+        clipStart.xy / clipStart.w;
+
+    float2 ndcEnd =
+        clipEnd.xy / clipEnd.w;
+
+    //--------------------------------------------
+    // Pixel-space direction
+    //--------------------------------------------
+
+    float2 pixelScale =
+        float2(
+            ViewportSize.x * 0.5,
+            ViewportSize.y * 0.5);
+
+    float2 dirPixels =
+        (ndcEnd - ndcStart) *
+        pixelScale;
+
+    float lineLengthPixels =
+        length(dirPixels);
+
+    if (lineLengthPixels < 1e-6)
+    {
+        dirPixels =
+            float2(1.0, 0.0);
+    }
+    else
+    {
+        dirPixels /=
+            lineLengthPixels;
+    }
+
+    float2 normalPixels =
+        float2(
+            -dirPixels.y,
+             dirPixels.x);
+
+    //--------------------------------------------
+    // Pixel directions -> NDC
+    //--------------------------------------------
+
+    float2 normalNdc =
+        float2(
+            normalPixels.x *
+                (2.0 / ViewportSize.x),
+
+            normalPixels.y *
+                (2.0 / ViewportSize.y));
+
+    float2 directionNdc =
+        float2(
+            dirPixels.x *
+                (2.0 / ViewportSize.x),
+
+            dirPixels.y *
+                (2.0 / ViewportSize.y));
+
+    //--------------------------------------------
+    // Dimensions
+    //--------------------------------------------
+
+    float visibleHalfWidth =
+        PixelThickness * 0.5;
+
+    float glowHalfWidth =
+        visibleHalfWidth +
+        GlowPixelOffset;
+
+    //--------------------------------------------
+    // Position along segment
+    //--------------------------------------------
+
+    float t =
+        vertex.Local.y;
+
+    float2 ndc =
+        lerp(
+            ndcStart,
+            ndcEnd,
+            t);
+
+    //--------------------------------------------
+    // Extend beyond both endpoints
+    //--------------------------------------------
+
+    float endDirection =
+        vertex.Local.y * 2.0 - 1.0;
+
+    ndc +=
+        directionNdc *
+        GlowPixelOffset *
+        endDirection;
+
+    //--------------------------------------------
+    // Expand sideways
+    //--------------------------------------------
+
+    ndc +=
+        normalNdc *
+        glowHalfWidth *
+        vertex.Local.x;
+
+    //--------------------------------------------
+    // Back to clip
+    //--------------------------------------------
+
+    float4 clip =
+        lerp(
+            clipStart,
+            clipEnd,
+            t);
+
+    clip.xy =
+        ndc * clip.w;
+
+    output.Position =
+        clip;
+
+    output.Side =
+        vertex.Local.x;
+
+    output.AlongPixels =
+        lerp(
+            -GlowPixelOffset,
+            lineLengthPixels +
+                GlowPixelOffset,
+            t);
+
+    output.LineLengthPixels =
+        lineLengthPixels;
+
+    output.PointId =
+        instance.PointId;
+
+    return output;
 }
 
-struct GSOut
-{
-    float4 pos : SV_POSITION;
-    float4 col : COLOR0;
-};
+//-----------------------------------------------------------------------------
+// Pixel shader
+//-----------------------------------------------------------------------------
 
-[maxvertexcount(4)]
-void GSMain(point VSOut vin[1], inout TriangleStream<GSOut> tri)
+float4 PSMain(PSInput input) : SV_TARGET
 {
-    VSOut i = vin[0];
-
-    // Look up state
-    PointState ps = PointSRV[i.pointId];
+    PointState ps = PointSRV[input.PointId];
     GroupState gs = GroupSRV[ps.GroupId];
 
-    // Visibility (same rules as glyphs/circles)
-    if (((gs.Flags & GROUP_VISIBLE) == 0u) || 
-        ((ps.Flags & POINT_VISIBLE) == 0u) || 
-        ((ps.Flags & POINT_HAS_LEADER) == 0u) ||
-        ((ps.Flags & POINT_MOUSE_OVER) == 0u))
-        return;
+    //--------------------------------------------
+    // Visibility
+    //--------------------------------------------
 
-    // Live endpoint B = BBase + label offset
-    float2 aW = ps.Offset;
-    //float2 bW = float2(i.bWorld.x + ps.PointInfoOffset.x, i.bWorld.y + ps.PointInfoOffset.y);
-    float2 bW = ps.Offset + ps.PointInfoOffset;
+    if ((gs.Flags & GROUP_VISIBLE) == 0u)
+        discard;
 
-    // Project to CLIP & NDC
-    float4 aC = mul(float4(aW, 0, 1), ViewProj);
-    float4 bC = mul(float4(bW, 0, 1), ViewProj);
-    float2 aN = aC.xy / aC.w;
-    float2 bN = bC.xy / bC.w;
+    if ((ps.Flags & POINT_VISIBLE) == 0u)
+        discard;
 
-    // Direction in NDC
-    float2 dir = bN - aN;
-    float len = length(dir);
-    if (len < 1e-6) { return; }
-    dir /= len;
+    if ((ps.Flags & POINT_HAS_LEADER) == 0u)
+        discard;
 
-    // Perp in NDC; convert desired pixel thickness to NDC using InvViewport (NDC range = 2)
-    float2 perpN = float2(-dir.y, dir.x);
-    float2 pxToN = 2.0 * InvViewport;
-    float2 offsN = perpN * (0.5 * PixelThickness) * pxToN;
+    if ((ps.Flags & POINT_MOUSE_OVER) == 0u)
+        discard;
 
-    // Quad corners in NDC
-    float2 aN0 = aN - offsN;
-    float2 aN1 = aN + offsN;
-    float2 bN0 = bN - offsN;
-    float2 bN1 = bN + offsN;
+    //--------------------------------------------
+    // Dimensions
+    //--------------------------------------------
 
-    // Back to CLIP using original w,z for each end
-    float4 vA0 = float4(aN0 * aC.w, aC.z, aC.w);
-    float4 vA1 = float4(aN1 * aC.w, aC.z, aC.w);
-    float4 vB0 = float4(bN0 * bC.w, bC.z, bC.w);
-    float4 vB1 = float4(bN1 * bC.w, bC.z, bC.w);
+    float visibleHalfWidth =
+        PixelThickness * 0.5;
 
-    // Color from group; override if selected
-    float4 col = HoverColor;
+    float glowHalfWidth =
+        visibleHalfWidth +
+        GlowPixelOffset;
 
-    // Emit strip
-    GSOut o;
-    o.col = col;
-    o.pos = vA0;
-    tri.Append(o);
-    o.pos = vA1;
-    tri.Append(o);
-    o.pos = vB0;
-    tri.Append(o);
-    o.pos = vB1;
-    tri.Append(o);
-    tri.RestartStrip();
-}
+    //--------------------------------------------
+    // Perpendicular distance
+    //--------------------------------------------
 
-float4 PSMain(GSOut i) : SV_Target
-{
-    return i.col; // simple solid; AA comes from rasterization of the quad
+    float perpendicularDistance =
+        abs(input.Side) *
+        glowHalfWidth;
+
+    //--------------------------------------------
+    // Distance beyond physical endpoints
+    //--------------------------------------------
+
+    float alongDistance =
+        0.0;
+
+    if (input.AlongPixels < 0.0)
+    {
+        alongDistance =
+            -input.AlongPixels;
+    }
+    else if (
+        input.AlongPixels >
+        input.LineLengthPixels)
+    {
+        alongDistance =
+            input.AlongPixels -
+            input.LineLengthPixels;
+    }
+
+    //--------------------------------------------
+    // Distance from centerline
+    //--------------------------------------------
+
+    float centerlineDistance =
+        length(
+            float2(
+                perpendicularDistance,
+                alongDistance));
+
+    //--------------------------------------------
+    // Don't draw over visible leader itself
+    //--------------------------------------------
+
+    if (centerlineDistance <=
+        visibleHalfWidth)
+    {
+        discard;
+    }
+
+    //--------------------------------------------
+    // Distance outside visible stroke
+    //--------------------------------------------
+
+    float glowDistance =
+        centerlineDistance -
+        visibleHalfWidth;
+
+    if (glowDistance >=
+        GlowPixelOffset)
+    {
+        discard;
+    }
+
+    //--------------------------------------------
+    // Glow falloff
+    //--------------------------------------------
+
+    float glowT = saturate(glowDistance / GlowPixelOffset);
+    float glowAlpha = 1.0 - smoothstep(0.0, 1.0, glowT);
+
+    const float MaxGlowAlpha = 0.45;
+
+    glowAlpha *= MaxGlowAlpha;
+
+    return float4(0.0, 0.0, 0.0, glowAlpha);
 }

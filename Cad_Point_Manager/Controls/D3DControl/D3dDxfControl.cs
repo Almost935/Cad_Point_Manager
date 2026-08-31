@@ -179,6 +179,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private int _leaderLineInstanceCount = 0;
         private bool _leaderLineVerticesDirty = false;
         private Buffer _leaderLineSettings;
+        private Buffer _leaderLineQuadBuffer;
 
         // Cogo point leader line glow rendering fields
         private VertexShader _leaderLineGlowVS;
@@ -904,34 +905,77 @@ namespace Cad_Point_Manager.Controls.D3DControl
         {
             if (_leaderLineInstanceCount <= 0) { return; }
 
-            ctx.InputAssembler.InputLayout = _leaderLineInputLayout;
-            ctx.InputAssembler.PrimitiveTopology = PrimitiveTopology.PointList; // ONE vertex per line-instance
-
-            ctx.VertexShader.Set(_leaderLineGlowVS);
-            ctx.GeometryShader.Set(_leaderLineGlowGS);
-            ctx.PixelShader.Set(_leaderLineGlowPS);
-            ctx.VertexShader.SetConstantBuffer(0, _transformationBuffer);
-            ctx.GeometryShader.SetConstantBuffer(0, _transformationBuffer);
-            ctx.GeometryShader.SetConstantBuffer(1, _leaderLineGlowSettings);
-            ctx.GeometryShader.SetShaderResource(0, StateBuffers.PointSRV);
-            ctx.GeometryShader.SetShaderResource(1, StateBuffers.GroupSRV);
-            ctx.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding(_leaderLineBuffer.Buffer, _leaderLineBuffer.Stride, 0));
-            ctx.Draw(_leaderLineInstanceCount, 0);
-
-            ctx.VertexShader.Set(_leaderLineVS);
-            ctx.GeometryShader.Set(_leaderLineGS);
-            ctx.PixelShader.Set(_leaderLinePS);
-            ctx.VertexShader.SetConstantBuffer(0, _transformationBuffer);
-            ctx.GeometryShader.SetConstantBuffer(0, _transformationBuffer);
-            ctx.GeometryShader.SetConstantBuffer(1, _leaderLineSettings);
-            ctx.GeometryShader.SetShaderResource(0, StateBuffers.PointSRV);
-            ctx.GeometryShader.SetShaderResource(1, StateBuffers.GroupSRV);
-            ctx.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding(_leaderLineBuffer.Buffer, _leaderLineBuffer.Stride, 0));
-            ctx.Draw(_leaderLineInstanceCount, 0);
-
-            ctx.GeometryShader.SetShaderResource(0, null);
-            ctx.GeometryShader.SetShaderResource(1, null);
             ctx.GeometryShader.Set(null);
+            ctx.InputAssembler.InputLayout = _leaderLineInputLayout;
+            ctx.InputAssembler.PrimitiveTopology = PrimitiveTopology.TriangleList;
+            var quadBinding = new VertexBufferBinding(_leaderLineQuadBuffer, Utilities.SizeOf<LineCornerVertex>(), 0);
+            var instanceBinding = new VertexBufferBinding(_leaderLineBuffer.Buffer, _leaderLineBuffer.Stride, 0);
+            ctx.InputAssembler.SetVertexBuffers(0, quadBinding, instanceBinding);
+
+            //--------------------------------------------
+            // Glow
+            //--------------------------------------------
+            ctx.VertexShader.Set(_leaderLineGlowVS);
+            ctx.PixelShader.Set(_leaderLineGlowPS);
+
+            ctx.VertexShader.SetConstantBuffer(0, _transformationBuffer);
+            ctx.VertexShader.SetConstantBuffer(1, _leaderLineGlowSettings);
+            ctx.VertexShader.SetShaderResource(0, StateBuffers.PointSRV);
+            ctx.VertexShader.SetShaderResource(1, StateBuffers.GroupSRV);
+
+            ctx.PixelShader.SetConstantBuffer(0, _transformationBuffer);
+            ctx.PixelShader.SetConstantBuffer(1, _leaderLineGlowSettings);
+            ctx.PixelShader.SetShaderResource(0, StateBuffers.PointSRV);
+            ctx.PixelShader.SetShaderResource(1, StateBuffers.GroupSRV);
+
+            ctx.DrawInstanced(6, _leaderLineInstanceCount, 0, 0);
+
+            //--------------------------------------------
+            // Normal leader
+            //--------------------------------------------
+            ctx.VertexShader.Set(_leaderLineVS);
+            ctx.PixelShader.Set(_leaderLinePS);
+
+            ctx.VertexShader.SetConstantBuffer(0, _transformationBuffer);
+            ctx.VertexShader.SetConstantBuffer(1, _leaderLineSettings);
+            ctx.VertexShader.SetShaderResource(0, StateBuffers.PointSRV);
+            ctx.VertexShader.SetShaderResource(1, StateBuffers.GroupSRV);
+
+            ctx.PixelShader.SetConstantBuffer(0, _transformationBuffer);
+            ctx.PixelShader.SetConstantBuffer(1, _leaderLineSettings);
+            ctx.PixelShader.SetShaderResource(0, StateBuffers.PointSRV);
+            ctx.PixelShader.SetShaderResource(1, StateBuffers.GroupSRV);
+
+            ctx.DrawInstanced(6, _leaderLineInstanceCount, 0, 0);
+        }
+        private void DrawLeaderLinesGlow(DeviceContext ctx)
+        {
+            if (_leaderLineInstanceCount <= 0) { return; }
+
+            ctx.GeometryShader.Set(null);
+            ctx.InputAssembler.InputLayout = _leaderLineInputLayout;
+            ctx.InputAssembler.PrimitiveTopology = PrimitiveTopology.TriangleList;
+            var quadBinding = new VertexBufferBinding(_leaderLineQuadBuffer, Utilities.SizeOf<LineCornerVertex>(), 0);
+            var instanceBinding = new VertexBufferBinding(_leaderLineBuffer.Buffer, _leaderLineBuffer.Stride, 0);
+            ctx.InputAssembler.SetVertexBuffers(0, quadBinding, instanceBinding);
+
+            //--------------------------------------------
+            // Glow
+            //--------------------------------------------
+            ctx.VertexShader.Set(_leaderLineGlowVS);
+            ctx.PixelShader.Set(_leaderLineGlowPS);
+
+            ctx.VertexShader.SetConstantBuffer(0, _transformationBuffer);
+            ctx.VertexShader.SetConstantBuffer(1, _leaderLineGlowSettings);
+            ctx.VertexShader.SetShaderResource(0, StateBuffers.PointSRV);
+            ctx.VertexShader.SetShaderResource(1, StateBuffers.GroupSRV);
+
+            ctx.PixelShader.SetConstantBuffer(0, _transformationBuffer);
+            ctx.PixelShader.SetConstantBuffer(1, _leaderLineGlowSettings);
+            ctx.PixelShader.SetShaderResource(0, StateBuffers.PointSRV);
+            ctx.PixelShader.SetShaderResource(1, StateBuffers.GroupSRV);
+
+            ctx.DrawInstanced(6, _leaderLineInstanceCount, 0, 0);
         }
         private void DrawDragOverlay(DeviceContext ctx)
         {
@@ -1326,32 +1370,35 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private void UpdateLeaderLineVertices()
         {
             List<LeaderLineInstance> list = [];
+
             foreach (var pg in PointGroups)
             {
                 if (pg is null) { continue; }
 
                 uint gid = SceneIdMap.GetOrAddGroupId(pg, out var isNewGroup);
+
                 if (isNewGroup) { StateBuffers.EnsureGroupCapacity(SceneIdMap.GroupCount); }
 
                 foreach (var p in pg.Points)
                 {
                     if (p is null) { continue; }
+
                     uint pid = SceneIdMap.GetOrAddPointId(p, out var isNewPoint);
+
                     if (isNewPoint) { StateBuffers.EnsurePointCapacity(SceneIdMap.PointCount); }
 
-                    var vertex = new LeaderLineInstance
+                    list.Add(new LeaderLineInstance
                     {
-                        Start = Vector2.Zero,
-                        End = Vector2.Zero,
-                        PointId = pid,
-                        GroupId = gid
-                    };
-                    list.Add(vertex);
+                        PointId = pid
+                    });
                 }
             }
+
             StateBuffers.FlushAll();
+
             _leaderLineInstanceCount = list.Count;
             _leaderLineBuffer.Update(ResCache.DeviceContext, CollectionsMarshal.AsSpan(list));
+
             _leaderLineVerticesDirty = false;
             _interactionDirty = true;
         }
@@ -1742,36 +1789,73 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
         private void InitializeLeaderLineShaders()
         {
+            var device = ResCache.Device;
             var path = AppDomain.CurrentDomain.BaseDirectory;
+
             while (Path.GetFileName(path) != "Cad_Point_Manager")
             {
                 path = Path.GetDirectoryName(path);
+
                 if (path == null)
+                {
                     throw new DirectoryNotFoundException("The 'Cad_Point_Manager' directory could not be found in the path.");
+                }
             }
+
+            //--------------------------------------------
+            // Normal leader shader
+            //--------------------------------------------
 
             string lineShaderPath = Path.Combine(path, @"Controls\D3DControl\Shaders\LeaderLineShader.hlsl");
             var lineVSBytecode = ShaderBytecode.CompileFromFile(lineShaderPath, "VSMain", "vs_5_0");
-            _leaderLineVS = new VertexShader(ResCache.Device, lineVSBytecode);
             var linePSBytecode = ShaderBytecode.CompileFromFile(lineShaderPath, "PSMain", "ps_5_0");
-            _leaderLinePS = new PixelShader(ResCache.Device, linePSBytecode);
-            var lineGSBytecode = ShaderBytecode.CompileFromFile(lineShaderPath, "GSMain", "gs_5_0");
-            _leaderLineGS = new GeometryShader(ResCache.Device, lineGSBytecode);
 
-            _leaderLineInputLayout = new InputLayout(ResCache.Device, ShaderSignature.GetInputSignature(lineVSBytecode), new[]
+            _leaderLineVS = new VertexShader(device, lineVSBytecode);
+            _leaderLinePS = new PixelShader(device, linePSBytecode);
+
+            //--------------------------------------------
+            // Input layout
+            //--------------------------------------------
+
+            _leaderLineInputLayout = new InputLayout(device, ShaderSignature.GetInputSignature(lineVSBytecode), new[]
             {
-                new InputElement("POSITION", 0, Format.R32G32_Float,     0, 0), // A
-                new InputElement("END", 0, Format.R32G32_Float,          8, 0), // BBase
-                new InputElement("POINT_ID", 0, Format.R32_UInt,         16, 0), // PointId
-            });
+                // Stream 0 - static quad
+                new InputElement("LOCAL",0,Format.R32G32_Float,0,0,InputClassification.PerVertexData,0),
 
-            string lineGlowShaderPath = Path.Combine(path, @"Controls\D3DControl\Shaders\LeaderLineGlowShader.hlsl");
-            var lineGlowVSBytecode = ShaderBytecode.CompileFromFile(lineGlowShaderPath, "VSMain", "vs_5_0");
-            _leaderLineGlowVS = new VertexShader(ResCache.Device, lineGlowVSBytecode);
-            var lineGlowPSBytecode = ShaderBytecode.CompileFromFile(lineGlowShaderPath, "PSMain", "ps_5_0");
-            _leaderLineGlowPS = new PixelShader(ResCache.Device, lineGlowPSBytecode);
-            var lineGlowGSBytecode = ShaderBytecode.CompileFromFile(lineGlowShaderPath, "GSMain", "gs_5_0");
-            _leaderLineGlowGS = new GeometryShader(ResCache.Device, lineGlowGSBytecode);
+                // Stream 1 - leader instance
+                new InputElement("POINT_ID",0,Format.R32_UInt,0,1,InputClassification.PerInstanceData,1)});
+
+            //--------------------------------------------
+            // Static line quad
+            //--------------------------------------------
+
+            LineCornerVertex[] quad =
+            {
+                new(-1, 0),
+                new( 1, 0),
+                new( 1, 1),
+
+                new(-1, 0),
+                new( 1, 1),
+                new(-1, 1)
+            };
+
+            _leaderLineQuadBuffer?.Dispose();
+            _leaderLineQuadBuffer = Buffer.Create(device, BindFlags.VertexBuffer, quad);
+
+            //--------------------------------------------
+            // Glow shader
+            //--------------------------------------------
+
+            string glowShaderPath = Path.Combine(path, @"Controls\D3DControl\Shaders\LeaderLineGlowShader.hlsl");
+            var glowVSBytecode = ShaderBytecode.CompileFromFile(glowShaderPath, "VSMain", "vs_5_0");
+
+            var glowPSBytecode = ShaderBytecode.CompileFromFile(glowShaderPath, "PSMain", "ps_5_0");
+
+            _leaderLineGlowVS = new VertexShader(device, glowVSBytecode);
+            _leaderLineGlowPS = new PixelShader(device, glowPSBytecode);
+
+            //--------------------------------------------
 
             _leaderLineShadersLoaded = true;
         }
@@ -2018,17 +2102,18 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             var leaderLineSettings = new LeaderLineSettings
             {
-                InvViewport = new(1 / Viewport.Width, 1 / Viewport.Height),
+                ViewportSize = new Vector2(RenderPixelWidth, RenderPixelHeight),
                 PixelThickness = GlobalHelperProperties.CogoPointLeaderLinePixelWidth,
-                SelectedColor = GlobalHelperProperties.SelectedObjectColor,
+                SelectedColor = GlobalHelperProperties.SelectedObjectColor
             };
             ResCache.DeviceContext.UpdateSubresource(ref leaderLineSettings, _leaderLineSettings);
 
             var leaderLineGlowSettings = new LeaderLineGlowSettings
             {
-                InvViewport = new(1 / Viewport.Width, 1 / Viewport.Height),
-                PixelThickness = GlobalHelperProperties.CogoPointLeaderLinePixelWidth * 10,
-                HoverColor = GlobalHelperProperties.HoverColor,
+                ViewportSize = new Vector2(RenderPixelWidth, RenderPixelHeight),
+                PixelThickness = GlobalHelperProperties.CogoPointLeaderLinePixelWidth,
+                GlowPixelOffset = GlobalHelperProperties.GlowPixelOffset,
+                HoverColor = GlobalHelperProperties.HoverColor
             };
             ResCache.DeviceContext.UpdateSubresource(ref leaderLineGlowSettings, _leaderLineGlowSettings);
 
@@ -3278,7 +3363,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             if (cogoMouseOverChanged)
             {
                 StateController.FlushPointUpdates();
-                _cogoHoverVerticesDirty = true;
+                _cogoHoverVerticesDirty = _leader = true;
             }
         }
         private async void RunDragCogoPointsHittest(CancellationToken token)

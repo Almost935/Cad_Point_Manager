@@ -219,26 +219,24 @@ namespace Cad_Point_Manager.Controls.D3DControl
     [StructLayout(LayoutKind.Sequential)]
     public struct LeaderLineSettings
     {
-        public Vector2 InvViewport;
+        public Vector2 ViewportSize;
         public float PixelThickness;
-        public float _pad;
+        public float Padding;
         public Vector4 SelectedColor;
     }
     [StructLayout(LayoutKind.Sequential)]
     public struct LeaderLineInstance
     {
-        public Vector2 Start;   // world: ellipse center
-        public Vector2 End;     // world: text base *before* drag; shader adds LabelSRV.Offset
         public uint PointId;    // Point index
-        public uint GroupId;    // PointGroup index
     }
 
     [StructLayout(LayoutKind.Sequential)]
     public struct LeaderLineGlowSettings
     {
-        public Vector2 InvViewport;
+        public Vector2 ViewportSize;
         public float PixelThickness;
-        public float _pad;
+        public float GlowPixelOffset;
+
         public Vector4 HoverColor;
     }
 

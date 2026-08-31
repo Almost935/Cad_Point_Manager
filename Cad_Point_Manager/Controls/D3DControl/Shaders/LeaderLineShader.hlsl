@@ -1,52 +1,61 @@
-﻿// LeaderLineShader.hlsl
-// One POINT per line: (A, BBase, LabelId, GroupId) -> GS extrudes pixel-width quad.
-// Uses LabelSRV/GroupSRV for visibility, selection, color; adds LabelSRV.Offset so it follows drag.
+﻿//-----------------------------------------------------------------------------
+// LeaderLineShader.hlsl
+//-----------------------------------------------------------------------------
 
-cbuffer TransformBuffer : register(b0) // same as your other passes
+cbuffer TransformationBuffer : register(b0)
 {
-    row_major float4x4 ViewProj; // world -> clip
-}
+    row_major matrix transformationMatrix;
+};
 
 cbuffer LeaderLineSettings : register(b1)
 {
-    float2 InvViewport; // (1/width, 1/height) in pixels
-    float PixelThickness; // e.g., 1.5
+    float2 ViewportSize;
+    float PixelThickness;
     float _pad0;
-    float4 SelectedColor; // rgba
-}
-
-struct VSIn
-{
-    float2 A : POSITION; // world: ellipse center
-    float2 BBase : END; // world: text base (UN-offset)
-    uint PointId : POINT_ID; // index into PointSRV
+    float4 SelectedColor;
 };
 
-struct VSOut
+//-----------------------------------------------------------------------------
+// Input
+//-----------------------------------------------------------------------------
+
+struct VSInput
 {
-    float4 aClip : TEXCOORD0;   // clip-space A
-    float4 bClip : TEXCOORD1;   // clip-space BBase
-    float2 aWorld : TEXCOORD2;  // world A
-    float2 bWorld : TEXCOORD3;  // world BBase
-    uint pointId : TEXCOORD4;   // index into PointSRV
-    float4 pos : SV_POSITION;   // dummy (IA = PointList)
+    float2 Local : LOCAL;
 };
+
+struct VSInstance
+{
+    uint PointId : POINT_ID;
+};
+
+struct PSInput
+{
+    float4 Position : SV_POSITION;
+    float Side : TEXCOORD0;
+    nointerpolation uint PointId : TEXCOORD1;
+};
+
+//-----------------------------------------------------------------------------
+// GPU state
+//-----------------------------------------------------------------------------
 
 struct PointState
 {
-    float2 Offset; // world-space drag delta
-    float2 PointInfoOffset; // Text info offset in world units
-    uint GroupId; // index into GroupState buffer
-    uint Flags; // bit0: visible bit1: selected, bit2: mouseOver, bit3: hasLeaderLine, bit4: mouseOverAnchor, bit5: anchorPressed, bit6: isFlippedY, bit7: isFlippedX
-    float2 _padLS; // keep 16B stride
+    float2 Offset;
+    float2 PointInfoOffset;
+    uint GroupId;
+    uint Flags;
+    float2 _padLS;
 };
+
 struct GroupState
 {
-    float4 Color; // rgba
-    float Scale; // point-scale
-    uint Flags; // bit0: visible
-    float TextInfoBaseXoffset; // distance between base position and text labels
-    float _padGS; // keep 16B stride
+    float4 Color;
+    float Scale;
+    uint Flags;
+    float TextInfoBaseXoffset;
+    float _padGS;
 };
 
 StructuredBuffer<PointState> PointSRV : register(t0);
@@ -54,97 +63,127 @@ StructuredBuffer<GroupState> GroupSRV : register(t1);
 
 static const uint POINT_VISIBLE = 1u << 0;
 static const uint POINT_SELECTED = 1u << 1;
-static const uint POINT_MOUSE_OVER = 1u << 2;
-static const uint POINT_HAS_LEADER = 1u << 3; 
+static const uint POINT_HAS_LEADER = 1u << 3;
 
 static const uint GROUP_VISIBLE = 1u << 0;
 
-VSOut VSMain(VSIn v)
+//-----------------------------------------------------------------------------
+// Vertex shader
+//-----------------------------------------------------------------------------
+
+PSInput VSMain(VSInput vertex, VSInstance instance)
 {
-    VSOut o;
-    o.aWorld = v.A;
-    o.bWorld = v.BBase;
-    o.aClip = mul(float4(v.A, 0, 1), ViewProj);
-    o.bClip = mul(float4(v.BBase, 0, 1), ViewProj);
-    o.pointId = v.PointId;
-    o.pos = o.aClip; // not used; required output
-    return o;
+    PSInput output;
+
+    PointState ps = PointSRV[instance.PointId];
+
+    //--------------------------------------------
+    // Live endpoints
+    //--------------------------------------------
+
+    float2 start = ps.Offset;
+    float2 end = ps.Offset + ps.PointInfoOffset;
+
+    //--------------------------------------------
+    // Transform endpoints
+    //--------------------------------------------
+
+    float4 clipStart = mul(float4(start, 0.0, 1.0), transformationMatrix);
+    float4 clipEnd = mul(float4(end, 0.0, 1.0), transformationMatrix);
+    
+    float2 ndcStart = clipStart.xy / clipStart.w;
+    float2 ndcEnd = clipEnd.xy / clipEnd.w;
+
+    //--------------------------------------------
+    // Direction in PIXEL space
+    //--------------------------------------------
+
+    float2 pixelScale = float2(ViewportSize.x * 0.5, ViewportSize.y * 0.5);
+    float2 dirPixels = (ndcEnd - ndcStart) * pixelScale;
+    float lineLengthPixels = length(dirPixels);
+
+    if (lineLengthPixels < 1e-6)
+    {
+        dirPixels = float2(1.0, 0.0);
+    }
+    else
+    {
+        dirPixels /= lineLengthPixels;
+    }
+
+    float2 normalPixels = float2(-dirPixels.y, dirPixels.x);
+
+    //--------------------------------------------
+    // Pixel normal -> NDC
+    //--------------------------------------------
+
+    float2 normalNdc =
+        float2(normalPixels.x * (2.0 / ViewportSize.x), normalPixels.y * (2.0 / ViewportSize.y));
+
+    //--------------------------------------------
+    // Build quad
+    //--------------------------------------------
+
+    float t = vertex.Local.y;
+    float2 ndc = lerp(ndcStart, ndcEnd, t);
+
+    float halfWidthPixels = PixelThickness * 0.5;
+
+    ndc += normalNdc * halfWidthPixels * vertex.Local.x;
+
+    //--------------------------------------------
+    // Back to clip space
+    //--------------------------------------------
+
+    float4 clip = lerp(clipStart, clipEnd, t);
+    clip.xy = ndc * clip.w;
+    output.Position = clip;
+    output.Side = vertex.Local.x;
+    output.PointId = instance.PointId;
+
+    return output;
 }
 
-struct GSOut
-{
-    float4 pos : SV_POSITION;
-    float4 col : COLOR0;
-};
+//-----------------------------------------------------------------------------
+// Pixel shader
+//-----------------------------------------------------------------------------
 
-[maxvertexcount(4)]
-void GSMain(point VSOut vin[1], inout TriangleStream<GSOut> tri)
+float4 PSMain(PSInput input) : SV_TARGET
 {
-    VSOut i = vin[0];
-
-    // Look up state
-    PointState ps = PointSRV[i.pointId];
+    PointState ps = PointSRV[input.PointId];
     GroupState gs = GroupSRV[ps.GroupId];
 
-    // Visibility (same rules as glyphs/circles)
-    if (((gs.Flags & GROUP_VISIBLE) == 0u) || ((ps.Flags & POINT_VISIBLE) == 0u) || ((ps.Flags & POINT_HAS_LEADER) == 0u))
-        return;
+    //--------------------------------------------
+    // Visibility
+    //--------------------------------------------
 
-    // Live endpoint B = BBase + label offset
-    float2 aW = ps.Offset;
-    //float2 bW = float2(i.bWorld.x + ps.PointInfoOffset.x, i.bWorld.y + ps.PointInfoOffset.y);
-    float2 bW = ps.Offset + ps.PointInfoOffset;
+    if ((gs.Flags & GROUP_VISIBLE) == 0u)
+        discard;
 
-    // Project to CLIP & NDC
-    float4 aC = mul(float4(aW, 0, 1), ViewProj);
-    float4 bC = mul(float4(bW, 0, 1), ViewProj);
-    float2 aN = aC.xy / aC.w;
-    float2 bN = bC.xy / bC.w;
+    if ((ps.Flags & POINT_VISIBLE) == 0u)
+        discard;
 
-    // Direction in NDC
-    float2 dir = bN - aN;
-    float len = length(dir);
-    if (len < 1e-6)
-        return;
-    dir /= len;
+    if ((ps.Flags & POINT_HAS_LEADER) == 0u)
+        discard;
 
-    // Perp in NDC; convert desired pixel thickness to NDC using InvViewport (NDC range = 2)
-    float2 perpN = float2(-dir.y, dir.x);
-    float2 pxToN = 2.0 * InvViewport;
-    float2 offsN = perpN * (0.5 * PixelThickness) * pxToN;
+    //--------------------------------------------
+    // Color
+    //--------------------------------------------
 
-    // Quad corners in NDC
-    float2 aN0 = aN - offsN;
-    float2 aN1 = aN + offsN;
-    float2 bN0 = bN - offsN;
-    float2 bN1 = bN + offsN;
+    float4 color = gs.Color;
 
-    // Back to CLIP using original w,z for each end
-    float4 vA0 = float4(aN0 * aC.w, aC.z, aC.w);
-    float4 vA1 = float4(aN1 * aC.w, aC.z, aC.w);
-    float4 vB0 = float4(bN0 * bC.w, bC.z, bC.w);
-    float4 vB1 = float4(bN1 * bC.w, bC.z, bC.w);
-
-    // Color from group; override if selected
-    float4 col = gs.Color;
     if ((ps.Flags & POINT_SELECTED) != 0u)
-        col = SelectedColor;
+        color = SelectedColor;
 
-    // Emit strip
-    GSOut o;
-    o.col = col;
-    o.pos = vA0;
-    tri.Append(o);
-    o.pos = vA1;
-    tri.Append(o);
-    o.pos = vB0;
-    tri.Append(o);
-    o.pos = vB1;
-    tri.Append(o);
-    tri.RestartStrip();
-}
+    //--------------------------------------------
+    // Analytic antialiasing
+    //--------------------------------------------
 
-float4 PSMain(GSOut i) : SV_Target
-{
-    return i.col; // simple solid; AA comes from rasterization of the quad
+    float d = abs(input.Side);
+    float w = fwidth(d);
+
+    float alpha = 1.0 - smoothstep(1.0 - w, 1.0 + w, d);
+    color.a *= alpha;
+
+    return color;
 }
