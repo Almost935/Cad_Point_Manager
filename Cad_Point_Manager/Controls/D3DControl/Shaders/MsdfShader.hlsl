@@ -92,16 +92,10 @@ float Median(float r, float g, float b)
 
 float ScreenPxRange(float2 uv)
 {
-    // Distance field range in texture UV units
     float2 unitRange = float2(DistanceRange, DistanceRange) / float2(AtlasWidth, AtlasHeight);
-
-    // Number of texture pixels covered by one screen pixel
     float2 screenTexSize = 1.0 / fwidth(uv);
-
-    // Canonical MSDF calculation
     float pxRange = 0.5 * dot(unitRange, screenTexSize);
 
-    // Prevent collapse when zoomed far away
     return max(pxRange, 1.0);
 }
 
@@ -149,7 +143,6 @@ VSOut VSMain(VSVertex v, VSInstance inst)
     float isFlippedY = ((ps.Flags & POINT_ISFLIPPEDY) != 0u) ? -1.0f : 1.0f;
 
     float2 corner = v.Corner + 0.5;
-
     float2 local = inst.PlaneOrigin + corner * inst.PlaneSize;
     local.x += inst.PenX;
     local.y *= inst.YSign;
@@ -158,6 +151,7 @@ VSOut VSMain(VSVertex v, VSInstance inst)
     
     float textInfoOffset = gs.TextInfoBaseXoffset * isFlippedY;
     float2 origin;
+    
     origin.x = ps.Offset.x + ps.PointInfoOffset.x + ls.Offset.x + textInfoOffset;
     origin.y = ps.Offset.y + ps.PointInfoOffset.y + ls.Offset.y * gs.Scale;
     

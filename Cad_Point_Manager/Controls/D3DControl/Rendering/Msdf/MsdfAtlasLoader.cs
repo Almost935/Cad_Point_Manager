@@ -10,7 +10,8 @@ public static class MsdfAtlasLoader
 {
     public static MsdfAtlas Load(Device device, string pngPath, string jsonPath)
     {
-        Texture2D texture = TextureLoader.LoadTexture(device, pngPath, out ShaderResourceView shaderResourceView);
+        Texture2D texture = TextureLoader.LoadTexture(
+            device, pngPath, out ShaderResourceView shaderResourceView, out MsdfCpuAtlas cpuAtlas);
 
         MsdfJsonRoot root = LoadJson(jsonPath);
 
@@ -28,13 +29,8 @@ public static class MsdfAtlasLoader
 
             if (glyph.PlaneBounds != null)
             {
-                planeMin = new Vector2(
-                    glyph.PlaneBounds.Left,
-                    glyph.PlaneBounds.Bottom);
-
-                planeMax = new Vector2(
-                    glyph.PlaneBounds.Right,
-                    glyph.PlaneBounds.Top);
+                planeMin = new Vector2(glyph.PlaneBounds.Left, glyph.PlaneBounds.Bottom);
+                planeMax = new Vector2(glyph.PlaneBounds.Right, glyph.PlaneBounds.Top);
             }
 
             Vector2 uvMin = Vector2.Zero;
@@ -42,13 +38,8 @@ public static class MsdfAtlasLoader
 
             if (glyph.AtlasBounds != null)
             {
-                uvMin = new Vector2(
-                    glyph.AtlasBounds.Left * invWidth,
-                    glyph.AtlasBounds.Top * invHeight);
-
-                uvMax = new Vector2(
-                    glyph.AtlasBounds.Right * invWidth,
-                    glyph.AtlasBounds.Bottom * invHeight);
+                uvMin = new Vector2(glyph.AtlasBounds.Left * invWidth, glyph.AtlasBounds.Top * invHeight);
+                uvMax = new Vector2(glyph.AtlasBounds.Right * invWidth, glyph.AtlasBounds.Bottom * invHeight);
             }
 
             glyphs.Add(character,
@@ -56,10 +47,8 @@ public static class MsdfAtlasLoader
                 {
                     Character = character,
                     Advance = glyph.Advance,
-
                     PlaneMin = planeMin,
                     PlaneMax = planeMax,
-
                     UvMin = uvMin,
                     UvMax = uvMax
                 });
@@ -71,25 +60,15 @@ public static class MsdfAtlasLoader
         {
             foreach (var pair in root.Kerning)
             {
-                uint key =
-                    ((uint)pair.Unicode1 << 16) |
-                    (ushort)pair.Unicode2;
+                uint key = ((uint)pair.Unicode1 << 16) | (ushort)pair.Unicode2;
 
-                kernings [key] = pair.Advance;
+                kernings[key] = pair.Advance;
             }
         }
 
         return new MsdfAtlas(
-            glyphs,
-            kernings,
-            root.Metrics.LineHeight,
-            root.Metrics.Ascender,
-            root.Metrics.Descender,
-            root.Atlas.Width,
-            root.Atlas.Height,
-            root.Atlas.DistanceRange,
-            texture,
-            shaderResourceView);
+            glyphs, kernings, root.Metrics.LineHeight, root.Metrics.Ascender, root.Metrics.Descender,
+            root.Atlas.Width, root.Atlas.Height, root.Atlas.DistanceRange, texture, shaderResourceView, cpuAtlas);
     }
 
     private static MsdfJsonRoot LoadJson(string jsonPath)

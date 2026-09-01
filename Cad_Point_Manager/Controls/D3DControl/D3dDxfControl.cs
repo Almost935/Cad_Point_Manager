@@ -86,6 +86,12 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public bool _buffersInitialized = false;
         private Buffer _drawingSettingsBuffer;
 
+        // Vertex staging fields
+        private readonly List<LineInstance> _lineInstanceStaging = [];
+        private readonly List<TextVertex> _textVertexStaging = [];
+        private readonly List<SolidVertex> _solidVertexStaging = [];
+        private readonly List<PointMarkerInstance> _pointMarkerInstanceStaging = [];
+
         // Line shader related fields
         private ResizableBuffer<LineInstance> _lineInstanceBuffer;
         private Buffer _lineQuadBuffer;
@@ -139,8 +145,10 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private bool _sigPointShadersLoaded = false;
         private int _sigPointVertexCount;
 
-        // CogoPoint shader related fields
+        // General CogoPoint shader related fields
         private bool _pointMarkerShadersLoaded = false;
+        private bool _cogoPointVerticesDirty = false;
+        private bool _cogoHoverVerticesDirty = false;
 
         // MSDF rendering
         private VertexShader _msdfVS;
@@ -186,11 +194,12 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private PixelShader _leaderLineGlowPS;
         private GeometryShader _leaderLineGlowGS;
         private Buffer _leaderLineGlowSettings;
+        private ResizableBuffer<LeaderLineInstance> _leaderLineGlowBuffer;
+        private int _leaderLineGlowInstanceCount;
+        private bool _leaderLineGlowVerticesDirty;
 
         // Cogo point hover rendering
         private bool _cogoHoverShadersLoaded = false;
-        private bool _cogoHoverVerticesDirty = false;
-
         private ResizableBuffer<CircleHoverVertex> _hoverCircleBuffer;
         private VertexShader _hoverCircleVertexShader;
         private PixelShader _hoverCirclePixelShader;
@@ -545,6 +554,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             if (HitTestableObjectTreeDirty) { LoadHitTestableObjectTree(); }
             if (_anchorVerticesDirty) { UpdateToggleAnchorVertices(); }
             if (_leaderLineVerticesDirty) { UpdateLeaderLineVertices(); }
+            if (_leaderLineGlowVerticesDirty) { UpdateLeaderLineGlowVertices(); }
             if (_sigPointVerticesDirty) { UpdateSignificantPointVertices(); }
             if (_dragOverlayDirty) { UpdateDragOverlayVertices(DragRect); }
 
@@ -597,9 +607,10 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 CompositeGlowTexture(ctx, ResCache.InteractionRenderTargetView);
 
                 if (_hoverCircleVertices.Count > 0) { DrawCogoPointHover(ctx); }
-                if (_anchorVerticesCount > 0) { DrawCogoPointAnchors(ctx); }
                 if (_sigPointVertexCount > 0) { DrawSignificantPoints(ctx); }
                 if (_msdfInstanceCount > 0) { DrawMsdfGlowGlyphs(ctx); }
+                if (_leaderLineGlowInstanceCount > 0) { DrawLeaderLinesGlow(ctx); }
+                if (_anchorVerticesCount > 0) { DrawCogoPointAnchors(ctx); }
 
                 _interactionDirty = false;
             }
@@ -912,27 +923,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             var instanceBinding = new VertexBufferBinding(_leaderLineBuffer.Buffer, _leaderLineBuffer.Stride, 0);
             ctx.InputAssembler.SetVertexBuffers(0, quadBinding, instanceBinding);
 
-            //--------------------------------------------
-            // Glow
-            //--------------------------------------------
-            ctx.VertexShader.Set(_leaderLineGlowVS);
-            ctx.PixelShader.Set(_leaderLineGlowPS);
-
-            ctx.VertexShader.SetConstantBuffer(0, _transformationBuffer);
-            ctx.VertexShader.SetConstantBuffer(1, _leaderLineGlowSettings);
-            ctx.VertexShader.SetShaderResource(0, StateBuffers.PointSRV);
-            ctx.VertexShader.SetShaderResource(1, StateBuffers.GroupSRV);
-
-            ctx.PixelShader.SetConstantBuffer(0, _transformationBuffer);
-            ctx.PixelShader.SetConstantBuffer(1, _leaderLineGlowSettings);
-            ctx.PixelShader.SetShaderResource(0, StateBuffers.PointSRV);
-            ctx.PixelShader.SetShaderResource(1, StateBuffers.GroupSRV);
-
-            ctx.DrawInstanced(6, _leaderLineInstanceCount, 0, 0);
-
-            //--------------------------------------------
-            // Normal leader
-            //--------------------------------------------
             ctx.VertexShader.Set(_leaderLineVS);
             ctx.PixelShader.Set(_leaderLinePS);
 
@@ -950,18 +940,15 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
         private void DrawLeaderLinesGlow(DeviceContext ctx)
         {
-            if (_leaderLineInstanceCount <= 0) { return; }
+            if (_leaderLineGlowInstanceCount <= 0) { return; }
 
             ctx.GeometryShader.Set(null);
             ctx.InputAssembler.InputLayout = _leaderLineInputLayout;
             ctx.InputAssembler.PrimitiveTopology = PrimitiveTopology.TriangleList;
             var quadBinding = new VertexBufferBinding(_leaderLineQuadBuffer, Utilities.SizeOf<LineCornerVertex>(), 0);
-            var instanceBinding = new VertexBufferBinding(_leaderLineBuffer.Buffer, _leaderLineBuffer.Stride, 0);
+            var instanceBinding = new VertexBufferBinding(_leaderLineGlowBuffer.Buffer, _leaderLineGlowBuffer.Stride, 0);
             ctx.InputAssembler.SetVertexBuffers(0, quadBinding, instanceBinding);
 
-            //--------------------------------------------
-            // Glow
-            //--------------------------------------------
             ctx.VertexShader.Set(_leaderLineGlowVS);
             ctx.PixelShader.Set(_leaderLineGlowPS);
 
@@ -975,7 +962,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             ctx.PixelShader.SetShaderResource(0, StateBuffers.PointSRV);
             ctx.PixelShader.SetShaderResource(1, StateBuffers.GroupSRV);
 
-            ctx.DrawInstanced(6, _leaderLineInstanceCount, 0, 0);
+            ctx.DrawInstanced(6, _leaderLineGlowInstanceCount, 0, 0);
         }
         private void DrawDragOverlay(DeviceContext ctx)
         {
@@ -1075,11 +1062,12 @@ namespace Cad_Point_Manager.Controls.D3DControl
             if (_lineInstanceBuffer is null || CadManager is null) { return; }
 
             var context = ResCache.DeviceContext;
-            var vertexSpan = CadManager.UpdateLineVerticesList(ResCache, SceneIdMap, StateBuffers);
+
+            CadManager.BuildLineInstances(_lineInstanceStaging, ResCache, SceneIdMap, StateBuffers);
 
             StateBuffers.EnsureObjectCapacity(SceneIdMap.ObjectCount);
-            _lineInstanceBuffer.Update(context, vertexSpan);
-            _lineInstanceCount = vertexSpan.Length;
+            _lineInstanceBuffer.Update(ResCache.DeviceContext, CollectionsMarshal.AsSpan(_lineInstanceStaging));
+            _lineInstanceCount = _lineInstanceStaging.Count;
 
             StateBuffers.FlushAll();
             _lineVerticesDirty = false;
@@ -1136,9 +1124,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
             }
 
             var context = ResCache.DeviceContext;
-            var vertexSpan = CadManager.UpdateTextVerticesList(ResCache, SceneIdMap, StateBuffers);
-            _textVertexBuffer.Update(context, vertexSpan);
-            _textVertexCount = vertexSpan.Length;
+
+            CadManager.BuildTextVertices(_textVertexStaging, ResCache, SceneIdMap, StateBuffers);
+
+            _textVertexBuffer.Update(context, CollectionsMarshal.AsSpan(_textVertexStaging));
+            _textVertexCount = _textVertexStaging.Count;
 
             StateBuffers.FlushAll();
             _textVerticesDirty = false;
@@ -1153,9 +1143,10 @@ namespace Cad_Point_Manager.Controls.D3DControl
             }
 
             var context = ResCache.DeviceContext;
-            var vertexSpan = CadManager.UpdateSolidVerticesList(ResCache, SceneIdMap, StateBuffers);
-            _solidVertexBuffer.Update(context, vertexSpan);
-            _solidVertexCount = vertexSpan.Length;
+            CadManager.BuildSolidVertices(_solidVertexStaging, ResCache, SceneIdMap, StateBuffers);
+
+            _solidVertexBuffer.Update(context, CollectionsMarshal.AsSpan(_solidVertexStaging));
+            _solidVertexCount = _solidVertexStaging.Count;
 
             StateBuffers.FlushAll();
             _solidVerticesDirty = false;
@@ -1191,34 +1182,16 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             _cogoTextVerticesDirty = false;
         }
-        private void UpdateMsdfGlowInstances()
-        {
-            //_msdfGlowInstances.Clear();
-
-            //foreach (var point in _mouseOverCogoPoints)
-            //{
-            //    if (point == null) { continue; }
-
-            //    if (!point.PointGroup.IsVisible) { continue; }
-
-            //    AddCogoPoint(point, _msdfGlowInstances);
-            //}
-
-            //_msdfGlowInstanceBuffer.Update(ResCache.DeviceContext, CollectionsMarshal.AsSpan(_msdfGlowInstances));
-
-            //_msdfGlowInstanceCount = _msdfGlowInstances.Count;
-
-            //_msdfGlowVerticesDirty = false;
-            //_interactionDirty = true;
-        }
         private void UpdatePointCircleVertices()
         {
             if (_pointCircleVertexBuffer is null) { return; }
 
             var context = ResCache.DeviceContext;
-            var vertexSpan = CadManager.UpdatePointCircleVerticesList(StateController);
-            _pointCircleVertexBuffer.Update(context, vertexSpan);
-            _pointCircleVertexCount = vertexSpan.Length;
+
+            CadManager.BuildPointMarkerInstances(_pointMarkerInstanceStaging, StateController);
+
+            _pointCircleVertexBuffer.Update(context, CollectionsMarshal.AsSpan(_pointMarkerInstanceStaging));
+            _pointCircleVertexCount = _pointMarkerInstanceStaging.Count;
 
             StateBuffers.FlushAll();
             _pointCircleVerticesDirty = false;
@@ -1400,6 +1373,32 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _leaderLineBuffer.Update(ResCache.DeviceContext, CollectionsMarshal.AsSpan(list));
 
             _leaderLineVerticesDirty = false;
+            _interactionDirty = true;
+        }
+        private void UpdateLeaderLineGlowVertices()
+        {
+            List<LeaderLineInstance> list = [];
+
+            foreach (var p in _mouseOverCogoPoints)
+            {
+                if (p is null) { continue; }
+
+                uint pid = SceneIdMap.GetOrAddPointId(p, out var isNewPoint);
+
+                if (isNewPoint) { StateBuffers.EnsurePointCapacity(SceneIdMap.PointCount); }
+
+                list.Add(new LeaderLineInstance
+                {
+                    PointId = pid
+                });
+            }
+
+            StateBuffers.FlushAll();
+
+            _leaderLineGlowInstanceCount = list.Count;
+            _leaderLineGlowBuffer.Update(ResCache.DeviceContext, CollectionsMarshal.AsSpan(list));
+
+            _leaderLineGlowVerticesDirty = false;
             _interactionDirty = true;
         }
         private void UpdateSignificantPointVertices()
@@ -1969,6 +1968,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             _leaderLineBuffer?.Dispose();
             _leaderLineBuffer = new(device, 2);
+
+            _leaderLineGlowBuffer?.Dispose();
+            _leaderLineGlowBuffer = new(device, 2);
 
             _sigPointVertexBuffer?.Dispose();
             _sigPointVertexBuffer = new(device, 64);
@@ -3284,7 +3286,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     {
                         ResetHoverObjects();
                         MouseOverCogoToggleButton(snappedCogoPoint);
-                        _cogoHoverVerticesDirty = true;
+                        _cogoHoverVerticesDirty = _leaderLineGlowVerticesDirty = true;
 
                         return;
                     }
@@ -3312,7 +3314,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                                     if (point.IsSelected && point.ToggleBounds.Contains(_lastHitTestCoords))
                                     {
                                         MouseOverCogoToggleButton(point);
-                                        _cogoHoverVerticesDirty = true;
+                                        _cogoHoverVerticesDirty = _leaderLineGlowVerticesDirty = true;
 
                                         return;
                                     }
@@ -3346,7 +3348,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                             {
                                 MouseOverCogoToggleButton(point);
                                 ResetHoverObjects();
-                                _cogoHoverVerticesDirty = true;
+                                _cogoHoverVerticesDirty = _leaderLineGlowVerticesDirty = true;
 
                                 return;
                             }
@@ -3363,7 +3365,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             if (cogoMouseOverChanged)
             {
                 StateController.FlushPointUpdates();
-                _cogoHoverVerticesDirty = _leader = true;
+                _cogoHoverVerticesDirty = _leaderLineGlowVerticesDirty = true;
             }
         }
         private async void RunDragCogoPointsHittest(CancellationToken token)
@@ -3402,7 +3404,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             if (adds.Count > 0 || removes.Count > 0)
             {
                 StateController.FlushPointUpdates();
-                _cogoHoverVerticesDirty = true;
+                _cogoHoverVerticesDirty = _leaderLineGlowVerticesDirty = true;
             }
         }
         private void RunDragGeometriesHittest(CancellationToken token)

@@ -16,6 +16,7 @@ public sealed class MsdfAtlas : IDisposable
     public float DistanceRange { get; }
     public Texture2D Texture { get; }
     public ShaderResourceView ShaderResourceView { get; }
+    public MsdfCpuAtlas CpuAtlas { get; }
 
     public MsdfAtlas(
         IReadOnlyDictionary<char, MsdfGlyph> glyphs,
@@ -27,7 +28,8 @@ public sealed class MsdfAtlas : IDisposable
         int height,
         float distanceRange,
         Texture2D texture,
-        ShaderResourceView shaderResourceView)
+        ShaderResourceView shaderResourceView,
+        MsdfCpuAtlas cpuAtlas)
     {
         Glyphs = glyphs;
         Kernings = kernings;
@@ -37,9 +39,9 @@ public sealed class MsdfAtlas : IDisposable
         Width = width;
         Height = height;
         DistanceRange = distanceRange;
-
         Texture = texture;
         ShaderResourceView = shaderResourceView;
+        CpuAtlas = cpuAtlas;
     }
 
     public void Dispose()

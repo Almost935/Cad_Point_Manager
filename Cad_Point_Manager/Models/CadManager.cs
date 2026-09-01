@@ -38,12 +38,6 @@ namespace Cad_Point_Manager.Models
         #region Fields
         private const float _pointSizeToExtentsFactor = 0.001f;
 
-        private readonly List<LineInstance> _cachedLineInstanceVertices = [];
-        private readonly List<TextVertex> _cachedTextVertices = [];
-        private readonly List<SolidVertex> _cachedSolidVertices = [];
-        private readonly List<TextVertex> _cachedPointTextVertices = [];
-        private readonly List<PointMarkerInstance> _cachedPointMarkerVertices = [];
-
         private LineTypeCache _lineTypeCache;
 
         private bool _dxfLoaded = false;
@@ -1293,10 +1287,6 @@ namespace Cad_Point_Manager.Models
             DxfImportResult = null;
 
             Layers.Clear();
-            _cachedLineInstanceVertices.Clear();
-            _cachedLineInstanceVertices.TrimExcess();
-            _cachedTextVertices.Clear();
-            _cachedTextVertices.TrimExcess();
 
             DxfLoaded = false;
             LineVerticesDirty = true;
@@ -1308,11 +1298,6 @@ namespace Cad_Point_Manager.Models
             PointGroups.Clear();
             CogoPoints.Clear();
 
-            _cachedPointTextVertices.Clear();
-            _cachedPointTextVertices.TrimExcess();
-            _cachedPointMarkerVertices.Clear();
-            _cachedPointMarkerVertices.TrimExcess();
-
             CogoPointTextVerticesDirty = true;
             CogoPointCircleVerticesDirty = true;
         }
@@ -1322,11 +1307,11 @@ namespace Cad_Point_Manager.Models
             ZoomToExtentsRequested?.Invoke();
         }
 
-        public ReadOnlySpan<LineInstance> UpdateLineVerticesList(ResCache resCache, SceneIdMap sceneIdMap, D3dStateBuffers stateBuffers)
+        public void BuildLineInstances(List<LineInstance> instances, ResCache resCache, SceneIdMap sceneIdMap, D3dStateBuffers stateBuffers)
         {
             if (LineVerticesDirty)
             {
-                _cachedLineInstanceVertices.Clear();
+                instances.Clear();
 
                 foreach (var keyValuePair in Layers)
                 {
@@ -1345,44 +1330,44 @@ namespace Cad_Point_Manager.Models
                             if (isNewObj) { stateBuffers.InitializeObjectState(sceneIdMap.MaxObjectId, obj, objectId); }
 
                             drawingGeometry.UpdateVertices(resCache, lId, objectId, ltId);
-                            drawingGeometry.StartVertexIndex = _cachedLineInstanceVertices.Count;
-                            _cachedLineInstanceVertices.AddRange(drawingGeometry.LineInstances);
-                            drawingGeometry.EndVertexIndex = _cachedLineInstanceVertices.Count - 1;
+                            drawingGeometry.StartVertexIndex = instances.Count;
+                            instances.AddRange(drawingGeometry.LineInstances);
+                            drawingGeometry.EndVertexIndex = instances.Count - 1;
                         }
                         if (obj is DrawingMtext drawingMtext)
                         {
                             drawingMtext.UpdateVertices(resCache, lId, ltId, sceneIdMap, stateBuffers);
-                            drawingMtext.StartLineVertexIndex = _cachedLineInstanceVertices.Count;
-                            _cachedLineInstanceVertices.AddRange(drawingMtext.LineInstances);
-                            drawingMtext.EndLineVertexIndex = _cachedLineInstanceVertices.Count - 1;
+                            drawingMtext.StartLineVertexIndex = instances.Count;
+                            instances.AddRange(drawingMtext.LineInstances);
+                            drawingMtext.EndLineVertexIndex = instances.Count - 1;
                         }
                         if (obj is DrawingSText drawingSText)
                         {
                             drawingSText.UpdateVertices(resCache, lId, ltId, sceneIdMap, stateBuffers);
-                            drawingSText.StartLineVertexIndex = _cachedLineInstanceVertices.Count;
-                            _cachedLineInstanceVertices.AddRange(drawingSText.LineInstances);
-                            drawingSText.EndLineVertexIndex = _cachedLineInstanceVertices.Count - 1;
+                            drawingSText.StartLineVertexIndex = instances.Count;
+                            instances.AddRange(drawingSText.LineInstances);
+                            drawingSText.EndLineVertexIndex = instances.Count - 1;
                         }
                         if (obj is DrawingBlock drawingBlock)
                         {
                             drawingBlock.UpdateGeometryVertices(resCache, lId, ltId, sceneIdMap, stateBuffers);
-                            drawingBlock.StartLineVertexIndex = _cachedLineInstanceVertices.Count;
-                            _cachedLineInstanceVertices.AddRange(drawingBlock.LineInstances);
-                            drawingBlock.EndLineVertexIndex = _cachedLineInstanceVertices.Count - 1;
+                            drawingBlock.StartLineVertexIndex = instances.Count;
+                            instances.AddRange(drawingBlock.LineInstances);
+                            drawingBlock.EndLineVertexIndex = instances.Count - 1;
                         }
                         if (obj is DrawingDimension drawingDimension)
                         {
                             drawingDimension.UpdateGeometryVertices(resCache, lId, ltId, sceneIdMap, stateBuffers);
-                            drawingDimension.StartLineVertexIndex = _cachedLineInstanceVertices.Count;
-                            _cachedLineInstanceVertices.AddRange(drawingDimension.LineInstances);
-                            drawingDimension.EndLineVertexIndex = _cachedLineInstanceVertices.Count - 1;
+                            drawingDimension.StartLineVertexIndex = instances.Count;
+                            instances.AddRange(drawingDimension.LineInstances);
+                            drawingDimension.EndLineVertexIndex = instances.Count - 1;
                         }
                         if (obj is DrawingMleader drawingMleader)
                         {
                             drawingMleader.UpdateGeometryVertices(resCache, lId, ltId, sceneIdMap, stateBuffers);
-                            drawingMleader.StartLineVertexIndex = _cachedLineInstanceVertices.Count;
-                            _cachedLineInstanceVertices.AddRange(drawingMleader.LineInstances);
-                            drawingMleader.EndLineVertexIndex = _cachedLineInstanceVertices.Count - 1;
+                            drawingMleader.StartLineVertexIndex = instances.Count;
+                            instances.AddRange(drawingMleader.LineInstances);
+                            drawingMleader.EndLineVertexIndex = instances.Count - 1;
                         }
                     }
                 }
@@ -1390,147 +1375,124 @@ namespace Cad_Point_Manager.Models
                 var arcs = Layers.SelectMany(l => l.Value.DrawingObjects).OfType<DrawingArc>().ToList();
 
                 LineVerticesDirty = false;
-
-                //// For Testing
-                //var tl = new LineVertex(new Vector3((float)Extents.Left, (float)Extents.Top, 0), 0, 0);
-                //var tr = new LineVertex(new Vector3((float)Extents.Right, (float)Extents.Top, 0), 0, 0);
-                //var bl = new LineVertex(new Vector3((float)Extents.Left, (float)Extents.Bottom, 0), 0, 0);
-                //var br = new LineVertex(new Vector3((float)Extents.Right, (float)Extents.Bottom, 0), 0, 0);
-                //_cachedLineVertices.Add(tl); _cachedLineVertices.Add(tr);
-                //_cachedLineVertices.Add(bl); _cachedLineVertices.Add(br);
-                //_cachedLineVertices.Add(br); _cachedLineVertices.Add(tr);
-                //_cachedLineVertices.Add(bl); _cachedLineVertices.Add(tl);
             }
-            return CollectionsMarshal.AsSpan(_cachedLineInstanceVertices);
         }
-        public ReadOnlySpan<TextVertex> UpdateTextVerticesList(ResCache d3DResCache, SceneIdMap sceneIdMap, D3dStateBuffers stateBuffers)
+        public void BuildTextVertices(List<TextVertex> vertices, ResCache resCache, SceneIdMap sceneIdMap, D3dStateBuffers stateBuffers)
         {
-            if (TextVerticesDirty)
+            vertices.Clear();
+
+            foreach (var kvp in Layers)
             {
-                if (d3DResCache.Device is null)
+                var layer = kvp.Value;
+                var lid = sceneIdMap.GetOrAddLayerId(layer, out var isNewLayer);
+                if (isNewLayer) { stateBuffers.InitializeLayerState(sceneIdMap.MaxLayerId, layer, lid); }
+
+                if (!layer.IsVisible) { continue; }
+
+                foreach (var obj in layer.DrawingObjects)
                 {
-                    return CollectionsMarshal.AsSpan(_cachedTextVertices);
+                    uint ltId = sceneIdMap.GetOrAddLineTypeId(obj.LineType, out var isNewLtype);
+                    if (isNewLtype) { stateBuffers.InitializeLineTypeState(sceneIdMap.MaxLineTypeId, obj.LineType, ltId); }
+
+                    if (obj is DrawingSText text)
+                    {
+                        text.UpdateVertices(resCache, lid, ltId, sceneIdMap, stateBuffers);
+                        text.StartTextVertexIndex = vertices.Count;
+                        vertices.AddRange(text.TextVertices);
+                        text.EndTextVertexIndex = vertices.Count - 1;
+                    }
+                    if (obj is DrawingMtext mtext)
+                    {
+                        mtext.UpdateVertices(resCache, lid, ltId, sceneIdMap, stateBuffers);
+                        mtext.StartTextVertexIndex = vertices.Count;
+                        vertices.AddRange(mtext.TextVertices);
+                        mtext.EndTextVertexIndex = vertices.Count - 1;
+                    }
+                    if (obj is DrawingBlock drawingBlock)
+                    {
+                        drawingBlock.UpdateTextVertices(resCache, lid, ltId, sceneIdMap, stateBuffers);
+                        drawingBlock.StartTextVertexIndex = vertices.Count;
+                        vertices.AddRange(drawingBlock.TextVertices);
+                        drawingBlock.EndTextVertexIndex = vertices.Count - 1;
+                    }
+                    if (obj is DrawingDimension dimension)
+                    {
+                        dimension.UpdateTextVertices(resCache, lid, ltId, sceneIdMap, stateBuffers);
+                        dimension.StartTextVertexIndex = vertices.Count;
+                        vertices.AddRange(dimension.TextVertices);
+                        dimension.EndTextVertexIndex = vertices.Count - 1;
+                    }
+                    if (obj is DrawingMleader drawingMleader)
+                    {
+                        drawingMleader.UpdateTextVertices(resCache, lid, ltId, sceneIdMap, stateBuffers);
+                        drawingMleader.StartTextVertexIndex = vertices.Count;
+                        vertices.AddRange(drawingMleader.TextVertices);
+                        drawingMleader.EndTextVertexIndex = vertices.Count - 1;
+                    }
                 }
-                _cachedTextVertices.Clear();
+            }
 
-                foreach (var kvp in Layers)
+            TextVerticesDirty = false;
+        }
+        public void BuildSolidVertices(List<SolidVertex> vertices, ResCache resCache, SceneIdMap sceneIdMap, D3dStateBuffers stateBuffers)
+        {
+            vertices.Clear();
+
+            foreach (var keyValuePair in Layers)
+            {
+                var layer = keyValuePair.Value;
+                var lId = sceneIdMap.GetOrAddLayerId(layer, out var isNewLayer);
+                if (isNewLayer) { stateBuffers.InitializeLayerState(sceneIdMap.MaxLayerId, layer, lId); }
+
+                foreach (var obj in layer.DrawingObjects)
                 {
-                    var layer = kvp.Value;
-                    var lid = sceneIdMap.GetOrAddLayerId(layer, out var isNewLayer);
-                    if (isNewLayer) { stateBuffers.InitializeLayerState(sceneIdMap.MaxLayerId, layer, lid); }
+                    var objectId = sceneIdMap.GetOrAddObjectId(obj, out var isNewObj);
+                    if (isNewObj) { stateBuffers.InitializeObjectState(sceneIdMap.MaxObjectId, obj, objectId); }
 
-                    if (!layer.IsVisible) { continue; }
-
-                    foreach (var obj in layer.DrawingObjects)
+                    if (obj is DrawingSolid drawingSolid)
+                    {
+                        drawingSolid.UpdateVertices(lId, objectId);
+                        drawingSolid.StartVertexIndex = vertices.Count;
+                        vertices.AddRange(drawingSolid.Vertices);
+                        drawingSolid.EndVertexIndex = vertices.Count - 1;
+                    }
+                    if (obj is DrawingMleader mleader)
                     {
                         uint ltId = sceneIdMap.GetOrAddLineTypeId(obj.LineType, out var isNewLtype);
                         if (isNewLtype) { stateBuffers.InitializeLineTypeState(sceneIdMap.MaxLineTypeId, obj.LineType, ltId); }
 
-                        if (obj is DrawingSText text)
-                        {
-                            text.UpdateVertices(d3DResCache, lid, ltId, sceneIdMap, stateBuffers);
-                            text.StartTextVertexIndex = _cachedTextVertices.Count;
-                            _cachedTextVertices.AddRange(text.TextVertices);
-                            text.EndTextVertexIndex = _cachedTextVertices.Count - 1;
-                        }
-                        if (obj is DrawingMtext mtext)
-                        {
-                            mtext.UpdateVertices(d3DResCache, lid, ltId, sceneIdMap, stateBuffers);
-                            mtext.StartTextVertexIndex = _cachedTextVertices.Count;
-                            _cachedTextVertices.AddRange(mtext.TextVertices);
-                            mtext.EndTextVertexIndex = _cachedTextVertices.Count - 1;
-                        }
-                        if (obj is DrawingBlock drawingBlock)
-                        {
-                            drawingBlock.UpdateTextVertices(d3DResCache, lid, ltId, sceneIdMap, stateBuffers);
-                            drawingBlock.StartTextVertexIndex = _cachedTextVertices.Count;
-                            _cachedTextVertices.AddRange(drawingBlock.TextVertices);
-                            drawingBlock.EndTextVertexIndex = _cachedTextVertices.Count - 1;
-                        }
-                        if (obj is DrawingDimension dimension)
-                        {
-                            dimension.UpdateTextVertices(d3DResCache, lid, ltId, sceneIdMap, stateBuffers);
-                            dimension.StartTextVertexIndex = _cachedTextVertices.Count;
-                            _cachedTextVertices.AddRange(dimension.TextVertices);
-                            dimension.EndTextVertexIndex = _cachedTextVertices.Count - 1;
-                        }
-                        if (obj is DrawingMleader drawingMleader)
-                        {
-                            drawingMleader.UpdateTextVertices(d3DResCache, lid, ltId, sceneIdMap, stateBuffers);
-                            drawingMleader.StartTextVertexIndex = _cachedTextVertices.Count;
-                            _cachedTextVertices.AddRange(drawingMleader.TextVertices);
-                            drawingMleader.EndTextVertexIndex = _cachedTextVertices.Count - 1;
-                        }
+                        mleader.UpdateSolidVertices(resCache, lId, objectId, ltId);
+                        mleader.StartSolidVertexIndex = vertices.Count;
+                        vertices.AddRange(mleader.SolidVertices);
+                        mleader.EndSolidVertexIndex = vertices.Count - 1;
                     }
-                }
-                TextVerticesDirty = false;
-            }
-
-            return CollectionsMarshal.AsSpan(_cachedTextVertices);
-        }
-        public ReadOnlySpan<SolidVertex> UpdateSolidVerticesList(ResCache resCache, SceneIdMap sceneIdMap, D3dStateBuffers stateBuffers)
-        {
-            if (SolidVerticesDirty)
-            {
-                _cachedSolidVertices.Clear();
-
-                foreach (var keyValuePair in Layers)
-                {
-                    var layer = keyValuePair.Value;
-                    var lId = sceneIdMap.GetOrAddLayerId(layer, out var isNewLayer);
-                    if (isNewLayer) { stateBuffers.InitializeLayerState(sceneIdMap.MaxLayerId, layer, lId); }
-
-                    foreach (var obj in layer.DrawingObjects)
+                    if (obj is DrawingBlock drawingBlock)
                     {
-                        var objectId = sceneIdMap.GetOrAddObjectId(obj, out var isNewObj);
-                        if (isNewObj) { stateBuffers.InitializeObjectState(sceneIdMap.MaxObjectId, obj, objectId); }
+                        uint ltId = sceneIdMap.GetOrAddLineTypeId(obj.LineType, out var isNewLtype);
+                        if (isNewLtype) { stateBuffers.InitializeLineTypeState(sceneIdMap.MaxLineTypeId, obj.LineType, ltId); }
 
-                        if (obj is DrawingSolid drawingSolid)
-                        {
-                            drawingSolid.UpdateVertices(lId, objectId);
-                            drawingSolid.StartVertexIndex = _cachedSolidVertices.Count;
-                            _cachedSolidVertices.AddRange(drawingSolid.Vertices);
-                            drawingSolid.EndVertexIndex = _cachedSolidVertices.Count - 1;
-                        }
-                        if (obj is DrawingMleader mleader)
-                        {
-                            uint ltId = sceneIdMap.GetOrAddLineTypeId(obj.LineType, out var isNewLtype);
-                            if (isNewLtype) { stateBuffers.InitializeLineTypeState(sceneIdMap.MaxLineTypeId, obj.LineType, ltId); }
+                        drawingBlock.UpdateSolidVertices(resCache, lId, objectId, ltId);
+                        drawingBlock.StartSolidVertexIndex = vertices.Count;
+                        vertices.AddRange(drawingBlock.SolidVertices);
+                        drawingBlock.EndSolidVertexIndex = vertices.Count - 1;
+                    }
+                    if (obj is DrawingWidePolyline drawingWidePolyline)
+                    {
+                        uint ltId = sceneIdMap.GetOrAddLineTypeId(obj.LineType, out var isNewLtype);
+                        if (isNewLtype) { stateBuffers.InitializeLineTypeState(sceneIdMap.MaxLineTypeId, obj.LineType, ltId); }
 
-                            mleader.UpdateSolidVertices(resCache, lId, objectId, ltId);
-                            mleader.StartSolidVertexIndex = _cachedSolidVertices.Count;
-                            _cachedSolidVertices.AddRange(mleader.SolidVertices);
-                            mleader.EndSolidVertexIndex = _cachedSolidVertices.Count - 1;
-                        }
-                        if (obj is DrawingBlock drawingBlock)
-                        {
-                            uint ltId = sceneIdMap.GetOrAddLineTypeId(obj.LineType, out var isNewLtype);
-                            if (isNewLtype) { stateBuffers.InitializeLineTypeState(sceneIdMap.MaxLineTypeId, obj.LineType, ltId); }
-
-                            drawingBlock.UpdateSolidVertices(resCache, lId, objectId, ltId);
-                            drawingBlock.StartSolidVertexIndex = _cachedSolidVertices.Count;
-                            _cachedSolidVertices.AddRange(drawingBlock.SolidVertices);
-                            drawingBlock.EndSolidVertexIndex = _cachedSolidVertices.Count - 1;
-                        }
-                        if (obj is DrawingWidePolyline drawingWidePolyline)
-                        {
-                            uint ltId = sceneIdMap.GetOrAddLineTypeId(obj.LineType, out var isNewLtype);
-                            if (isNewLtype) { stateBuffers.InitializeLineTypeState(sceneIdMap.MaxLineTypeId, obj.LineType, ltId); }
-
-                            drawingWidePolyline.UpdateVertices(resCache, lId, objectId, ltId);
-                            drawingWidePolyline.StartVertexIndex = _cachedSolidVertices.Count;
-                            _cachedSolidVertices.AddRange(drawingWidePolyline.SolidVertices);
-                            drawingWidePolyline.EndVertexIndex = _cachedSolidVertices.Count - 1;
-                        }
+                        drawingWidePolyline.UpdateVertices(resCache, lId, objectId, ltId);
+                        drawingWidePolyline.StartVertexIndex = vertices.Count;
+                        vertices.AddRange(drawingWidePolyline.SolidVertices);
+                        drawingWidePolyline.EndVertexIndex = vertices.Count - 1;
                     }
                 }
-                SolidVerticesDirty = false;
             }
-            return CollectionsMarshal.AsSpan(_cachedSolidVertices);
+            SolidVerticesDirty = false;
         }
-        public ReadOnlySpan<PointMarkerInstance> UpdatePointCircleVerticesList(D3dStateController stateController)
+        public void BuildPointMarkerInstances(List<PointMarkerInstance> instances, D3dStateController stateController)
         {
-            _cachedPointMarkerVertices.Clear();
+            instances.Clear();
 
             foreach (var pg in PointGroups)
             {
@@ -1540,7 +1502,7 @@ namespace Cad_Point_Manager.Models
                 {
                     var pointRegistration = stateController.EnsurePointRegistered(p);
 
-                    _cachedPointMarkerVertices.Add(new PointMarkerInstance
+                    instances.Add(new PointMarkerInstance
                     {
                         Position = Vector3.Zero,
                         Radius = GlobalHelperProperties.CogoPointCirclePixelRadius,
@@ -1549,7 +1511,6 @@ namespace Cad_Point_Manager.Models
                 }
             }
             CogoPointCircleVerticesDirty = false;
-            return CollectionsMarshal.AsSpan(_cachedPointMarkerVertices);
         }
 
         public void GetTestDxfPoints()
