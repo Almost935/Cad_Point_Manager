@@ -60,6 +60,7 @@
     <Compile Remove="Models\OffscreenBitmap.cs" />
     <Compile Remove="Models\OffscreenBitmapManager.cs" />
     <Compile Remove="Models\PointRendering\CogoPointTextVerticesDict.cs" />
+    <Compile Remove="Models\PointRendering\GlyphPlacement.cs" />
     <Compile Remove="Models\Printing\PageSize.cs" />
     <Compile Remove="Services\D3dDxfRenderHost.cs" />
     <Compile Remove="Services\DxfService.cs" />

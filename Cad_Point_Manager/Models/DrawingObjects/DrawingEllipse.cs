@@ -1,4 +1,5 @@
 ﻿using Cad_Point_Manager.Controls.D3DControl;
+using Cad_Point_Manager.Controls.D3DControl.Rendering.Msdf;
 using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Helpers;
 using Cad_Point_Manager.Models.DrawingObjects.HelperClasses;
@@ -169,7 +170,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
             UpdateBounds();
         }
-        public override double DistanceToPoint(System.Windows.Point point)
+        public override double DistanceToPoint(System.Windows.Point point, MsdfAtlas atlas = null)
         {
             // Convert angles to radians
             double startRad = StartAngle * Math.PI / 180;

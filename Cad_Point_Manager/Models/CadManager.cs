@@ -3,6 +3,7 @@ using Cad_Point_Manager.Common;
 using Cad_Point_Manager.Common.Collections;
 using Cad_Point_Manager.Controls.D3DControl;
 using Cad_Point_Manager.Controls.D3DControl.Rendering.Helpers;
+using Cad_Point_Manager.Controls.D3DControl.Rendering.Msdf;
 using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Helpers;
 using Cad_Point_Manager.Models.DrawingObjects;
@@ -451,7 +452,8 @@ namespace Cad_Point_Manager.Models
 
             return cmd.Succeeded;
         }
-        internal bool TryCreatePointInternal(int pointNumber, Vector3 position, string pgName, out CogoPoint? point, out string? errorMessage, float elevation = 0, string description = "")
+        internal bool TryCreatePointInternal(int pointNumber, Vector3 position, string pgName, out CogoPoint? point, 
+            out string? errorMessage, float elevation = 0, string description = "")
         {
             var pgExists = TryGetPointGroup(pgName, out var pg);
 
@@ -1217,7 +1219,7 @@ namespace Cad_Point_Manager.Models
 
             return geometries;
         }
-        public List<(double distance, CogoPoint points)> HitTestCogoPoints(Point p, float tolerance)
+        public List<(double distance, CogoPoint points)> HitTestCogoPoints(Point p, float tolerance, MsdfAtlas atlas)
         {
             List<(double distance, CogoPoint points)> hits = [];
 
@@ -1228,13 +1230,13 @@ namespace Cad_Point_Manager.Models
 
             foreach (var node in nodes)
             {
-                hits.AddRange(node.HitTestPoint(p, rect));
+                hits.AddRange(node.HitTestPoint(p, rect, atlas));
             }
             hits.Sort((x, y) => x.distance.CompareTo(y.distance));
             return hits;
         }
 
-        public List<CogoPoint> HitTestDragCogoPoints(Rect rect)
+        public List<CogoPoint> HitTestDragCogoPoints(Rect rect, MsdfAtlas atlas)
         {
             List<CogoPoint> points = [];
 

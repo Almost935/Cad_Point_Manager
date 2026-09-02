@@ -1,4 +1,5 @@
 ﻿using Cad_Point_Manager.Common;
+using Cad_Point_Manager.Controls.D3DControl.Rendering.Msdf;
 using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Helpers;
 using SharpDX;
@@ -72,7 +73,7 @@ namespace Cad_Point_Manager.Models.HitTesting
                 _boundsSize,
                 _boundsSize);
         }
-        public override double DistanceToPoint(Point p)
+        public override double DistanceToPoint(Point p, MsdfAtlas atlas = null)
         {
             return MathHelpers.PointToPointDistance(p, Position);
         }

@@ -42,6 +42,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         #region Fields
         private const float HoverTextPadPx = 3f;     // grow the text rect by this many pixels
         private const float HoverEllipsePadPx = 2f;  // extra pixels over the point radius
+        private const float CogoPointTextHitPaddingPixels = 3.0f;
 
         // CogoPoint ToggleButton Fields
         private float _desiredHalfWorldForAnchors;
@@ -2266,52 +2267,37 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             var ids = StateController.EnsurePointRegistered(point);
 
+            // Point number
             var pointNumberLayout = LayoutMsdfString(
-                point.PointNumber.ToString(),
-                point,
-                point.PointNumberOffset,
-                emToWorld);
-
+                point.PointNumber.ToString(), point, point.PointNumberOffset, emToWorld);
             point.PointNumberBounds = pointNumberLayout.Bounds;
+            point.PointNumberGlyphs = CreateGlyphHitRegions(pointNumberLayout);
 
             AddMsdfString(
-                pointNumberLayout,
-                ids.PointNumberLabelId,
-                ids.PointId,
-                emToWorld,
-                destination);
+                pointNumberLayout, ids.PointNumberLabelId, ids.PointId, emToWorld, destination);
 
+            // Elevation
             var elevationLayout = LayoutMsdfString(
-                    point.Elevation.ToString("F3"),
-                    point,
-                    point.ElevationOffset,
-                    emToWorld);
-
+                point.Elevation.ToString("F3"), point, point.ElevationOffset, emToWorld);
             point.ElevationBounds = elevationLayout.Bounds;
+            point.ElevationGlyphs = CreateGlyphHitRegions(elevationLayout);
 
-            AddMsdfString(
-                elevationLayout,
-                ids.ElevationLabelId,
-                ids.PointId,
-                emToWorld,
-                destination);
+            AddMsdfString(elevationLayout, ids.ElevationLabelId, ids.PointId, emToWorld, destination);
 
+            // Description (if it has one)
             if (point.HasDescription)
             {
                 var descriptionLayout = LayoutMsdfString(
-                    point.Description.ToString(),
-                    point,
-                    point.DescriptionOffset,
-                    emToWorld);
-
+                    point.Description.ToString(), point, point.DescriptionOffset, emToWorld);
                 point.DescriptionBounds = descriptionLayout.Bounds;
+                point.DescriptionGlyphs = CreateGlyphHitRegions(descriptionLayout);
 
-                AddMsdfString(
-                    descriptionLayout,
-                    ids.DescriptionLabelId,
-                    ids.PointId,
-                    emToWorld,
-                    destination);
+                AddMsdfString(descriptionLayout, ids.DescriptionLabelId, ids.PointId, emToWorld, destination);
+            }
+            else
+            {
+                point.DescriptionBounds = Rect.Empty;
+                point.DescriptionGlyphs = [];
             }
 
             float rW = (float)(GlobalHelperProperties.CogoPointCirclePixelRadius * point.PointGroup.PointScale);
@@ -2346,28 +2332,32 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
         private void UpdateCogoPointBounds(CogoPoint p)
         {
-            p.PointNumberBounds =
-                 LayoutMsdfString(
-                     p.PointNumber.ToString(),
-                     p,
-                     p.PointNumberOffset,
-                     p.PointGroup.FontBaseSize.ToFloat()).Bounds;
-            p.ElevationBounds =
-                 LayoutMsdfString(
-                     p.Elevation.ToString("F3"),
-                     p,
-                     p.ElevationOffset,
-                     p.PointGroup.FontBaseSize.ToFloat()).Bounds;
+            float emToWorld = p.PointGroup.FontBaseSize.ToFloat();
+
+            // Point Number
+            var pointNumberLayout = LayoutMsdfString(
+                p.PointNumber.ToString(), p, p.PointNumberOffset, emToWorld);
+            p.PointNumberBounds = pointNumberLayout.Bounds;
+            p.PointNumberGlyphs = CreateGlyphHitRegions(pointNumberLayout);
+
+            // Elevation
+            var elevationLayout = LayoutMsdfString(
+                p.Elevation.ToString("F3"), p, p.ElevationOffset, emToWorld);
+            p.ElevationBounds = elevationLayout.Bounds;
+            p.ElevationGlyphs = CreateGlyphHitRegions(elevationLayout);
+
+            // Description
             if (p.HasDescription)
             {
-                p.DescriptionBounds =
-                     LayoutMsdfString(
-                         p.Description,
-                         p,
-                         p.DescriptionOffset,
-                         p.PointGroup.FontBaseSize.ToFloat()).Bounds;
+                var descriptionLayout = LayoutMsdfString(p.Description, p, p.DescriptionOffset, emToWorld);
+                p.DescriptionBounds = descriptionLayout.Bounds;
+                p.DescriptionGlyphs = CreateGlyphHitRegions(descriptionLayout);
             }
-            else { p.DescriptionBounds = Rect.Empty; }
+            else
+            {
+                p.DescriptionBounds = Rect.Empty;
+                p.DescriptionGlyphs = [];
+            }
 
             UpdateToggleAnchorBounds(p);
 
@@ -2435,6 +2425,27 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 }
             }
             return layout;
+        }
+        private static MsdfGlyphHitRegion[] CreateGlyphHitRegions(MsdfTextLayout layout)
+        {
+            if (layout.Glyphs.Count == 0) { return []; }
+
+            var regions =
+                new MsdfGlyphHitRegion[layout.Glyphs.Count];
+
+            for (int i = 0; i < layout.Glyphs.Count; i++)
+            {
+                var placement = layout.Glyphs[i];
+
+                regions[i] = new MsdfGlyphHitRegion
+                {
+                    Bounds = placement.Bounds,
+                    UvMin = placement.Glyph.UvMin,
+                    UvMax = placement.Glyph.UvMax
+                };
+            }
+
+            return regions;
         }
 
         private void SetLineRenderMode(DeviceContext ctx, bool selectedOnly, bool glowPass)
@@ -2740,6 +2751,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             {
                 StateController.FlushPointUpdates();
                 _cogoHoverVerticesDirty = _leaderLineVerticesDirty = true;
+                _baseSceneDirty = true;
             }
 
             _suspendHitTesting = false;
@@ -3188,7 +3200,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
                         ResetHoverObjects();
                         lineGlowVerticesDirty = true;
 
-                        _nearestHitTestableGeometries = CadManager.HitTestGeometries(_lastHitTestCoords, _hittestStrokeThickness).Take(_maxSelectableObjects).ToList();
+                        _nearestHitTestableGeometries = CadManager.HitTestGeometries(
+                            _lastHitTestCoords, _hittestStrokeThickness).Take(_maxSelectableObjects).ToList();
+
                         if (_nearestHitTestableGeometries.Count > 0)
                         {
                             bool exists = HitTestingHelpers.TryGetNextDrawingGeometry(_currentSnapHitTestIndex, _nearestHitTestableGeometries, out var tup);
@@ -3256,6 +3270,15 @@ namespace Cad_Point_Manager.Controls.D3DControl
             var snappedCogoPointsCopy = _mouseOverCogoPoints.ToList();
             bool cogoMouseOverChanged = false;
 
+            //if (_testingStopWatch.ElapsedMilliseconds > 1000)
+            //{
+                //foreach (var p in _mouseOverCogoPoints)
+                //{
+                //    RunCogoMsdfHitTest(p, _lastHitTestCoords);
+                //}
+            //    _testingStopWatch.Restart();
+            //}
+
             if (_mouseOverToggleButtonPoint is not null)
             {
                 if (_mouseOverToggleButtonPoint.IsSelected &&
@@ -3291,13 +3314,13 @@ namespace Cad_Point_Manager.Controls.D3DControl
                         return;
                     }
 
-                    if (snappedCogoPoint.DistanceToPoint(_lastHitTestCoords) > _hittestStrokeThickness)
+                    if (snappedCogoPoint.DistanceToPoint(_lastHitTestCoords, ResCache.CogoPointMsdfAtlas) > _hittestStrokeThickness)
                     {
                         ResetHoverObjects();
                         ResetCogoToggleButtonMouseOver();
                         cogoMouseOverChanged = true;
 
-                        _nearestHitTestableCogoPoints = CadManager.HitTestCogoPoints(_lastHitTestCoords, _hittestStrokeThickness).Take(_maxSelectableObjects).ToList();
+                        _nearestHitTestableCogoPoints = CadManager.HitTestCogoPoints(_lastHitTestCoords, _hittestStrokeThickness, ResCache.CogoPointMsdfAtlas).Take(_maxSelectableObjects).ToList();
 
                         if (_nearestHitTestableCogoPoints.Count > 0)
                         {
@@ -3330,8 +3353,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
             }
             else
             {
-                _nearestHitTestableCogoPoints = CadManager.HitTestCogoPoints(_lastHitTestCoords, _hittestStrokeThickness)
+                _nearestHitTestableCogoPoints = CadManager.HitTestCogoPoints(_lastHitTestCoords, _hittestStrokeThickness, ResCache.CogoPointMsdfAtlas)
                     .Take(_maxSelectableObjects).ToList();
+
                 if (_nearestHitTestableCogoPoints.Count > 0)
                 {
                     bool exists = HitTestingHelpers.TryGetNextCogoPoint(_currentSnapHitTestIndex, _nearestHitTestableCogoPoints, out var tup);
@@ -3367,6 +3391,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 StateController.FlushPointUpdates();
                 _cogoHoverVerticesDirty = _leaderLineGlowVerticesDirty = true;
             }
+
+
         }
         private async void RunDragCogoPointsHittest(CancellationToken token)
         {
@@ -3377,7 +3403,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             if (currentRect.IsEmpty || currentRect.Width <= 0 || currentRect.Height <= 0) { return; }
 
             var newSet = CadManager
-                .HitTestDragCogoPoints(currentRect)
+                .HitTestDragCogoPoints(currentRect, ResCache.CogoPointMsdfAtlas)
                 .Where(p => currentRect.Contains(p.Bounds))
                 .ToHashSet();
 
@@ -3469,6 +3495,23 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public void CancelHitTesting()
         {
             _hitTestCancellationTokenSource?.Cancel();
+        }
+
+        private void RunCogoMsdfHitTest(CogoPoint point, Point worldMousePoint)
+        {
+            var atlas = ResCache.CogoPointMsdfAtlas;
+
+            bool pointNumberHit = MsdfHitTester.HitTest(atlas, point.PointNumberGlyphs, worldMousePoint);
+
+            bool elevationHit = MsdfHitTester.HitTest(
+                atlas, point.ElevationGlyphs, worldMousePoint);
+
+            bool descriptionHit = MsdfHitTester.HitTest(atlas, point.DescriptionGlyphs, worldMousePoint);
+
+            Debug.WriteLine(
+                $"\npointNumberHit: {pointNumberHit}, " +
+                $"elevationHit: {elevationHit}, " +
+                $"descriptionHit: {descriptionHit}");
         }
 
         private void LoadHitTestableObjectTree()

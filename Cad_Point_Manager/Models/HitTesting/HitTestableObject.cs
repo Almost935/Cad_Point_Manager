@@ -1,4 +1,5 @@
 ﻿using Cad_Point_Manager.Common;
+using Cad_Point_Manager.Controls.D3DControl.Rendering.Msdf;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows;
@@ -18,7 +19,7 @@ namespace Cad_Point_Manager.Models.HitTesting
         #endregion
 
         #region Methods
-        public abstract double DistanceToPoint(Point p);
+        public abstract double DistanceToPoint(Point p, MsdfAtlas atlas = null);
         public abstract void UpdateBounds();
         public abstract void MouseEnter();
         public abstract void MouseLeave();

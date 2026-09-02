@@ -1,4 +1,5 @@
-﻿using Cad_Point_Manager.Extensions;
+﻿using Cad_Point_Manager.Controls.D3DControl.Rendering.Msdf;
+using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Helpers;
 using Cad_Point_Manager.Models.HitTesting;
 using SharpDX;
@@ -33,8 +34,6 @@ namespace Cad_Point_Manager.Models.PointRendering
         #endregion
 
         #region Properties
-        [Required(ErrorMessage = "Point name is required.")]
-        [RegularExpression(@"^[1-9]\d*$", ErrorMessage = "Point number must be a positive integer.")]
         public int PointNumber
         {
             get { return _pointNumber; }
@@ -141,6 +140,9 @@ namespace Cad_Point_Manager.Models.PointRendering
         public bool HasLeaderLine { get; set; } = false;
         public bool IsFlippedY { get; set; } = false;
         public bool IsFlippedX { get; set; } = false;
+        public MsdfGlyphHitRegion[] PointNumberGlyphs { get; set; } = [];
+        public MsdfGlyphHitRegion[] ElevationGlyphs { get; set; } = [];
+        public MsdfGlyphHitRegion[] DescriptionGlyphs { get; set; } = [];
 
         public float BasePointNumberOffset_Y => _textBaseHeight * _textLineSpacingFactor * 2;
         public float BaseElevationOffset_Y => _textBaseHeight * _textLineSpacingFactor;
@@ -169,8 +171,13 @@ namespace Cad_Point_Manager.Models.PointRendering
             return $"CogoPoint PointNumber: {PointNumber}";
         }
 
-        public override double DistanceToPoint(Point p)
+        public override double DistanceToPoint(Point p, MsdfAtlas atlas = null)
         {
+            if (atlas != null)
+            {
+                return DistanceToCogoPointViaAtlas(this, p, atlas);
+            }
+
             if (PointNumberBounds.Contains(p) || ElevationBounds.Contains(p) || DescriptionBounds.Contains(p) || EllipseBounds.Contains(p))
             {
                 return 0.0;
@@ -304,20 +311,46 @@ namespace Cad_Point_Manager.Models.PointRendering
             //    TextInfoBasePosition = new(Position.X.ToFloat() + TextInfoBaseOffset_X, Position.Y.ToFloat());
             //}
         }
-        #endregion
 
-        #region IEquatable Implementation
-        //public bool Equals(CogoPoint other) =>
-        //other is not null && PointNumber == other.PointNumber;
+        private static double DistanceToCogoPointViaAtlas(CogoPoint point, Point p, MsdfAtlas atlas)
+        {
+            // Point marker itself.
+            if (point.EllipseBounds.Contains(p))
+                return 0.0;
 
-        //public override bool Equals(object obj) =>
-        //    obj is CogoPoint other && Equals(other);
+            // Actual rendered text.
+            if (point.PointNumberBounds.Contains(p) &&
+                MsdfHitTester.HitTest(atlas, point.PointNumberGlyphs, p))
+            {
+                return 0.0;
+            }
 
-        //public override int GetHashCode() => PointNumber; // int is fine
+            if (point.ElevationBounds.Contains(p) &&
+                MsdfHitTester.HitTest(atlas, point.ElevationGlyphs, p))
+            {
+                return 0.0;
+            }
 
-        //public static bool operator ==(CogoPoint a, CogoPoint b) =>
-        //    EqualityComparer<CogoPoint>.Default.Equals(a, b);
-        //public static bool operator !=(CogoPoint a, CogoPoint b) => !(a == b);
+            if (point.DescriptionBounds.Contains(p) &&
+                MsdfHitTester.HitTest(atlas, point.DescriptionGlyphs, p))
+            {
+                return 0.0;
+            }
+
+            // Existing non-text CogoPoint tests...
+            if (point.HasLeaderLine)
+            {
+                return MathHelpers.PointToLineDistance(
+                    p, point.Position, Point.Add(point.Position, point.TextInfoOffset.ToVector()));
+            }
+
+            if (point.IsSelected && point.ToggleBounds.Contains(p))
+            {
+                return 0.0;
+            }
+
+            return double.MaxValue;
+        }
         #endregion
     }
 

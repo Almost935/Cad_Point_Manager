@@ -1,4 +1,5 @@
 ﻿using Cad_Point_Manager.Controls.D3DControl;
+using Cad_Point_Manager.Controls.D3DControl.Rendering.Msdf;
 using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Helpers;
 using Cad_Point_Manager.Models.DrawingObjects.HelperClasses;
@@ -77,7 +78,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             Bounds = Rect.Union(Bounds, new System.Windows.Point(End.X, End.Y));
         }
 
-        public override double DistanceToPoint(System.Windows.Point point)
+        public override double DistanceToPoint(System.Windows.Point point, MsdfAtlas atlas = null)
         {
             return (float)MathHelpers.PointToLineDistance(point, new System.Windows.Point(Start.X, Start.Y), new System.Windows.Point(End.X, End.Y));
         }

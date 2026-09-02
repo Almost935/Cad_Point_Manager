@@ -1,4 +1,5 @@
 ﻿using Cad_Point_Manager.Controls.D3DControl;
+using Cad_Point_Manager.Controls.D3DControl.Rendering.Msdf;
 using Cad_Point_Manager.Models.DrawingObjects.HelperClasses;
 using netDxf.Entities;
 using PdfSharpCore.Drawing;
@@ -73,7 +74,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             Bounds = PolylineApproximation.Bounds;
         }
 
-        public override double DistanceToPoint(System.Windows.Point p)
+        public override double DistanceToPoint(System.Windows.Point p, MsdfAtlas atlas = null)
         {
             return PolylineApproximation.DistanceToPoint(p);
         }

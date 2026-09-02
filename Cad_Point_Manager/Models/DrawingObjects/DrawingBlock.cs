@@ -1,5 +1,6 @@
 ﻿using Cad_Point_Manager.Controls.D3DControl;
 using Cad_Point_Manager.Controls.D3DControl.Rendering.Helpers;
+using Cad_Point_Manager.Controls.D3DControl.Rendering.Msdf;
 using Cad_Point_Manager.Helpers;
 using Cad_Point_Manager.Models.DrawingObjects.HelperClasses;
 using netDxf.Entities;
@@ -92,7 +93,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 Bounds = Rect.Union(Bounds, drawingObj.Bounds);
             }
         }
-        public override double DistanceToPoint(System.Windows.Point point)
+        public override double DistanceToPoint(System.Windows.Point point, MsdfAtlas atlas = null)
         {
             double distance = double.MaxValue;
 

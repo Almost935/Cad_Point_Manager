@@ -1,5 +1,6 @@
 ﻿using Cad_Point_Manager.Common.Collections;
 using Cad_Point_Manager.Controls.D3DControl;
+using Cad_Point_Manager.Controls.D3DControl.Rendering.Msdf;
 using SharpDX;
 using System.ComponentModel;
 using System.Windows.Media;

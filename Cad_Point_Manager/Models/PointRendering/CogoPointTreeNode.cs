@@ -1,4 +1,5 @@
-﻿using Cad_Point_Manager.Helpers;
+﻿using Cad_Point_Manager.Controls.D3DControl.Rendering.Msdf;
+using Cad_Point_Manager.Helpers;
 using System.Windows;
 
 namespace Cad_Point_Manager.Models.PointRendering
@@ -29,7 +30,7 @@ namespace Cad_Point_Manager.Models.PointRendering
         #endregion
 
         #region Methods
-        public List<CogoPointTreeNode>                                                                             GetIntersectingQuadTreeNodes(Rect view)
+        public List<CogoPointTreeNode> GetIntersectingQuadTreeNodes(Rect view)
         {
             List<CogoPointTreeNode> intersectingNodes = [];
 
@@ -76,7 +77,7 @@ namespace Cad_Point_Manager.Models.PointRendering
             return node;
         }
 
-        public List<(double distance, CogoPoint cogoPoint)> HitTestPoint(Point p, Rect hitTestRange)
+        public List<(double distance, CogoPoint cogoPoint)> HitTestPoint(Point p, Rect hitTestRange, MsdfAtlas atlas)
         {
             List<(double distance, CogoPoint cogoPoint)> hits = [];
 
@@ -86,7 +87,7 @@ namespace Cad_Point_Manager.Models.PointRendering
                 {
                     if (potentialHit.BoundsInRect(hitTestRange))
                     {
-                        double d = potentialHit.DistanceToPoint(p);
+                        double d = potentialHit.DistanceToPoint(p, atlas);
                         hits.Add((d, potentialHit));
                     }
                 }

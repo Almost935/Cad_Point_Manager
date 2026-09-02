@@ -1,5 +1,6 @@
 ﻿using Cad_Point_Manager.Controls.D3DControl;
 using Cad_Point_Manager.Controls.D3DControl.Rendering.Helpers;
+using Cad_Point_Manager.Controls.D3DControl.Rendering.Msdf;
 using Cad_Point_Manager.Helpers;
 using Cad_Point_Manager.Models.DrawingObjects.HelperClasses;
 using netDxf.Entities;
@@ -67,7 +68,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects.Dimensioning
             }
         }
 
-        public override double DistanceToPoint(System.Windows.Point p)
+        public override double DistanceToPoint(System.Windows.Point p, MsdfAtlas atlas = null)
         {
             throw new NotImplementedException();
         }
