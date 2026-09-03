@@ -102,8 +102,6 @@
                                                  RelativeSource="{RelativeSource Self}" />
                                         <Binding Path="(Validation.Errors)"
                                                  RelativeSource="{RelativeSource Self}" />
-                                        <Binding Path="ToolTip"
-                                                 RelativeSource="{RelativeSource Self}" />
                                     </MultiBinding>
                                 </Setter.Value>
                             </Setter>
@@ -154,18 +152,6 @@
                 Value="Left" />
         <Setter Property="VerticalContentAlignment"
                 Value="Stretch" />
-        <Setter Property="ToolTip">
-            <Setter.Value>
-                <MultiBinding Converter="{StaticResource FirstValidationErrorConverter}">
-                    <Binding Path="(Validation.HasError)"
-                             RelativeSource="{RelativeSource Self}" />
-                    <Binding Path="(Validation.Errors)"
-                             RelativeSource="{RelativeSource Self}" />
-                    <Binding Path="ToolTip"
-                             RelativeSource="{RelativeSource Self}" />
-                </MultiBinding>
-            </Setter.Value>
-        </Setter>
         <Setter Property="Validation.ErrorTemplate">
             <Setter.Value>
                 <ControlTemplate>
@@ -183,8 +169,8 @@
                             CornerRadius="2"
                             Padding="2 1 2 1">
                         <ScrollViewer x:Name="PART_ContentHost"
-                                      Margin="0" 
-                                      VerticalAlignment="Center"/>
+                                      Margin="0"
+                                      VerticalAlignment="Center" />
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="Validation.HasError"
@@ -194,12 +180,21 @@
                                     Value="Red" />
                             <Setter Property="Foreground"
                                     Value="{DynamicResource ErrorForegroundBrush}" />
+                            <Setter Property="ToolTip">
+                                <Setter.Value>
+                                    <MultiBinding Converter="{StaticResource FirstValidationErrorConverter}">
+                                        <Binding Path="(Validation.HasError)"
+                                                 RelativeSource="{RelativeSource Self}" />
+                                        <Binding Path="(Validation.Errors)"
+                                                 RelativeSource="{RelativeSource Self}" />
+                                    </MultiBinding>
+                                </Setter.Value>
+                            </Setter>
                         </Trigger>
                         <Trigger Property="Validation.HasError"
                                  Value="False">
                             <Setter Property="ToolTip"
-                                    Value="{Binding Text, 
-                         RelativeSource={RelativeSource Self}}" />
+                                    Value="{Binding Text, RelativeSource={RelativeSource Self}}" />
                         </Trigger>
                         <Trigger Property="IsEnabled"
                                  Value="False">

@@ -11,14 +11,13 @@ namespace Cad_Point_Manager.Converters
         {
             var hasError = values[0] as bool?;
             var errors = values[1] as ReadOnlyObservableCollection<ValidationError>;
-            var originalTooltip = values[2]?.ToString();
 
             if (hasError == true && errors != null && errors.Count > 0)
             {
                 return errors[0].ErrorContent?.ToString();
             }
 
-            return originalTooltip;
+            return null;
         }
 
         public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)

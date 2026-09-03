@@ -517,6 +517,7 @@
                                    PointGroups="{Binding PointGroups, Mode=TwoWay}"
                                    CogoPoints="{Binding CogoPoints, Mode=TwoWay}"
                                    SelectedGeometries="{Binding SelectedGeometries, Mode=TwoWay}"
+                                   SelectedCogoPoints="{Binding SelectedCogoPoints, Mode=TwoWay}"
                                    SnappedHitTestablePoint="{Binding SnappedHitTestablePoint, Mode=TwoWay}"
                                    SelectedHitTestablePoints="{Binding SelectedHitTestablePoints, Mode=TwoWay}"
                                    SceneIdMap="{Binding SceneIdMap, Mode=OneWayToSource}"

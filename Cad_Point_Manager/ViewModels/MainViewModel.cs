@@ -25,6 +25,8 @@ using Point = System.Windows.Point;
 using TextBox = System.Windows.Controls.TextBox;
 using Cad_Point_Manager.Models.DxfImport;
 using Cad_Point_Manager.Services.DxfLoading;
+using System.Collections.Specialized;
+using System.Diagnostics;
 
 
 namespace Cad_Point_Manager.ViewModels
@@ -49,12 +51,12 @@ namespace Cad_Point_Manager.ViewModels
         private BatchableObservableCollection<CogoPoint> _cogoPoints = [];
         private HitTestablePoint _snappedHitTestablePoint;
         private BatchableObservableCollection<HitTestablePoint> _selectedHitTestablePoints = [];
+        private BatchableObservableCollection<CogoPoint> _selectedCogoPoints = [];
         private BatchableObservableCollection<DrawingGeometry> _selectedGeometries = [];
         private IReadOnlyList<ChainPath> _chainPaths = [];
         private double _vertexSnapTolerance = 1e-4;
         private Point _mousePosition = new();
         private ResCache _resCache = new ResCache();
-        private SelectionMode _selectionMode;
 
         // CogoPoint Creation Fields
         private int _newCogoPointsStartCount = 1;
@@ -180,6 +182,15 @@ namespace Cad_Point_Manager.ViewModels
             {
                 _selectedHitTestablePoints = value;
                 OnPropertyChanged(nameof(SelectedHitTestablePoints));
+            }
+        }
+        public BatchableObservableCollection<CogoPoint> SelectedCogoPoints
+        {
+            get => _selectedCogoPoints;
+            set
+            {
+                _selectedCogoPoints = value;
+                OnPropertyChanged(nameof(SelectedCogoPoints));
             }
         }
         public BatchableObservableCollection<DrawingGeometry> SelectedGeometries
@@ -798,7 +809,8 @@ namespace Cad_Point_Manager.ViewModels
         }
 
         // Geometry Chain Methods
-        private void SelectedGeometries_CollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+        private void SelectedGeometries_CollectionChanged(
+            object? sender, NotifyCollectionChangedEventArgs e)
         {
             RebuildChains();
         }
@@ -806,6 +818,12 @@ namespace Cad_Point_Manager.ViewModels
         {
             var directed = _service.BuildChainsFromSelection(SelectedGeometries, VertexSnapTolerance);
             ChainPaths = directed;
+        }
+
+        private void SelectedCogoPoints_CollectionChanged(
+            object? sender, NotifyCollectionChangedEventArgs e)
+        {
+            Debug.WriteLine($"SelectedCogoPoints_CollectionChanged e.Action: {e.Action}");
         }
 
         // Printing Methods

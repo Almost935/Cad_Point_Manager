@@ -314,42 +314,38 @@ namespace Cad_Point_Manager.Models.PointRendering
 
         private static double DistanceToCogoPointViaAtlas(CogoPoint point, Point p, MsdfAtlas atlas)
         {
-            // Point marker itself.
-            if (point.EllipseBounds.Contains(p))
-                return 0.0;
+            double minDistance = double.MaxValue;
 
-            // Actual rendered text.
-            if (point.PointNumberBounds.Contains(p) &&
-                MsdfHitTester.HitTest(atlas, point.PointNumberGlyphs, p))
-            {
-                return 0.0;
-            }
+            // Point number.
+            minDistance = Math.Min(minDistance, MsdfHitTester.DistanceToGlyphs(atlas, point.PointNumberGlyphs, p));
 
-            if (point.ElevationBounds.Contains(p) &&
-                MsdfHitTester.HitTest(atlas, point.ElevationGlyphs, p))
-            {
-                return 0.0;
-            }
+            // Elevation.
+            minDistance = Math.Min(minDistance, MsdfHitTester.DistanceToGlyphs(atlas, point.ElevationGlyphs, p));
 
-            if (point.DescriptionBounds.Contains(p) &&
-                MsdfHitTester.HitTest(atlas, point.DescriptionGlyphs, p))
-            {
-                return 0.0;
-            }
+            // Description.
+            minDistance = Math.Min(minDistance, MsdfHitTester.DistanceToGlyphs(atlas, point.DescriptionGlyphs, p));
 
-            // Existing non-text CogoPoint tests...
+            // Leader line.
             if (point.HasLeaderLine)
             {
-                return MathHelpers.PointToLineDistance(
+                double leaderDistance = MathHelpers.PointToLineDistance(
                     p, point.Position, Point.Add(point.Position, point.TextInfoOffset.ToVector()));
+
+                minDistance = Math.Min(minDistance, leaderDistance);
             }
 
-            if (point.IsSelected && point.ToggleBounds.Contains(p))
+            // Toggle.
+            if (point.IsSelected &&point.ToggleBounds.Contains(p))
             {
-                return 0.0;
+                minDistance = 0.0;
             }
 
-            return double.MaxValue;
+            if (point.EllipseBounds.Contains(p))
+            {
+                minDistance = 0.0;
+            }
+
+            return minDistance;
         }
         #endregion
     }

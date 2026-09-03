@@ -42,7 +42,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         #region Fields
         private const float HoverTextPadPx = 3f;     // grow the text rect by this many pixels
         private const float HoverEllipsePadPx = 2f;  // extra pixels over the point radius
-        private const float CogoPointTextHitPaddingPixels = 3.0f;
+        private const float CogoPointTextHitPaddingPixels = 8.0f;
 
         // CogoPoint ToggleButton Fields
         private float _desiredHalfWorldForAnchors;
@@ -273,6 +273,10 @@ namespace Cad_Point_Manager.Controls.D3DControl
         // CogoPoint Movement Fields
         private CogoPoint _mouseOverToggleButtonPoint = null;
         private CogoPoint _pressedToggleButtonPoint = null;
+
+        // Hit Testing Fields
+        private double _currentHitTestPadding;
+
         private bool _cogoPointTextBeingMoved => _pressedToggleButtonPoint is not null;
         #endregion
 
@@ -1182,6 +1186,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _msdfInstanceCount = _msdfInstances.Count;
 
             _cogoTextVerticesDirty = false;
+            _baseSceneDirty = true;
         }
         private void UpdatePointCircleVertices()
         {
@@ -2581,12 +2586,14 @@ namespace Cad_Point_Manager.Controls.D3DControl
             UpdateDragRect();
 
             CadManager.Camera.Zoom(zoomStep, mousePixels);
-            _hittestStrokeThickness = 7.0f / (CadManager.Camera.InitialViewMatrix.M11 * CadManager.Camera.CurrentZoom);
+
+            var worldUnitsPerPixel = CadManager.Camera.GetWorldUnitsPerPixel();
+            _hittestStrokeThickness = 7.0f * worldUnitsPerPixel;
+            _currentHitTestPadding = CogoPointTextHitPaddingPixels * worldUnitsPerPixel;
 
             UpdateToggleAnchorDimensions();
 
             _cogoHoverVerticesDirty = true;
-            //ConstantBuffersDirty = true;
             TransformationBufferDirty = true;
 
             e.Handled = true;
@@ -3270,15 +3277,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             var snappedCogoPointsCopy = _mouseOverCogoPoints.ToList();
             bool cogoMouseOverChanged = false;
 
-            //if (_testingStopWatch.ElapsedMilliseconds > 1000)
-            //{
-                //foreach (var p in _mouseOverCogoPoints)
-                //{
-                //    RunCogoMsdfHitTest(p, _lastHitTestCoords);
-                //}
-            //    _testingStopWatch.Restart();
-            //}
-
             if (_mouseOverToggleButtonPoint is not null)
             {
                 if (_mouseOverToggleButtonPoint.IsSelected &&
@@ -3314,25 +3312,30 @@ namespace Cad_Point_Manager.Controls.D3DControl
                         return;
                     }
 
-                    if (snappedCogoPoint.DistanceToPoint(_lastHitTestCoords, ResCache.CogoPointMsdfAtlas) > _hittestStrokeThickness)
+                    if (snappedCogoPoint.DistanceToPoint(_lastHitTestCoords, ResCache.CogoPointMsdfAtlas) > _currentHitTestPadding)
                     {
                         ResetHoverObjects();
                         ResetCogoToggleButtonMouseOver();
                         cogoMouseOverChanged = true;
 
-                        _nearestHitTestableCogoPoints = CadManager.HitTestCogoPoints(_lastHitTestCoords, _hittestStrokeThickness, ResCache.CogoPointMsdfAtlas).Take(_maxSelectableObjects).ToList();
+                        _nearestHitTestableCogoPoints = CadManager.HitTestCogoPoints(
+                            _lastHitTestCoords, _currentHitTestPadding, ResCache.CogoPointMsdfAtlas).Take(_maxSelectableObjects).ToList();
 
                         if (_nearestHitTestableCogoPoints.Count > 0)
                         {
-                            bool exists = HitTestingHelpers.TryGetNextCogoPoint(_currentSnapHitTestIndex, _nearestHitTestableCogoPoints, out var tup);
+                            bool exists = HitTestingHelpers.TryGetNextCogoPoint(
+                                _currentSnapHitTestIndex, _nearestHitTestableCogoPoints, out var tup);
+
                             if (!exists) { _currentSnapHitTestIndex = 0; }
-                            exists = HitTestingHelpers.TryGetNextCogoPoint(_currentSnapHitTestIndex, _nearestHitTestableCogoPoints, out tup);
+
+                            exists = HitTestingHelpers.TryGetNextCogoPoint(
+                                _currentSnapHitTestIndex, _nearestHitTestableCogoPoints, out tup);
 
                             if (exists)
                             {
                                 var (distance, point) = tup;
 
-                                if (distance <= _hittestStrokeThickness)
+                                if (distance <= _currentHitTestPadding)
                                 {
                                     if (point.IsSelected && point.ToggleBounds.Contains(_lastHitTestCoords))
                                     {
@@ -3353,11 +3356,12 @@ namespace Cad_Point_Manager.Controls.D3DControl
             }
             else
             {
-                _nearestHitTestableCogoPoints = CadManager.HitTestCogoPoints(_lastHitTestCoords, _hittestStrokeThickness, ResCache.CogoPointMsdfAtlas)
+                _nearestHitTestableCogoPoints = CadManager.HitTestCogoPoints(_lastHitTestCoords, _currentHitTestPadding, ResCache.CogoPointMsdfAtlas)
                     .Take(_maxSelectableObjects).ToList();
 
                 if (_nearestHitTestableCogoPoints.Count > 0)
                 {
+
                     bool exists = HitTestingHelpers.TryGetNextCogoPoint(_currentSnapHitTestIndex, _nearestHitTestableCogoPoints, out var tup);
                     if (!exists) { _currentSnapHitTestIndex = 0; }
                     exists = HitTestingHelpers.TryGetNextCogoPoint(_currentSnapHitTestIndex, _nearestHitTestableCogoPoints, out tup);
@@ -3366,7 +3370,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     {
                         var (distance, point) = tup;
 
-                        if (distance <= _hittestStrokeThickness)
+                        if (distance <= _currentHitTestPadding)
                         {
                             if (point.IsSelected && point.ToggleBounds.Contains(_lastHitTestCoords))
                             {
@@ -3391,8 +3395,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 StateController.FlushPointUpdates();
                 _cogoHoverVerticesDirty = _leaderLineGlowVerticesDirty = true;
             }
-
-
         }
         private async void RunDragCogoPointsHittest(CancellationToken token)
         {
@@ -3495,23 +3497,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public void CancelHitTesting()
         {
             _hitTestCancellationTokenSource?.Cancel();
-        }
-
-        private void RunCogoMsdfHitTest(CogoPoint point, Point worldMousePoint)
-        {
-            var atlas = ResCache.CogoPointMsdfAtlas;
-
-            bool pointNumberHit = MsdfHitTester.HitTest(atlas, point.PointNumberGlyphs, worldMousePoint);
-
-            bool elevationHit = MsdfHitTester.HitTest(
-                atlas, point.ElevationGlyphs, worldMousePoint);
-
-            bool descriptionHit = MsdfHitTester.HitTest(atlas, point.DescriptionGlyphs, worldMousePoint);
-
-            Debug.WriteLine(
-                $"\npointNumberHit: {pointNumberHit}, " +
-                $"elevationHit: {elevationHit}, " +
-                $"descriptionHit: {descriptionHit}");
         }
 
         private void LoadHitTestableObjectTree()

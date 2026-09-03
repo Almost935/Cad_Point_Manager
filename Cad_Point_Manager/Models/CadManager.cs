@@ -1127,7 +1127,7 @@ namespace Cad_Point_Manager.Models
             Camera.ZoomToBounds(new Rect(centerX - (p.Bounds.Width * paddingFactor * 0.5), centerY - (p.Bounds.Height * paddingFactor * 0.5),
                 p.Bounds.Width * paddingFactor, p.Bounds.Height * paddingFactor));
             Camera.IsDirty = true;
-            //Zoom to point sometimes not working
+
             ZoomToPointRequested?.Invoke();
         }
 
@@ -1219,7 +1219,7 @@ namespace Cad_Point_Manager.Models
 
             return geometries;
         }
-        public List<(double distance, CogoPoint points)> HitTestCogoPoints(Point p, float tolerance, MsdfAtlas atlas)
+        public List<(double distance, CogoPoint points)> HitTestCogoPoints(Point p, double tolerance, MsdfAtlas atlas)
         {
             List<(double distance, CogoPoint points)> hits = [];
 
@@ -1233,6 +1233,7 @@ namespace Cad_Point_Manager.Models
                 hits.AddRange(node.HitTestPoint(p, rect, atlas));
             }
             hits.Sort((x, y) => x.distance.CompareTo(y.distance));
+
             return hits;
         }
 
@@ -1520,7 +1521,7 @@ namespace Cad_Point_Manager.Models
             ClearDxfPoints();
 
             var inflatedExtents = Rect.Inflate(Extents, Extents.Width * 0.1, Extents.Height * 0.1);
-            int maxPoints = 1000;
+            int maxPoints = 1;
             float rows = 15;
             float cols = 15;
             float yIncrement = (inflatedExtents.Height / (rows - 1)).ToFloat();
