@@ -69,7 +69,7 @@ namespace Cad_Point_Manager.Models.PointRendering
         {
             foreach (var pg in _cadManager.PointGroups)
             {
-                CogoPoints.AddRange(pg.Points);
+                CogoPoints.AddRange(_cadManager.GetPoints(pg));
             }
         }
         public List<CogoPointTreeNode> GetIntersectingNodes(Rect view)

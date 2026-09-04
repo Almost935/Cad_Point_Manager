@@ -148,7 +148,7 @@ namespace Cad_Point_Manager.Views.UserControls
             }
         }
 
-        public List<CogoPoint> SelectedCogoPoints => _selectedPointGroups.SelectMany(pg => pg.Points).ToList();
+        public List<CogoPoint> SelectedCogoPoints => _selectedPointGroups.SelectMany(pg => CadManager.GetPoints(pg)).ToList();
 
         public string EditPointGroupName { get; set; }
         #endregion
@@ -423,11 +423,12 @@ namespace Cad_Point_Manager.Views.UserControls
         {
             if (CadManager is null) { return; }
 
-            var count = _selectedPointGroups.Sum(pg => pg.Points.Count);
-            if (count > 0)
+            var pointsToDelete = _selectedPointGroups.SelectMany(pg => CadManager.GetPoints(pg)).ToList();
+
+            if (pointsToDelete.Count > 0)
             {
                 _pointGroupsMessageBoxOpen = true;
-                if (MessageBox.Show($"Deleting the selected point groups will result in the deletion of {count} Cogo Points. Continue?",
+                if (MessageBox.Show($"Deleting the selected point groups will result in the deletion of {pointsToDelete.Count} Cogo Points. Continue?",
                     "Delete Points", MessageBoxButton.OKCancel, MessageBoxImage.Warning, MessageBoxResult.Cancel) == MessageBoxResult.Cancel)
                 {
                     _pointGroupsMessageBoxOpen = false;
@@ -645,11 +646,11 @@ namespace Cad_Point_Manager.Views.UserControls
         {
             if (CadManager is null) { return; }
 
-            var count = _selectedPointGroups.Sum(pg => pg.Points.Count);
-            if (count > 0)
+            var pointsToDelete = _selectedPointGroups.SelectMany(pg => CadManager.GetPoints(pg)).ToList();
+            if (pointsToDelete.Count > 0)
             {
                 _pointGroupsMessageBoxOpen = true;
-                if (MessageBox.Show($"Deleting the selected point groups will result in the deletion of {count} Cogo Points. Continue?",
+                if (MessageBox.Show($"Deleting the selected point groups will result in the deletion of {pointsToDelete.Count} Cogo Points. Continue?",
                     "Delete Points", MessageBoxButton.OKCancel, MessageBoxImage.Warning, MessageBoxResult.Cancel) == MessageBoxResult.Cancel)
                 {
                     _pointGroupsMessageBoxOpen = false;

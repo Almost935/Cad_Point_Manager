@@ -48,7 +48,6 @@ namespace Cad_Point_Manager.ViewModels
         private Size _viewportSize = Size.Empty;
         private BatchableObservableCollection<KeyValuePair<string, ObjectLayer>> _layers = [];
         private BatchableObservableCollection<PointGroup> _pointGroups = [];
-        private BatchableObservableCollection<CogoPoint> _cogoPoints = [];
         private HitTestablePoint _snappedHitTestablePoint;
         private BatchableObservableCollection<HitTestablePoint> _selectedHitTestablePoints = [];
         private BatchableObservableCollection<CogoPoint> _selectedCogoPoints = [];
@@ -152,18 +151,6 @@ namespace Cad_Point_Manager.ViewModels
             {
                 _pointGroups = value;
                 OnPropertyChanged(nameof(PointGroups));
-            }
-        }
-        public BatchableObservableCollection<CogoPoint> CogoPoints
-        {
-            get => _cogoPoints;
-            set
-            {
-                if (_cogoPoints != null)
-                {
-                    _cogoPoints = value;
-                    OnPropertyChanged(nameof(CogoPoints));
-                }
             }
         }
         public HitTestablePoint SnappedHitTestablePoint
@@ -483,6 +470,8 @@ namespace Cad_Point_Manager.ViewModels
                 _ => JobFileManager?.CadManager?.UndoRedoManager.CanRedo == true);
 
             SelectedGeometries.CollectionChanged += SelectedGeometries_CollectionChanged;
+
+            SelectedCogoPoints.CollectionChanged += SelectedCogoPoints_CollectionChanged;
         }
         #endregion
 
@@ -686,7 +675,8 @@ namespace Cad_Point_Manager.ViewModels
         {
             if (JobFileManager.CadManager.SnapSelectionMode == SelectionMode.Points)
             {
-                if (SelectedHitTestablePoints.Count > 0)
+                var coords = SelectedHitTestablePoints.Select(p => p.Position).ToList();
+                if (coords.Count > 0)
                 {
                     var startNumberErrors = GetErrors(nameof(NewCogoPointsStartNumberText));
                     var elevErrors = GetErrors(nameof(NewCogoPointsElevationText));
@@ -706,17 +696,23 @@ namespace Cad_Point_Manager.ViewModels
                     }
                     else
                     {
-                        foreach (var hitPoint in SelectedHitTestablePoints)
-                        {
-                            int pointNum = JobFileManager.CadManager.GetNextAvailablePointNumber(NewCogoPointsStartNumber);
+                        List<(int pointNumber, SharpDX.Vector3 position, PointGroup pg, float elevation, string description)> pointsToCreate = [];
+                        int pointNum = JobFileManager.CadManager.GetNextAvailablePointNumber(NewCogoPointsStartNumber);
 
-                            JobFileManager.CadManager.TryCreatePoint(
-                                pointNum,
-                                hitPoint.Position.ToSharpDXVector3(),
-                                ActivePointGroup, out _,
-                                NewCogoPointsElevation.ToFloat(),
-                                NewCogoPointsDescription);
+                        foreach (var coord in coords)
+                        {
+                            while (JobFileManager.CadManager.PointNumberExists(pointNum))
+                            {
+                                pointNum++;
+                            }
+                            pointsToCreate.Add((pointNum, coord.ToSharpDXVector3(), ActivePointGroup, NewCogoPointsElevation.ToFloat(), NewCogoPointsDescription));
+                            pointNum++;
                         }
+
+                        JobFileManager.CadManager.TryCreatePoints(pointsToCreate, out _, out _);
+
+                        JobFileManager.CadManager.CogoPointTextVerticesDirty = true;
+                        JobFileManager.CadManager.CogoPointCircleVerticesDirty = true;
 
                         ResetSelectionRequested?.Invoke(this, EventArgs.Empty);
                         JobFileManager.CadManager.UpdateCogoPointTree();
@@ -823,7 +819,8 @@ namespace Cad_Point_Manager.ViewModels
         private void SelectedCogoPoints_CollectionChanged(
             object? sender, NotifyCollectionChangedEventArgs e)
         {
-            Debug.WriteLine($"SelectedCogoPoints_CollectionChanged e.Action: {e.Action}");
+            Debug.WriteLine($"\nSelectedCogoPoints_CollectionChanged e.Action: {e.Action}" +
+                $"\nSelectedCogoPoints.Count: {SelectedCogoPoints.Count}");
         }
 
         // Printing Methods

@@ -256,7 +256,6 @@ namespace Cad_Point_Manager.Models.PointRendering
             if (pointGroup == null) { return; }
             if (PointGroup == pointGroup) { return; }
             PointGroup = pointGroup;
-            PointGroup.TryAddPoint(this);
         }
 
         public void SetTextInfoOffset(Vector2 offset)

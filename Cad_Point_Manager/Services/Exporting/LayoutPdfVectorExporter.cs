@@ -264,7 +264,7 @@ namespace Cad_Point_Manager.Services.Exporting
             {
                 if (pg is null || !pg.IsVisible) { continue; }
 
-                foreach (var p in pg.Points)
+                foreach (var p in cadManager.GetPoints(pg))
                 {
                     if (p is null) { continue; }
 
@@ -375,7 +375,7 @@ namespace Cad_Point_Manager.Services.Exporting
                 float duToWorldBase = (float)pg.FontBaseSize / duPerEm;
                 float ySign = -1f;
 
-                foreach (var p in pg.Points)
+                foreach (var p in cadManager.GetPoints(pg))
                 {
                     if (p is null) { continue; }
 

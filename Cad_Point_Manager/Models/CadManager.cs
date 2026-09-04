@@ -17,6 +17,7 @@ using Cad_Point_Manager.Models.Printing;
 using netDxf.Entities;
 using netDxf.Tables;
 using SharpDX;
+using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
@@ -67,6 +68,10 @@ namespace Cad_Point_Manager.Models
         private Camera _camera;
         private PointGroup _activePointGroup;
         private double _pointBaseScale = 1;
+
+        // Testing Fields
+        private List<LineInstance> _cogoPointBoundsLines = [];
+        // End Testing Fields
         #endregion
 
         #region Properties
@@ -321,7 +326,7 @@ namespace Cad_Point_Manager.Models
         public CogoPointTree CogoPointTree { get; set; }
         public float OverallDrawingLineTypeScale { get; set; }
 
-        public List<int> UsedPointNumbers => PointGroups.SelectMany(pg => pg.Points).Select(p => p.PointNumber).ToList();
+        public List<int> UsedPointNumbers => PointGroups.SelectMany(pg => GetPoints(pg)).Select(p => p.PointNumber).ToList();
         #endregion
 
         #region Events
@@ -334,6 +339,7 @@ namespace Cad_Point_Manager.Models
         #region Constructor
         public CadManager()
         {
+            CogoPoints.CollectionChanged += CogoPoints_CollectionChanged;
             GetCollectionViews();
         }
         #endregion
@@ -435,16 +441,11 @@ namespace Cad_Point_Manager.Models
         }
 
         #region CogoPoint related methods
-        public bool PointExists(int pointNumber) => PointGroups.SelectMany(pg => pg.Points).Any(p => p.PointNumber == pointNumber);
+        public bool PointExists(int pointNumber) => PointGroups.SelectMany(pg => GetPoints(pg)).Any(p => p.PointNumber == pointNumber);
         public bool TryCreatePoint(int pointNumber, Vector3 position, PointGroup pg, out CogoPoint? point, float elevation = 0, string description = "")
         {
             var cmd = new CreatePointCommand(
-                this,
-                pointNumber,
-                position,
-                pg.Name,
-                elevation,
-                description);
+                this, pointNumber, position, pg.Name, elevation, description);
 
             UndoRedoManager.Execute(cmd);
 
@@ -452,7 +453,7 @@ namespace Cad_Point_Manager.Models
 
             return cmd.Succeeded;
         }
-        internal bool TryCreatePointInternal(int pointNumber, Vector3 position, string pgName, out CogoPoint? point, 
+        internal bool TryCreatePointInternal(int pointNumber, Vector3 position, string pgName, out CogoPoint? point,
             out string? errorMessage, float elevation = 0, string description = "")
         {
             var pgExists = TryGetPointGroup(pgName, out var pg);
@@ -469,7 +470,7 @@ namespace Cad_Point_Manager.Models
                 return false;
             }
 
-            point = pg.AddPoint(pointNumber, position, elevation, description);
+            point = new(pg, pointNumber, position, this, elevation, description);
             CogoPoints.Add(point);
             errorMessage = null;
 
@@ -541,10 +542,9 @@ namespace Cad_Point_Manager.Models
                 return false;
             }
 
-            var isAdded = pg.TryAddPoint(p);
             CogoPoints.Add(p);
 
-            return isAdded;
+            return true;
         }
         public bool TryDeletePoint(CogoPoint point)
         {
@@ -558,11 +558,7 @@ namespace Cad_Point_Manager.Models
             bool deleted = false;
             if (point != null && point.PointGroup != null)
             {
-                deleted = point.PointGroup.DeletePoint(point);
-                if (deleted)
-                {
-                    CogoPoints.Remove(point);
-                }
+                CogoPoints.Remove(point);
             }
             return deleted;
         }
@@ -578,7 +574,7 @@ namespace Cad_Point_Manager.Models
         }
         public bool PointNumberExists(int num)
         {
-            return PointGroups.SelectMany(pg => pg.Points).Any(p => p.PointNumber == num);
+            return PointGroups.SelectMany(pg => GetPoints(pg)).Any(p => p.PointNumber == num);
         }
         public bool ValidatePointNameChange(int pointNumber, CogoPoint p, out string? errorMessage)
         {
@@ -606,6 +602,17 @@ namespace Cad_Point_Manager.Models
                 return false;
             }
             return true;
+        }
+        public IEnumerable<CogoPoint> GetPoints(PointGroup group)
+        {
+            return CogoPoints.Where(p => p.PointGroup == group);
+        }
+        private void CogoPoints_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        {
+            foreach (var pg in PointGroups)
+            {
+                pg.NotifyPointCountChanged();
+            }
         }
         #endregion
 
@@ -657,9 +664,12 @@ namespace Cad_Point_Manager.Models
         }
         public void DeletePointGroup(PointGroup pg)
         {
-            if (pg.Points.Count > 0)
+            var pts = GetPoints(pg);
+
+            if (pts.Count() > 0)
             {
-                var copy = pg.Points.ToList();
+                var copy = pts.ToList();
+
                 foreach (var p in copy)
                 {
                     TryDeletePoint(p);
@@ -669,7 +679,9 @@ namespace Cad_Point_Manager.Models
         }
         public void TryDeletePointGroup(PointGroup pg)
         {
-            if (pg.Points.Count > 0)
+            var pts = GetPoints(pg);
+
+            if (pts.Count() > 0)
             {
                 var result = MessageBox.Show(
                     "This will delete all points associated with this group. Continue?",
@@ -677,7 +689,7 @@ namespace Cad_Point_Manager.Models
 
                 if (result != MessageBoxResult.Yes)
                 {
-                    foreach (var p in pg.Points)
+                    foreach (var p in pts)
                     {
                         TryDeletePoint(p);
                     }
@@ -694,9 +706,13 @@ namespace Cad_Point_Manager.Models
                 bool removed = PointGroups.Remove(pg);
                 if (removed)
                 {
-                    pg.MergeToPointGroup(destinationPG);
+                    foreach (var p in GetPoints(pg).ToList())
+                    {
+                        p.UpdatePointGroup(destinationPG);
+                    }
                 }
             }
+
         }
         public List<PointGroupDto> GetPointGroupDtos()
         {
@@ -720,7 +736,7 @@ namespace Cad_Point_Manager.Models
                 return false;
             }
 
-            cogoPoint = ActivePointGroup.AddPoint(pointNum, position, elevation, description);
+            cogoPoint = new(ActivePointGroup, pointNum, position, this, elevation, description);
             CogoPoints.Add(cogoPoint);
 
             return true;
@@ -1375,7 +1391,7 @@ namespace Cad_Point_Manager.Models
                     }
                 }
 
-                var arcs = Layers.SelectMany(l => l.Value.DrawingObjects).OfType<DrawingArc>().ToList();
+                instances.AddRange(_cogoPointBoundsLines);
 
                 LineVerticesDirty = false;
             }
@@ -1501,7 +1517,7 @@ namespace Cad_Point_Manager.Models
             {
                 if (!pg.IsVisible || pg is null) { continue; }
 
-                foreach (CogoPoint p in pg.Points)
+                foreach (CogoPoint p in GetPoints(pg))
                 {
                     var pointRegistration = stateController.EnsurePointRegistered(p);
 
@@ -1516,6 +1532,7 @@ namespace Cad_Point_Manager.Models
             CogoPointCircleVerticesDirty = false;
         }
 
+        // CogoPoint Test Methods
         public void GetTestDxfPoints()
         {
             ClearDxfPoints();
@@ -1531,30 +1548,28 @@ namespace Cad_Point_Manager.Models
             string description = "Test Point";
             Random random = new();
 
+            string pointGroupName = $"TestGroup";
+            TryCreatePointGroup(pointGroupName, Colors.Red, out var pointGroup);
+
             for (int i = 0; i < rows; i++)
             {
-                string pointGroupName = $"TestGroup {i + 1}";
-                bool created = TryCreatePointGroup(pointGroupName, Colors.Red, out var pointGroup);
-                if (created)
+                var groupActivated = TrySetActivePointGroup(pointGroup);
+                if (!groupActivated) { continue; }
+
+                float y = inflatedExtents.Top.ToFloat() + (yIncrement * i);
+
+                for (int j = 0; j < cols; j++)
                 {
-                    var groupActivated = TrySetActivePointGroup(pointGroup);
-                    if (!groupActivated) { continue; }
+                    float x = inflatedExtents.Left.ToFloat() + (xIncrement * j);
 
-                    float y = inflatedExtents.Top.ToFloat() + (yIncrement * i);
-
-                    for (int j = 0; j < cols; j++)
+                    if (CreateTestPoint(pointNum, x, y, description, random))
                     {
-                        float x = inflatedExtents.Left.ToFloat() + (xIncrement * j);
+                        pointNum++;
+                        testPointCount++;
 
-                        if (CreateTestPoint(pointNum, x, y, description, random))
-                        {
-                            pointNum++;
-                            testPointCount++;
+                        if (testPointCount >= maxPoints) { return; }
 
-                            if (testPointCount >= maxPoints) { return; }
-
-                            continue;
-                        }
+                        continue;
                     }
                 }
             }
@@ -1564,6 +1579,45 @@ namespace Cad_Point_Manager.Models
             return TryAddPointToActiveGroup(pointNum, new Vector3(x, y, 0), out _,
                             (Math.Round(300 + random.NextDouble() * 100, 3)).ToFloat(), description);
         }
+        public void UpdateCogoPointBoundingLines(SceneIdMap sceneIdMap)
+        {
+            _cogoPointBoundsLines.Clear();
+
+            var layer = Layers.First().Value;
+            sceneIdMap.TryGetLayerId(layer, out var lId);
+
+            foreach (var p in CogoPoints)
+            {
+                // PointNumber
+                LineInstance top = new(p.PointNumberBounds.TopLeft.ToSharpDXVector2(), p.PointNumberBounds.TopRight.ToSharpDXVector2(), lId, 0, 0, 0, 0);
+                LineInstance bottom = new(p.PointNumberBounds.BottomLeft.ToSharpDXVector2(), p.PointNumberBounds.BottomRight.ToSharpDXVector2(), lId, 0, 0, 0, 0);
+                LineInstance right = new(p.PointNumberBounds.TopRight.ToSharpDXVector2(), p.PointNumberBounds.BottomRight.ToSharpDXVector2(), lId, 0, 0, 0, 0);
+                LineInstance left = new(p.PointNumberBounds.TopLeft.ToSharpDXVector2(), p.PointNumberBounds.BottomLeft.ToSharpDXVector2(), lId, 0, 0, 0, 0);
+                _cogoPointBoundsLines.AddRange(new[] { top, bottom, right, left });
+
+                // Elevation
+                top = new(p.ElevationBounds.TopLeft.ToSharpDXVector2(), p.ElevationBounds.TopRight.ToSharpDXVector2(), lId, 0, 0, 0, 0);
+                bottom = new(p.ElevationBounds.BottomLeft.ToSharpDXVector2(), p.ElevationBounds.BottomRight.ToSharpDXVector2(), lId, 0, 0, 0, 0);
+                right = new(p.ElevationBounds.TopRight.ToSharpDXVector2(), p.ElevationBounds.BottomRight.ToSharpDXVector2(), lId, 0, 0, 0, 0);
+                left = new(p.ElevationBounds.TopLeft.ToSharpDXVector2(), p.ElevationBounds.BottomLeft.ToSharpDXVector2(), lId, 0, 0, 0, 0);
+                _cogoPointBoundsLines.AddRange(new[] { top, bottom, right, left });
+
+                // Description
+                top = new(p.DescriptionBounds.TopLeft.ToSharpDXVector2(), p.DescriptionBounds.TopRight.ToSharpDXVector2(), lId, 0, 0, 0, 0);
+                bottom = new(p.DescriptionBounds.BottomLeft.ToSharpDXVector2(), p.DescriptionBounds.BottomRight.ToSharpDXVector2(), lId, 0, 0, 0, 0);
+                right = new(p.DescriptionBounds.TopRight.ToSharpDXVector2(), p.DescriptionBounds.BottomRight.ToSharpDXVector2(), lId, 0, 0, 0, 0);
+                left = new(p.DescriptionBounds.TopLeft.ToSharpDXVector2(), p.DescriptionBounds.BottomLeft.ToSharpDXVector2(), lId, 0, 0, 0, 0);
+                _cogoPointBoundsLines.AddRange(new[] { top, bottom, right, left });
+
+                // Ellipse
+                top = new(p.EllipseBounds.TopLeft.ToSharpDXVector2(), p.EllipseBounds.TopRight.ToSharpDXVector2(), lId, 0, 0, 0, 0);
+                bottom = new(p.EllipseBounds.BottomLeft.ToSharpDXVector2(), p.EllipseBounds.BottomRight.ToSharpDXVector2(), lId, 0, 0, 0, 0);
+                right = new(p.EllipseBounds.TopRight.ToSharpDXVector2(), p.EllipseBounds.BottomRight.ToSharpDXVector2(), lId, 0, 0, 0, 0);
+                left = new(p.EllipseBounds.TopLeft.ToSharpDXVector2(), p.EllipseBounds.BottomLeft.ToSharpDXVector2(), lId, 0, 0, 0, 0);
+                _cogoPointBoundsLines.AddRange(new[] { top, bottom, right, left });
+            }
+        }
+        // End CogoPoint Test Methods
 
         // Hit testing tree related methods
         public void UpdateExtents()
@@ -1611,9 +1665,9 @@ namespace Cad_Point_Manager.Models
                 for (int g = i; g < PointGroups.Count; g += processorCount)
                 {
                     var group = PointGroups[g];
-                    if (group?.Points == null) { continue; }
+                    if (group is null) { continue; }
 
-                    foreach (var point in group.Points)
+                    foreach (var point in GetPoints(group))
                     {
                         localUnion.Union(point.Bounds);
                     }

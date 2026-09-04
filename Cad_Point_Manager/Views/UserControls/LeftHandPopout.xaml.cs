@@ -12,6 +12,7 @@ using SharpDX;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Windows;
@@ -253,24 +254,27 @@ namespace Cad_Point_Manager.Views.UserControls
         }
         private static void OnSelectedCogoPointsChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
-            if (d is LeftHandPopout control)
-            {
-                if (e.OldValue is ObservableCollection<CogoPoint> oldCollection)
-                {
-                    oldCollection.CollectionChanged -= control.SelectedCogoPoints_CollectionChanged;
-                }
+            if (d is not LeftHandPopout control)
+                return;
 
-                if (e.NewValue is ObservableCollection<CogoPoint> newCollection)
+            if (e.OldValue is ObservableCollection<CogoPoint> oldCollection)
+            {
+                oldCollection.CollectionChanged -= control.SelectedCogoPoints_CollectionChanged;
+            }
+
+            if (e.NewValue is ObservableCollection<CogoPoint> newCollection)
+            {
+                newCollection.CollectionChanged += control.SelectedCogoPoints_CollectionChanged;
+
+                if (control.CogoPointSelectionViewModel == null)
                 {
-                    newCollection.CollectionChanged += control.SelectedCogoPoints_CollectionChanged;
-                    if (control.CogoPointSelectionViewModel is null)
-                    {
-                        control.CogoPointSelectionViewModel = new(control.CadManager, newCollection);
-                    }
+                    control.CogoPointSelectionViewModel =
+                        new CogoPointSelectionViewModel(control.CadManager, newCollection);
+                }
+                else
+                {
                     control.CogoPointSelectionViewModel.SelectedPoints = newCollection;
                 }
-
-                control.CogoPointSelectionViewModel?.Refresh();
             }
         }
 
@@ -1170,15 +1174,17 @@ namespace Cad_Point_Manager.Views.UserControls
         // Point Group Properties
         private void PropertiesPointGroupComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            bool found = CadManager.TryGetPointGroup(CogoPointSelectionViewModel.PointGroup, out PointGroup? pg);
-            if (found)
+            string pointGroupName = CogoPointSelectionViewModel.PointGroup;
+
+            bool found = CadManager.TryGetPointGroup(pointGroupName, out PointGroup? pg);
+
+            if (!found || pg == null) { return; }
+
+            foreach (var point in CogoPointSelectionViewModel.SelectedPoints)
             {
-                foreach (var point in CogoPointSelectionViewModel.SelectedPoints)
+                if (point.PointGroup?.Name != pointGroupName)
                 {
-                    if (point.PointGroup.Name != CogoPointSelectionViewModel.PointGroup)
-                    {
-                        point.PointGroup = found ? pg : null;
-                    }
+                    point.PointGroup = pg;
                 }
             }
         }

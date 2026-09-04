@@ -390,7 +390,7 @@
                                         </GridViewColumn.Header>
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
-                                                <TextBlock Text="{Binding Points.Count}"
+                                                <TextBlock Text="{Binding PointCount}"
                                                            Style="{StaticResource InlineTextBlockStyle}"
                                                            Foreground="{StaticResource ReadOnlyBodyForeground}" />
                                             </DataTemplate>

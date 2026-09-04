@@ -24,12 +24,18 @@ namespace Cad_Point_Manager.ViewModels
         {
             get
             {
-                if (_selectedPoints.Count() == 0) { return _noneString; }
-                if (_selectedPoints.Count() == 1)
-                { return _selectedPoints[0].PointNumber.ToString(); }
+                if (_selectedPoints.Count == 0)
+                    return _noneString;
 
-                var value = _selectedPoints.Select(p => p.PointNumber).Distinct().ToList();
-                return value.Count() == 1 ? value[0].ToString() : _variesString;
+                int first = _selectedPoints[0].PointNumber;
+
+                for (int i = 1; i < _selectedPoints.Count; i++)
+                {
+                    if (_selectedPoints[i].PointNumber != first)
+                        return _variesString;
+                }
+
+                return first.ToString();
             }
             set
             {
@@ -37,6 +43,7 @@ namespace Cad_Point_Manager.ViewModels
                 {
                     foreach (var p in _selectedPoints)
                         p.PointNumber = result;
+
                     OnPropertyChanged(nameof(PointNumber));
                 }
             }
@@ -60,13 +67,23 @@ namespace Cad_Point_Manager.ViewModels
         {
             get
             {
-                if (_selectedPoints.Count == 0) { return _noneString; }
-                var values = _selectedPoints.Select(p => p.Description).Distinct().ToList();
-                return values.Count == 1 ? values[0] : _variesString;
+                if (_selectedPoints.Count == 0)
+                    return _noneString;
+
+                string first = _selectedPoints[0].Description;
+
+                for (int i = 1; i < _selectedPoints.Count; i++)
+                {
+                    if (_selectedPoints[i].Description != first)
+                        return _variesString;
+                }
+
+                return first;
             }
             set
             {
-                if (string.IsNullOrWhiteSpace(value)) return;
+                if (string.IsNullOrWhiteSpace(value))
+                    return;
 
                 foreach (var point in _selectedPoints)
                     point.Description = value;
@@ -78,23 +95,41 @@ namespace Cad_Point_Manager.ViewModels
         {
             get
             {
-                if (_selectedPoints.Count == 0) { return _noneString; }
-                var names = _selectedPoints.Select(p => p.PointGroup?.Name).Distinct().ToList();
-                var pg = names.Count() == 1 ? names[0] : _variesString;
-                return pg;
+                if (_selectedPoints.Count == 0)
+                    return _noneString;
+
+                string? first = _selectedPoints[0].PointGroup?.Name;
+
+                for (int i = 1; i < _selectedPoints.Count; i++)
+                {
+                    if (_selectedPoints[i].PointGroup?.Name != first)
+                        return _variesString;
+                }
+
+                return first ?? _noneString;
             }
+
             set
             {
-                if (string.IsNullOrEmpty(value) || value == _variesString) { return; }
-
-                var group = _selectedPoints.FirstOrDefault()?.CadManager?.PointGroups
-                    .FirstOrDefault(pg => pg.Name == value);
-
-                if (group != null)
+                if (string.IsNullOrEmpty(value) || value == _variesString || value == _noneString)
                 {
-                    foreach (var p in _selectedPoints) { p.UpdatePointGroup(group); }
-                    OnPropertyChanged(nameof(PointGroup));
+                    return;
                 }
+
+                var group = CadManager?.PointGroups.FirstOrDefault(pg => pg.Name == value);
+
+                if (group == null)
+                    return;
+
+                foreach (var p in _selectedPoints)
+                {
+                    if (!ReferenceEquals(p.PointGroup, group))
+                    {
+                        p.UpdatePointGroup(group);
+                    }
+                }
+
+                OnPropertyChanged(nameof(PointGroup));
             }
         }
 
@@ -128,8 +163,11 @@ namespace Cad_Point_Manager.ViewModels
             get => _selectedPoints;
             set
             {
+                if (ReferenceEquals(_selectedPoints, value)) { return; }
+
                 _selectedPoints = value;
                 OnPropertyChanged(nameof(SelectedPoints));
+                Refresh();
             }
         }
 
@@ -139,7 +177,7 @@ namespace Cad_Point_Manager.ViewModels
 
             UpdateDisplayedPointGroups();
             _selectedPoints = selectedPoints;
-            _selectedPoints.CollectionChanged += (s, e) => Refresh();
+
             Refresh();
         }
 
@@ -192,10 +230,16 @@ namespace Cad_Point_Manager.ViewModels
         }
         private string GetCommonValueOrVaries(Func<CogoPoint, double> selector)
         {
-            if (_selectedPoints.Count() == 0) { return _noneString; }
+            if (_selectedPoints.Count == 0) { return _noneString; }
 
-            var values = _selectedPoints.Select(selector).Distinct().ToList();
-            return values.Count() == 1 ? values[0].ToString("F3") : _variesString;
+            double first = selector(_selectedPoints[0]);
+
+            for (int i = 1; i < _selectedPoints.Count; i++)
+            {
+                if (selector(_selectedPoints[i]) != first) { return _variesString; }
+            }
+
+            return first.ToString("F3");
         }
 
         private void SetDoubleProperty(Action<CogoPoint> setter)

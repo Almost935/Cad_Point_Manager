@@ -16,7 +16,6 @@ namespace Cad_Point_Manager.Models.PointRendering
         private string _name;
         private Color _color = Colors.Black;
         private bool _isVisible = true;
-        private BatchableObservableCollection<CogoPoint> _points = [];
         private double _pointScale = 1;
         private float _pointInfoBaseXoffset = 0;
         #endregion
@@ -58,18 +57,6 @@ namespace Cad_Point_Manager.Models.PointRendering
                 }
             }
         }
-        public BatchableObservableCollection<CogoPoint> Points
-        {
-            get => _points;
-            set
-            {
-                if (_points != value)
-                {
-                    _points = value;
-                    OnPropertyChanged(nameof(Points));
-                }
-            }
-        }
         public double PointScale
         {
             get => _pointScale;
@@ -98,7 +85,9 @@ namespace Cad_Point_Manager.Models.PointRendering
         public double FontBaseSize { get; set; } = 4;
         public double MarkerBaseSize { get; set; } = 0.75;
         public GroupState PointGroupState { get; set; }
-        public CadManager CadManager;
+        public CadManager CadManager { get; set; }
+
+        public int PointCount => CadManager.GetPoints(this).Count();
         #endregion
 
         #region Constructors
@@ -113,50 +102,9 @@ namespace Cad_Point_Manager.Models.PointRendering
         #endregion
 
         #region Methods
-
-        public bool DeletePoint(CogoPoint point)
-        {
-            return Points.Remove(point);
-        }
-
-        public CogoPoint AddPoint(int pointNum, Vector3 position, float elevation = 0, string description = "")
-        {
-            CogoPoint cogoPoint = new(this, pointNum, position, CadManager, elevation, description);
-            Points.Add(cogoPoint);
-            return cogoPoint;
-        }
-        public bool TryAddPoint(int pointNum, Vector3 position, out CogoPoint cogoPoint, float elevation = 0, string description = "")
-        {
-            if (Points.Any(p => p.PointNumber == pointNum))
-            {
-                cogoPoint = null;
-                return false;
-            }
-            cogoPoint = new(this, pointNum, position, CadManager, elevation, description);
-            Points.Add(cogoPoint);
-            return true;
-        }
-        public bool TryAddPoint(CogoPoint point)
-        {
-            if (Points.Any(p => p.PointNumber == point.PointNumber))
-            {
-                return false;
-            }
-            Points.Add(point);
-            return true;
-        }
-
         public override string ToString()
         {
             return $"PointGroup Name: {Name}";
-        }
-
-        public void MergeToPointGroup(PointGroup newPG)
-        {
-            foreach (var point in Points)
-            {
-                point.UpdatePointGroup(newPG);
-            }
         }
 
         public void UpdatePointInfoBaseXoffset()
@@ -171,6 +119,11 @@ namespace Cad_Point_Manager.Models.PointRendering
         protected void OnPropertyChanged(string propertyName)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
+        public void NotifyPointCountChanged()
+        {
+            OnPropertyChanged(nameof(PointCount));
         }
         #endregion
     }

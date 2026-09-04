@@ -487,35 +487,16 @@
                                    ClipToBounds="False"
                                    CadManager="{Binding JobFileManager.CadManager}"
                                    Camera="{Binding JobFileManager.CadManager.Camera}"
-                                   ActivePointGroup="{Binding ActivePointGroup}" />
+                                   ActivePointGroup="{Binding ActivePointGroup}"
+                                   SelectedCogoPoints="{Binding ElementName=d3dDxfControl, Path=SelectedCogoPoints, Mode=TwoWay}" />
             </Grid>
             <Grid x:Name="dxfGrid"
                   SizeChanged="DxfGrid_SizeChanged"
                   ClipToBounds="True"
                   Grid.Row="2">
-                <Grid.Margin>
-                    <MultiBinding Converter="{StaticResource LeftRightMarginConverter}">
-                        <Binding ElementName="SourceControl"
-                                 Path="Value" />
-                        <Binding ElementName="SourceControl"
-                                 Path="Value" />
-                        <Binding>
-                            <Binding.Source>
-                                <sys:Double>20</sys:Double>
-                            </Binding.Source>
-                        </Binding>
-                        <Binding>
-                            <Binding.Source>
-                                <sys:Double>10</sys:Double>
-                            </Binding.Source>
-                        </Binding>
-                    </MultiBinding>
-                </Grid.Margin>
                 <d3D:D3dDxfControl x:Name="d3dDxfControl"
                                    CadManager="{Binding JobFileManager.CadManager}"
                                    Layers="{Binding Layers, Mode=TwoWay}"
-                                   PointGroups="{Binding PointGroups, Mode=TwoWay}"
-                                   CogoPoints="{Binding CogoPoints, Mode=TwoWay}"
                                    SelectedGeometries="{Binding SelectedGeometries, Mode=TwoWay}"
                                    SelectedCogoPoints="{Binding SelectedCogoPoints, Mode=TwoWay}"
                                    SnappedHitTestablePoint="{Binding SnappedHitTestablePoint, Mode=TwoWay}"
@@ -609,8 +590,7 @@
                               Style="{StaticResource ValidationComboBox}"
                               ItemsSource="{Binding JobFileManager.CadManager.PointGroupsView}"
                               DisplayMemberPath="Name"
-                              SelectedValue="{Binding ActivePointGroup}" 
-                              />
+                              SelectedValue="{Binding ActivePointGroup}" />
                 </Grid>
                 <WrapPanel Grid.Column="2"
                            Margin="0 5 0 5"
