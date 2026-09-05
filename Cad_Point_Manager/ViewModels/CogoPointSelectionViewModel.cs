@@ -19,6 +19,7 @@ namespace Cad_Point_Manager.ViewModels
         public bool IsCoordinateEditable => SelectedPoints.Count > 0;
         public bool IsDescriptionEditable => SelectedPoints.Count > 0;
         public bool IsPointGroupEditable => SelectedPoints.Count > 0;
+        public string PointGroupDisplay => PointGroup;
 
         public string PointNumber
         {
@@ -133,19 +134,9 @@ namespace Cad_Point_Manager.ViewModels
             }
         }
 
-        private ObservableCollection<string> _displayedPointGroupsName = [];
         private CadManager _cadManager;
         private ObservableCollection<CogoPoint> _selectedPoints;
 
-        public ObservableCollection<string> DisplayedPointGroupsName
-        {
-            get => _displayedPointGroupsName;
-            set
-            {
-                _displayedPointGroupsName = value;
-                OnPropertyChanged(nameof(DisplayedPointGroupsName));
-            }
-        }
         public CadManager CadManager
         {
             get => _cadManager;
@@ -175,7 +166,6 @@ namespace Cad_Point_Manager.ViewModels
         {
             CadManager = cadManager;
 
-            UpdateDisplayedPointGroups();
             _selectedPoints = selectedPoints;
 
             Refresh();
@@ -189,7 +179,10 @@ namespace Cad_Point_Manager.ViewModels
             OnPropertyChanged(nameof(Easting));
             OnPropertyChanged(nameof(Elevation));
             OnPropertyChanged(nameof(Description));
+
             OnPropertyChanged(nameof(PointGroup));
+            OnPropertyChanged(nameof(PointGroupDisplay));
+
             OnPropertyChanged(nameof(IsPointNumberEditable));
             OnPropertyChanged(nameof(IsCoordinateEditable));
             OnPropertyChanged(nameof(IsDescriptionEditable));
@@ -198,36 +191,9 @@ namespace Cad_Point_Manager.ViewModels
 
         public void UpdateCadManager(CadManager cadManager)
         {
-            if (CadManager is not null)
-            {
-                CadManager.PointGroups.CollectionChanged -= OnPointGroupsCollectionChanged;
-            }
             CadManager = cadManager;
-            CadManager.PointGroups.CollectionChanged += OnPointGroupsCollectionChanged;
-
-            UpdateDisplayedPointGroups();
         }
 
-        private void OnPointGroupsCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
-        {
-            UpdateDisplayedPointGroups();
-        }
-
-        public void UpdateDisplayedPointGroups()
-        {
-            DisplayedPointGroupsName.Clear();
-
-            foreach (var pg in _cadManager.PointGroups)
-            {
-                if (pg != null && !string.IsNullOrEmpty(pg.Name))
-                {
-                    DisplayedPointGroupsName.Add(pg.Name);
-                }
-            }
-
-            DisplayedPointGroupsName.Add(_noneString);
-            DisplayedPointGroupsName.Add(_variesString);
-        }
         private string GetCommonValueOrVaries(Func<CogoPoint, double> selector)
         {
             if (_selectedPoints.Count == 0) { return _noneString; }

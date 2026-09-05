@@ -477,89 +477,70 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Helpers
         }
         public void FlushLayerSubset(HashSet<uint> dirty)
         {
-            if (dirty == null || dirty.Count == 0) return;
-
-            DataStream s;
-            _ctx.MapSubresource(_layerBuf, 0, MapMode.WriteNoOverwrite, MapFlags.None, out s);
-            int stride = Utilities.SizeOf<LayerState>();
-            foreach (var id in dirty)
+            if (dirty == null || dirty.Count == 0 || _layerBuf == null)
             {
-                s.Position = id * stride;
-                s.Write(_layerCpu[id]);
+                return;
             }
+
+            _ctx.MapSubresource(_layerBuf, 0, MapMode.WriteDiscard, MapFlags.None, out DataStream s);
+            s.WriteRange(_layerCpu, 0, _layerCap);
             _ctx.UnmapSubresource(_layerBuf, 0);
         }
         public void FlushObjectSubset(HashSet<uint> dirty)
         {
-            if (dirty == null || dirty.Count == 0) { return; }
-
-            DataStream s;
-            _ctx.MapSubresource(_objectBuf, 0, MapMode.WriteNoOverwrite, MapFlags.None, out s);
-            int stride = Utilities.SizeOf<ObjectState>();
-            foreach (var id in dirty)
+            if (dirty == null || dirty.Count == 0 || _objectBuf == null)
             {
-                s.Position = id * stride;
-                s.Write(_objectCpu[id]);
+                return;
             }
+
+            _ctx.MapSubresource(_objectBuf, 0, MapMode.WriteDiscard, MapFlags.None, out DataStream s);
+            s.WriteRange(_objectCpu, 0, _objectCap);
             _ctx.UnmapSubresource(_objectBuf, 0);
         }
         public void FlushGroupSubset(HashSet<uint> dirty)
         {
-            if (dirty == null || dirty.Count == 0) return;
-
-            DataStream s;
-            _ctx.MapSubresource(_groupBuf, 0, MapMode.WriteNoOverwrite, MapFlags.None, out s);
-            int stride = Utilities.SizeOf<GroupState>();
-            foreach (var id in dirty)
+            if (dirty == null || dirty.Count == 0 || _groupBuf == null)
             {
-                s.Position = id * stride;
-                s.Write(_groupCpu[id]);
+                return;
             }
+
+            _ctx.MapSubresource(_groupBuf, 0, MapMode.WriteDiscard, MapFlags.None, out DataStream s);
+            s.WriteRange(_groupCpu, 0, _groupCap);
             _ctx.UnmapSubresource(_groupBuf, 0);
         }
         public void FlushPointSubset(HashSet<uint> dirty)
         {
-            if (dirty == null || dirty.Count == 0) return;
-
-            DataStream s;
-            _ctx.MapSubresource(_pointBuf, 0, MapMode.WriteNoOverwrite, MapFlags.None, out s);
-            int stride = Utilities.SizeOf<PointState>();
-            foreach (var id in dirty)
+            if (dirty == null || dirty.Count == 0 || _pointBuf == null)
             {
-                s.Position = id * stride;
-                s.Write(_pointCpu[id]);
+                return;
             }
+
+            _ctx.MapSubresource(_pointBuf, 0, MapMode.WriteDiscard, MapFlags.None, out DataStream s);
+            s.WriteRange(_pointCpu, 0, _pointCap);
             _ctx.UnmapSubresource(_pointBuf, 0);
         }
         public void FlushLabelSubset(HashSet<uint> dirty)
         {
-            if (dirty == null || dirty.Count == 0) return;
-
-            DataStream s;
-            _ctx.MapSubresource(_labelBuf, 0, MapMode.WriteNoOverwrite, MapFlags.None, out s);
-            int stride = Utilities.SizeOf<LabelState>();
-            foreach (var id in dirty)
+            if (dirty == null || dirty.Count == 0 || _labelBuf == null)
             {
-                s.Position = id * stride;
-                s.Write(_labelCpu[id]);
+                return;
             }
+
+            _ctx.MapSubresource(_labelBuf, 0, MapMode.WriteDiscard, MapFlags.None, out DataStream s);
+            s.WriteRange(_labelCpu, 0, _labelCap);
             _ctx.UnmapSubresource(_labelBuf, 0);
         }
         public void FlushLineTypeSubset(HashSet<uint> dirty)
         {
-            if (dirty == null || dirty.Count == 0) { return; }
-            DataStream s;
-            _ctx.MapSubresource(_lineTypeBuf, 0, MapMode.WriteNoOverwrite, MapFlags.None, out s);
-            int stride = Utilities.SizeOf<LineTypeInfo>();
-            foreach (var id in dirty)
+            if (dirty == null || dirty.Count == 0 || _lineTypeBuf == null)
             {
-                s.Position = id * stride;
-                s.Write(_lineTypeCpu[id]);
+                return;
             }
+
+            _ctx.MapSubresource(_lineTypeBuf, 0, MapMode.WriteDiscard, MapFlags.None, out DataStream s);
+            s.WriteRange(_lineTypeCpu, 0, _lineTypeCap);
             _ctx.UnmapSubresource(_lineTypeBuf, 0);
         }
-
-
 
         // D3dStateBuffers.cs  (inside class)
         public void MaybeShrinkAllTo25PctOrLess(int labelUsed, int pointUsed, int groupUsed, int layerUsed, int objectUsed,

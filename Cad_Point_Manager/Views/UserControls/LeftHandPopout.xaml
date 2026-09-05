@@ -614,9 +614,12 @@
                                                        Style="{StaticResource ValidationComboBox}"
                                                        FontSize="{StaticResource PropertiesTabTextSize}"
                                                        Margin="{StaticResource RowItemMargin}"
-                                                       ItemsSource="{Binding DisplayedPointGroupsName}"
+                                                       ItemsSource="{Binding CadManager.PointGroupsView}"
+                                                       DisplayMemberPath="Name"
                                                        IsEnabled="{Binding IsPointGroupEditable}"
-                                                       SelectedItem="{Binding PointGroup}"
+                                                       IsEditable="False"
+                                                       Tag="UseDisplayText"
+                                                       controls:NoRevertComboBox.DisplayText="{Binding PointGroupDisplay}"
                                                        SelectionChanged="PropertiesPointGroupComboBox_SelectionChanged" />
                         </Grid>
                     </StackPanel>

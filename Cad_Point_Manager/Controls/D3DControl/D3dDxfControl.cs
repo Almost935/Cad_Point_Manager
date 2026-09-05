@@ -4046,10 +4046,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     _interactionDirty = true;
                     _baseSceneDirty = true;
                 }
-                if (e.PropertyName == nameof(PointGroup.Name))
-                {
-
-                }
             }
         }
         private void CogoPoint_PropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -4072,18 +4068,16 @@ namespace Cad_Point_Manager.Controls.D3DControl
             {
                 if (sender is CogoPoint cp)
                 {
-                    var id = SceneIdMap.GetOrAddGroupId(cp.PointGroup, out bool isNew);
-                    if (isNew)
-                    {
-                        StateController.SetPointGroupId(cp, id);
-                        StateController.FlushPointUpdates();
+                    var gId = SceneIdMap.GetOrAddGroupId(cp.PointGroup, out bool isNew);
+                    if (isNew) 
+                    { 
+                        StateBuffers.InitializeGroupState(SceneIdMap.MaxGroupId, cp.PointGroup, gId); 
                     }
-                    UpdateCogoPointBounds(cp);
 
-                    CadManager.UpdateCogoPointTree();
-                    UpdateInitialMatrix();
+                    StateController.SetPointGroupId(cp, gId);
+                    StateController.FlushGroupUpdates();
 
-                    _baseSceneDirty = true; _interactionDirty = true;
+                    _baseSceneDirty = _interactionDirty = true;
                 }
             }
             if (e.PropertyName == nameof(CogoPoint.PointNumber) ||

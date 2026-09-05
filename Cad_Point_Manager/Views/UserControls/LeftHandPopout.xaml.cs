@@ -236,16 +236,7 @@ namespace Cad_Point_Manager.Views.UserControls
 
                 control.CogoPointSelectionViewModel?.UpdateCadManager(cadManager);
                 control.CogoPointSelectionViewModel?.Refresh();
-
-                if (cadManager?.PointGroups is ObservableCollection<PointGroup> pgs)
-                {
-                    pgs.CollectionChanged += control.PointGroups_CollectionChanged;
-                }
             }
-        }
-        private void PointGroups_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
-        {
-            CogoPointSelectionViewModel?.UpdateDisplayedPointGroups();
         }
 
         private void SelectedCogoPoints_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
@@ -1172,21 +1163,24 @@ namespace Cad_Point_Manager.Views.UserControls
         }
 
         // Point Group Properties
-        private void PropertiesPointGroupComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void PropertiesPointGroupComboBox_SelectionChanged(
+            object sender, SelectionChangedEventArgs e)
         {
-            string pointGroupName = CogoPointSelectionViewModel.PointGroup;
+            if (sender is not ComboBox comboBox)
+                return;
 
-            bool found = CadManager.TryGetPointGroup(pointGroupName, out PointGroup? pg);
-
-            if (!found || pg == null) { return; }
+            if (comboBox.SelectedItem is not PointGroup pointGroup)
+                return;
 
             foreach (var point in CogoPointSelectionViewModel.SelectedPoints)
             {
-                if (point.PointGroup?.Name != pointGroupName)
+                if (!ReferenceEquals(point.PointGroup, pointGroup))
                 {
-                    point.PointGroup = pg;
+                    point.UpdatePointGroup(pointGroup);
                 }
             }
+
+            CogoPointSelectionViewModel.Refresh();
         }
         #endregion
 
