@@ -227,11 +227,20 @@ namespace Cad_Point_Manager.Views.UserControls
         private void HideTimer_Tick(object sender, EventArgs e)
         {
             _hideTimer.Stop();
-            if (!_isMouseOverPanel && !PointGroupListColorPickerOpen && !NewPointColorPickerToggleOpen &&
-                !LayerListColorPickerOpen && !_pointGroupsMessageBoxOpen && !pgListViewContextMenu.IsOpen)
+
+            if (_isMouseOverPanel ||
+                PointGroupListColorPickerOpen ||
+                NewPointColorPickerToggleOpen ||
+                LayerListColorPickerOpen ||
+                _pointGroupsMessageBoxOpen ||
+                pgListViewContextMenu.IsOpen)
             {
-                HideControl();
+                return;
             }
+
+            FinishActivePointGroupEdit();
+
+            HideControl();
         }
 
         private void OverallGrid_MouseEnter(object sender, MouseEventArgs e)
@@ -284,9 +293,9 @@ namespace Cad_Point_Manager.Views.UserControls
             if (layerListColumnWidth > 0)
             {
                 // Set column with name and visibility checkbox to double that of the color picker col
-                layerListGridView.Columns [0].Width = layerListColumnWidth * 1.8;
-                layerListGridView.Columns [1].Width = layerListColumnWidth * 0.6;
-                layerListGridView.Columns [2].Width = layerListColumnWidth * 0.6;
+                layerListGridView.Columns[0].Width = layerListColumnWidth * 1.8;
+                layerListGridView.Columns[1].Width = layerListColumnWidth * 0.6;
+                layerListGridView.Columns[2].Width = layerListColumnWidth * 0.6;
             }
         }
         private void LayersListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -384,7 +393,7 @@ namespace Cad_Point_Manager.Views.UserControls
                 }
                 else if (lv.SelectedItems.Count > 0)
                 {
-                    _pointGroupAnchorIndex = lv.Items.IndexOf(lv.SelectedItems [lv.SelectedItems.Count - 1]);
+                    _pointGroupAnchorIndex = lv.Items.IndexOf(lv.SelectedItems[lv.SelectedItems.Count - 1]);
                 }
                 else
                 {
@@ -412,11 +421,11 @@ namespace Cad_Point_Manager.Views.UserControls
             double pointGroupColumnWidth = pointGroupLTotalWidth / pointGroupGridView.Columns.Count;
             if (pointGroupColumnWidth > 0)
             {
-                pointGroupGridView.Columns [0].Width = pointGroupColumnWidth * 1.3;
-                pointGroupGridView.Columns [1].Width = pointGroupColumnWidth * 0.9;
-                pointGroupGridView.Columns [2].Width = pointGroupColumnWidth * 0.9;
-                pointGroupGridView.Columns [3].Width = pointGroupColumnWidth * 1;
-                pointGroupGridView.Columns [4].Width = pointGroupColumnWidth * 0.9;
+                pointGroupGridView.Columns[0].Width = pointGroupColumnWidth * 1.3;
+                pointGroupGridView.Columns[1].Width = pointGroupColumnWidth * 0.9;
+                pointGroupGridView.Columns[2].Width = pointGroupColumnWidth * 0.9;
+                pointGroupGridView.Columns[3].Width = pointGroupColumnWidth * 1;
+                pointGroupGridView.Columns[4].Width = pointGroupColumnWidth * 0.9;
             }
         }
         private void DeletePointGroupButton_Click(object sender, RoutedEventArgs e)
@@ -573,14 +582,37 @@ namespace Cad_Point_Manager.Views.UserControls
         }
         private void PointGroupsInlineEditBox_LostFocus(object sender, RoutedEventArgs e)
         {
-            if (sender is not TextBox tb)
-            {
-                return;
-            }
+            //if (sender is not TextBox tb)
+            //{
+            //    return;
+            //}
+
+            //var lvi = VisualTreeHelpers.FindAncestor<ListViewItem>(tb);
+
+            //if (lvi == null)
+            //{
+            //    return;
+            //}
+
+            //InlineEdit.SetEditingField(lvi, null);
+
+            if (sender is not TextBox tb) { return; }
 
             var lvi = VisualTreeHelpers.FindAncestor<ListViewItem>(tb);
+            if (lvi == null) { return; }
 
-            if (lvi == null)
+            var binding = tb.GetBindingExpression(TextBox.TextProperty);
+            if (!Validation.GetHasError(tb))
+            {
+                binding?.UpdateSource();
+            }
+
+            string? currentField = InferPGFieldNameFromDisplayElement(tb);
+            string? editingField = InlineEdit.GetEditingField(lvi);
+
+            if (!string.IsNullOrEmpty(editingField) &&
+                currentField != null &&
+                !string.Equals(editingField, currentField, StringComparison.Ordinal))
             {
                 return;
             }
@@ -665,6 +697,137 @@ namespace Cad_Point_Manager.Views.UserControls
             CadManager.CogoPointCircleVerticesDirty = true;
             CadManager.CogoPointTextVerticesDirty = true;
         }
+        private bool FinishPointGroupCellEdit(TextBox tb, bool revertIfInvalid)
+        {
+            var lvi = VisualTreeHelpers.FindAncestor<ListViewItem>(tb);
+
+            if (lvi == null || lvi.DataContext is not PointGroup pg)
+            {
+                return false;
+            }
+
+            string field =
+                InlineEdit.GetEditingField(lvi);
+
+            if (string.IsNullOrEmpty(field))
+            {
+                return false;
+            }
+
+            var binding = tb.GetBindingExpression(TextBox.TextProperty);
+
+            string text = tb.Text;
+            string? errorMessage = null;
+
+            switch (field)
+            {
+                case "Name":
+                    {
+                        if (text != pg.Name &&
+                            !CadManager.IsValidPointGroupName(text, out string svcError))
+                        {
+                            errorMessage = svcError;
+                        }
+
+                        break;
+                    }
+
+                case "PointScale":
+                    {
+                        if (!CadManager.IsValidPointScale(text, out string svcError))
+                        {
+                            errorMessage = svcError;
+                        }
+
+                        break;
+                    }
+            }
+
+            if (errorMessage != null)
+            {
+                if (!revertIfInvalid)
+                {
+                    if (binding != null)
+                    {
+                        Validation.MarkInvalid(binding, new ValidationError(
+                            new DataErrorValidationRule(), binding, errorMessage, null));
+                    }
+
+                    return false;
+                }
+
+                Validation.ClearInvalid(binding);
+                binding?.UpdateTarget();
+
+                InlineEdit.SetEditingField(lvi, null);
+
+                return true;
+            }
+
+            if (binding != null)
+            {
+                Validation.ClearInvalid(binding);
+            }
+
+            switch (field)
+            {
+                case "Name":
+                    {
+                        if (text != pg.Name)
+                        {
+                            CadManager.ChangePointGroupName(pg, text);
+                        }
+                        break;
+                    }
+
+                case "PointScale":
+                    {
+                        CadManager.ChangePointGroupScale(_selectedPointGroups, double.Parse(text));
+                        break;
+                    }
+            }
+
+            binding?.UpdateTarget();
+            InlineEdit.SetEditingField(lvi, null);
+
+            return true;
+        }
+        private void FinishActivePointGroupEdit()
+        {
+            foreach (var item in pointGroupsListView.Items)
+            {
+                if (pointGroupsListView.ItemContainerGenerator.ContainerFromItem(item) is not ListViewItem lvi)
+                {
+                    continue;
+                }
+
+                string field = InlineEdit.GetEditingField(lvi);
+
+                if (string.IsNullOrEmpty(field))
+                {
+                    continue;
+                }
+
+                string? textBoxName = field switch
+                {
+                    "Name" => "pgNameEdit",
+                    "PointScale" => "pgScaleEdit",
+                    _ => null
+                };
+
+                if (textBoxName == null)
+                {
+                    continue;
+                }
+
+                if (VisualTreeHelpers.FindByName(lvi, textBoxName) is TextBox tb)
+                {
+                    FinishPointGroupCellEdit(tb, revertIfInvalid: true);
+                }
+
+                return;
+            }
+        }
 
         // PointGroups listview visibily checkbox methods
         private void PointGroupsVisibilityCheckBox_Checked(object sender, RoutedEventArgs e)
@@ -706,7 +869,7 @@ namespace Cad_Point_Manager.Views.UserControls
                 int end = Math.Max(anchor, clicked);
 
                 lv.SelectedItems.Clear();
-                for (int i = start; i <= end; i++) { lv.SelectedItems.Add(lv.Items [i]); }
+                for (int i = start; i <= end; i++) { lv.SelectedItems.Add(lv.Items[i]); }
 
                 lvi.Focus();
 
@@ -761,7 +924,7 @@ namespace Cad_Point_Manager.Views.UserControls
                 int end = Math.Max(anchor, clicked);
 
                 lv.SelectedItems.Clear();
-                for (int i = start; i <= end; i++) { lv.SelectedItems.Add(lv.Items [i]); }
+                for (int i = start; i <= end; i++) { lv.SelectedItems.Add(lv.Items[i]); }
 
                 lvi.Focus();
 

@@ -24,6 +24,11 @@ cbuffer MsdfSettings : register(b2)
     float DistanceRange;
     float CameraZoom;
 }
+cbuffer MsdfRenderModeBuffer : register(b3)
+{
+    uint RenderSelectionOverlay;
+    float3 _renderModePadding;
+};
 
 struct LabelState
 {
@@ -83,6 +88,8 @@ struct VSOut
     float4 Color : COLOR;
     float Visible : TEXCOORD1;
     float MouseOver : TEXCOORD2;
+
+    nointerpolation float Selected : TEXCOORD3;
 };
 
 float Median(float r, float g, float b)
@@ -130,6 +137,7 @@ VSOut VSMain(VSVertex v, VSInstance inst)
         o.UV = 0;
         o.Color = 0;
         o.Visible = 0;
+        o.Selected = 0;
         return o;
     }
     
@@ -162,11 +170,7 @@ VSOut VSMain(VSVertex v, VSInstance inst)
     o.UV = lerp(inst.UvOrigin, inst.UvOrigin + inst.UvSize, corner);
 
     o.Color = gs.Color;
-    
-    if (sel > 0.5f)
-    {
-        o.Color = SelectedColor;
-    }
+    o.Selected = sel;
 
     return o;
 }
@@ -176,10 +180,20 @@ float4 PSMain(VSOut input) : SV_Target
     if (input.Visible < 0.5f)
         clip(-1);
 
+    if (RenderSelectionOverlay != 0u && input.Selected < 0.5f)
+    {
+        discard;
+    }
+
     float3 msd = FontAtlas.Sample(FontSampler, input.UV).rgb;
     float sd = Median(msd.r, msd.g, msd.b);
     float screenPxDistance = ScreenPxRange(input.UV) * (sd - 0.5);
     float opacity = smoothstep(-0.5, 0.5, screenPxDistance);
+
+    if (RenderSelectionOverlay != 0u)
+    {
+        return float4(SelectedColor.rgb, opacity * SelectedColor.a);
+    }
 
     return float4(input.Color.rgb, opacity);
 }

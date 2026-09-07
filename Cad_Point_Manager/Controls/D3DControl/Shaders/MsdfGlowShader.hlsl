@@ -170,30 +170,75 @@ float4 PSMain(VSOut input) : SV_Target
     float sd = Median(msd.r, msd.g, msd.b);
     float d = (sd - 0.5f) * DistanceRange;
 
-    //---------------------------------------
-    // Outside glow
-    //---------------------------------------
+    ////---------------------------------------
+    //// Outside glow
+    ////---------------------------------------
 
-    float glowRadius = clamp(120.0f / CameraZoom, 0.01f, DistanceRange * 0.5f);
+    //float glowRadius = clamp(120.0f / CameraZoom, 0.01f, DistanceRange * 0.5f);
 
-    // Positive distance going OUTWARD from the glyph boundary.
-    float outsideDistance = max(-d, 0.0f);
+    //// Positive distance going OUTWARD from the glyph boundary.
+    //float outsideDistance = max(-d, 0.0f);
 
-    // 1 at glyph boundary -> 0 at glowRadius.
-    float halo = 1.0f - smoothstep(0.0f, glowRadius, outsideDistance);
+    //// 1 at glyph boundary -> 0 at glowRadius.
+    //float halo = 1.0f - smoothstep(0.0f, glowRadius, outsideDistance);
 
-    // Keep this contribution outside the glyph.
-    float outsideMask = 1.0f - smoothstep(-0.25f, 0.25f, d);
-    halo *= outsideMask;
+    //// Keep this contribution outside the glyph.
+    //float outsideMask = 1.0f - smoothstep(-0.25f, 0.25f, d);
+    //halo *= outsideMask;
 
-    //---------------------------------------
-    // Interior
-    //---------------------------------------
+    ////---------------------------------------
+    //// Interior
+    ////---------------------------------------
+
+    //float fill = smoothstep(-0.25f, 0.5f, d);
+
+    ////---------------------------------------
+    //// Combine
+    ////---------------------------------------
+
+    //float alpha = halo * 0.55f + fill * 0.20f;
+    //alpha = saturate(alpha);
+
+    //return float4(0, 0, 0, alpha);
+    
+    
+    
+    bool selected = (input.PointFlags & POINT_SELECTED) != 0u;
+    bool mouseOver = (input.PointFlags & POINT_MOUSEOVER) != 0u;
+
+    if (!selected && !mouseOver)
+    {
+        discard;
+    }
 
     float fill = smoothstep(-0.25f, 0.5f, d);
 
+    float glowRadius = clamp(120.0f / CameraZoom, 0.01f, DistanceRange * 0.5f);
+    float outsideDistance = max(-d, 0.0f);
+
+    float halo = 1.0f - smoothstep(0.0f, glowRadius, outsideDistance);
+    float outsideMask = 1.0f - smoothstep(-0.25f, 0.25f, d);
+    halo *= outsideMask;
+
+    if (selected)
+    {
+        float3 selectionColor = SelectedColor.rgb;
+
+        if (mouseOver)
+        {
+            selectionColor = lerp(selectionColor, float3(0, 0, 0), 0.35f);
+        }
+
+        float tintAlpha = fill * SelectedColor.a;
+        float glowAlpha = halo * SelectedColor.a;
+        float alpha = max(tintAlpha, glowAlpha);
+
+        return float4(selectionColor, alpha);
+    }
+
+
     //---------------------------------------
-    // Combine
+    // Unselected mouseover
     //---------------------------------------
 
     float alpha = halo * 0.55f + fill * 0.20f;

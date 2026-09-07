@@ -40,8 +40,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
     public class D3dDxfControl : Direct3DControl, INotifyPropertyChanged, IDisposable
     {
         #region Fields
-        private const float HoverTextPadPx = 3f;     // grow the text rect by this many pixels
-        private const float HoverEllipsePadPx = 2f;  // extra pixels over the point radius
         private const float CogoPointTextHitPaddingPixels = 8.0f;
 
         // CogoPoint ToggleButton Fields
@@ -164,6 +162,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private Buffer _msdfSettingsBuffer;
         private bool _cogoTextVerticesDirty = false;
         private Buffer _cogoPointTextSettingsBuffer;
+        private Buffer _msdfRenderModeBuffer;
 
         // MSDF glow rendering
         private VertexShader _msdfGlowVS;
@@ -785,6 +784,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
         {
             if (_msdfInstanceCount == 0) { return; }
 
+            //SetMsdfRenderMode(ctx, false);
+
             ctx.VertexShader.Set(_msdfVS);
             ctx.PixelShader.Set(_msdfPS);
 
@@ -796,8 +797,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
             ctx.VertexShader.SetConstantBuffer(0, _transformationBuffer);
             ctx.VertexShader.SetConstantBuffer(1, _drawingSettingsBuffer);
             ctx.VertexShader.SetConstantBuffer(2, _msdfSettingsBuffer);
+            ctx.VertexShader.SetConstantBuffer(3, _msdfRenderModeBuffer);
 
+            ctx.PixelShader.SetConstantBuffer(1, _drawingSettingsBuffer);
             ctx.PixelShader.SetConstantBuffer(2, _msdfSettingsBuffer);
+            ctx.PixelShader.SetConstantBuffer(3, _msdfRenderModeBuffer);
 
             ctx.VertexShader.SetShaderResource(0, StateBuffers.LabelSRV);
             ctx.VertexShader.SetShaderResource(1, StateBuffers.PointSRV);
@@ -812,6 +816,10 @@ namespace Cad_Point_Manager.Controls.D3DControl
             ctx.InputAssembler.SetVertexBuffers(0, quadBinding, instanceBinding);
 
             ctx.DrawInstanced(6, _msdfInstanceCount, 0, 0);
+
+            //SetMsdfRenderMode(ctx, true);
+
+            //ctx.DrawInstanced(6, _msdfInstanceCount, 0, 0);
         }
         private void DrawMsdfGlowGlyphs(DeviceContext ctx)
         {
@@ -1898,11 +1906,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _dragFillBuffer?.Dispose();
             _dragFillBuffer = new(device, 6);
 
-            SceneIdMap ??= new();
-            StateBuffers?.Dispose();
-            StateBuffers = new(device, device.ImmediateContext);
-            StateController = new(SceneIdMap, StateBuffers);
-
             _pointCircleVertexBuffer?.Dispose();
             _pointCircleVertexBuffer = new(device, GlobalHelperProperties.InitialCircleVertices);
 
@@ -1917,6 +1920,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             _sigPointVertexBuffer?.Dispose();
             _sigPointVertexBuffer = new(device, 64);
+
+            SceneIdMap ??= new();
+            StateBuffers?.Dispose();
+            StateBuffers = new(device, device.ImmediateContext);
+            StateController = new(SceneIdMap, StateBuffers);
 
             _buffersInitialized = true;
         }
@@ -1961,6 +1969,16 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 OptionFlags = ResourceOptionFlags.None
             };
             _msdfSettingsBuffer = new Buffer(ResCache.Device, msdfBufferDesc);
+
+            var msdfRenderModeBufferDesc = new BufferDescription
+            {
+                Usage = ResourceUsage.Dynamic,
+                SizeInBytes = Utilities.SizeOf<MsdfRenderModeBuffer>(),
+                BindFlags = BindFlags.ConstantBuffer,
+                CpuAccessFlags = CpuAccessFlags.Write,
+                OptionFlags = ResourceOptionFlags.None
+            };
+            _msdfRenderModeBuffer = new Buffer(ResCache.Device, msdfRenderModeBufferDesc);
 
             var pointTextBufferDesc = new BufferDescription
             {
@@ -2402,17 +2420,23 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 RenderGlowPass = glowPass ? 1u : 0u
             };
 
-            DataStream stream;
             ctx.MapSubresource(
-                _lineRenderModeBuffer,
-                MapMode.WriteDiscard,
-                SharpDX.Direct3D11.MapFlags.None,
-                out stream);
-
+                _lineRenderModeBuffer, MapMode.WriteDiscard, SharpDX.Direct3D11.MapFlags.None, out DataStream stream);
             stream.Write(data);
-
             ctx.UnmapSubresource(_lineRenderModeBuffer, 0);
+            stream.Dispose();
+        }
+        private void SetMsdfRenderMode(DeviceContext ctx, bool selectedOnly)
+        {
+            var data = new MsdfRenderModeBuffer
+            {
+                RenderSelectionOverlay = selectedOnly ? 1u : 0u
+            };
 
+            ctx.MapSubresource(
+                _msdfRenderModeBuffer, MapMode.WriteDiscard, SharpDX.Direct3D11.MapFlags.None, out DataStream stream);
+            stream.Write(data);
+            ctx.UnmapSubresource(_msdfRenderModeBuffer, 0);
             stream.Dispose();
         }
 
@@ -2659,8 +2683,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
                                     cogoPointSelectionChanged = true;
                                 }
                             }
-
-                            //StateController.FlushPointUpdates();
                         }
                         break;
                     }
@@ -3885,35 +3907,16 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     cogoPoint.PropertyChanged -= CogoPoint_PropertyChanged;
                 }
             }
-            //if (e.Action == NotifyCollectionChangedAction.Reset)
-            //{
-            //    foreach (var cp in CadManager.CogoPoints)
-            //    {
-            //        cp.PropertyChanged -= CogoPoint_PropertyChanged;
-            //        cp.PropertyChanged += CogoPoint_PropertyChanged;
+            if (e.Action == NotifyCollectionChangedAction.Reset)
+            {
+                foreach (var cp in CadManager.CogoPoints)
+                {
+                    cp.PropertyChanged -= CogoPoint_PropertyChanged;
+                    cp.PropertyChanged += CogoPoint_PropertyChanged;
 
-            //        uint pId = SceneIdMap.GetOrAddPointId(cp, out var isNewPoint);
-            //        uint gId = SceneIdMap.GetOrAddGroupId(cp.PointGroup, out var isNewGroup);
-
-            //        if (isNewGroup)
-            //        { StateBuffers.InitializeGroupState(SceneIdMap.MaxGroupId, cp.PointGroup, gId); }
-
-            //        if (isNewPoint)
-            //        { StateBuffers.InitializePointState(SceneIdMap.MaxPointId, cp, pId, gId); }
-
-            //        uint idPN = SceneIdMap.GetOrAddLabelId(cp, 0, out var isNew);
-            //        if (isNew)
-            //        { StateBuffers.InitializeLabelState(SceneIdMap.MaxLabelCount, cp.PointNumberOffset, idPN); }
-
-            //        uint idElev = SceneIdMap.GetOrAddLabelId(cp, 1, out isNew);
-            //        if (isNew)
-            //        { StateBuffers.InitializeLabelState(SceneIdMap.MaxLabelCount, cp.ElevationOffset, idElev); }
-
-            //        uint idDesc = SceneIdMap.GetOrAddLabelId(cp, 2, out isNew);
-            //        if (isNew)
-            //        { StateBuffers.InitializeLabelState(SceneIdMap.MaxLabelCount, cp.DescriptionOffset, idDesc); }
-            //    }
-            //}
+                    StateController.EnsurePointRegistered(cp);
+                }
+            }
         }
         private void Layers_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
         {
@@ -4050,7 +4053,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
         private void CogoPoint_PropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
-            if (e.PropertyName == nameof(CogoPoint.Easting) || e.PropertyName == nameof(CogoPoint.Northing))
+            if (e.PropertyName == nameof(CogoPoint.Easting) ||
+                e.PropertyName == nameof(CogoPoint.Northing))
             {
                 if (sender is CogoPoint cp)
                 {
@@ -4069,9 +4073,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 if (sender is CogoPoint cp)
                 {
                     var gId = SceneIdMap.GetOrAddGroupId(cp.PointGroup, out bool isNew);
-                    if (isNew) 
-                    { 
-                        StateBuffers.InitializeGroupState(SceneIdMap.MaxGroupId, cp.PointGroup, gId); 
+                    if (isNew)
+                    {
+                        StateBuffers.InitializeGroupState(SceneIdMap.MaxGroupId, cp.PointGroup, gId);
                     }
 
                     StateController.SetPointGroupId(cp, gId);
@@ -4192,6 +4196,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
                     _msdfInstanceBuffer?.Dispose(); _msdfInstanceBuffer = null;
                     _msdfSettingsBuffer?.Dispose(); _msdfSettingsBuffer = null;
+                    _msdfRenderModeBuffer?.Dispose(); _msdfRenderModeBuffer = null;
 
                     _leaderLineBuffer?.Dispose(); _leaderLineBuffer = null;
                     _leaderLineGS?.Dispose(); _leaderLineGS = null;

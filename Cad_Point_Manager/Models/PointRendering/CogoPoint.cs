@@ -93,14 +93,22 @@ namespace Cad_Point_Manager.Models.PointRendering
         }
         public PointGroup PointGroup
         {
-            get { return _pointGroup; }
+            get => _pointGroup;
             set
             {
-                if (_pointGroup != value)
+                if (_pointGroup == value)
                 {
-                    _pointGroup = value;
-                    OnPropertyChanged(nameof(PointGroup));
+                    return;
                 }
+
+                var oldGroup = _pointGroup;
+
+                _pointGroup = value;
+
+                OnPropertyChanged(nameof(PointGroup));
+
+                oldGroup?.NotifyPointCountChanged();
+                _pointGroup?.NotifyPointCountChanged();
             }
         }
         public bool IsEditing

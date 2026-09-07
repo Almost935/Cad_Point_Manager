@@ -141,6 +141,12 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public float DistanceRange;
         public float CameraZoom;
     }
+    [StructLayout(LayoutKind.Sequential)]
+    public struct MsdfRenderModeBuffer
+    {
+        public uint RenderSelectionOverlay;
+        private Vector3 _padding;
+    }
 
     [StructLayout(LayoutKind.Sequential)]
     public struct GlyphVertexQuad

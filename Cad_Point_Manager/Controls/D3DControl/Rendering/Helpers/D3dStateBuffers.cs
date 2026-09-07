@@ -285,6 +285,7 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Helpers
             Array.Resize(ref _pointCpu, _pointCap);
 
             _pointSrv?.Dispose(); _pointBuf?.Dispose();
+
             var desc = new BufferDescription
             {
                 SizeInBytes = Utilities.SizeOf<PointState>() * _pointCap,

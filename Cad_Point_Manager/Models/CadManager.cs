@@ -609,9 +609,28 @@ namespace Cad_Point_Manager.Models
         }
         private void CogoPoints_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
         {
-            foreach (var pg in PointGroups)
+            if (e.OldItems != null)
             {
-                pg.NotifyPointCountChanged();
+                foreach (CogoPoint point in e.OldItems)
+                {
+                    point.PointGroup?.NotifyPointCountChanged();
+                }
+            }
+
+            if (e.NewItems != null)
+            {
+                foreach (CogoPoint point in e.NewItems)
+                {
+                    point.PointGroup?.NotifyPointCountChanged();
+                }
+            }
+
+            if (e.Action == NotifyCollectionChangedAction.Reset)
+            {
+                foreach (var pg in PointGroups)
+                {
+                    pg.NotifyPointCountChanged();
+                }
             }
         }
         #endregion
@@ -820,9 +839,7 @@ namespace Cad_Point_Manager.Models
                 return;
             }
 
-            if (!IsValidPointGroupName(
-                    newName,
-                    out string error))
+            if (!IsValidPointGroupName(newName, out string error))
             {
                 return;
             }
@@ -846,10 +863,7 @@ namespace Cad_Point_Manager.Models
             }
 
             UndoRedoManager.Execute(
-                new CompositeCommand(
-                    this,
-                    "Edit Point Group Name",
-                    commands));
+                new CompositeCommand(this, "Edit Point Group Name", commands));
         }
         public void ChangePointGroupScale(IEnumerable<PointGroup> groups, double newScale)
         {
