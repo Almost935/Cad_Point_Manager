@@ -137,6 +137,14 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Helpers
             else { s.Flags &= ~(uint)CogoPointFlags.MouseOverAnchor; }
             _dirtyPoints.Add(pid);
         }
+        public void SetPointAnchorPressed(CogoPoint cp, bool pressed)
+        {
+            if (!_ids.TryGetPointId(cp, out var pid)) { return; }
+            ref var s = ref _bufs.PointSpan[(int)pid];
+            if (pressed) { s.Flags |= (uint)CogoPointFlags.AnchorPressed; }
+            else { s.Flags &= ~(uint)CogoPointFlags.AnchorPressed; }
+            _dirtyPoints.Add(pid);
+        }
         public void SetPointSelected(CogoPoint cp, bool selected)
         {
             if (!_ids.TryGetPointId(cp, out var pid)) { return; }

@@ -160,8 +160,7 @@ VSOut VSMain(VSVertex v, VSInstance inst)
 
 float4 PSMain(VSOut input) : SV_Target
 {
-    if (input.Visible < 0.5f ||
-        (input.PointFlags & POINT_MOUSEOVER) == 0u)
+    if (input.Visible < 0.5f)
     {
         clip(-1);
     }
@@ -169,39 +168,6 @@ float4 PSMain(VSOut input) : SV_Target
     float3 msd = FontAtlas.Sample(FontSampler, input.UV).rgb;
     float sd = Median(msd.r, msd.g, msd.b);
     float d = (sd - 0.5f) * DistanceRange;
-
-    ////---------------------------------------
-    //// Outside glow
-    ////---------------------------------------
-
-    //float glowRadius = clamp(120.0f / CameraZoom, 0.01f, DistanceRange * 0.5f);
-
-    //// Positive distance going OUTWARD from the glyph boundary.
-    //float outsideDistance = max(-d, 0.0f);
-
-    //// 1 at glyph boundary -> 0 at glowRadius.
-    //float halo = 1.0f - smoothstep(0.0f, glowRadius, outsideDistance);
-
-    //// Keep this contribution outside the glyph.
-    //float outsideMask = 1.0f - smoothstep(-0.25f, 0.25f, d);
-    //halo *= outsideMask;
-
-    ////---------------------------------------
-    //// Interior
-    ////---------------------------------------
-
-    //float fill = smoothstep(-0.25f, 0.5f, d);
-
-    ////---------------------------------------
-    //// Combine
-    ////---------------------------------------
-
-    //float alpha = halo * 0.55f + fill * 0.20f;
-    //alpha = saturate(alpha);
-
-    //return float4(0, 0, 0, alpha);
-    
-    
     
     bool selected = (input.PointFlags & POINT_SELECTED) != 0u;
     bool mouseOver = (input.PointFlags & POINT_MOUSEOVER) != 0u;
@@ -212,12 +178,16 @@ float4 PSMain(VSOut input) : SV_Target
     }
 
     float fill = smoothstep(-0.25f, 0.5f, d);
+    
+    float mouseOverGlowRadius = clamp(120.0f / CameraZoom, 0.01f, DistanceRange * 0.5f);
+    float selectionGlowRadius = mouseOverGlowRadius * 0.5f;
 
-    float glowRadius = clamp(120.0f / CameraZoom, 0.01f, DistanceRange * 0.5f);
+    float glowRadius = mouseOver ? mouseOverGlowRadius : selectionGlowRadius;
+    
     float outsideDistance = max(-d, 0.0f);
-
     float halo = 1.0f - smoothstep(0.0f, glowRadius, outsideDistance);
     float outsideMask = 1.0f - smoothstep(-0.25f, 0.25f, d);
+
     halo *= outsideMask;
 
     if (selected)

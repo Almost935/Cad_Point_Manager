@@ -523,6 +523,7 @@
                                                      RelativeSource="{RelativeSource AncestorType=Page}" />
                                             <Binding Path="DataContext.JobFileManager.CadManager.Camera.WindowsMatrix"
                                                      RelativeSource="{RelativeSource AncestorType=Page}" />
+                                            <Binding ElementName="BackgroundCanvas" />
                                         </MultiBinding>
                                     </TranslateTransform.X>
                                     <TranslateTransform.Y>
@@ -532,6 +533,7 @@
                                                      RelativeSource="{RelativeSource AncestorType=Page}" />
                                             <Binding Path="DataContext.JobFileManager.CadManager.Camera.WindowsMatrix"
                                                      RelativeSource="{RelativeSource AncestorType=Page}" />
+                                            <Binding ElementName="BackgroundCanvas" />
                                         </MultiBinding>
                                     </TranslateTransform.Y>
                                 </TranslateTransform>

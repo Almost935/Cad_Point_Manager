@@ -35,9 +35,7 @@ namespace Cad_Point_Manager.ViewModels
     {
         #region Fields
         private readonly SelectionConnectivityService _service = new();
-
         private readonly Dictionary<string, List<string>> _errors = [];
-
         private readonly LayoutPdfVectorExporter _layoutPdfVectorExporter = new();
 
         private JobFileManager _jobFileManager = new();
@@ -470,8 +468,6 @@ namespace Cad_Point_Manager.ViewModels
                 _ => JobFileManager?.CadManager?.UndoRedoManager.CanRedo == true);
 
             SelectedGeometries.CollectionChanged += SelectedGeometries_CollectionChanged;
-
-            SelectedCogoPoints.CollectionChanged += SelectedCogoPoints_CollectionChanged;
         }
         #endregion
 
@@ -686,7 +682,7 @@ namespace Cad_Point_Manager.ViewModels
                     {
                         if (ActivePointGroup == null)
                         {
-                            AddError(nameof(ActivePointGroup), "A point group must be selected.");
+                            MessageBox.Show("You must select an active point group to create new points.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                         }
                         if (startNumberErrors is not null || elevErrors is not null || descErrors is not null)
                         {
@@ -814,13 +810,6 @@ namespace Cad_Point_Manager.ViewModels
         {
             var directed = _service.BuildChainsFromSelection(SelectedGeometries, VertexSnapTolerance);
             ChainPaths = directed;
-        }
-
-        private void SelectedCogoPoints_CollectionChanged(
-            object? sender, NotifyCollectionChangedEventArgs e)
-        {
-            Debug.WriteLine($"\nSelectedCogoPoints_CollectionChanged e.Action: {e.Action}" +
-                $"\nSelectedCogoPoints.Count: {SelectedCogoPoints.Count}");
         }
 
         // Printing Methods

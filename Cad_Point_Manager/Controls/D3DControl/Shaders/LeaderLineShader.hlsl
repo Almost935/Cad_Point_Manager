@@ -6,13 +6,18 @@ cbuffer TransformationBuffer : register(b0)
 {
     row_major matrix transformationMatrix;
 };
-
-cbuffer LeaderLineSettings : register(b1)
+cbuffer DrawingSettingsBuffer : register(b1)
 {
     float2 ViewportSize;
-    float PixelThickness;
-    float _pad0;
+    float2 _pad1;
+
+    float LineHalfWidthPixels;
+    float GlobalLineTypeScale;
+    float AnnotationScale;
+    float GlowPixelOffset;
+
     float4 SelectedColor;
+    float4 SelectedMouseOverColor;
 };
 
 //-----------------------------------------------------------------------------
@@ -127,7 +132,7 @@ PSInput VSMain(VSInput vertex, VSInstance instance)
     float t = vertex.Local.y;
     float2 ndc = lerp(ndcStart, ndcEnd, t);
 
-    float halfWidthPixels = PixelThickness * 0.5;
+    float halfWidthPixels = 0.5;
 
     ndc += normalNdc * halfWidthPixels * vertex.Local.x;
 
@@ -171,9 +176,6 @@ float4 PSMain(PSInput input) : SV_TARGET
     //--------------------------------------------
 
     float4 color = gs.Color;
-
-    if ((ps.Flags & POINT_SELECTED) != 0u)
-        color = SelectedColor;
 
     //--------------------------------------------
     // Analytic antialiasing

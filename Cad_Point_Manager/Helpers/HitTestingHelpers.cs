@@ -1,11 +1,25 @@
 ﻿using Cad_Point_Manager.Models.DrawingObjects;
 using Cad_Point_Manager.Models.HitTesting;
 using Cad_Point_Manager.Models.PointRendering;
+using System.Diagnostics;
 
 namespace Cad_Point_Manager.Helpers
 {
     public static class HitTestingHelpers
     {
+        public static T? GetCycledHit<T>(IReadOnlyList<T> hits, ref int index)
+        {
+            if (hits.Count == 0)
+            {
+                index = 0;
+                return default;
+            }
+
+            index %= hits.Count;
+
+            return hits[index];
+        }
+
         public static bool TryGetNextHitTestablePoint(int currentIndex, List<(double distance, HitTestablePoint hitTestablePoint)> pointTups, out (double distance, HitTestablePoint hitTestablePoint) hitTestablePointTup)
         {
             hitTestablePointTup = default;
@@ -21,7 +35,7 @@ namespace Cad_Point_Manager.Helpers
         public static bool TryGetNextDrawingGeometry(int currentIndex, List<(double distance, DrawingGeometry geometry)> geometryTups, out (double distance, DrawingGeometry geometry) geometryTup)
         {
             geometryTup = default;
-            if (currentIndex > geometryTups.Count) { return false; }
+            if (currentIndex >= geometryTups.Count) { return false; }
 
             geometryTup = geometryTups[currentIndex];
 
@@ -36,7 +50,11 @@ namespace Cad_Point_Manager.Helpers
         public static bool TryGetNextCogoPoint(int currentIndex, List<(double distance, CogoPoint point)> cogoPointsTups, out (double distance, CogoPoint point) cogoPointsTup)
         {
             cogoPointsTup = default;
-            if (currentIndex > cogoPointsTups.Count) { return false; }
+
+            if (currentIndex >= cogoPointsTups.Count)
+            {
+                return false;
+            }
 
             cogoPointsTup = cogoPointsTups[currentIndex];
 
@@ -51,7 +69,7 @@ namespace Cad_Point_Manager.Helpers
         public static bool TryGetNextHitTestableObject(int currentIndex, List<(double distance, HitTestableObject hitTestableObject)> hitTestableObjectTups, out (double distance, HitTestableObject hitTestableObject) hitTestableObjectTup)
         {
             hitTestableObjectTup = default;
-            if (currentIndex > hitTestableObjectTups.Count) { return false; }
+            if (currentIndex >= hitTestableObjectTups.Count) { return false; }
 
             hitTestableObjectTup = hitTestableObjectTups[currentIndex];
 

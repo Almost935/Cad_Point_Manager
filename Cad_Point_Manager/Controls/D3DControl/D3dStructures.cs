@@ -223,27 +223,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct LeaderLineSettings
-    {
-        public Vector2 ViewportSize;
-        public float PixelThickness;
-        public float Padding;
-        public Vector4 SelectedColor;
-    }
-    [StructLayout(LayoutKind.Sequential)]
     public struct LeaderLineInstance
     {
         public uint PointId;    // Point index
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    public struct LeaderLineGlowSettings
-    {
-        public Vector2 ViewportSize;
-        public float PixelThickness;
-        public float GlowPixelOffset;
-
-        public Vector4 HoverColor;
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -288,13 +270,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public Vector2 Pad;   // 16B stride
         public Vector4 Color;
     }
-    [StructLayout(LayoutKind.Sequential)]
-    struct CircleHoverVertex(Vector3 position, float radius, float isSelected = 0)
-    {
-        public Vector3 Position = position;
-        public float PointMarkerRadiusWorld = radius;
-        public float IsSelected = isSelected;
-    }
+
     [StructLayout(LayoutKind.Sequential)]
     public struct CogoPointGlowSettingsBuffer
     {

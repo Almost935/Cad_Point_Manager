@@ -95,6 +95,8 @@ StructuredBuffer<LineTypeInfo> LineTypeInfos : register(t2);
 StructuredBuffer<float> PatternData : register(t3);
 
 static const uint LAYER_VISIBLE = 1u << 0;
+static const uint OBJECT_VISIBLE = 1u << 0;
+static const uint OBJECT_SELECTED = 1u << 1;
 static const uint OBJECT_MOUSEOVER = 1u << 2;
 
 //-----------------------------------------------------------------------------
@@ -233,9 +235,13 @@ float4 PSMain(PSInput input) : SV_TARGET
     // Visibility
     //--------------------------------------------
 
-    if ((ls.Flags & LAYER_VISIBLE) == 0)
+    if ((os.Flags & OBJECT_VISIBLE) == 0)
         discard;
-    if ((os.Flags & OBJECT_MOUSEOVER) == 0)
+    
+    bool selected = (os.Flags & OBJECT_SELECTED) != 0;
+    bool mouseOver = (os.Flags & OBJECT_MOUSEOVER) != 0;
+
+    if (!selected && !mouseOver)
         discard;
 
     //--------------------------------------------
@@ -364,6 +370,8 @@ float4 PSMain(PSInput input) : SV_TARGET
     float alongDistance = patternAlongDistance;
     float perpendicularDistance = abs(input.Side) * glowHalfWidth;
     float centerlineDistance = length(float2(perpendicularDistance, alongDistance));
+    
+    bool insideStroke = visible && centerlineDistance <= visibleLineHalfWidth;
 
     //--------------------------------------------
     // Distance to outside of stroke
@@ -372,23 +380,69 @@ float4 PSMain(PSInput input) : SV_TARGET
     float distanceFromStroke = centerlineDistance - visibleLineHalfWidth;
     float glowDistance = max(distanceFromStroke, 0.0);
 
+    float mouseOverGlowRadius = GlowPixelOffset;
+    float selectionGlowRadius = mouseOverGlowRadius * 0.5f;
+    float glowRadius = mouseOver ? mouseOverGlowRadius : selectionGlowRadius;
+
     //--------------------------------------------
-    // Outside glow radius
+    // Selected
     //--------------------------------------------
 
-    if (glowDistance >= GlowPixelOffset)
+    if (selected)
+    {
+        float3 selectionColor = SelectedColor.rgb;
+
+        //----------------------------------------
+        // Darken selected + mouseover
+        //----------------------------------------
+
+        if (mouseOver)
+        {
+            selectionColor = lerp(selectionColor, float3(0.0, 0.0, 0.0), 0.35f);
+        }
+
+        //----------------------------------------
+        // Interior selection tint
+        //----------------------------------------
+
+        if (insideStroke)
+        {
+            return float4(selectionColor, SelectedColor.a);
+        }
+
+        //----------------------------------------
+        // Outside selection glow
+        //----------------------------------------
+
+        if (glowDistance >= glowRadius)
+        {
+            discard;
+        }
+
+        float glowT = saturate(glowDistance / glowRadius);
+        float glowAlpha = 1.0 - smoothstep(0.0, 1.0, glowT);
+        glowAlpha *= SelectedColor.a;
+
+        return float4(selectionColor, glowAlpha);
+    }
+
+    //--------------------------------------------
+    // Mouseover only
+    //--------------------------------------------
+
+    if (insideStroke)
     {
         discard;
     }
 
-    //--------------------------------------------
-    // Glow
-    //--------------------------------------------
+    if (glowDistance >= mouseOverGlowRadius)
+    {
+        discard;
+    }
 
-    float glowT = saturate(glowDistance / GlowPixelOffset);
+    float glowT = saturate(glowDistance / mouseOverGlowRadius);
     float glowAlpha = 1.0 - smoothstep(0.0, 1.0, glowT);
-    const float MaxGlowAlpha = 0.45;
-    glowAlpha *= MaxGlowAlpha;
+    glowAlpha *= 0.45f;
 
     return float4(0.0, 0.0, 0.0, glowAlpha);
 }

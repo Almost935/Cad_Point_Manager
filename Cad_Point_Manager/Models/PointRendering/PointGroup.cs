@@ -109,7 +109,7 @@ namespace Cad_Point_Manager.Models.PointRendering
 
         public void UpdatePointInfoBaseXoffset()
         {
-            PointInfoBaseXoffset = (float)(FontBaseSize * PointScale * _markerToPointScaleFactor);
+            PointInfoBaseXoffset = (float)(FontBaseSize * PointScale * _markerToPointScaleFactor * 0.5);
         }
         #endregion
 

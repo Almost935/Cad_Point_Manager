@@ -47,17 +47,6 @@
                 </DataTrigger>
             </Style.Triggers>
         </Style>
-
-        <!--<Style x:Key="EllipseStyle"
-               TargetType="Ellipse">
-            <Style.Triggers>
-                <DataTrigger Binding="{Binding HitTestablePoint.IsSelected}"
-                             Value="True">
-                    <Setter Property="Fill"
-                            Value="{StaticResource MouseOverHitTestablePointBrush}" />
-                </DataTrigger>
-            </Style.Triggers>
-        </Style>-->
     </UserControl.Resources>
 
     <Grid Height="{StaticResource SignificantPointPixelDiameter}"

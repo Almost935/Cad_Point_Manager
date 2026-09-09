@@ -74,10 +74,10 @@ VSOut VSMain(VSQuadIn v, VSInst i)
     PointState ps = PointStates[i.pointId];
     GroupState gs = GroupStates[ps.GroupId];
 
-    const float visPt   = ((ps.Flags & POINT_VISIBLE) != 0u) ? 1.0f : 0.0f;
-    const float visGrp  = ((gs.Flags & GROUP_VISIBLE) != 0u) ? 1.0f : 0.0f;
-    const float sel     = ((ps.Flags & POINT_SELECTED) != 0u) ? 1.0f : 0.0f;
-    const float moAnchor= ((ps.Flags & POINT_MOUSEOVERANCHOR) != 0u) ? 1.0f : 0.0f;
+    const float visPt = ((ps.Flags & POINT_VISIBLE) != 0u) ? 1.0f : 0.0f;
+    const float visGrp = ((gs.Flags & GROUP_VISIBLE) != 0u) ? 1.0f : 0.0f;
+    const float sel = ((ps.Flags & POINT_SELECTED) != 0u) ? 1.0f : 0.0f;
+    const float moAnchor = ((ps.Flags & POINT_MOUSEOVERANCHOR) != 0u) ? 1.0f : 0.0f;
     const float pressed = ((ps.Flags & POINT_ANCHORPRESSED) != 0u) ? 1.0f : 0.0f;
 
     uint state = (pressed > 0.5f) ? 2 : ((moAnchor > 0.5f) ? 1 : 0);
@@ -88,7 +88,7 @@ VSOut VSMain(VSQuadIn v, VSInst i)
 
     // Position & UV in world units
     float2 worldPos = i.center + ps.Offset + ps.PointInfoOffset + v.local * halfSize;
-    o.pos   = mul(float4(worldPos, 0.0, 1.0), ViewProj);
+    o.pos = mul(float4(worldPos, 0.0, 1.0), ViewProj);
     o.uv = v.local * halfSize;
     o.size = halfSize;
 
@@ -102,19 +102,17 @@ VSOut VSMain(VSQuadIn v, VSInst i)
 
 float4 PSMain(VSOut i) : SV_Target
 {
-    // Early kill when not to be shown
     if (i.show < 0.5f)
         discard;
 
-    // Rounded-rect SDF
     float2 q = abs(i.uv) - (i.size - i.rf.x);
     float d = length(max(q, 0.0)) - i.rf.x;
 
     float aa = max(fwidth(d), 1e-6);
     float fillAlpha = smoothstep(0.5 * aa, -0.5 * aa, d);
 
-    // Simple state-based color (you can refine)
     float4 col = baseColor;
+    
     if (i.state == 1)
         col = mouseOverColor;
     if (i.state == 2)
@@ -129,6 +127,7 @@ float4 PSMain(VSOut i) : SV_Target
     float4 outCol = lerp(col, borderCol, borderMask);
 
     outCol.a *= fillAlpha;
+    
     if (outCol.a <= 0.001)
         discard;
 

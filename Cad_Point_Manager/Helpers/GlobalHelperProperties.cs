@@ -27,7 +27,7 @@ namespace Cad_Point_Manager.Helpers
         public const float TextHeightToSpaceWidthFactor = 0.5f;
 
         //public static readonly Vector4 SelectedObjectColor = new(59.0f / 255.0f, 255.0f / 255.0f, 62.0f / 255.0f, 0.3f);
-        public static readonly Vector4 SelectedObjectColor = new(36.0f / 255.0f, 250.0f / 255.0f, 255.0f / 255.0f, 0.6f);
+        public static readonly Vector4 SelectedObjectColor = new(36.0f / 255.0f, 250.0f / 255.0f, 255.0f / 255.0f, 0.7f);
         public static readonly Vector4 SelectedMouseOverObjectColor = new(127.0f / 255.0f, 1.0f, 116.0f / 255.0f, 1);
         public static readonly Vector4 SelectedMouseOverGlowColor = new(127.0f / 255.0f, 1.0f, 116.0f / 255.0f, 0.4f);
 

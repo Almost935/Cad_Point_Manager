@@ -373,33 +373,6 @@ float4 PSMain(PSInput input) : SV_TARGET
         }
     }
 
-    if (RenderGlowPass == 0 && !visible)
-        discard;
-
-    //--------------------------------------------
-    // Determine render pass
-    //--------------------------------------------
-
-    if (RenderGlowPass == 1)
-    {
-        if (!mouseOver)
-            discard;
-    }
-    else if (RenderSelectedOnly == 1)
-    {
-        if (!selected)
-            discard;
-    }
-    else
-    {
-        if (selected)
-            discard;
-    }
-
-    //-------------------------------------------------------------------------
-    // Mouseover glow
-    //-------------------------------------------------------------------------
-
     if (RenderGlowPass == 1)
     {
         float visibleLineHalfWidth = LineHalfWidthPixels * 0.5;
@@ -458,15 +431,17 @@ float4 PSMain(PSInput input) : SV_TARGET
 
         return float4(0.0, 0.0, 0.0, glowAlpha);
     }
+    
+    if (!visible)
+    {
+        discard;
+    }
 
     //-------------------------------------------------------------------------
     // Normal line rendering
     //-------------------------------------------------------------------------
 
     float4 color = ((os.Flags & OBJ_COLOR_BY_LAYER) != 0) ? ls.Color : os.Color;
-
-    if (selected)
-        color = SelectedColor;
 
     float d = abs(input.Side);
     float w = fwidth(d);
