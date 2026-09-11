@@ -41,6 +41,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
     {
         #region Fields
         private const float CogoPointTextHitPaddingPixels = 8.0f;
+        private const float CogoQuadrantHysteresisPixels = 4.0f;
 
         // CogoPoint ToggleButton Fields
         private float _desiredHalfWorldForAnchors;
@@ -140,6 +141,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private bool _sigPointVerticesDirty = false;
         private bool _sigPointShadersLoaded = false;
         private int _sigPointVertexCount;
+
+        // General CogoPoint rendering fields
+        private readonly Dictionary<CogoPoint, int> _pointCircleRenderIndices = [];
+        private readonly Dictionary<CogoPoint, int> _leaderLineRenderIndices = [];
+        private readonly Dictionary<CogoPoint, MsdfRenderRange> _msdfRenderRanges = [];
 
         // MSDF rendering
         private VertexShader _msdfVS;
@@ -544,7 +550,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             var ctx = ResCache.DeviceContext;
 
-            // Only Draw the cached pan if the user is actively panning, otherwise draw the full scene
             if (_isPanning)
             {
                 DrawCachedPan(ctx);
@@ -567,11 +572,20 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 DrawLineGlows(ctx);
                 CompositeGlowTexture(ctx, ResCache.InteractionRenderTargetView);
 
-                DrawPointCircleGlow(ctx);
-                DrawSignificantPoints(ctx);
-                DrawMsdfGlowGlyphs(ctx);
-                DrawLeaderLinesGlow(ctx);
-                DrawCogoPointAnchors(ctx);
+                if (_cogoPointTextBeingMoved)
+                {
+                    DrawMovingPointCircle(ctx, _pressedToggleButtonPoint);
+                    DrawMovingMsdfGlyph(ctx, _pressedToggleButtonPoint);
+                    DrawMovingLeaderLine(ctx, _pressedToggleButtonPoint);
+                }
+                else
+                {
+                    DrawPointCircleGlow(ctx);
+                    DrawSignificantPoints(ctx);
+                    DrawMsdfGlowGlyphs(ctx);
+                    DrawLeaderLinesGlow(ctx);
+                    DrawCogoPointAnchors(ctx);
+                }
 
                 _interactionDirty = false;
             }
@@ -605,16 +619,32 @@ namespace Cad_Point_Manager.Controls.D3DControl
             //Debug.WriteLine($"Solids {sw.ElapsedMilliseconds} ms");
             //sw.Restart();
 
-            DrawPointCircles(ctx);
-            //Debug.WriteLine($"Circles {sw.ElapsedMilliseconds} ms");
-            //sw.Restart();
+            if (_cogoPointTextBeingMoved)
+            {
+                DrawPointCirclesExcept(ctx, _pressedToggleButtonPoint);
+                //Debug.WriteLine($"Circles {sw.ElapsedMilliseconds} ms");
+                //sw.Restart();
 
-            DrawMsdfGlyphs(ctx);
-            //Debug.WriteLine($"Glyphs {sw.ElapsedMilliseconds} ms");
-            //sw.Restart();
+                DrawMsdfGlyphsExcept(ctx, _pressedToggleButtonPoint);
+                //Debug.WriteLine($"Glyphs {sw.ElapsedMilliseconds} ms");
+                //sw.Restart();
 
-            DrawLeaderLines(ctx);
-            //Debug.WriteLine($"Glyphs {sw.ElapsedMilliseconds} ms");
+                DrawLeaderLinesExcept(ctx, _pressedToggleButtonPoint);
+                //Debug.WriteLine($"Glyphs {sw.ElapsedMilliseconds} ms");
+            }
+            else
+            {
+                DrawPointCircles(ctx);
+                //Debug.WriteLine($"Circles {sw.ElapsedMilliseconds} ms");
+                //sw.Restart();
+
+                DrawMsdfGlyphs(ctx);
+                //Debug.WriteLine($"Glyphs {sw.ElapsedMilliseconds} ms");
+                //sw.Restart();
+
+                DrawLeaderLines(ctx);
+                //Debug.WriteLine($"Glyphs {sw.ElapsedMilliseconds} ms");
+            }
         }
         private void DrawLines(DeviceContext ctx)
         {
@@ -754,10 +784,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             ctx.Draw(_solidVertexCount, 0);
         }
-        private void DrawMsdfGlyphs(DeviceContext ctx)
+        private void SetupMsdfPipeline(DeviceContext ctx)
         {
-            if (_msdfInstanceCount == 0) { return; }
-
             ctx.VertexShader.Set(_msdfVS);
             ctx.PixelShader.Set(_msdfPS);
 
@@ -779,6 +807,12 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             ctx.PixelShader.SetShaderResource(2, StateBuffers.GroupSRV);
             ctx.PixelShader.SetShaderResource(3, ResCache.CogoPointMsdfAtlas.ShaderResourceView);
+        }
+        private void DrawMsdfGlyphs(DeviceContext ctx)
+        {
+            if (_msdfInstanceCount == 0) { return; }
+
+            SetupMsdfPipeline(ctx);
 
             var quadBinding = new VertexBufferBinding(_msdfQuadBuffer, Utilities.SizeOf<MsdfVertex>(), 0);
             var instanceBinding = new VertexBufferBinding(_msdfInstanceBuffer.Buffer, _msdfInstanceBuffer.Stride, 0);
@@ -786,10 +820,56 @@ namespace Cad_Point_Manager.Controls.D3DControl
             ctx.InputAssembler.SetVertexBuffers(0, quadBinding, instanceBinding);
 
             ctx.DrawInstanced(6, _msdfInstanceCount, 0, 0);
+        }
+        private void DrawMsdfGlyphsExcept(DeviceContext ctx, CogoPoint excludedPoint)
+        {
+            if (_msdfInstanceCount == 0)
+                return;
 
-            //SetMsdfRenderMode(ctx, true);
+            if (!_msdfRenderRanges.TryGetValue(excludedPoint,
+                out var excluded))
+            {
+                DrawMsdfGlyphs(ctx);
+                return;
+            }
 
-            //ctx.DrawInstanced(6, _msdfInstanceCount, 0, 0);
+            SetupMsdfPipeline(ctx);
+
+            var quadBinding = new VertexBufferBinding(_msdfQuadBuffer, Utilities.SizeOf<MsdfVertex>(), 0);
+            var instanceBinding = new VertexBufferBinding(_msdfInstanceBuffer.Buffer, _msdfInstanceBuffer.Stride, 0);
+
+            ctx.InputAssembler.SetVertexBuffers(0, quadBinding, instanceBinding);
+
+            int beforeCount = excluded.StartInstance;
+
+            if (beforeCount > 0)
+            {
+                ctx.DrawInstanced(6, beforeCount, 0, 0);
+            }
+
+            int afterStart = excluded.StartInstance + excluded.InstanceCount;
+            int afterCount = _msdfInstanceCount - afterStart;
+
+            if (afterCount > 0)
+            {
+                ctx.DrawInstanced(6, afterCount, 0, afterStart);
+            }
+        }
+        private void DrawMovingMsdfGlyph(DeviceContext ctx, CogoPoint point)
+        {
+            if (!_msdfRenderRanges.TryGetValue(point, out var range))
+            {
+                return;
+            }
+
+            SetupMsdfPipeline(ctx);
+
+            var quadBinding = new VertexBufferBinding(_msdfQuadBuffer, Utilities.SizeOf<MsdfVertex>(), 0);
+            var instanceBinding = new VertexBufferBinding(_msdfInstanceBuffer.Buffer, _msdfInstanceBuffer.Stride, 0);
+
+            ctx.InputAssembler.SetVertexBuffers(0, quadBinding, instanceBinding);
+
+            ctx.DrawInstanced(6, range.InstanceCount, 0, range.StartInstance);
         }
         private void DrawMsdfGlowGlyphs(DeviceContext ctx)
         {
@@ -824,10 +904,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             ctx.DrawInstanced(6, _msdfInstanceCount, 0, 0);
         }
-        private void DrawPointCircles(DeviceContext ctx)
+        private void SetupPointCirclesPipeline(DeviceContext ctx)
         {
-            if (_pointCircleVertexCount == 0) { return; }
-
             ctx.VertexShader.Set(_pointMarkerVS);
             ctx.GeometryShader.Set(_pointMarkerGS);
             ctx.PixelShader.Set(_pointMarkerPS);
@@ -846,8 +924,56 @@ namespace Cad_Point_Manager.Controls.D3DControl
             ctx.InputAssembler.PrimitiveTopology = PrimitiveTopology.PointList;
             ctx.InputAssembler.SetVertexBuffers(0,
                 new VertexBufferBinding(_pointCircleVertexBuffer.Buffer, _pointCircleVertexBuffer.Stride, 0));
+        }
+        private void DrawPointCircles(DeviceContext ctx)
+        {
+            if (_pointCircleVertexCount == 0) { return; }
+
+            SetupPointCirclesPipeline(ctx);
 
             ctx.Draw(_pointCircleVertexCount, 0);
+            ctx.GeometryShader.Set(null);
+        }
+        private void DrawPointCirclesExcept(DeviceContext ctx, CogoPoint excludedPoint)
+        {
+            if (_pointCircleVertexCount == 0)
+                return;
+
+            if (!_pointCircleRenderIndices.TryGetValue(excludedPoint, out int excludedIndex))
+            {
+                DrawPointCircles(ctx);
+                return;
+            }
+
+            SetupPointCirclesPipeline(ctx);
+
+            // Everything before moving point
+            if (excludedIndex > 0)
+            {
+                ctx.Draw(excludedIndex, 0);
+            }
+
+            int afterStart = excludedIndex + 1;
+            int afterCount = _pointCircleVertexCount - afterStart;
+
+            if (afterCount > 0)
+            {
+                ctx.Draw(afterCount, afterStart);
+            }
+
+            ctx.GeometryShader.Set(null);
+        }
+        private void DrawMovingPointCircle(DeviceContext ctx, CogoPoint point)
+        {
+            if (!_pointCircleRenderIndices.TryGetValue(point, out int index))
+            {
+                return;
+            }
+
+            SetupPointCirclesPipeline(ctx);
+
+            ctx.Draw(1, index);
+
             ctx.GeometryShader.Set(null);
         }
         private void DrawPointCircleGlow(DeviceContext ctx)
@@ -902,9 +1028,46 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             ctx.DrawInstanced(6, _anchorVerticesCount, 0, 0);
         }
+        private void SetupLeaderLinesPipeline(DeviceContext ctx)
+        {
+            ctx.GeometryShader.Set(null);
+            ctx.InputAssembler.InputLayout = _leaderLineInputLayout;
+            ctx.InputAssembler.PrimitiveTopology = PrimitiveTopology.TriangleList;
+            var quadBinding = new VertexBufferBinding(_leaderLineQuadBuffer, Utilities.SizeOf<LineCornerVertex>(), 0);
+            var instanceBinding = new VertexBufferBinding(_leaderLineBuffer.Buffer, _leaderLineBuffer.Stride, 0);
+            ctx.InputAssembler.SetVertexBuffers(0, quadBinding, instanceBinding);
+
+            ctx.VertexShader.Set(_leaderLineVS);
+            ctx.PixelShader.Set(_leaderLinePS);
+
+            ctx.VertexShader.SetConstantBuffer(0, _transformationBuffer);
+            ctx.VertexShader.SetConstantBuffer(1, _drawingSettingsBuffer);
+            ctx.VertexShader.SetShaderResource(0, StateBuffers.PointSRV);
+            ctx.VertexShader.SetShaderResource(1, StateBuffers.GroupSRV);
+
+            ctx.PixelShader.SetConstantBuffer(0, _transformationBuffer);
+            ctx.PixelShader.SetConstantBuffer(1, _drawingSettingsBuffer);
+            ctx.PixelShader.SetShaderResource(0, StateBuffers.PointSRV);
+            ctx.PixelShader.SetShaderResource(1, StateBuffers.GroupSRV);
+        }
         private void DrawLeaderLines(DeviceContext ctx)
         {
             if (_leaderLineInstanceCount <= 0) { return; }
+
+            SetupLeaderLinesPipeline(ctx);
+
+            ctx.DrawInstanced(6, _leaderLineInstanceCount, 0, 0);
+        }
+        private void DrawLeaderLinesExcept(DeviceContext ctx, CogoPoint excludedPoint)
+        {
+            if (_leaderLineInstanceCount == 0)
+                return;
+
+            if (!_leaderLineRenderIndices.TryGetValue(excludedPoint, out int excludedIndex))
+            {
+                DrawLeaderLines(ctx);
+                return;
+            }
 
             ctx.GeometryShader.Set(null);
             ctx.InputAssembler.InputLayout = _leaderLineInputLayout;
@@ -926,7 +1089,29 @@ namespace Cad_Point_Manager.Controls.D3DControl
             ctx.PixelShader.SetShaderResource(0, StateBuffers.PointSRV);
             ctx.PixelShader.SetShaderResource(1, StateBuffers.GroupSRV);
 
-            ctx.DrawInstanced(6, _leaderLineInstanceCount, 0, 0);
+            if (excludedIndex > 0)
+            {
+                ctx.DrawInstanced(6, excludedIndex, 0, 0);
+            }
+
+            int afterStart = excludedIndex + 1;
+            int afterCount = _leaderLineInstanceCount - afterStart;
+
+            if (afterCount > 0)
+            {
+                ctx.DrawInstanced(6, afterCount, 0, afterStart);
+            }
+        }
+        private void DrawMovingLeaderLine(DeviceContext ctx, CogoPoint point)
+        {
+            if (!_leaderLineRenderIndices.TryGetValue(point, out int index))
+            {
+                return;
+            }
+
+            SetupLeaderLinesPipeline(ctx);
+
+            ctx.DrawInstanced(6, 1, 0, index);
         }
         private void DrawLeaderLinesGlow(DeviceContext ctx)
         {
@@ -1087,6 +1272,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private void UpdateMsdfInstances()
         {
             _msdfInstances.Clear();
+            _msdfRenderRanges.Clear();
 
             foreach (var pointGroup in CadManager.PointGroups)
             {
@@ -1102,7 +1288,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
                         continue;
                     }
 
+                    int startInstance = _msdfInstances.Count;
                     AddCogoPoint(point, _msdfInstances);
+                    int instanceCount = _msdfInstances.Count - startInstance;
+
+                    _msdfRenderRanges[point] = new MsdfRenderRange(startInstance, instanceCount);
                 }
             }
 
@@ -1114,23 +1304,28 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             _cogoTextVerticesDirty = false;
             _baseSceneDirty = true;
-
-            //// Testing
-            //CadManager.UpdateCogoPointBoundingLines(SceneIdMap);
-            //CadManager.LineVerticesDirty = true;
         }
         private void UpdatePointCircleVertices()
         {
-            if (_pointCircleVertexBuffer is null) { return; }
+            if (_pointCircleVertexBuffer is null)
+                return;
 
             var context = ResCache.DeviceContext;
 
-            CadManager.BuildPointMarkerInstances(_pointMarkerInstanceStaging, StateController);
+            _pointCircleRenderIndices.Clear();
 
-            _pointCircleVertexBuffer.Update(context, CollectionsMarshal.AsSpan(_pointMarkerInstanceStaging));
-            _pointCircleVertexCount = _pointMarkerInstanceStaging.Count;
+            CadManager.BuildPointMarkerInstances(_pointMarkerInstanceStaging, StateController, _pointCircleRenderIndices);
+
+            _pointCircleVertexBuffer.Update(
+                context,
+                CollectionsMarshal.AsSpan(
+                    _pointMarkerInstanceStaging));
+
+            _pointCircleVertexCount =
+                _pointMarkerInstanceStaging.Count;
 
             StateBuffers.FlushAll();
+
             _pointCircleVerticesDirty = false;
             _baseSceneDirty = true;
         }
@@ -1216,6 +1411,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private void UpdateLeaderLineVertices()
         {
             List<LeaderLineInstance> list = [];
+            _leaderLineRenderIndices.Clear();
 
             foreach (var pg in CadManager.PointGroups)
             {
@@ -1237,6 +1433,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     {
                         PointId = pid
                     });
+
+                    _leaderLineRenderIndices[p] = list.Count - 1;
                 }
             }
 
@@ -1601,7 +1799,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 new[]
                 {
                     new InputElement("POSITION", 0, Format.R32G32_Float, 0, 0),
-                    
+
                     new InputElement("TEXCOORD", 0, Format.R32G32_Float, 0, 1, InputClassification.PerInstanceData, 1), // Center (float2) @ offset 0
                     new InputElement("POINT_ID", 0, Format.R32_UInt,      8, 1, InputClassification.PerInstanceData, 1), // PointId  @ offset 8
                 });
@@ -2524,6 +2722,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 CaptureMouse();
 
                 _interactionDirty = true;
+                _baseSceneDirty = true;
 
                 e.Handled = true;
                 return;
@@ -2677,74 +2876,106 @@ namespace Cad_Point_Manager.Controls.D3DControl
             var center = pt.Position.ToSharpDXVector2() + pt.TextInfoOffset; // world center of the toggle
             pt.ToggleBounds = new(center.X - half, center.Y - half, 2f * half, 2f * half);
         }
-
         private void UpdateCogoPointInfoOffset(CogoPoint point, Vector2 offset)
         {
-            if (point is null) { return; }
+            if (point is null)
+                return;
 
             point.SetTextInfoOffset(offset);
 
-            bool labelsNeedUpdate = SetCogoPointLabelQuadrant(point, offset);
-            if (labelsNeedUpdate) { StateController.FlushLabelUpdates(); }
+            bool labelsChanged = SetCogoPointLabelQuadrant(point, offset);
 
-            StateController.SetPointInfoOffset(point, offset, true, point.IsFlippedY, point.IsFlippedX);
+            StateController.SetPointInfoOffset(
+                point, offset, true, point.IsFlippedY, point.IsFlippedX);
+
+            if (labelsChanged)
+                StateController.FlushLabelUpdates();
+
             StateController.FlushPointUpdates();
 
             UpdateToggleAnchorBounds(point);
 
             _interactionDirty = true;
-            _baseSceneDirty = true;
         }
+
         private bool SetCogoPointLabelQuadrant(CogoPoint point, Vector2 offset)
         {
             bool labelsNeedUpdate = false;
+            float threshold = CogoQuadrantHysteresisPixels * CadManager.Camera.GetWorldUnitsPerPixel();
 
-            if (offset.X < 0 && !point.IsFlippedY)
+            // -----------------------------
+            // Horizontal
+            // -----------------------------
+
+            if (offset.X < -threshold && !point.IsFlippedY)
             {
                 point.IsFlippedY = true;
 
-                point.PointNumberOffset = new(-point.PointNumberBounds.Width.ToFloat(), point.PointNumberOffset.Y);
-                point.ElevationOffset = new(-point.ElevationBounds.Width.ToFloat(), point.ElevationOffset.Y);
-                point.DescriptionOffset = new(-point.DescriptionBounds.Width.ToFloat(), point.DescriptionOffset.Y);
+                point.PointNumberOffset = new(
+                    -point.PointNumberBounds.Width.ToFloat(), point.PointNumberOffset.Y);
 
-                StateController.SetLabelOffsets(point, point.PointNumberOffset, point.ElevationOffset, point.DescriptionOffset);
+                point.ElevationOffset = new(
+                    -point.ElevationBounds.Width.ToFloat(), point.ElevationOffset.Y);
+
+                point.DescriptionOffset = new(
+                    -point.DescriptionBounds.Width.ToFloat(), point.DescriptionOffset.Y);
+
                 labelsNeedUpdate = true;
             }
-            if (offset.X > 0 && point.IsFlippedY)
+            else if (offset.X > threshold && point.IsFlippedY)
             {
                 point.IsFlippedY = false;
 
                 point.PointNumberOffset = new(0, point.PointNumberOffset.Y);
+
                 point.ElevationOffset = new(0, point.ElevationOffset.Y);
+
                 point.DescriptionOffset = new(0, point.DescriptionOffset.Y);
 
-                StateController.SetLabelOffsets(point, point.PointNumberOffset, point.ElevationOffset, point.DescriptionOffset);
                 labelsNeedUpdate = true;
             }
 
-            if (offset.Y < 0 && !point.IsFlippedX)
+            // -----------------------------
+            // Vertical
+            // -----------------------------
+
+            if (offset.Y < -threshold && !point.IsFlippedX)
             {
                 point.IsFlippedX = true;
 
                 var translation = (float)(point.DescriptionBounds.Height / point.PointGroup.PointScale);
 
-                point.PointNumberOffset = new(point.PointNumberOffset.X, -point.BaseDescriptionOffset_Y - translation);
-                point.ElevationOffset = new(point.ElevationOffset.X, -point.BaseElevationOffset_Y - translation);
-                point.DescriptionOffset = new(point.DescriptionOffset.X, -point.BasePointNumberOffset_Y - translation);
+                point.PointNumberOffset = new(
+                    point.PointNumberOffset.X, -point.BaseDescriptionOffset_Y - translation);
 
-                StateController.SetLabelOffsets(point, point.PointNumberOffset, point.ElevationOffset, point.DescriptionOffset);
+                point.ElevationOffset = new(
+                    point.ElevationOffset.X, -point.BaseElevationOffset_Y - translation);
+
+                point.DescriptionOffset = new(
+                    point.DescriptionOffset.X, -point.BasePointNumberOffset_Y - translation);
+
                 labelsNeedUpdate = true;
             }
-            if (offset.Y > 0 && point.IsFlippedX)
+            else if (offset.Y > threshold && point.IsFlippedX)
             {
                 point.IsFlippedX = false;
 
-                point.PointNumberOffset = new(point.PointNumberOffset.X, point.BasePointNumberOffset_Y);
-                point.ElevationOffset = new(point.ElevationOffset.X, point.BaseElevationOffset_Y);
-                point.DescriptionOffset = new(point.DescriptionOffset.X, point.BaseDescriptionOffset_Y);
+                point.PointNumberOffset = new(
+                    point.PointNumberOffset.X, point.BasePointNumberOffset_Y);
 
-                StateController.SetLabelOffsets(point, point.PointNumberOffset, point.ElevationOffset, point.DescriptionOffset);
+                point.ElevationOffset = new(
+                    point.ElevationOffset.X, point.BaseElevationOffset_Y);
+
+                point.DescriptionOffset = new(
+                    point.DescriptionOffset.X, point.BaseDescriptionOffset_Y);
+
                 labelsNeedUpdate = true;
+            }
+
+            if (labelsNeedUpdate)
+            {
+                StateController.SetLabelOffsets(
+                    point, point.PointNumberOffset, point.ElevationOffset, point.DescriptionOffset);
             }
 
             return labelsNeedUpdate;
@@ -2844,7 +3075,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
         private void RunPointsHitTest(CancellationToken token)
         {
-            // Check for cancellation
             if (token.IsCancellationRequested)
             {
                 token.ThrowIfCancellationRequested();
@@ -2877,21 +3107,21 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
                     if (_nearestHitTestablePoints.Count > 0)
                     {
-                        bool exists = HitTestingHelpers.TryGetNextHitTestablePoint(
-                            _currentSnapHitTestIndex, _nearestHitTestablePoints, out var tup);
-                        if (!exists)
+                        (double d, HitTestablePoint p) = HitTestingHelpers.GetCycledHit(
+                            _nearestHitTestablePoints, ref _currentSnapHitTestIndex);
+
+                        if (p is null)
                         {
                             _currentSnapHitTestIndex = 0;
-                            exists = HitTestingHelpers.TryGetNextHitTestablePoint(
-                                _currentSnapHitTestIndex, _nearestHitTestablePoints, out tup);
+                            (d, p) = HitTestingHelpers.GetCycledHit(
+                                _nearestHitTestablePoints, ref _currentSnapHitTestIndex);
                         }
-                        if (exists)
-                        {
-                            var (distance, point) = tup;
 
-                            if (distance <= _hittestStrokeThickness)
+                        if (p is not null)
+                        {
+                            if (d <= _hittestStrokeThickness)
                             {
-                                SnappedHitTestablePoint = point;
+                                SnappedHitTestablePoint = p;
                                 _lastSnapHitTestIndex = _currentSnapHitTestIndex;
                             }
                         }
@@ -2906,22 +3136,21 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
                 if (_nearestHitTestablePoints.Count < 1) { return; }
 
-                bool exists = HitTestingHelpers.TryGetNextHitTestablePoint(
-                    _currentSnapHitTestIndex, _nearestHitTestablePoints, out var tup);
-                if (!exists)
+                (double d, HitTestablePoint p) = HitTestingHelpers.GetCycledHit(
+                    _nearestHitTestablePoints, ref _currentSnapHitTestIndex);
+
+                if (p is null)
                 {
                     _currentSnapHitTestIndex = 0;
-                    exists = HitTestingHelpers.TryGetNextHitTestablePoint(
-                        _currentSnapHitTestIndex, _nearestHitTestablePoints, out tup);
+                    (d, p) = HitTestingHelpers.GetCycledHit(
+                        _nearestHitTestablePoints, ref _currentSnapHitTestIndex);
                 }
 
-                if (exists)
+                if (p is not null)
                 {
-                    var (distance, point) = tup;
-
-                    if (distance <= _hittestStrokeThickness)
+                    if (d <= _hittestStrokeThickness)
                     {
-                        SnappedHitTestablePoint = point;
+                        SnappedHitTestablePoint = p;
                         _lastSnapHitTestIndex = _currentSnapHitTestIndex;
                     }
                 }
@@ -2964,15 +3193,20 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
                         if (_nearestHitTestableGeometries.Count > 0)
                         {
-                            bool exists = HitTestingHelpers.TryGetNextDrawingGeometry(_currentSnapHitTestIndex, _nearestHitTestableGeometries, out var tup);
-                            if (!exists) { _currentSnapHitTestIndex = 0; }
-                            exists = HitTestingHelpers.TryGetNextDrawingGeometry(_currentSnapHitTestIndex, _nearestHitTestableGeometries, out tup);
+                            (double d, DrawingGeometry geometry) = HitTestingHelpers.GetCycledHit(
+                                _nearestHitTestableGeometries, ref _currentSnapHitTestIndex);
 
-                            if (exists)
+                            if (geometry is null)
                             {
-                                var (distance, geometry) = tup;
+                                _currentSnapHitTestIndex = 0;
 
-                                if (distance <= _hittestStrokeThickness)
+                                (d, geometry) = HitTestingHelpers.GetCycledHit(
+                                    _nearestHitTestableGeometries, ref _currentSnapHitTestIndex);
+                            }
+
+                            if (geometry is not null)
+                            {
+                                if (d <= _hittestStrokeThickness)
                                 {
                                     _mouseOverHitTestableObjects.Add(geometry);
                                     HoverObject(geometry);
@@ -2989,15 +3223,18 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
                 if (_nearestHitTestableGeometries.Count > 0)
                 {
-                    bool exists = HitTestingHelpers.TryGetNextDrawingGeometry(_currentSnapHitTestIndex, _nearestHitTestableGeometries, out var tup);
-                    if (!exists) { _currentSnapHitTestIndex = 0; }
-                    exists = HitTestingHelpers.TryGetNextDrawingGeometry(_currentSnapHitTestIndex, _nearestHitTestableGeometries, out tup);
+                    (double d, DrawingGeometry geometry) = HitTestingHelpers.GetCycledHit(
+                               _nearestHitTestableGeometries, ref _currentSnapHitTestIndex);
 
-                    if (exists)
+                    if (geometry is null)
                     {
-                        var (distance, geometry) = tup;
+                        _currentSnapHitTestIndex = 0;
+                        (d, geometry) = HitTestingHelpers.GetCycledHit(_nearestHitTestableGeometries, ref _currentSnapHitTestIndex);
+                    }
 
-                        if (distance <= _hittestStrokeThickness)
+                    if (geometry is not null)
+                    {
+                        if (d <= _hittestStrokeThickness)
                         {
                             _mouseOverHitTestableObjects.Add(geometry);
                             HoverObject(geometry);
@@ -3013,141 +3250,77 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 StateController.FlushObjectUpdates();
                 _interactionDirty = true;
             }
-        }
+        }s
         private void RunCogoPointsHitTest(CancellationToken token)
         {
-            if (token.IsCancellationRequested) { token.ThrowIfCancellationRequested(); }
+            if (token.IsCancellationRequested)
+            {
+                token.ThrowIfCancellationRequested();
+            }
+
             if (!Dispatcher.CheckAccess())
             {
                 Dispatcher.BeginInvoke(() => RunCogoPointsHitTest(token));
+
                 return;
             }
-            if (!CadManager.DxfLoaded) { return; }
 
-            _lastHitTestCoords = new(DxfCoords.X, DxfCoords.Y);
-
-            var snappedCogoPointsCopy = _mouseOverCogoPoints.ToList();
-            bool cogoMouseOverChanged = false;
-
-            if (_mouseOverToggleButtonPoint is not null)
+            if (!CadManager.DxfLoaded)
             {
-                if (_mouseOverToggleButtonPoint.IsSelected &&
-                    _mouseOverToggleButtonPoint.ToggleBounds.Contains(_lastHitTestCoords))
-                {
-                    if (!_mouseOverToggleButtonPoint.IsMouseOverToggleButton)
-                    {
-                        ResetHoverObjects();
-                        MouseOverCogoToggleButton(_mouseOverToggleButtonPoint);
-                        _interactionDirty = true;
-
-                        return;
-                    }
-                }
-                else
-                {
-                    ResetCogoToggleButtonMouseOver();
-                    cogoMouseOverChanged = true;
-                }
+                return;
             }
 
-            if (snappedCogoPointsCopy is not null && snappedCogoPointsCopy.Count > 0)
+            _lastHitTestCoords = new Point(DxfCoords.X, DxfCoords.Y);
+
+            _nearestHitTestableCogoPoints = CadManager.HitTestCogoPoints(
+                _lastHitTestCoords, _currentHitTestPadding, ResCache.CogoPointMsdfAtlas);
+
+            PrioritizeCogoToggleHit(_nearestHitTestableCogoPoints, _lastHitTestCoords);
+
+            if (_nearestHitTestableCogoPoints.Count > _maxSelectableObjects)
             {
-                foreach (var snappedCogoPoint in snappedCogoPointsCopy)
-                {
-                    if (snappedCogoPoint.IsSelected &&
-                        snappedCogoPoint.ToggleBounds.Contains(_lastHitTestCoords))
-                    {
-                        ResetHoverObjects();
-                        MouseOverCogoToggleButton(snappedCogoPoint);
-                        _interactionDirty = true;
-
-                        return;
-                    }
-
-                    if (snappedCogoPoint.DistanceToPoint(_lastHitTestCoords, ResCache.CogoPointMsdfAtlas) > _currentHitTestPadding)
-                    {
-                        ResetHoverObjects();
-                        ResetCogoToggleButtonMouseOver();
-                        cogoMouseOverChanged = true;
-
-                        _nearestHitTestableCogoPoints = CadManager.HitTestCogoPoints(
-                            _lastHitTestCoords, _currentHitTestPadding, ResCache.CogoPointMsdfAtlas).Take(_maxSelectableObjects).ToList();
-
-                        if (_nearestHitTestableCogoPoints.Count > 0)
-                        {
-                            bool exists = HitTestingHelpers.TryGetNextCogoPoint(
-                                _currentSnapHitTestIndex, _nearestHitTestableCogoPoints, out var tup);
-
-                            //var hit = HitTestingHelpers.GetCycledHit(_nearestHitTestableCogoPoints,ref _currentSnapHitTestIndex);
-
-                            if (!exists) { _currentSnapHitTestIndex = 0; }
-
-                            exists = HitTestingHelpers.TryGetNextCogoPoint(
-                                _currentSnapHitTestIndex, _nearestHitTestableCogoPoints, out tup);
-
-                            if (exists)
-                            {
-                                var (distance, point) = tup;
-
-                                if (distance <= _currentHitTestPadding)
-                                {
-                                    if (point.IsSelected && point.ToggleBounds.Contains(_lastHitTestCoords))
-                                    {
-                                        ResetHoverObjects();
-                                        MouseOverCogoToggleButton(point);
-                                        _interactionDirty = true;
-
-                                        return;
-                                    }
-                                    _mouseOverCogoPoints.Add(point);
-                                    HoverObject(point);
-                                    cogoMouseOverChanged = true;
-                                    _lastSnapHitTestIndex = _currentSnapHitTestIndex;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            else
-            {
-                _nearestHitTestableCogoPoints = CadManager.HitTestCogoPoints(_lastHitTestCoords, _currentHitTestPadding, ResCache.CogoPointMsdfAtlas)
-                    .Take(_maxSelectableObjects).ToList();
-
-                if (_nearestHitTestableCogoPoints.Count > 0)
-                {
-
-                    bool exists = HitTestingHelpers.TryGetNextCogoPoint(_currentSnapHitTestIndex, _nearestHitTestableCogoPoints, out var tup);
-                    if (!exists) { _currentSnapHitTestIndex = 0; }
-                    exists = HitTestingHelpers.TryGetNextCogoPoint(_currentSnapHitTestIndex, _nearestHitTestableCogoPoints, out tup);
-
-                    if (exists)
-                    {
-                        var (distance, point) = tup;
-
-                        if (distance <= _currentHitTestPadding)
-                        {
-                            if (point.IsSelected && point.ToggleBounds.Contains(_lastHitTestCoords))
-                            {
-                                ResetHoverObjects();
-                                MouseOverCogoToggleButton(point);
-                                _interactionDirty = true;
-
-                                return;
-                            }
-
-                            _mouseOverCogoPoints.Add(point);
-                            HoverObject(point);
-                            cogoMouseOverChanged = true;
-                            _lastSnapHitTestIndex = _currentSnapHitTestIndex;
-                        }
-                    }
-                }
+                _nearestHitTestableCogoPoints = _nearestHitTestableCogoPoints.Take(_maxSelectableObjects).ToList();
             }
 
-            if (cogoMouseOverChanged)
+            if (_nearestHitTestableCogoPoints.Count == 0)
             {
+                if (_mouseOverCogoPoints.Count > 0)
+                {
+                    ResetHoverObjects();
+                }
+
+                ResetCogoToggleButtonMouseOver();
+
+                return;
+            }
+
+            var hit = HitTestingHelpers.GetCycledHit(_nearestHitTestableCogoPoints, ref _currentSnapHitTestIndex);
+            var (distance, point) = hit;
+
+            ResetHoverObjects();
+            ResetCogoToggleButtonMouseOver();
+
+            if (point.IsSelected && point.ToggleBounds.Contains(_lastHitTestCoords))
+            {
+                MouseOverCogoToggleButton(point);
+
+                _lastSnapHitTestIndex = _currentSnapHitTestIndex;
+
+                _interactionDirty = true;
+
+                return;
+            }
+
+            if (distance <= _currentHitTestPadding)
+            {
+                _mouseOverCogoPoints.Add(point);
+
+                HoverObject(point);
+
+                _lastSnapHitTestIndex = _currentSnapHitTestIndex;
+
                 StateController.FlushPointUpdates();
+
                 _interactionDirty = true;
             }
         }
@@ -3252,6 +3425,27 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public void CancelHitTesting()
         {
             _hitTestCancellationTokenSource?.Cancel();
+        }
+        private void PrioritizeCogoToggleHit(
+            List<(double distance, CogoPoint point)> hits, Point mouse)
+        {
+            if (hits.Count <= 1)
+            {
+                return;
+            }
+
+            int toggleIndex = hits.FindIndex(
+                h => h.point.IsSelected && h.point.ToggleBounds.Contains(mouse));
+
+            if (toggleIndex <= 0)
+            {
+                return;
+            }
+
+            var toggleHit = hits[toggleIndex];
+
+            hits.RemoveAt(toggleIndex);
+            hits.Insert(0, toggleHit);
         }
 
         private void LoadHitTestableObjectTree()

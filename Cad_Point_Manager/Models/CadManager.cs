@@ -1523,9 +1523,10 @@ namespace Cad_Point_Manager.Models
             }
             SolidVerticesDirty = false;
         }
-        public void BuildPointMarkerInstances(List<PointMarkerInstance> instances, D3dStateController stateController)
+        public void BuildPointMarkerInstances(List<PointMarkerInstance> instances, D3dStateController stateController, Dictionary<CogoPoint, int> pointCircleRenderIndices)
         {
             instances.Clear();
+            pointCircleRenderIndices.Clear();
 
             foreach (var pg in PointGroups)
             {
@@ -1541,6 +1542,8 @@ namespace Cad_Point_Manager.Models
                         Radius = GlobalHelperProperties.CogoPointCirclePixelRadius,
                         PointId = pointRegistration.PointId,
                     });
+
+                    pointCircleRenderIndices[p] = instances.Count - 1;
                 }
             }
             CogoPointCircleVerticesDirty = false;
