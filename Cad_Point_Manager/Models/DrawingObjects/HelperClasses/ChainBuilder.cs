@@ -159,8 +159,8 @@
                     }
                 }
 
-                // Add the segment end, except for the last edge of a closed loop (avoid duplicating the first point)
                 bool isLastEdge = (i == chain.Steps.Count - 1);
+
                 if (!(isLastEdge && isClosed))
                     points.Add(b);
             }

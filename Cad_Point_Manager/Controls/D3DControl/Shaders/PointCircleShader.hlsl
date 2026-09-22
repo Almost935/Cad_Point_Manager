@@ -21,11 +21,12 @@ cbuffer DrawingSettingsBuffer : register(b1)
 
 struct PointState
 {
-    float2 Offset; // world-space drag delta
-    float2 PointInfoOffset; // Text info offset in world units
-    uint GroupId; // index into GroupState buffer
-    uint Flags; // bit0: visible bit1: selected, bit2: mouseOver, bit3: hasLeaderLine, bit4: mouseOverAnchor, bit5: anchorPressed, bit6: isFlippedY, bit7: isFlippedX
-    float2 _padLS; // keep 16B stride
+    float2 Offset;
+    float2 PointInfoOffset;
+    uint GroupId;
+    uint Flags;
+    uint LabelQuadrant;
+    uint _padLS;
 };
 struct GroupState
 {

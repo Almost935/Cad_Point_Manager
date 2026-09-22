@@ -170,43 +170,71 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
             UpdateBounds();
         }
-        public override double DistanceToPoint(System.Windows.Point point, MsdfAtlas atlas = null)
+        public override double DistanceToPoint(
+            System.Windows.Point point, MsdfAtlas atlas = null)
         {
-            // Convert angles to radians
-            double startRad = StartAngle * Math.PI / 180;
-            double endRad = EndAngle * Math.PI / 180;
-
-            // Calculate the distance from the point to the center of the circle
-            double dx = point.X - RadiusPoint.X;
-            double dy = point.Y - RadiusPoint.Y;
-            double distanceToCenter = Math.Sqrt(dx * dx + dy * dy);
-
-            // Calculate the angle of the point relative to the center
-            double pointAngle = Math.Atan2(dy, dx);
-            if (pointAngle < 0) pointAngle += 2 * Math.PI; // Normalize angle to [0, 2*PI]
-
-            // Check if the point is within the angular range of the arc
-            bool withinArc = (startRad <= endRad && pointAngle >= startRad && pointAngle <= endRad) ||
-                             (startRad > endRad && (pointAngle >= startRad || pointAngle <= endRad));
-
-            if (withinArc)
+            if (SamplePoints is null || SamplePoints.Count < 2)
             {
-                // Point is within the angular range of the arc
-                return Math.Abs(distanceToCenter - Radius);
+                return double.MaxValue;
             }
-            else
+
+            double minDistance = double.MaxValue;
+
+            for (int i = 0; i < SamplePoints.Count - 1; i++)
             {
-                // Point is outside the angular range, calculate distance to the closest arc endpoint
-                double startX = RadiusPoint.X + Radius * Math.Cos(startRad);
-                double startY = RadiusPoint.Y + Radius * Math.Sin(startRad);
-                double endX = RadiusPoint.X + Radius * Math.Cos(endRad);
-                double endY = RadiusPoint.Y + Radius * Math.Sin(endRad);
+                double distance = DistanceToSegment(
+                    point, SamplePoints[i], SamplePoints[i + 1]);
 
-                double distanceToStart = Math.Sqrt((point.X - startX) * (point.X - startX) + (point.Y - startY) * (point.Y - startY));
-                double distanceToEnd = Math.Sqrt((point.X - endX) * (point.X - endX) + (point.Y - endY) * (point.Y - endY));
-
-                return Math.Min(distanceToStart, distanceToEnd);
+                if (distance < minDistance)
+                {
+                    minDistance = distance;
+                }
             }
+
+            bool closed = Math.Abs(Sweep - 360f) < 0.001f;
+
+            if (closed)
+            {
+                double distance = DistanceToSegment(
+                    point, SamplePoints[^1], SamplePoints[0]);
+
+                if (distance < minDistance)
+                {
+                    minDistance = distance;
+                }
+            }
+
+            return minDistance;
+        }
+
+        private static double DistanceToSegment(
+            System.Windows.Point p, System.Windows.Point a, System.Windows.Point b)
+        {
+            var d = b - a;
+            double lengthSquared = d.LengthSquared;
+
+            if (lengthSquared <= 1e-12)
+            {
+                double px = p.X - a.X;
+                double py = p.Y - a.Y;
+
+                return Math.Sqrt(px * px + py * py);
+            }
+
+            double t =
+                ((p.X - a.X) * d.X +
+                 (p.Y - a.Y) * d.Y) /
+                lengthSquared;
+
+            t = Math.Clamp(t, 0.0, 1.0);
+
+            double closestX = a.X + t * d.X;
+            double closestY = a.Y + t * d.Y;
+
+            double distX = p.X - closestX;
+            double distY = p.Y - closestY;
+
+            return Math.Sqrt(distX * distX + distY * distY);
         }
         public override void UpdateBounds()
         {

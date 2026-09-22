@@ -51,8 +51,7 @@ namespace Cad_Point_Manager.Views
 
         private void Vm_ResetSelectionRequested(object? sender, EventArgs e)
         {
-            // Call directly into the control (this is “View stuff” so it’s fine here)
-            d3dDxfControl?.ResetSelectedObjects();
+            d3dDxfControl?.ResetSelectedObjectsWithFlush();
         }
 
         private void DxfGrid_SizeChanged(object sender, SizeChangedEventArgs e)

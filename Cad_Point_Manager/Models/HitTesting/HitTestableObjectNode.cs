@@ -4,6 +4,7 @@ using Cad_Point_Manager.Helpers;
 using Cad_Point_Manager.Models.DrawingObjects;
 using SharpDX;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Windows;
 
 using Point = System.Windows.Point;
@@ -89,14 +90,21 @@ namespace Cad_Point_Manager.Models.HitTesting
 
             foreach (var hitTestableObject in HitTestableObjects)
             {
-                if (hitTestableObject is DrawingGeometry drawingGeometry3D)
+                if (hitTestableObject is DrawingEllipse ellipse)
                 {
-                    if (drawingGeometry3D.Layer.IsVisible)
+                    var boundsInRect = ellipse.BoundsInRect(hitTestRange);
+                    double dis = ellipse.DistanceToPoint(p);
+
+                    Debug.WriteLine($"ellipse.BoundsInRect: {boundsInRect}, ellipse.Distance: {dis}");
+                }
+                if (hitTestableObject is DrawingGeometry drawingGeometry)
+                {
+                    if (drawingGeometry.Layer.IsVisible)
                     {
-                        if (drawingGeometry3D.BoundsInRect(hitTestRange))
+                        if (drawingGeometry.BoundsInRect(hitTestRange))
                         {
-                            double d = drawingGeometry3D.DistanceToPoint(p);
-                            geometries.Add((d, drawingGeometry3D));
+                            double d = drawingGeometry.DistanceToPoint(p);
+                            geometries.Add((d, drawingGeometry));
                         }
                     }
                 }

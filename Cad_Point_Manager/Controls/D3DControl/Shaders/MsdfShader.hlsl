@@ -31,16 +31,15 @@ struct LabelState
     uint Flags;
     float _pad;
 };
-
 struct PointState
 {
     float2 Offset;
     float2 PointInfoOffset;
     uint GroupId;
     uint Flags;
-    float2 _pad;
+    uint LabelQuadrant;
+    uint _padLS;
 };
-
 struct GroupState
 {
     float4 Color;
@@ -110,6 +109,11 @@ static const uint POINT_MOUSEOVER = 1u << 2;
 static const uint POINT_ISFLIPPEDY = 1u << 6;
 static const uint POINT_ISFLIPPEDX = 1u << 7;
 
+static const uint QUADRANT_UPPER_RIGHT = 0u;
+static const uint QUADRANT_UPPER_LEFT = 1u;
+static const uint QUADRANT_LOWER_LEFT = 2u;
+static const uint QUADRANT_LOWER_RIGHT = 3u;
+
 static const uint GROUP_VISIBLE = 1u << 0;
 
 
@@ -142,8 +146,7 @@ VSOut VSMain(VSVertex v, VSInstance inst)
     float sel = ((ps.Flags & POINT_SELECTED) != 0u) ? 1.0f : 0.0f;
     o.MouseOver = ((ps.Flags & POINT_MOUSEOVER) != 0u) ? 1.0f : 0.0f;
     
-    // Flipped axis
-    float isFlippedY = ((ps.Flags & POINT_ISFLIPPEDY) != 0u) ? -1.0f : 1.0f;
+    float isLabelLeft = (ps.LabelQuadrant == QUADRANT_UPPER_LEFT || ps.LabelQuadrant == QUADRANT_LOWER_LEFT) ? -1.0f : 1.0f;
 
     float2 corner = v.Corner + 0.5;
     float2 local = inst.PlaneOrigin + corner * inst.PlaneSize;
@@ -152,7 +155,7 @@ VSOut VSMain(VSVertex v, VSInstance inst)
     
     local *= (inst.EmToWorld * gs.Scale);
     
-    float textInfoOffset = gs.TextInfoBaseXoffset * isFlippedY;
+    float textInfoOffset = gs.TextInfoBaseXoffset * isLabelLeft;
     float2 origin;
     
     origin.x = ps.Offset.x + ps.PointInfoOffset.x + ls.Offset.x + textInfoOffset;

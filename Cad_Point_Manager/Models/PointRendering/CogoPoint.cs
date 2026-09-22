@@ -9,6 +9,16 @@ using Point = System.Windows.Point;
 
 namespace Cad_Point_Manager.Models.PointRendering
 {
+    #region Enums
+    public enum CogoLabelQuadrant
+    {
+        UpperRight = 0,
+        UpperLeft = 1,
+        LowerLeft = 2,
+        LowerRight = 3
+    }
+    #endregion
+
     public class CogoPoint : HitTestableObject
     {
         #region Fields
@@ -31,6 +41,7 @@ namespace Cad_Point_Manager.Models.PointRendering
         private PointGroup _pointGroup;
         private string _description;
         private bool _isEditing = false;
+        private CogoLabelQuadrant _labelQuadrant = CogoLabelQuadrant.UpperRight;
         #endregion
 
         #region Properties
@@ -123,10 +134,25 @@ namespace Cad_Point_Manager.Models.PointRendering
                 }
             }
         }
+        public CogoLabelQuadrant LabelQuadrant
+        {
+            get => _labelQuadrant;
+            set
+            {
+                if (_labelQuadrant == value) { return; }
+
+                _labelQuadrant = value;
+                OnPropertyChanged(nameof(LabelQuadrant));
+            }
+        }
 
         public Point Position => new(Easting, Northing);
         public bool HasPointNumberError => HasErrorsFor(nameof(PointNumber));
         public bool HasDescription => !string.IsNullOrWhiteSpace(Description);
+        public bool IsLabelLeft =>
+            LabelQuadrant == CogoLabelQuadrant.UpperLeft || LabelQuadrant == CogoLabelQuadrant.LowerLeft;
+        public bool IsLabelBelow =>
+            LabelQuadrant == CogoLabelQuadrant.LowerLeft || LabelQuadrant == CogoLabelQuadrant.LowerRight;
 
         public CadManager CadManager { get; }
         public CogoPointBoundsSnapshot CogoPointBounds => _cogoPointBounds ?? _empty;
@@ -146,8 +172,6 @@ namespace Cad_Point_Manager.Models.PointRendering
         public bool IsMouseOverToggleButton { get; set; } = false;
         public bool IsToggleButtonPressed { get; set; } = false;
         public bool HasLeaderLine { get; set; } = false;
-        public bool IsFlippedY { get; set; } = false;
-        public bool IsFlippedX { get; set; } = false;
         public MsdfGlyphHitRegion[] PointNumberGlyphs { get; set; } = [];
         public MsdfGlyphHitRegion[] ElevationGlyphs { get; set; } = [];
         public MsdfGlyphHitRegion[] DescriptionGlyphs { get; set; } = [];
@@ -272,7 +296,7 @@ namespace Cad_Point_Manager.Models.PointRendering
         }
         public void UpdateOffsetOrientation()
         {
-            if (IsFlippedY)
+            if (IsLabelLeft)
             {
                 PointNumberOffset = new(-PointNumberBounds.Width.ToFloat(), PointNumberOffset.Y);
                 ElevationOffset = new(-ElevationBounds.Width.ToFloat(), ElevationOffset.Y);
@@ -285,7 +309,7 @@ namespace Cad_Point_Manager.Models.PointRendering
                 DescriptionOffset = new(0, DescriptionOffset.Y);
             }
 
-            if (IsFlippedX)
+            if (IsLabelBelow)
             {
                 var translation = (float)(DescriptionBounds.Height / PointGroup.PointScale);
 
@@ -342,7 +366,7 @@ namespace Cad_Point_Manager.Models.PointRendering
             }
 
             // Toggle.
-            if (point.IsSelected &&point.ToggleBounds.Contains(p))
+            if (point.IsSelected && point.ToggleBounds.Contains(p))
             {
                 minDistance = 0.0;
             }

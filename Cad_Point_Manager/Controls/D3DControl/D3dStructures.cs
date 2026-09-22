@@ -197,10 +197,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
     public struct PointState
     {
         public Vector2 Offset;
-        public Vector2 PointInfoOffset; // Offset of the point info text from the point position
-        public uint GroupId;   // PointGroup index
-        public uint Flags; // bit0: visible bit1: selected, bit2: mouseOver, bit3: hasLeaderLine, bit4: mouseOverAnchor, bit5: anchorPressed, bit6: isFlippedY, bit7: isFlippedX
-        public Vector2 _pad;   // 16B stride
+        public Vector2 PointInfoOffset;
+        public uint GroupId;
+        public uint Flags;
+        public uint LabelQuadrant;
+        public uint _pad;
     }
 
     [StructLayout(LayoutKind.Sequential)]

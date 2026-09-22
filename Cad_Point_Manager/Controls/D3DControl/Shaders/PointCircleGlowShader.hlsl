@@ -27,20 +27,16 @@ struct PointState
 {
     float2 Offset;
     float2 PointInfoOffset;
-
     uint GroupId;
     uint Flags;
-
-    float2 _padLS;
+    uint LabelQuadrant;
+    uint _padLS;
 };
-
 struct GroupState
 {
     float4 Color;
-
     float Scale;
     uint Flags;
-
     float TextInfoBaseXoffset;
     float _padGS;
 };

@@ -31,8 +31,8 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Helpers
         HasLeaderLine = 1u << 3,
         MouseOverAnchor = 1u << 4,
         AnchorPressed = 1u << 5,
-        IsFlippedY = 1u << 6,
-        IsFlippedX = 1u << 7
+        MirrorX = 1u << 6,
+        MirrorY = 1u << 7
     }
 
     [Flags]
@@ -136,14 +136,14 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Helpers
             if (cp.IsSelected) { baseFlags |= (uint)CogoPointFlags.Selected; }
             if (cp.IsMouseOver) { baseFlags |= (uint)CogoPointFlags.MouseOver; }
             if (cp.HasLeaderLine) { baseFlags |= (uint)CogoPointFlags.HasLeaderLine; }
-            if (cp.IsFlippedY) { baseFlags |= (uint)CogoPointFlags.IsFlippedY; }
-            if (cp.IsFlippedX) { baseFlags |= (uint)CogoPointFlags.IsFlippedX; }
+
             PointSpan[(int)pId] = new PointState
             {
                 Offset = cp.Position.ToSharpDXVector2(),
-                PointInfoOffset = Vector2.Zero,
+                PointInfoOffset = cp.TextInfoOffset,
                 GroupId = gId,
-                Flags = baseFlags
+                Flags = baseFlags,
+                LabelQuadrant = (uint)cp.LabelQuadrant
             };
         }
         public void InitializeGroupState(int count, PointGroup pg, uint gId)

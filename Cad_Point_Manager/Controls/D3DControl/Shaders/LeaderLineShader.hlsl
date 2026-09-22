@@ -51,7 +51,8 @@ struct PointState
     float2 PointInfoOffset;
     uint GroupId;
     uint Flags;
-    float2 _padLS;
+    uint LabelQuadrant;
+    uint _padLS;
 };
 
 struct GroupState
