@@ -63,7 +63,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
     [StructLayout(LayoutKind.Sequential)]
     struct OverlayQuadVertex
     {
-        public Vector2 Local;      // -1..1
+        public Vector2 Local;
     }
     [StructLayout(LayoutKind.Sequential)]
     public struct OverlayVertex
@@ -72,14 +72,32 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public Vector4 Color;
     }
     [StructLayout(LayoutKind.Sequential)]
-    public struct OverlayOutlineSettings
+    public struct DragOverlayVertex
     {
-        public Vector2 RectMinWorld;   // 0..7
-        public Vector2 RectMaxWorld;   // 8..15
-        public float ThicknessPx;    // 16..19
-        public float FeatherPx;      // 20..23
-        private Vector2 _pad0;         // 24..31  <-- moves BorderColor to 32
-        public Vector4 BorderColor;    // 32..47
+        public Vector2 Local;
+        public DragOverlayVertex(float x, float y)
+        {
+            Local = new Vector2(x, y);
+        }
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct DragOverlaySettings
+    {
+        // Rectangle in render-target pixels
+        public Vector2 RectMinPx;
+        public Vector2 RectMaxPx;
+
+        // Render target size in pixels
+        public Vector2 ViewportSize;
+
+        // Border settings
+        public float ThicknessPx;
+        public float FeatherPx;
+
+        // Colors
+        public Vector4 FillColor;
+        public Vector4 BorderColor;
     }
 
     [StructLayout(LayoutKind.Sequential)]

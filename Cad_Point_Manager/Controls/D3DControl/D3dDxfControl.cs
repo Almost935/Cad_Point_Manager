@@ -73,16 +73,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private readonly object _dragCogoLock = new();
         private HashSet<CogoPoint> _dragCogoCurrent = [];  // last-applied set
 
-        // Drag Selection Fields
-        private bool _isDragging = false;
-        private Point _dragStartScreen;
-        private Point _dragStart;
-        private Rect _dragRect = new(0, 0, 0, 0);
-        private Vector _dxfDragRectTranslate = new();
-        private System.Windows.Media.Matrix _currentlyAppliedDragRectMatrix = new();
-        private bool _dragOverlayDirty = false;
-        private bool _dragHitTestDirty = false;
-
         // Direct3D related fields
         public bool _buffersInitialized = false;
         private Buffer _drawingSettingsBuffer;
@@ -210,16 +200,24 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private bool _anchorShaderLoaded = false;
 
         // Drag rectangle shader
-        private VertexShader _overlayOutlineVS;
-        private PixelShader _overlayOutlinePS;
-        private InputLayout _overlayOutlineLayout;
-        private Buffer _overlayOutlineSettingsBuffer;
-        private ResizableBuffer<OverlayVertex> _dragFillBuffer;
-        private int _dragFillVertexCount;
-        private VertexShader _overlayVS;
-        private PixelShader _overlayPS;
-        private InputLayout _overlayLayout;
+        private VertexShader _dragOverlayOutlineVS;
+        private PixelShader _dragOverlayOutlinePS;
+        private InputLayout _dragOverlayLayout;
+        private Buffer _dragOverlaySettingsBuffer;
+        private Buffer _dragOverlayQuadBuffer;
+        private VertexShader _dragOverlayFillVS;
+        private PixelShader _dragOverlayFillPS;
         private bool _overlayShaderLoaded;
+
+        // Drag Selection Fields
+        private bool _isDragging = false;
+        private Point _dragStartScreen;
+        private Point _dragStart;
+        private Rect _dragRect = new(0, 0, 0, 0);
+        private Vector _dxfDragRectTranslate = new();
+        private System.Windows.Media.Matrix _currentlyAppliedDragRectMatrix = new();
+        private bool _dragOverlayDirty = false;
+        private bool _dragHitTestDirty = false;
 
         // Cached pan rendering
         private VertexShader _panVertexShader;
@@ -522,7 +520,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             if (_anchorVerticesDirty) { UpdateToggleAnchorVertices(); }
             if (_leaderLineVerticesDirty) { UpdateLeaderLineVertices(); }
             if (_sigPointVerticesDirty) { UpdateSignificantPointVertices(); }
-            if (_dragOverlayDirty) { UpdateDragOverlayVertices(DragRect); }
+            if (_dragOverlayDirty) { UpdateDragOverlay(DragRect); }
 
             if (!_lineShadersLoaded) { InitializeLineShaders(); }
             if (!_lineGlowShadersLoaded) { InitializeLineGlowShaders(); }
@@ -586,7 +584,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             ctx.CopyResource(ResCache.InteractionTexture, ResCache.Texture2D);
             ctx.OutputMerger.SetRenderTargets(ResCache.RenderTargetView);
 
-            if (IsDragging && _dragFillVertexCount > 0)
+            if (IsDragging)
             {
                 DrawDragOverlay(ctx);
             }
@@ -729,9 +727,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             ctx.InputAssembler.SetVertexBuffers(
                 0, new VertexBufferBinding(_lineGlowCompositeVertexBuffer, Utilities.SizeOf<GlowCompositeVertex>(), 0));
-
             ctx.PixelShader.SetShaderResource(0, ResCache.GlowShaderResourceView);
-
             ctx.PixelShader.SetSampler(0, _lineGlowCompositeSampler);
 
             ctx.Draw(6, 0);
@@ -1132,29 +1128,72 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             ctx.DrawInstanced(6, _leaderLineInstanceCount, 0, 0);
         }
+        //private void DrawDragOverlay(DeviceContext ctx)
+        //{
+        //    // Overlay Fill
+        //    ctx.GeometryShader.Set(null);
+        //    ctx.OutputMerger.SetRenderTargets(ResCache.RenderTargetView);
+        //    ctx.OutputMerger.SetBlendState(ResCache.BaseBlendState);
+        //    ctx.InputAssembler.PrimitiveTopology = PrimitiveTopology.TriangleList;
+        //    ctx.InputAssembler.SetVertexBuffers(
+        //        0, new VertexBufferBinding(_dragOverlayQuadBuffer, Utilities.SizeOf<DragOverlayVertex>(), 0));
+        //    ctx.InputAssembler.InputLayout = _overlayLayout;
+        //    ctx.VertexShader.Set(_overlayVS);
+        //    ctx.PixelShader.Set(_overlayPS);
+        //    ctx.VertexShader.SetConstantBuffer(0, _transformationBuffer);
+        //    ctx.VertexShader.SetConstantBuffer(1, _overlayOutlineSettingsBuffer);
+        //    ctx.Draw(6, 0);
+
+        //    // Overlay Outline
+        //    ctx.VertexShader.Set(_overlayOutlineVS);
+        //    ctx.PixelShader.Set(_overlayOutlinePS);
+        //    ctx.InputAssembler.InputLayout = _overlayOutlineLayout;
+        //    ctx.VertexShader.SetConstantBuffer(0, _transformationBuffer);      // b0
+        //    ctx.PixelShader.SetConstantBuffer(0, null);                        // not used
+        //    ctx.VertexShader.SetConstantBuffer(1, _overlayOutlineSettingsBuffer); // b1
+        //    ctx.PixelShader.SetConstantBuffer(1, _overlayOutlineSettingsBuffer);  // b1
+        //    ctx.InputAssembler.PrimitiveTopology = PrimitiveTopology.TriangleList;
+        //    ctx.InputAssembler.SetVertexBuffers(0,
+        //       new VertexBufferBinding(_dragFillBuffer.Buffer, _dragFillBuffer.Stride, 0));
+        //    ctx.Draw(_dragFillVertexCount, 0);
+        //}
         private void DrawDragOverlay(DeviceContext ctx)
         {
-            // --- fill (triangles) ---
-            ctx.VertexShader.Set(_overlayVS);
-            ctx.PixelShader.Set(_overlayPS);
-            ctx.InputAssembler.InputLayout = _overlayLayout;
-            ctx.VertexShader.SetConstantBuffer(0, _transformationBuffer);
-            ctx.InputAssembler.PrimitiveTopology = PrimitiveTopology.TriangleList;
-            ctx.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding(_dragFillBuffer.Buffer, _dragFillBuffer.Stride, 0));
-            ctx.Draw(_dragFillVertexCount, 0);
+            // Drag Rect Fill
+            ctx.GeometryShader.Set(null);
 
-            // --- border (same VB, triangle list) ---
-            ctx.VertexShader.Set(_overlayOutlineVS);
-            ctx.PixelShader.Set(_overlayOutlinePS);
-            ctx.InputAssembler.InputLayout = _overlayOutlineLayout;
-            ctx.VertexShader.SetConstantBuffer(0, _transformationBuffer);      // b0
-            ctx.PixelShader.SetConstantBuffer(0, null);                        // not used
-            ctx.VertexShader.SetConstantBuffer(1, _overlayOutlineSettingsBuffer); // b1
-            ctx.PixelShader.SetConstantBuffer(1, _overlayOutlineSettingsBuffer);  // b1
+            ctx.OutputMerger.SetRenderTargets(ResCache.RenderTargetView);
+            ctx.OutputMerger.SetBlendState(ResCache.BaseBlendState);
+            ctx.InputAssembler.PrimitiveTopology =PrimitiveTopology.TriangleList;
+            ctx.InputAssembler.InputLayout = _dragOverlayLayout;
+            ctx.InputAssembler.SetVertexBuffers(
+                0, new VertexBufferBinding(_dragOverlayQuadBuffer, Utilities.SizeOf<DragOverlayVertex>(), 0));
+            ctx.VertexShader.Set(_dragOverlayFillVS);
+            ctx.PixelShader.Set(_dragOverlayFillPS);
+
+            ctx.VertexShader.SetConstantBuffer(0, _transformationBuffer);
+            ctx.VertexShader.SetConstantBuffer(1, _dragOverlaySettingsBuffer);
+
+            ctx.PixelShader.SetConstantBuffer(1, _dragOverlaySettingsBuffer);
+
+            ctx.Draw(6, 0);
+
+            // Drag Rect Outline
+            ctx.OutputMerger.SetRenderTargets(ResCache.RenderTargetView);
+            ctx.OutputMerger.SetBlendState(ResCache.BaseBlendState);
             ctx.InputAssembler.PrimitiveTopology = PrimitiveTopology.TriangleList;
-            ctx.InputAssembler.SetVertexBuffers(0,
-               new VertexBufferBinding(_dragFillBuffer.Buffer, _dragFillBuffer.Stride, 0));
-            ctx.Draw(_dragFillVertexCount, 0);
+            ctx.InputAssembler.InputLayout = _dragOverlayLayout;
+            ctx.InputAssembler.SetVertexBuffers(
+                0, new VertexBufferBinding(_dragOverlayQuadBuffer, Utilities.SizeOf<DragOverlayVertex>(), 0));
+            ctx.VertexShader.Set(_dragOverlayOutlineVS);
+            ctx.PixelShader.Set(_dragOverlayOutlinePS);
+
+            ctx.VertexShader.SetConstantBuffer(0, _transformationBuffer);
+            ctx.VertexShader.SetConstantBuffer(1, _dragOverlaySettingsBuffer);
+
+            ctx.PixelShader.SetConstantBuffer(1, _dragOverlaySettingsBuffer);
+
+            ctx.Draw(6, 0);
         }
         private void DrawSignificantPoints(DeviceContext ctx)
         {
@@ -1322,46 +1361,33 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _pointCircleVerticesDirty = false;
             _baseSceneDirty = true;
         }
-        private void UpdateDragOverlayVertices(Rect r)
+        private void UpdateDragOverlay(Rect r)
         {
             if (r.IsEmpty || r.Width <= 0 || r.Height <= 0 || !IsDragging)
             {
-                _dragFillVertexCount = 0;
                 _dragOverlayDirty = false;
                 return;
             }
 
-            var settings = new OverlayOutlineSettings
+            var settings = new DragOverlaySettings
             {
-                RectMinWorld = new Vector2((float)r.Left, (float)r.Top),
-                RectMaxWorld = new Vector2((float)r.Right, (float)r.Bottom),
-                ThicknessPx = 1.0f,     // tweak as desired
-                FeatherPx = 1.0f,     // small AA feather
-                BorderColor = new Vector4(0f, 0.749f, 1f, 1f) // DeepSkyBlue like your lines
-            };
-            ResCache.DeviceContext.UpdateSubresource(ref settings, _overlayOutlineSettingsBuffer);
-
-            // world-space coords (z=0)
-            var lt = new Vector3((float)r.Left, (float)r.Top, 1);
-            var rt = new Vector3((float)r.Right, (float)r.Top, 1);
-            var rb = new Vector3((float)r.Right, (float)r.Bottom, 1);
-            var lb = new Vector3((float)r.Left, (float)r.Bottom, 1);
-
-            // fill color (ARGB #3300FFFF like your XAML)
-            var fill = new Vector4(0f, 1f, 1f, 0.2f); // DeepSkyBlue-ish with alpha
-
-            var fillVerts = new OverlayVertex[6]
-            {
-                new() { Position = lt, Color = fill },
-                new() { Position = lb, Color = fill },
-                new() { Position = rb, Color = fill },
-                new() { Position = lt, Color = fill },
-                new() { Position = rb, Color = fill },
-                new() { Position = rt, Color = fill },
+                RectMinPx = new Vector2((float)r.Left, (float)r.Top),
+                RectMaxPx = new Vector2((float)r.Right, (float)r.Bottom),
+                ViewportSize = new Vector2(RenderPixelWidth, RenderPixelHeight),
+                ThicknessPx = 1.0f,
+                FeatherPx = 1.0f,
+                FillColor = new Vector4(0f, 0.749f, 1f, 0.3f),
+                BorderColor = new Vector4(0f, 0.749f, 1f, 1f)
             };
 
-            _dragFillBuffer.Update(ResCache.DeviceContext, fillVerts);
-            _dragFillVertexCount = 6;
+            var ctx = ResCache.DeviceContext;
+
+            var box = ctx.MapSubresource(
+                _dragOverlaySettingsBuffer, 0, MapMode.WriteDiscard, SharpDX.Direct3D11.MapFlags.None);
+
+            Utilities.Write(box.DataPointer, ref settings);
+
+            ctx.UnmapSubresource(_dragOverlaySettingsBuffer, 0);
 
             _dragOverlayDirty = false;
         }
@@ -1737,36 +1763,48 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
         private void InitializeOverlayShaders()
         {
-            // Fill
+            var device = ResCache.Device;
+
             var path = AppDomain.CurrentDomain.BaseDirectory;
             while (Path.GetFileName(path) != "Cad_Point_Manager")
             {
                 path = Path.GetDirectoryName(path) ?? throw new DirectoryNotFoundException("Cad_Point_Manager not found");
             }
 
-            string fx = Path.Combine(path, @"Controls\D3DControl\Shaders\OverlaySolidShader.hlsl");
+            string fx = Path.Combine(path, @"Controls\D3DControl\Shaders\DragOverlayFillShader.hlsl");
             using var vs = ShaderBytecode.CompileFromFile(fx, "VSMain", "vs_5_0");
             using var ps = ShaderBytecode.CompileFromFile(fx, "PSMain", "ps_5_0");
-            _overlayVS = new VertexShader(ResCache.Device, vs);
-            _overlayPS = new PixelShader(ResCache.Device, ps);
+            _dragOverlayFillVS = new VertexShader(device, vs);
+            _dragOverlayFillPS = new PixelShader(device, ps);
 
-            _overlayLayout = new InputLayout(
-                ResCache.Device,
-                ShaderSignature.GetInputSignature(vs),
-                new[] {
-                    new InputElement("POSITION", 0, Format.R32G32B32_Float, 0, 0),
-                    new InputElement("COLOR",    0, Format.R32G32B32A32_Float, 12, 0),
+            _dragOverlayLayout = new InputLayout(device, ShaderSignature.GetInputSignature(vs),
+                new[]
+                {
+                    new InputElement("LOCAL",0,Format.R32G32_Float,0,0),
                 });
 
             // Border
-            string outlineFx = Path.Combine(path, @"Controls\D3DControl\Shaders\OverlayOutlineShader.hlsl");
+            string outlineFx = Path.Combine(path, @"Controls\D3DControl\Shaders\DragOverlayOutlineShader.hlsl");
             using var ovs = ShaderBytecode.CompileFromFile(outlineFx, "VSMain", "vs_5_0");
             using var ops = ShaderBytecode.CompileFromFile(outlineFx, "PSMain", "ps_5_0");
-            _overlayOutlineVS = new VertexShader(ResCache.Device, ovs);
-            _overlayOutlinePS = new PixelShader(ResCache.Device, ops);
+            _dragOverlayOutlineVS = new VertexShader(device, ovs);
+            _dragOverlayOutlinePS = new PixelShader(device, ops);
 
-            // Reuse the SAME input layout as OverlaySolid (POSITION, COLOR)
-            _overlayOutlineLayout = _overlayLayout;
+            _dragOverlayQuadBuffer?.Dispose();
+            var dragQuadVertices = new[]
+            {
+                new DragOverlayVertex(0f, 0f),
+                new DragOverlayVertex(0f, 1f),
+                new DragOverlayVertex(1f, 1f),
+
+                new DragOverlayVertex(0f, 0f),
+                new DragOverlayVertex(1f, 1f),
+                new DragOverlayVertex(1f, 0f),
+            };
+            _dragOverlayQuadBuffer = Buffer.Create(
+                device,
+                BindFlags.VertexBuffer,
+                dragQuadVertices);
 
             _overlayShaderLoaded = true;
         }
@@ -1951,9 +1989,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _solidVertexBuffer?.Dispose();
             _solidVertexBuffer = new(device, GlobalHelperProperties.InitialLineVertices);
 
-            _dragFillBuffer?.Dispose();
-            _dragFillBuffer = new(device, 6);
-
             _pointCircleVertexBuffer?.Dispose();
             _pointCircleVertexBuffer = new(device, GlobalHelperProperties.InitialCircleVertices);
 
@@ -2037,13 +2072,13 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             var overlayOutlineBufferDesc = new BufferDescription
             {
-                Usage = ResourceUsage.Default,
-                SizeInBytes = Utilities.SizeOf<OverlayOutlineSettings>(),
+                Usage = ResourceUsage.Dynamic,
+                SizeInBytes = Utilities.SizeOf<DragOverlaySettings>(),
                 BindFlags = BindFlags.ConstantBuffer,
-                CpuAccessFlags = CpuAccessFlags.None,
+                CpuAccessFlags = CpuAccessFlags.Write,
                 OptionFlags = ResourceOptionFlags.None
             };
-            _overlayOutlineSettingsBuffer = new Buffer(ResCache.Device, overlayOutlineBufferDesc);
+            _dragOverlaySettingsBuffer = new Buffer(ResCache.Device, overlayOutlineBufferDesc);
 
             var sigPointBufferDesc = new BufferDescription
             {
@@ -3261,9 +3296,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
                 foreach (var geometry in newHits)
                 {
-                    if (DragRect.Contains(geometry.Bounds))
+                    if (DragRect.Contains(geometry.Bounds) &&
+                        _mouseOverHitTestableObjects.Add(geometry))
                     {
-                        _mouseOverHitTestableObjects.Add(geometry);
                         HoverObject(geometry);
                         lineGlowVerticesDirty = true;
                     }
@@ -3276,9 +3311,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
                 foreach (var geometry in possiblyRemoved)
                 {
-                    if (!DragRect.Contains(geometry.Bounds))
+                    if (!DragRect.Contains(geometry.Bounds) &&
+                        _mouseOverHitTestableObjects.Remove(geometry))
                     {
-                        _mouseOverHitTestableObjects.Remove(geometry);
                         DehoverObject(geometry);
                         lineGlowVerticesDirty = true;
                     }
@@ -3291,10 +3326,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 StateController.FlushObjectUpdates();
                 _interactionDirty = true;
             }
-        }
-        public void CancelHitTesting()
-        {
-            _hitTestCancellationTokenSource?.Cancel();
         }
         private void PrioritizeCogoToggleHit(
             List<(double distance, CogoPoint point)> hits, Point mouse)
@@ -4351,29 +4382,26 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 // Drag overlay
                 // -------------------------------------------------
 
-                _dragFillBuffer?.Dispose();
-                _dragFillBuffer = null;
+                _dragOverlayQuadBuffer?.Dispose();
+                _dragOverlayQuadBuffer = null;
 
-                _overlayVS?.Dispose();
-                _overlayVS = null;
+                _dragOverlayFillVS?.Dispose();
+                _dragOverlayFillVS = null;
 
-                _overlayPS?.Dispose();
-                _overlayPS = null;
+                _dragOverlayFillPS?.Dispose();
+                _dragOverlayFillPS = null;
 
-                _overlayLayout?.Dispose();
-                _overlayLayout = null;
+                _dragOverlayOutlineVS?.Dispose();
+                _dragOverlayOutlineVS = null;
 
-                _overlayOutlineVS?.Dispose();
-                _overlayOutlineVS = null;
+                _dragOverlayOutlinePS?.Dispose();
+                _dragOverlayOutlinePS = null;
 
-                _overlayOutlinePS?.Dispose();
-                _overlayOutlinePS = null;
+                _dragOverlayLayout?.Dispose();
+                _dragOverlayLayout = null;
 
-                _overlayOutlineLayout?.Dispose();
-                _overlayOutlineLayout = null;
-
-                _overlayOutlineSettingsBuffer?.Dispose();
-                _overlayOutlineSettingsBuffer = null;
+                _dragOverlaySettingsBuffer?.Dispose();
+                _dragOverlaySettingsBuffer = null;
 
                 // -------------------------------------------------
                 // Significant points
