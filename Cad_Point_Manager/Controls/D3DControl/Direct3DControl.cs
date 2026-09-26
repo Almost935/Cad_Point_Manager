@@ -22,7 +22,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private Texture2D _dxfTexture;
         private RenderTargetView _renderTargetView;
         private RenderTargetView _dxfRenderTargetView;
-        private RenderTargetView _frameRenderTargetView;
         private Dx11ImageSource _d3DSurface;
         private SharpDX.Direct2D1.Factory2 _d2dFactory;
         private SharpDX.Direct2D1.Device1 _d2dDevice;
@@ -278,7 +277,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             Disposer.SafeDispose(ref _d2dFactory);
             Disposer.SafeDispose(ref _d2dDevice);
             Disposer.SafeDispose(ref _d2dDeviceContext);
-            Disposer.SafeDispose(ref _frameRenderTargetView);
         }
 
         private void CreateAndBindTargets()
@@ -302,7 +300,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 Disposer.SafeDispose(ref _texture2D);
                 Disposer.SafeDispose(ref _dxfRenderTargetView);
                 Disposer.SafeDispose(ref _renderTargetView);
-                Disposer.SafeDispose(ref _frameRenderTargetView);
 
                 var texture2DRenderDesc = new Texture2DDescription
                 {
@@ -361,6 +358,13 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 ResCache.InteractionTexture = null;
                 ResCache.InteractionTexture = new Texture2D(_device, offscreenRenderDesc);
                 ResCache.InteractionRenderTargetView = new RenderTargetView(_device, ResCache.InteractionTexture);
+
+                ResCache.FrameRenderTargetView?.Dispose();
+                ResCache.FrameRenderTargetView = null;
+                ResCache.FrameTexture?.Dispose();
+                ResCache.FrameTexture = null;
+                ResCache.FrameTexture = new Texture2D(_device, offscreenRenderDesc);
+                ResCache.FrameRenderTargetView = new RenderTargetView(_device, ResCache.FrameTexture);
 
                 var rtvDesc = new RenderTargetViewDescription
                 {

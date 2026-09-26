@@ -1,6 +1,7 @@
 ﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                    xmlns:converters="clr-namespace:Cad_Point_Manager.Converters">
+                    xmlns:converters="clr-namespace:Cad_Point_Manager.Converters"
+                    xmlns:behaviors="clr-namespace:Cad_Point_Manager.Behaviors">
     <Style x:Key="RoundedTextBoxStyle"
            TargetType="TextBox">
         <Setter Property="Background"
@@ -152,6 +153,8 @@
                 Value="Left" />
         <Setter Property="VerticalContentAlignment"
                 Value="Stretch" />
+        <Setter Property="behaviors:TextBoxBehavior.SelectAllOnFocus"
+                Value="True" />
         <Setter Property="Validation.ErrorTemplate">
             <Setter.Value>
                 <ControlTemplate>

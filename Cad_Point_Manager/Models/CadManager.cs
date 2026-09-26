@@ -1260,7 +1260,7 @@ namespace Cad_Point_Manager.Models
 
             foreach (var node in nodes)
             {
-                hits.AddRange(node.HitTestPoint(p, rect, atlas));
+                hits.AddRange(node.HitTestCogoPoint(p, rect, atlas));
             }
             hits.Sort((x, y) => x.distance.CompareTo(y.distance));
 
@@ -1555,7 +1555,7 @@ namespace Cad_Point_Manager.Models
             ClearDxfPoints();
 
             var inflatedExtents = Rect.Inflate(Extents, Extents.Width * 0.1, Extents.Height * 0.1);
-            int maxPoints = 1;
+            int maxPoints = 1000;
             float rows = 15;
             float cols = 15;
             float yIncrement = (inflatedExtents.Height / (rows - 1)).ToFloat();

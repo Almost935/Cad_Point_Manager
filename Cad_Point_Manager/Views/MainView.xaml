@@ -18,6 +18,7 @@
       xmlns:models="clr-namespace:Cad_Point_Manager.Models"
       xmlns:views="clr-namespace:Cad_Point_Manager.Views"
       xmlns:validation="clr-namespace:Cad_Point_Manager.Views.ValidationRules"
+      xmlns:behaviors="clr-namespace:Cad_Point_Manager.Behaviors"
       xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
       xmlns:helpers="clr-namespace:Cad_Point_Manager.Helpers"
       d:DataContext="{d:DesignInstance Type=viewModels:MainViewModel}"
@@ -264,27 +265,13 @@
                                VerticalAlignment="Center"
                                HorizontalAlignment="Center"
                                Text="Point Number Start:" />
-                    <TextBox Grid.Column="1"
+                    <TextBox x:Name="PointNumberStartTextBox"
+                             Grid.Column="1"
                              Style="{StaticResource ValidationTextBox}"
                              Height="{StaticResource CogoCreationTextBoxHeight}"
                              MinWidth="{StaticResource CogoCreationTextBoxWidth}"
                              Margin="{StaticResource CogoPointCreationTextBoxMargin}"
-                             Text="{Binding Path=NewCogoPointsStartNumberText, ValidatesOnDataErrors=True}"
-                             PreviewMouseLeftButtonUp="TextBox_PreviewMouseLeftButtonUp">
-                        <i:Interaction.Triggers>
-                            <i:EventTrigger EventName="LostFocus">
-                                <i:InvokeCommandAction Command="{Binding DataContext.CogoCreationTextBoxLostFocusCommand, RelativeSource={RelativeSource AncestorType=Page}}"
-                                                       PassEventArgsToCommand="True" />
-                            </i:EventTrigger>
-                            <i:EventTrigger EventName="GotFocus">
-                                <i:InvokeCommandAction Command="{Binding DataContext.CogoCreationTextBoxGotFocusCommand, RelativeSource={RelativeSource AncestorType=Page}}"
-                                                       PassEventArgsToCommand="True" />
-                            </i:EventTrigger>
-                            <i:EventTrigger EventName="GotKeyboardFocus">
-                                <i:InvokeCommandAction Command="{Binding DataContext.CogoCreationTextBoxGotKeyboardFocusCommand, RelativeSource={RelativeSource AncestorType=Page}}"
-                                                       PassEventArgsToCommand="True" />
-                            </i:EventTrigger>
-                        </i:Interaction.Triggers>
+                             Text="{Binding Path=NewCogoPointsStartNumberText, ValidatesOnDataErrors=True}">
                     </TextBox>
                 </Grid>
                 <Grid Grid.Column="1"
@@ -305,20 +292,7 @@
                              MinWidth="{StaticResource CogoCreationTextBoxWidth}"
                              Margin="{StaticResource CogoPointCreationTextBoxMargin}"
                              Text="{Binding NewCogoPointsElevationText, ValidatesOnDataErrors=True}">
-                        <i:Interaction.Triggers>
-                            <i:EventTrigger EventName="LostFocus">
-                                <i:InvokeCommandAction Command="{Binding DataContext.CogoCreationTextBoxLostFocusCommand, RelativeSource={RelativeSource AncestorType=Page}}"
-                                                       PassEventArgsToCommand="True" />
-                            </i:EventTrigger>
-                            <i:EventTrigger EventName="GotFocus">
-                                <i:InvokeCommandAction Command="{Binding DataContext.CogoCreationTextBoxGotFocusCommand, RelativeSource={RelativeSource AncestorType=Page}}"
-                                                       PassEventArgsToCommand="True" />
-                            </i:EventTrigger>
-                            <i:EventTrigger EventName="GotKeyboardFocus">
-                                <i:InvokeCommandAction Command="{Binding DataContext.CogoCreationTextBoxGotKeyboardFocusCommand, RelativeSource={RelativeSource AncestorType=Page}}"
-                                                       PassEventArgsToCommand="True" />
-                            </i:EventTrigger>
-                        </i:Interaction.Triggers>
+
                     </TextBox>
                 </Grid>
                 <Grid Grid.Column="2"

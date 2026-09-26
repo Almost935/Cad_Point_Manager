@@ -581,13 +581,15 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 _interactionDirty = false;
             }
 
-            ctx.CopyResource(ResCache.InteractionTexture, ResCache.Texture2D);
-            ctx.OutputMerger.SetRenderTargets(ResCache.RenderTargetView);
+            ctx.CopyResource(ResCache.InteractionTexture, ResCache.FrameTexture);
+            ctx.OutputMerger.SetRenderTargets(ResCache.FrameRenderTargetView);
 
             if (IsDragging)
             {
                 DrawDragOverlay(ctx);
             }
+
+            ctx.CopyResource(ResCache.FrameTexture, ResCache.Texture2D);
         }
 
         private void DrawDxf(DeviceContext ctx)
@@ -1128,43 +1130,14 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             ctx.DrawInstanced(6, _leaderLineInstanceCount, 0, 0);
         }
-        //private void DrawDragOverlay(DeviceContext ctx)
-        //{
-        //    // Overlay Fill
-        //    ctx.GeometryShader.Set(null);
-        //    ctx.OutputMerger.SetRenderTargets(ResCache.RenderTargetView);
-        //    ctx.OutputMerger.SetBlendState(ResCache.BaseBlendState);
-        //    ctx.InputAssembler.PrimitiveTopology = PrimitiveTopology.TriangleList;
-        //    ctx.InputAssembler.SetVertexBuffers(
-        //        0, new VertexBufferBinding(_dragOverlayQuadBuffer, Utilities.SizeOf<DragOverlayVertex>(), 0));
-        //    ctx.InputAssembler.InputLayout = _overlayLayout;
-        //    ctx.VertexShader.Set(_overlayVS);
-        //    ctx.PixelShader.Set(_overlayPS);
-        //    ctx.VertexShader.SetConstantBuffer(0, _transformationBuffer);
-        //    ctx.VertexShader.SetConstantBuffer(1, _overlayOutlineSettingsBuffer);
-        //    ctx.Draw(6, 0);
-
-        //    // Overlay Outline
-        //    ctx.VertexShader.Set(_overlayOutlineVS);
-        //    ctx.PixelShader.Set(_overlayOutlinePS);
-        //    ctx.InputAssembler.InputLayout = _overlayOutlineLayout;
-        //    ctx.VertexShader.SetConstantBuffer(0, _transformationBuffer);      // b0
-        //    ctx.PixelShader.SetConstantBuffer(0, null);                        // not used
-        //    ctx.VertexShader.SetConstantBuffer(1, _overlayOutlineSettingsBuffer); // b1
-        //    ctx.PixelShader.SetConstantBuffer(1, _overlayOutlineSettingsBuffer);  // b1
-        //    ctx.InputAssembler.PrimitiveTopology = PrimitiveTopology.TriangleList;
-        //    ctx.InputAssembler.SetVertexBuffers(0,
-        //       new VertexBufferBinding(_dragFillBuffer.Buffer, _dragFillBuffer.Stride, 0));
-        //    ctx.Draw(_dragFillVertexCount, 0);
-        //}
         private void DrawDragOverlay(DeviceContext ctx)
         {
             // Drag Rect Fill
             ctx.GeometryShader.Set(null);
 
-            ctx.OutputMerger.SetRenderTargets(ResCache.RenderTargetView);
+            ctx.OutputMerger.SetRenderTargets(ResCache.FrameRenderTargetView);
             ctx.OutputMerger.SetBlendState(ResCache.BaseBlendState);
-            ctx.InputAssembler.PrimitiveTopology =PrimitiveTopology.TriangleList;
+            ctx.InputAssembler.PrimitiveTopology = PrimitiveTopology.TriangleList;
             ctx.InputAssembler.InputLayout = _dragOverlayLayout;
             ctx.InputAssembler.SetVertexBuffers(
                 0, new VertexBufferBinding(_dragOverlayQuadBuffer, Utilities.SizeOf<DragOverlayVertex>(), 0));
@@ -1179,7 +1152,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             ctx.Draw(6, 0);
 
             // Drag Rect Outline
-            ctx.OutputMerger.SetRenderTargets(ResCache.RenderTargetView);
+            ctx.OutputMerger.SetRenderTargets(ResCache.FrameRenderTargetView);
             ctx.OutputMerger.SetBlendState(ResCache.BaseBlendState);
             ctx.InputAssembler.PrimitiveTopology = PrimitiveTopology.TriangleList;
             ctx.InputAssembler.InputLayout = _dragOverlayLayout;
@@ -2876,29 +2849,45 @@ namespace Cad_Point_Manager.Controls.D3DControl
             ConstantBuffersDirty = true;
         }
 
+        //private void UpdateToggleAnchorDimensions()
+        //{
+        //    float wupp = CadManager.Camera.GetWorldUnitsPerPixel();
+        //    float desiredHalfWorld = (AnchorPixelSize * 0.5f) * wupp;
+        //    float drawingShort = (float)Math.Min(CadManager.Camera.Extents.Width, CadManager.Camera.Extents.Height);
+        //    float maxHalfBase = (drawingShort * MaxCogoToggleToDrawingFraction) * 0.5f;
+
+        //    // Cache for settings
+        //    _desiredHalfWorldForAnchors = desiredHalfWorld;
+        //    _maxHalfBaseForAnchors = maxHalfBase;
+        //    _featherWorldForAnchors = FeatherPx * wupp;
+
+        //    _desiredHalfWorldForAnchors = desiredHalfWorld;
+        //    _maxHalfBaseForAnchors = maxHalfBase;
+        //    _featherWorldForAnchors = FeatherPx * wupp;
+
+        //    foreach (var pg in CadManager.PointGroups)
+        //    {
+        //        foreach (var p in CadManager.GetPoints(pg))
+        //        {
+        //            UpdateToggleAnchorBounds(p);
+        //        }
+        //    }
+        //}
         private void UpdateToggleAnchorDimensions()
         {
             float wupp = CadManager.Camera.GetWorldUnitsPerPixel();
-            float desiredHalfWorld = (AnchorPixelSize * 0.5f) * wupp;
-            float drawingShort = (float)Math.Min(CadManager.Camera.Extents.Width, CadManager.Camera.Extents.Height);
-            float maxHalfBase = (drawingShort * MaxCogoToggleToDrawingFraction) * 0.5f;
 
-            // Cache for settings
-            _desiredHalfWorldForAnchors = desiredHalfWorld;
-            _maxHalfBaseForAnchors = maxHalfBase;
+            _desiredHalfWorldForAnchors =
+                (AnchorPixelSize * 0.5f) * wupp;
+
+            float drawingShort = (float)Math.Min(
+                CadManager.Camera.Extents.Width,
+                CadManager.Camera.Extents.Height);
+
+            _maxHalfBaseForAnchors =
+                (drawingShort * MaxCogoToggleToDrawingFraction) * 0.5f;
+
             _featherWorldForAnchors = FeatherPx * wupp;
-
-            _desiredHalfWorldForAnchors = desiredHalfWorld;
-            _maxHalfBaseForAnchors = maxHalfBase;
-            _featherWorldForAnchors = FeatherPx * wupp;
-
-            foreach (var pg in CadManager.PointGroups)
-            {
-                foreach (var p in CadManager.GetPoints(pg))
-                {
-                    UpdateToggleAnchorBounds(p);
-                }
-            }
         }
         private void UpdateToggleAnchorBounds(CogoPoint pt)
         {
@@ -2909,6 +2898,16 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             var center = pt.Position.ToSharpDXVector2() + pt.TextInfoOffset; // world center of the toggle
             pt.ToggleBounds = new(center.X - half, center.Y - half, 2f * half, 2f * half);
+        }
+        private bool IsPointInToggleAnchor(CogoPoint point, Point mouse)
+        {
+            float half = MathF.Min(_desiredHalfWorldForAnchors, _maxHalfBaseForAnchors * (float)point.PointGroup.PointScale);
+            var center = point.Position.ToSharpDXVector2() + point.TextInfoOffset;
+
+            return mouse.X >= center.X - half &&
+                   mouse.X <= center.X + half &&
+                   mouse.Y >= center.Y - half &&
+                   mouse.Y <= center.Y + half;
         }
         private void UpdateCogoPointInfoOffset(CogoPoint point, Vector2 offset)
         {
@@ -3185,6 +3184,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _nearestHitTestableCogoPoints = CadManager.HitTestCogoPoints(
                 _lastHitTestCoords, _currentHitTestPadding, ResCache.CogoPointMsdfAtlas);
 
+            ResetHoverCogoPointsWithoutFlush();
+
             PrioritizeCogoToggleHit(_nearestHitTestableCogoPoints, _lastHitTestCoords);
 
             if (_nearestHitTestableCogoPoints.Count > _maxSelectableObjects)
@@ -3196,9 +3197,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             if (_nearestHitTestableCogoPoints.Count == 0)
             {
-                //ResetHoverCogoPointsWithoutFlush();
-                ResetHoverCogoPointsWithFlush();
-                ResetCogoToggleButtonMouseOver();
+                StateController.FlushPointUpdates();
                 _interactionDirty = true;
 
                 return;
@@ -3210,7 +3209,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             ResetHoverCogoPointsWithoutFlush();
             ResetCogoToggleButtonMouseOver();
 
-            if (point.IsSelected && point.ToggleBounds.Contains(_lastHitTestCoords))
+            if (point.IsSelected && IsPointInToggleAnchor(point, _lastHitTestCoords))
             {
                 MouseOverCogoToggleButton(point);
                 _lastSnapHitTestIndex = _currentSnapHitTestIndex;
@@ -3336,7 +3335,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             }
 
             int toggleIndex = hits.FindIndex(
-                h => h.point.IsSelected && h.point.ToggleBounds.Contains(mouse));
+                h => h.point.IsSelected && IsPointInToggleAnchor(h.point, mouse));
 
             if (toggleIndex <= 0)
             {

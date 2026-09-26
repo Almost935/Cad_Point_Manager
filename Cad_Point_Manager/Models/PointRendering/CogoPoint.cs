@@ -210,7 +210,10 @@ namespace Cad_Point_Manager.Models.PointRendering
                 return DistanceToCogoPointViaAtlas(this, p, atlas);
             }
 
-            if (PointNumberBounds.Contains(p) || ElevationBounds.Contains(p) || DescriptionBounds.Contains(p) || EllipseBounds.Contains(p))
+            if (PointNumberBounds.Contains(p) ||
+                ElevationBounds.Contains(p) ||
+                DescriptionBounds.Contains(p) ||
+                EllipseBounds.Contains(p))
             {
                 return 0.0;
             }
@@ -230,14 +233,37 @@ namespace Cad_Point_Manager.Models.PointRendering
                 return double.MaxValue;
             }
         }
+        public bool CouldIntersectHitRange(Rect hitTestRange)
+        {
+            if (hitTestRange.IsEmpty)
+                return false;
+
+            if (!EllipseBounds.IsEmpty && EllipseBounds.IntersectsWith(hitTestRange))
+                return true;
+
+            if (!PointNumberBounds.IsEmpty && PointNumberBounds.IntersectsWith(hitTestRange))
+                return true;
+
+            if (!ElevationBounds.IsEmpty && ElevationBounds.IntersectsWith(hitTestRange))
+                return true;
+
+            if (!DescriptionBounds.IsEmpty && DescriptionBounds.IntersectsWith(hitTestRange))
+                return true;
+
+            if (HasLeaderLine)
+            {
+                // More on this below.
+            }
+
+            return false;
+        }
         public override void UpdateBounds()
         {
             Bounds = Rect.Empty;
-            if (EllipseBounds != Rect.Empty) { Bounds = Rect.Union(Bounds, EllipseBounds); }
+
             if (PointNumberBounds != Rect.Empty) { Bounds = Rect.Union(Bounds, PointNumberBounds); }
             if (ElevationBounds != Rect.Empty) { Bounds = Rect.Union(Bounds, ElevationBounds); }
             if (DescriptionBounds != Rect.Empty) { Bounds = Rect.Union(Bounds, DescriptionBounds); }
-            if (ToggleBounds != Rect.Empty) { Bounds = Rect.Union(Bounds, ToggleBounds); }
         }
 
         public bool CogoPointIntersectsRect(Rect rect)

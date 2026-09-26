@@ -77,7 +77,7 @@ namespace Cad_Point_Manager.Models.PointRendering
             return node;
         }
 
-        public List<(double distance, CogoPoint cogoPoint)> HitTestPoint(Point p, Rect hitTestRange, MsdfAtlas atlas)
+        public List<(double distance, CogoPoint cogoPoint)> HitTestCogoPoint(Point p, Rect hitTestRange, MsdfAtlas atlas)
         {
             List<(double distance, CogoPoint cogoPoint)> hits = [];
 
