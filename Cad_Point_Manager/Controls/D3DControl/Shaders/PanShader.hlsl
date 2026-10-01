@@ -3,7 +3,8 @@
 cbuffer PanSettings : register(b0)
 {
     float2 OffsetUv;
-    float2 Padding;
+    float PanCacheFactorX;
+    float PanCacheFactorY;
 };
 
 Texture2D PanTexture : register(t0);
@@ -26,7 +27,13 @@ PSInput VSMain(VSInput input)
     PSInput output;
 
     output.Position = float4(input.Position, 0.0f, 1.0f);
-    output.TexCoord = 0.25f + input.TexCoord * 0.5f + OffsetUv;
+
+    float2 cacheFactor = float2(PanCacheFactorX, PanCacheFactorY);
+    float2 visibleUvSize = 1.0f / cacheFactor;
+    float2 centeredUvOrigin = (1.0f - visibleUvSize) * 0.5f;
+
+    output.TexCoord =
+    centeredUvOrigin + input.TexCoord * visibleUvSize + OffsetUv;
 
     return output;
 }

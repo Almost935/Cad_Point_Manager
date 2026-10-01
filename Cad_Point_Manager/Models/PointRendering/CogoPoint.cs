@@ -9,6 +9,13 @@ using Point = System.Windows.Point;
 
 namespace Cad_Point_Manager.Models.PointRendering
 {
+    #region Structures
+    public readonly record struct CogoPointInfoState(
+    Vector2 Offset,
+    CogoLabelQuadrant Quadrant,
+    bool HasLeaderLine);
+    #endregion
+
     #region Enums
     public enum CogoLabelQuadrant
     {
@@ -205,7 +212,7 @@ namespace Cad_Point_Manager.Models.PointRendering
 
         public override double DistanceToPoint(Point p, MsdfAtlas atlas = null)
         {
-            if (atlas != null)
+            if (atlas is not null)
             {
                 return DistanceToCogoPointViaAtlas(this, p, atlas);
             }
@@ -233,7 +240,7 @@ namespace Cad_Point_Manager.Models.PointRendering
                 return double.MaxValue;
             }
         }
-        public bool CouldIntersectHitRange(Rect hitTestRange)
+        public bool IntersectsHitRange(Rect hitTestRange)
         {
             if (hitTestRange.IsEmpty)
                 return false;
@@ -250,9 +257,12 @@ namespace Cad_Point_Manager.Models.PointRendering
             if (!DescriptionBounds.IsEmpty && DescriptionBounds.IntersectsWith(hitTestRange))
                 return true;
 
+            if (!ToggleBounds.IsEmpty && IsSelected && ToggleBounds.IntersectsWith(hitTestRange))
+                return true;
+
             if (HasLeaderLine)
             {
-                // More on this below.
+                
             }
 
             return false;
@@ -261,6 +271,7 @@ namespace Cad_Point_Manager.Models.PointRendering
         {
             Bounds = Rect.Empty;
 
+            if (EllipseBounds != Rect.Empty) { Bounds = Rect.Union(Bounds, EllipseBounds); }
             if (PointNumberBounds != Rect.Empty) { Bounds = Rect.Union(Bounds, PointNumberBounds); }
             if (ElevationBounds != Rect.Empty) { Bounds = Rect.Union(Bounds, ElevationBounds); }
             if (DescriptionBounds != Rect.Empty) { Bounds = Rect.Union(Bounds, DescriptionBounds); }

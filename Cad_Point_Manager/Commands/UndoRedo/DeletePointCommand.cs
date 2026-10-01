@@ -10,19 +10,14 @@ namespace Cad_Point_Manager.Commands.UndoRedo
         private readonly CogoPoint _point;
         private readonly PointGroup _group;
 
-        private bool _disposed;
-
         private bool _succeeded;
         private string? _errorMessage;
 
         public bool Succeeded => _succeeded;
         public string? ErrorMessage => _errorMessage;
         public string Description => "Delete Point";
-        public bool Disposed => _disposed;
 
-        public DeletePointCommand(
-            CadManager cadManager,
-            CogoPoint point)
+        public DeletePointCommand(CadManager cadManager, CogoPoint point)
         {
             _cadManager = cadManager;
             _point = point;
@@ -31,25 +26,20 @@ namespace Cad_Point_Manager.Commands.UndoRedo
 
         public void Execute()
         {
-            _cadManager.TryDeletePointInternal(_point);
+            _succeeded = _cadManager.TryDeletePointInternal(_point);
 
-            MarkDirty();
+            if (!_succeeded)
+            {
+                _errorMessage = $"Failed to delete point {_point.PointNumber}.";
+            }
         }
 
         public void Undo()
         {
-            _cadManager.TryAddPoint(_point, _group);
+            _succeeded = _cadManager.RestorePointInternal(_point, _group);
 
-            MarkDirty();
-        }
-
-        private void MarkDirty()
-        {
-            //_cadManager.CogoPointCircleVerticesDirty = true;
-            //_cadManager.CogoPointTextVerticesDirty = true;
-            //_cadManager.HitTestableObjectTreeDirty = true;
-
-            //_cadManager.UpdateExtents();
+            if (!_succeeded)
+                _errorMessage = $"Could not restore point {_point.PointNumber}.";
         }
     }
 }

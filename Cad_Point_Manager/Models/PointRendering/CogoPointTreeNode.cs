@@ -85,7 +85,7 @@ namespace Cad_Point_Manager.Models.PointRendering
             {
                 if (potentialHit.PointGroup.IsVisible)
                 {
-                    if (potentialHit.BoundsInRect(hitTestRange))
+                    if (potentialHit.IntersectsHitRange(hitTestRange))
                     {
                         double d = potentialHit.DistanceToPoint(p, atlas);
                         hits.Add((d, potentialHit));

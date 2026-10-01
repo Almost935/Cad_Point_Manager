@@ -94,8 +94,6 @@ namespace Cad_Point_Manager.Models.HitTesting
                 {
                     var boundsInRect = ellipse.BoundsInRect(hitTestRange);
                     double dis = ellipse.DistanceToPoint(p);
-
-                    Debug.WriteLine($"ellipse.BoundsInRect: {boundsInRect}, ellipse.Distance: {dis}");
                 }
                 if (hitTestableObject is DrawingGeometry drawingGeometry)
                 {

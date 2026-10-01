@@ -752,6 +752,14 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Helpers
             _lineTypeCpu = [];
         }
 
+        public void ResetCogoPointStateBuffers(int pointCount, int labelCount, Action<DeviceContext> unbindAllSrvs)
+        {
+            unbindAllSrvs?.Invoke(_ctx);
+
+            RecreatePointCap(ToPow2AtLeast(pointCount));
+            RecreateLabelCap(ToPow2AtLeast(labelCount));
+        }
+
         public void Dispose()
         {
             _labelSrv?.Dispose();

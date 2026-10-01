@@ -24,12 +24,11 @@ namespace Cad_Point_Manager
             {
                 if (WindowState == WindowState.Maximized)
                 {
-                    // Force WPF to recompute maximized bounds for the new monitor
                     Dispatcher.BeginInvoke(new Action(() =>
                     {
                         var ws = WindowState;
                         WindowState = WindowState.Normal;
-                        WindowState = ws; // back to Maximized
+                        WindowState = ws;
                     }), DispatcherPriority.Background);
                 }
             };

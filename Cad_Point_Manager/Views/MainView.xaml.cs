@@ -21,7 +21,6 @@ namespace Cad_Point_Manager.Views
             {
                 if (DataContext is MainViewModel vm)
                 {
-                    //Application.Current.MainWindow.KeyUp += vm.Window_KeyUp;
                     vm.ResetSelectionRequested += Vm_ResetSelectionRequested;
                     vm.ResetLayoutsViewRequested += OnResetLayoutsView;
                     vm.RebuildLayoutsViewRequested += OnRebuildLayoutsView;
@@ -31,7 +30,6 @@ namespace Cad_Point_Manager.Views
             {
                 if (DataContext is MainViewModel vm)
                 {
-                    //Application.Current.MainWindow.KeyUp -= vm.Window_KeyUp;
                     vm.ResetSelectionRequested -= Vm_ResetSelectionRequested;
                     vm.ResetLayoutsViewRequested -= OnResetLayoutsView;
                     vm.RebuildLayoutsViewRequested += OnRebuildLayoutsView;

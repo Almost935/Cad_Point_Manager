@@ -19,10 +19,7 @@
 
         #region Constructor
         public PropertyChangeCommand(
-            string description,
-            Action<T> setter,
-            T oldValue,
-            T newValue)
+            string description, Action<T> setter, T oldValue, T newValue)
         {
             _description = description;
             _setter = setter;

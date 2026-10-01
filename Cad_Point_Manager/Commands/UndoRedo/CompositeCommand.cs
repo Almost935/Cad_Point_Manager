@@ -17,9 +17,7 @@ namespace Cad_Point_Manager.Commands.UndoRedo
         public string Description { get; }
 
         public CompositeCommand(
-            CadManager cadManager,
-            string description,
-            IEnumerable<IUndoableCommand> commands)
+            CadManager cadManager, string description, IEnumerable<IUndoableCommand> commands)
         {
             _cadManager = cadManager;
             Description = description;
@@ -32,32 +30,63 @@ namespace Cad_Point_Manager.Commands.UndoRedo
                 _containsCogoPointCommands = true;
             }
         }
-
         public void Execute()
         {
-            foreach (var cmd in _commands)
+            _succeeded = true;
+            _errorMessage = null;
+
+            void ExecuteCommands()
             {
-                cmd.Execute();
+                foreach (var cmd in _commands)
+                {
+                    cmd.Execute();
+
+                    if (!cmd.Succeeded)
+                    {
+                        _succeeded = false;
+
+                        _errorMessage ??= cmd.ErrorMessage ?? $"Command failed: {cmd.Description}";
+                    }
+                }
             }
 
             if (_containsCogoPointCommands)
             {
+                using (_cadManager.CogoPoints.DeferNotifications())
+                {
+                    ExecuteCommands();
+                }
+
                 _cadManager.CogoPointCircleVerticesDirty = true;
                 _cadManager.CogoPointTextVerticesDirty = true;
+            }
+            else
+            {
+                ExecuteCommands();
             }
         }
 
         public void Undo()
         {
-            for (int i = _commands.Count - 1; i >= 0; i--)
-            {
-                _commands[i].Undo();
-            }
-
             if (_containsCogoPointCommands)
             {
+                using (_cadManager.CogoPoints.DeferNotifications())
+                {
+                    for (int i = _commands.Count - 1; i >= 0; i--)
+                    {
+                        _commands[i].Undo();
+                    }
+                }
+
                 _cadManager.CogoPointCircleVerticesDirty = true;
                 _cadManager.CogoPointTextVerticesDirty = true;
+            }
+            else
+            {
+                for (int i = _commands.Count - 1; i >= 0; i--)
+                {
+                    _commands[i].Undo();
+                }
             }
         }
 

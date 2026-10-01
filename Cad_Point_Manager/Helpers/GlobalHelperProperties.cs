@@ -26,7 +26,6 @@ namespace Cad_Point_Manager.Helpers
         public const float TextHeightToFontSizeFactor = 1.5f;
         public const float TextHeightToSpaceWidthFactor = 0.5f;
 
-        //public static readonly Vector4 SelectedObjectColor = new(59.0f / 255.0f, 255.0f / 255.0f, 62.0f / 255.0f, 0.3f);
         public static readonly Vector4 SelectedObjectColor = new(36.0f / 255.0f, 250.0f / 255.0f, 255.0f / 255.0f, 0.7f);
         public static readonly Vector4 SelectedMouseOverObjectColor = new(127.0f / 255.0f, 1.0f, 116.0f / 255.0f, 1);
         public static readonly Vector4 SelectedMouseOverGlowColor = new(127.0f / 255.0f, 1.0f, 116.0f / 255.0f, 0.4f);
@@ -46,6 +45,10 @@ namespace Cad_Point_Manager.Helpers
         public static readonly SolidColorBrush SelectedCogoPointBrush = new(SelectedCogoPointColor);
         public static readonly Color SelectedCogoPointMouseOverColor = Color.FromArgb(255, 127, 255, 116);
         public static readonly SolidColorBrush SelectedCogoPointMouseOverBrush = new(SelectedCogoPointMouseOverColor);
+
+        // Drag rect properties
+        public static readonly Vector4 DragRectBorderColor = new(0f, 0.749f, 1f, 1f);
+        public static readonly Vector4 DragRectFillColor = new(0f, 0.749f, 1f, 0.15f);
 
         public const float PdfPreviewDpi = 96;
     }

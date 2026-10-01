@@ -485,7 +485,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
     public struct PanSettings
     {
         public Vector2 OffsetUv;
-        public Vector2 Padding;
+        public float PanCacheFactorX;
+        public float PanCacheFactorY;
     }
     #endregion
 }

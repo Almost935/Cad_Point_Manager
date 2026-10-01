@@ -20,6 +20,14 @@ namespace Cad_Point_Manager.Commands.UndoRedo
             RaiseStateChanged();
         }
 
+        public void RecordExecuted(IUndoableCommand command)
+        {
+            _undoStack.Push(command);
+            _redoStack.Clear();
+
+            RaiseStateChanged();
+        }
+
         public void Undo()
         {
             if (_undoStack.Count == 0) { return; }

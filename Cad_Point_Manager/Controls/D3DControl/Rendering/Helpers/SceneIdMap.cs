@@ -134,6 +134,15 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Helpers
             _nextObjectId = 0;
         }
 
+        public void ResetCogoPointIds()
+        {
+            _pointOf.Clear();
+            _labelOf.Clear();
+
+            _nextPointId = 0;
+            _nextLabelId = 0;
+        }
+
         public int MaxLabelCount => (int)_nextLabelId;
         public int PointCount => _pointOf.Count;
         public int GroupCount => _groupOf.Count;
@@ -142,10 +151,10 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Helpers
         public int LineTypeCount => _lineTypeOf.Count;
 
         public void ClearLabels() { _labelOf.Clear(); _nextLabelId = 0; }
-        public void ClearPoints() { _pointOf.Clear(); }
-        public void ClearGroups() { _groupOf.Clear(); }
-        public void ClearLayers() { _layerOf.Clear(); }
-        public void ClearObjects() { _objectOf.Clear(); }
-        public void ClearLineTypes() { _lineTypeOf.Clear(); }
+        public void ClearPoints() { _pointOf.Clear(); _nextPointId = 0; }
+        public void ClearGroups() { _groupOf.Clear(); _nextGroupId = 0; }
+        public void ClearLayers() { _layerOf.Clear(); _nextLayerId = 0; }
+        public void ClearObjects() { _objectOf.Clear(); _nextObjectId = 0; }
+        public void ClearLineTypes() { _lineTypeOf.Clear(); _nextLineTypeId = 0; }
     }
 }

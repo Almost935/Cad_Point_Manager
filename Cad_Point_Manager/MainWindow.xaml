@@ -13,6 +13,14 @@
         WindowState="Maximized"
         ui:ThemeManager.IsThemeAware="True"
         ui:ThemeManager.RequestedTheme="Dark">
+    <Window.InputBindings>
+        <KeyBinding Key="Z"
+                    Modifiers="Control"
+                    Command="{Binding UndoCommand}" />
+        <KeyBinding Key="Y"
+                    Modifiers="Control"
+                    Command="{Binding RedoCommand}" />
+    </Window.InputBindings>
     <Grid>
         <Frame x:Name="mainFrame"
                Grid.Row="1" />

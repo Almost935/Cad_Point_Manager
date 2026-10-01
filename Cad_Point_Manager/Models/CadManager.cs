@@ -483,17 +483,12 @@ namespace Cad_Point_Manager.Models
         {
             createdPoints = [];
             errorMessages = [];
-            var commands = new List<IUndoableCommand>();
+            List<IUndoableCommand> commands = [];
 
             foreach (var p in pointData)
             {
                 var cmd = new CreatePointCommand(
-                    this,
-                    p.pointNumber,
-                    p.position,
-                    p.pg.Name,
-                    p.elevation,
-                    p.description);
+                    this, p.pointNumber, p.position, p.pg.Name, p.elevation, p.description);
 
                 commands.Add(cmd);
 
@@ -504,9 +499,7 @@ namespace Cad_Point_Manager.Models
             }
 
             var composite = new CompositeCommand(
-                this,
-                "Create Multiple Points",
-                commands);
+                this, "Create Multiple Points", commands);
 
             using (CogoPoints.DeferNotifications())
             {
@@ -533,16 +526,26 @@ namespace Cad_Point_Manager.Models
         public bool TryAddPoint(CogoPoint p, PointGroup pg)
         {
             if (pg == null || !PointGroupExists(pg))
-            {
                 return false;
-            }
 
-            if (PointNumberExists(p.PointNumber) || !IsValidPointName(p.PointNumber, out _))
-            {
+            if (!IsValidPointName(p.PointNumber, out _))
                 return false;
-            }
 
             CogoPoints.Add(p);
+
+            return true;
+        }
+        internal bool RestorePointInternal(CogoPoint point, PointGroup group)
+        {
+            if (point == null || group == null)
+                return false;
+
+            if (!PointGroupExists(group))
+                return false;
+
+            point.UpdatePointGroup(group);
+
+            CogoPoints.Add(point);
 
             return true;
         }
@@ -551,16 +554,30 @@ namespace Cad_Point_Manager.Models
             var cmd = new DeletePointCommand(this, point);
             UndoRedoManager.Execute(cmd);
 
-            return cmd.Disposed;
+            return cmd.Succeeded;
         }
         internal bool TryDeletePointInternal(CogoPoint point)
         {
-            bool deleted = false;
-            if (point != null && point.PointGroup != null)
+            if (point == null || point.PointGroup == null)
+                return false;
+
+            return CogoPoints.Remove(point);
+        }
+        public bool TryDeletePoints(IEnumerable<CogoPoint> points)
+        {
+            List<IUndoableCommand> commands = [];
+
+            foreach (var p in points)
             {
-                CogoPoints.Remove(point);
+                commands.Add(new DeletePointCommand(this, p));
             }
-            return deleted;
+
+            var composite = new CompositeCommand(
+                this, "Delete Multiple Points", commands);
+
+            UndoRedoManager.Execute(composite);
+
+            return composite.Succeeded;
         }
         public List<CogoPointDto> GetCogoPointDtos()
         {
@@ -1168,7 +1185,6 @@ namespace Cad_Point_Manager.Models
             Rect viewportBounds = new(0.5, 0.5, 28.938, 23);
             LayoutViewport viewport = new(viewportBounds, Camera.OverviewScene);
             TryCreateLayout(GetNextAvailableLayoutName(), viewport, out _);
-            UndoRedoManager.Clear();
         }
 
         public void GetPointScale()
@@ -1555,7 +1571,7 @@ namespace Cad_Point_Manager.Models
             ClearDxfPoints();
 
             var inflatedExtents = Rect.Inflate(Extents, Extents.Width * 0.1, Extents.Height * 0.1);
-            int maxPoints = 1000;
+            int maxPoints = 10;
             float rows = 15;
             float cols = 15;
             float yIncrement = (inflatedExtents.Height / (rows - 1)).ToFloat();

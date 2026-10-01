@@ -6,11 +6,12 @@ namespace Cad_Point_Manager.Services.GeometrySelection
     {
         public List<ChainPath> BuildChainsFromSelection(IEnumerable<DrawingObject> selected, double eps)
         {
-            if (selected is null) return new List<ChainPath>();
+            if (selected is null) 
+                return new List<ChainPath>();
 
             // Per-call locals (no fields => no retention across calls)
             var raw = new List<EdgeInput>(1024);
-            var circleChains = new List<ChainPath>();
+            List<ChainPath> circleChains = [];
 
             foreach (var g in selected)
             {
@@ -22,6 +23,9 @@ namespace Cad_Point_Manager.Services.GeometrySelection
                             var a = new Pt(ln.Start.X, ln.Start.Y);
                             var b = new Pt(ln.End.X, ln.End.Y);
                             raw.Add(new EdgeInput(a, b, SegmentKind.Line, null));
+
+
+
                             break;
                         }
 
