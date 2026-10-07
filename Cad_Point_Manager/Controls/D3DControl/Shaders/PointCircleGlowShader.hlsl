@@ -17,6 +17,9 @@ cbuffer DrawingSettingsBuffer : register(b1)
 
     float4 SelectedColor;
     float4 SelectedMouseOverColor;
+    
+    float CogoPointCircleRadiusPixels;
+    float3 _pad2;
 };
 
 //--------------------------------------------
@@ -47,9 +50,6 @@ struct GroupState
 
 struct VS_INPUT
 {
-    float3 position : POSITION;
-    float radius : RADIUS;
-    uint labelId : LABEL_ID;
     uint pointId : POINT_ID;
 };
 
@@ -119,11 +119,8 @@ void GSMain(point VS_INPUT input[1], inout TriangleStream<GS_OUTPUT> output)
     // Interaction
     //--------------------------------------------
 
-    bool selected =
-        (ps.Flags & POINT_SELECTED) != 0u;
-
-    bool mouseOver =
-        (ps.Flags & POINT_MOUSEOVER) != 0u;
+    bool selected = (ps.Flags & POINT_SELECTED) != 0u;
+    bool mouseOver = (ps.Flags & POINT_MOUSEOVER) != 0u;
 
     if (!selected && !mouseOver)
     {
@@ -134,122 +131,57 @@ void GSMain(point VS_INPUT input[1], inout TriangleStream<GS_OUTPUT> output)
     // Live point position
     //--------------------------------------------
 
-    float3 position =
-        input[0].position +
-        float3(
-            ps.Offset.xy,
-            0.0f);
-
-    float4 center =
-        mul(
-            float4(position, 1.0f),
-            transformationMatrix);
+    float4 center = mul(float4(ps.Offset.xy, 0.0f, 1.0f), transformationMatrix);
 
     //--------------------------------------------
     // Actual marker radius
     //--------------------------------------------
 
-    float radiusWorld =
-        input[0].radius *
-        gs.Scale;
-
-    float circleClipX =
-        radiusWorld *
-        transformationMatrix._11;
-
-    float circleClipY =
-        radiusWorld *
-        transformationMatrix._22;
+    float radiusWorld = CogoPointCircleRadiusPixels * gs.Scale;
+    float circleClipX = radiusWorld * transformationMatrix._11;
+    float circleClipY = radiusWorld * transformationMatrix._22;
 
     //--------------------------------------------
     // Maximum glow expansion
     //--------------------------------------------
 
-    float2 glowClip =
-        float2(
-            GlowPixelOffset /
-                ViewportSize.x,
+    float2 glowClip = float2(
+        GlowPixelOffset / ViewportSize.x, GlowPixelOffset / ViewportSize.y) * 2.0f;
 
-            GlowPixelOffset /
-                ViewportSize.y) *
-        2.0f;
-
-    float quadClipX =
-        circleClipX +
-        glowClip.x;
-
-    float quadClipY =
-        circleClipY +
-        glowClip.y;
+    float quadClipX = circleClipX + glowClip.x;
+    float quadClipY = circleClipY + glowClip.y;
 
     //--------------------------------------------
     // Original marker boundary relative to
     // expanded quad
     //--------------------------------------------
 
-    float2 circleEdge =
-        float2(
-            circleClipX /
-                quadClipX,
-
-            circleClipY /
-                quadClipY);
+    float2 circleEdge = float2(
+        circleClipX / quadClipX, circleClipY / quadClipY);
 
     //--------------------------------------------
     // Emit expanded quad
     //--------------------------------------------
 
     EmitCorner(
-        input[0].pointId,
-        float4(
-            center.x - quadClipX,
-            center.y + quadClipY,
-            0,
-            1),
-        float2(-1, 1),
-        circleEdge,
-        output);
-
+        input[0].pointId, float4(center.x - quadClipX, center.y + quadClipY, 0, 1),
+        float2(-1, 1), circleEdge, output);
     EmitCorner(
-        input[0].pointId,
-        float4(
-            center.x - quadClipX,
-            center.y - quadClipY,
-            0,
-            1),
-        float2(-1, -1),
-        circleEdge,
-        output);
-
+        input[0].pointId, float4(center.x - quadClipX, center.y - quadClipY, 0, 1),
+        float2(-1, -1), circleEdge, output);
     EmitCorner(
-        input[0].pointId,
-        float4(
-            center.x + quadClipX,
-            center.y + quadClipY,
-            0,
-            1),
-        float2(1, 1),
-        circleEdge,
-        output);
-
+        input[0].pointId, float4(center.x + quadClipX, center.y + quadClipY, 0, 1),
+        float2(1, 1), circleEdge, output);
     EmitCorner(
-        input[0].pointId,
-        float4(
-            center.x + quadClipX,
-            center.y - quadClipY,
-            0,
-            1),
-        float2(1, -1),
-        circleEdge,
-        output);
+        input[0].pointId, float4(center.x + quadClipX, center.y - quadClipY, 0, 1),
+        float2(1, -1), circleEdge, output);
 }
 
 //--------------------------------------------
 // Pixel shader
 //--------------------------------------------
 
-float4 PSMain(
-    GS_OUTPUT input) : SV_TARGET
+float4 PSMain(GS_OUTPUT input) : SV_TARGET
 {
     PointState ps = PointStates[input.pointId];
     GroupState gs = GroupStates[ps.GroupId];

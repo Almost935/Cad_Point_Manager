@@ -549,7 +549,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             if (_isPanning)
             {
                 DrawCachedPan(ctx);
-                //DrawPanInteractions(ctx);
                 return;
             }
 
@@ -1744,7 +1743,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _pointMarkerInputLayout = new InputLayout(ResCache.Device, ShaderSignature.GetInputSignature(pointMarkerVsb),
                 new[]
                 {
-                    new InputElement("POINT_ID", 0, Format.R32_UInt,        20, 0),
+                    new InputElement("POINT_ID", 0, Format.R32_UInt, 0, 0),
                 });
 
             _pointMarkerShadersLoaded = true;

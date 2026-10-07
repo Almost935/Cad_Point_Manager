@@ -152,10 +152,13 @@
                     for (int k = 1; k <= intermediatesPerSegment; k++)
                     {
                         double t = (double)k / (intermediatesPerSegment + 1);
-                        double ang = start + sweep * t;
+                        
+                        double angleDegrees = start + sweep * t;
+                        double angleRadians = angleDegrees * Math.PI / 180.0;
+
                         points.Add(new Pt(
-                            arc.Center.X + arc.Radius * Math.Cos(ang),
-                            arc.Center.Y + arc.Radius * Math.Sin(ang)));
+                            arc.Center.X + arc.Radius * Math.Cos(angleRadians),
+                            arc.Center.Y + arc.Radius * Math.Sin(angleRadians)));
                     }
                 }
 

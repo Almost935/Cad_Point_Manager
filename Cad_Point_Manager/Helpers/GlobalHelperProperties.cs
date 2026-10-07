@@ -35,8 +35,8 @@ namespace Cad_Point_Manager.Helpers
 
         public static readonly float DxfPointToExtentsBaseFactor = 0.05f;
 
-        public const float CogoPointCirclePixelRadius = 0.4f;
-        public const float CogoPointCircleMouseOverPixelRadius = 0.6f;
+        public const float CogoPointCirclePixelRadius = 0.2f;
+        public const float CogoPointCircleMouseOverPixelRadius = 0.4f;
         public const float CogoPointLeaderLinePixelWidth = 1;
 
         public static readonly Color MouseOverCogoPointColor = Color.FromArgb(255, 8, 230, 238);
