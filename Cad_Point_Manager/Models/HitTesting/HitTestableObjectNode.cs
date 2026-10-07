@@ -15,6 +15,7 @@ namespace Cad_Point_Manager.Models.HitTesting
     {
         #region Properties
         public List<HitTestableObject> HitTestableObjects { get; set; } = [];
+        public List<DrawingGeometry> Geometries { get; set; } = [];
         public Rect Extents { get; set; }
         public int Level { get; set; }
         public HitTestableObjectNode[] ChildNodes { get; set; }
@@ -26,6 +27,7 @@ namespace Cad_Point_Manager.Models.HitTesting
         public HitTestableObjectNode(List<HitTestableObject> hitTestableObjects, int level, Rect extents, HitTestableObjectTree tree)
         {
             HitTestableObjects = hitTestableObjects;
+            Geometries = hitTestableObjects.OfType<DrawingGeometry>().ToList();
             Level = level;
             Extents = extents;
             Tree = tree;
@@ -88,22 +90,23 @@ namespace Cad_Point_Manager.Models.HitTesting
         {
             List<(double distance, DrawingGeometry geometry)> geometries = [];
 
-            foreach (var hitTestableObject in HitTestableObjects)
+            foreach (var geometry in Geometries)
             {
-                if (hitTestableObject is DrawingEllipse ellipse)
+                //if (hitTestableObject is DrawingEllipse ellipse)
+                //{
+                //    if (ellipse.BoundsInRect(hitTestRange))
+                //    {
+                //        double d = ellipse.DistanceToPoint(p);
+                //        geometries.Add((d, ellipse));
+                //    }
+                //}
+
+                if (geometry.Layer.IsVisible)
                 {
-                    var boundsInRect = ellipse.BoundsInRect(hitTestRange);
-                    double dis = ellipse.DistanceToPoint(p);
-                }
-                if (hitTestableObject is DrawingGeometry drawingGeometry)
-                {
-                    if (drawingGeometry.Layer.IsVisible)
+                    if (geometry.BoundsInRect(hitTestRange))
                     {
-                        if (drawingGeometry.BoundsInRect(hitTestRange))
-                        {
-                            double d = drawingGeometry.DistanceToPoint(p);
-                            geometries.Add((d, drawingGeometry));
-                        }
+                        double d = geometry.DistanceToPoint(p);
+                        geometries.Add((d, geometry));
                     }
                 }
             }
@@ -177,23 +180,6 @@ namespace Cad_Point_Manager.Models.HitTesting
             hits.Sort((a, b) => a.distance.CompareTo(b.distance));
 
             return hits.ToList();
-        }
-
-        public List<DrawingGeometry> HitTestGeometriesInRect(Rect rect)
-        {
-            List<DrawingGeometry> geometries = [];
-
-            foreach (var hitTestableObject in HitTestableObjects)
-            {
-                if (hitTestableObject is DrawingGeometry geometry)
-                {
-                    if (geometry.Layer.IsVisible)
-                    {
-                        if (geometry.BoundsInRect(rect)) { geometries.Add(geometry); }
-                    }
-                }
-            }
-            return geometries;
         }
 
         private void Subdivide()

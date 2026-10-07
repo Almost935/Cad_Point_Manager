@@ -327,7 +327,8 @@ namespace Cad_Point_Manager.Views.UserControls
 
         public void ReloadPreview()
         {
-            PdfLayoutPreviewControl.RebuildAsync();
+            //PdfLayoutPreviewControl.RebuildAsync();
+            PdfLayoutPreviewControl.Rebuild();
         }
 
         private void LayoutsListInlineEditBox_PreviewKeyDown(object sender, KeyEventArgs e)
@@ -507,7 +508,7 @@ namespace Cad_Point_Manager.Views.UserControls
 
             InlineEdit.SetEditingField(lvi, null);
         }
-        
+
         private void Layouts_CollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
         {
             if (CadManager is not null && CadManager.Layouts.Count > 0)
@@ -540,7 +541,11 @@ namespace Cad_Point_Manager.Views.UserControls
         private static void OnActiveLayoutChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             var ctrl = (LayoutsViewControl)d;
-            if (ctrl is not null) { ctrl.PdfLayoutPreviewControl.RebuildAsync(); }
+            if (ctrl is not null)
+            {
+                //ctrl.PdfLayoutPreviewControl.RebuildAsync();
+                ctrl.PdfLayoutPreviewControl.Rebuild();
+            }
 
             if (e.OldValue is Layout oldLayout) { oldLayout.Viewport.PropertyChanged -= ctrl.ActiveLayoutViewport_PropertyChanged; }
 
@@ -555,11 +560,13 @@ namespace Cad_Point_Manager.Views.UserControls
                 // If PropertyChanged can come from a background thread, marshal to UI thread
                 if (!Dispatcher.CheckAccess())
                 {
-                    await Dispatcher.InvokeAsync(() => PdfLayoutPreviewControl.RebuildAsync());
+                    //await Dispatcher.InvokeAsync(() => PdfLayoutPreviewControl.RebuildAsync());
+                    await Dispatcher.InvokeAsync(() => PdfLayoutPreviewControl.Rebuild());
                     return;
                 }
 
-                PdfLayoutPreviewControl.RebuildAsync();
+                //PdfLayoutPreviewControl.RebuildAsync();
+                PdfLayoutPreviewControl.Rebuild();
             }
         }
 
@@ -568,7 +575,8 @@ namespace Cad_Point_Manager.Views.UserControls
             var ctrl = (LayoutsViewControl)d;
             if (ctrl is not null)
             {
-                ctrl.PdfLayoutPreviewControl.RebuildAsync();
+                //ctrl.PdfLayoutPreviewControl.RebuildAsync();
+                ctrl.PdfLayoutPreviewControl.Rebuild();
             }
         }
         #endregion

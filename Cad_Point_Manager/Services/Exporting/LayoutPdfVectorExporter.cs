@@ -132,12 +132,7 @@ namespace Cad_Point_Manager.Services.Exporting
         }
 
         public static MemoryStream ExportToStream(
-           Layout layout,
-           CadManager cadManager,
-           D3dStateController stateController,
-           SceneIdMap ids,
-           ResCache resCache,
-           Matrix worldToPdf)
+            Layout layout, CadManager cadManager, D3dStateController stateController, SceneIdMap ids, ResCache resCache, Matrix worldToPdf)
         {
             Stopwatch sw = Stopwatch.StartNew();
 

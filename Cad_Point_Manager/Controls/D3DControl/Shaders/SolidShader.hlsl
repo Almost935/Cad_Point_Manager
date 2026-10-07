@@ -17,6 +17,9 @@ cbuffer DrawingSettingsBuffer : register(b1)
 
     float4 SelectedColor;
     float4 SelectedMouseOverColor;
+    
+    float CogoPointCircleRadiusPixels;
+    float2 _pad2;
 };
 
 

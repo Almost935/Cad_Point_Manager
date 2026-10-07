@@ -11,6 +11,7 @@ using Cad_Point_Manager.Models;
 using Cad_Point_Manager.Models.DrawingObjects;
 using Cad_Point_Manager.Models.HitTesting;
 using Cad_Point_Manager.Models.PointRendering;
+using DocumentFormat.OpenXml.Office2010.CustomUI;
 using PdfSharpCore.Pdf.Advanced;
 using SharpDX;
 using SharpDX.D3DCompiler;
@@ -720,6 +721,41 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             ctx.DrawInstanced(6, _lineInstanceCount, 0, 0);
         }
+        private void DrawLineGlowsDirect(DeviceContext ctx, RenderTargetView target)
+        {
+            if (_lineInstanceBuffer is null || _lineInstanceCount == 0)
+            {
+                return;
+            }
+
+            ctx.OutputMerger.SetRenderTargets(target);
+            ctx.OutputMerger.SetBlendState(ResCache.BaseBlendState);
+
+            ctx.VertexShader.Set(_lineGlowVertexShader);
+            ctx.PixelShader.Set(_lineGlowPixelShader);
+            ctx.GeometryShader.Set(null);
+
+            ctx.InputAssembler.InputLayout = _lineInstanceInputLayout;
+            ctx.InputAssembler.PrimitiveTopology = PrimitiveTopology.TriangleList;
+
+            var quadBinding = new VertexBufferBinding(
+                _lineQuadBuffer, Utilities.SizeOf<LineCornerVertex>(), 0);
+            var instanceBinding = new VertexBufferBinding(
+                _lineInstanceBuffer.Buffer, _lineInstanceBuffer.Stride, 0);
+
+            ctx.InputAssembler.SetVertexBuffers(0, quadBinding, instanceBinding);
+
+            ctx.VertexShader.SetConstantBuffer(0, _transformationBuffer);
+            ctx.VertexShader.SetConstantBuffer(1, _drawingSettingsBuffer);
+
+            ctx.PixelShader.SetConstantBuffer(1, _drawingSettingsBuffer);
+            ctx.PixelShader.SetShaderResource(0, StateBuffers.LayerSRV);
+            ctx.PixelShader.SetShaderResource(1, StateBuffers.ObjectSRV);
+            ctx.PixelShader.SetShaderResource(2, StateBuffers.LineTypeSRV);
+            ctx.PixelShader.SetShaderResource(3, StateBuffers.PatternSRV);
+
+            ctx.DrawInstanced(6, _lineInstanceCount, 0, 0);
+        }
         private void CompositeGlowTexture(DeviceContext ctx, RenderTargetView rtv)
         {
             ctx.OutputMerger.SetRenderTargets(rtv);
@@ -1226,23 +1262,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             ctx.PixelShader.SetShaderResource(0, null);
         }
-        private void DrawPanInteractions(DeviceContext ctx)
-        {
-            var target = ResCache.RenderTargetView;
-
-            ctx.OutputMerger.SetRenderTargets(target);
-            ctx.OutputMerger.SetBlendState(ResCache.BaseBlendState);
-
-            DrawLineGlows(ctx);
-            CompositeGlowTexture(ctx, target);
-
-            DrawPointCircleGlow(ctx);
-            DrawSignificantPoints(ctx);
-            DrawMsdfGlowGlyphs(ctx);
-            DrawLeaderLinesGlow(ctx);
-            DrawCogoPointAnchors(ctx);
-
-        }
 
         private void UpdateLineVertices()
         {
@@ -1342,15 +1361,13 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             _pointCircleRenderIndices.Clear();
 
-            CadManager.BuildPointMarkerInstances(_pointMarkerInstanceStaging, StateController, _pointCircleRenderIndices);
+            CadManager.BuildPointMarkerInstances(
+                _pointMarkerInstanceStaging, StateController, _pointCircleRenderIndices);
 
             _pointCircleVertexBuffer.Update(
-                context,
-                CollectionsMarshal.AsSpan(
-                    _pointMarkerInstanceStaging));
+                context, CollectionsMarshal.AsSpan(_pointMarkerInstanceStaging));
 
-            _pointCircleVertexCount =
-                _pointMarkerInstanceStaging.Count;
+            _pointCircleVertexCount = _pointMarkerInstanceStaging.Count;
 
             StateBuffers.FlushAll();
 
@@ -1727,9 +1744,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _pointMarkerInputLayout = new InputLayout(ResCache.Device, ShaderSignature.GetInputSignature(pointMarkerVsb),
                 new[]
                 {
-                    new InputElement("POSITION", 0, Format.R32G32B32_Float, 0, 0),
-                    new InputElement("RADIUS",   0, Format.R32_Float,       12, 0),
-                    new InputElement("LABEL_ID", 0, Format.R32_UInt,        16, 0),
                     new InputElement("POINT_ID", 0, Format.R32_UInt,        20, 0),
                 });
 
@@ -2171,9 +2185,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 AnnotationScale = 1,
                 GlowPixelOffset = GlobalHelperProperties.GlowPixelOffset,
                 SelectedColor = GlobalHelperProperties.SelectedObjectColor,
-                SelectedMouseOverColor = GlobalHelperProperties.SelectedMouseOverObjectColor
+                SelectedMouseOverColor = GlobalHelperProperties.SelectedMouseOverObjectColor,
+                CogoPointCircleRadiusPixels = GlobalHelperProperties.CogoPointCirclePixelRadius
             };
-
             ResCache.DeviceContext.UpdateSubresource(ref drawingSettings, _drawingSettingsBuffer);
         }
 
@@ -2254,6 +2268,12 @@ namespace Cad_Point_Manager.Controls.D3DControl
             DrawPointCircles(ctx);
             DrawMsdfGlyphs(ctx);
             DrawLeaderLines(ctx);
+
+            DrawLineGlowsDirect(ctx, _panCacheRtv);
+            DrawPointCircleGlow(ctx);
+            DrawMsdfGlowGlyphs(ctx);
+            DrawLeaderLinesGlow(ctx);
+            DrawCogoPointAnchors(ctx);
 
             ctx.Rasterizer.SetViewport(0, 0, RenderPixelWidth, RenderPixelHeight);
             transformationBuffer = new TransformationBuffer { WorldViewProjection = normalTransformation };
@@ -3317,7 +3337,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 _nearestHitTestableCogoPoints, ref _currentSnapHitTestIndex);
 
             ResetHoverCogoPointsWithoutFlush();
-            ResetCogoToggleButtonMouseOverWithoutFlush();
 
             if (point.IsSelected && IsPointInToggleAnchor(point, _lastHitTestCoords))
             {
@@ -3336,7 +3355,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
                 StateController.FlushPointUpdates();
                 _interactionDirty = true;
+                return;
             }
+
+            StateController.FlushPointUpdates();
+            _interactionDirty = true;
         }
         private async void RunDragCogoPointsHittest(CancellationToken token)
         {
@@ -3568,7 +3591,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
         public void ResetHoverCogoPointsWithFlush()
         {
-            ResetCogoToggleButtonMouseOverWithFlush();
+            ResetCogoToggleButtonMouseOverWithoutFlush();
 
             if (_mouseOverCogoPoints.Count > 0)
             {

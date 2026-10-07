@@ -170,8 +170,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
             UpdateBounds();
         }
-        public override double DistanceToPoint(
-            System.Windows.Point point, MsdfAtlas atlas = null)
+        public override double DistanceToPoint(System.Windows.Point point, MsdfAtlas atlas = null)
         {
             if (SamplePoints is null || SamplePoints.Count < 2)
             {

@@ -32,6 +32,10 @@ namespace Cad_Point_Manager.Controls.D3DControl
         // Colors
         public Vector4 SelectedColor;
         public Vector4 SelectedMouseOverColor;
+
+        // CogoPoint Rendering
+        public float CogoPointCircleRadiusPixels;
+        private Vector3 _pad2;
     }
     [StructLayout(LayoutKind.Sequential)]
     public struct SolidVertex(Vector3 pos, uint layerId, uint objectId)
@@ -235,9 +239,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
     [StructLayout(LayoutKind.Sequential)]
     public struct PointMarkerInstance
     {
-        public Vector3 Position;
-        public float Radius;
-        public uint LabelId;
         public uint PointId;
     }
 

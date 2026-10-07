@@ -332,17 +332,6 @@
                                                    ActiveLayout="{Binding ActiveLayout}"
                                                    Scenes="{Binding Scenes}" />
                 </Border>
-                <!--<Border x:Name="viewportBorder"
-                        Width="{Binding ElementName=Titleblock, Path=ViewportWidth}"
-                        Height="{Binding ElementName=Titleblock, Path=ViewportHeight}"
-                        Canvas.Left="{Binding ElementName=Titleblock, Path=ViewportLeft}"
-                        Canvas.Top="{Binding ElementName=Titleblock, Path=ViewportTop}">
-                    <local:PdfLayoutPreviewControl x:Name="PdfLayoutPreviewControl"
-                                                   Renderer="{Binding Renderer}"
-                                                   CadManager="{Binding CadManager}"
-                                                   ActiveLayout="{Binding ActiveLayout}"
-                                                   Scenes="{Binding Scenes}" />
-                </Border>-->
             </Canvas>
 
             <Canvas x:Name="EditorOverlay"

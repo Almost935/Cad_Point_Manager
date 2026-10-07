@@ -119,9 +119,7 @@ namespace Cad_Point_Manager.Views.UserControls
 
             var worldToPdf =
                    LayoutPdfVectorExporter.BuildWorldToPdfFromCamera(
-                       ActiveLayout,
-                       CadManager,
-                       ActiveLayout.Viewport.Scene.Bounds.ToRect());
+                       ActiveLayout, CadManager, ActiveLayout.Viewport.Scene.Bounds.ToRect());
 
             using var pdf =
                 LayoutPdfVectorExporter.ExportViewportPreviewToStream(
@@ -135,10 +133,7 @@ namespace Cad_Point_Manager.Views.UserControls
 
             var bmp =
                 _previewService.RenderPreview(
-                    pdf,
-                    renderWidth,
-                    renderHeight,
-                    GlobalHelperProperties.PdfPreviewDpi);
+                    pdf, renderWidth, renderHeight, GlobalHelperProperties.PdfPreviewDpi);
 
             LayoutPreviewImage.Source = bmp;
         }
@@ -169,29 +164,19 @@ namespace Cad_Point_Manager.Views.UserControls
 
             var worldToPdf =
                    LayoutPdfVectorExporter.BuildWorldToPdfFromCamera(
-                       activeLayout,
-                       cadManager,
-                       activeLayout.Viewport.Scene.Bounds.ToRect());
+                       activeLayout, cadManager, activeLayout.Viewport.Scene.Bounds.ToRect());
 
             await Task.Run(() =>
             {
                 using var pdf =
                     LayoutPdfVectorExporter.ExportToStream(
-                        activeLayout,
-                        cadManager,
-                        stateController,
-                        sceneIdMap,
-                        resCache,
-                        worldToPdf);
+                        activeLayout, cadManager, stateController, sceneIdMap, resCache, worldToPdf);
 
                 pdf.Position = 0;
 
                 var bmp =
                     _previewService.RenderPreview(
-                        pdf,
-                        renderWidth,
-                        renderHeight,
-                        GlobalHelperProperties.PdfPreviewDpi);
+                        pdf, renderWidth, renderHeight, GlobalHelperProperties.PdfPreviewDpi);
 
                 if (Dispatcher.HasShutdownStarted || Dispatcher.HasShutdownFinished)
                 {
@@ -207,7 +192,11 @@ namespace Cad_Point_Manager.Views.UserControls
 
         private static void OnLayoutChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
-            if (d is PdfLayoutPreviewControl c) { _ = c.RebuildAsync(); }
+            if (d is PdfLayoutPreviewControl c)
+            {
+                //_ = c.RebuildAsync();
+                c.Rebuild();
+            }
         }
         private static void OnViewportSizeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {

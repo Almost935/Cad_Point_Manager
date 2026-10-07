@@ -17,6 +17,9 @@ cbuffer DrawingSettingsBuffer : register(b1)
 
     float4 SelectedColor;
     float4 SelectedMouseOverColor;
+    
+    float CogoPointCircleRadiusPixels;
+    float2 _pad2;
 };
 
 struct PointState
@@ -41,9 +44,6 @@ struct GroupState
 // Strip per-vertex color and flags; *add* ids
 struct VS_INPUT
 {
-    float3 position : POSITION;
-    float radius : RADIUS;
-    uint labelId : LABEL_ID;
     uint pointId : POINT_ID;
 };
 
@@ -83,29 +83,29 @@ void GSMain(point VS_INPUT input[1], inout TriangleStream<GS_OUTPUT> output)
     PointState ps = PointStates[input[0].pointId];
     GroupState gs = GroupStates[ps.GroupId];
 
-    
-    
-    // Visibility
     bool visGrp = (gs.Flags & GROUP_VISIBLE) != 0u;
     bool visPt = (ps.Flags & POINT_VISIBLE) != 0u;
+
     if (!visGrp || !visPt)
-    {
         return;
-    }
 
     float4 color = gs.Color;
-   
-    // Scale radius by group scale (Option A)
-    float radiusWorld = input[0].radius * gs.Scale;
 
-    float4 center = mul(float4(input[0].position + float3(ps.Offset.xy, 0), 1), transformationMatrix);
-    float radiusX = radiusWorld * transformationMatrix._11;
-    float radiusY = radiusWorld * transformationMatrix._22;
+    float radiusWorld = CogoPointCircleRadiusPixels * gs.Scale;
 
-    EmitCorner(color, float4(center.x - radiusX, center.y + radiusY, 0, 1), float2(-1, 1), output);
-    EmitCorner(color, float4(center.x - radiusX, center.y - radiusY, 0, 1), float2(-1, -1), output);
-    EmitCorner(color, float4(center.x + radiusX, center.y + radiusY, 0, 1), float2(1, 1), output);
-    EmitCorner(color, float4(center.x + radiusX, center.y - radiusY, 0, 1), float2(1, -1), output);
+    float4 center = mul(float4(ps.Offset.xy, 0.0f, 1.0f),transformationMatrix);
+
+    float radiusX =radiusWorld * transformationMatrix._11;
+    float radiusY =radiusWorld * transformationMatrix._22;
+
+    EmitCorner(
+        color,float4(center.x - radiusX,center.y + radiusY, 0, 1),float2(-1, 1), output);
+    EmitCorner(
+        color,float4(center.x - radiusX,center.y - radiusY, 0, 1),float2(-1, -1), output);
+    EmitCorner(
+        color,float4(center.x + radiusX,center.y + radiusY, 0, 1),float2(1, 1), output);
+    EmitCorner(
+        color,float4(center.x + radiusX,center.y - radiusY, 0, 1),float2(1, -1), output);
 }
 
 float4 PSMain(GS_OUTPUT input) : SV_TARGET

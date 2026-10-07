@@ -4,6 +4,7 @@ using Cad_Point_Manager.Helpers;
 using Cad_Point_Manager.Models.HitTesting;
 using SharpDX;
 using System.ComponentModel.DataAnnotations;
+using System.Diagnostics;
 using System.Windows;
 using Point = System.Windows.Point;
 
@@ -245,25 +246,34 @@ namespace Cad_Point_Manager.Models.PointRendering
             if (hitTestRange.IsEmpty)
                 return false;
 
-            if (!EllipseBounds.IsEmpty && EllipseBounds.IntersectsWith(hitTestRange))
+            var testRect = EllipseBounds;
+            testRect.Union(PointNumberBounds);
+            testRect.Union(ElevationBounds);
+            testRect.Union(DescriptionBounds);
+            testRect.Union(ToggleBounds);
+
+            if (!testRect.IsEmpty && testRect.IntersectsWith(hitTestRange))
                 return true;
 
-            if (!PointNumberBounds.IsEmpty && PointNumberBounds.IntersectsWith(hitTestRange))
-                return true;
+            //if (!EllipseBounds.IsEmpty && EllipseBounds.IntersectsWith(hitTestRange))
+            //    return true;
 
-            if (!ElevationBounds.IsEmpty && ElevationBounds.IntersectsWith(hitTestRange))
-                return true;
+            //if (!PointNumberBounds.IsEmpty && PointNumberBounds.IntersectsWith(hitTestRange))
+            //    return true;
 
-            if (!DescriptionBounds.IsEmpty && DescriptionBounds.IntersectsWith(hitTestRange))
-                return true;
+            //if (!ElevationBounds.IsEmpty && ElevationBounds.IntersectsWith(hitTestRange))
+            //    return true;
 
-            if (!ToggleBounds.IsEmpty && IsSelected && ToggleBounds.IntersectsWith(hitTestRange))
-                return true;
+            //if (!DescriptionBounds.IsEmpty && DescriptionBounds.IntersectsWith(hitTestRange))
+            //    return true;
 
-            if (HasLeaderLine)
-            {
-                
-            }
+            //if (!ToggleBounds.IsEmpty && IsSelected && ToggleBounds.IntersectsWith(hitTestRange))
+            //    return true;
+
+            //if (HasLeaderLine)
+            //{
+
+            //}
 
             return false;
         }
@@ -384,16 +394,10 @@ namespace Cad_Point_Manager.Models.PointRendering
         {
             double minDistance = double.MaxValue;
 
-            // Point number.
             minDistance = Math.Min(minDistance, MsdfHitTester.DistanceToGlyphs(atlas, point.PointNumberGlyphs, p));
-
-            // Elevation.
             minDistance = Math.Min(minDistance, MsdfHitTester.DistanceToGlyphs(atlas, point.ElevationGlyphs, p));
-
-            // Description.
             minDistance = Math.Min(minDistance, MsdfHitTester.DistanceToGlyphs(atlas, point.DescriptionGlyphs, p));
 
-            // Leader line.
             if (point.HasLeaderLine)
             {
                 double leaderDistance = MathHelpers.PointToLineDistance(

@@ -1319,9 +1319,9 @@ namespace Cad_Point_Manager.Models
 
             foreach (var node in nodes)
             {
-                foreach (var obj in node.HitTestableObjects)
+                foreach (var geometry in node.Geometries)
                 {
-                    if (obj is DrawingGeometry geometry &&
+                    if (geometry.Layer.IsVisible &&
                         geometry.BoundsInRect(rect))
                     {
                         hits.Add(geometry);
@@ -1554,8 +1554,6 @@ namespace Cad_Point_Manager.Models
 
                     instances.Add(new PointMarkerInstance
                     {
-                        Position = Vector3.Zero,
-                        Radius = GlobalHelperProperties.CogoPointCirclePixelRadius,
                         PointId = pointRegistration.PointId,
                     });
 
