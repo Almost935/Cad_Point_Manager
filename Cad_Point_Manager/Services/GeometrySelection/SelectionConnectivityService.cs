@@ -4,12 +4,12 @@ namespace Cad_Point_Manager.Services.GeometrySelection
 {
     public sealed class SelectionConnectivityService : ISelectionConnectivityService
     {
-        public List<ChainPath> BuildChainsFromSelection(IEnumerable<DrawingObject> selected, double eps)
+        public List<ChainPath> BuildChainsFromSelection(
+            IEnumerable<DrawingObject> selected, double eps)
         {
-            if (selected is null) 
-                return new List<ChainPath>();
+            if (selected is null)
+                return [];
 
-            // Per-call locals (no fields => no retention across calls)
             var raw = new List<EdgeInput>(1024);
             List<ChainPath> circleChains = [];
 
@@ -19,86 +19,96 @@ namespace Cad_Point_Manager.Services.GeometrySelection
                 {
                     case DrawingLine ln:
                         {
-                            // Lines: use Start/End (Vector3) from your model
-                            var a = new Pt(ln.Start.X, ln.Start.Y);
-                            var b = new Pt(ln.End.X, ln.End.Y);
-                            raw.Add(new EdgeInput(a, b, SegmentKind.Line, null));
+                            Pt a = new(ln.Start.X, ln.Start.Y);
+                            Pt b = new(ln.End.X, ln.End.Y);
 
-
+                            raw.Add(new EdgeInput(a, b, SegmentKind.Line));
 
                             break;
                         }
 
                     case DrawingArc arc:
                         {
-                            // Arcs: center = RadiusPoint, angles in degrees (StartAngle/EndAngle)
-                            var cx = arc.RadiusPoint.X; var cy = arc.RadiusPoint.Y;
-                            var r = arc.Radius;
-                            var start = arc.StartAngle;
-                            var end = arc.EndAngle;
-
-                            var a = AtAngle(cx, cy, r, start);
-                            var b = AtAngle(cx, cy, r, end);
-
-                            var ad = new ArcData(new Pt(cx, cy), r, start, end - start); // sweep may be +/-; normalized in key
-                            raw.Add(new EdgeInput(a, b, SegmentKind.Arc, ad));
+                            AddArcEdge(raw, arc);
                             break;
                         }
 
-                    case DrawingCircle c:
+                    case DrawingCircle circle:
                         {
-                            // Full circle -> stand-alone chain with single EdgeUse
-                            var center = new Pt(c.RadiusPoint.X, c.RadiusPoint.Y);
-                            var ad = new ArcData(center, c.Radius, 0.0, 360.0);
-                            var circEdge = new EdgeInput(center, center, SegmentKind.Circle, ad);
-                            circleChains.Add(new ChainPath(new List<Pt>(), new List<EdgeUse> { new EdgeUse(circEdge, true) }));
+                            Pt center = new(circle.RadiusPoint.X, circle.RadiusPoint.Y);
+                            ArcData arcData = new(center, circle.Radius, 0.0, 360.0);
+
+                            EdgeInput circleEdge = new(center, center, SegmentKind.Circle, arcData);
+
+                            circleChains.Add(new ChainPath([], [new EdgeUse(circleEdge, true)]));
+
                             break;
                         }
 
-                    case DrawingPolyline pl:
+                    case DrawingPolyline polyline:
                         {
-                            // Exploded segments already available
-                            foreach (var seg in pl.DrawingSegments)
+                            foreach (DrawingSegment segment in polyline.DrawingSegments)
                             {
-                                if (seg is DrawingLine lseg)
+                                switch (segment)
                                 {
-                                    var a = new Pt(lseg.Start.X, lseg.Start.Y);
-                                    var b = new Pt(lseg.End.X, lseg.End.Y);
-                                    raw.Add(new EdgeInput(a, b, SegmentKind.Line, null));
-                                }
-                                else if (seg is DrawingArc aseg)
-                                {
-                                    var cx = aseg.RadiusPoint.X; var cy = aseg.RadiusPoint.Y;
-                                    var r = aseg.Radius;
-                                    var start = aseg.StartAngle;
-                                    var end = aseg.EndAngle;
+                                    case DrawingLine lineSegment:
+                                        {
+                                            Pt a = new(lineSegment.Start.X, lineSegment.Start.Y);
+                                            Pt b = new(lineSegment.End.X, lineSegment.End.Y);
 
-                                    var a = AtAngle(cx, cy, r, start);
-                                    var b = AtAngle(cx, cy, r, end);
+                                            raw.Add(new EdgeInput(a, b, SegmentKind.Line));
 
-                                    var ad = new ArcData(new Pt(cx, cy), r, start, end - start);
-                                    raw.Add(new EdgeInput(a, b, SegmentKind.Arc, ad));
+                                            break;
+                                        }
+
+                                    case DrawingArc arcSegment:
+                                        {
+                                            AddArcEdge(raw, arcSegment);
+
+                                            break;
+                                        }
                                 }
                             }
+
                             break;
                         }
                 }
             }
 
-            // Dedupe within this build so the same geometric edge only appears once
+            // Remove duplicate geometric edges.
             var seen = new HashSet<EdgeKey>();
             var deduped = new List<EdgeInput>(raw.Count);
-            foreach (var e in raw)
-                if (seen.Add(EdgeKey.FromEdge(e)))
-                    deduped.Add(e);
 
-            // Build chains from deduped inputs
-            var chains = ChainBuilder.BuildChainsDetailed(deduped, eps);
+            foreach (EdgeInput edge in raw)
+            {
+                if (seen.Add(EdgeKey.FromEdge(edge)))
+                {
+                    deduped.Add(edge);
+                }
+            }
 
-            // Add circle-only chains
+            List<ChainPath> chains = ChainBuilder.BuildChainsDetailed(deduped, eps);
+
             chains.AddRange(circleChains);
 
-            return chains; // fresh lists; no shared internal buffers
+            return chains;
+        }
+
+        private static void AddArcEdge(List<EdgeInput> edges, DrawingArc arc)
+        {
+            double cx = arc.RadiusPoint.X;
+            double cy = arc.RadiusPoint.Y;
+            double radius = arc.Radius;
+
+            double startAngle = arc.StartAngle;
+            double sweepAngle = arc.Sweep;
+
+            Pt a = AtAngle(cx, cy, radius, startAngle);
+            Pt b = AtAngle(cx, cy, radius, startAngle + sweepAngle);
+
+            ArcData arcData = new(new Pt(cx, cy), radius, startAngle, sweepAngle);
+
+            edges.Add(new EdgeInput(a, b, SegmentKind.Arc, arcData));
         }
 
         private static Pt AtAngle(double cx, double cy, double r, double deg)
