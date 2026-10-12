@@ -50,6 +50,8 @@ namespace Cad_Point_Manager.Models.PointRendering
         private string _description;
         private bool _isEditing = false;
         private CogoLabelQuadrant _labelQuadrant = CogoLabelQuadrant.UpperRight;
+        private bool _showElevation = true;
+        private bool _showDescription = true;
         #endregion
 
         #region Properties
@@ -153,6 +155,33 @@ namespace Cad_Point_Manager.Models.PointRendering
                 OnPropertyChanged(nameof(LabelQuadrant));
             }
         }
+        public bool ShowElevation
+        {
+            get => _showElevation;
+            set
+            {
+                if (_showElevation == value) return;
+
+                _showElevation = value;
+                OnPropertyChanged(nameof(ShowElevation));
+            }
+        }
+        public bool ShowDescription
+        {
+            get => _showDescription;
+            set
+            {
+                if (_showDescription == value) return;
+
+                _showDescription = value;
+                OnPropertyChanged(nameof(ShowDescription));
+            }
+        }
+
+        public bool IsElevationVisible => ShowElevation;
+
+        public bool IsDescriptionVisible =>
+            ShowDescription && HasDescription;
 
         public Point Position => new(Easting, Northing);
         public bool HasPointNumberError => HasErrorsFor(nameof(PointNumber));

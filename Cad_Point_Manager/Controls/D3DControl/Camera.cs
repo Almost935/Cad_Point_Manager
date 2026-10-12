@@ -79,9 +79,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public Matrix InverseViewProjectionMatrix { get; private set; } = Matrix.Identity;
         public ViewportF Viewport { get; set; }
         public Vector2 Translate { get; set; } = Vector2.Zero;
-        public int CurrentZoomStep { get; set; } = 0;
+        public double CurrentZoomStep { get; set; } = 0.0;
         public float CurrentZoom => (float)Math.Pow(_zoomFactor, CurrentZoomStep);
-        public bool IsIn3DView { get; set; } = false;
         public Rect Extents { get; set; } = RectExtensions.Zero;
         public Scene OverviewScene { get; set; }
         #endregion
@@ -207,32 +206,31 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public void PanFromStart(Vector2 panStartTranslate, Vector2 panStartScreen, Vector2 currentScreen, float worldPerPixel)
         {
             Vector2 deltaPixels = panStartScreen - currentScreen;
-            Translate = 
+            Translate =
                 panStartTranslate + new Vector2(-deltaPixels.X * worldPerPixel, deltaPixels.Y * worldPerPixel);
 
             UpdateView();
             UpdateViewProjection();
         }
-        public void Zoom(int zoomStepDelta, Vector2 mousePosition)
+        public void Zoom(double zoomStepDelta, Vector2 mousePosition)
         {
-            CurrentZoomStep += zoomStepDelta;
-            Vector2 initialNDC = ScreenToNDC(mousePosition);
+            if (zoomStepDelta == 0 || Viewport.Width <= 0 || Viewport.Height <= 0)
+                return;
 
-            Vector3 initialWorldPivot3D = Unproject(initialNDC);
-            Vector2 initialWorldMousePos = new(initialWorldPivot3D.X, initialWorldPivot3D.Y);
+            Vector2 worldBefore = ScreenToWorld(mousePosition);
+
+            CurrentZoomStep = Math.Clamp(CurrentZoomStep + zoomStepDelta,-100.0,100.0);
+
+            UpdateView();
+            UpdateViewProjection();
+
+            Vector2 worldAfter = ScreenToWorld(mousePosition);
+            Translate += worldAfter - worldBefore;
 
             UpdateView();
             UpdateViewProjection();
 
-            Vector2 finalNDC = ScreenToNDC(mousePosition);
-            Vector3 finalWorldPivot3D = Unproject(finalNDC);
-            Vector2 finalWorldMousePos = new(finalWorldPivot3D.X, finalWorldPivot3D.Y);
-            Vector2 worldDelta = finalWorldMousePos - initialWorldMousePos;
-
-            Translate += worldDelta;
-
-            UpdateView();
-            UpdateViewProjection();
+            IsDirty = true;
         }
 
         public void SetPanAndZoom(Vector2 translation, int zoomStep)
@@ -324,7 +322,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             float targetH = (float)bounds.Height + 2f * padY;
 
             // 1) Measure base viewport world size at zoom=1, translate=0
-            int oldStep = CurrentZoomStep;
+            double oldStep = CurrentZoomStep;
             Vector2 oldTranslate = Translate;
 
             CurrentZoomStep = 0;
@@ -405,7 +403,15 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 return false;
             }
 
-            scene = new Scene() { Name = sceneName, ZoomStep = CurrentZoomStep, ZoomFactor = _zoomFactor, Translation = Translate, Bounds = GetCurrentViewportBounds() };
+            scene = new Scene()
+            {
+                Name = sceneName, 
+                ZoomStep = CurrentZoomStep, 
+                ZoomFactor = _zoomFactor, 
+                Translation = Translate, 
+                Bounds = GetCurrentViewportBounds()
+            };
+
             Scenes.Add(scene);
 
             return true;

@@ -50,6 +50,13 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 base.Unlock();
             }
         }
+        public void InvalidateD3DImageWhileLocked()
+        {
+            if (renderTarget == null)
+                return;
+
+            base.AddDirtyRect(new System.Windows.Int32Rect(0, 0, base.PixelWidth, base.PixelHeight));
+        }
 
         public void SetRenderTarget(SharpDX.Direct3D11.Texture2D target)
         {
@@ -135,7 +142,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             {
                 return;
             }
-            
+
             var presentParams = GetPresentParameters();
             Dx11ImageSource.D3DDevice.ResetEx(ref presentParams);
         }

@@ -8,14 +8,18 @@ using System.Diagnostics;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Threading;
-using FeatureLevel = SharpDX.Direct3D.FeatureLevel;
 
+using FeatureLevel = SharpDX.Direct3D.FeatureLevel;
 
 namespace Cad_Point_Manager.Controls.D3DControl
 {
     public abstract class Direct3DControl : System.Windows.Controls.Image
     {
         #region Fields
+        private int _successfulFrameLocks;
+        private int _skippedFrameLocks;
+        private readonly Stopwatch _lockStatsTimer = Stopwatch.StartNew();
+
         private SharpDX.Direct3D11.Device _device;
         private DeviceContext _deviceContext;
         private Texture2D _texture2D;
@@ -153,19 +157,96 @@ namespace Cad_Point_Manager.Controls.D3DControl
             EndD3D();
         }
 
+        //private void OnRendering(object sender, EventArgs e)
+        //{
+        //    if (!_renderTimer.IsRunning || !_d3DSurface.IsFrontBufferAvailable) { return; }
+
+        //    _d3DSurface.Lock();
+
+        //    PrepareAndCallRender();
+
+        //    _d3DSurface.Unlock();
+
+        //    _device.ImmediateContext.Flush();
+
+        //    _d3DSurface.InvalidateD3DImage();
+
+        //    _lastRenderTime = _renderTimer.ElapsedMilliseconds;
+        //}
+        //private void OnRendering(object sender, EventArgs e)
+        //{
+        //    if (!_renderTimer.IsRunning ||
+        //        !_d3DSurface.IsFrontBufferAvailable)
+        //        return;
+
+        //    long start = Stopwatch.GetTimestamp();
+
+        //    _d3DSurface.Lock();
+
+        //    long afterLock = Stopwatch.GetTimestamp();
+
+        //    PrepareAndCallRender();
+
+        //    long afterRender = Stopwatch.GetTimestamp();
+
+        //    _d3DSurface.Unlock();
+
+        //    _device.ImmediateContext.Flush();
+
+        //    _d3DSurface.InvalidateD3DImage();
+
+        //    long end = Stopwatch.GetTimestamp();
+
+        //    double Ms(long a, long b) =>
+        //        (b - a) * 1000.0 / Stopwatch.Frequency;
+
+        //    if (Ms(start, end) > 16.0)
+        //    {
+        //        Debug.WriteLine(
+        //            $"Lock: {Ms(start, afterLock):F2} ms | " +
+        //            $"Render: {Ms(afterLock, afterRender):F2} ms | " +
+        //            $"Present path: {Ms(afterRender, end):F2} ms | " +
+        //            $"Total: {Ms(start, end):F2} ms");
+        //    }
+        //}
         private void OnRendering(object sender, EventArgs e)
         {
-            if (!_renderTimer.IsRunning || !_d3DSurface.IsFrontBufferAvailable) { return; }
+            if (!_renderTimer.IsRunning ||
+                !_d3DSurface.IsFrontBufferAvailable)
+                return;
+
+            long start = Stopwatch.GetTimestamp();
 
             _d3DSurface.Lock();
+            long afterLock = Stopwatch.GetTimestamp();
 
-            PrepareAndCallRender();
+            try
+            {
+                PrepareAndCallRender();
 
-            _d3DSurface.Unlock();
+                _device.ImmediateContext.Flush();
 
-            _device.ImmediateContext.Flush();
+                _d3DSurface.InvalidateD3DImageWhileLocked();
+            }
+            finally
+            {
+                _d3DSurface.Unlock();
+            }
 
-            _d3DSurface.InvalidateD3DImage();
+            long end = Stopwatch.GetTimestamp();
+
+            double Ms(long a, long b) =>
+                (b - a) * 1000.0 / Stopwatch.Frequency;
+
+            double lockTime = Ms(start, afterLock);
+            double totalTime = Ms(start, end);
+
+            if (totalTime > 25)
+            {
+                Debug.WriteLine(
+                    $"Lock: {lockTime:F2} ms | " +
+                    $"Total: {totalTime:F2} ms");
+            }
 
             _lastRenderTime = _renderTimer.ElapsedMilliseconds;
         }

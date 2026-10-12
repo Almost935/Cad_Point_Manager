@@ -339,6 +339,11 @@ namespace Cad_Point_Manager.Models
         #region Constructor
         public CadManager()
         {
+            Camera = new(
+                new ViewportF(0, 0, 1, 1), 
+                GlobalHelperProperties.ZoomFactor, 
+                new Rect(0, 0, 1, 1));
+
             CogoPoints.CollectionChanged += CogoPoints_CollectionChanged;
             GetCollectionViews();
         }

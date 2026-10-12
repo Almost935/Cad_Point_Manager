@@ -2101,6 +2101,54 @@ namespace Cad_Point_Manager.Controls.D3DControl
             ConstantBuffersInitialized = true;
             ConstantBuffersDirty = true;
         }
+        private void EnsureGpuResourcesInitialized()
+        {
+            if (!_buffersInitialized)
+                InitializeBuffers();
+
+            if (!_lineShadersLoaded)
+                InitializeLineShaders();
+
+            if (!_lineGlowShadersLoaded)
+                InitializeLineGlowShaders();
+
+            if (!_textShaderLoaded)
+                InitializeTextShaders();
+
+            if (!_solidShaderLoaded)
+                InitializeSolidShaders();
+
+            if (!_overlayShaderLoaded)
+                InitializeOverlayShaders();
+
+            if (!_msdfShadersLoaded)
+                InitializeMsdfShaders();
+
+            if (!_pointMarkerShadersLoaded)
+                InitializePointCircleShaders();
+
+            if (!_cogoHoverShadersLoaded)
+                InitializePointCircleGlowShaders();
+
+            if (!_anchorShaderLoaded)
+                InitializeToggleAnchorShaders();
+
+            if (!_leaderLineShadersLoaded)
+                InitializeLeaderLineShaders();
+
+            if (!_sigPointShadersLoaded)
+                InitializeSignificantPointsShaders();
+
+            if (!_panShadersLoaded)
+                InitializePanShaders();
+
+            if (!ConstantBuffersInitialized)
+            {
+                InitializeConstantBuffers();
+                ConstantBuffersDirty = true;
+                TransformationBufferDirty = true;
+            }
+        }
         private void UpdateConstantBuffers()
         {
             UpdateDrawingSettingsBuffer(RenderPixelWidth, RenderPixelHeight);
@@ -2231,10 +2279,12 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
         private void BuildPanCache()
         {
+            EnsureGpuResourcesInitialized();
             EnsurePanCache();
 
             if (_panCacheTexture is null ||
-                _panCacheRtv is null)
+                _panCacheRtv is null ||
+                _panCacheSrv is null)
             {
                 return;
             }
@@ -2531,6 +2581,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
         private void UpdateDxfCoords(Vector2 mousePosDip)
         {
+            if (CadManager.Camera is null) { return; }
+
             var mousePx = DipToPixel(mousePosDip);
 
             DxfCoords = CadManager.Camera.ScreenToWorld(mousePx);
@@ -2607,27 +2659,34 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
         protected override void OnMouseWheel(MouseWheelEventArgs e)
         {
-            int zoomStep;
-            if (e.Delta > 0) { zoomStep = 1; }
-            else { zoomStep = -1; }
+            double zoomStep = e.Delta / 120.0;
+
+            if (zoomStep == 0)
+                return;
 
             var mousePixels = GetMousePx(e);
+            var zoomScale = Math.Pow(GlobalHelperProperties.ZoomFactor, zoomStep);
 
             var matrix = CurrentlyAppliedDragRectMatrix;
-            matrix.ScaleAt(Math.Pow(GlobalHelperProperties.ZoomFactor, zoomStep), Math.Pow(GlobalHelperProperties.ZoomFactor, zoomStep), mousePixels.X, mousePixels.Y);
+
+            matrix.ScaleAt(zoomScale, zoomScale, mousePixels.X, mousePixels.Y);
+
             CurrentlyAppliedDragRectMatrix = matrix;
+
             UpdateDragRect();
 
             CadManager.Camera.Zoom(zoomStep, mousePixels);
 
-            var worldUnitsPerPixel = CadManager.Camera.GetWorldUnitsPerPixel();
+            float worldUnitsPerPixel = CadManager.Camera.GetWorldUnitsPerPixel();
+
             _hittestStrokeThickness = 7.0f * worldUnitsPerPixel;
             _currentHitTestPadding = CogoPointTextHitPaddingPixels * worldUnitsPerPixel;
 
             UpdateToggleAnchorDimensions();
 
+            ConstantBuffersDirty = true;
             TransformationBufferDirty = true;
-
+            
             e.Handled = true;
         }
         protected override void OnMouseEnter(MouseEventArgs e)
