@@ -12,9 +12,7 @@ namespace Cad_Point_Manager.Models.PointRendering
 {
     #region Structures
     public readonly record struct CogoPointInfoState(
-    Vector2 Offset,
-    CogoLabelQuadrant Quadrant,
-    bool HasLeaderLine);
+         Vector2 Offset, CogoLabelQuadrant Quadrant, bool HasLeaderLine);
     #endregion
 
     #region Enums
@@ -50,8 +48,6 @@ namespace Cad_Point_Manager.Models.PointRendering
         private string _description;
         private bool _isEditing = false;
         private CogoLabelQuadrant _labelQuadrant = CogoLabelQuadrant.UpperRight;
-        private bool _showElevation = true;
-        private bool _showDescription = true;
         #endregion
 
         #region Properties
@@ -155,34 +151,9 @@ namespace Cad_Point_Manager.Models.PointRendering
                 OnPropertyChanged(nameof(LabelQuadrant));
             }
         }
-        public bool ShowElevation
-        {
-            get => _showElevation;
-            set
-            {
-                if (_showElevation == value) return;
 
-                _showElevation = value;
-                OnPropertyChanged(nameof(ShowElevation));
-            }
-        }
-        public bool ShowDescription
-        {
-            get => _showDescription;
-            set
-            {
-                if (_showDescription == value) return;
-
-                _showDescription = value;
-                OnPropertyChanged(nameof(ShowDescription));
-            }
-        }
-
-        public bool IsElevationVisible => ShowElevation;
-
-        public bool IsDescriptionVisible =>
-            ShowDescription && HasDescription;
-
+        public bool IsElevationVisible => PointGroup.ShowElevation;
+        public bool IsDescriptionVisible => PointGroup.ShowDescription && HasDescription;
         public Point Position => new(Easting, Northing);
         public bool HasPointNumberError => HasErrorsFor(nameof(PointNumber));
         public bool HasDescription => !string.IsNullOrWhiteSpace(Description);
@@ -372,41 +343,58 @@ namespace Cad_Point_Manager.Models.PointRendering
         }
         public void UpdateOffsetOrientation()
         {
-            if (IsLabelLeft)
+            float lineSpacing = _textBaseHeight * _textLineSpacingFactor;
+
+            bool showElevation = IsElevationVisible;
+            bool showDescription = IsDescriptionVisible;
+
+            int visibleCount = 1 + (showElevation ? 1 : 0) + (showDescription ? 1 : 0);
+
+            int pointNumberIndex = 0;
+            int elevationIndex = 1;
+            int descriptionIndex = 1 + (showElevation ? 1 : 0);
+
+            float GetYOffset(int index)
             {
-                PointNumberOffset = new(-PointNumberBounds.Width.ToFloat(), PointNumberOffset.Y);
-                ElevationOffset = new(-ElevationBounds.Width.ToFloat(), ElevationOffset.Y);
-                DescriptionOffset = new(-DescriptionBounds.Width.ToFloat(), DescriptionOffset.Y);
+                if (!IsLabelBelow)
+                    return (visibleCount - 1 - index) * lineSpacing;
+
+                return -index * lineSpacing;
             }
-            else
-            {
-                PointNumberOffset = new(0, PointNumberOffset.Y);
-                ElevationOffset = new(0, ElevationOffset.Y);
-                DescriptionOffset = new(0, DescriptionOffset.Y);
-            }
+
+            float translation = 0;
 
             if (IsLabelBelow)
             {
-                var translation = (float)(DescriptionBounds.Height / PointGroup.PointScale);
+                Rect bottomLabelBounds =
+                    showDescription ? DescriptionBounds : showElevation ? ElevationBounds : PointNumberBounds;
 
-                PointNumberOffset = new(PointNumberOffset.X, -BaseDescriptionOffset_Y - translation);
-                ElevationOffset = new(ElevationOffset.X, -BaseElevationOffset_Y - translation);
-                DescriptionOffset = new(DescriptionOffset.X, -BasePointNumberOffset_Y - translation);
+                if (!bottomLabelBounds.IsEmpty)
+                {
+                    translation = (float)(bottomLabelBounds.Height / PointGroup.PointScale);
+                }
             }
-            else
-            {
-                PointNumberOffset = new(PointNumberOffset.X, BasePointNumberOffset_Y);
-                ElevationOffset = new(ElevationOffset.X, BaseElevationOffset_Y);
-                DescriptionOffset = new(DescriptionOffset.X, BaseDescriptionOffset_Y);
-            }
+
+            float yTranslation = IsLabelBelow ? -translation : 0;
+
+            PointNumberOffset = new Vector2(
+                IsLabelLeft ? -(float)PointNumberBounds.Width : 0, GetYOffset(pointNumberIndex) + yTranslation);
+            ElevationOffset = new Vector2(
+                IsLabelLeft ? -(float)ElevationBounds.Width : 0, showElevation ? GetYOffset(elevationIndex) + yTranslation : 0);
+
+            DescriptionOffset = new Vector2(
+                IsLabelLeft ? -(float)DescriptionBounds.Width : 0, showDescription ? GetYOffset(descriptionIndex) + yTranslation : 0);
         }
 
         public void ResetTextLocations()
         {
             HasLeaderLine = false;
-            DescriptionOffset = new(0, BaseDescriptionOffset_Y);
-            ElevationOffset = new(0, BaseElevationOffset_Y);
-            PointNumberOffset = new(0, BasePointNumberOffset_Y);
+
+            PointNumberOffset = Vector2.Zero;
+            ElevationOffset = Vector2.Zero;
+            DescriptionOffset = Vector2.Zero;
+
+            UpdateOffsetOrientation();
         }
 
         protected override void OnPropertyChanged(string propertyName)

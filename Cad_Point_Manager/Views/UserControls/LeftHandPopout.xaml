@@ -308,6 +308,7 @@
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
+
                         <GridViewColumn Header="Northing">
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
@@ -336,6 +337,7 @@
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
+
                         <GridViewColumn Header="Easting">
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
@@ -364,6 +366,7 @@
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
+
                         <GridViewColumn Header="Elevation">
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
@@ -392,6 +395,7 @@
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
+
                         <GridViewColumn Header="Description">
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
@@ -625,8 +629,7 @@
                     </StackPanel>
                 </Grid>
             </Border>
-            <Grid Background="{StaticResource PopoutMenuBackgroundBrush}"
-                  Opacity="{Binding ElementName=root, Path=ViewsTabOpacity}"
+            <Grid Opacity="{Binding ElementName=root, Path=ViewsTabOpacity}"
                   Visibility="{Binding ElementName=root, Path=ViewsTabVisible, Converter={StaticResource BoolToVisibilityConverter}}">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="*" />

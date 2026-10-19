@@ -422,10 +422,12 @@ namespace Cad_Point_Manager.Views.UserControls
             if (pointGroupColumnWidth > 0)
             {
                 pointGroupGridView.Columns[0].Width = pointGroupColumnWidth * 1.3;
-                pointGroupGridView.Columns[1].Width = pointGroupColumnWidth * 0.9;
-                pointGroupGridView.Columns[2].Width = pointGroupColumnWidth * 0.9;
-                pointGroupGridView.Columns[3].Width = pointGroupColumnWidth * 1;
-                pointGroupGridView.Columns[4].Width = pointGroupColumnWidth * 0.9;
+                pointGroupGridView.Columns[1].Width = pointGroupColumnWidth * 0.8;
+                pointGroupGridView.Columns[2].Width = pointGroupColumnWidth * 0.8;
+                pointGroupGridView.Columns[3].Width = pointGroupColumnWidth * 0.8;
+                pointGroupGridView.Columns[4].Width = pointGroupColumnWidth * 1.15;
+                pointGroupGridView.Columns[5].Width = pointGroupColumnWidth * 1.15;
+                pointGroupGridView.Columns[6].Width = pointGroupColumnWidth * 1;
             }
         }
         private void DeletePointGroupButton_Click(object sender, RoutedEventArgs e)

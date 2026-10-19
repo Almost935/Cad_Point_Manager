@@ -225,6 +225,12 @@
                                     <EventSetter Event="MouseDown"
                                                  Handler="CellDisplay_MouseDown" />
                                 </Style>
+                                <Style TargetType="CheckBox">
+                                    <Setter Property="VerticalAlignment"
+                                            Value="Center" />
+                                    <Setter Property="VerticalAlignment"
+                                            Value="Center" />
+                                </Style>
                             </controls:SortableListView.Resources>
                             <controls:SortableListView.ContextMenu>
                                 <ContextMenu x:Name="pgListViewContextMenu"
@@ -380,6 +386,32 @@
                                                                 Value="Visible" />
                                                     </DataTrigger>
                                                 </DataTemplate.Triggers>
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                    <GridViewColumn>
+                                        <GridViewColumn.Header>
+                                            <TextBlock Text="Elev. Visible"
+                                                       Style="{StaticResource HeaderTextBlockStyle}" />
+                                        </GridViewColumn.Header>
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <Grid>
+                                                    <CheckBox IsChecked="{Binding ShowElevation, Mode=TwoWay}" />
+                                                </Grid>
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                    <GridViewColumn>
+                                        <GridViewColumn.Header>
+                                            <TextBlock Text="Desc. Visible"
+                                                       Style="{StaticResource HeaderTextBlockStyle}" />
+                                        </GridViewColumn.Header>
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <Grid>
+                                                    <CheckBox IsChecked="{Binding ShowDescription, Mode=TwoWay}" />
+                                                </Grid>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>

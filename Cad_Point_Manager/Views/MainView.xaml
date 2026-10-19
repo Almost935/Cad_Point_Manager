@@ -435,7 +435,7 @@
                   Panel.ZIndex="1">
                 <uc:RightHandPopout x:Name="RightSidePopout"
                                     Panel.ZIndex="1"
-                                    Width="400"
+                                    Width="500"
                                     HorizontalAlignment="Right"
                                     ClipToBounds="False"
                                     CadManager="{Binding JobFileManager.CadManager}"

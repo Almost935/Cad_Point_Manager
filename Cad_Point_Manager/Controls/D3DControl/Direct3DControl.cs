@@ -241,13 +241,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             double lockTime = Ms(start, afterLock);
             double totalTime = Ms(start, end);
 
-            if (totalTime > 25)
-            {
-                Debug.WriteLine(
-                    $"Lock: {lockTime:F2} ms | " +
-                    $"Total: {totalTime:F2} ms");
-            }
-
             _lastRenderTime = _renderTimer.ElapsedMilliseconds;
         }
 

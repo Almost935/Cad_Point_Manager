@@ -2,6 +2,7 @@
 using Cad_Point_Manager.Controls.D3DControl;
 using Cad_Point_Manager.Controls.D3DControl.Rendering.Msdf;
 using SharpDX;
+using SharpDX.Direct3D9;
 using System.ComponentModel;
 using System.Windows.Media;
 using Color = System.Windows.Media.Color;
@@ -18,6 +19,8 @@ namespace Cad_Point_Manager.Models.PointRendering
         private bool _isVisible = true;
         private double _pointScale = 1;
         private float _pointInfoBaseXoffset = 0;
+        private bool _showElevation = true;
+        private bool _showDescription = true;
         #endregion
 
         #region Properties
@@ -79,6 +82,28 @@ namespace Cad_Point_Manager.Models.PointRendering
                     _pointInfoBaseXoffset = value;
                     OnPropertyChanged(nameof(PointInfoBaseXoffset));
                 }
+            }
+        }
+        public bool ShowElevation
+        {
+            get => _showElevation;
+            set
+            {
+                if (_showElevation == value) return;
+
+                _showElevation = value;
+                OnPropertyChanged(nameof(ShowElevation));
+            }
+        }
+        public bool ShowDescription
+        {
+            get => _showDescription;
+            set
+            {
+                if (_showDescription == value) return;
+
+                _showDescription = value;
+                OnPropertyChanged(nameof(ShowDescription));
             }
         }
 

@@ -2359,32 +2359,48 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             var ids = StateController.EnsurePointRegistered(point);
 
-            // Point number
+            // Point number: always visible
             var pointNumberLayout = LayoutMsdfString(
                 point.PointNumber.ToString(), point, point.PointNumberOffset, emToWorld);
+
             point.PointNumberBounds = pointNumberLayout.Bounds;
             point.PointNumberGlyphs = CreateGlyphHitRegions(pointNumberLayout);
 
-            AddMsdfString(
-                pointNumberLayout, ids.PointNumberLabelId, ids.PointId, emToWorld, destination);
+            AddMsdfString(pointNumberLayout, ids.PointNumberLabelId, ids.PointId, emToWorld, destination);
 
             // Elevation
-            var elevationLayout = LayoutMsdfString(
-                point.Elevation.ToString("F3"), point, point.ElevationOffset, emToWorld);
-            point.ElevationBounds = elevationLayout.Bounds;
-            point.ElevationGlyphs = CreateGlyphHitRegions(elevationLayout);
+            if (point.IsElevationVisible)
+            {
+                var elevationLayout = LayoutMsdfString(
+                    point.Elevation.ToString("F3"), point, point.ElevationOffset, emToWorld);
 
-            AddMsdfString(elevationLayout, ids.ElevationLabelId, ids.PointId, emToWorld, destination);
+                point.ElevationBounds = elevationLayout.Bounds;
+                point.ElevationGlyphs = CreateGlyphHitRegions(elevationLayout);
 
-            // Description (if it has one)
-            if (point.HasDescription)
+                AddMsdfString(
+                    elevationLayout,
+                    ids.ElevationLabelId,
+                    ids.PointId,
+                    emToWorld,
+                    destination);
+            }
+            else
+            {
+                point.ElevationBounds = Rect.Empty;
+                point.ElevationGlyphs = [];
+            }
+
+            // Description
+            if (point.IsDescriptionVisible)
             {
                 var descriptionLayout = LayoutMsdfString(
-                    point.Description.ToString(), point, point.DescriptionOffset, emToWorld);
+                    point.Description, point, point.DescriptionOffset, emToWorld);
+
                 point.DescriptionBounds = descriptionLayout.Bounds;
                 point.DescriptionGlyphs = CreateGlyphHitRegions(descriptionLayout);
 
-                AddMsdfString(descriptionLayout, ids.DescriptionLabelId, ids.PointId, emToWorld, destination);
+                AddMsdfString(
+                    descriptionLayout, ids.DescriptionLabelId, ids.PointId, emToWorld, destination);
             }
             else
             {
@@ -2392,10 +2408,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 point.DescriptionGlyphs = [];
             }
 
+            // Point circle
             float rW = (float)(GlobalHelperProperties.CogoPointCirclePixelRadius * point.PointGroup.PointScale);
+
             var c = point.Position;
             point.EllipseBounds = new Rect(c.X - rW, c.Y - rW, 2 * rW, 2 * rW);
-
             UpdateToggleAnchorBounds(point);
 
             point.UpdateBounds();
@@ -2426,20 +2443,32 @@ namespace Cad_Point_Manager.Controls.D3DControl
         {
             float emToWorld = p.PointGroup.FontBaseSize.ToFloat();
 
-            // Point Number
+            // Point number
             var pointNumberLayout = LayoutMsdfString(
-                p.PointNumber.ToString(), p, p.PointNumberOffset, emToWorld);
+                p.PointNumber.ToString(),
+                p,
+                p.PointNumberOffset,
+                emToWorld);
+
             p.PointNumberBounds = pointNumberLayout.Bounds;
             p.PointNumberGlyphs = CreateGlyphHitRegions(pointNumberLayout);
 
             // Elevation
-            var elevationLayout = LayoutMsdfString(
-                p.Elevation.ToString("F3"), p, p.ElevationOffset, emToWorld);
-            p.ElevationBounds = elevationLayout.Bounds;
-            p.ElevationGlyphs = CreateGlyphHitRegions(elevationLayout);
+            if (p.IsElevationVisible)
+            {
+                var elevationLayout = LayoutMsdfString(
+                    p.Elevation.ToString("F3"), p, p.ElevationOffset, emToWorld);
+                p.ElevationBounds = elevationLayout.Bounds;
+                p.ElevationGlyphs = CreateGlyphHitRegions(elevationLayout);
+            }
+            else
+            {
+                p.ElevationBounds = Rect.Empty;
+                p.ElevationGlyphs = [];
+            }
 
             // Description
-            if (p.HasDescription)
+            if (p.IsDescriptionVisible)
             {
                 var descriptionLayout = LayoutMsdfString(p.Description, p, p.DescriptionOffset, emToWorld);
                 p.DescriptionBounds = descriptionLayout.Bounds;
@@ -2451,12 +2480,12 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 p.DescriptionGlyphs = [];
             }
 
-            float rW = (float)(GlobalHelperProperties.CogoPointCirclePixelRadius * p.PointGroup.PointScale);
+            float rW =
+                (float)(GlobalHelperProperties.CogoPointCirclePixelRadius * p.PointGroup.PointScale);
             var c = p.Position;
             p.EllipseBounds = new Rect(c.X - rW, c.Y - rW, 2 * rW, 2 * rW);
 
             UpdateToggleAnchorBounds(p);
-
             p.UpdateBounds();
         }
         private MsdfTextLayout LayoutMsdfString(string text, CogoPoint point, Vector2 labelOffset, float emToWorld)
@@ -2686,7 +2715,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             ConstantBuffersDirty = true;
             TransformationBufferDirty = true;
-            
+
             e.Handled = true;
         }
         protected override void OnMouseEnter(MouseEventArgs e)
@@ -4190,7 +4219,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     _baseSceneDirty = true;
                     _interactionDirty = true;
                 }
-                if (e.PropertyName == nameof(PointGroup.Color) || e.PropertyName == nameof(PointGroup.PointScale))
+                if (e.PropertyName == nameof(PointGroup.Color) ||
+                    e.PropertyName == nameof(PointGroup.PointScale))
                 {
                     pg.UpdatePointInfoBaseXoffset();
                     StateController.SetGroupScaleColorBaseOffset(pg, pg.PointScale.ToFloat(), pg.Color.ToSharpDXVector4(), pg.PointInfoBaseXoffset);
@@ -4219,11 +4249,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
                         UpdateInitialMatrix();
                     }
 
-                    //// Testing
-                    //CadManager.UpdateCogoPointBoundingLines(SceneIdMap);
-                    //CadManager.LineVerticesDirty = true;
-                    //// End Testing
-
                     _baseSceneDirty = true;
                     _interactionDirty = true;
                 }
@@ -4235,6 +4260,25 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     }
                     _interactionDirty = true;
                     _baseSceneDirty = true;
+                }
+                if (e.PropertyName == nameof(PointGroup.ShowElevation) ||
+                    e.PropertyName == nameof(PointGroup.ShowDescription))
+                {
+                    foreach (var point in CadManager.GetPoints(pg))
+                    {
+                        UpdateCogoPointBounds(point);
+                        point.UpdateOffsetOrientation();
+
+                        StateController.SetLabelOffsets(
+                            point, point.PointNumberOffset, point.ElevationOffset, point.DescriptionOffset);
+
+                        UpdateCogoPointBounds(point);
+                    }
+                    StateController.FlushLabelUpdates();
+
+                    _cogoTextVerticesDirty = true;
+                    _baseSceneDirty = true;
+                    _interactionDirty = true;
                 }
             }
         }
@@ -4255,6 +4299,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     _pointCircleVerticesDirty = true; _baseSceneDirty = true; _interactionDirty = true;
                 }
             }
+
             if (e.PropertyName == nameof(CogoPoint.PointGroup))
             {
                 if (sender is CogoPoint cp)
@@ -4271,6 +4316,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     _baseSceneDirty = _interactionDirty = true;
                 }
             }
+
             if (e.PropertyName == nameof(CogoPoint.PointNumber) ||
                 e.PropertyName == nameof(CogoPoint.Elevation) ||
                 e.PropertyName == nameof(CogoPoint.Description))

@@ -380,6 +380,7 @@ namespace Cad_Point_Manager.Models
                 var layer = GetLayer(e.Layer);
                 var dxfLineType = DxfHelpers.GetLineType(e, dxfImportResult.DxfDocument);
 
+                Debug.WriteLine($"e.GetType(): {e.GetType()}");
                 var drawingObj = DxfHelpers.GetDrawingObject(e, layer, DxfHelpers.GetEntityObjectColor(e),
                     DxfHelpers.GetColorType(e), _lineTypeCache.GetLineType(dxfLineType));
 
@@ -409,6 +410,7 @@ namespace Cad_Point_Manager.Models
                     bool lineTypeResolved = GetParsedMleaderLineType(mleader, layer, dxfImportResult.DxfDocument.Linetypes, out var dxfLineType);
                     if (!lineTypeResolved) { throw new Exception($"Line type not found in DXF document."); }
 
+                    Debug.WriteLine($"e.GetType(): {mleader.GetType()}");
                     var lineType = _lineTypeCache.GetLineType(dxfLineType);
 
                     var blockExists = ArrowheadToNetDxfBlockNameResolver.ResolveArrowhead(mleader.Style.ArrowheadType, out string blockName);
@@ -418,6 +420,7 @@ namespace Cad_Point_Manager.Models
                     {
                         Insert insert = new(dxfBlock);
 
+                        Debug.WriteLine($"arrowhead");
                         arrowHeadBlock = DxfHelpers.GetDrawingObject(
                             insert, layer, DxfHelpers.GetEntityObjectColor(insert), DxfHelpers.GetColorType(insert),
                             _lineTypeCache.GetLineType(DxfHelpers.GetLineType(insert, dxfImportResult.DxfDocument))) as DrawingBlock;
@@ -1041,6 +1044,7 @@ namespace Cad_Point_Manager.Models
             if (layer is not null) { return layer; }
             else
             {
+                Debug.WriteLine($"layer");
                 layer = new(dxfLayer, _lineTypeCache.GetLineType(dxfLayer.Linetype));
                 Layers.Add(new KeyValuePair<string, ObjectLayer>(dxfLayer.Name, layer));
 
