@@ -396,9 +396,7 @@
                                         </GridViewColumn.Header>
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
-                                                <Grid>
-                                                    <CheckBox IsChecked="{Binding ShowElevation, Mode=TwoWay}" />
-                                                </Grid>
+                                                <CheckBox IsChecked="{Binding ShowElevation, Mode=TwoWay}" />
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
@@ -409,9 +407,7 @@
                                         </GridViewColumn.Header>
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
-                                                <Grid>
-                                                    <CheckBox IsChecked="{Binding ShowDescription, Mode=TwoWay}" />
-                                                </Grid>
+                                                <CheckBox IsChecked="{Binding ShowDescription, Mode=TwoWay}" />
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>

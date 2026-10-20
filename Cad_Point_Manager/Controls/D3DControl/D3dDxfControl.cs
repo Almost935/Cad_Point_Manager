@@ -1231,8 +1231,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
             }
 
             Vector2 deltaPixels = _panCurrentMousePos - _panStartMousePos;
-            float offsetU = -deltaPixels.X / _panCacheWidth;
-            float offsetV = -deltaPixels.Y / _panCacheHeight;
+            float offsetU = -MathF.Round(deltaPixels.X) / _panCacheWidth;
+            float offsetV = -MathF.Round(deltaPixels.Y) / _panCacheHeight;
 
             var settings = new PanSettings
             {
@@ -2697,7 +2697,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             var zoomScale = Math.Pow(GlobalHelperProperties.ZoomFactor, zoomStep);
 
             var matrix = CurrentlyAppliedDragRectMatrix;
-
             matrix.ScaleAt(zoomScale, zoomScale, mousePixels.X, mousePixels.Y);
 
             CurrentlyAppliedDragRectMatrix = matrix;

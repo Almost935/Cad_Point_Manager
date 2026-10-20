@@ -40,10 +40,12 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         public List<ArrowheadInstance> Arrowheads { get; } = [];
         public DrawingObject? Arrowhead { get; set; } = null;
         public TextAttachmentSide TextAttachmentSide { get; set; } = TextAttachmentSide.Right;
+        public LineType TextLineType { get; set; }
         #endregion
 
         #region Constructors
-        public DrawingMleader(ParsedMLeader parsedMLeader, ObjectLayer layer, TextStyle textStyle, LineType lineType,
+        public DrawingMleader(
+            ParsedMLeader parsedMLeader, ObjectLayer layer, TextStyle textStyle, LineType lineType, LineType textLineType,
             bool isPartOfBlock = false, DrawingBlock block = null, DrawingBlock? arrowHeadBlock = null)
         {
             Type = DrawingObjectType.DrawingMleader;
@@ -53,6 +55,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             Layer = layer;
             TextStyle = textStyle;
             LineType = lineType;
+            TextLineType = textLineType;
             ObjectColor = parsedMLeader.Color.color;
             ColorType = parsedMLeader.Color.colorType;
             IsPartOfBlock = isPartOfBlock;
@@ -100,7 +103,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
             var alignment = GetTextAlignment(ParsedMLeader.TextAlignmentType);
 
-            DrawingMtext drawingMtext = new(mtext, Layer, ObjectColor, ColorType, LineType, 
+            DrawingMtext drawingMtext = new(mtext, Layer, ObjectColor, ColorType, TextLineType,
                 false, ParsedMLeader.TextAttachment, alignment, IsPartOfBlock, DrawingBlock);
 
             DrawingObjects.Add(drawingMtext);

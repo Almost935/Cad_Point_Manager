@@ -442,15 +442,23 @@
                                 <Setter Property="Template">
                                     <Setter.Value>
                                         <ControlTemplate TargetType="GroupItem">
+
                                             <Expander IsExpanded="False"
                                                       Style="{StaticResource ListViewExpanderStyle}"
                                                       Margin="0 1 0 1"
                                                       HorizontalAlignment="Left"
-                                                      Header="{Binding Name.Name}"
                                                       FontSize="{StaticResource ListViewHeaderFontSize}">
+                                                <Expander.Header>
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <TextBlock Text="{Binding Name.Name}" />
+                                                        <TextBlock Text="{Binding ItemCount, StringFormat=' ({0})'}" />
+                                                    </StackPanel>
+                                                </Expander.Header>
+
                                                 <ItemsPresenter SnapsToDevicePixels="True"
                                                                 UseLayoutRounding="True" />
                                             </Expander>
+
                                         </ControlTemplate>
                                     </Setter.Value>
                                 </Setter>

@@ -17,14 +17,17 @@ namespace Cad_Point_Manager.Models.DrawingObjects.HelperClasses
         #endregion
 
         #region Properties
-        public LineType Continuous => _lineTypes.Values.FirstOrDefault(lt => lt.Name == "Continuous") ?? throw new InvalidOperationException("Continuous line type not found in the cache.");
+        public LineType Continuous { get; }
         #endregion
 
         #region Constructor
         public LineTypeCache(DxfDocument dxfDocument)
         {
             _dxfDocument = dxfDocument;
+
             BuildCache();
+
+            Continuous = GetLineType(_dxfDocument.Linetypes["Continuous"]);
         }
         #endregion
 
@@ -54,18 +57,12 @@ namespace Cad_Point_Manager.Models.DrawingObjects.HelperClasses
                 return lineType;
             }
         }
-        public bool TryGetLineType(netDxf.Tables.Linetype dxfLineType, out LineType lineType)
+        public LineType GetLineTypeOrContinuous(netDxf.Tables.Linetype? dxfLineType)
         {
-            return _lineTypes.TryGetValue(dxfLineType.Handle, out lineType);
-        }
-        public bool TryGetLineTypeNyHandle(string handle, out LineType lineType)
-        {
-            return _lineTypes.TryGetValue(handle, out lineType);
-        }
-        public bool TryGetLineTypeByName(string name, out LineType lineType)
-        {
-            lineType = _lineTypes.Values.FirstOrDefault(lt => lt.Name == name);
-            return lineType != null;
+            if (dxfLineType == null || string.IsNullOrEmpty(dxfLineType.Handle))
+                return Continuous;
+
+            return GetLineType(dxfLineType);
         }
 
         public void BuildGpuBuffers(out List<LineTypeInfo> infos, out List<float> patterns)

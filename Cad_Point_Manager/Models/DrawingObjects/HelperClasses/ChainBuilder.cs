@@ -189,7 +189,6 @@
             if (chain.Steps.Count == 0)
                 return points;
 
-            // Circles are standalone paths and intentionally have no chain nodes.
             if (chain.Steps.Count == 1 &&
                 chain.Steps[0].Edge.Kind == SegmentKind.Circle)
             {
@@ -239,7 +238,6 @@
                 return points;
             }
 
-            // Every non-circle chain must have one more node than steps.
             if (chain.Nodes.Count != chain.Steps.Count + 1)
             {
                 throw new InvalidOperationException(
@@ -248,11 +246,7 @@
                     $"A non-circle chain must contain Steps.Count + 1 nodes.");
             }
 
-            bool isClosed =
-                chain.Nodes.Count > 1 &&
-                PointsEqual(
-                    chain.Nodes.First(),
-                    chain.Nodes.Last());
+            bool isClosed = chain.Nodes.Count > 1 && PointsEqual(chain.Nodes.First(), chain.Nodes.Last());
 
             for (int i = 0; i < chain.Steps.Count; i++)
             {
@@ -270,9 +264,7 @@
                 {
                     case SegmentKind.Line:
                         {
-                            for (int k = 1;
-                                 k <= intermediatesPerSegment;
-                                 k++)
+                            for (int k = 1; k <= intermediatesPerSegment; k++)
                             {
                                 double t =
                                     (double)k /
@@ -301,46 +293,23 @@
 
                             if (step.Forward)
                             {
-                                startDegrees =
-                                    arc.StartAngle;
-
-                                sweepDegrees =
-                                    arc.SweepAngle;
+                                startDegrees = arc.StartAngle;
+                                sweepDegrees = arc.SweepAngle;
                             }
                             else
                             {
-                                startDegrees =
-                                    arc.StartAngle +
-                                    arc.SweepAngle;
-
-                                sweepDegrees =
-                                    -arc.SweepAngle;
+                                startDegrees = arc.StartAngle + arc.SweepAngle;
+                                sweepDegrees = -arc.SweepAngle;
                             }
 
-                            for (int k = 1;
-                                 k <= intermediatesPerSegment;
-                                 k++)
+                            for (int k = 1; k <= intermediatesPerSegment; k++)
                             {
-                                double t =
-                                    (double)k /
-                                    (intermediatesPerSegment + 1);
-
-                                double angleDegrees =
-                                    startDegrees +
-                                    sweepDegrees * t;
-
-                                double angleRadians =
-                                    angleDegrees *
-                                    Math.PI / 180.0;
+                                double t = (double)k / (intermediatesPerSegment + 1);
+                                double angleDegrees = startDegrees + sweepDegrees * t;
+                                double angleRadians = angleDegrees * Math.PI / 180.0;
 
                                 Pt p = new(
-                                    arc.Center.X +
-                                    arc.Radius *
-                                    Math.Cos(angleRadians),
-
-                                    arc.Center.Y +
-                                    arc.Radius *
-                                    Math.Sin(angleRadians));
+                                    arc.Center.X + arc.Radius * Math.Cos(angleRadians), arc.Center.Y + arc.Radius * Math.Sin(angleRadians));
 
                                 AddPointIfDifferent(points, p);
                             }
@@ -350,14 +319,12 @@
 
                     case SegmentKind.Circle:
                         {
-                            // A circle should have been handled above.
                             throw new InvalidOperationException(
                                 "Circle unexpectedly appeared inside a normal chain.");
                         }
                 }
 
-                bool isLastEdge =
-                    i == chain.Steps.Count - 1;
+                bool isLastEdge = i == chain.Steps.Count - 1;
 
                 if (!(isLastEdge && isClosed))
                 {
@@ -366,17 +333,6 @@
             }
 
             return points;
-        }
-
-        private static double NormalizePositiveRadians(double angle)
-        {
-            double twoPi = 2.0 * Math.PI;
-            angle %= twoPi;
-
-            if (angle < 0)
-                angle += twoPi;
-
-            return angle;
         }
 
         private static bool PointsEqual(Pt a, Pt b, double tolerance = 1e-8)

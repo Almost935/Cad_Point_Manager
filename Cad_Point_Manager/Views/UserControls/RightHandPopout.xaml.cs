@@ -541,9 +541,7 @@ namespace Cad_Point_Manager.Views.UserControls
                 else
                 {
                     if (binding != null)
-                    {
                         Validation.ClearInvalid(binding);
-                    }
 
                     switch (field)
                     {
@@ -568,7 +566,7 @@ namespace Cad_Point_Manager.Views.UserControls
 
                     e.Handled = true;
 
-                    (tb as UIElement)?.MoveFocus(new TraversalRequest(FocusNavigationDirection.Next));
+                    //(tb as UIElement)?.MoveFocus(new TraversalRequest(FocusNavigationDirection.Next));
 
                     return;
                 }

@@ -672,6 +672,7 @@ namespace Cad_Point_Manager.ViewModels
             if (JobFileManager.CadManager.SnapSelectionMode == SelectionMode.Points)
             {
                 var coords = SelectedHitTestablePoints.Select(p => p.Position).ToList();
+
                 if (coords.Count > 0)
                 {
                     var startNumberErrors = GetErrors(nameof(NewCogoPointsStartNumberText));
@@ -744,12 +745,32 @@ namespace Cad_Point_Manager.ViewModels
                     }
                     else
                     {
-                        List<System.Numerics.Vector2> coords = [];
+                        List<Pt> uniquePoints = [];
+
+                        double tolerance = VertexSnapTolerance;
+
                         foreach (var chainPath in ChainPaths)
                         {
-                            var pts = ChainBuilder.ExpandChainPoints(chainPath, NewCogoPointsIntermediatePointsCount);
-                            coords.AddRange(pts.Select(p => new System.Numerics.Vector2((float)p.X, (float)p.Y)).ToList());
+                            var pts = ChainBuilder.ExpandChainPoints(
+                                chainPath, NewCogoPointsIntermediatePointsCount);
+
+                            foreach (Pt p in pts)
+                            {
+                                bool exists = uniquePoints.Any(existing =>
+                                {
+                                    double dx = existing.X - p.X;
+                                    double dy = existing.Y - p.Y;
+
+                                    return dx * dx + dy * dy <= tolerance;
+                                });
+
+                                if (!exists)
+                                    uniquePoints.Add(p);
+                            }
                         }
+
+                        List<System.Numerics.Vector2> coords =
+                            uniquePoints.Select(p => new System.Numerics.Vector2((float)p.X, (float)p.Y)).ToList();
 
                         List<(int pointNumber, SharpDX.Vector3 position, PointGroup pg, float elevation, string description)> pointsToCreate = [];
                         int pointNum = JobFileManager.CadManager.GetNextAvailablePointNumber(NewCogoPointsStartNumber);
@@ -760,7 +781,7 @@ namespace Cad_Point_Manager.ViewModels
                             {
                                 pointNum++;
                             }
-                            pointsToCreate.Add((pointNum, coords [i].ToSharpDXVector3(), ActivePointGroup, NewCogoPointsElevation.ToFloat(), NewCogoPointsDescription));
+                            pointsToCreate.Add((pointNum, coords[i].ToSharpDXVector3(), ActivePointGroup, NewCogoPointsElevation.ToFloat(), NewCogoPointsDescription));
                             pointNum++;
                         }
 
@@ -838,7 +859,7 @@ namespace Cad_Point_Manager.ViewModels
         {
             if (string.IsNullOrWhiteSpace(propertyName)) { return _errors.SelectMany(kvp => kvp.Value); }
 
-            if (_errors.ContainsKey(propertyName)) { return _errors [propertyName]; }
+            if (_errors.ContainsKey(propertyName)) { return _errors[propertyName]; }
 
             return null;
         }
@@ -846,11 +867,11 @@ namespace Cad_Point_Manager.ViewModels
         protected void AddError(string propertyName, string error)
         {
             if (!_errors.ContainsKey(propertyName))
-                _errors [propertyName] = [];
+                _errors[propertyName] = [];
 
-            if (!_errors [propertyName].Contains(error))
+            if (!_errors[propertyName].Contains(error))
             {
-                _errors [propertyName].Add(error);
+                _errors[propertyName].Add(error);
                 ErrorsChanged?.Invoke(this, new DataErrorsChangedEventArgs(propertyName));
             }
         }
