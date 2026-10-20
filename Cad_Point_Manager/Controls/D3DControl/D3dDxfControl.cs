@@ -90,7 +90,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
         // Line shader related fields
         private ResizableBuffer<LineInstance> _lineInstanceBuffer;
         private Buffer _lineQuadBuffer;
-        private Buffer _lineRenderModeBuffer;
         private int _lineInstanceCount;
         private VertexShader _lineVertexShader;
         private PixelShader _linePixelShader;
@@ -654,7 +653,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             ctx.VertexShader.SetConstantBuffer(0, _transformationBuffer);
             ctx.VertexShader.SetConstantBuffer(1, _drawingSettingsBuffer);
-            ctx.VertexShader.SetConstantBuffer(2, _lineRenderModeBuffer);
 
             ctx.VertexShader.SetShaderResource(0, StateBuffers.LayerSRV);
             ctx.VertexShader.SetShaderResource(1, StateBuffers.ObjectSRV);
@@ -663,7 +661,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             ctx.PixelShader.SetConstantBuffer(0, _transformationBuffer);
             ctx.PixelShader.SetConstantBuffer(1, _drawingSettingsBuffer);
-            ctx.PixelShader.SetConstantBuffer(2, _lineRenderModeBuffer);
 
             ctx.PixelShader.SetShaderResource(0, StateBuffers.LayerSRV);
             ctx.PixelShader.SetShaderResource(1, StateBuffers.ObjectSRV);
@@ -2037,16 +2034,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 OptionFlags = ResourceOptionFlags.None
             };
             _drawingSettingsBuffer = new Buffer(ResCache.Device, drawingSettingsBufferDesc);
-
-            var lineRenderModeBufferDesc = new BufferDescription
-            {
-                Usage = ResourceUsage.Dynamic,
-                SizeInBytes = Utilities.SizeOf<LineRenderModeBuffer>(),
-                BindFlags = BindFlags.ConstantBuffer,
-                CpuAccessFlags = CpuAccessFlags.Write,
-                OptionFlags = ResourceOptionFlags.None
-            };
-            _lineRenderModeBuffer = new Buffer(ResCache.Device, lineRenderModeBufferDesc);
 
             var msdfBufferDesc = new BufferDescription
             {
@@ -4485,9 +4472,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
                 _lineQuadBuffer?.Dispose();
                 _lineQuadBuffer = null;
-
-                _lineRenderModeBuffer?.Dispose();
-                _lineRenderModeBuffer = null;
 
                 _lineVertexShader?.Dispose();
                 _lineVertexShader = null;

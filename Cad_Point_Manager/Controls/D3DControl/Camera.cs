@@ -297,15 +297,15 @@ namespace Cad_Point_Manager.Controls.D3DControl
         /// </summary>
         public float GetWorldUnitsPerPixel()
         {
-            // Unproject two screen points that are 1 pixel apart in X (screen space)
-            Vector2 screenCenter = new(Viewport.Width / 2f, Viewport.Height / 2f);
-            Vector2 screenRight = new(screenCenter.X + 1, screenCenter.Y);
+            if (!HasValidViewport)
+                return 0f;
 
-            Vector2 worldCenter = ScreenToWorld(screenCenter);
-            Vector2 worldRight = ScreenToWorld(screenRight);
+            float scaleX = Math.Abs(ViewProjectionMatrix.M11);
 
-            float worldUnitsPerPixel = Vector2.Distance(worldCenter, worldRight);
-            return worldUnitsPerPixel;
+            if (scaleX <= 0f)
+                return 0f;
+
+            return 2f / (Viewport.Width * scaleX);
         }
 
         public void ZoomToBounds(Rect bounds)
