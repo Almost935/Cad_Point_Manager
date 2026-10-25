@@ -3,7 +3,8 @@ using Cad_Point_Manager.Controls.D3DControl;
 using Cad_Point_Manager.Controls.D3DControl.Rendering.Helpers;
 using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Models.DrawingObjects.HelperClasses;
-using SharpDX;
+
+using Matrix = System.Windows.Media.Matrix;
 
 namespace Cad_Point_Manager.Models.DrawingObjects
 {
@@ -15,28 +16,42 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         public TextRenderStyle TextRenderStyle { get; set; } = TextRenderStyle.Triangle;
 
         public string Text { get; set; }
-        public float TextHeight { get; set; }
-        public float MaxWidth { get; set; }
+        public double TextHeight { get; set; }
+        public double MaxWidth { get; set; }
         public int StartLineVertexIndex { get; set; }
         public int EndLineVertexIndex { get; set; }
         public int StartTextVertexIndex { get; set; }
         public int EndTextVertexIndex { get; set; }
-        public Vector3 Position { get; set; }
-        public float Rotation { get; set; } = 0;
+        public Vector2d Position { get; set; }
+        public double Rotation { get; set; } = 0;
         public TextAttachmentPoint AttachmentPoint { get; set; }
         public TextAlignment TextAlignment { get; set; } = TextAlignment.Left;
-        public Vector2 AttachmentOffset { get; set; } = new Vector2(0, 0);
-        public float TextHeightScaleFactor { get; set; } = 1.0f;
+        public Vector2d AttachmentOffset { get; set; } = Vector2d.Zero;
+        public double TextHeightScaleFactor { get; set; } = 1.0f;
 
-        public Matrix LocalTranslationTransform => Matrix.Translation(AttachmentOffset.X, AttachmentOffset.Y, 0);
-        public Matrix WorldTranslationTransform => Matrix.Translation(Position);
-        public Matrix RotationTransform => Matrix.RotationZ(MathUtil.DegreesToRadians(Rotation));
-        public Matrix ScaleTransform => Matrix.Scaling(TextHeightScaleFactor, TextHeightScaleFactor, 1.0f);
-        public Matrix Transform => LocalTranslationTransform * ScaleTransform * RotationTransform * WorldTranslationTransform;
+        public Matrix LocalTranslationTransform => new Matrix(1, 0, 0, 1, AttachmentOffset.X, AttachmentOffset.Y);
+        public Matrix WorldTranslationTransform => new(1, 0, 0, 1, Position.X, Position.Y);
+        public Matrix RotationTransform
+        {
+            get
+            {
+                Matrix m = Matrix.Identity;
+                m.Rotate(Rotation);
+                return m;
+            }
+        }
+        public Matrix ScaleTransform => new(TextHeightScaleFactor, 0, 0, TextHeightScaleFactor, 0, 0);
+        public Matrix Transform =>
+            LocalTranslationTransform *
+            ScaleTransform *
+            RotationTransform *
+            WorldTranslationTransform;
         #endregion
 
         #region Methods
-        public abstract void UpdateVertices(ResCache d3DResCache, uint layerId , uint lineTypeId, SceneIdMap sceneIdMap, D3dStateBuffers stateBuffers);
+        public abstract void UpdateVertices(
+            ResCache d3DResCache, uint layerId, uint lineTypeId, SceneIdMap sceneIdMap, 
+            D3dStateBuffers stateBuffers, Vector2d renderOrigin);
         #endregion
     }
 }

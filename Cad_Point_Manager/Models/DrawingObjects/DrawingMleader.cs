@@ -119,9 +119,9 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 Bounds = Rect.Union(Bounds, drawingObj.Bounds);
             }
         }
-        public override double DistanceToPoint(System.Windows.Point p, MsdfAtlas atlas = null)
+        public override double DistanceToPoint(Vector2d p, MsdfAtlas atlas = null)
         {
-            return 0;
+            return double.MaxValue;
         }
         public override void MouseEnter()
         {
@@ -148,7 +148,9 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 obj.DrawToPdf(gfx, worldToPdf, pen);
             }
         }
-        public void UpdateGeometryVertices(ResCache resCache, uint layerId, uint lineTypeId, SceneIdMap sceneIdMap, D3dStateBuffers stateBuffers)
+        public void UpdateGeometryVertices(
+            ResCache resCache, uint layerId, uint lineTypeId, SceneIdMap sceneIdMap, 
+            D3dStateBuffers stateBuffers, Vector2d renderOrigin)
         {
             LineInstances.Clear();
 
@@ -159,12 +161,14 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                     var objectId = sceneIdMap.GetOrAddObjectId(obj, out var isNewObj);
                     if (isNewObj) { stateBuffers.InitializeObjectState(sceneIdMap.MaxObjectId, obj, objectId); }
 
-                    geometry.UpdateVertices(resCache, layerId, objectId, lineTypeId);
+                    geometry.UpdateVertices(
+                        resCache, layerId, objectId, lineTypeId, renderOrigin);
                     LineInstances.AddRange(geometry.LineInstances);
                 }
                 if (obj is DrawingMtext mtext)
                 {
-                    mtext.UpdateVertices(resCache, layerId, lineTypeId, sceneIdMap, stateBuffers);
+                    mtext.UpdateVertices(
+                        resCache, layerId, lineTypeId, sceneIdMap, stateBuffers, renderOrigin);
                     foreach (var segment in mtext.Segments)
                     {
                         LineInstances.AddRange(segment.LineInstances);
@@ -176,7 +180,8 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             {
                 if (Arrowhead is DrawingBlock block)
                 {
-                    block.UpdateGeometryVertices(resCache, layerId, lineTypeId, sceneIdMap, stateBuffers);
+                    block.UpdateGeometryVertices(
+                        resCache, layerId, lineTypeId, sceneIdMap, stateBuffers, renderOrigin);
 
                     foreach (var arrowhead in Arrowheads)
                     {
@@ -191,7 +196,9 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 }
             }
         }
-        public void UpdateTextVertices(ResCache resCache, uint layerId, uint lineTypeId, SceneIdMap sceneIdMap, D3dStateBuffers stateBuffers)
+        public void UpdateTextVertices(
+            ResCache resCache, uint layerId, uint lineTypeId, SceneIdMap sceneIdMap, 
+            D3dStateBuffers stateBuffers, Vector2d renderOrigin)
         {
             TextVertices.Clear();
 
@@ -199,7 +206,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             {
                 if (obj is DrawingMtext mtext)
                 {
-                    mtext.UpdateVertices(resCache, layerId, lineTypeId, sceneIdMap, stateBuffers);
+                    mtext.UpdateVertices(resCache, layerId, lineTypeId, sceneIdMap, stateBuffers, renderOrigin);
 
                     foreach (var segment in mtext.Segments)
                     {
@@ -212,7 +219,8 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             {
                 if (Arrowhead is DrawingBlock block)
                 {
-                    block.UpdateTextVertices(resCache, layerId, lineTypeId, sceneIdMap, stateBuffers);
+                    block.UpdateTextVertices(
+                        resCache, layerId, lineTypeId, sceneIdMap, stateBuffers, renderOrigin);
 
                     foreach (var arrowhead in Arrowheads)
                     {
@@ -227,7 +235,8 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 }
             }
         }
-        public void UpdateSolidVertices(ResCache resCache, uint layerId, uint objectId, uint lineTypeId)
+        public void UpdateSolidVertices(
+            ResCache resCache, uint layerId, uint objectId, uint lineTypeId, Vector2d renderOrigin)
         {
             SolidVertices.Clear();
 
@@ -235,7 +244,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             {
                 if (obj is DrawingSolid solid)
                 {
-                    solid.UpdateVertices(layerId, objectId);
+                    solid.UpdateVertices(layerId, objectId, renderOrigin);
                     SolidVertices.AddRange(solid.Vertices);
                 }
             }
@@ -243,7 +252,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             {
                 if (Arrowhead is DrawingBlock block)
                 {
-                    block.UpdateSolidVertices(resCache, layerId, objectId, lineTypeId);
+                    block.UpdateSolidVertices(resCache, layerId, objectId, lineTypeId, renderOrigin);
 
                     foreach (var arrowhead in Arrowheads)
                     {
@@ -258,7 +267,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 }
                 else if (Arrowhead is DrawingSolid solid)
                 {
-                    solid.UpdateVertices(layerId, objectId);
+                    solid.UpdateVertices(layerId, objectId, renderOrigin);
 
                     foreach (var arrowhead in Arrowheads)
                     {

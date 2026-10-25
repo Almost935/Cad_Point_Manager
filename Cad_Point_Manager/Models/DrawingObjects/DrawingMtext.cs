@@ -61,11 +61,13 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         #endregion
 
         #region Methods
-        public override void UpdateVertices(ResCache resCache, uint layerId, uint lineTypeId, SceneIdMap sceneIdMap, D3dStateBuffers stateBuffers)
+        public override void UpdateVertices(
+            ResCache resCache, uint layerId, uint lineTypeId, SceneIdMap sceneIdMap,
+            D3dStateBuffers stateBuffers, Vector2d renderOrigin)
         {
             if (DxfMtext is null) { return; }
 
-            UpdateMtextBlock(resCache, layerId, lineTypeId, sceneIdMap, stateBuffers);
+            UpdateMtextBlock(resCache, layerId, lineTypeId, sceneIdMap, stateBuffers, renderOrigin);
             MtextBlock.SetTextPositions();
             MtextBlock.GetTextBox(MtextBlock.Height);
             SetRotation();
@@ -92,7 +94,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             this.IsSelected = false;
         }
 
-        public override double DistanceToPoint(Point p, MsdfAtlas atlas = null)
+        public override double DistanceToPoint(Vector2d p, MsdfAtlas atlas = null)
         {
             if (MtextBlock is null || MtextBlock.Rows.Count == 0) { return double.MaxValue; }
 
@@ -102,7 +104,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
             if (vertices.Count < 3) return double.MaxValue;
 
-            Vector2 testPoint = new((float)p.X, (float)p.Y);
             double minDistance = double.MaxValue;
             bool pointInside = false;
             object locker = new();
@@ -111,11 +112,11 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             {
                 if (pointInside) return;
 
-                Vector2 v0 = vertices[i * 3 + 0].Position.ToSharpDXVector2();
-                Vector2 v1 = vertices[i * 3 + 1].Position.ToSharpDXVector2();
-                Vector2 v2 = vertices[i * 3 + 2].Position.ToSharpDXVector2();
+                Vector2d v0 = vertices[i * 3 + 0].Position.ToVector2d();
+                Vector2d v1 = vertices[i * 3 + 1].Position.ToVector2d();
+                Vector2d v2 = vertices[i * 3 + 2].Position.ToVector2d();
 
-                if (MathHelpers.IsPointInTriangle(testPoint, v0, v1, v2))
+                if (MathHelpers.IsPointInTriangle(p, v0, v1, v2))
                 {
                     lock (locker)
                     {
@@ -127,7 +128,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 }
                 else
                 {
-                    double dist = MathHelpers.DistanceToTriangle(testPoint, v0, v1, v2);
+                    double dist = MathHelpers.DistanceToTriangle(p, v0, v1, v2);
 
                     lock (locker)
                     {
@@ -147,7 +148,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 DxfMtext = mText;
                 Text = mText.Value;
                 MaxWidth = (float)mText.RectangleWidth;
-                Position = new((float)mText.Position.X, (float)mText.Position.Y, 0);
+                Position = mText.Position.ToVector2d();
                 Rotation = (float)mText.Rotation;
                 UpdateBounds();
                 IsBold = mText.Style.FontStyle == FontStyle.Bold;
@@ -176,7 +177,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             if (ptsPerWorld <= 0.000001) { return; }
 
             double rotDeg = -Rotation;
-            var basePdf = PdfDrawingHelpers.WorldToPdf(new Vector2(Position.X, Position.Y), worldToPdf);
+            var basePdf = PdfDrawingHelpers.WorldToPdf(Position, worldToPdf);
 
             var state = gfx.Save();
             if (Math.Abs(rotDeg) > 0.0001) { gfx.RotateAtTransform(rotDeg, basePdf); }
@@ -208,10 +209,12 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             }
         }
 
-        public void UpdateMtextBlock(ResCache resCache, uint layerId, uint lineTypeId, SceneIdMap sceneIdMap, D3dStateBuffers stateBuffers)
+        public void UpdateMtextBlock(
+            ResCache resCache, uint layerId, uint lineTypeId, SceneIdMap sceneIdMap,
+            D3dStateBuffers stateBuffers, Vector2d renderOrigin)
         {
             MtextBlock?.Dispose();
-            MtextBlock = new((float)MaxWidth, Position, DxfMtext.AttachmentPoint, Rotation, AllowsWrapping);
+            MtextBlock = new(MaxWidth, Position, DxfMtext.AttachmentPoint, Rotation, AllowsWrapping);
 
             string rawText = DxfMtext.Value;
             Vector4 baseColor = ObjectColor;
@@ -390,13 +393,14 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
                         currentSegment = new("", currentSegment.ObjectColor, currentSegment.ColorType, currentSegment.Font, currentSegment.TextHeight,
                             currentSegment.IsBold, currentSegment.IsItalic, currentSegment.IsUnderlined, currentSegment.IsOverstriked,
-                            currentSegment.IsStrikethrough, currentSegment.IsNewLine, currentSegment.TextAlignment);
-
-                        currentSegment.IsNewLine = false;
+                            currentSegment.IsStrikethrough, currentSegment.IsNewLine, currentSegment.TextAlignment)
+                        {
+                            IsNewLine = false
+                        };
                     }
                 }
 
-                Vector3 basePosition = Position;
+                Vector2d basePosition = Position;
 
                 foreach (var segmentInfo in textSegments)
                 {
@@ -423,14 +427,16 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                             var newSegmentInfo = new TextSegmentInformation(segmentText, segmentInfo.ObjectColor, segmentInfo.ColorType, segmentInfo.Font, segmentInfo.TextHeight,
                                 segmentInfo.IsBold, segmentInfo.IsItalic, segmentInfo.IsUnderlined, segmentInfo.IsOverstriked, segmentInfo.IsStrikethrough,
                                 isNewLine, segmentInfo.TextAlignment);
-                            var newSegment = CreateMtextSegment(newSegmentInfo, resCache, layerId, lineTypeId, sceneIdMap, stateBuffers);
+                            var newSegment = CreateMtextSegment(
+                                newSegmentInfo, resCache, layerId, lineTypeId, sceneIdMap, stateBuffers, renderOrigin);
 
                             MtextBlock.AddSegment(newSegment);
                         }
                     }
                     else
                     {
-                        var segment = CreateMtextSegment(segmentInfo, resCache, layerId, lineTypeId, sceneIdMap, stateBuffers);
+                        var segment = CreateMtextSegment(
+                            segmentInfo, resCache, layerId, lineTypeId, sceneIdMap, stateBuffers, renderOrigin);
                         MtextBlock.AddSegment(segment);
                     }
                 }
@@ -442,7 +448,8 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             {
                 for (int i = 0; i < segment.TextVertices.Count; i++)
                 {
-                    segment.TextVertices[i] = TextVertex.RotateAroundPoint(segment.TextVertices[i], new Vector2(Position.X, Position.Y), (float)(MathHelper.DegToRad * Rotation));
+                    segment.TextVertices[i] = TextVertex.RotateAroundPoint(
+                        segment.TextVertices[i], Position.ToSharpDXVector2(), (float)(MathHelper.DegToRad * Rotation));
                 }
             }
         }
@@ -452,16 +459,17 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             uint layerId,
             uint lineTypeId,
             SceneIdMap sceneIdMap,
-            D3dStateBuffers stateBuffers)
+            D3dStateBuffers stateBuffers,
+            Vector2d renderOrigin)
         {
             (var fontFamily, var renderStyle) = AutoCadFontResolver.Resolve(segmentInfo.Font);
 
             DrawingMtextSegment segment = new(this, Layer, segmentInfo.Text, segmentInfo.ObjectColor, segmentInfo.ColorType,
-                LineType, Vector3.Zero, 0, (float)segmentInfo.TextHeight, fontFamily, segmentInfo.IsItalic, segmentInfo.IsBold,
+                LineType, Vector2d.Zero, 0, (float)segmentInfo.TextHeight, fontFamily, segmentInfo.IsItalic, segmentInfo.IsBold,
                 segmentInfo.IsUnderlined, segmentInfo.IsStrikethrough, segmentInfo.IsOverstriked, segmentInfo.IsNewLine,
                 0, renderStyle, segmentInfo.TextAlignment, IsPartOfBlock, DrawingBlock);
 
-            segment.UpdateVertices(resCache, layerId, lineTypeId, sceneIdMap, stateBuffers);
+            segment.UpdateVertices(resCache, layerId, lineTypeId, sceneIdMap, stateBuffers, renderOrigin);
 
             return segment;
         }

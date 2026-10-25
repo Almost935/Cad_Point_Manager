@@ -324,7 +324,8 @@ namespace Cad_Point_Manager.Models
         public TextVertex[] NumberVertices { get; set; } = [];
         public UndoRedoManager UndoRedoManager { get; } = new();
         public CogoPointTree CogoPointTree { get; set; }
-        public float OverallDrawingLineTypeScale { get; set; }
+        public double OverallDrawingLineTypeScale { get; set; }
+        public Vector2d RenderOrigin { get; private set; }
 
         public List<int> UsedPointNumbers => PointGroups.SelectMany(pg => GetPoints(pg)).Select(p => p.PointNumber).ToList();
         #endregion
@@ -340,8 +341,8 @@ namespace Cad_Point_Manager.Models
         public CadManager()
         {
             Camera = new(
-                new ViewportF(0, 0, 1, 1), 
-                GlobalHelperProperties.ZoomFactor, 
+                new ViewportF(0, 0, 1, 1),
+                GlobalHelperProperties.ZoomFactor,
                 new Rect(0, 0, 1, 1));
 
             CogoPoints.CollectionChanged += CogoPoints_CollectionChanged;
@@ -358,14 +359,19 @@ namespace Cad_Point_Manager.Models
         public void LoadDxf(DxfImportResult dxfImportResult)
         {
             ClearDxf();
+
             DxfImportResult = dxfImportResult;
+
             Extents = DxfHelpers.GetBoundsFromHeader(DxfImportResult.DxfDocument);
+            RenderOrigin = new Vector2d(
+                Extents.X + Extents.Width / 2.0, Extents.Y + Extents.Height / 2.0);
+
             _lineTypeCache = new(DxfImportResult.DxfDocument);
             GetPointScale();
 
             GetTestDxfPoints();
 
-            OverallDrawingLineTypeScale = DxfImportResult.DxfDocument.DrawingVariables.LtScale.ToFloat();
+            OverallDrawingLineTypeScale = DxfImportResult.DxfDocument.DrawingVariables.LtScale;
 
             foreach (var layer in dxfImportResult.DxfDocument.Layers)
             {
@@ -450,8 +456,11 @@ namespace Cad_Point_Manager.Models
         }
 
         #region CogoPoint related methods
-        public bool PointExists(int pointNumber) => PointGroups.SelectMany(pg => GetPoints(pg)).Any(p => p.PointNumber == pointNumber);
-        public bool TryCreatePoint(int pointNumber, Vector3 position, PointGroup pg, out CogoPoint? point, float elevation = 0, string description = "")
+        public bool PointExists(int pointNumber) =>
+            PointGroups.SelectMany(pg => GetPoints(pg)).Any(p => p.PointNumber == pointNumber);
+        public bool TryCreatePoint(
+            int pointNumber, Vector2d position, PointGroup pg, out CogoPoint? point,
+            double elevation = 0, string description = "")
         {
             var cmd = new CreatePointCommand(
                 this, pointNumber, position, pg.Name, elevation, description);
@@ -462,8 +471,9 @@ namespace Cad_Point_Manager.Models
 
             return cmd.Succeeded;
         }
-        internal bool TryCreatePointInternal(int pointNumber, Vector3 position, string pgName, out CogoPoint? point,
-            out string? errorMessage, float elevation = 0, string description = "")
+        internal bool TryCreatePointInternal(
+            int pointNumber, Vector2d position, string pgName, out CogoPoint? point,
+            out string? errorMessage, double elevation = 0, string description = "")
         {
             var pgExists = TryGetPointGroup(pgName, out var pg);
 
@@ -486,7 +496,8 @@ namespace Cad_Point_Manager.Models
             return true;
         }
         public bool TryCreatePoints(
-            IEnumerable<(int pointNumber, Vector3 position, PointGroup pg, float elevation, string description)> pointData,
+            IEnumerable<(
+                int pointNumber, Vector2d position, PointGroup pg, double elevation, string description)> pointData,
             out List<CogoPoint> createdPoints,
             out List<string> errorMessages)
         {
@@ -773,7 +784,8 @@ namespace Cad_Point_Manager.Models
             }
             return false;
         }
-        public bool TryAddPointToActiveGroup(int pointNum, Vector3 position, out CogoPoint cogoPoint, float elevation = 0, string description = "")
+        public bool TryAddPointToActiveGroup(
+            int pointNum, Vector2d position, out CogoPoint cogoPoint, double elevation = 0, string description = "")
         {
             if (ActivePointGroup == null || PointNumberExists(pointNum))
             {
@@ -1236,7 +1248,7 @@ namespace Cad_Point_Manager.Models
             LayoutsView.SortDescriptions.Add(new SortDescription("Name", ListSortDirection.Ascending));
         }
 
-        public List<(double distance, HitTestablePoint point)> HitTestSignficantPoints(Point p, float tolerance)
+        public List<(double distance, HitTestablePoint point)> HitTestSignficantPoints(Vector2d p, double tolerance)
         {
             List<(double distance, HitTestablePoint point)> hits = [];
 
@@ -1245,19 +1257,19 @@ namespace Cad_Point_Manager.Models
             Rect rect = new(p.X - tolerance, p.Y - tolerance, tolerance * 2, tolerance * 2);
             var nodes = HitTestableObjectTree.GetIntersectingNodes(rect);
 
-            List<(SignificantPointType pointType, double distance, Vector2 vector)> significantPoints = [];
+            List<(SignificantPointType pointType, double distance, Vector2d vector)> significantPoints = [];
             foreach (var node in nodes)
             {
                 significantPoints.AddRange(node.HitTestSignificantPoints(p, rect));
             }
             foreach (var (pointType, distance, coords) in significantPoints)
             {
-                hits.Add((distance, new HitTestablePoint(coords.ToPoint(), pointType)));
+                hits.Add((distance, new HitTestablePoint(coords, pointType)));
             }
             hits.Sort((x, y) => x.distance.CompareTo(y.distance));
             return hits;
         }
-        public List<(double distance, DrawingGeometry geometries)> HitTestGeometries(Point p, float tolerance)
+        public List<(double distance, DrawingGeometry geometries)> HitTestGeometries(Vector2d p, double tolerance)
         {
             List<(double distance, DrawingGeometry geometries)> geometries = [];
 
@@ -1274,7 +1286,7 @@ namespace Cad_Point_Manager.Models
 
             return geometries;
         }
-        public List<(double distance, CogoPoint points)> HitTestCogoPoints(Point p, double tolerance, MsdfAtlas atlas)
+        public List<(double distance, CogoPoint points)> HitTestCogoPoints(Vector2d p, double tolerance, MsdfAtlas atlas)
         {
             List<(double distance, CogoPoint points)> hits = [];
 
@@ -1387,42 +1399,42 @@ namespace Cad_Point_Manager.Models
                             var objectId = sceneIdMap.GetOrAddObjectId(obj, out var isNewObj);
                             if (isNewObj) { stateBuffers.InitializeObjectState(sceneIdMap.MaxObjectId, obj, objectId); }
 
-                            drawingGeometry.UpdateVertices(resCache, lId, objectId, ltId);
+                            drawingGeometry.UpdateVertices(resCache, lId, objectId, ltId, RenderOrigin);
                             drawingGeometry.StartVertexIndex = instances.Count;
                             instances.AddRange(drawingGeometry.LineInstances);
                             drawingGeometry.EndVertexIndex = instances.Count - 1;
                         }
                         if (obj is DrawingMtext drawingMtext)
                         {
-                            drawingMtext.UpdateVertices(resCache, lId, ltId, sceneIdMap, stateBuffers);
+                            drawingMtext.UpdateVertices(resCache, lId, ltId, sceneIdMap, stateBuffers, RenderOrigin);
                             drawingMtext.StartLineVertexIndex = instances.Count;
                             instances.AddRange(drawingMtext.LineInstances);
                             drawingMtext.EndLineVertexIndex = instances.Count - 1;
                         }
                         if (obj is DrawingSText drawingSText)
                         {
-                            drawingSText.UpdateVertices(resCache, lId, ltId, sceneIdMap, stateBuffers);
+                            drawingSText.UpdateVertices(resCache, lId, ltId, sceneIdMap, stateBuffers, RenderOrigin);
                             drawingSText.StartLineVertexIndex = instances.Count;
                             instances.AddRange(drawingSText.LineInstances);
                             drawingSText.EndLineVertexIndex = instances.Count - 1;
                         }
                         if (obj is DrawingBlock drawingBlock)
                         {
-                            drawingBlock.UpdateGeometryVertices(resCache, lId, ltId, sceneIdMap, stateBuffers);
+                            drawingBlock.UpdateGeometryVertices(resCache, lId, ltId, sceneIdMap, stateBuffers, RenderOrigin);
                             drawingBlock.StartLineVertexIndex = instances.Count;
                             instances.AddRange(drawingBlock.LineInstances);
                             drawingBlock.EndLineVertexIndex = instances.Count - 1;
                         }
                         if (obj is DrawingDimension drawingDimension)
                         {
-                            drawingDimension.UpdateGeometryVertices(resCache, lId, ltId, sceneIdMap, stateBuffers);
+                            drawingDimension.UpdateGeometryVertices(resCache, lId, ltId, sceneIdMap, stateBuffers, RenderOrigin);
                             drawingDimension.StartLineVertexIndex = instances.Count;
                             instances.AddRange(drawingDimension.LineInstances);
                             drawingDimension.EndLineVertexIndex = instances.Count - 1;
                         }
                         if (obj is DrawingMleader drawingMleader)
                         {
-                            drawingMleader.UpdateGeometryVertices(resCache, lId, ltId, sceneIdMap, stateBuffers);
+                            drawingMleader.UpdateGeometryVertices(resCache, lId, ltId, sceneIdMap, stateBuffers, RenderOrigin);
                             drawingMleader.StartLineVertexIndex = instances.Count;
                             instances.AddRange(drawingMleader.LineInstances);
                             drawingMleader.EndLineVertexIndex = instances.Count - 1;
@@ -1454,35 +1466,35 @@ namespace Cad_Point_Manager.Models
 
                     if (obj is DrawingSText text)
                     {
-                        text.UpdateVertices(resCache, lid, ltId, sceneIdMap, stateBuffers);
+                        text.UpdateVertices(resCache, lid, ltId, sceneIdMap, stateBuffers, RenderOrigin);
                         text.StartTextVertexIndex = vertices.Count;
                         vertices.AddRange(text.TextVertices);
                         text.EndTextVertexIndex = vertices.Count - 1;
                     }
                     if (obj is DrawingMtext mtext)
                     {
-                        mtext.UpdateVertices(resCache, lid, ltId, sceneIdMap, stateBuffers);
+                        mtext.UpdateVertices(resCache, lid, ltId, sceneIdMap, stateBuffers, RenderOrigin);
                         mtext.StartTextVertexIndex = vertices.Count;
                         vertices.AddRange(mtext.TextVertices);
                         mtext.EndTextVertexIndex = vertices.Count - 1;
                     }
                     if (obj is DrawingBlock drawingBlock)
                     {
-                        drawingBlock.UpdateTextVertices(resCache, lid, ltId, sceneIdMap, stateBuffers);
+                        drawingBlock.UpdateTextVertices(resCache, lid, ltId, sceneIdMap, stateBuffers, RenderOrigin);
                         drawingBlock.StartTextVertexIndex = vertices.Count;
                         vertices.AddRange(drawingBlock.TextVertices);
                         drawingBlock.EndTextVertexIndex = vertices.Count - 1;
                     }
                     if (obj is DrawingDimension dimension)
                     {
-                        dimension.UpdateTextVertices(resCache, lid, ltId, sceneIdMap, stateBuffers);
+                        dimension.UpdateTextVertices(resCache, lid, ltId, sceneIdMap, stateBuffers, RenderOrigin);
                         dimension.StartTextVertexIndex = vertices.Count;
                         vertices.AddRange(dimension.TextVertices);
                         dimension.EndTextVertexIndex = vertices.Count - 1;
                     }
                     if (obj is DrawingMleader drawingMleader)
                     {
-                        drawingMleader.UpdateTextVertices(resCache, lid, ltId, sceneIdMap, stateBuffers);
+                        drawingMleader.UpdateTextVertices(resCache, lid, ltId, sceneIdMap, stateBuffers, RenderOrigin);
                         drawingMleader.StartTextVertexIndex = vertices.Count;
                         vertices.AddRange(drawingMleader.TextVertices);
                         drawingMleader.EndTextVertexIndex = vertices.Count - 1;
@@ -1509,7 +1521,7 @@ namespace Cad_Point_Manager.Models
 
                     if (obj is DrawingSolid drawingSolid)
                     {
-                        drawingSolid.UpdateVertices(lId, objectId);
+                        drawingSolid.UpdateVertices(lId, objectId, RenderOrigin);
                         drawingSolid.StartVertexIndex = vertices.Count;
                         vertices.AddRange(drawingSolid.Vertices);
                         drawingSolid.EndVertexIndex = vertices.Count - 1;
@@ -1519,7 +1531,7 @@ namespace Cad_Point_Manager.Models
                         uint ltId = sceneIdMap.GetOrAddLineTypeId(obj.LineType, out var isNewLtype);
                         if (isNewLtype) { stateBuffers.InitializeLineTypeState(sceneIdMap.MaxLineTypeId, obj.LineType, ltId); }
 
-                        mleader.UpdateSolidVertices(resCache, lId, objectId, ltId);
+                        mleader.UpdateSolidVertices(resCache, lId, objectId, ltId, RenderOrigin);
                         mleader.StartSolidVertexIndex = vertices.Count;
                         vertices.AddRange(mleader.SolidVertices);
                         mleader.EndSolidVertexIndex = vertices.Count - 1;
@@ -1529,7 +1541,7 @@ namespace Cad_Point_Manager.Models
                         uint ltId = sceneIdMap.GetOrAddLineTypeId(obj.LineType, out var isNewLtype);
                         if (isNewLtype) { stateBuffers.InitializeLineTypeState(sceneIdMap.MaxLineTypeId, obj.LineType, ltId); }
 
-                        drawingBlock.UpdateSolidVertices(resCache, lId, objectId, ltId);
+                        drawingBlock.UpdateSolidVertices(resCache, lId, objectId, ltId, RenderOrigin);
                         drawingBlock.StartSolidVertexIndex = vertices.Count;
                         vertices.AddRange(drawingBlock.SolidVertices);
                         drawingBlock.EndSolidVertexIndex = vertices.Count - 1;
@@ -1539,7 +1551,7 @@ namespace Cad_Point_Manager.Models
                         uint ltId = sceneIdMap.GetOrAddLineTypeId(obj.LineType, out var isNewLtype);
                         if (isNewLtype) { stateBuffers.InitializeLineTypeState(sceneIdMap.MaxLineTypeId, obj.LineType, ltId); }
 
-                        drawingWidePolyline.UpdateVertices(resCache, lId, objectId, ltId);
+                        drawingWidePolyline.UpdateVertices(resCache, lId, objectId, ltId, RenderOrigin);
                         drawingWidePolyline.StartVertexIndex = vertices.Count;
                         vertices.AddRange(drawingWidePolyline.SolidVertices);
                         drawingWidePolyline.EndVertexIndex = vertices.Count - 1;
@@ -1559,7 +1571,7 @@ namespace Cad_Point_Manager.Models
 
                 foreach (CogoPoint p in GetPoints(pg))
                 {
-                    var pointRegistration = stateController.EnsurePointRegistered(p);
+                    var pointRegistration = stateController.EnsurePointRegistered(p, RenderOrigin);
 
                     instances.Add(new PointMarkerInstance
                     {
@@ -1579,10 +1591,10 @@ namespace Cad_Point_Manager.Models
 
             var inflatedExtents = Rect.Inflate(Extents, Extents.Width * 0.1, Extents.Height * 0.1);
             int maxPoints = 10;
-            float rows = 15;
-            float cols = 15;
-            float yIncrement = (inflatedExtents.Height / (rows - 1)).ToFloat();
-            float xIncrement = (inflatedExtents.Width / (cols - 1)).ToFloat();
+            double rows = 15;
+            double cols = 15;
+            double yIncrement = inflatedExtents.Height / (rows - 1);
+            double xIncrement = inflatedExtents.Width / (cols - 1);
             int pointNum = 1;
             int testPointCount = 0;
             string description = "Test Point";
@@ -1596,11 +1608,11 @@ namespace Cad_Point_Manager.Models
                 var groupActivated = TrySetActivePointGroup(pointGroup);
                 if (!groupActivated) { continue; }
 
-                float y = inflatedExtents.Top.ToFloat() + (yIncrement * i);
+                double y = inflatedExtents.Top + (yIncrement * i);
 
                 for (int j = 0; j < cols; j++)
                 {
-                    float x = inflatedExtents.Left.ToFloat() + (xIncrement * j);
+                    double x = inflatedExtents.Left + (xIncrement * j);
 
                     if (CreateTestPoint(pointNum, x, y, description, random))
                     {
@@ -1614,10 +1626,10 @@ namespace Cad_Point_Manager.Models
                 }
             }
         }
-        public bool CreateTestPoint(int pointNum, float x, float y, string description, Random random)
+        public bool CreateTestPoint(int pointNum, double x, double y, string description, Random random)
         {
-            return TryAddPointToActiveGroup(pointNum, new Vector3(x, y, 0), out _,
-                            (Math.Round(300 + random.NextDouble() * 100, 3)).ToFloat(), description);
+            return TryAddPointToActiveGroup(
+                pointNum, new Vector2d(x, y), out _, (Math.Round(300 + random.NextDouble() * 100, 3)), description);
         }
         public void UpdateCogoPointBoundingLines(SceneIdMap sceneIdMap)
         {

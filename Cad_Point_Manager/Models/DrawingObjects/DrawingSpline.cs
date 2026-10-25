@@ -1,4 +1,5 @@
-﻿using Cad_Point_Manager.Controls.D3DControl;
+﻿using Cad_Point_Manager.Common;
+using Cad_Point_Manager.Controls.D3DControl;
 using Cad_Point_Manager.Controls.D3DControl.Rendering.Msdf;
 using Cad_Point_Manager.Models.DrawingObjects.HelperClasses;
 using netDxf.Entities;
@@ -21,7 +22,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         #endregion
 
         #region Constructors
-        public DrawingSpline(Spline spline, ObjectLayer layer, Vector4 objectColor, ColorType colorType, 
+        public DrawingSpline(Spline spline, ObjectLayer layer, Vector4 objectColor, ColorType colorType,
             LineType lineType, bool isPartOfBlock = false, DrawingBlock block = null)
         {
             Type = DrawingObjectType.DrawingSpline;
@@ -62,9 +63,10 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             }
         }
 
-        public override void UpdateVertices(ResCache resCache, uint layerId, uint objectId, uint lineTypeId)
+        public override void UpdateVertices(
+            ResCache resCache, uint layerId, uint objectId, uint lineTypeId, Vector2d renderOrigin)
         {
-            PolylineApproximation.UpdateVertices(resCache, layerId, objectId, lineTypeId);
+            PolylineApproximation.UpdateVertices(resCache, layerId, objectId, lineTypeId, renderOrigin);
             LineInstances = PolylineApproximation.LineInstances;
         }
 
@@ -74,7 +76,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             Bounds = PolylineApproximation.Bounds;
         }
 
-        public override double DistanceToPoint(System.Windows.Point p, MsdfAtlas atlas = null)
+        public override double DistanceToPoint(Vector2d p, MsdfAtlas atlas = null)
         {
             return PolylineApproximation.DistanceToPoint(p);
         }

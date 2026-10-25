@@ -1,4 +1,5 @@
-﻿using Cad_Point_Manager.Controls.D3DControl;
+﻿using Cad_Point_Manager.Common;
+using Cad_Point_Manager.Controls.D3DControl;
 using Cad_Point_Manager.Controls.D3DControl.Rendering.Msdf;
 using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Helpers;
@@ -14,11 +15,11 @@ namespace Cad_Point_Manager.Models.DrawingObjects
     public class DrawingEllipse : DrawingCurve
     {
         #region Properties
-        public float Rotation { get; private set; }
-        public float MajorAxis { get; private set; }
-        public float MinorAxis { get; private set; }
+        public double Rotation { get; private set; }
+        public double MajorAxis { get; private set; }
+        public double MinorAxis { get; private set; }
         public bool IsLargeArc { get; private set; }
-        public Vector3 MidPoint { get; set; }
+        public Vector2d MidPoint { get; set; }
 
         private Ellipse DxfEllipse => EntityObject as Ellipse;
         #endregion
@@ -47,12 +48,12 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         {
             if (EntityObject is not Ellipse ellipse) { throw new ArgumentException(); }
 
-            RadiusPoint = ellipse.Center.ToSharpDXVector3();
-            Rotation = (float)ellipse.Rotation;
-            MajorAxis = (float)ellipse.MajorAxis;
-            MinorAxis = (float)(ellipse.MinorAxis * ellipse.MajorAxis);
-            StartAngle = (float)ellipse.StartAngle;
-            EndAngle = (float)ellipse.EndAngle;
+            RadiusPoint = ellipse.Center.ToVector2d();
+            Rotation = ellipse.Rotation;
+            MajorAxis = ellipse.MajorAxis;
+            MinorAxis = ellipse.MinorAxis * ellipse.MajorAxis;
+            StartAngle = ellipse.StartAngle;
+            EndAngle = ellipse.EndAngle;
             Sweep = EndAngle - StartAngle;
 
             if (Sweep < 0) { Sweep += 360; }
@@ -64,23 +65,19 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             NumberOfSegments = CalculateSegments(effectiveRadius, Sweep);
 
             var vertices = ellipse.ToPolyline2D(NumberOfSegments).Vertexes;
-            SamplePoints = vertices.Select(v => new System.Windows.Point(v.Position.X, v.Position.Y)).ToList();
-            Start = vertices.First().Position.ToSharpDXVector3();
-            End = vertices.Last().Position.ToSharpDXVector3();
+            SamplePoints = vertices.Select(v => v.Position.ToVector2d()).ToList();
+
+            Start = vertices.First().Position.ToVector2d();
+            End = vertices.Last().Position.ToVector2d();
 
             UpdateBounds();
         }
         public override void DrawToPdf(
-            XGraphics gfx,
-            System.Windows.Media.Matrix worldToPdf,
-            XPen pen)
+            XGraphics gfx, System.Windows.Media.Matrix worldToPdf, XPen pen)
         {
-            // 1) Center in PDF coords
-            var cPdf = PdfDrawingHelpers.WorldToPdf(new SharpDX.Vector2(RadiusPoint.X, RadiusPoint.Y), worldToPdf);
+            var cPdf = PdfDrawingHelpers.WorldToPdf(RadiusPoint, worldToPdf);
 
-            // 2) Radius in PDF "points"
-            //    (compute by transforming one known radius point; this automatically respects your camera scale)
-            var rWorldPt = new SharpDX.Vector2(RadiusPoint.X + Radius, RadiusPoint.Y);
+            var rWorldPt = new Vector2d(RadiusPoint.X + Radius, RadiusPoint.Y);
             var rPdfPt = PdfDrawingHelpers.WorldToPdf(rWorldPt, worldToPdf);
 
             double rPts = Math.Sqrt(
@@ -89,23 +86,15 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
             if (rPts <= 0.00001) { return; }
 
-            // 3) Bounding rect for the circle in PDF coords
             var rect = new XRect(cPdf.X - rPts, cPdf.Y - rPts, 2 * rPts, 2 * rPts);
 
-            // 4) Convert DXF (CCW, Y-up) angles to PDF page (Y-down) angles.
-            //    When you flip Y, CCW becomes CW. A simple conversion is:
-            //      start' = 360 - start
-            //      sweep' = -sweep
             double start = PdfDrawingHelpers.NormalizeDeg(360.0 - StartAngle);
             double sweep = -Sweep;
 
-            // Optional: if you ever store arcs that cross 0 and Sweep got weird, you can recompute sweep:
-            // double end = NormalizeDeg(360.0 - EndAngle);
-            // double sweep = ComputeSweepCW(start, end);
-
             gfx.DrawArc(pen, rect, start, sweep);
         }
-        public override void UpdateVertices(ResCache resCache, uint layerId, uint objectId, uint lineTypeId)
+        public override void UpdateVertices(
+            ResCache resCache, uint layerId, uint objectId, uint lineTypeId, Vector2d renderOrigin)
         {
             if (EntityObject is not Ellipse ellipse) { throw new ArgumentException(); }
 
@@ -125,8 +114,8 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
             for (int i = 0; i < vertices.Count - 1; i++)
             {
-                Vector2 start = vertices[i].Position.ToSharpDXVector2();
-                Vector2 end = vertices[i + 1].Position.ToSharpDXVector2();
+                Vector2 start = vertices[i].Position.ToVector2d().ToGpuRelative(renderOrigin);
+                Vector2 end = vertices[i + 1].Position.ToVector2d().ToGpuRelative(renderOrigin);
 
                 LineInstanceFlags flags = LineInstanceFlags.None;
 
@@ -136,7 +125,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                     {
                         flags |= LineInstanceFlags.ForceStartVisible;
                     }
-
                     if (i == vertices.Count - 2)
                     {
                         flags |= LineInstanceFlags.ForceEndVisible;
@@ -144,7 +132,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 }
 
                 lines.Add(
-                    new LineInstance(start, end, layerId, objectId, (float)accumulatedDistance, (uint)flags, Length));
+                    new LineInstance(start, end, layerId, objectId, (float)accumulatedDistance, (uint)flags, (float)Length));
 
                 double dx = (double)end.X - start.X;
                 double dy = (double)end.Y - start.Y;
@@ -156,13 +144,13 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
             if (closed)
             {
-                Vector2 first = vertices[0].Position.ToSharpDXVector2();
-                Vector2 last = vertices[^1].Position.ToSharpDXVector2();
+                Vector2 first = vertices[0].Position.ToVector2d().ToGpuRelative(renderOrigin);
+                Vector2 last = vertices[^1].Position.ToVector2d().ToGpuRelative(renderOrigin);
 
                 if (Vector2.DistanceSquared(first, last) > 1e-12f)
                 {
                     lines.Add(
-                        new LineInstance(last, first, layerId, objectId, (float)accumulatedDistance, (uint)LineInstanceFlags.None, Length));
+                        new LineInstance(last, first, layerId, objectId, (float)accumulatedDistance, (uint)LineInstanceFlags.None, (float)Length));
                 }
             }
 
@@ -170,7 +158,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
             UpdateBounds();
         }
-        public override double DistanceToPoint(System.Windows.Point point, MsdfAtlas atlas = null)
+        public override double DistanceToPoint(Vector2d point, MsdfAtlas atlas = null)
         {
             if (SamplePoints is null || SamplePoints.Count < 2)
             {
@@ -206,11 +194,10 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             return minDistance;
         }
 
-        private static double DistanceToSegment(
-            System.Windows.Point p, System.Windows.Point a, System.Windows.Point b)
+        private static double DistanceToSegment(Vector2d p, Vector2d a, Vector2d b)
         {
-            var d = b - a;
-            double lengthSquared = d.LengthSquared;
+            Vector2d d = b - a;
+            double lengthSquared = d.LengthSquared();
 
             if (lengthSquared <= 1e-12)
             {
@@ -237,12 +224,13 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         }
         public override void UpdateBounds()
         {
-            Bounds = Rect.Empty;
+            Rect bounds = Rect.Empty;
 
             foreach (var p in SamplePoints)
             {
-                Bounds = Rect.Union(Bounds, p);
+                bounds.Union(p);
             }
+            Bounds = bounds;
         }
         public override bool GeometryInRect(Rect rect)
         {
@@ -254,20 +242,13 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         }
         public void UpdateArcMidpoint()
         {
-            // Calculate the midpoint angle
-            float midAngle = StartAngle + (Sweep / 2); // Midpoint angle in degrees
-            double midAngleRadians = midAngle * Math.PI / 180; // Convert to radians
+            double midAngle = StartAngle + (Sweep / 2);
+            double midAngleRadians = midAngle * Math.PI / 180; 
 
-            // Calculate midpoint in XY plane
-            float midX = RadiusPoint.X + (float)(Radius * Math.Cos(midAngleRadians));
-            float midY = RadiusPoint.Y + (float)(Radius * Math.Sin(midAngleRadians));
+            double midX = RadiusPoint.X + (Radius * Math.Cos(midAngleRadians));
+            double midY = RadiusPoint.Y + (Radius * Math.Sin(midAngleRadians));
 
-            // Interpolate the Z coordinate along the arc
-            float startZ = Start.Z;
-            float endZ = End.Z;
-            float midZ = startZ + ((endZ - startZ) * (midAngle - StartAngle) / Sweep);
-
-            MidPoint = new(midX, midY, midZ);
+            MidPoint = new(midX, midY);
         }
         #endregion
     }

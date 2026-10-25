@@ -1,15 +1,16 @@
-﻿using System.Windows;
+﻿using Cad_Point_Manager.Common;
+using System.Windows;
 
 namespace Cad_Point_Manager.Models.DrawingObjects
 {
     public class TextBox
     {
         #region Properties
-        public Point InsertionPoint { get; set; } = new Point(0, 0);
-        public Point TopLeft { get; set; }
-        public Point BottomRight { get; set; }
+        public Vector2d InsertionPoint { get; set; } = Vector2d.Zero;
+        public Vector2d TopLeft { get; set; }
+        public Vector2d BottomRight { get; set; }
 
-        public Vector Translation { get; set; } = new(0, 0);
+        public Vector2d Translation { get; set; } = Vector2d.Zero;
         public double CurrentScale { get; set; } = 1.0;
         public double Rotation { get; set; } = 0.0;
 
@@ -22,11 +23,11 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         #endregion
 
         #region Static Properties
-        public static TextBox Empty => new TextBox(new Point(0, 0), new Point(0, 0), new Point(0, 0));
+        public static TextBox Empty => new TextBox(Vector2d.Zero, Vector2d.Zero, Vector2d.Zero);
         #endregion
 
         #region Constructors
-        public TextBox(Point insertionPoint, Point topLeft, Point bottomRight)
+        public TextBox(Vector2d insertionPoint, Vector2d topLeft, Vector2d bottomRight)
         {
             InsertionPoint = insertionPoint;
             TopLeft = topLeft;
@@ -43,11 +44,11 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
         public void Expand(double expandRight, double expandBottom, double expandLeft, double expandTop)
         {
-            BottomRight = new Point(BottomRight.X + expandRight, BottomRight.Y + expandBottom);
-            TopLeft = new Point(TopLeft.X - expandLeft, TopLeft.Y - expandTop);
+            BottomRight = new(BottomRight.X + expandRight, BottomRight.Y + expandBottom);
+            TopLeft = new(TopLeft.X - expandLeft, TopLeft.Y - expandTop);
         }
 
-        public void Translate(Vector offset)
+        public void Translate(Vector2d offset)
         {
             TopLeft += offset;
             BottomRight += offset;
@@ -56,83 +57,25 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
         public void Scale(double factor)
         {
-            var center = new Point(Left + Width / 2, Top + Height / 2);
+            var center = new Vector2d(Left + Width / 2, Top + Height / 2);
             ScaleTo(factor, center);
         }
 
-        public void ScaleTo(double factor, Point pivot)
+        public void ScaleTo(double factor, Vector2d pivot)
         {
             TopLeft = ScalePoint(TopLeft, pivot, factor);
             BottomRight = ScalePoint(BottomRight, pivot, factor);
             CurrentScale *= factor;
         }
-
-        public void Rotate(double angleDegrees, Point pivot)
-        {
-            TopLeft = ApplyCurrentRotationToPoint(TopLeft, pivot, angleDegrees);
-            BottomRight = ApplyCurrentRotationToPoint(BottomRight, pivot, angleDegrees);
-            Rotation += angleDegrees;
-        }
-
-        public void Union(Point point)
-        {
-            double left = Math.Min(Left, point.X);
-            double right = Math.Max(Right, point.X);
-            double top = Math.Min(Top, point.Y);
-            double bottom = Math.Max(Bottom, point.Y);
-            TopLeft = new Point(left, top);
-            BottomRight = new Point(right, bottom);
-        }
-
-        public void Union(TextBox other)
-        {
-            double left = Math.Min(Left, other.Left);
-            double right = Math.Max(Right, other.Right);
-            double top = Math.Min(Top, other.Top);
-            double bottom = Math.Max(Bottom, other.Bottom);
-            TopLeft = new Point(left, top);
-            BottomRight = new Point(right, bottom);
-        }
-
         #endregion
 
         #region Private Methods
-        private Point ApplyCurrentRotationToPoint(Point pt, Point pivot, double angleDegrees)
-        {
-            double radians = angleDegrees * Math.PI / 180;
-            double cos = Math.Cos(radians);
-            double sin = Math.Sin(radians);
-
-            double dx = pt.X - pivot.X;
-            double dy = pt.Y - pivot.Y;
-
-            double xNew = dx * cos - dy * sin + pivot.X;
-            double yNew = dx * sin + dy * cos + pivot.Y;
-
-            return new Point(xNew, yNew);
-        }
-
-        private static Point UnapplyCurrentRotationToPoint(Point pt, Point pivot, double angleDegrees)
-        {
-            double radians = angleDegrees * Math.PI / 180;
-            double cos = Math.Cos(radians);
-            double sin = Math.Sin(radians);
-
-            double dx = pt.X - pivot.X;
-            double dy = pt.Y - pivot.Y;
-
-            double xNew = dx * cos - dy * sin + pivot.X;
-            double yNew = dx * sin + dy * cos + pivot.Y;
-
-            return new Point(xNew, yNew);
-        }
-
-        private static Point ScalePoint(Point pt, Point pivot, double factor)
+        private static Vector2d ScalePoint(Vector2d pt, Vector2d pivot, double factor)
         {
             double dx = pt.X - pivot.X;
             double dy = pt.Y - pivot.Y;
 
-            return new Point(pivot.X + dx * factor, pivot.Y + dy * factor);
+            return new Vector2d(pivot.X + dx * factor, pivot.Y + dy * factor);
         }
 
         #endregion

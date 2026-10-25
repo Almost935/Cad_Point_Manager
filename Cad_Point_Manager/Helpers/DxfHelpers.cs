@@ -235,14 +235,16 @@ namespace Cad_Point_Manager.Helpers
             return (r, g, b, a);
         }
 
-        public static DrawingObject PolylineResolver(Polyline2D polyline2D, ObjectLayer layer, SharpDX.Vector4 color,
-            ColorType colorType, LineType lineType, DrawingBlock ownerBlock = null, bool isPartOfDimension = false)
+        public static DrawingObject PolylineResolver(
+            Polyline2D polyline2D, ObjectLayer layer, SharpDX.Vector4 color,
+            ColorType colorType, LineType lineType, DrawingBlock ownerBlock = null, 
+            bool isPartOfDimension = false)
         {
             if (polyline2D == null) { return null; }
 
             if (polyline2D.Vertexes.Any(v => v.StartWidth > 0 || v.EndWidth > 0))
             {
-                var width = polyline2D.Vertexes.Max(v => Math.Max(v.StartWidth, v.EndWidth)).ToFloat();
+                var width = polyline2D.Vertexes.Max(v => Math.Max(v.StartWidth, v.EndWidth));
                 return new DrawingWidePolyline(
                     polyline2D, layer, color, colorType, lineType, width, isPartOfDimension, ownerBlock);
             }

@@ -31,8 +31,10 @@ using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
+
 using Buffer = SharpDX.Direct3D11.Buffer;
 using InputElement = SharpDX.Direct3D11.InputElement;
+using MatrixD = System.Windows.Media.Matrix;
 using Matrix = SharpDX.Matrix;
 using Point = System.Windows.Point;
 
@@ -41,21 +43,21 @@ namespace Cad_Point_Manager.Controls.D3DControl
     public class D3dDxfControl : Direct3DControl, INotifyPropertyChanged, IDisposable
     {
         #region Fields
-        private const float CogoPointTextHitPaddingPixels = 8.0f;
-        private const float CogoQuadrantHysteresisPixels = 4.0f;
+        private const double CogoPointTextHitPaddingPixels = 8.0;
+        private const double CogoQuadrantHysteresisPixels = 4.0;
 
-        private const float PanCacheFactorX = 2.0f;
-        private const float PanCacheFactorY = 2.0f;
+        private const double PanCacheFactorX = 2.0;
+        private const double PanCacheFactorY = 2.0;
 
         // CogoPoint ToggleButton Fields
-        private float _desiredHalfWorldForAnchors;
-        private float _maxHalfBaseForAnchors;
-        private float _featherWorldForAnchors;
+        private double _desiredHalfWorldForAnchors;
+        private double _maxHalfBaseForAnchors;
+        private double _featherWorldForAnchors;
 
-        public float AnchorPixelSize = 18f; // UI handle size in pixels
-        public float FeatherPx = 1.25f; // anti-aliased edge in px
-        public float CornerFracOfHalf = 0.35f; // rounded corner as a fraction of half
-        public float MaxCogoToggleToDrawingFraction = 0.2f; // cap relative to drawing extents
+        public double AnchorPixelSize = 18; // UI handle size in pixels
+        public double FeatherPx = 1.25; // anti-aliased edge in px
+        public double CornerFracOfHalf = 0.35; // rounded corner as a fraction of half
+        public double MaxCogoToggleToDrawingFraction = 0.2; // cap relative to drawing extents
         private static readonly Vector4 AnchorBaseColor = new(0.00f, 0.95f, 1.00f, 1.00f);
         private static readonly Vector4 AnchorHoverColor = new(0.85f, 1.00f, 1.00f, 1.00f);
         private static readonly Vector4 AnchorPressedColor = new(0.15f, 0.82f, 0.85f, 1.00f);
@@ -66,9 +68,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private Buffer _transformationBuffer;
 
         private Point _pointerCoords;
-        private Vector2 _dxfCoords;
+        private Vector2d _dxfCoords;
         private string _dxfCoordsString = $"X: {0:F3}   Y: {0:F3}";
-        private Matrix _dxfInitialMatrix = Matrix.Identity;
+        private MatrixD _dxfInitialMatrix = MatrixD.Identity;
         private bool _isMouseInside;
         private Window _attachedWindow;
         private volatile bool _suspendHitTesting;
@@ -217,7 +219,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private Point _dragStartScreen;
         private Point _dragStart;
         private Rect _dragRect = new(0, 0, 0, 0);
-        private Vector _dxfDragRectTranslate = new();
+        private Vector2d _dxfDragRectTranslate = new();
         private System.Windows.Media.Matrix _currentlyAppliedDragRectMatrix = new();
         private bool _dragOverlayDirty = false;
         private bool _dragOverlayValid = false;
@@ -230,7 +232,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private Buffer _panSettingsBuffer;
         private SamplerState _panSampler;
         private bool _panShadersLoaded;
-        private Vector2 _panCurrentMousePos;
+        private Vector2d _panCurrentMousePos;
         private Texture2D _panCacheTexture;
         private RenderTargetView _panCacheRtv;
         private ShaderResourceView _panCacheSrv;
@@ -240,14 +242,14 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         // Panning and Zooming Fields
         private bool _isPanning;
-        private Vector2 _panStartMousePos;
-        private Vector2 _panStartCameraTranslate;
-        private Vector2 _prevMousePos;
-        private float _panWorldUnitsPerPixel;
+        private Vector2d _panStartMousePos;
+        private Vector2d _panStartCameraTranslate;
+        private Vector2d _prevMousePos;
+        private double _panWorldUnitsPerPixel;
 
         // Interaction Fields
-        private float _hittestStrokeThickness;
-        private Point _lastHitTestCoords;
+        private double _hittestStrokeThickness;
+        private Vector2d _lastHitTestCoords;
         private Rect _lastQueriedDxfRect = Rect.Empty;
         private CancellationTokenSource _hitTestCancellationTokenSource;
         private int _currentSnapHitTestIndex = 0;
@@ -286,7 +288,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public ViewportF Viewport { get; set; }
         public SnapMode CurrentSnapMode { get; set; } = SnapMode.Object;
 
-        public Vector2 DxfCoords
+        public Vector2d DxfCoords
         {
             get => _dxfCoords;
             set
@@ -325,7 +327,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 OnPropertyChanged();
             }
         }
-        public Vector DxfDragRectTranslate
+        public Vector2d DxfDragRectTranslate
         {
             get => _dxfDragRectTranslate;
             set
@@ -422,18 +424,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             set => SetValue(SelectedGeometriesProperty, value);
         }
 
-        public static readonly DependencyProperty MousePositionProperty =
-            DependencyProperty.Register(
-                nameof(MousePosition),
-                typeof(Point),
-                typeof(D3dDxfControl),
-                new FrameworkPropertyMetadata(new Point(), null));
-        public Point MousePosition
-        {
-            get => (Point)GetValue(MousePositionProperty);
-            set => SetValue(MousePositionProperty, value);
-        }
-
         public static readonly DependencyProperty SceneIdMapProperty =
             DependencyProperty.Register(
                 nameof(SceneIdMap),
@@ -472,7 +462,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         #endregion
 
         #region Functions
-        public readonly Func<Vector2, string> formatVectorString = (vector) => $"X: {vector.X:F3}   Y: {vector.Y:F3}";
+        public readonly Func<Vector2d, string> formatVectorString = (vector) => $"X: {vector.X:F3}   Y: {vector.Y:F3}";
         #endregion
 
         #region Events
@@ -1227,15 +1217,15 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 return;
             }
 
-            Vector2 deltaPixels = _panCurrentMousePos - _panStartMousePos;
-            float offsetU = -MathF.Round(deltaPixels.X) / _panCacheWidth;
-            float offsetV = -MathF.Round(deltaPixels.Y) / _panCacheHeight;
+            Vector2d deltaPixels = _panCurrentMousePos - _panStartMousePos;
+            double offsetU = -Math.Round(deltaPixels.X) / _panCacheWidth;
+            double offsetV = -Math.Round(deltaPixels.Y) / _panCacheHeight;
 
             var settings = new PanSettings
             {
-                OffsetUv = new Vector2(offsetU, offsetV),
-                PanCacheFactorX = PanCacheFactorX,
-                PanCacheFactorY = PanCacheFactorY
+                OffsetUv = new Vector2((float)offsetU, (float)offsetV),
+                PanCacheFactorX = (float)PanCacheFactorX,
+                PanCacheFactorY = (float)PanCacheFactorY
             };
 
             ctx.UpdateSubresource(ref settings, _panSettingsBuffer);
@@ -1379,10 +1369,12 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 return;
             }
 
+            var origin = CadManager.RenderOrigin;
+
             var settings = new DragOverlaySettings
             {
-                RectMinPx = new Vector2((float)r.Left, (float)r.Top),
-                RectMaxPx = new Vector2((float)r.Right, (float)r.Bottom),
+                RectMinPx = new Vector2((float)(r.Left - origin.X), (float)(r.Top - origin.Y)),
+                RectMaxPx = new Vector2((float)(r.Right - origin.X), (float)(r.Bottom - origin.Y)),
                 ViewportSize = new Vector2(RenderPixelWidth, RenderPixelHeight),
                 ThicknessPx = 1.0f,
                 FeatherPx = 1.0f,
@@ -1416,7 +1408,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 {
                     if (p is null) { continue; }
                     var pid = SceneIdMap.GetOrAddPointId(p, out var isNewPoint);
-                    if (isNewPoint) { StateController.EnsurePointRegistered(p); }
+                    if (isNewPoint) { StateController.EnsurePointRegistered(p, CadManager.RenderOrigin); }
 
                     var center = Vector2.Zero;
 
@@ -1424,7 +1416,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     {
                         Center = center,
                         PointId = pid,
-                        GroupId = gid
                     });
                 }
             }
@@ -1454,7 +1445,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
                     uint pid = SceneIdMap.GetOrAddPointId(p, out var isNewPoint);
 
-                    if (isNewPoint) { StateController.EnsurePointRegistered(p); }
+                    if (isNewPoint) { StateController.EnsurePointRegistered(p, CadManager.RenderOrigin); }
 
                     list.Add(new LeaderLineInstance
                     {
@@ -1485,7 +1476,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
                 vertices.Add(new SignificantPointVertex
                 {
-                    Position = sigP.Position.ToSharpDXVector3(),
+                    Position = sigP.Position.ToSharpDXVector2(),
                 });
             }
             _sigPointVertexCount = vertices.Count;
@@ -1616,9 +1607,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 ShaderSignature.GetInputSignature(textVSBytecode),
                 new[]
                 {
-                    new InputElement("POSITION", 0, Format.R32G32B32_Float, 0, 0),
-                    new InputElement("LAYERID", 0, Format.R32_UInt, 12, 0),
-                    new InputElement("OBJECTID", 0, Format.R32_UInt, 16, 0),
+                    new InputElement("POSITION", 0, Format.R32G32_Float, 0, 0),
+                    new InputElement("LAYERID", 0, Format.R32_UInt, 8, 0),
+                    new InputElement("OBJECTID", 0, Format.R32_UInt, 12, 0),
                  });
 
             _textShaderLoaded = true;
@@ -1646,9 +1637,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 ShaderSignature.GetInputSignature(solidVSBytecode),
                 new[]
                 {
-                    new InputElement("POSITION", 0, Format.R32G32B32_Float, 0, 0),
-                    new InputElement("LAYERID", 0, Format.R32_UInt, 12, 0),
-                    new InputElement("OBJECTID", 0, Format.R32_UInt, 16, 0),
+                    new InputElement("POSITION", 0, Format.R32G32_Float, 0, 0),
+                    new InputElement("LAYERID", 0, Format.R32_UInt, 8, 0),
+                    new InputElement("OBJECTID", 0, Format.R32_UInt, 12, 0),
                  });
 
             _solidShaderLoaded = true;
@@ -1837,7 +1828,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     new InputElement("POSITION", 0, Format.R32G32_Float, 0, 0),
 
                     new InputElement("TEXCOORD", 0, Format.R32G32_Float, 0, 1, InputClassification.PerInstanceData, 1), // Center (float2) @ offset 0
-                    new InputElement("POINT_ID", 0, Format.R32_UInt,      8, 1, InputClassification.PerInstanceData, 1), // PointId  @ offset 8
+                    new InputElement("POINT_ID", 0, Format.R32_UInt, 8, 1, InputClassification.PerInstanceData, 1), // PointId  @ offset 8
                 });
 
             // Dedicated unit quad for this shader
@@ -1925,7 +1916,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _sigPointLayout = new InputLayout(ResCache.Device, ShaderSignature.GetInputSignature(significantPointVsb),
                 new[]
                 {
-                    new InputElement("POSITION", 0, Format.R32G32B32_Float, 0, 0),
+                    new InputElement("POSITION", 0, Format.R32G32_Float, 0, 0),
                 });
 
             _sigPointShadersLoaded = true;
@@ -2145,7 +2136,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 AtlasHeight = ResCache.CogoPointMsdfAtlas.Height,
                 AtlasWidth = ResCache.CogoPointMsdfAtlas.Width,
                 DistanceRange = ResCache.CogoPointMsdfAtlas.DistanceRange,
-                CameraZoom = CadManager.Camera.CurrentZoom
+                CameraZoom = (float)CadManager.Camera.CurrentZoom
             };
             ResCache.DeviceContext.UpdateSubresource(ref msdfSettings, _msdfSettingsBuffer);
 
@@ -2158,7 +2149,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             var sigPointSettings = new SignificantPointSettingsBuffer
             {
                 Color = GlobalHelperProperties.SelectedSigPointColor,
-                RadiusPx = GlobalHelperProperties.SignificantPointPixelRadius,
+                RadiusPx = (float)GlobalHelperProperties.SignificantPointPixelRadius,
                 ViewPortSize = new Vector2(Viewport.Width, Viewport.Height)
             };
             ResCache.DeviceContext.UpdateSubresource(ref sigPointSettings, _sigPointSettingsBuffer);
@@ -2170,24 +2161,23 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
         private void UpdateTransformationBuffer()
         {
-            var transformation = CadManager.Camera.ViewProjectionMatrix;
+            //var transformation = CadManager.Camera.ViewProjectionMatrix.ToSharpDxMatrix();
+            var transformation = CadManager.Camera.GetRelativeViewProjectionMatrix(CadManager.RenderOrigin);
             var transformationBuffer = new TransformationBuffer
             {
                 WorldViewProjection = transformation
             };
             ResCache.DeviceContext.UpdateSubresource(ref transformationBuffer, _transformationBuffer);
 
-            // CogoPoint toggle button settings must also be updated when the transformation buffer is updated,
-            // because the toggle button size is in world units and depends on the current zoom level.
             var toggleSettings = new ToggleAnchorSettingsBuffer
             {
                 BaseColor = AnchorBaseColor, // Vector4
                 SelectedColor = AnchorPressedColor,// Vector4
                 MouseOverColor = AnchorHoverColor, // Vector4
-                DesiredHalf = _desiredHalfWorldForAnchors,
-                CornerFracOfHalf = CornerFracOfHalf, // 0..1
-                Feather = _featherWorldForAnchors,
-                MaxHalfBase = _maxHalfBaseForAnchors
+                DesiredHalf = (float)_desiredHalfWorldForAnchors,
+                CornerFracOfHalf = (float)CornerFracOfHalf, // 0..1
+                Feather = (float)_featherWorldForAnchors,
+                MaxHalfBase = (float)_maxHalfBaseForAnchors
             };
             ResCache.DeviceContext.UpdateSubresource(ref toggleSettings, _toggleSettingsBuffer);
 
@@ -2200,7 +2190,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         {
             var transformation = new TransformationBuffer
             {
-                WorldViewProjection = CadManager.Camera.ViewProjectionMatrix
+                WorldViewProjection = CadManager.Camera.GetRelativeViewProjectionMatrix(CadManager.RenderOrigin)
             };
 
             ResCache.DeviceContext.UpdateSubresource(ref transformation, _transformationBuffer);
@@ -2213,14 +2203,13 @@ namespace Cad_Point_Manager.Controls.D3DControl
             var drawingSettings = new DrawingSettingsBuffer
             {
                 ViewportSize = new Vector2(viewportWidth, viewportHeight),
-
-                LineHalfWidthPixels = GlobalHelperProperties.CogoPointLeaderLinePixelWidth,
-                GlobalLineTypeScale = CadManager.OverallDrawingLineTypeScale,
+                LineHalfWidthPixels = (float)GlobalHelperProperties.CogoPointLeaderLinePixelWidth,
+                GlobalLineTypeScale = (float)CadManager.OverallDrawingLineTypeScale,
                 AnnotationScale = 1,
-                GlowPixelOffset = GlobalHelperProperties.GlowPixelOffset,
+                GlowPixelOffset = (float)GlobalHelperProperties.GlowPixelOffset,
                 SelectedColor = GlobalHelperProperties.SelectedObjectColor,
                 SelectedMouseOverColor = GlobalHelperProperties.SelectedMouseOverObjectColor,
-                CogoPointCircleRadiusPixels = GlobalHelperProperties.CogoPointCirclePixelRadius
+                CogoPointCircleRadiusPixels = (float)GlobalHelperProperties.CogoPointCirclePixelRadius
             };
             ResCache.DeviceContext.UpdateSubresource(ref drawingSettings, _drawingSettingsBuffer);
         }
@@ -2278,10 +2267,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             var ctx = ResCache.DeviceContext;
 
-            float cacheScaleX = 1.0f / PanCacheFactorX;
-            float cacheScaleY = 1.0f / PanCacheFactorY;
-            var normalTransformation = CadManager.Camera.ViewProjectionMatrix;
-            var panCacheTransformation = normalTransformation * Matrix.Scaling(cacheScaleX, cacheScaleY, 1.0f);
+            float cacheScaleX = (float)(1.0 / PanCacheFactorX);
+            float cacheScaleY = (float)(1.0 / PanCacheFactorY);
+
+            Matrix normalTransformation = CadManager.Camera.GetRelativeViewProjectionMatrix(CadManager.RenderOrigin);
+            Matrix panCacheTransformation = normalTransformation * Matrix.Scaling(cacheScaleX, cacheScaleY, 1.0f);
 
             var transformationBuffer = new TransformationBuffer
             {
@@ -2312,7 +2302,12 @@ namespace Cad_Point_Manager.Controls.D3DControl
             DrawCogoPointAnchors(ctx);
 
             ctx.Rasterizer.SetViewport(0, 0, RenderPixelWidth, RenderPixelHeight);
-            transformationBuffer = new TransformationBuffer { WorldViewProjection = normalTransformation };
+
+            transformationBuffer = new TransformationBuffer
+            {
+                WorldViewProjection = normalTransformation
+            };
+
             ctx.UpdateSubresource(ref transformationBuffer, _transformationBuffer);
             UpdateDrawingSettingsBuffer(RenderPixelWidth, RenderPixelHeight);
 
@@ -2328,7 +2323,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
         private bool ShouldRecenterPanCache()
         {
-            Vector2 delta = _panCurrentMousePos - _panStartMousePos;
+            Vector2d delta = _panCurrentMousePos - _panStartMousePos;
 
             float marginX = (_panCacheWidth - RenderPixelWidth) * 0.5f;
             float marginY = (_panCacheHeight - RenderPixelHeight) * 0.5f;
@@ -2344,7 +2339,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         {
             float emToWorld = (float)point.PointGroup.FontBaseSize;
 
-            var ids = StateController.EnsurePointRegistered(point);
+            var ids = StateController.EnsurePointRegistered(point, CadManager.RenderOrigin);
 
             // Point number: always visible
             var pointNumberLayout = LayoutMsdfString(
@@ -2428,7 +2423,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
         private void UpdateCogoPointBounds(CogoPoint p)
         {
-            float emToWorld = p.PointGroup.FontBaseSize.ToFloat();
+            double emToWorld = p.PointGroup.FontBaseSize;
 
             // Point number
             var pointNumberLayout = LayoutMsdfString(
@@ -2467,26 +2462,26 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 p.DescriptionGlyphs = [];
             }
 
-            float rW =
-                (float)(GlobalHelperProperties.CogoPointCirclePixelRadius * p.PointGroup.PointScale);
+            double rW =
+                GlobalHelperProperties.CogoPointCirclePixelRadius * p.PointGroup.PointScale;
             var c = p.Position;
             p.EllipseBounds = new Rect(c.X - rW, c.Y - rW, 2 * rW, 2 * rW);
 
             UpdateToggleAnchorBounds(p);
             p.UpdateBounds();
         }
-        private MsdfTextLayout LayoutMsdfString(string text, CogoPoint point, Vector2 labelOffset, float emToWorld)
+        private MsdfTextLayout LayoutMsdfString(string text, CogoPoint point, Vector2d labelOffset, double emToWorld)
         {
             MsdfTextLayout layout = new();
 
-            float scale = emToWorld * point.PointGroup.PointScale.ToFloat();
+            double scale = emToWorld * point.PointGroup.PointScale;
             var baseOffset = point.PointGroup.PointInfoBaseXoffset;
 
             if (point.IsLabelLeft) { baseOffset *= -1; }
 
-            Vector2 origin = new(
-                point.Position.X.ToFloat() + labelOffset.X + baseOffset + point.TextInfoOffset.X,
-                point.Position.Y.ToFloat() + (labelOffset.Y * point.PointGroup.PointScale.ToFloat() + point.TextInfoOffset.Y));
+            Vector2d origin = new(
+                point.Position.X + labelOffset.X + baseOffset + point.TextInfoOffset.X,
+                point.Position.Y + (labelOffset.Y * point.PointGroup.PointScale + point.TextInfoOffset.Y));
 
             if (string.IsNullOrEmpty(text)) { return layout; }
 
@@ -2563,7 +2558,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         private void SetInitialMatrix()
         {
-            if (!CadManager.DxfLoaded) { _dxfInitialMatrix = Matrix.Identity; }
+            if (!CadManager.DxfLoaded) { _dxfInitialMatrix = MatrixD.Identity; }
             else
             {
                 CadManager.UpdateExtents();
@@ -2590,26 +2585,31 @@ namespace Cad_Point_Manager.Controls.D3DControl
             //ConstantBuffersDirty = true;
             TransformationBufferDirty = true;
         }
-        private Matrix GetExtentsFittingMatrix(ViewportF viewport, Rect extents)
+        private MatrixD GetExtentsFittingMatrix(ViewportF viewport, Rect extents)
         {
-            double scale = Math.Min(viewport.Width / extents.Width, viewport.Height / extents.Height);
-            return Matrix.Scaling(scale.ToFloat(), scale.ToFloat(), 1) * Matrix.Translation(-extents.Left.ToFloat(), -extents.Top.ToFloat(), 0);
+            if (extents.IsEmpty || extents.Width <= 0 || extents.Height <= 0)
+                return MatrixD.Identity;
+
+            double scale = Math.Min(
+                viewport.Width / extents.Width,
+                viewport.Height / extents.Height);
+
+            return new MatrixD(scale, 0, 0, scale, 0, 0);
         }
-        private void UpdateDxfCoords(Vector2 mousePosDip)
+        private void UpdateDxfCoords(Vector2d mousePosDip)
         {
             if (CadManager.Camera is null) { return; }
 
             var mousePx = DipToPixel(mousePosDip);
 
             DxfCoords = CadManager.Camera.ScreenToWorld(mousePx);
-            MousePosition = DxfCoords.ToPoint();
             DxfCoordsString = formatVectorString(DxfCoords);
         }
 
         protected override void OnMouseMove(MouseEventArgs e)
         {
             _pointerCoords = e.GetPosition(this);
-            var currentMousePos = new Vector2((float)_pointerCoords.X, (float)_pointerCoords.Y);
+            var currentMousePos = _pointerCoords.ToVector2d();
 
             if (!_isPanning)
             {
@@ -2621,8 +2621,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 var mousePx = GetMousePx(e);
                 var w = CadManager.Camera.ScreenToWorld(mousePx);
 
-                var delta = new Vector2(
-                    w.X - _pressedToggleButtonPoint.Position.X.ToFloat(), w.Y - _pressedToggleButtonPoint.Position.Y.ToFloat());
+                var delta = new Vector2d(
+                    w.X - _pressedToggleButtonPoint.Position.X,
+                    w.Y - _pressedToggleButtonPoint.Position.Y);
 
                 UpdateCogoPointInfoOffsetWithFlush(_pressedToggleButtonPoint, delta);
 
@@ -2692,9 +2693,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             CadManager.Camera.Zoom(zoomStep, mousePixels);
 
-            float worldUnitsPerPixel = CadManager.Camera.GetWorldUnitsPerPixel();
+            double worldUnitsPerPixel = CadManager.Camera.GetWorldUnitsPerPixel();
 
-            _hittestStrokeThickness = 7.0f * worldUnitsPerPixel;
+            _hittestStrokeThickness = 7.0 * worldUnitsPerPixel;
             _currentHitTestPadding = CogoPointTextHitPaddingPixels * worldUnitsPerPixel;
 
             UpdateToggleAnchorDimensions();
@@ -2913,9 +2914,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
                 var mousePx = GetMousePx(e);
                 var w = CadManager.Camera.ScreenToWorld(mousePx);
-                var delta = new Vector2(
-                    w.X - _pressedToggleButtonPoint.Position.X.ToFloat(),
-                    w.Y - _pressedToggleButtonPoint.Position.Y.ToFloat());
+                var delta = new Vector2d(
+                    w.X - _pressedToggleButtonPoint.Position.X,
+                    w.Y - _pressedToggleButtonPoint.Position.Y);
 
                 UpdateCogoPointInfoOffsetWithFlush(_pressedToggleButtonPoint, delta);
 
@@ -3049,12 +3050,12 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         private void UpdateToggleAnchorDimensions()
         {
-            float wupp = CadManager.Camera.GetWorldUnitsPerPixel();
+            double wupp = CadManager.Camera.GetWorldUnitsPerPixel();
 
             _desiredHalfWorldForAnchors =
-                (AnchorPixelSize * 0.5f) * wupp;
+                (AnchorPixelSize * 0.5) * wupp;
 
-            float drawingShort = (float)Math.Min(
+            double drawingShort = Math.Min(
                 CadManager.Camera.Extents.Width,
                 CadManager.Camera.Extents.Height);
 
@@ -3064,28 +3065,27 @@ namespace Cad_Point_Manager.Controls.D3DControl
         }
         private void UpdateToggleAnchorBounds(CogoPoint pt)
         {
-            float half = MathF.Min(
-            _desiredHalfWorldForAnchors,
-            _maxHalfBaseForAnchors * (float)pt.PointGroup.PointScale
-            );
+            double half = Math.Min(
+                _desiredHalfWorldForAnchors,
+                _maxHalfBaseForAnchors * pt.PointGroup.PointScale);
 
-            var center = pt.Position.ToSharpDXVector2() + pt.TextInfoOffset; // world center of the toggle
-            pt.ToggleBounds = new(center.X - half, center.Y - half, 2f * half, 2f * half);
+            var center = pt.Position + pt.TextInfoOffset; // world center of the toggle
+            pt.ToggleBounds = new(center.X - half, center.Y - half, 2 * half, 2 * half);
         }
-        private bool IsPointInToggleAnchor(CogoPoint point, Point mouse)
+        private bool IsPointInToggleAnchor(CogoPoint point, Vector2d mouse)
         {
-            return GetToggleAnchorBounds(point).Contains(mouse);
+            return mouse.IsWithin(GetToggleAnchorBounds(point));
         }
         private Rect GetToggleAnchorBounds(CogoPoint point)
         {
-            float half = MathF.Min(
-                _desiredHalfWorldForAnchors, _maxHalfBaseForAnchors * (float)point.PointGroup.PointScale);
+            double half = Math.Min(
+                _desiredHalfWorldForAnchors, _maxHalfBaseForAnchors * point.PointGroup.PointScale);
 
-            var center = point.Position.ToSharpDXVector2() + point.TextInfoOffset;
+            var center = point.Position + point.TextInfoOffset;
 
-            return new Rect(center.X - half, center.Y - half, half * 2f, half * 2f);
+            return new Rect(center.X - half, center.Y - half, half * 2, half * 2);
         }
-        private void UpdateCogoPointInfoOffsetWithFlush(CogoPoint point, Vector2 offset)
+        private void UpdateCogoPointInfoOffsetWithFlush(CogoPoint point, Vector2d offset)
         {
             if (point is null)
                 return;
@@ -3095,7 +3095,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             bool labelsChanged = SetCogoPointLabelQuadrant(point, offset);
 
-            StateController.SetPointInfoOffset(point, offset, point.HasLeaderLine);
+            StateController.SetPointInfoOffset(point, offset.ToSharpDXVector2(), point.HasLeaderLine);
 
             if (labelsChanged)
                 StateController.FlushLabelUpdates();
@@ -3118,10 +3118,11 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             point.HasLeaderLine = state.HasLeaderLine;
 
-            StateController.SetPointInfoOffset(point, state.Offset, state.HasLeaderLine);
+            StateController.SetPointInfoOffset(point, state.Offset.ToSharpDXVector2(), state.HasLeaderLine);
             StateController.SetPointLabelQuadrant(point, state.Quadrant);
             StateController.SetLabelOffsets(
-                point, point.PointNumberOffset, point.ElevationOffset, point.DescriptionOffset);
+                point, point.PointNumberOffset.ToSharpDXVector2(), point.ElevationOffset.ToSharpDXVector2(),
+                point.DescriptionOffset.ToSharpDXVector2());
 
             StateController.FlushLabelUpdates();
             StateController.FlushPointUpdates();
@@ -3133,9 +3134,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _baseSceneDirty = true;
         }
 
-        private bool SetCogoPointLabelQuadrant(CogoPoint point, Vector2 offset)
+        private bool SetCogoPointLabelQuadrant(CogoPoint point, Vector2d offset)
         {
-            float threshold = CogoQuadrantHysteresisPixels * CadManager.Camera.GetWorldUnitsPerPixel();
+            float threshold = (float)(CogoQuadrantHysteresisPixels * CadManager.Camera.GetWorldUnitsPerPixel());
 
             var quadrant = point.LabelQuadrant;
 
@@ -3154,7 +3155,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             else if (offset.Y > threshold)
                 isBelow = false;
 
-            var newQuadrant = (isLeft, isBelow) switch
+            CogoLabelQuadrant newQuadrant = (isLeft, isBelow) switch
             {
                 (false, false) => CogoLabelQuadrant.UpperRight,
                 (true, false) => CogoLabelQuadrant.UpperLeft,
@@ -3169,7 +3170,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
             point.UpdateOffsetOrientation();
 
             StateController.SetLabelOffsets(
-                point, point.PointNumberOffset, point.ElevationOffset, point.DescriptionOffset);
+                point, point.PointNumberOffset.ToSharpDXVector2(), 
+                point.ElevationOffset.ToSharpDXVector2(),
+                point.DescriptionOffset.ToSharpDXVector2());
 
             StateController.SetPointLabelQuadrant(point, newQuadrant);
 
@@ -3533,7 +3536,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             }
         }
         private void PrioritizeCogoToggleHit(
-            List<(double distance, CogoPoint point)> hits, Point mouse)
+            List<(double distance, CogoPoint point)> hits, Vector2d mouse)
         {
             if (hits.Count <= 1)
                 return;
@@ -3918,7 +3921,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             // Assign fresh contiguous IDs and initialize all states.
             foreach (var point in CadManager.CogoPoints)
             {
-                StateController.EnsurePointRegistered(point);
+                StateController.EnsurePointRegistered(point, CadManager.RenderOrigin);
             }
 
             // Push freshly rebuilt state arrays to the GPU.
@@ -3945,28 +3948,28 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _baseSceneDirty = true;
         }
 
-        private Vector2 DipToPixel(Vector2 dip)
+        private Vector2d DipToPixel(Vector2d dip)
         {
             var dpi = VisualTreeHelper.GetDpi(this);
-            return new Vector2(
-                dip.X * (float)dpi.DpiScaleX,
-                dip.Y * (float)dpi.DpiScaleY
+            return new Vector2d(
+                dip.X * dpi.DpiScaleX,
+                dip.Y * dpi.DpiScaleY
             );
         }
-        private Vector2 GetMousePx(MouseEventArgs e)
+        private Vector2d GetMousePx(MouseEventArgs e)
         {
             var pDip = e.GetPosition(this);
             var dpi = VisualTreeHelper.GetDpi(this);
 
-            return new Vector2(
-                (float)(pDip.X * dpi.DpiScaleX),
-                (float)(pDip.Y * dpi.DpiScaleY)
+            return new Vector2d(
+                pDip.X * dpi.DpiScaleX,
+                pDip.Y * dpi.DpiScaleY
             );
         }
 
         private void ClearDxf()
         {
-            CadManager.Camera.ResetView(Matrix.Identity, CadManager.Extents);
+            CadManager.Camera.ResetView(MatrixD.Identity, CadManager.Extents);
             ResetHoverObjectsWithoutFlush();
 
             StateController.FlushObjectUpdates();
@@ -4098,7 +4101,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     cp.PropertyChanged -= CogoPoint_PropertyChanged;
                     cp.PropertyChanged += CogoPoint_PropertyChanged;
 
-                    StateController.EnsurePointRegistered(cp);
+                    StateController.EnsurePointRegistered(cp, CadManager.RenderOrigin);
                 }
             }
             if (e.Action == NotifyCollectionChangedAction.Remove)
@@ -4116,7 +4119,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     cp.PropertyChanged -= CogoPoint_PropertyChanged;
                     cp.PropertyChanged += CogoPoint_PropertyChanged;
 
-                    StateController.EnsurePointRegistered(cp);
+                    StateController.EnsurePointRegistered(cp, CadManager.RenderOrigin);
                 }
             }
         }
@@ -4167,7 +4170,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
                             uint ltId = SceneIdMap.GetOrAddLineTypeId(drawingMtext.LineType, out var isNewLtype);
                             if (isNewLtype) { StateBuffers.InitializeLineTypeState(SceneIdMap.MaxLineTypeId, drawingMtext.LineType, ltId); }
 
-                            drawingMtext.UpdateMtextBlock(ResCache, drawingMtext.Layer.Id, ltId, SceneIdMap, StateBuffers);
+                            drawingMtext.UpdateMtextBlock(
+                                ResCache, drawingMtext.Layer.Id, ltId, SceneIdMap, StateBuffers, CadManager.RenderOrigin);
                         }
                     }
                 }
@@ -4209,7 +4213,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     e.PropertyName == nameof(PointGroup.PointScale))
                 {
                     pg.UpdatePointInfoBaseXoffset();
-                    StateController.SetGroupScaleColorBaseOffset(pg, pg.PointScale.ToFloat(), pg.Color.ToSharpDXVector4(), pg.PointInfoBaseXoffset);
+                    StateController.SetGroupScaleColorBaseOffset(pg, (float)pg.PointScale, pg.Color.ToSharpDXVector4(), pg.PointInfoBaseXoffset);
                     StateController.FlushGroupUpdates();
 
                     if (e.PropertyName == nameof(PointGroup.PointScale))
@@ -4223,7 +4227,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
                             if (point.IsLabelBelow || point.IsLabelLeft)
                             {
                                 point.UpdateOffsetOrientation();
-                                StateController.SetLabelOffsets(point, point.PointNumberOffset, point.ElevationOffset, point.DescriptionOffset);
+                                StateController.SetLabelOffsets(
+                                    point, point.PointNumberOffset.ToSharpDXVector2(),
+                                    point.ElevationOffset.ToSharpDXVector2(), point.DescriptionOffset.ToSharpDXVector2());
                                 labelsNeedUpdate = true;
 
                                 UpdateCogoPointBounds(point); // Done a second time because the first call is just to get lines width
@@ -4256,7 +4262,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
                         point.UpdateOffsetOrientation();
 
                         StateController.SetLabelOffsets(
-                            point, point.PointNumberOffset, point.ElevationOffset, point.DescriptionOffset);
+                            point, point.PointNumberOffset.ToSharpDXVector2(),
+                            point.ElevationOffset.ToSharpDXVector2(),
+                            point.DescriptionOffset.ToSharpDXVector2());
 
                         UpdateCogoPointBounds(point);
                     }

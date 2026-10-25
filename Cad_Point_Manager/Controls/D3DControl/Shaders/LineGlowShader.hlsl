@@ -75,13 +75,11 @@ struct LayerState
 {
     float4 Color;
     uint Flags;
-    float3 Padding;
 };
 struct ObjectState
 {
     uint Flags;
     uint LineTypeId;
-    float2 Padding;
     float4 Color;
 };
 struct LineTypeInfo

@@ -9,8 +9,8 @@
 
     public sealed class ChainPath
     {
-        public List<Pt> Nodes { get; }             // snapped vertex positions (start..end; loops will repeat the start at the end)
-        public List<EdgeUse> Steps { get; }        // each segment in order, with direction
+        public List<Pt> Nodes { get; }
+        public List<EdgeUse> Steps { get; }
         public ChainPath(List<Pt> nodes, List<EdgeUse> steps) { Nodes = nodes; Steps = steps; }
     }
 

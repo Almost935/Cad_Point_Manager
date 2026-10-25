@@ -1,4 +1,5 @@
-﻿using Cad_Point_Manager.Controls.D3DControl;
+﻿using Cad_Point_Manager.Common;
+using Cad_Point_Manager.Controls.D3DControl;
 using Cad_Point_Manager.Controls.D3DControl.Rendering.Msdf;
 using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Helpers;
@@ -17,16 +18,15 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         public Polyline2D Polyline2D => EntityObject as Polyline2D;
         public List<SolidVertex> SolidVertices { get; } = [];
         public bool IsClosed { get; set; }
-        public float Length { get; set; }
-        public float Width { get; set; }
+        public double Length { get; set; }
+        public double Width { get; set; }
         public List<DrawingSegment> DrawingSegments { get; } = [];
-        public int StartVertexIndex { get; set; }
-        public int EndVertexIndex { get; set; }
         #endregion
 
         #region Constructors
-        public DrawingWidePolyline(Polyline2D polyline2D, ObjectLayer layer, Vector4 objectColor, ColorType colorType, 
-            LineType lineType, float width, bool isPartOfBlock = false, DrawingBlock block = null)
+        public DrawingWidePolyline(
+            Polyline2D polyline2D, ObjectLayer layer, Vector4 objectColor, ColorType colorType,
+            LineType lineType, double width, bool isPartOfBlock = false, DrawingBlock block = null)
         {
             Type = DrawingObjectType.DrawingPolyline;
 
@@ -47,36 +47,79 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         #region Methods
         public override void UpdateData()
         {
-            if (EntityObject is Polyline2D polyline2D)
-            {
-                IsClosed = polyline2D.IsClosed;
-                Length = 0;
+            if (EntityObject is not Polyline2D polyline2D)
+                throw new ArgumentException("Entity must be a Polyline2D");
 
-                foreach (var e in polyline2D.Explode())
-                {
-                    var segment = DxfHelpers.GetDrawingSegment(e, Layer, ObjectColor, ColorType, LineType, DrawingBlock);
-                    DrawingSegments.Add(segment);
-                    Length += segment.Length;
-                }
-            }
-            else
+            DrawingSegments.Clear();
+
+            IsClosed = polyline2D.IsClosed;
+            Length = 0.0;
+
+            var vertices = polyline2D.Vertexes;
+
+            if (vertices.Count > 0)
             {
-                throw new ArgumentException("entity must be of type Polyline2D or Polyline3D");
+                Start = vertices[0].Position.ToVector2d();
+                End = vertices[^1].Position.ToVector2d();
             }
+
+            foreach (var entity in polyline2D.Explode())
+            {
+                var segment = DxfHelpers.GetDrawingSegment(
+                    entity, Layer, ObjectColor, ColorType, LineType, DrawingBlock);
+
+                if (segment is null)
+                    continue;
+
+                DrawingSegments.Add(segment);
+                Length += segment.Length;
+            }
+
+            UpdateBounds();
         }
+
         public override void UpdateBounds()
         {
+            Rect bounds = Rect.Empty;
+
+            foreach (var segment in DrawingSegments)
+            {
+                if (segment.Bounds.IsEmpty)
+                    continue;
+
+                bounds.Union(segment.Bounds);
+            }
+
+            if (!bounds.IsEmpty)
+                bounds.Inflate(Width * 0.5, Width * 0.5);
+
+            Bounds = bounds;
         }
-        public override void MouseEnter()
+
+        public override double DistanceToPoint(Vector2d p, MsdfAtlas atlas = null)
         {
+            double minDistance = double.MaxValue;
+
+            foreach (var segment in DrawingSegments)
+            {
+                double distance = segment.DistanceToPoint(p);
+
+                if (distance < minDistance)
+                {
+                    minDistance = distance;
+
+                    if (minDistance <= Width * 0.5)
+                        return 0;
+                }
+            }
+
+            if (minDistance == double.MaxValue)
+                return double.MaxValue;
+
+            return Math.Max(0, minDistance - Width * 0.5);
         }
-        public override void MouseLeave()
-        {
-        }
-        public override double DistanceToPoint(System.Windows.Point p, MsdfAtlas atlas = null)
-        {
-            return 1000;
-        }
+
+
         public override void DrawToPdf(XGraphics gfx, System.Windows.Media.Matrix worldToPdf, XPen pen)
         {
         }
@@ -84,23 +127,18 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         {
             return false;
         }
-        public override void UpdateVertices(ResCache resCache, uint layerId, uint objectId, uint lineTypeId)
+        public override void UpdateVertices(
+            ResCache resCache, uint layerId, uint objectId, uint lineTypeId, Vector2d renderOrigin)
         {
-            var vertices = WidenedGeometryRenderingHelpers.GetWidenedPolylineVertices(resCache, this, Width, out _);
+            SolidVertices.Clear();
 
-            for (int i = 0; i < vertices.Count; i += 3) // Every three vertices represent a triangle
+            var vertices =
+                WidenedGeometryRenderingHelpers.GetWidenedPolylineVertices(
+                    resCache, this, Width, renderOrigin);
+
+            foreach (var p in vertices)
             {
-                var p1 = vertices[i];
-                var p2 = vertices[i + 1];
-                var p3 = vertices[i + 2];
-
-                SolidVertex sv1 = new(p1.ToSharpDXVector3(), layerId, objectId);
-                SolidVertex sv2 = new(p2.ToSharpDXVector3(), layerId, objectId);
-                SolidVertex sv3 = new(p3.ToSharpDXVector3(), layerId, objectId);
-
-                SolidVertices.Add(sv1);
-                SolidVertices.Add(sv2);
-                SolidVertices.Add(sv3);
+                SolidVertices.Add(new(p.ToSharpDXVector2(), layerId, objectId));
             }
         }
         #endregion

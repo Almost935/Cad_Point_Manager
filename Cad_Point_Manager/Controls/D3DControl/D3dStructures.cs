@@ -38,22 +38,22 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private Vector3 _pad2;
     }
     [StructLayout(LayoutKind.Sequential)]
-    public struct SolidVertex(Vector3 pos, uint layerId, uint objectId)
+    public struct SolidVertex(Vector2 pos, uint layerId, uint objectId)
     {
-        public Vector3 Position = pos;
+        public Vector2 Position = pos;
         public uint LayerId = layerId;
         public uint ObjectId = objectId;
 
         public readonly SolidVertex Transform(Matrix transform)
         {
-            Vector3 transformedPosition = Vector3.TransformCoordinate(Position, transform);
+            Vector2 transformedPosition = Vector2.TransformCoordinate(Position, transform);
             return new SolidVertex(transformedPosition, LayerId, ObjectId);
         }
     }
     [StructLayout(LayoutKind.Sequential)]
     public struct SignificantPointVertex
     {
-        public Vector3 Position;
+        public Vector2 Position;
     }
     [StructLayout(LayoutKind.Sequential)]
     public struct SignificantPointSettingsBuffer
@@ -72,17 +72,13 @@ namespace Cad_Point_Manager.Controls.D3DControl
     [StructLayout(LayoutKind.Sequential)]
     public struct OverlayVertex
     {
-        public Vector3 Position;
+        public Vector2 Position;
         public Vector4 Color;
     }
     [StructLayout(LayoutKind.Sequential)]
-    public struct DragOverlayVertex
+    public struct DragOverlayVertex(float x, float y)
     {
-        public Vector2 Local;
-        public DragOverlayVertex(float x, float y)
-        {
-            Local = new Vector2(x, y);
-        }
+        public Vector2 Local = new(x, y);
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -113,13 +109,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public Vector4 Color;        // rgba
     }
     [StructLayout(LayoutKind.Sequential)]
-    public struct MsdfVertex
+    public struct MsdfVertex(float x, float y)
     {
-        public Vector2 Corner;
-        public MsdfVertex(float x, float y)
-        {
-            Corner = new Vector2(x, y);
-        }
+        public Vector2 Corner = new(x, y);
     }
     [StructLayout(LayoutKind.Sequential)]
     public struct MsdfGlyphInstance
@@ -141,21 +133,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public Vector2 UvSize;
     }
     [StructLayout(LayoutKind.Sequential)]
-    public struct GlyphMetricGpu
-    {
-        public Vector2 PlaneMin;
-
-        public Vector2 PlaneMax;
-
-        public Vector2 UvMin;
-
-        public Vector2 UvMax;
-
-        public float Advance;
-
-        private Vector3 _padding;
-    }
-    [StructLayout(LayoutKind.Sequential)]
     public struct MsdfSettingsBuffer
     {
         public float AtlasWidth;
@@ -163,13 +140,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public float DistanceRange;
         public float CameraZoom;
     }
-    [StructLayout(LayoutKind.Sequential)]
-    public struct MsdfRenderModeBuffer
-    {
-        public uint RenderSelectionOverlay;
-        private Vector3 _padding;
-    }
-
     [StructLayout(LayoutKind.Sequential)]
     public struct GlyphVertexQuad
     {
@@ -210,30 +180,51 @@ namespace Cad_Point_Manager.Controls.D3DControl
     [StructLayout(LayoutKind.Sequential)]
     public struct LabelState
     {
-        public Vector2 Offset; // world-space drag delta
+        /// <summary>
+        /// Represents the offset of a specific label (CogoPoint.PointNumberOffset, CogoPoint.PointDescriptionOffset, CogoPoint.PointElevationOffset) 
+        /// from the base point of the CogoPoint (CogoPoint.Position)
+        /// </summary>
+        public Vector2 Offset;
         public uint Flags;  // bit0: visible
-        public float Pad;    // keep 16B stride
     }
 
     [StructLayout(LayoutKind.Sequential)]
     public struct PointState
     {
+        /// <summary>
+        /// Vector representing the base point offset of the CogoPoint (CogoPoint.Position)
+        /// </summary>
         public Vector2 Offset;
+
+        /// <summary>
+        /// Represents the current distance between the CogoPoint and the base point. Changes as the CogoPoint is dragged by the user (CogoPoint.TextInfoOffset)
+        /// </summary>
         public Vector2 PointInfoOffset;
         public uint GroupId;
+
         public uint Flags;
+
+        /// <summary>
+        /// Represents the quadrant that the CogoPoint's labels are in (CogoPoint.LabelQuadrant)
+        /// </summary>
         public uint LabelQuadrant;
-        public uint _pad;
     }
 
     [StructLayout(LayoutKind.Sequential)]
     public struct GroupState
     {
         public Vector4 Color; // rgba
-        public float Scale; // point-scale
+
+        /// <summary>
+        /// Represents the current scale of the CogoPoint. Is defined by the PointGroup (PointGroup.PointScale)
+        /// </summary>
+        public float Scale;
         public uint Flags; // bit0: visible
+
+        /// <summary>
+        /// Represents the base distance between the CogoPoint and the point info text. Property is contained in the CogoPoint's PointGroup (PointGroup.PointInfoBaseXoffset)
+        /// </summary>
         public float TextInfoBaseXoffset; // world offset from point to base of text (before any drag)
-        public float _pad;   // 16B stride
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -253,7 +244,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
     {
         public Vector2 Center;
         public uint PointId;
-        public uint GroupId;        // TEXCOORD9
     }
     [StructLayout(LayoutKind.Sequential)]
     public struct ToggleAnchorSettingsBuffer
@@ -280,14 +270,12 @@ namespace Cad_Point_Manager.Controls.D3DControl
     {
         public Vector4 Color; // rgba
         public uint Flags; // bit0: visible 
-        public Vector3 Pad;   // 16B stride
     }
     [StructLayout(LayoutKind.Sequential)]
     public struct ObjectState
     {
         public uint Flags; // bit0: visible bit1: selected, bit2: mouseOver, bit3: colorByLayer
         public uint LineTypeId; // LineType index
-        public Vector2 Pad;   // 16B stride
         public Vector4 Color;
     }
 
@@ -304,22 +292,21 @@ namespace Cad_Point_Manager.Controls.D3DControl
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct LineVertex(Vector3 position, uint layerId, uint objectId)
+    public struct LineVertex(Vector2 position, uint layerId, uint objectId)
     {
-        public Vector3 Position = position;
+        public Vector2 Position = position;
         public uint LayerId = layerId;   // Layer index
         public uint ObjectId = objectId;  // Object index
         public uint LinetypeId; // Line type index
-        private Vector2 _padding; // Padding to ensure the structure is 16-byte aligned
 
-        public readonly LineVertex Translate(Vector3 offset)
+        public readonly LineVertex Translate(Vector2 offset)
         {
             return new LineVertex(Position + offset, LayerId, ObjectId);
         }
 
         public readonly LineVertex Transform(Matrix transform)
         {
-            Vector3 transformedPosition = Vector3.TransformCoordinate(Position, transform);
+            Vector2 transformedPosition = Vector2.TransformCoordinate(Position, transform);
             return new LineVertex(transformedPosition, LayerId, ObjectId);
         }
 
@@ -334,7 +321,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public Vector2 Corner = new(side, along);
     }
     [StructLayout(LayoutKind.Sequential)]
-    public struct LineInstance(Vector2 start, Vector2 end, uint layerId, uint objectId, float startDistance, uint flags, float parentSegmentLength)
+    public struct LineInstance(
+        Vector2 start, Vector2 end, uint layerId, uint objectId, float startDistance, uint flags, float parentSegmentLength)
     {
         public Vector2 Start = start;
         public Vector2 End = end;
@@ -415,20 +403,19 @@ namespace Cad_Point_Manager.Controls.D3DControl
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct TextVertex(Vector3 position, uint layerId, uint objectId)
+    public struct TextVertex(Vector2 position, uint layerId, uint objectId)
     {
-        public Vector3 Position { get; set; } = position;
+        public Vector2 Position { get; set; } = position;
         public uint LayerId { get; set; } = layerId;   // Layer index
         public uint ObjectId { get; set; } = objectId; // Object index
-        private Vector3 _padding; // Padding to ensure the structure is 16-byte aligned
 
-        public readonly TextVertex Translate(Vector3 offset)
+        public readonly TextVertex Translate(Vector2 offset)
         {
             return new TextVertex(Position + offset, LayerId, ObjectId);
         }
         public readonly TextVertex Transform(Matrix transform)
         {
-            Vector3 transformedPosition = Vector3.TransformCoordinate(Position, transform);
+            Vector2 transformedPosition = Vector2.TransformCoordinate(Position, transform);
             return new TextVertex(transformedPosition, LayerId, ObjectId);
         }
 
@@ -443,7 +430,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             float rotatedX = cos * dx - sin * dy + basePoint.X;
             float rotatedY = sin * dx + cos * dy + basePoint.Y;
 
-            return new TextVertex(new Vector3(rotatedX, rotatedY, textVertex.Position.Z), layerId: textVertex.LayerId,
+            return new TextVertex(new Vector2(rotatedX, rotatedY), layerId: textVertex.LayerId,
                 objectId: textVertex.ObjectId);
         }
 

@@ -32,7 +32,6 @@ struct LabelState
 {
     float2 Offset;
     uint Flags;
-    float _pad;
 };
 struct PointState
 {
@@ -41,7 +40,6 @@ struct PointState
     uint GroupId;
     uint Flags;
     uint LabelQuadrant;
-    uint _padLS;
 };
 struct GroupState
 {
@@ -49,7 +47,6 @@ struct GroupState
     float Scale;
     uint Flags;
     float TextInfoBaseXoffset;
-    float _pad;
 };
 
 StructuredBuffer<LabelState> LabelStates : register(t0);

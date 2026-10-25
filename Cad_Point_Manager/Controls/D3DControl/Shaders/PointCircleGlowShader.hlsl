@@ -33,7 +33,6 @@ struct PointState
     uint GroupId;
     uint Flags;
     uint LabelQuadrant;
-    uint _padLS;
 };
 struct GroupState
 {
@@ -41,7 +40,6 @@ struct GroupState
     float Scale;
     uint Flags;
     float TextInfoBaseXoffset;
-    float _padGS;
 };
 
 //--------------------------------------------

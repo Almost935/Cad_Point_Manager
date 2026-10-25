@@ -12,20 +12,20 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         #endregion
 
         #region Properties
-        public float Height { get; set; } = 0;
-        public float MaxWidth { get; set; }
+        public double Height { get; set; } = 0;
+        public double MaxWidth { get; set; }
         public TextAlignment TextAlignment { get; set; }
-        public Vector3 BaseRowPosition { get; set; } = Vector3.Zero;
+        public Vector2d BaseRowPosition { get; set; } = Vector2d.Zero;
 
         public List<DrawingMtextSegment> Segments => _segments;
-        public float Width => (float)Segments.Sum(s => s.Bounds.Width) + (Segments.Count > 1 ? Segments.Skip(1).Sum(s => s.SpaceWidth) : 0f);
+        public double Width => Segments.Sum(s => s.Bounds.Width) + (Segments.Count > 1 ? Segments.Skip(1).Sum(s => s.SpaceWidth) : 0);
 
-        public Vector3 CurrentTranslate { get; private set; } = Vector3.Zero;
-        public Vector3 OverallTranslate { get; private set; } = Vector3.Zero;
+        public Vector2d CurrentTranslate { get; private set; } = Vector2d.Zero;
+        public Vector2d OverallTranslate { get; private set; } = Vector2d.Zero;
         #endregion
 
         #region Constructors
-        public DrawingMtextRow(List<DrawingMtextSegment> segments, Vector3 basePosition, float maxWidth)
+        public DrawingMtextRow(List<DrawingMtextSegment> segments, Vector2d basePosition, double maxWidth)
         {
             _segments = segments;
             TextAlignment = _segments.First().TextAlignment;
@@ -45,7 +45,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         public void AddSegment(DrawingMtextSegment segment)
         {
             Segments.Add(segment);
-            float rowHeight = segment.TextHeight;
+            double rowHeight = segment.TextHeight;
 
             if (rowHeight > Height) { Height = rowHeight; }
         }
@@ -61,7 +61,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             for (int i = 0; i < Segments.Count; i++)
             {
                 var segment = Segments [i];
-                float rowHeight = segment.TextHeight;
+                double rowHeight = segment.TextHeight;
 
                 if (rowHeight > Height) { Height = rowHeight; }
             }
@@ -69,7 +69,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         public void SetTextSegmentsXOffset()
         {
             DrawingMtextSegment prevSegment = null;
-            float currentXOffset = 0;
+            double currentXOffset = 0;
             for (int i = 0; i < Segments.Count; i++)
             {
                 var segment = Segments [i];
@@ -82,7 +82,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             }
         }
 
-        public void UpdateTranslate(Vector3 offset)
+        public void UpdateTranslate(Vector2d offset)
         {
             CurrentTranslate += offset;
             OverallTranslate += offset;
@@ -93,7 +93,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             {
                 segment.ApplyTranslate(CurrentTranslate);
             }
-            CurrentTranslate = Vector3.Zero; // Reset current translate after applying to segments
+            CurrentTranslate = Vector2d.Zero; // Reset current translate after applying to segments
         }
         #endregion
 

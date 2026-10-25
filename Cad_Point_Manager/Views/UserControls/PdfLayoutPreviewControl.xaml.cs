@@ -119,21 +119,16 @@ namespace Cad_Point_Manager.Views.UserControls
 
             var worldToPdf =
                    LayoutPdfVectorExporter.BuildWorldToPdfFromCamera(
-                       ActiveLayout, CadManager, ActiveLayout.Viewport.Scene.Bounds.ToRect());
+                       ActiveLayout, CadManager, ActiveLayout.Viewport.Scene.Bounds);
 
             using var pdf =
                 LayoutPdfVectorExporter.ExportViewportPreviewToStream(
-                    ActiveLayout,
-                    CadManager,
-                    Renderer.StateController,
-                    Renderer.SceneIdMap,
-                    Renderer.ResCache,
-                    worldToPdf);
+                    ActiveLayout, CadManager, worldToPdf);
+
             pdf.Position = 0;
 
-            var bmp =
-                _previewService.RenderPreview(
-                    pdf, renderWidth, renderHeight, GlobalHelperProperties.PdfPreviewDpi);
+            var bmp = _previewService.RenderPreview(
+                pdf, renderWidth, renderHeight, GlobalHelperProperties.PdfPreviewDpi);
 
             LayoutPreviewImage.Source = bmp;
         }
@@ -164,13 +159,13 @@ namespace Cad_Point_Manager.Views.UserControls
 
             var worldToPdf =
                    LayoutPdfVectorExporter.BuildWorldToPdfFromCamera(
-                       activeLayout, cadManager, activeLayout.Viewport.Scene.Bounds.ToRect());
+                       activeLayout, cadManager, activeLayout.Viewport.Scene.Bounds);
 
             await Task.Run(() =>
             {
                 using var pdf =
                     LayoutPdfVectorExporter.ExportToStream(
-                        activeLayout, cadManager, stateController, sceneIdMap, resCache, worldToPdf);
+                        activeLayout, cadManager, worldToPdf);
 
                 pdf.Position = 0;
 

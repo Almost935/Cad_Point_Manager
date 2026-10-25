@@ -52,7 +52,6 @@ namespace Cad_Point_Manager.ViewModels
         private BatchableObservableCollection<DrawingGeometry> _selectedGeometries = [];
         private IReadOnlyList<ChainPath> _chainPaths = [];
         private double _vertexSnapTolerance = 1e-4;
-        private Point _mousePosition = new();
         private ResCache _resCache = new ResCache();
 
         // CogoPoint Creation Fields
@@ -207,15 +206,6 @@ namespace Cad_Point_Manager.ViewModels
                     OnPropertyChanged(nameof(VertexSnapTolerance));
                     RebuildChains();
                 }
-            }
-        }
-        public Point MousePosition
-        {
-            get => _mousePosition;
-            set
-            {
-                _mousePosition = value;
-                OnPropertyChanged(nameof(MousePosition));
             }
         }
         public ResCache ResCache
@@ -693,7 +683,7 @@ namespace Cad_Point_Manager.ViewModels
                     }
                     else
                     {
-                        List<(int pointNumber, SharpDX.Vector3 position, PointGroup pg, float elevation, string description)> pointsToCreate = [];
+                        List<(int pointNumber, Vector2d position, PointGroup pg, double elevation, string description)> pointsToCreate = [];
                         int pointNum = JobFileManager.CadManager.GetNextAvailablePointNumber(NewCogoPointsStartNumber);
 
                         foreach (var coord in coords)
@@ -702,7 +692,7 @@ namespace Cad_Point_Manager.ViewModels
                             {
                                 pointNum++;
                             }
-                            pointsToCreate.Add((pointNum, coord.ToSharpDXVector3(), ActivePointGroup, NewCogoPointsElevation.ToFloat(), NewCogoPointsDescription));
+                            pointsToCreate.Add((pointNum, coord, ActivePointGroup, NewCogoPointsElevation, NewCogoPointsDescription));
                             pointNum++;
                         }
 
@@ -769,10 +759,10 @@ namespace Cad_Point_Manager.ViewModels
                             }
                         }
 
-                        List<System.Numerics.Vector2> coords =
-                            uniquePoints.Select(p => new System.Numerics.Vector2((float)p.X, (float)p.Y)).ToList();
+                        List<Vector2d> coords =
+                            uniquePoints.Select(p => new Vector2d(p.X, p.Y)).ToList();
 
-                        List<(int pointNumber, SharpDX.Vector3 position, PointGroup pg, float elevation, string description)> pointsToCreate = [];
+                        List<(int pointNumber, Vector2d position, PointGroup pg, double elevation, string description)> pointsToCreate = [];
                         int pointNum = JobFileManager.CadManager.GetNextAvailablePointNumber(NewCogoPointsStartNumber);
 
                         for (int i = 0; i < coords.Count; i++)
@@ -781,7 +771,7 @@ namespace Cad_Point_Manager.ViewModels
                             {
                                 pointNum++;
                             }
-                            pointsToCreate.Add((pointNum, coords[i].ToSharpDXVector3(), ActivePointGroup, NewCogoPointsElevation.ToFloat(), NewCogoPointsDescription));
+                            pointsToCreate.Add((pointNum, coords[i], ActivePointGroup, NewCogoPointsElevation, NewCogoPointsDescription));
                             pointNum++;
                         }
 
@@ -843,9 +833,6 @@ namespace Cad_Point_Manager.ViewModels
                 ActiveLayout,
                 JobFileManager.CadManager,
                 ActiveLayout.Viewport.Scene,
-                StateController,
-                SceneIdMap,
-                ResCache,
                 templatePrims,
                 path,
                 openAfterExport: true);

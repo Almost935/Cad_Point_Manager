@@ -1,4 +1,5 @@
-﻿using SharpDX;
+﻿using Cad_Point_Manager.Common;
+using SharpDX;
 using System.Windows;
 using Point = System.Windows.Point;
 
@@ -19,6 +20,11 @@ namespace Cad_Point_Manager.Extensions
         public static Vector ToVector(this Point p)
         {
             return new Vector(p.X, p.Y);
+        }
+
+        public static Vector2d ToVector2d(this Point p)
+        {
+            return new Vector2d(p.X, p.Y);
         }
     }
 }

@@ -19,7 +19,7 @@ namespace Cad_Point_Manager.Models.HitTesting
         #endregion
 
         #region Methods
-        public abstract double DistanceToPoint(Point p, MsdfAtlas atlas = null);
+        public abstract double DistanceToPoint(Vector2d p, MsdfAtlas atlas = null);
         public abstract void UpdateBounds();
         public abstract void MouseEnter();
         public abstract void MouseLeave();

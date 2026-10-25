@@ -25,7 +25,7 @@ cbuffer DrawingSettingsBuffer : register(b1)
 
 struct VSInput
 {
-    float3 Position : POSITION;
+    float2 Position : POSITION;
     uint LayerId : LAYERID; // Layer index for indirection
     uint ObjectId : OBJECTID; // Object index for indirection
 };
@@ -40,13 +40,11 @@ struct LayerState
 {
     float4 Color;
     uint Flags;
-    float3 Pad;
 };
-
 struct ObjectState
 {
     uint Flags;
-    float3 Pad;
+    uint LineTypeId;
     float4 Color;
 };
 
@@ -79,16 +77,8 @@ float4 GetObjectColor(VSInput input)
     {
         col = ls.Color;
     }
-
-    //float sel = ((os.Flags & OBJ_SELECTED) != 0u) ? 1.0f : 0.0f;
-    //float mo = ((os.Flags & OBJ_MOUSEOVER) != 0u) ? 1.0f : 0.0f;
     
-    //if (sel > 0.5)
-    //{
-    //    col = (mo > 0.5) ? selectedMouseOverColor : selectedColor;
-    //}
-    
-    if (!visLayer)
+    if (!visLayer || !visObject)
     {
         col.a = 0.0;
     }
@@ -100,12 +90,13 @@ PSInput VSMain(VSInput input)
 {
     PSInput o;
 
-    float4 clip = mul(float4(input.Position, 1.0), transformationMatrix);
+    float4 clip = mul(float4(input.Position, 0.0, 1.0), transformationMatrix);
     
     float4 col = GetObjectColor(input);
 
     o.Position = clip;
     o.Color = col;
+    
     return o;
 }
 

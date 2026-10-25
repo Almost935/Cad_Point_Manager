@@ -13,12 +13,12 @@ namespace Cad_Point_Manager.Models.HitTesting
         #region Fields
         private const float _boundsSize = 1.0f;
 
-        private Point _position;
+        private Vector2d _position;
         private SignificantPointType _pointType;
         #endregion
 
         #region Properties
-        public Point Position
+        public Vector2d Position
         {
             get { return _position; }
             set
@@ -41,7 +41,7 @@ namespace Cad_Point_Manager.Models.HitTesting
         #endregion
 
         #region Constructors
-        public HitTestablePoint(Point position, SignificantPointType pointType)
+        public HitTestablePoint(Vector2d position, SignificantPointType pointType)
         {
             Position = position;
             PointType = pointType;
@@ -73,9 +73,9 @@ namespace Cad_Point_Manager.Models.HitTesting
                 _boundsSize,
                 _boundsSize);
         }
-        public override double DistanceToPoint(Point p, MsdfAtlas atlas = null)
+        public override double DistanceToPoint(Vector2d p, MsdfAtlas atlas = null)
         {
-            return MathHelpers.PointToPointDistance(p, Position);
+            return p.DistanceTo(Position);
         }
         #endregion
 
@@ -90,10 +90,6 @@ namespace Cad_Point_Manager.Models.HitTesting
         {
             return Math.Abs(p1.Position.X - p2.Position.X) <= tolerance &&
                   Math.Abs(p1.Position.Y - p2.Position.Y) <= tolerance;
-        }
-        public static float GetDistance2D(HitTestablePoint p1, HitTestablePoint p2)
-        {
-            return Vector2.Distance(p1.Position.ToSharpDXVector2(), p2.Position.ToSharpDXVector2());
         }
         #endregion
     }

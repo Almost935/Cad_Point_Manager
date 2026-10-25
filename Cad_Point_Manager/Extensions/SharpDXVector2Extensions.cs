@@ -1,4 +1,5 @@
-﻿using SharpDX;
+﻿using Cad_Point_Manager.Common;
+using SharpDX;
 using System.Windows;
 using Point = System.Windows.Point;
 
@@ -34,6 +35,11 @@ namespace Cad_Point_Manager.Extensions
         public static netDxf.Vector2 ToNetDxfVector2(this Vector2 v)
         {
             return new netDxf.Vector2(v.X, v.Y);
+        }
+
+        public static Vector2d ToVector2d(this Vector2 v)
+        {
+            return new Vector2d(v.X, v.Y);
         }
 
         public static bool EqualsWithTolerance(this Vector2 v1, Vector2 v2, float tolerance)

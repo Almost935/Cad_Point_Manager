@@ -1,4 +1,5 @@
-﻿using Cad_Point_Manager.Models;
+﻿using Cad_Point_Manager.Common;
+using Cad_Point_Manager.Models;
 using Cad_Point_Manager.Models.Importing;
 using SharpDX;
 
@@ -28,21 +29,16 @@ namespace Cad_Point_Manager.Commands.UndoRedo
             IEnumerable<ParsedPointImportRow> rows)
         {
             _cadManager = cadManager;
-
             _rows = rows.ToList();
 
             List<IUndoableCommand> commands = [];
 
-            // Prevent duplicate group creation commands
             HashSet<string> createdGroups =
                 new(StringComparer.OrdinalIgnoreCase);
 
             foreach (var row in _rows)
             {
-                Vector3 position = new(
-                    (float)row.Easting,
-                    (float)row.Northing,
-                    0);
+                Vector2d position = new(row.Easting, row.Northing);
 
                 commands.Add(
                     new CreatePointCommand(
@@ -54,10 +50,7 @@ namespace Cad_Point_Manager.Commands.UndoRedo
                         row.Description ?? ""));
             }
 
-            _composite = new CompositeCommand(
-                _cadManager,
-                "Import Points",
-                commands);
+            _composite = new CompositeCommand(_cadManager, "Import Points", commands);
         }
         #endregion
 

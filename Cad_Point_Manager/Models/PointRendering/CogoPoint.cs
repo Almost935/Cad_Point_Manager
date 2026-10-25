@@ -1,4 +1,5 @@
-﻿using Cad_Point_Manager.Controls.D3DControl.Rendering.Msdf;
+﻿using Cad_Point_Manager.Common;
+using Cad_Point_Manager.Controls.D3DControl.Rendering.Msdf;
 using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Helpers;
 using Cad_Point_Manager.Models.HitTesting;
@@ -12,7 +13,7 @@ namespace Cad_Point_Manager.Models.PointRendering
 {
     #region Structures
     public readonly record struct CogoPointInfoState(
-         Vector2 Offset, CogoLabelQuadrant Quadrant, bool HasLeaderLine);
+         Vector2d Offset, CogoLabelQuadrant Quadrant, bool HasLeaderLine);
     #endregion
 
     #region Enums
@@ -154,7 +155,7 @@ namespace Cad_Point_Manager.Models.PointRendering
 
         public bool IsElevationVisible => PointGroup.ShowElevation;
         public bool IsDescriptionVisible => PointGroup.ShowDescription && HasDescription;
-        public Point Position => new(Easting, Northing);
+        public Vector2d Position => new(Easting, Northing);
         public bool HasPointNumberError => HasErrorsFor(nameof(PointNumber));
         public bool HasDescription => !string.IsNullOrWhiteSpace(Description);
         public bool IsLabelLeft =>
@@ -169,10 +170,10 @@ namespace Cad_Point_Manager.Models.PointRendering
         public Rect DescriptionBounds { get; set; } = Rect.Empty;
         public Rect EllipseBounds { get; set; } = Rect.Empty;
         public Rect ToggleBounds { get; set; } = Rect.Empty;
-        public Vector2 TextInfoOffset { get; set; }
-        public Vector2 PointNumberOffset { get; set; }
-        public Vector2 ElevationOffset { get; set; }
-        public Vector2 DescriptionOffset { get; set; }
+        public Vector2d TextInfoOffset { get; set; }
+        public Vector2d PointNumberOffset { get; set; }
+        public Vector2d ElevationOffset { get; set; }
+        public Vector2d DescriptionOffset { get; set; }
         public bool TextVerticesInitialized { get; set; }
         public int TextStartIndex { get; set; }
         public int TextEndIndex { get; set; }
@@ -184,14 +185,14 @@ namespace Cad_Point_Manager.Models.PointRendering
         public MsdfGlyphHitRegion[] ElevationGlyphs { get; set; } = [];
         public MsdfGlyphHitRegion[] DescriptionGlyphs { get; set; } = [];
 
-        public float BasePointNumberOffset_Y => _textBaseHeight * _textLineSpacingFactor * 2;
-        public float BaseElevationOffset_Y => _textBaseHeight * _textLineSpacingFactor;
-        public float BaseDescriptionOffset_Y => 0;
+        public double BasePointNumberOffset_Y => _textBaseHeight * _textLineSpacingFactor * 2;
+        public double BaseElevationOffset_Y => _textBaseHeight * _textLineSpacingFactor;
+        public double BaseDescriptionOffset_Y => 0;
         #endregion
 
         #region Constructors
-        public CogoPoint(PointGroup pointGroup, int pointNum, Vector3 position,
-            CadManager cadManager, float elevation = 0, string description = "")
+        public CogoPoint(PointGroup pointGroup, int pointNum, Vector2d position,
+            CadManager cadManager, double elevation = 0, string description = "")
         {
             CadManager = cadManager;
             PointGroup = pointGroup;
@@ -211,7 +212,7 @@ namespace Cad_Point_Manager.Models.PointRendering
             return $"CogoPoint PointNumber: {PointNumber}";
         }
 
-        public override double DistanceToPoint(Point p, MsdfAtlas atlas = null)
+        public override double DistanceToPoint(Vector2d p, MsdfAtlas atlas = null)
         {
             if (atlas is not null)
             {
@@ -227,7 +228,7 @@ namespace Cad_Point_Manager.Models.PointRendering
             }
             else if (HasLeaderLine)
             {
-                return MathHelpers.PointToLineDistance(p, Position, Point.Add(Position, TextInfoOffset.ToVector()));
+                return MathHelpers.PointToLineDistance(p, Position, Position + TextInfoOffset);
             }
             else
             {
@@ -337,7 +338,7 @@ namespace Cad_Point_Manager.Models.PointRendering
             PointGroup = pointGroup;
         }
 
-        public void SetTextInfoOffset(Vector2 offset)
+        public void SetTextInfoOffset(Vector2d offset)
         {
             TextInfoOffset = offset;
         }
@@ -377,12 +378,13 @@ namespace Cad_Point_Manager.Models.PointRendering
 
             float yTranslation = IsLabelBelow ? -translation : 0;
 
-            PointNumberOffset = new Vector2(
+            PointNumberOffset = new(
                 IsLabelLeft ? -(float)PointNumberBounds.Width : 0, GetYOffset(pointNumberIndex) + yTranslation);
-            ElevationOffset = new Vector2(
+
+            ElevationOffset = new(
                 IsLabelLeft ? -(float)ElevationBounds.Width : 0, showElevation ? GetYOffset(elevationIndex) + yTranslation : 0);
 
-            DescriptionOffset = new Vector2(
+            DescriptionOffset = new(
                 IsLabelLeft ? -(float)DescriptionBounds.Width : 0, showDescription ? GetYOffset(descriptionIndex) + yTranslation : 0);
         }
 
@@ -390,9 +392,9 @@ namespace Cad_Point_Manager.Models.PointRendering
         {
             HasLeaderLine = false;
 
-            PointNumberOffset = Vector2.Zero;
-            ElevationOffset = Vector2.Zero;
-            DescriptionOffset = Vector2.Zero;
+            PointNumberOffset = Vector2d.Zero;
+            ElevationOffset = Vector2d.Zero;
+            DescriptionOffset = Vector2d.Zero;
 
             UpdateOffsetOrientation();
         }
@@ -407,23 +409,27 @@ namespace Cad_Point_Manager.Models.PointRendering
             //}
         }
 
-        private static double DistanceToCogoPointViaAtlas(CogoPoint point, Point p, MsdfAtlas atlas)
+        private static double DistanceToCogoPointViaAtlas(CogoPoint point, Vector2d p, MsdfAtlas atlas)
         {
             double minDistance = double.MaxValue;
 
-            minDistance = Math.Min(minDistance, MsdfHitTester.DistanceToGlyphs(atlas, point.PointNumberGlyphs, p));
-            minDistance = Math.Min(minDistance, MsdfHitTester.DistanceToGlyphs(atlas, point.ElevationGlyphs, p));
-            minDistance = Math.Min(minDistance, MsdfHitTester.DistanceToGlyphs(atlas, point.DescriptionGlyphs, p));
+            Point wp = p.ToPoint();
+
+            minDistance = Math.Min(
+                minDistance, MsdfHitTester.DistanceToGlyphs(atlas, point.PointNumberGlyphs, wp));
+            minDistance = Math.Min(
+                minDistance, MsdfHitTester.DistanceToGlyphs(atlas, point.ElevationGlyphs, wp));
+            minDistance = Math.Min(
+                minDistance, MsdfHitTester.DistanceToGlyphs(atlas, point.DescriptionGlyphs, wp));
 
             if (point.HasLeaderLine)
             {
                 double leaderDistance = MathHelpers.PointToLineDistance(
-                    p, point.Position, Point.Add(point.Position, point.TextInfoOffset.ToVector()));
+                    p, point.Position, point.Position + point.TextInfoOffset);
 
                 minDistance = Math.Min(minDistance, leaderDistance);
             }
 
-            // Toggle.
             if (point.IsSelected && point.ToggleBounds.Contains(p))
             {
                 minDistance = 0.0;
@@ -436,16 +442,48 @@ namespace Cad_Point_Manager.Models.PointRendering
 
             return minDistance;
         }
+
+        public Vector2d GetLabelOffset(int line)
+        {
+            double textInfoOffset = PointGroup.PointInfoBaseXoffset;
+
+            if (LabelQuadrant == CogoLabelQuadrant.LowerLeft ||
+                LabelQuadrant == CogoLabelQuadrant.UpperLeft)
+            {
+                textInfoOffset *= -1.0;
+            }
+
+            switch (line)
+            {
+                case 0:
+                    return new(
+                        Position.X + PointNumberOffset.X + textInfoOffset + TextInfoOffset.X,
+                        Position.Y + (PointNumberOffset.Y * PointGroup.PointScale) + TextInfoOffset.Y);
+
+                case 1:
+                    return new(
+                        Position.X + ElevationOffset.X + textInfoOffset + TextInfoOffset.X,
+                        Position.Y + (ElevationOffset.Y * PointGroup.PointScale) + TextInfoOffset.Y);
+
+                case 2:
+                    return new(
+                        Position.X + DescriptionOffset.X + textInfoOffset + TextInfoOffset.X,
+                        Position.Y + (DescriptionOffset.Y * PointGroup.PointScale) + TextInfoOffset.Y);
+
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(line), "Line must be 0, 1, or 2.");
+            }
+        }
         #endregion
     }
 
     public sealed class CogoPointDto
     {
         public int PointNumber { get; set; }
-        public float X { get; set; }
-        public float Y { get; set; }
-        public float Z { get; set; }
-        public float Elevation { get; set; }
+        public double X { get; set; }
+        public double Y { get; set; }
+        public double Z { get; set; }
+        public double Elevation { get; set; }
         public string Description { get; set; } = string.Empty;
         public string PointGroupName { get; set; } = string.Empty;
 
@@ -455,10 +493,10 @@ namespace Cad_Point_Manager.Models.PointRendering
         {
             if (cogoPoint is null) { return; }
             PointNumber = cogoPoint.PointNumber;
-            X = (float)cogoPoint.Easting;
-            Y = (float)cogoPoint.Northing;
-            Z = (float)cogoPoint.Elevation;
-            Elevation = (float)cogoPoint.Elevation;
+            X = cogoPoint.Easting;
+            Y = cogoPoint.Northing;
+            Z = cogoPoint.Elevation;
+            Elevation = cogoPoint.Elevation;
             Description = cogoPoint.Description ?? string.Empty;
             PointGroupName = cogoPoint.PointGroup?.Name ?? string.Empty;
         }

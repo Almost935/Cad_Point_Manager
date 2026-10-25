@@ -1,4 +1,5 @@
-﻿using Cad_Point_Manager.Common.Collections;
+﻿using Cad_Point_Manager.Common;
+using Cad_Point_Manager.Common.Collections;
 using Cad_Point_Manager.Controls.D3DControl;
 using Cad_Point_Manager.Helpers;
 using Cad_Point_Manager.Models;
@@ -402,8 +403,9 @@ namespace Cad_Point_Manager.Views.UserControls
                 return;
             }
 
-            bool created = TryCreateNewPoint(CadManager.GetNextAvailablePointNumber(_lastCreatedPointNumber),
-                new Vector3(0, 0, 0), ActivePointGroup, 0, "");
+            bool created = TryCreateNewPoint(
+                CadManager.GetNextAvailablePointNumber(_lastCreatedPointNumber),
+                Vector2d.Zero, ActivePointGroup, 0, "");
         }
         private void PointsListViewEditPoint_Click(object sender, RoutedEventArgs e)
         {
@@ -711,7 +713,7 @@ namespace Cad_Point_Manager.Views.UserControls
                 _ => null
             };
         }
-        private bool TryCreateNewPoint(int num, Vector3 pos, PointGroup pg, float elevation, string description)
+        private bool TryCreateNewPoint(int num, Vector2d pos, PointGroup pg, float elevation, string description)
         {
             if (!CadManager.TryCreatePoint(num, pos, pg, out CogoPoint p, elevation, description))
                 return false;

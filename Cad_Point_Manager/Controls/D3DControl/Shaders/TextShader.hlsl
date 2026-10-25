@@ -33,7 +33,7 @@ float4 GetSnappedColor(float4 color)
 // Input / Output
 struct VSInput
 {
-    float3 Position : POSITION;
+    float2 Position : POSITION;
     uint LayerId : LAYERID; // Layer index for indirection
     uint ObjectId : OBJECTID; // Object index for indirection
 };
@@ -48,12 +48,11 @@ struct LayerState
 {
     float4 Color;
     uint Flags; // bit0: visible, bit1: selected, bit2: mouseOver
-    float3 Pad;
 };
 struct ObjectState
 {
-    uint Flags; // bit0: visible, bit1: selected, bit2: mouseOver, bit3: colorByLayer
-    float3 Pad;
+    uint Flags;
+    uint LineTypeId;
     float4 Color;
 };
 
@@ -112,28 +111,11 @@ float4 GetObjectColor(VSInput input)
     return col;
 }
 
-//PSInput VSMain(VSInput input)
-//{
-//    PSInput o;
-
-//    float4 clip = mul(float4(input.Position, 1.0), transformationMatrix);
-    
-//    float4 col = GetObjectColor(input);
-
-//    // --- uniform snap (same offset for all vertices in this draw) ---
-//    float2 snapNdc = ComputeSnapDeltaNdc(ViewportSize);
-//    clip.xy += snapNdc * clip.w;
-
-//    o.Position = clip;
-//    o.Color = col;
-//    return o;
-//}
-
 PSInput VSMain(VSInput input)
 {
     PSInput o;
 
-    o.Position = mul(float4(input.Position, 1.0), transformationMatrix);
+    o.Position = mul(float4(input.Position, 0.0, 1.0), transformationMatrix);
     o.Color = GetObjectColor(input);
 
     return o;

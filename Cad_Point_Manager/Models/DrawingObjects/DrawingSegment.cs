@@ -5,7 +5,7 @@
         #region Properties
         public bool IsPartOfPolyline { get; set; } = false;
         public DrawingPolyline DrawingPolyline3D { get; set; }
-        public float Length { get; set; }
+        public double Length { get; set; }
         #endregion
     }
 }

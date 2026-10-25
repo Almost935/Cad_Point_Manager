@@ -1,4 +1,5 @@
-﻿using Cad_Point_Manager.Extensions;
+﻿using Cad_Point_Manager.Common;
+using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Models;
 using Cad_Point_Manager.Models.PointRendering;
 using SharpDX;
@@ -10,9 +11,9 @@ namespace Cad_Point_Manager.Commands.UndoRedo
         private readonly CadManager _cadManager;
 
         private readonly int _pointNumber;
-        private readonly Vector3 _position;
+        private readonly Vector2d _position;
         private readonly string _groupName;
-        private readonly float _elevation;
+        private readonly double _elevation;
         private readonly string _description;
 
         private CogoPoint? _createdPoint;
@@ -26,12 +27,8 @@ namespace Cad_Point_Manager.Commands.UndoRedo
         public CogoPoint? CreatedPoint => _createdPoint;
 
         public CreatePointCommand(
-            CadManager cadManager,
-            int pointNumber,
-            Vector3 position,
-            string groupName,
-            float elevation,
-            string description)
+            CadManager cadManager, int pointNumber, Vector2d position,
+            string groupName, double elevation, string description)
         {
             _cadManager = cadManager;
             _pointNumber = pointNumber;
@@ -41,28 +38,21 @@ namespace Cad_Point_Manager.Commands.UndoRedo
             _description = description;
         }
 
-        public CreatePointCommand(
-            CadManager cadManager,
-            CogoPoint cogoPoint)
+        public CreatePointCommand(CadManager cadManager, CogoPoint cogoPoint)
         {
             _cadManager = cadManager;
             _pointNumber = cogoPoint.PointNumber;
-            _position = cogoPoint.Position.ToSharpDXVector3();
+            _position = cogoPoint.Position;
             _groupName = cogoPoint.PointGroup.Name;
-            _elevation = cogoPoint.Elevation.ToFloat();
+            _elevation = cogoPoint.Elevation;
             _description = cogoPoint.Description;
         }
 
         public void Execute()
         {
             _succeeded = _cadManager.TryCreatePointInternal(
-                _pointNumber,
-                _position,
-                _groupName,
-                out _createdPoint,
-                out _errorMessage,
-                _elevation,
-                _description);
+                _pointNumber, _position, _groupName, out _createdPoint,
+                out _errorMessage, _elevation, _description);
         }
 
         public void Undo()

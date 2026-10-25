@@ -1,4 +1,5 @@
-﻿using Cad_Point_Manager.Controls.D3DControl;
+﻿using Cad_Point_Manager.Common;
+using Cad_Point_Manager.Controls.D3DControl;
 using Cad_Point_Manager.Controls.D3DControl.Rendering.Helpers;
 using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Helpers;
@@ -15,31 +16,18 @@ using System.Windows.Media;
 
 namespace Cad_Point_Manager.Services.Exporting
 {
-    public class LayoutPdfVectorExporter : ILayoutPdfVectorExporter
+    public class LayoutPdfVectorExporter
     {
         private const double PdfPointsPerInch = 72;
 
         static double Pt(double inches) => inches * PdfPointsPerInch;
         static readonly Dictionary<short, XGraphicsPath> _duGlyphPathCache = [];
 
-        const uint LABEL_VISIBLE = 1u << 0;
-
-        const uint POINT_VISIBLE = 1u << 0;
-        const uint POINT_SELECTED = 1u << 1;
-        const uint POINT_MOUSEOVR = 1u << 2;
-        const uint POINT_ISFLIPPEDY = 1u << 6;
-
-        const uint GROUP_VISIBLE = 1u << 0;
-
         public Task ExportAsync(
             Layout layout,
             CadManager cadManager3D,
             Scene scene,
-            D3dStateController stateController,
-            SceneIdMap ids,
-            ResCache resCache,
             List<TbPrimitive> templatePrims, string outputPath,
-            CancellationToken ct = default,
             bool openAfterExport = false)
         {
             return Application.Current.Dispatcher.InvokeAsync(() =>
@@ -48,28 +36,21 @@ namespace Cad_Point_Manager.Services.Exporting
                 double pageWpts = layout.PageWidth * PdfPointsPerInch;
                 double pageHpts = layout.PageHeight * PdfPointsPerInch;
 
-                Matrix worldToPdf = BuildWorldToPdfFromCamera(layout, cadManager3D, scene.Bounds.ToRect());
+                Matrix worldToPdf = BuildWorldToPdfFromCamera(layout, cadManager3D, scene.Bounds);
 
                 LayoutPdfVectorExporter.Export(
                     layout,
                     cadManager3D,
-                    stateController,
-                    ids,
-                    resCache,
                     templatePrims,
                     worldToPdf,
                     outputPath,
                     openAfterExport);
-
             }).Task;
         }
 
         public static void Export(
             Layout layout,
             CadManager cadManager,
-            D3dStateController stateController,
-            SceneIdMap ids,
-            ResCache resCache,
             List<TbPrimitive> templatePrims,
             Matrix worldToPdf,
             string outputPdfPath,
@@ -111,13 +92,7 @@ namespace Cad_Point_Manager.Services.Exporting
                 }
             }
 
-            var labelStates = stateController.GetLabelStatesSnapshot();
-            var pointStates = stateController.GetPointStatesSnapshot();
-            var groupStates = stateController.GetGroupStatesSnapshot();
-
-            DrawCogoPointStrings(
-                gfx, cadManager, ids, resCache, worldToPdf,
-                labelStates, pointStates, groupStates);
+            DrawCogoPointStrings(gfx, cadManager, worldToPdf);
 
             gfx.Restore(cadClipState);
             DrawTitleblockPdf(gfx, templatePrims);
@@ -131,8 +106,7 @@ namespace Cad_Point_Manager.Services.Exporting
             }
         }
 
-        public static MemoryStream ExportToStream(
-            Layout layout, CadManager cadManager, D3dStateController stateController, SceneIdMap ids, ResCache resCache, Matrix worldToPdf)
+        public static MemoryStream ExportToStream(Layout layout, CadManager cadManager, Matrix worldToPdf)
         {
             Stopwatch sw = Stopwatch.StartNew();
 
@@ -169,13 +143,7 @@ namespace Cad_Point_Manager.Services.Exporting
                 }
             }
 
-            var labelStates = stateController.GetLabelStatesSnapshot();
-            var pointStates = stateController.GetPointStatesSnapshot();
-            var groupStates = stateController.GetGroupStatesSnapshot();
-
-            DrawCogoPointStrings(
-                gfx, cadManager, ids, resCache, worldToPdf,
-                labelStates, pointStates, groupStates);
+            DrawCogoPointStrings(gfx, cadManager, worldToPdf);
 
             doc.Save(stream, false);
             stream.Position = 0;
@@ -189,12 +157,7 @@ namespace Cad_Point_Manager.Services.Exporting
         }
 
         public static MemoryStream ExportViewportPreviewToStream(
-            Layout layout,
-            CadManager cadManager,
-            D3dStateController stateController,
-            SceneIdMap ids,
-            ResCache resCache,
-            Matrix worldToPdf)
+            Layout layout, CadManager cadManager, Matrix worldToPdf)
         {
             var stream = new MemoryStream();
 
@@ -208,12 +171,7 @@ namespace Cad_Point_Manager.Services.Exporting
 
             using var gfx = XGraphics.FromPdfPage(page);
 
-            gfx.DrawRectangle(
-                XBrushes.White,
-                0,
-                0,
-                vpWpts,
-                vpHpts);
+            gfx.DrawRectangle(XBrushes.White, 0, 0, vpWpts, vpHpts);
 
             foreach (var kv in cadManager.Layers)
             {
@@ -222,19 +180,12 @@ namespace Cad_Point_Manager.Services.Exporting
 
                 foreach (var obj in layer.DrawingObjects)
                 {
-                    var pen = new XPen(
-                        PdfTransform.ToXColor(obj.GetColor().ToVector4()),
-                        0.0);
+                    var pen = new XPen(PdfTransform.ToXColor(obj.GetColor().ToVector4()), 0.0);
                     obj.DrawToPdf(gfx, worldToPdf, pen);
                 }
             }
 
-            var labelStates = stateController.GetLabelStatesSnapshot();
-            var pointStates = stateController.GetPointStatesSnapshot();
-            var groupStates = stateController.GetGroupStatesSnapshot();
-            DrawCogoPointStrings(
-                gfx, cadManager, ids, resCache, worldToPdf,
-                labelStates, pointStates, groupStates);
+            DrawCogoPointStrings(gfx, cadManager, worldToPdf);
 
             doc.Save(stream, false);
 
@@ -243,253 +194,71 @@ namespace Cad_Point_Manager.Services.Exporting
             return stream;
         }
 
-        private static void DrawCogoPointStrings(
-            XGraphics gfx,
-            CadManager cadManager,
-            SceneIdMap ids,
-            ResCache resCache,
-            Matrix worldToPdf,
-            LabelState[] labelStates,
-            PointState[] pointStates,
-            GroupState[] groupStates)
+        private static void DrawCogoPointStrings(XGraphics gfx, CadManager cadManager, Matrix worldToPdf)
         {
-            const string fallbackFontFamily = "Arial";
+            const string fontFamily = "Arial";
+
+            double scaleX = PointsPerWorldUnitX(worldToPdf);
+            double scaleY = PointsPerWorldUnitY(worldToPdf);
+            double fontScale = PointsPerWorldUnit(worldToPdf);
 
             foreach (var pg in cadManager.PointGroups)
             {
-                if (pg is null || !pg.IsVisible) { continue; }
+                if (pg is null || !pg.IsVisible)
+                    continue;
 
-                foreach (var p in cadManager.GetPoints(pg))
+                foreach (var cp in cadManager.GetPoints(pg))
                 {
-                    if (p is null) { continue; }
+                    if (cp is null)
+                        continue;
 
-                    if (!ids.TryGetGroupId(pg, out var gId)) { continue; }
-                    if (!ids.TryGetPointId(p, out var pId)) { continue; }
-
-                    if (pId >= (uint)pointStates.Length) { continue; }
-                    var ps = pointStates[(int)pId];
-
-                    if (ps.GroupId >= (uint)groupStates.Length) { continue; }
-                    var gs = groupStates[(int)ps.GroupId];
-
-                    var color = PickColor(ps, gs);
+                    var color = GetCogoPointColor(cp);
                     var brush = new XSolidBrush(color);
                     var pen = new XPen(color, 0.25);
 
+                    double pointScale = pg.PointScale;
 
-                    // Draw PN / Elev / Desc (same order you do now)
-                    DrawLine(p.PointNumber.ToString(), p, line: 0);
-                    DrawLine(p.Elevation.ToString("F3"), p, line: 1);
-                    if (p.HasDescription) DrawLine(p.Description, p, line: 2);
+                    DrawLabel(cp.PointNumber.ToString(), 0);
 
-                    // Match shader: center = position + ps.Offset
-                    var centerW = ps.Offset;
-                    var (X, Y) = TransformPoint(worldToPdf, centerW);
+                    if (cp.IsElevationVisible)
+                        DrawLabel(cp.Elevation.ToString("F3"), 1);
 
-                    // Match shader: radiusWorld = input.radius * gs.Scale
-                    float radiusWorld = GlobalHelperProperties.CogoPointCirclePixelRadius * gs.Scale;
+                    if (cp.IsDescriptionVisible)
+                        DrawLabel(cp.Description, 2);
 
-                    // Convert world radius -> PDF points using true axis scales
-                    double rx = radiusWorld * PointsPerWorldUnitX(worldToPdf);
-                    double ry = radiusWorld * PointsPerWorldUnitY(worldToPdf);
+                    Vector2d center = cp.Position.Transform(worldToPdf);
+                    double radiusWorld = GlobalHelperProperties.CogoPointCirclePixelRadius * pointScale;
 
-                    // Filled disc (like your pixel shader)
-                    gfx.DrawEllipse(
-                        brush,
-                        X - rx,
-                        Y - ry,
-                        rx * 2.0,
-                        ry * 2.0
-                    );
+                    double rx = radiusWorld * scaleX;
+                    double ry = radiusWorld * scaleY;
 
-                    if (p.HasLeaderLine)
+                    gfx.DrawEllipse(brush, center.X - rx, center.Y - ry, rx * 2, ry * 2);
+
+                    if (cp.HasLeaderLine)
                     {
-                        var start = TransformPoint(worldToPdf, p.Position.ToSharpDXVector2());
-                        var end = TransformPoint(worldToPdf, p.Position.ToSharpDXVector2() + ps.PointInfoOffset);
+                        Vector2d start = cp.Position.Transform(worldToPdf);
+                        Vector2d end = (cp.Position + cp.TextInfoOffset).Transform(worldToPdf);
+
                         gfx.DrawLine(pen, new XPoint(start.X, start.Y), new XPoint(end.X, end.Y));
                     }
 
-                    void DrawLine(string s, CogoPoint cp, int line)
+                    void DrawLabel(string text, int line)
                     {
-                        if (string.IsNullOrEmpty(s)) { return; }
-                        if (!ids.TryGetLabelId(cp, line, out var labelId)) { return; }
-                        if (labelId >= (uint)labelStates.Length) { return; }
+                        if (string.IsNullOrEmpty(text))
+                            return;
 
-                        var ls = labelStates[(int)labelId];
+                        Vector2d labelWorld = cp.GetLabelOffset(line);
+                        Vector2d labelPdf = labelWorld.Transform(worldToPdf);
 
-                        if (!IsVisible(ls, ps, gs)) { return; }
+                        double fontSizePts = Math.Max(0.1, pg.FontBaseSize * pointScale * fontScale);
+                        var font = new XFont(fontFamily, fontSizePts, XFontStyle.Regular, new XPdfFontOptions(PdfFontEncoding.Unicode));
 
-                        // 1) Compute label world origin (matches BuildDuToPdf origin math)
-                        var world = ComputeCogoLabelWorldOrigin(ls, ps, gs);
-
-                        // 2) Convert world -> PDF points
-                        var pdf = TransformPoint(worldToPdf, world);
-
-                        // 3) Compute font size in points from your world font height
-                        // pg.FontBaseSize is your "world" font height baseline (you already use it in tessellation).
-                        double worldEm = pg.FontBaseSize * gs.Scale;
-                        double ptsPerWorld = PointsPerWorldUnit(worldToPdf);
-                        double fontSizePts = Math.Max(0.1, worldEm * ptsPerWorld);
-
-                        // 4) Create font (embed Unicode so PDFs behave better)
-                        // If you have a custom font resolver, keep using it; otherwise this uses installed fonts.
-                        var font = new XFont(
-                            fallbackFontFamily,
-                            fontSizePts,
-                            XFontStyle.Regular,
-                            new XPdfFontOptions(PdfFontEncoding.Unicode));
-
-                        // 5) Draw.
-                        // PdfSharp draws text relative to the top-left of the layout rect in most cases.
-                        // If your offsets were tuned to a baseline, you may want to subtract font.GetHeight() here.
-                        gfx.DrawString(s, font, brush, new XPoint(pdf.X, pdf.Y), XStringFormats.BaseLineLeft);
+                        gfx.DrawString(text, font, brush, new XPoint(labelPdf.X, labelPdf.Y), XStringFormats.BaseLineLeft);
                     }
                 }
             }
         }
 
-        private static void DrawCogoPointGlyphs(
-            XGraphics gfx,
-            CadManager cadManager,
-            SceneIdMap ids,
-            ResCache resCache,
-            Matrix worldToPdf,
-            LabelState[] labelStates,
-            PointState[] pointStates,
-            GroupState[] groupStates,
-            GlyphMeshCache glyphCache)
-        {
-            var face = resCache.CogoPointFontFace;
-            var duPerEm = face.Metrics.DesignUnitsPerEm;
-
-            foreach (var pg in cadManager.PointGroups)
-            {
-                if (pg is null || !pg.IsVisible) { continue; }
-
-                // This matches your D3D logic for DU->world scales :contentReference[oaicite:9]{index=9}
-                float duToWorldBase = (float)pg.FontBaseSize / duPerEm;
-                float ySign = -1f;
-
-                foreach (var p in cadManager.GetPoints(pg))
-                {
-                    if (p is null) { continue; }
-
-                    // IMPORTANT: Don't create IDs during export
-                    if (!ids.TryGetGroupId(pg, out var gId)) { continue; }
-                    if (!ids.TryGetPointId(p, out var pId)) { continue; }
-
-                    if (pId >= (uint)pointStates.Length) { continue; }
-                    var ps = pointStates[(int)pId];
-
-                    // group comes from PointState.GroupId in shader :contentReference[oaicite:10]{index=10}
-                    if (ps.GroupId >= (uint)groupStates.Length) { continue; }
-                    var gs = groupStates[(int)ps.GroupId];
-
-                    // Draw PN / Elev / Desc lines
-                    DrawTesselatedLabelLine(gfx, p.PointNumber.ToString(), p, line: 0);
-                    DrawTesselatedLabelLine(gfx, p.Elevation.ToString("F3"), p, line: 1);
-                    if (p.HasDescription) DrawTesselatedLabelLine(gfx, p.Description, p, line: 2);
-
-                    void DrawLabelLine(XGraphics g, string s, CogoPoint cp, int line)
-                    {
-                        if (string.IsNullOrEmpty(s)) { return; }
-                        if (!ids.TryGetLabelId(cp, line, out var labelId)) { return; }
-                        if (labelId >= (uint)labelStates.Length) { return; }
-
-                        var ls = labelStates[(int)labelId];
-
-                        // shader visibility test :contentReference[oaicite:11]{index=11}
-                        if (!IsVisible(ls, ps, gs)) { return; }
-
-                        // Convert chars -> glyph IDs (same as AddCogoTextLabelLine) :contentReference[oaicite:12]{index=12}
-                        Span<int> cps = stackalloc int[s.Length];
-                        for (int i = 0; i < s.Length; i++) cps[i] = s[i];
-                        var gids = face.GetGlyphIndices(cps.ToArray());
-
-                        float penDU = 0f;
-                        var brush = PickBrush(ps, gs);
-
-                        var instOrigin = SharpDX.Vector2.Zero;
-
-                        for (int i = 0; i < gids.Length; i++)
-                        {
-                            short gid = (short)gids[i];
-                            if (gid <= 0) { continue; }
-
-                            // 1) Get cached DU path for this glyph (tessellates once per gid)
-                            var duPath = GetDuGlyphPath(gid, glyphCache);
-
-                            // 2) Build DU->PDF transform for THIS glyph instance (includes penDU)
-                            var duToPdf = BuildDuToPdf(
-                                instOrigin,
-                                duToWorldBase,
-                                penDU,
-                                ySign,
-                                ls, ps, gs,
-                                worldToPdf);
-
-                            // 3) Draw cached path with transform (NO per-triangle allocations)
-                            gfx.Save();
-                            gfx.MultiplyTransform(duToPdf);
-                            gfx.DrawPath(brush, duPath);
-                            gfx.Restore();
-
-                            // 4) advance pen
-                            penDU += resCache.AdvanceWidthCache[gid];
-                        }
-                    }
-
-                    void DrawTesselatedLabelLine(XGraphics g, string s, CogoPoint cp, int line)
-                    {
-                        if (string.IsNullOrEmpty(s)) { return; }
-                        if (!ids.TryGetLabelId(cp, line, out var labelId)) { return; }
-                        if (labelId >= (uint)labelStates.Length) { return; }
-
-                        var ls = labelStates[(int)labelId];
-
-                        // shader visibility test :contentReference[oaicite:11]{index=11}
-                        if (!IsVisible(ls, ps, gs)) { return; }
-
-                        // Convert chars -> glyph IDs (same as AddCogoTextLabelLine) :contentReference[oaicite:12]{index=12}
-                        Span<int> cps = stackalloc int[s.Length];
-                        for (int i = 0; i < s.Length; i++) cps[i] = s[i];
-                        var gids = face.GetGlyphIndices(cps.ToArray());
-
-                        float penDU = 0f;
-                        var brush = PickBrush(ps, gs);
-
-                        var instOrigin = SharpDX.Vector2.Zero;
-
-                        for (int i = 0; i < gids.Length; i++)
-                        {
-                            short gid = (short)gids[i];
-                            if (gid <= 0) { continue; }
-
-                            // 1) Get cached DU path for this glyph (tessellates once per gid)
-                            var duPath = GetDuGlyphPath(gid, glyphCache);
-
-                            // 2) Build DU->PDF transform for THIS glyph instance (includes penDU)
-                            var duToPdf = BuildDuToPdf(
-                                instOrigin,
-                                duToWorldBase,
-                                penDU,
-                                ySign,
-                                ls, ps, gs,
-                                worldToPdf);
-
-                            // 3) Draw cached path with transform (NO per-triangle allocations)
-                            gfx.Save();
-                            gfx.MultiplyTransform(duToPdf);
-                            gfx.DrawPath(brush, duPath);
-                            gfx.Restore();
-
-                            // 4) advance pen
-                            penDU += resCache.AdvanceWidthCache[gid];
-                        }
-                    }
-                }
-            }
-        }
         private static void DrawTitleblockPdf(XGraphics gfx, IEnumerable<TbPrimitive> prims)
         {
             foreach (var prim in prims)
@@ -587,47 +356,21 @@ namespace Cad_Point_Manager.Services.Exporting
             if (clipToRect) gfx.Restore();
         }
 
-        private static bool IsVisible(in LabelState ls, in PointState ps, in GroupState gs)
-        {
-            bool visLbl = (ls.Flags & LABEL_VISIBLE) != 0;
-            bool visPt = (ps.Flags & POINT_VISIBLE) != 0;
-            bool visGrp = (gs.Flags & GROUP_VISIBLE) != 0;
-            return visLbl && visPt && visGrp;
-        }
-
         private static XMatrix BuildDuToPdf(
-            SharpDX.Vector2 instOriginWorld,
-            float duToWorldBase,
-            float penDU,
-            float ySign,
-            in LabelState ls,
-            in PointState ps,
-            in GroupState gs,
+            double duToWorldBase,
+            double penDU,
+            double ySign,
+            CogoPoint cp,
+            int line,
             Matrix worldToPdf)
         {
-            float isFlippedY = ((ps.Flags & POINT_ISFLIPPEDY) != 0) ? -1f : 1f;
-            float textInfoOffset = gs.TextInfoBaseXoffset * isFlippedY;
+            var offset = cp.GetLabelOffset(line);
 
-            // Same origin math as your shader
-            float x = instOriginWorld.X
-                      + ls.Offset.X
-                      + textInfoOffset
-                      + ps.PointInfoOffset.X
-                      + ps.Offset.X;
-
-            float y = instOriginWorld.Y
-                      + (ls.Offset.Y * gs.Scale)
-                      + ps.PointInfoOffset.Y
-                      + ps.Offset.Y;
-
-            float duToWorld = duToWorldBase * gs.Scale;
+            double duToWorld = duToWorldBase * cp.PointGroup.PointScale;
 
             // --- DU -> WORLD (WPF matrix math) ---
             var duToWorldM = new Matrix(
-                duToWorld, 0,
-                0, duToWorld * ySign,
-                x + penDU * duToWorld,
-                y);
+                duToWorld, 0, 0, duToWorld * ySign, offset.X + penDU * duToWorld, offset.Y);
 
             // Compose with WORLD -> PDF (still WPF)
             duToWorldM.Append(worldToPdf);
@@ -642,41 +385,16 @@ namespace Cad_Point_Manager.Services.Exporting
                 duToWorldM.OffsetY);
         }
 
-        private static XBrush PickBrush(in PointState ps, in GroupState gs)
+        private static XColor GetCogoPointColor(CogoPoint cp)
         {
-            // Match your shader: selected overrides group color
-            var c = ((ps.Flags & POINT_SELECTED) != 0)
-                ? GlobalHelperProperties.SelectedObjectColor // or pass this in
-                : gs.Color;
-
-            return new XSolidBrush(PdfTransform.ToXColor(c.ToVector4()));
-        }
-        private static XColor PickColor(in PointState ps, in GroupState gs)
-        {
-            // Match your shader: selected overrides group color
-            var c = ((ps.Flags & POINT_SELECTED) != 0)
-                ? GlobalHelperProperties.SelectedObjectColor // or pass this in
-                : gs.Color;
-
-            return PdfTransform.ToXColor(c.ToVector4());
-        }
-        private static XGraphicsPath GetDuGlyphPath(short gid, GlyphMeshCache cache)
-        {
-            if (_duGlyphPathCache.TryGetValue(gid, out var p)) { return p; }
-
-            var mesh = cache.Get(gid);
-            var path = new XGraphicsPath();
-
-            var v = mesh.PositionsDU;
-            for (int i = 0; i + 2 < v.Length; i += 3)
+            if (cp.IsSelected)
             {
-                path.AddLine(v[i].X, v[i].Y, v[i + 1].X, v[i + 1].Y);
-                path.AddLine(v[i + 1].X, v[i + 1].Y, v[i + 2].X, v[i + 2].Y);
-                path.CloseFigure();
+                return PdfTransform.ToXColor(
+                    GlobalHelperProperties.SelectedObjectColor.ToVector4());
             }
 
-            _duGlyphPathCache[gid] = path;
-            return path;
+            return PdfTransform.ToXColor(
+                cp.PointGroup.Color.ToVector4());
         }
         private static List<string> WrapLinesNoJustify(XGraphics gfx, XFont font, string text, double maxWidthPts)
         {
@@ -783,49 +501,8 @@ namespace Cad_Point_Manager.Services.Exporting
             return new XRect(rx, ry, w, h);
         }
 
-        private static SharpDX.Matrix GetExtentsFittingMatrix(SharpDX.ViewportF viewport, Rect extents)
-        {
-            // same as D3dDxfControl.GetExtentsFittingMatrix :contentReference[oaicite:8]{index=8}
-            double scale = Math.Min(viewport.Width / extents.Width, viewport.Height / extents.Height);
-            return SharpDX.Matrix.Scaling((float)scale, (float)scale, 1f)
-                 * SharpDX.Matrix.Translation((float)-extents.Left, (float)-extents.Top, 0f);
-        }
-
-        private static SharpDX.Vector2 ComputeCogoLabelWorldOrigin(in LabelState ls, in PointState ps, in GroupState gs)
-        {
-            // These constants already exist in your exporter:
-            // const uint POINT_ISFLIPPEDY = ...
-            float isFlippedY = ((ps.Flags & POINT_ISFLIPPEDY) != 0) ? -1f : 1f;
-            float textInfoOffset = gs.TextInfoBaseXoffset * isFlippedY;
-
-            float x =
-                ls.Offset.X +
-                textInfoOffset +
-                ps.PointInfoOffset.X +
-                ps.Offset.X;
-
-            float y =
-                (ls.Offset.Y * gs.Scale) +
-                ps.PointInfoOffset.Y +
-                ps.Offset.Y;
-
-            return new SharpDX.Vector2(x, y);
-        }
-
-        private static (double X, double Y) TransformPoint(Matrix m, SharpDX.Vector2 p)
-        {
-            // WPF Matrix semantics:
-            // x' = x*M11 + y*M21 + OffsetX
-            // y' = x*M12 + y*M22 + OffsetY
-            double x = p.X;
-            double y = p.Y;
-            return (x * m.M11 + y * m.M21 + m.OffsetX,
-                    x * m.M12 + y * m.M22 + m.OffsetY);
-        }
-
         private static double PointsPerWorldUnit(Matrix worldToPdf)
         {
-            // Length of transformed (0,1) gives “points per world unit” in Y direction.
             double dx = worldToPdf.M21;
             double dy = worldToPdf.M22;
             double len = Math.Sqrt(dx * dx + dy * dy);
@@ -847,87 +524,59 @@ namespace Cad_Point_Manager.Services.Exporting
             double len = Math.Sqrt(dx * dx + dy * dy);
             return len <= 0 ? 1.0 : len;
         }
+
         public static Matrix BuildWorldToPdfFromCamera(Layout layout, CadManager cadManager, Rect bounds)
         {
-            if (layout is null) { throw new ArgumentNullException(nameof(layout)); }
-            if (cadManager is null) { throw new ArgumentNullException(nameof(cadManager)); }
-            if (bounds == Rect.Empty) { throw new ArgumentException("Bounds cannot be Rect.Empty.", nameof(bounds)); }
+            if (layout is null)
+                throw new ArgumentNullException(nameof(layout));
 
-            var cam = cadManager.Camera ?? throw new InvalidOperationException("cadManager.Camera is null.");
+            if (cadManager is null)
+                throw new ArgumentNullException(nameof(cadManager));
 
-            // PDF viewport rect in POINTS (page coords, Y-down)
-            var vpIn = layout.Viewport.LocalRectIn;
-            double vpX = vpIn.X * 72.0;
-            double vpY = vpIn.Y * 72.0;
-            double vpW = vpIn.Width * 72.0;
-            double vpH = vpIn.Height * 72.0;
-
-            // Save camera state (IMPORTANT: include Extents)
-            var oldViewport = cam.Viewport;
-            var oldInitial = cam.InitialViewMatrix;
-            var oldExtents = cam.Extents;
-            var oldTranslate = cam.Translate;
-            var oldZoomStep = cam.CurrentZoomStep;
-
-            try
+            if (bounds.IsEmpty ||
+                bounds.Width <= 0 ||
+                bounds.Height <= 0)
             {
-                // Virtual viewport matching the PDF viewport size (in points)
-                var virtualViewport = new SharpDX.ViewportF(0, 0, (float)vpW, (float)vpH);
-
-                // Use the SAVED visible scene bounds (world rect)
-                if (bounds.Width <= 0 || bounds.Height <= 0)
-                    throw new InvalidOperationException("Scene.Bounds is invalid (width/height <= 0).");
-
-                // Add small padding to avoid hairline clipping
-                const double padFrac = 0.02; // 2%
-                double padX = bounds.Width * padFrac;
-                double padY = bounds.Height * padFrac;
-
-                var padded = new Rect(
-                    bounds.X - padX,
-                    bounds.Y - padY,
-                    bounds.Width + 2 * padX,
-                    bounds.Height + 2 * padY);
-
-                // Center projection on the scene bounds and fit BOTH axes (min(scaleX, scaleY))
-                cam.Extents = padded;
-                cam.InitialViewMatrix = GetExtentsFittingMatrix(virtualViewport, padded);
-
-                // IMPORTANT: neutralize aspect-dependent view state for export
-                cam.Translate = SharpDX.Vector2.Zero;
-                cam.CurrentZoomStep = 0;
-
-                // Recompute camera transforms for the virtual viewport
-                cam.Viewport = virtualViewport;
-                cam.UpdateProjection();
-                cam.UpdateView();
-                // UpdateViewProjection() is private in your Camera; so call the public path:
-                cam.Update2DTransformationMatrix(); // ensures WindowsMatrix is correct after View/Projection change
-                                                    // BUT Update2DTransformationMatrix depends on ViewProjectionMatrix, so we need a public way.
-                                                    // Easiest: call cam.ResetToDefaults() after setting InitialViewMatrix/Extents/Viewport:
-                cam.ResetToDefaults(); // uses CurrentZoomStep/Translate we just set to 0/0
-
-                // Camera.WindowsMatrix maps world -> view (top-left origin, Y-down)
-                var worldToView = cam.WindowsMatrix;
-
-                // Shift into the PDF viewport’s location on the page
-                worldToView.Translate(vpX, vpY);
-
-                return worldToView;
+                throw new ArgumentException(
+                    "Invalid scene bounds.", nameof(bounds));
             }
-            finally
-            {
-                // Restore camera state
-                cam.Extents = oldExtents;
-                cam.InitialViewMatrix = oldInitial;
-                cam.Viewport = oldViewport;
-                cam.Translate = oldTranslate;
-                cam.CurrentZoomStep = oldZoomStep;
 
-                cam.UpdateProjection();
-                cam.UpdateView();
-                cam.ResetToDefaults(); // puts matrices back in sync with restored state
-            }
+            var vp = layout.Viewport.LocalRectIn;
+
+            // PDF viewport coordinates in points.
+            double vpX = vp.X * PdfPointsPerInch;
+            double vpY = vp.Y * PdfPointsPerInch;
+            double vpW = vp.Width * PdfPointsPerInch;
+            double vpH = vp.Height * PdfPointsPerInch;
+
+            if (vpW <= 0 || vpH <= 0)
+                throw new ArgumentException("Invalid PDF viewport.");
+
+            const double paddingFraction = 0.02;
+
+            double worldW = bounds.Width * (1.0 + 2.0 * paddingFraction);
+            double worldH = bounds.Height * (1.0 + 2.0 * paddingFraction);
+
+            double worldCenterX = bounds.X + bounds.Width * 0.5;
+            double worldCenterY = bounds.Y + bounds.Height * 0.5;
+
+            // Uniform scale, preserving the drawing aspect ratio.
+            double scale = Math.Min(
+                vpW / worldW,
+                vpH / worldH);
+
+            // Position the drawing center in the PDF viewport center.
+            double pdfCenterX = vpX + vpW * 0.5;
+            double pdfCenterY = vpY + vpH * 0.5;
+
+            // World: Y increases upward.
+            // PDF:   Y increases downward.
+            return new Matrix(
+                scale, 0,
+                0, -scale,
+                pdfCenterX - worldCenterX * scale,
+                pdfCenterY + worldCenterY * scale);
         }
+
     }
 }

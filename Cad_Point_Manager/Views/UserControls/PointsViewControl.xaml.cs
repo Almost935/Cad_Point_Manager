@@ -1,4 +1,5 @@
-﻿using Cad_Point_Manager.Helpers;
+﻿using Cad_Point_Manager.Common;
+using Cad_Point_Manager.Helpers;
 using Cad_Point_Manager.Models;
 using Cad_Point_Manager.Models.PointRendering;
 using Cad_Point_Manager.Services;
@@ -403,7 +404,7 @@ namespace Cad_Point_Manager.Views.UserControls
             }
 
             TryCreateNewPoint(CadManager.GetNextAvailablePointNumber(_lastCreatedPointNumber),
-                new Vector3(0, 0, 0), ActivePointGroup, 0, "");
+                Vector2d.Zero, ActivePointGroup, 0, "");
         }
         private void PointsListViewEditPoint_Click(object sender, RoutedEventArgs e)
         {
@@ -425,7 +426,7 @@ namespace Cad_Point_Manager.Views.UserControls
             CadManager.CogoPointCircleVerticesDirty = true;
             CadManager.CogoPointTextVerticesDirty = true;
         }
-        private bool TryCreateNewPoint(int num, Vector3 pos, PointGroup pg, float elevation, string description)
+        private bool TryCreateNewPoint(int num, Vector2d pos, PointGroup pg, float elevation, string description)
         {
             if (!CadManager.TryCreatePoint(num, pos, pg, out CogoPoint p, elevation, description))
             { return false; }

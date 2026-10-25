@@ -1,6 +1,7 @@
 ﻿using Cad_Point_Manager.Common;
 using Cad_Point_Manager.Controls.D3DControl;
 using Cad_Point_Manager.Controls.D3DControl.Rendering.Helpers;
+using Cad_Point_Manager.Extensions;
 using netDxf.Entities;
 using SharpDX;
 using SharpDX.Direct2D1;
@@ -16,8 +17,8 @@ namespace Cad_Point_Manager.Helpers
         private const float _dictBaseTextSize = 10.00f;
         private const float _flatteningTolerance = 0.0001f;
 
-        public static ConcurrentDictionary<(string fontName, FontWeight fontWeight, FontStyle fontstyle), float> FontSizeFactorDict
-        { get; } = new ConcurrentDictionary<(string fontName, FontWeight fontWeight, FontStyle fontstyle), float>();
+        public static ConcurrentDictionary<(string fontName, FontWeight fontWeight, FontStyle fontstyle), double> FontSizeFactorDict
+        { get; } = new ConcurrentDictionary<(string fontName, FontWeight fontWeight, FontStyle fontstyle), double>();
 
         public static (List<Vector2> vertices, RawRectangleF bounds) GetLineRepresentationOfTextLayout(
             ResCache resCache,
@@ -43,10 +44,10 @@ namespace Cad_Point_Manager.Helpers
             return (vertices, bounds);
         }
 
-        public static (List<Vector2> vertices, RawRectangleF bounds) TesselateTextLayout(ResCache resCache, TextLayout textLayout,
-            string text, FontFace fontFace)
+        public static (List<Vector2d> vertices, RawRectangleF bounds) TesselateTextLayout(
+            ResCache resCache, TextLayout textLayout, string text, FontFace fontFace)
         {
-            var fontSizeFactor = GetFontSizeFactor(resCache, textLayout, fontFace); // Multiply by a factor to smoothen curves
+            double fontSizeFactor = GetFontSizeFactor(resCache, textLayout, fontFace); // Multiply by a factor to smoothen curves
             var geometry = TextLayoutToGeometry(resCache, textLayout, text, fontFace, fontSizeFactor);
             var bounds = geometry.GetBounds();
             var tesselationFactor = GetTessellationFactor(textLayout.FontSize);
@@ -73,10 +74,10 @@ namespace Cad_Point_Manager.Helpers
                 return widthWithSpace - widthWithoutSpace;
             }
         }
-        public static float GetFontSizeFactor(ResCache resCache, TextLayout textLayout, FontFace fontFace)
+        public static double GetFontSizeFactor(ResCache resCache, TextLayout textLayout, FontFace fontFace)
         {
             bool fontToTextHeightFactorExists = FontSizeFactorDict.TryGetValue(
-                   (textLayout.FontFamilyName, textLayout.FontWeight, textLayout.FontStyle), out float fontToTextHeightFactor);
+                   (textLayout.FontFamilyName, textLayout.FontWeight, textLayout.FontStyle), out double fontToTextHeightFactor);
 
             if (!fontToTextHeightFactorExists)
             {
@@ -97,8 +98,8 @@ namespace Cad_Point_Manager.Helpers
             return fontToTextHeightFactor;
         }
 
-        private static PathGeometry TextLayoutToGeometry(ResCache resCache, TextLayout textLayout, string text, FontFace fontFace,
-            float scaleFactor)
+        private static PathGeometry TextLayoutToGeometry(
+            ResCache resCache, TextLayout textLayout, string text, FontFace fontFace, double scaleFactor)
         {
             PathGeometry pathGeometry = new(resCache.D2dFactory)
             {
@@ -107,7 +108,7 @@ namespace Cad_Point_Manager.Helpers
 
             using var sink = pathGeometry.Open();
             var clusterMetrics = textLayout.GetClusterMetrics();
-            float charOffset = 0;
+            double charOffset = 0;
 
             for (int i = 0; i < text.Length; i++)
             {
@@ -127,9 +128,12 @@ namespace Cad_Point_Manager.Helpers
                     glyphSink);
                 glyphSink.Close();
 
-                var combinedMatrix = Matrix3x2.Scaling(scaleFactor, -scaleFactor) * Matrix3x2.Translation(charOffset, 0);
+                var combinedMatrix = new System.Windows.Media.Matrix(
+                    scaleFactor, 0, 0, -scaleFactor, charOffset, 0);
 
-                using TransformedGeometry transformedGlyph = new(resCache.D2dFactory, glyphGeometry, combinedMatrix);
+                using TransformedGeometry transformedGlyph = new(
+                    resCache.D2dFactory, glyphGeometry, combinedMatrix.ToSharpDxMatrix3x2());
+
                 transformedGlyph.FlatteningTolerance = _flatteningTolerance;
                 transformedGlyph.Simplify(GeometrySimplificationOption.Lines, Matrix3x2.Identity, _flatteningTolerance, sink);
 
@@ -140,21 +144,25 @@ namespace Cad_Point_Manager.Helpers
             return pathGeometry;
         }
 
-        public static List<Vector2> TessellateGeometry(Geometry geometry, float flatteningTolerance = 0.001f, float tesselationFactor = 1)
+        public static List<Vector2d> TessellateGeometry(
+            Geometry geometry, float flatteningTolerance = 0.001f, float tesselationFactor = 1)
         {
-            var vertices = new List<Vector2>();
+            using var sink = new CustomTessellationSink();
 
-            using (var sink = new CustomTessellationSink())
-            {
-                geometry.Tessellate(flatteningTolerance, sink);
-                vertices.AddRange(sink.Vertices);
-            }
+            geometry.Tessellate(flatteningTolerance, sink);
 
-            var scale = Matrix.Scaling(tesselationFactor, tesselationFactor, 1);
-            for (int i = 0; i < vertices.Count; i++)
+            var source = sink.Vertices;
+            var vertices = new List<Vector2d>(source.Count);
+
+            double scale = tesselationFactor;
+
+            for (int i = 0; i < source.Count; i++)
             {
-                var vertex = vertices[i];
-                vertices[i] = Vector2.TransformCoordinate(vertex, scale);
+                var v = source[i];
+
+                vertices.Add(new Vector2d(
+                    v.X * scale,
+                    v.Y * scale));
             }
 
             return vertices;

@@ -86,21 +86,12 @@ namespace Cad_Point_Manager.Models.HitTesting
             return node;
         }
 
-        public List<(double distance, DrawingGeometry geometry)> HitTestGeometries(Point p, Rect hitTestRange)
+        public List<(double distance, DrawingGeometry geometry)> HitTestGeometries(Vector2d p, Rect hitTestRange)
         {
             List<(double distance, DrawingGeometry geometry)> geometries = [];
 
             foreach (var geometry in Geometries)
             {
-                //if (hitTestableObject is DrawingEllipse ellipse)
-                //{
-                //    if (ellipse.BoundsInRect(hitTestRange))
-                //    {
-                //        double d = ellipse.DistanceToPoint(p);
-                //        geometries.Add((d, ellipse));
-                //    }
-                //}
-
                 if (geometry.Layer.IsVisible)
                 {
                     if (geometry.BoundsInRect(hitTestRange))
@@ -112,9 +103,8 @@ namespace Cad_Point_Manager.Models.HitTesting
             }
             return geometries;
         }
-        public List<(SignificantPointType pointType, double distance, Vector2 coordinate)> HitTestSignificantPoints(Point p, Rect hitTestRange)
+        public List<(SignificantPointType pointType, double distance, Vector2d coordinate)> HitTestSignificantPoints(Vector2d p, Rect hitTestRange)
         {
-            Vector2 pos = new((float)p.X, (float)p.Y);
             ConcurrentBag<DrawingSegment> segments = [];
 
             Parallel.ForEach(HitTestableObjects, hitTestableObject =>
@@ -170,13 +160,15 @@ namespace Cad_Point_Manager.Models.HitTesting
 
             var coords = GeometryHelpers.GetSignificantPointsList(segments.ToList());
 
-            List<(SignificantPointType pointType, double distance, Vector2 coordinate)> hits = [];
+            List<(SignificantPointType pointType, double distance, Vector2d coordinate)> hits = [];
+
             foreach (var (pointType, position) in coords)
             {
-                var vector2Pos = position.ToSharpDXVector2();
-                float d = Vector2.Distance(vector2Pos, pos);
+                var vector2Pos = position;
+                double d = Vector2d.Distance(vector2Pos, p);
                 hits.Add((pointType, d, vector2Pos));
             }
+
             hits.Sort((a, b) => a.distance.CompareTo(b.distance));
 
             return hits.ToList();

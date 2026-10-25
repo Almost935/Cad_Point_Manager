@@ -1,4 +1,6 @@
-﻿using System.Windows;
+﻿using Cad_Point_Manager.Common;
+using System.Runtime.CompilerServices;
+using System.Windows;
 
 namespace Cad_Point_Manager.Extensions
 {
@@ -22,15 +24,11 @@ namespace Cad_Point_Manager.Extensions
             var bottom = Math.Max(y1, y2);
             return new Rect(new Point(left, top), new Point(right, bottom));
         }
-
-        // "Touch" selection: any overlap or containment in either direction
         public static bool Touches(this Rect a, Rect b)
         {
             if (a.IsEmpty || b.IsEmpty) return false;
             return a.IntersectsWith(b) || a.Contains(b) || b.Contains(a);
         }
-
-        // "Contain" selection: a must fully contain b
         public static bool FullyContains(this Rect a, Rect b)
         {
             if (a.IsEmpty || b.IsEmpty) return false;
@@ -39,7 +37,28 @@ namespace Cad_Point_Manager.Extensions
 
         public static SharpDX.RectangleF ToRectangeF(this Rect rect)
         {
-            return new SharpDX.RectangleF(rect.Left.ToFloat(), rect.Top.ToFloat(), rect.Width.ToFloat(), rect.Height.ToFloat());
+            return new SharpDX.RectangleF((float)rect.Left, (float)rect.Top, (float)rect.Width, (float)rect.Height);
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void Union(this ref Rect rect, Vector2d point)
+        {
+            if (rect.IsEmpty)
+            {
+                rect = new Rect(point.X, point.Y, 0, 0);
+                return;
+            }
+
+            if (point.X < rect.X)
+                rect.Width += rect.X - point.X;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool Contains(this Rect rect, Vector2d point)
+            => !rect.IsEmpty &&
+            point.X >= rect.Left &&
+            point.X <= rect.Right &&
+            point.Y >= rect.Top &&
+            point.Y <= rect.Bottom;
     }
 }

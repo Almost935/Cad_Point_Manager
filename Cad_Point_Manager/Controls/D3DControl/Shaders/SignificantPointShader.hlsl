@@ -15,7 +15,7 @@ cbuffer CircleSettingsBuffer : register(b1)
 
 struct VS_INPUT
 {
-    float3 position : POSITION;
+    float2 position : POSITION;
 };
 
 struct GS_OUTPUT
@@ -42,7 +42,7 @@ void EmitCorner(VS_INPUT input, float4 position, float4 color, float2 offset, in
 [maxvertexcount(4)]
 void GSMain(point VS_INPUT input[1], inout TriangleStream<GS_OUTPUT> output)
 {
-    float4 center = mul(float4(input[0].position, 1), transformationMatrix);
+    float4 center = mul(float4(input[0].position, 1, 0), transformationMatrix);
     float2 pixelRadiusClip = float2(radiusPx / viewportSize.x, radiusPx / viewportSize.y) * 2.0f;
     float radiusX = pixelRadiusClip.x;
     float radiusY = pixelRadiusClip.y;

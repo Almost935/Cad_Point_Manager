@@ -1,4 +1,5 @@
-﻿using Cad_Point_Manager.Controls.D3DControl;
+﻿using Cad_Point_Manager.Common;
+using Cad_Point_Manager.Controls.D3DControl;
 using Cad_Point_Manager.Controls.D3DControl.Rendering.Msdf;
 using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Helpers;
@@ -44,11 +45,11 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         {
             if (EntityObject is Circle circle)
             {
-                Radius = (float)circle.Radius;
+                Radius = circle.Radius;
                 StartAngle = 0;
                 EndAngle = 360;
                 Sweep = EndAngle - StartAngle;
-                RadiusPoint = new Vector3((float)circle.Center.X, (float)circle.Center.Y, (float)circle.Center.Z);
+                RadiusPoint = new(circle.Center.X, circle.Center.Y);
                 Length = (float)((Sweep / 360) * (2 * Math.PI * Radius));
             }
             else
@@ -58,19 +59,13 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         }
 
         public override void DrawToPdf(
-           XGraphics gfx,
-           System.Windows.Media.Matrix worldToPdf,
-           XPen pen)
+            XGraphics gfx, System.Windows.Media.Matrix worldToPdf, XPen pen)
         {
-            // Center in world (DXF)
-            var cWorld = new Vector2(RadiusPoint.X, RadiusPoint.Y);
+            var cWorld = new Vector2d(RadiusPoint.X, RadiusPoint.Y);
 
-            // Center in PDF (points)
             var cPdf = PdfDrawingHelpers.WorldToPdf(cWorld, worldToPdf);
 
-            // Compute radius in PDF points by transforming a known radius point.
-            // Pick a point one radius to the +X direction in world.
-            var rWorldPt = new Vector2(RadiusPoint.X + Radius, RadiusPoint.Y);
+            var rWorldPt = new Vector2d(RadiusPoint.X + Radius, RadiusPoint.Y);
             var rPdfPt = PdfDrawingHelpers.WorldToPdf(rWorldPt, worldToPdf);
 
             double rPts = Math.Sqrt(
@@ -79,14 +74,13 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
             if (rPts <= 1e-6) { return; }
 
-            // Bounding rect for the ellipse/circle in PDF coords
             var rect = new XRect(cPdf.X - rPts, cPdf.Y - rPts, 2 * rPts, 2 * rPts);
 
-            // Draw a true vector circle (PDF curve, not line segments)
             gfx.DrawEllipse(pen, rect);
         }
 
-        public override void UpdateVertices(ResCache resCache, uint layerId, uint objectId, uint lineTypeId)
+        public override void UpdateVertices(
+            ResCache resCache, uint layerId, uint objectId, uint lineTypeId, Vector2d renderOrigin)
         {
             if (EntityObject is Circle circle)
             {
@@ -113,17 +107,20 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
                     int next = (i + 1) % vertices.Count;
 
+                    var start = vertices[i].Position.ToVector2d().ToGpuRelative(renderOrigin);
+                    var end = vertices[next].Position.ToVector2d().ToGpuRelative(renderOrigin);
+
                     lineInstances.Add(new LineInstance(
-                        vertices[i].Position.ToSharpDXVector2(), vertices[next].Position.ToSharpDXVector2(), 
-                        layerId, objectId, (float)accumulatedDistance, (uint)flags, Length));
-                    
-                    double segmentLength = Vector2.Distance(vertices[next].Position.ToSharpDXVector2(), vertices[i].Position.ToSharpDXVector2());
+                        start, end, layerId, objectId, (float)accumulatedDistance, 
+                        (uint)flags, (float)Length));
+
+                    double segmentLength = Vector2.Distance(end, start);
                     accumulatedDistance += segmentLength;
                 }
 
                 LineInstances = lineInstances.ToArray();
-                Start = LineInstances.First().Start.ToSharpDXVector3();
-                End = LineInstances.Last().End.ToSharpDXVector3();
+                Start = LineInstances.First().Start.ToVector2d();
+                End = LineInstances.Last().End.ToVector2d();
 
                 UpdateBounds();
             }
@@ -147,7 +144,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             }
         }
 
-        public override double DistanceToPoint(System.Windows.Point point, MsdfAtlas atlas = null)
+        public override double DistanceToPoint(Vector2d point, MsdfAtlas atlas = null)
         {
             // Calculate the distance from the point to the center of the circle
             double dx = point.X - RadiusPoint.X;

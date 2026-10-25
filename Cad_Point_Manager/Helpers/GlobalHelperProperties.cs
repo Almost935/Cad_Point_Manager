@@ -9,13 +9,13 @@ namespace Cad_Point_Manager.Helpers
     {
         public static readonly int PopOutCloseDelay = 700;
 
-        public const float ZoomFactor = 1.3f;
+        public const double ZoomFactor = 1.3;
 
-        public const float HoverTransparency = 0.5f;
-        public static readonly Vector4 HoverColor = new(0, 0, 0, HoverTransparency);
-        public const float GlowPixelOffset = 5;
+        public const double HoverTransparency = 0.5;
+        public static readonly Vector4 HoverColor = new(0, 0, 0, (float)HoverTransparency);
+        public const double GlowPixelOffset = 5;
 
-        public const float TextHeightToGlowOffsetFactor = 0.05f;
+        public const double TextHeightToGlowOffsetFactor = 0.05;
         public const int InitialLineVertices = 5000;
         public const int InitialTextVertices = 5000;
         public const int InitialCircleVertices = 1000;
@@ -23,21 +23,21 @@ namespace Cad_Point_Manager.Helpers
         public const int InitialTextGlowVertices = 2000;
         public const int InitialCircleGlowVertices = 200;
 
-        public const float TextHeightToFontSizeFactor = 1.5f;
-        public const float TextHeightToSpaceWidthFactor = 0.5f;
+        public const double TextHeightToFontSizeFactor = 1.5;
+        public const double TextHeightToSpaceWidthFactor = 0.5;
 
         public static readonly Vector4 SelectedObjectColor = new(36.0f / 255.0f, 250.0f / 255.0f, 255.0f / 255.0f, 0.7f);
         public static readonly Vector4 SelectedMouseOverObjectColor = new(127.0f / 255.0f, 1.0f, 116.0f / 255.0f, 1);
         public static readonly Vector4 SelectedMouseOverGlowColor = new(127.0f / 255.0f, 1.0f, 116.0f / 255.0f, 0.4f);
 
-        public const float SignificantPointPixelRadius = 6.0f;
+        public const double SignificantPointPixelRadius = 6.0;
         public static readonly Vector4 SelectedSigPointColor = new(59.0f / 255.0f, 255.0f / 255.0f, 62.0f / 255.0f, 0.5f);
 
-        public static readonly float DxfPointToExtentsBaseFactor = 0.05f;
+        public static readonly double DxfPointToExtentsBaseFactor = 0.05;
 
-        public const float CogoPointCirclePixelRadius = 0.2f;
-        public const float CogoPointCircleMouseOverPixelRadius = 0.4f;
-        public const float CogoPointLeaderLinePixelWidth = 1;
+        public const double CogoPointCirclePixelRadius = 0.2;
+        public const double CogoPointCircleMouseOverPixelRadius = 0.4;
+        public const double CogoPointLeaderLinePixelWidth = 1;
 
         public static readonly Color MouseOverCogoPointColor = Color.FromArgb(255, 8, 230, 238);
         public static readonly SolidColorBrush MouseOverCogoPointBrush = new(MouseOverCogoPointColor);

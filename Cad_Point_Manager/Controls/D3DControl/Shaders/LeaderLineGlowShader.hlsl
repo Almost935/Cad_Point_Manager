@@ -40,10 +40,8 @@ struct VSInstance
 struct PSInput
 {
     float4 Position : SV_POSITION;
-
     float Side : TEXCOORD0;
     float AlongPixels : TEXCOORD1;
-
     nointerpolation float LineLengthPixels : TEXCOORD2;
     nointerpolation uint PointId : TEXCOORD3;
 };
@@ -59,18 +57,14 @@ struct PointState
     uint GroupId;
     uint Flags;
     uint LabelQuadrant;
-    uint _padLS;
 };
 
 struct GroupState
 {
     float4 Color;
-
     float Scale;
     uint Flags;
-
     float TextInfoBaseXoffset;
-    float _padGS;
 };
 
 StructuredBuffer<PointState> PointStates : register(t0);

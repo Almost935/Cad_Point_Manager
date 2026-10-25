@@ -1,41 +1,33 @@
-﻿using Cad_Point_Manager.Extensions;
+﻿using Cad_Point_Manager.Common;
+using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Models.Printing;
 using SharpDX;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows;
+using System.Windows.Input;
+
+using Matrix = System.Windows.Media.Matrix;
+using D3dMatrix = SharpDX.Matrix;
 
 namespace Cad_Point_Manager.Controls.D3DControl
 {
     public class Camera : INotifyPropertyChanged
     {
         #region Fields
-        private readonly float _zoomFactor;
+        private readonly double _zoomFactor;
         private bool HasValidViewport => Viewport.Width > 0 && Viewport.Height > 0;
 
         private Matrix _scaledViewMatrix = Matrix.Identity;
 
-        private Matrix3x2 _d2dMatrix = Matrix3x2.Identity;
-        private System.Windows.Media.Matrix _windowsMatrix = System.Windows.Media.Matrix.Identity;
+        private Matrix _windowsMatrix = Matrix.Identity;
         private bool _isDirty = true;
         private ObservableCollection<Scene> _scenes = [];
         #endregion
 
         #region Properties
-        public Matrix3x2 D2dMatrix
-        {
-            get => _d2dMatrix;
-            set
-            {
-                if (_d2dMatrix != value)
-                {
-                    _d2dMatrix = value;
-                    OnPropertyChanged(nameof(D2dMatrix));
-                }
-            }
-        }
-        public System.Windows.Media.Matrix WindowsMatrix
+        public Matrix WindowsMatrix
         {
             get => _windowsMatrix;
             set
@@ -78,21 +70,27 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public Matrix ViewProjectionMatrix { get; private set; } = Matrix.Identity;
         public Matrix InverseViewProjectionMatrix { get; private set; } = Matrix.Identity;
         public ViewportF Viewport { get; set; }
-        public Vector2 Translate { get; set; } = Vector2.Zero;
+        public Vector2d Translate { get; set; } = Vector2d.Zero;
         public double CurrentZoomStep { get; set; } = 0.0;
-        public float CurrentZoom => (float)Math.Pow(_zoomFactor, CurrentZoomStep);
+        public double CurrentZoom => Math.Pow(_zoomFactor, CurrentZoomStep);
         public Rect Extents { get; set; } = RectExtensions.Zero;
         public Scene OverviewScene { get; set; }
         #endregion
 
         #region Constructors
-        public Camera(ViewportF viewport, float zoomFactor, Rect extents)
+        public Camera(ViewportF viewport, double zoomFactor, Rect extents)
         {
             Viewport = viewport;
             _zoomFactor = zoomFactor;
             Extents = extents;
 
-            OverviewScene = new Scene() { Name = "Default", ZoomStep = 0, Translation = Vector2.Zero, Bounds = GetCurrentViewportBounds() };
+            OverviewScene = new Scene()
+            {
+                Name = "Default",
+                ZoomStep = 0,
+                Translation = Vector2d.Zero,
+                Bounds = GetCurrentViewportBounds()
+            };
             Scenes.Add(OverviewScene);
 
             ResetToDefaults();
@@ -110,23 +108,29 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         public void UpdateProjection()
         {
-            Vector2 basePoint = new(Extents.Center().X.ToFloat(), Extents.Center().Y.ToFloat());
-
-            if (!HasValidViewport)
+            if (!HasValidViewport || InitialViewMatrix.M11 <= 0)
             {
                 ProjectionMatrix = Matrix.Identity;
                 return;
             }
 
-            float scaledViewWidth = Viewport.Width / InitialViewMatrix.M11;
-            float scaledViewHeight = Viewport.Height / InitialViewMatrix.M11;
-            ProjectionMatrix = Matrix.OrthoOffCenterLH(basePoint.X - scaledViewWidth / 2, basePoint.X + scaledViewWidth / 2, basePoint.Y - scaledViewHeight / 2, basePoint.Y + scaledViewHeight / 2, 0.0f, 1000f);
+            double scale = InitialViewMatrix.M11;
+
+            double centerX = Extents.X + Extents.Width * 0.5;
+            double centerY = Extents.Y + Extents.Height * 0.5;
+
+            double scaleX = 2.0 * scale / Viewport.Width;
+            double scaleY = 2.0 * scale / Viewport.Height;
+
+            ProjectionMatrix = new Matrix(
+                scaleX, 0, 0, scaleY, -centerX * scaleX, -centerY * scaleY);
         }
 
         public void UpdateInitialView(Matrix newInitialView, Rect newExtents)
         {
             Extents = newExtents;
             InitialViewMatrix = newInitialView;
+
             UpdateProjection();
             UpdateViewProjection();
             UpdateDefaultScene();
@@ -146,29 +150,50 @@ namespace Cad_Point_Manager.Controls.D3DControl
             InverseViewProjectionMatrix = Matrix.Identity;
             _scaledViewMatrix = Matrix.Identity;
             CurrentZoomStep = 0;
-            Translate = Vector2.Zero;
+            Translate = Vector2d.Zero;
         }
 
         public void UpdateView()
         {
-            var zoom = CurrentZoom;
-            ViewMatrix = Matrix.Scaling(zoom, zoom, 1) * Matrix.Translation(Translate.X, Translate.Y, 0);
-            _scaledViewMatrix = Matrix.Scaling(zoom, zoom, 1) * Matrix.Translation(Translate.X * ProjectionMatrix.M11 * zoom, Translate.Y * ProjectionMatrix.M22 * zoom, 0);
+            double zoom = CurrentZoom;
+
+            double centerX = Extents.X + Extents.Width * 0.5;
+            double centerY = Extents.Y + Extents.Height * 0.5;
+
+            ViewMatrix = new Matrix(
+                zoom, 0, 0, zoom, (1.0 - zoom) * centerX + zoom * Translate.X,
+                (1.0 - zoom) * centerY + zoom * Translate.Y);
+
+            _scaledViewMatrix = ViewMatrix;
         }
 
         public void UpdateViewProjection()
         {
-            ViewProjectionMatrix = ProjectionMatrix * _scaledViewMatrix;
-            InverseViewProjectionMatrix = Matrix.Invert(ViewProjectionMatrix);
+            ViewProjectionMatrix = ViewMatrix * ProjectionMatrix;
+
+            InverseViewProjectionMatrix = ViewProjectionMatrix;
+
+            if (InverseViewProjectionMatrix.HasInverse)
+            {
+                var inverse = InverseViewProjectionMatrix;
+                inverse.Invert();
+                InverseViewProjectionMatrix = inverse;
+            }
+
             Update2DTransformationMatrix();
+
+            IsDirty = true;
         }
         public void ResetToDefaults()
         {
             CurrentZoomStep = 0;
+            Translate = Vector2d.Zero;
 
             UpdateProjection();
             UpdateView();
             UpdateViewProjection();
+
+            IsDirty = true;
         }
 
         /// <summary>
@@ -176,18 +201,20 @@ namespace Cad_Point_Manager.Controls.D3DControl
         /// </summary>
         /// <param name="screenSpaceStart">The start pan location in screen space coordinates.</param>
         /// <param name="screenSpaceEnd">The end pan location in screen space coordinates.</param>
-        public void Pan(Vector2 screenSpaceStart, Vector2 screenSpaceEnd)
+        public void Pan(Vector2d screenSpaceStart, Vector2d screenSpaceEnd)
         {
-            Vector2 deltaPixels = screenSpaceEnd - screenSpaceStart;
+            Vector2d deltaPixels = screenSpaceEnd - screenSpaceStart;
 
-            float worldPerPixel = GetWorldUnitsPerPixel();
+            double worldPerPixel = GetWorldUnitsPerPixel();
 
-            Translate += new Vector2(
+            Translate += new Vector2d(
                 -deltaPixels.X * worldPerPixel,
                  deltaPixels.Y * worldPerPixel);
 
             UpdateView();
             UpdateViewProjection();
+
+            IsDirty = true;
         }
 
         /// <summary>
@@ -203,28 +230,32 @@ namespace Cad_Point_Manager.Controls.D3DControl
         /// <param name="currentScreen">
         /// Current mouse position, in screen pixels.
         /// </param>
-        public void PanFromStart(Vector2 panStartTranslate, Vector2 panStartScreen, Vector2 currentScreen, float worldPerPixel)
+        public void PanFromStart(
+            Vector2d panStartTranslate, Vector2d panStartScreen, Vector2d currentScreen, double worldPerPixel)
         {
-            Vector2 deltaPixels = panStartScreen - currentScreen;
-            Translate =
-                panStartTranslate + new Vector2(-deltaPixels.X * worldPerPixel, deltaPixels.Y * worldPerPixel);
+            Vector2d deltaPixels = panStartScreen - currentScreen;
+
+            Translate = panStartTranslate + new Vector2d(
+                -deltaPixels.X * worldPerPixel,
+                 deltaPixels.Y * worldPerPixel);
 
             UpdateView();
             UpdateViewProjection();
+
+            IsDirty = true;
         }
-        public void Zoom(double zoomStepDelta, Vector2 mousePosition)
+        public void Zoom(double zoomStepDelta, Vector2d mousePosition)
         {
-            if (zoomStepDelta == 0 || Viewport.Width <= 0 || Viewport.Height <= 0)
+            if (zoomStepDelta == 0 || !HasValidViewport)
                 return;
 
-            Vector2 worldBefore = ScreenToWorld(mousePosition);
+            Vector2d worldBefore = ScreenToWorld(mousePosition);
 
-            CurrentZoomStep = Math.Clamp(CurrentZoomStep + zoomStepDelta,-100.0,100.0);
+            CurrentZoomStep = Math.Clamp(
+                CurrentZoomStep + zoomStepDelta, -100.0, 100.0);
 
-            UpdateView();
-            UpdateViewProjection();
+            Vector2d worldAfter = ScreenToWorld(mousePosition);
 
-            Vector2 worldAfter = ScreenToWorld(mousePosition);
             Translate += worldAfter - worldBefore;
 
             UpdateView();
@@ -232,8 +263,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             IsDirty = true;
         }
-
-        public void SetPanAndZoom(Vector2 translation, int zoomStep)
+        public void SetPanAndZoom(Vector2d translation, int zoomStep)
         {
             Translate = translation;
             CurrentZoomStep = zoomStep;
@@ -243,32 +273,42 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         public void Update2DTransformationMatrix()
         {
-            if (HasValidViewport)
+            if (!HasValidViewport)
             {
-                var halfW = Viewport.Width / 2f;
-                var halfH = Viewport.Height / 2f;
-                Matrix ndcToPixel = Matrix.Scaling(halfW, -halfH, 1) * Matrix.Translation(halfW, halfH, 0);
-                Matrix final = ViewProjectionMatrix * ndcToPixel;
-                D2dMatrix = new(
-                   final.M11, final.M12,
-                   final.M21, final.M22,
-                   final.M41, final.M42
-                   );
-                WindowsMatrix = D2dMatrix.ToWindowsMatrix();
+                WindowsMatrix = Matrix.Identity;
+                return;
             }
-            else
-            {
-                D2dMatrix = Matrix3x2.Identity;
-                WindowsMatrix = D2dMatrix.ToWindowsMatrix();
-            }
+
+            double halfW = Viewport.Width * 0.5;
+            double halfH = Viewport.Height * 0.5;
+
+            Matrix ndcToPixel = new(
+                halfW, 0, 0, -halfH, halfW, halfH);
+
+            WindowsMatrix = ViewProjectionMatrix * ndcToPixel;
         }
 
-        public Vector2 ScreenToWorld(Vector2 screenSpace)
+        public Vector2d ScreenToWorld(Vector2d screenPosition)
         {
-            Vector2 ndc = ScreenToNDC(screenSpace);
-            Vector3 world = Unproject(ndc);
+            if (!HasValidViewport)
+                return Vector2d.Zero;
 
-            return new Vector2(world.X, world.Y);
+            double scale = InitialViewMatrix.M11 * CurrentZoom;
+
+            if (scale <= 0)
+                return Vector2d.Zero;
+
+            double worldPerPixel = 1.0 / scale;
+
+            double centerX = Extents.X + Extents.Width * 0.5;
+            double centerY = Extents.Y + Extents.Height * 0.5;
+
+            double dx = screenPosition.X - Viewport.Width * 0.5;
+            double dy = Viewport.Height * 0.5 - screenPosition.Y;
+
+            return new Vector2d(
+                centerX + dx * worldPerPixel - Translate.X,
+                centerY + dy * worldPerPixel - Translate.Y);
         }
 
         public Vector2 ScreenToNDC(Vector2 screenSpace)
@@ -278,118 +318,85 @@ namespace Cad_Point_Manager.Controls.D3DControl
             return new Vector2(x, y);
         }
 
-        public Vector3 Unproject(Vector2 ndc)
-        {
-            Vector4 ndcVec = new(ndc.X, ndc.Y, 0, 1);
-            Vector4 worldVec = Vector4.Transform(ndcVec, InverseViewProjectionMatrix);
-            if (worldVec.W != 0)
-            {
-                worldVec.X /= worldVec.W;
-                worldVec.Y /= worldVec.W;
-                worldVec.Z /= worldVec.W;
-            }
+        //public Vector3 Unproject(Vector2 ndc)
+        //{
+        //    Vector4 ndcVec = new(ndc.X, ndc.Y, 0, 1);
+        //    Vector4 worldVec = Vector4.Transform(ndcVec, InverseViewProjectionMatrix);
+        //    if (worldVec.W != 0)
+        //    {
+        //        worldVec.X /= worldVec.W;
+        //        worldVec.Y /= worldVec.W;
+        //        worldVec.Z /= worldVec.W;
+        //    }
 
-            return new Vector3(worldVec.X, worldVec.Y, worldVec.Z);
-        }
+        //    return new Vector3(worldVec.X, worldVec.Y, worldVec.Z);
+        //}
 
         /// <summary>
         /// Returns how many world units correspond to one screen-space pixel.
         /// </summary>
-        public float GetWorldUnitsPerPixel()
+        public double GetWorldUnitsPerPixel()
         {
             if (!HasValidViewport)
-                return 0f;
+                return 0.0;
 
-            float scaleX = Math.Abs(ViewProjectionMatrix.M11);
+            double scale = InitialViewMatrix.M11 * CurrentZoom;
 
-            if (scaleX <= 0f)
-                return 0f;
-
-            return 2f / (Viewport.Width * scaleX);
+            return scale > 0.0 ? 1.0 / scale : 0.0;
         }
 
         public void ZoomToBounds(Rect bounds)
         {
-            if (!HasValidViewport) { return; }
-            if (bounds.IsEmpty || bounds.Width <= 0 || bounds.Height <= 0) { return; }
-
-            // Optional padding so it's not edge-to-edge
-            const float paddingPct = 0.05f; // 5% padding
-            float padX = (float)bounds.Width * paddingPct;
-            float padY = (float)bounds.Height * paddingPct;
-
-            float targetW = (float)bounds.Width + 2f * padX;
-            float targetH = (float)bounds.Height + 2f * padY;
-
-            // 1) Measure base viewport world size at zoom=1, translate=0
-            double oldStep = CurrentZoomStep;
-            Vector2 oldTranslate = Translate;
-
-            CurrentZoomStep = 0;
-            Translate = Vector2.Zero;
-            UpdateView();
-            UpdateViewProjection();
-
-            RectangleF baseView = GetCurrentViewportBounds();
-            if (baseView.Width <= 0 || baseView.Height <= 0)
-            {
-                // restore and bail
-                CurrentZoomStep = oldStep;
-                Translate = oldTranslate;
-                UpdateView();
-                UpdateViewProjection();
+            if (!HasValidViewport || bounds.IsEmpty ||
+                bounds.Width <= 0 || bounds.Height <= 0)
                 return;
-            }
 
-            float baseW = baseView.Width;
-            float baseH = baseView.Height;
+            const double paddingPct = 0.05;
 
-            // 2) Compute the continuous zoom that would make bounds fit
-            // zoom > 1 => zoom in (smaller world visible), zoom < 1 => zoom out (larger world visible)
-            float desiredZoom = Math.Min(baseW / targetW, baseH / targetH);
+            double targetW = bounds.Width * (1.0 + 2.0 * paddingPct);
+            double targetH = bounds.Height * (1.0 + 2.0 * paddingPct);
 
-            // Guard against weird values
-            if (float.IsNaN(desiredZoom) || float.IsInfinity(desiredZoom) || desiredZoom <= 0) { desiredZoom = 1f; }
+            double initialScale = InitialViewMatrix.M11;
 
-            // 3) Convert desiredZoom to a zoom step.
-            // IMPORTANT: choose a zoom that does NOT exceed desiredZoom, so the bounds still fits.
-            int step = ZoomStepFloor(desiredZoom);
+            if (initialScale <= 0)
+                return;
 
-            CurrentZoomStep = step;
+            double baseW = Viewport.Width / initialScale;
+            double baseH = Viewport.Height / initialScale;
+
+            double desiredZoom = Math.Min(
+                baseW / targetW,
+                baseH / targetH);
+
+            if (!double.IsFinite(desiredZoom) || desiredZoom <= 0)
+                return;
+
+            CurrentZoomStep = ZoomStepFloor(desiredZoom);
+
+            Vector2d boundsCenter = new(
+                bounds.X + bounds.Width * 0.5,
+                bounds.Y + bounds.Height * 0.5);
+
+            Vector2d extentsCenter = new(
+                Extents.X + Extents.Width * 0.5,
+                Extents.Y + Extents.Height * 0.5);
+
+            Translate = extentsCenter - boundsCenter;
+
             UpdateView();
             UpdateViewProjection();
 
-            // 4) Center using the SAME convention as Pan(): Translate -= worldDelta
-            Vector2 desiredCenter = new(
-                (float)(bounds.X + bounds.Width / 2.0),
-                (float)(bounds.Y + bounds.Height / 2.0));
-
-            Vector2 screenCenter = new(Viewport.Width / 2f, Viewport.Height / 2f);
-            Vector2 currentCenterWorld = ScreenToWorld(screenCenter);
-
-            Vector2 worldDelta = desiredCenter - currentCenterWorld;
-
-            // Pan uses: Translate -= delta; so do the same here
-            Translate -= worldDelta;
-
-            UpdateView();
-            UpdateViewProjection();
+            IsDirty = true;
         }
 
-        private int ZoomStepFloor(float desiredZoom)
+        private int ZoomStepFloor(double desiredZoom)
         {
-            // desiredZoom = zoomFactor^step
-            // step = log(desiredZoom) / log(zoomFactor)
-            // We floor to ensure resulting zoom <= desiredZoom (keeps bounds fitting).
             double zf = _zoomFactor;
+
             if (zf <= 1.0) return 0;
 
             double raw = Math.Log(desiredZoom) / Math.Log(zf);
-
-            // For negative values, Floor(-2.1) => -3 (more zoom-out), which is still <= desiredZoom, which we want.
             int step = (int)Math.Floor(raw);
-
-            // Optional clamp (prevents insane zoom steps if bounds is microscopic/huge)
             step = Math.Clamp(step, -500, 500);
 
             return step;
@@ -405,10 +412,10 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
             scene = new Scene()
             {
-                Name = sceneName, 
-                ZoomStep = CurrentZoomStep, 
-                ZoomFactor = _zoomFactor, 
-                Translation = Translate, 
+                Name = sceneName,
+                ZoomStep = CurrentZoomStep,
+                ZoomFactor = _zoomFactor,
+                Translation = Translate,
                 Bounds = GetCurrentViewportBounds()
             };
 
@@ -466,28 +473,22 @@ namespace Cad_Point_Manager.Controls.D3DControl
             }
             return true;
         }
-        public RectangleF GetCurrentViewportBounds()
+        public Rect GetCurrentViewportBounds()
         {
-            if (!HasValidViewport) { return RectangleF.Empty; }
+            if (!HasValidViewport)
+                return Rect.Empty;
 
-            if (ViewProjectionMatrix == Matrix.Identity) { return new RectangleF(0, 0, Viewport.Width, Viewport.Height); }
+            Vector2d bottomLeft = ScreenToWorld(
+                new Vector2d(0, Viewport.Height));
 
-            Vector2 screenTL = new(0, 0);
-            Vector2 screenTR = new(Viewport.Width, 0);
-            Vector2 screenBR = new(Viewport.Width, Viewport.Height);
-            Vector2 screenBL = new(0, Viewport.Height);
+            Vector2d topRight = ScreenToWorld(
+                new Vector2d(Viewport.Width, 0));
 
-            Vector2 worldTL = ScreenToWorld(screenTL);
-            Vector2 worldTR = ScreenToWorld(screenTR);
-            Vector2 worldBR = ScreenToWorld(screenBR);
-            Vector2 worldBL = ScreenToWorld(screenBL);
-
-            float minX = Math.Min(Math.Min(worldTL.X, worldTR.X), Math.Min(worldBL.X, worldBR.X));
-            float maxX = Math.Max(Math.Max(worldTL.X, worldTR.X), Math.Max(worldBL.X, worldBR.X));
-            float minY = Math.Min(Math.Min(worldTL.Y, worldTR.Y), Math.Min(worldBL.Y, worldBR.Y));
-            float maxY = Math.Max(Math.Max(worldTL.Y, worldTR.Y), Math.Max(worldBL.Y, worldBR.Y));
-
-            return new RectangleF(minX, minY, maxX - minX, maxY - minY);
+            return new Rect(
+                bottomLeft.X,
+                bottomLeft.Y,
+                topRight.X - bottomLeft.X,
+                topRight.Y - bottomLeft.Y);
         }
         public void UpdateDefaultScene()
         {
@@ -495,10 +496,40 @@ namespace Cad_Point_Manager.Controls.D3DControl
             if (defaultScene != null)
             {
                 defaultScene.ZoomStep = 0;
-                defaultScene.Translation = Vector2.Zero;
-                defaultScene.Bounds = Extents.ToRectangeF();
+                defaultScene.Translation = Vector2d.Zero;
+                defaultScene.Bounds = Extents;
             }
         }
+
+        public D3dMatrix GetRelativeViewProjectionMatrix(Vector2d renderOrigin)
+        {
+            if (!HasValidViewport || InitialViewMatrix.M11 <= 0)
+                return D3dMatrix.Identity;
+
+            double centerX = Extents.X + Extents.Width * 0.5;
+            double centerY = Extents.Y + Extents.Height * 0.5;
+
+            double scale = InitialViewMatrix.M11 * CurrentZoom;
+
+            double scaleX = 2.0 * scale / Viewport.Width;
+            double scaleY = 2.0 * scale / Viewport.Height;
+
+            double translateX =
+                (renderOrigin.X - centerX + Translate.X) * scaleX;
+
+            double translateY =
+                (renderOrigin.Y - centerY + Translate.Y) * scaleY;
+
+            var matrix = D3dMatrix.Identity;
+
+            matrix.M11 = (float)scaleX;
+            matrix.M22 = (float)scaleY;
+            matrix.M41 = (float)translateX;
+            matrix.M42 = (float)translateY;
+
+            return matrix;
+        }
+
         #endregion
 
         #region INotifyPropertyChanged Implementation

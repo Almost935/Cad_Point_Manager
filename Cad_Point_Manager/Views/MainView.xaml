@@ -468,7 +468,6 @@
                                    StateBuffers="{Binding StateBuffers, Mode=OneWayToSource}"
                                    ResCache="{Binding ResCache}"
                                    Focusable="True"
-                                   MousePosition="{Binding MousePosition, Mode=OneWayToSource}"
                                    Cursor="{x:Static helpers:AppCursors.DarkCrosshairCursor}" />
                 <Canvas x:Name="BackgroundCanvas">
                     <uc:SignificantPointControl HitTestablePoint="{Binding DataContext.SnappedHitTestablePoint, RelativeSource={RelativeSource AncestorType=Page}}"

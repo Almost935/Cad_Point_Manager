@@ -1,4 +1,5 @@
-﻿using Cad_Point_Manager.Controls.D3DControl;
+﻿using Cad_Point_Manager.Common;
+using Cad_Point_Manager.Controls.D3DControl;
 using Cad_Point_Manager.Controls.D3DControl.Rendering.Msdf;
 using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Helpers;
@@ -18,7 +19,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
     public class DrawingPolyline : DrawingGeometry
     {
         #region Properties
-        public float Length { get; set; }
+        public double Length { get; set; }
         public bool IsClosed { get; set; }
         public List<DrawingSegment> DrawingSegments { get; set; } = [];
         public int NumberOfSegments => DrawingSegments.Count;
@@ -109,19 +110,19 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             }
         }
 
-        public override double DistanceToPoint(System.Windows.Point point, MsdfAtlas atlas = null)
+        public override double DistanceToPoint(Vector2d p, MsdfAtlas atlas = null)
         {
             double distance = double.MaxValue;
 
-            Parallel.ForEach(DrawingSegments, segment =>
+            foreach (var segment in DrawingSegments)
             {
-                var d = segment.DistanceToPoint(point);
-                if (d < distance)
-                {
-                    distance = d;
-                }
-            });
+                double potD = segment.DistanceToPoint(p);
 
+                if (potD < distance)
+                {
+                    distance = potD;
+                }
+            }
             return distance;
         }
 
@@ -143,14 +144,16 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             return false;
         }
 
-        public override void UpdateVertices(ResCache resCache, uint layerId, uint objectId, uint lineTypeId)
+        public override void UpdateVertices(
+            ResCache resCache, uint layerId, uint objectId, uint lineTypeId, Vector2d renderOrigin)
         {
             if (EntityObject is Polyline2D polyline2D)
             {
                 var start = polyline2D.Vertexes.First();
                 var end = polyline2D.Vertexes.Last();
-                Start = new Vector3((float)start.Position.X, (float)start.Position.Y, 0);
-                End = new Vector3((float)end.Position.X, (float)end.Position.Y, 0);
+
+                Start = start.Position.ToVector2d();
+                End = end.Position.ToVector2d();
 
                 var entities = polyline2D.Explode();
                 var vertices = polyline2D.Vertexes;
@@ -163,7 +166,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
                     if (obj is not null)
                     {
-                        obj.UpdateVertices(resCache, layerId, objectId, lineTypeId);
+                        obj.UpdateVertices(resCache, layerId, objectId, lineTypeId, renderOrigin);
                         DrawingSegments.Add(obj);
                     }
                 }
@@ -194,8 +197,8 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             {
                 var start = polyline3D.Vertexes.First();
                 var end = polyline3D.Vertexes.Last();
-                Start = new Vector3((float)start.X, (float)start.Y, 0);
-                End = new Vector3((float)end.X, (float)end.Y, 0);
+                Start = start.ToVector2d();
+                End = end.ToVector2d();
 
                 var entities = polyline3D.Explode();
                 var vertices = polyline3D.Vertexes;
@@ -208,7 +211,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
                     if (obj is not null)
                     {
-                        obj.UpdateVertices(resCache, layerId, objectId, lineTypeId);
+                        obj.UpdateVertices(resCache, layerId, objectId, lineTypeId, renderOrigin);
                         DrawingSegments.Add(obj);
                     }
                 }

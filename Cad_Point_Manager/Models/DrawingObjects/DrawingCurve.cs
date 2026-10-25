@@ -1,18 +1,19 @@
-﻿using Vector3 = SharpDX.Vector3;
+﻿using Cad_Point_Manager.Common;
+using Vector3 = SharpDX.Vector3;
 
 namespace Cad_Point_Manager.Models.DrawingObjects
 {
     public abstract class DrawingCurve : DrawingSegment
     {
         #region Properties
-        public float Radius { get; set; }
-        public Vector3 RadiusPoint { get; set; }
-        public float StartAngle { get; set; }
-        public float EndAngle { get; set; }
+        public double Radius { get; set; }
+        public Vector2d RadiusPoint { get; set; }
+        public double StartAngle { get; set; }
+        public double EndAngle { get; set; }
         public int NumberOfSegments { get; set; }
-        public float Sweep { get; set; }
-        public List<System.Windows.Point> SamplePoints { get; set; } = [];
-        public float Diameter => Radius * 2;
+        public double Sweep { get; set; }
+        public List<Vector2d> SamplePoints { get; set; } = [];
+        public double Diameter => Radius * 2;
         #endregion
 
         #region Methods

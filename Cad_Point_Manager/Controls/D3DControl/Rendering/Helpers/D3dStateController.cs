@@ -1,4 +1,5 @@
 ﻿// Rendering/D3D/D3dStateController.cs
+using Cad_Point_Manager.Common;
 using Cad_Point_Manager.Models.DrawingObjects;
 using Cad_Point_Manager.Models.PointRendering;
 using SharpDX;
@@ -35,21 +36,21 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Helpers
         public ReadOnlySpan<ObjectState> GetObjectStates() => _bufs.ObjectSpan;
         public ReadOnlySpan<LineTypeInfo> GetLineTypeStates() => _bufs.LineTypeSpan;
 
-        public PointRegistration EnsurePointRegistered(CogoPoint p)
+        public PointRegistration EnsurePointRegistered(CogoPoint p, Vector2d renderOrigin)
         {
             uint pId = _ids.GetOrAddPointId(p, out var isNewPoint);
             uint gId = _ids.GetOrAddGroupId(p.PointGroup, out var isNewGroup);
             if (isNewGroup) { _bufs.InitializeGroupState(_ids.MaxGroupId, p.PointGroup, gId); }
-            if (isNewPoint) { _bufs.InitializePointState(_ids.MaxPointId, p, pId, gId); }
+            if (isNewPoint) { _bufs.InitializePointState(_ids.MaxPointId, p, pId, gId, renderOrigin); }
 
             uint idPN = _ids.GetOrAddLabelId(p, 0, out var isNew);
-            if (isNew) { _bufs.InitializeLabelState(_ids.MaxLabelCount, p.PointNumberOffset, idPN); }
+            if (isNew) { _bufs.InitializeLabelState(_ids.MaxLabelCount, p.PointNumberOffset.ToSharpDXVector2(), idPN); }
 
             uint idElev = _ids.GetOrAddLabelId(p, 1, out isNew);
-            if (isNew) { _bufs.InitializeLabelState(_ids.MaxLabelCount, p.ElevationOffset, idElev); }
+            if (isNew) { _bufs.InitializeLabelState(_ids.MaxLabelCount, p.ElevationOffset.ToSharpDXVector2(), idElev); }
 
             uint idDesc = _ids.GetOrAddLabelId(p, 2, out isNew);
-            if (isNew) { _bufs.InitializeLabelState(_ids.MaxLabelCount, p.DescriptionOffset, idDesc); }
+            if (isNew) { _bufs.InitializeLabelState(_ids.MaxLabelCount, p.DescriptionOffset.ToSharpDXVector2(), idDesc); }
 
             return new PointRegistration(pId, gId, idPN, idElev, idDesc);
         }
@@ -234,6 +235,7 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Helpers
             void Set(int line)
             {
                 if (!_ids.TryGetLabelId(cp, line, out var lid)) { return; }
+
                 _bufs.LabelSpan[(int)lid].Offset = line switch
                 {
                     0 => pointNumOffset,
@@ -243,7 +245,9 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Helpers
                 };
                 _dirtyLabels.Add(lid);
             }
+
             Set(0); Set(1);
+
             if (!string.IsNullOrEmpty(cp.Description)) Set(2);
         }
         public void SetLabelVisible(CogoPoint cp, int line, bool visible)

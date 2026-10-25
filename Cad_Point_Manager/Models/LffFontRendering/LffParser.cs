@@ -1,4 +1,5 @@
-﻿using SharpDX;
+﻿using Cad_Point_Manager.Common;
+using SharpDX;
 using SixLabors.Fonts;
 using System;
 using System.Collections.Generic;
@@ -108,7 +109,7 @@ namespace Cad_Point_Manager.Models.LffFontRendering
         {
             LffStroke stroke = new();
 
-            Vector2? previousPoint = null;
+            Vector2d? previousPoint = null;
 
             foreach (string token in line.Split(';'))
             {
@@ -118,9 +119,9 @@ namespace Cad_Point_Manager.Models.LffFontRendering
 
                 if (parts.Length < 2) { continue; }
 
-                Vector2 point = new(
-                    float.Parse(parts[0], CultureInfo.InvariantCulture),
-                    float.Parse(parts[1], CultureInfo.InvariantCulture));
+                Vector2d point = new(
+                    double.Parse(parts[0], CultureInfo.InvariantCulture),
+                    double.Parse(parts[1], CultureInfo.InvariantCulture));
 
                 float bulge = 0;
 
@@ -152,10 +153,10 @@ namespace Cad_Point_Manager.Models.LffFontRendering
             {
                 bool hasPoint = false;
 
-                float minX = float.MaxValue;
-                float maxX = float.MinValue;
-                float minY = float.MaxValue;
-                float maxY = float.MinValue;
+                double minX = double.MaxValue;
+                double maxX = double.MinValue;
+                double minY = double.MaxValue;
+                double maxY = double.MinValue;
 
                 foreach (var stroke in glyph.Strokes)
                 {
@@ -179,9 +180,9 @@ namespace Cad_Point_Manager.Models.LffFontRendering
 
                 if (!hasPoint) { continue; }
 
-                glyph.Bounds = new RectangleF(minX, minY, maxX - minX, maxY - minY);
+                glyph.Bounds = new RectangleF((float)minX, (float)minY, (float)(maxX - minX), (float)(maxY - minY));
 
-                glyph.AdvanceWidth = maxX + font.LetterSpacing;
+                glyph.AdvanceWidth = (float)(maxX + font.LetterSpacing);
             }
 
             if (font.Glyphs.TryGetValue('I', out var testGlyph))

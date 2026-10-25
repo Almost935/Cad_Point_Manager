@@ -1,6 +1,8 @@
-﻿using Cad_Point_Manager.Controls.D3DControl;
+﻿using Cad_Point_Manager.Common;
+using Cad_Point_Manager.Controls.D3DControl;
 using Cad_Point_Manager.Controls.D3DControl.Rendering.Helpers;
 using Cad_Point_Manager.Controls.D3DControl.Rendering.Msdf;
+using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Helpers;
 using Cad_Point_Manager.Models.DrawingObjects.HelperClasses;
 using netDxf.Entities;
@@ -20,7 +22,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
         #region Properties
         public Insert DxfInsert { get; set; }
-        public Vector3 InsertionPoint { get; set; }
+        public Vector2d InsertionPoint { get; set; }
         public int StartLineVertexIndex { get; set; }
         public int EndLineVertexIndex { get; set; }
         public int StartTextVertexIndex { get; set; }
@@ -63,7 +65,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         {
             if (EntityObject is Insert insert)
             {
-                InsertionPoint = new((float)insert.Position.X, (float)insert.Position.Y, (float)insert.Position.Z);
+                InsertionPoint = insert.Position.ToVector2d();
 
                 UpdateDrawingObjects(insert);
                 UpdateBounds();
@@ -93,13 +95,13 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 Bounds = Rect.Union(Bounds, drawingObj.Bounds);
             }
         }
-        public override double DistanceToPoint(System.Windows.Point point, MsdfAtlas atlas = null)
+        public override double DistanceToPoint(Vector2d point, MsdfAtlas atlas = null)
         {
             double distance = double.MaxValue;
 
             Parallel.ForEach(DrawingObjects, obj =>
             {
-                var d = obj.DistanceToPoint(point);
+                double d = obj.DistanceToPoint(point);
                 if (d < distance)
                 {
                     distance = d;
@@ -137,7 +139,8 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 {
                     var colorType = DxfHelpers.GetColorType(e);
                     Vector4 color = DxfHelpers.GetEntityObjectColor(e, DxfInsert);
-                    var obj = DxfHelpers.GetDrawingObject(e, Layer, color, colorType, LineType, this, isPartOfDimension: IsPartOfDimension);
+                    var obj = DxfHelpers.GetDrawingObject(
+                        e, Layer, color, colorType, LineType, this, isPartOfDimension: IsPartOfDimension);
 
                     if (obj is not null) { DrawingObjects.Add(obj); }
                 }
@@ -148,7 +151,9 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             }
         }
 
-        public void UpdateGeometryVertices(ResCache resCache, uint layerId, uint lineTypeId, SceneIdMap sceneIdMap, D3dStateBuffers stateBuffers)
+        public void UpdateGeometryVertices(
+            ResCache resCache, uint layerId, uint lineTypeId, SceneIdMap sceneIdMap, 
+            D3dStateBuffers stateBuffers, Vector2d renderOrigin)
         {
             LineInstances.Clear();
 
@@ -156,7 +161,8 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             {
                 if (obj is DrawingBlock block)
                 {
-                    block.UpdateGeometryVertices(resCache, layerId, lineTypeId, sceneIdMap, stateBuffers);
+                    block.UpdateGeometryVertices(
+                        resCache, layerId, lineTypeId, sceneIdMap, stateBuffers, renderOrigin);
                     LineInstances.AddRange(block.LineInstances);
                 }
                 if (obj is DrawingGeometry geometry)
@@ -164,22 +170,24 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                     var objectId = sceneIdMap.GetOrAddObjectId(obj, out var isNewObj);
                     if (isNewObj) { stateBuffers.InitializeObjectState(sceneIdMap.MaxObjectId, obj, objectId); }
 
-                    geometry.UpdateVertices(resCache, layerId, objectId, lineTypeId);
+                    geometry.UpdateVertices(resCache, layerId, objectId, lineTypeId, renderOrigin);
                     LineInstances.AddRange(geometry.LineInstances);
                 }
                 if (obj is DrawingMtext mtext)
                 {
-                    mtext.UpdateVertices(resCache, layerId, lineTypeId, sceneIdMap, stateBuffers);
+                    mtext.UpdateVertices(resCache, layerId, lineTypeId, sceneIdMap, stateBuffers, renderOrigin);
                     LineInstances.AddRange(mtext.LineInstances);
                 }
                 if (obj is DrawingText text)
                 {
-                    text.UpdateVertices(resCache, layerId, lineTypeId, sceneIdMap, stateBuffers);
+                    text.UpdateVertices(resCache, layerId, lineTypeId, sceneIdMap, stateBuffers, renderOrigin);
                     LineInstances.AddRange(text.LineInstances);
                 }
             }
         }
-        public void UpdateTextVertices(ResCache resCache, uint layerId, uint lineTypeId, SceneIdMap sceneIdMap, D3dStateBuffers stateBuffers)
+        public void UpdateTextVertices(
+            ResCache resCache, uint layerId, uint lineTypeId, SceneIdMap sceneIdMap, 
+            D3dStateBuffers stateBuffers, Vector2d renderOrigin)
         {
             TextVertices.Clear();
 
@@ -187,17 +195,20 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             {
                 if (obj is DrawingBlock block)
                 {
-                    block.UpdateTextVertices(resCache, layerId, lineTypeId, sceneIdMap, stateBuffers);
+                    block.UpdateTextVertices(
+                        resCache, layerId, lineTypeId, sceneIdMap, stateBuffers, renderOrigin);
                     TextVertices.AddRange(block.TextVertices);
                 }
                 if (obj is DrawingSText text)
                 {
-                    text.UpdateVertices(resCache, layerId, lineTypeId, sceneIdMap, stateBuffers);
+                    text.UpdateVertices(
+                        resCache, layerId, lineTypeId, sceneIdMap, stateBuffers, renderOrigin);
                     TextVertices.AddRange(text.TextVertices);
                 }
                 if (obj is DrawingMtext mtext)
                 {
-                    mtext.UpdateVertices(resCache, layerId, lineTypeId, sceneIdMap, stateBuffers);
+                    mtext.UpdateVertices(
+                        resCache, layerId, lineTypeId, sceneIdMap, stateBuffers, renderOrigin);
 
                     foreach (var segment in mtext.Segments)
                     {
@@ -206,24 +217,29 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 }
             }
         }
-        public void UpdateSolidVertices(ResCache resCache, uint layerId, uint objectId, uint lineTypeId)
+        public void UpdateSolidVertices(
+            ResCache resCache, uint layerId, uint objectId, 
+            uint lineTypeId, Vector2d renderOrigin)
         {
             SolidVertices.Clear();
             foreach (var obj in DrawingObjects)
             {
                 if (obj is DrawingBlock block)
                 {
-                    block.UpdateSolidVertices(resCache, layerId, objectId, lineTypeId);
+                    block.UpdateSolidVertices(
+                        resCache, layerId, objectId, lineTypeId, renderOrigin);
                     SolidVertices.AddRange(block.SolidVertices);
                 }
                 if (obj is DrawingSolid solid)
                 {
-                    solid.UpdateVertices(layerId, objectId);
+                    solid.UpdateVertices(
+                        layerId, objectId, renderOrigin);
                     SolidVertices.AddRange(solid.Vertices);
                 }
                 if (obj is DrawingWidePolyline widePolyline)
                 {
-                    widePolyline.UpdateVertices(resCache, layerId, objectId, lineTypeId);
+                    widePolyline.UpdateVertices(
+                        resCache, layerId, objectId, lineTypeId, renderOrigin);
                     SolidVertices.AddRange(widePolyline.SolidVertices);
                 }
             }

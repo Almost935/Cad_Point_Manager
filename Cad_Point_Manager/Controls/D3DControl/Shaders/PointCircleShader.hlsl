@@ -29,7 +29,6 @@ struct PointState
     uint GroupId;
     uint Flags;
     uint LabelQuadrant;
-    uint _padLS;
 };
 struct GroupState
 {
@@ -37,7 +36,6 @@ struct GroupState
     float Scale; // point-scale
     uint Flags; // bit0: visible
     float TextInfoBaseXoffset; // distance between base position and text labels
-    float _padGS; // keep 16B stride
 };
 
 // --- Vertex/Geometry interfaces ---

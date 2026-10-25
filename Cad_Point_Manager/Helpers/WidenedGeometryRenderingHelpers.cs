@@ -1,9 +1,11 @@
-﻿using Cad_Point_Manager.Controls.D3DControl;
+﻿using Cad_Point_Manager.Common;
+using Cad_Point_Manager.Controls.D3DControl;
 using Cad_Point_Manager.Controls.D3DControl.Rendering.Helpers;
 using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Models.DrawingObjects;
 using SharpDX;
 using SharpDX.Direct2D1;
+using SharpDX.Mathematics.Interop;
 using System.Diagnostics;
 
 namespace Cad_Point_Manager.Helpers
@@ -15,110 +17,106 @@ namespace Cad_Point_Manager.Helpers
         #endregion
 
         #region Methods
-        public static List<Vector2> GetWidenedPolylineVertices(ResCache resCache, DrawingWidePolyline widePolyLine, float width, out List<Vector2> vertices)
+        public static List<Vector2d> GetWidenedPolylineVertices(
+            ResCache resCache, DrawingWidePolyline widePolyline, double width, Vector2d renderOrigin)
         {
-            vertices = [];
+            using var geometry = GetWidenedPolylineGeometry(
+                resCache, widePolyline, width, _tesselationFactor, renderOrigin);
 
-            using var geometry = GetWidenedPolylineGeometry(resCache, widePolyLine, width, _tesselationFactor);
-            vertices = TesselatePolylineGeometry(resCache, geometry, _tesselationFactor);
-
-            return vertices;
+            return TesselatePolylineGeometry(resCache, geometry, _tesselationFactor);
         }
-        private static List<Vector2> TesselatePolylineGeometry(ResCache resCache, PathGeometry geometry, float tesselationFactor = 1)
+        private static List<Vector2d> TesselatePolylineGeometry(ResCache resCache, PathGeometry geometry, float tesselationFactor = 1)
         {
-            List<Vector2> vertices = [];
+            List<Vector2d> vertices = [];
 
             using (var sink = new CustomTessellationSink())
             {
                 geometry.Tessellate(1e-8f, sink);
-                vertices.AddRange(sink.Vertices);
+                foreach (var vertex in sink.Vertices)
+                {
+                    vertices.Add(vertex.ToVector2d());
+                }
             }
 
-            var scale = Matrix.Scaling(1 / tesselationFactor, 1 / tesselationFactor, 1);
+            double scaleFactor = 1.0 / tesselationFactor;
+            var scale = new System.Windows.Media.Matrix(
+                scaleFactor, 0,
+                0, scaleFactor,
+                0, 0);
+
             for (int i = 0; i < vertices.Count; i++)
             {
                 var vertex = vertices[i];
-                vertices[i] = Vector2.TransformCoordinate(vertex, scale);
+                vertices[i] = Vector2d.TransformCoordinate(vertex, scale);
             }
 
             return vertices;
         }
-        private static PathGeometry GetWidenedPolylineGeometry(ResCache resCache, DrawingWidePolyline widePolyLine, float width, float tesselationFactor)
+
+        private static PathGeometry GetWidenedPolylineGeometry(
+            ResCache resCache, DrawingWidePolyline widePolyline, double width, float tesselationFactor, Vector2d renderOrigin)
         {
             PathGeometry source = new(resCache.D2dFactory);
 
+            RawVector2 ToRelative(double x, double y)
+                => new((float)(x - renderOrigin.X), (float)(y - renderOrigin.Y));
+
+            var vertices = widePolyline.Polyline2D.Vertexes;
+
+            if (vertices.Count < 2)
+            {
+                source.Dispose();
+                throw new ArgumentException("Polyline must contain at least two vertices.");
+            }
+
             using (GeometrySink sink = source.Open())
             {
-                var start = widePolyLine.DrawingSegments.First().Start;
-                var vertices = widePolyLine.Polyline2D.Vertexes.Select(v => v.Position).ToList();
-                sink.BeginFigure(start.ToRawVector2(), FigureBegin.Hollow);
+                var start = vertices[0].Position;
 
-                for (int i = 0; i < widePolyLine.DrawingSegments.Count; i++)
+                sink.BeginFigure(ToRelative(start.X, start.Y), FigureBegin.Hollow);
+
+                int segmentCount = Math.Min(
+                    widePolyline.DrawingSegments.Count, widePolyline.IsClosed ? vertices.Count : vertices.Count - 1);
+
+                for (int i = 0; i < segmentCount; i++)
                 {
-                    var segment = widePolyLine.DrawingSegments[i];
-                    var end = default(Vector2);
-
-                    var test1 = i == widePolyLine.DrawingSegments.Count - 1;
-                    var test2 = (i + 1) >= vertices.Count;
-
-                    if (i == widePolyLine.DrawingSegments.Count - 1 &&
-                        (i + 1) >= vertices.Count)
-                    {
-                        if (widePolyLine.IsClosed)
-                        {
-                            end = vertices[0].ToRawVector2();
-                        }
-                        else
-                        {
-                            break;
-                        }
-                    }
-                    else
-                    {
-                        end = vertices[i + 1].ToRawVector2();
-                    }
+                    int next = (i + 1) % vertices.Count;
+                    var endpoint = vertices[next].Position;
+                    RawVector2 end = ToRelative(endpoint.X, endpoint.Y);
+                    var segment = widePolyline.DrawingSegments[i];
 
                     switch (segment)
                     {
-                        case DrawingLine drawingLine:
-
+                        case DrawingLine:
                             sink.AddLine(end);
                             break;
 
-                        case DrawingArc drawingArc:
-
+                        case DrawingArc arc:
                             sink.AddArc(new ArcSegment
                             {
                                 Point = end,
-                                Size = new Size2F(drawingArc.Radius, drawingArc.Radius),
+                                Size = new Size2F((float)arc.Radius, (float)arc.Radius),
                                 SweepDirection = SweepDirection.CounterClockwise,
                                 ArcSize = ArcSize.Small
                             });
-
-                            break;
-
-                        default:
                             break;
                     }
                 }
 
-                if (widePolyLine.IsClosed) { sink.EndFigure(FigureEnd.Closed); }
-                else { sink.EndFigure(FigureEnd.Open); }
+                sink.EndFigure(widePolyline.IsClosed ? FigureEnd.Closed : FigureEnd.Open);
 
                 sink.Close();
             }
 
             var matrix = Matrix3x2.Scaling(tesselationFactor, tesselationFactor);
+
             using TransformedGeometry transformed = new(resCache.D2dFactory, source, matrix);
 
             PathGeometry widened = new(resCache.D2dFactory);
 
-            using (var sink = widened.Open())
+            using (GeometrySink sink = widened.Open())
             {
-                transformed.Widen(
-                    width * tesselationFactor,
-                    sink);
-
+                transformed.Widen((float)(width * tesselationFactor), sink);
                 sink.Close();
             }
 
@@ -126,6 +124,7 @@ namespace Cad_Point_Manager.Helpers
 
             return widened;
         }
+
         #endregion
     }
 }

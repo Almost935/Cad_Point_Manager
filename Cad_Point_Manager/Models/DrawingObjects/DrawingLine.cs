@@ -1,4 +1,5 @@
-﻿using Cad_Point_Manager.Controls.D3DControl;
+﻿using Cad_Point_Manager.Common;
+using Cad_Point_Manager.Controls.D3DControl;
 using Cad_Point_Manager.Controls.D3DControl.Rendering.Msdf;
 using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Helpers;
@@ -17,7 +18,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
     public class DrawingLine : DrawingSegment
     {
         #region Properties
-        public Vector3 MidPoint { get; set; }
+        public Vector2d MidPoint { get; set; }
         #endregion
 
         #region Constructors
@@ -43,10 +44,10 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         {
             if (EntityObject is not null && EntityObject is Line line)
             {
-                Start = new Vector3((float)line.StartPoint.X, (float)line.StartPoint.Y, 0);
-                End = new Vector3((float)line.EndPoint.X, (float)line.EndPoint.Y, 0);
-                Length = Vector3.Distance(Start, End);
-                MidPoint = (Start + End) / 2;
+                Start = line.StartPoint.ToVector2d();
+                End = line.EndPoint.ToVector2d();
+                Length = Vector2d.DistanceTo(Start, End);
+                MidPoint = Vector2d.Average(Start, End);
 
                 UpdateBounds();
             }
@@ -56,19 +57,27 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             }
         }
         public override void DrawToPdf(
-           XGraphics gfx,
-           System.Windows.Media.Matrix worldToPdf,
-           XPen pen)
+            XGraphics gfx, System.Windows.Media.Matrix worldToPdf, XPen pen)
         {
-            var p0 = PdfTransform.WorldToPdf(Start.ToVector3(), worldToPdf);
-            var p1 = PdfTransform.WorldToPdf(End.ToVector3(), worldToPdf);
+            var p0 = PdfTransform.WorldToPdf(Start, worldToPdf);
+            var p1 = PdfTransform.WorldToPdf(End, worldToPdf);
             gfx.DrawLine(pen, p0, p1);
         }
 
-        public override void UpdateVertices(ResCache resCache, uint layerId, uint objectId, uint lineTypeId)
+        public override void UpdateVertices(
+            ResCache resCache, uint layerId, uint objectId, uint lineTypeId, Vector2d renderOrigin)
         {
-            LineInstances = new[] { new LineInstance(
-                Start.ToSharpDXVector2(), End.ToSharpDXVector2(), layerId, objectId, 0, (uint)LineInstanceFlags.None, Length) };
+            LineInstances = new[]
+            {
+                new LineInstance(
+                    Start.ToGpuRelative(renderOrigin),
+                    End.ToGpuRelative(renderOrigin),
+                    layerId,
+                    objectId,
+                    0,
+                    (uint)LineInstanceFlags.None,
+                    (float)Length)
+            };
         }
 
         public override void UpdateBounds()
@@ -78,9 +87,9 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             Bounds = Rect.Union(Bounds, new System.Windows.Point(End.X, End.Y));
         }
 
-        public override double DistanceToPoint(System.Windows.Point point, MsdfAtlas atlas = null)
+        public override double DistanceToPoint(Vector2d point, MsdfAtlas atlas = null)
         {
-            return (float)MathHelpers.PointToLineDistance(point, new System.Windows.Point(Start.X, Start.Y), new System.Windows.Point(End.X, End.Y));
+            return (float)MathHelpers.PointToLineDistance(point, Start, End);
         }
 
         public override bool GeometryInRect(Rect rect)

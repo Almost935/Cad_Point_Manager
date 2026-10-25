@@ -1,4 +1,5 @@
-﻿using Cad_Point_Manager.Extensions;
+﻿using Cad_Point_Manager.Common;
+using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Models.DxfImport;
 using Cad_Point_Manager.Models.PointRendering;
 using Cad_Point_Manager.Services.DxfLoading;
@@ -388,7 +389,7 @@ namespace Cad_Point_Manager.Models
 
                 CadManager.TryCreatePoint(
                     cpDto.PointNumber,
-                    new SharpDX.Vector3(cpDto.X, cpDto.Y, cpDto.Z),
+                    new Vector2d(cpDto.X, cpDto.Y),
                     pointGroup,
                     out _,
                     cpDto.Elevation,

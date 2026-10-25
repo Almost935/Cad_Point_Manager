@@ -28,11 +28,11 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         #region Properties
         public Text DxfText { get; set; }
         public string FontFamilyName { get; set; }
-        public float WidthFactor { get; set; } = 1.0f;
+        public double WidthFactor { get; set; } = 1.0;
         public bool IsBold { get; set; }
         public bool IsItalic { get; set; }
         public TextLayout TextLayout { get; set; }
-        public float FontSizeFactor { get; set; } = 1;
+        public double FontSizeFactor { get; set; } = 1;
         public LffFont LffFont { get; set; }
 
         public bool TextFormatCreated => _textFormat != null;
@@ -40,7 +40,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         #endregion
 
         #region Constructor
-        public DrawingSText(Text text, ObjectLayer layer, Vector4 objectColor, ColorType colorType, 
+        public DrawingSText(Text text, ObjectLayer layer, Vector4 objectColor, ColorType colorType,
             LineType lineType, bool isPartOfBlock = false, DrawingBlock block = null)
         {
             Type = DrawingObjectType.DrawingSText;
@@ -66,13 +66,13 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 Text = text.Value;
                 WidthFactor = (float)text.WidthFactor;
 
-                float widthPerCharacter = (float)(0.6f * text.Height);
-                float textWidth = widthPerCharacter * Text.Length * WidthFactor;
+                double widthPerCharacter = 0.6 * text.Height;
+                double textWidth = widthPerCharacter * Text.Length * WidthFactor;
 
                 Bounds = new(text.Position.X, text.Position.Y, textWidth * 2, text.Height * 2);
                 Rotation = (float)text.Rotation;
                 AttachmentPoint = TextRenderingHelpers.GetAttachmentPoint(text.Alignment);
-                Position = text.Position.ToSharpDXVector3();
+                Position = text.Position.ToVector2d();
                 TextHeight = (float)text.Height;
                 FontFamilyName = text.Style.FontFamilyName;
 
@@ -101,8 +101,8 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 for (int i = 0; i < LineInstances.Count; i++)
                 {
                     var v = LineInstances[i];
-                    var p1Pdf = PdfDrawingHelpers.WorldToPdf(new Vector2(v.Start.X, v.Start.Y), worldToPdf);
-                    var p2Pdf = PdfDrawingHelpers.WorldToPdf(new Vector2(v.End.X, v.End.Y), worldToPdf);
+                    var p1Pdf = PdfDrawingHelpers.WorldToPdf(new Vector2d(v.Start.X, v.Start.Y), worldToPdf);
+                    var p2Pdf = PdfDrawingHelpers.WorldToPdf(new Vector2d(v.End.X, v.End.Y), worldToPdf);
 
                     gfx.DrawLine(pen, new XPoint(p1Pdf.X, p1Pdf.Y), new XPoint(p2Pdf.X, p2Pdf.Y));
                 }
@@ -117,9 +117,9 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
                 for (int i = 0; i + 2 < verts.Count; i += 3)
                 {
-                    var p0 = PdfTransform.WorldToPdf(verts[i].Position.ToVector3(), worldToPdf);
-                    var p1 = PdfTransform.WorldToPdf(verts[i + 1].Position.ToVector3(), worldToPdf);
-                    var p2 = PdfTransform.WorldToPdf(verts[i + 2].Position.ToVector3(), worldToPdf);
+                    var p0 = PdfTransform.WorldToPdf(verts[i].Position.ToVector2d(), worldToPdf);
+                    var p1 = PdfTransform.WorldToPdf(verts[i + 1].Position.ToVector2d(), worldToPdf);
+                    var p2 = PdfTransform.WorldToPdf(verts[i + 2].Position.ToVector2d(), worldToPdf);
                     path.AddPolygon(new[] { p0, p1, p2 });
                 }
 
@@ -127,7 +127,9 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             }
         }
 
-        public override void UpdateVertices(ResCache resCache, uint layerId, uint lineTypeId, SceneIdMap sceneIdMap, D3dStateBuffers stateBuffers)
+        public override void UpdateVertices(
+            ResCache resCache, uint layerId, uint lineTypeId, SceneIdMap sceneIdMap,
+            D3dStateBuffers stateBuffers, Vector2d renderOrigin)
         {
             GetTextFormat(resCache.WriteFactory);
             GetTextLayout(resCache.WriteFactory);
@@ -138,16 +140,17 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
             if (TextRenderStyle == TextRenderStyle.Stroke)
             {
-                List<Vector2> vertices = GetLffVertices();
-                LineInstances = GetLineVertices(vertices, layerId, objectId, lineTypeId);
+                List<Vector2d> vertices = GetLffVertices();
+                LineInstances = GetLineVertices(vertices, layerId, objectId, lineTypeId, renderOrigin);
                 TextVertices = [];
             }
             else
             {
                 FontSizeFactor = TextRenderingHelpers.GetFontSizeFactor(resCache, TextLayout, _fontFace);
-                (List<Vector2> vertices, RawRectangleF bounds) = TextRenderingHelpers.TesselateTextLayout(resCache, TextLayout, Text, _fontFace);
+                (List<Vector2d> vertices, RawRectangleF bounds) = 
+                    TextRenderingHelpers.TesselateTextLayout(resCache, TextLayout, Text, _fontFace);
                 Bounds = bounds.ToRect();
-                TextVertices = GetTextVertices(vertices, layerId, objectId);
+                TextVertices = GetTextVertices(vertices, layerId, objectId, renderOrigin);
 
                 LineInstances = [];
             }
@@ -170,9 +173,9 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             this.IsSelected = false;
         }
 
-        public override double DistanceToPoint(Point p, MsdfAtlas atlas = null)
+        public override double DistanceToPoint(Vector2d p, MsdfAtlas atlas = null)
         {
-            return 1000;
+            return double.MaxValue;
         }
         public override void UpdateBounds()
         {
@@ -210,14 +213,15 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
         public void GetTextFormat(SharpDX.DirectWrite.Factory1 factory)
         {
-            _textFormat = new(factory, FontFamilyName, TextHeight);
+            _textFormat = new(factory, FontFamilyName, (float)TextHeight);
         }
         public void GetTextLayout(SharpDX.DirectWrite.Factory1 factory)
         {
             TextLayout = new(factory, Text, _textFormat, (float)Bounds.Width, (float)Bounds.Height, 96, true);
         }
 
-        public List<LineInstance> GetLineVertices(List<Vector2> vertices, uint layerId, uint objectId, uint lineTypeId)
+        public List<LineInstance> GetLineVertices(
+            List<Vector2d> vertices, uint layerId, uint objectId, uint lineTypeId, Vector2d renderOrigin)
         {
             List<LineInstance> lineInstances = [];
 
@@ -232,61 +236,51 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             TextHeightScaleFactor = TextHeight / LffFont.DesignHeight;
             AttachmentOffset = UpdateAttachmentOffset();
 
-            var transform = Transform;
+            var transform = Transform.ToSharpDxMatrix();
 
             for (int i = 0; i < vertices.Count; i += 2)
             {
-                var s = vertices[i];
-                var e = vertices[i + 1];
+                var s = vertices[i].ToGpuRelative(renderOrigin);
+                var e = vertices[i + 1].ToGpuRelative(renderOrigin);
 
                 LineInstance lineInstance = new(
-                    Vector2.TransformCoordinate(s, transform), 
-                    Vector2.TransformCoordinate(e, transform), 
+                    Vector2.TransformCoordinate(s, transform),
+                    Vector2.TransformCoordinate(e, transform),
                     layerId, objectId, 0, (uint)LineInstanceFlags.None, 0);
 
                 lineInstances.Add(lineInstance);
             }
             return lineInstances;
         }
-        public List<TextVertex> GetTextVertices(List<Vector2> vertices, uint layerId, uint objectId)
+        public List<TextVertex> GetTextVertices(
+            List<Vector2d> vertices, uint layerId, uint objectId, Vector2d renderOrigin)
         {
             List<TextVertex> textVertices = [];
 
             if (TextRenderStyle == TextRenderStyle.Stroke) { return textVertices; }
 
-            AttachmentOffset = TextRenderingHelpers.GetAttachmentOffset(Bounds.ToRectangeF(), AttachmentPoint);
+            AttachmentOffset = TextRenderingHelpers.GetAttachmentOffset(Bounds.ToRectangeF(), AttachmentPoint).ToVector2d();
             TextHeightScaleFactor = 1;
 
-            var transform = Transform;
+            var transform = Transform.ToSharpDxMatrix();
 
             for (int i = 0; i < vertices.Count; i += 3)
             {
-                var v1 = vertices[i];
-                var v2 = vertices[i + 1];
-                var v3 = vertices[i + 2];
+                var v1 = vertices[i].ToGpuRelative(renderOrigin);
+                var v2 = vertices[i + 1].ToGpuRelative(renderOrigin);
+                var v3 = vertices[i + 2].ToGpuRelative(renderOrigin);
 
                 var scaledVector1 = Vector2.TransformCoordinate(v1, transform);
-                TextVertex textVertex1 = new(new Vector3(scaledVector1.X, scaledVector1.Y, 0), layerId, objectId);
+                TextVertex textVertex1 = new(v1, layerId, objectId);
                 var scaledVector2 = Vector2.TransformCoordinate(v2, transform);
-                TextVertex textVertex2 = new(new Vector3(scaledVector2.X, scaledVector2.Y, 0), layerId, objectId);
+                TextVertex textVertex2 = new(v2, layerId, objectId);
                 var scaledVector3 = Vector2.TransformCoordinate(v3, transform);
-                TextVertex textVertex3 = new(new Vector3(scaledVector3.X, scaledVector3.Y, 0), layerId, objectId);
+                TextVertex textVertex3 = new(v3, layerId, objectId);
 
                 textVertices.AddRange([textVertex1, textVertex2, textVertex3]);
             }
 
             return textVertices;
-        }
-
-        public static float ConvertDxfHeightToFontSize(float height)
-        {
-            //// Convert millimeters to inches (1 inch = 25.4 mm)
-            //float heightInInches = dxfHeightInMm / 25.4f;
-
-            //// Convert inches to points (1 inch = 72 points)
-            //float fontSizeInPoints = heightInInches * 72f;
-
-            return height;
         }
 
         private void UpdateFontFace(ResCache resCache)
@@ -296,14 +290,14 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             _fontFace = resCache.GetFontFace(FontFamilyName, fontWeight, FontStretch.Normal, fontStyle);
         }
 
-        private List<Vector2> GetLffVertices()
+        private List<Vector2d> GetLffVertices()
         {
             if (LffFont == null)
             {
                 throw new Exception($"Font '{FontFamilyName}' not found in LffFontManager.");
             }
 
-            List<Vector2> vertices = [];
+            List<Vector2d> vertices = [];
 
             float penX = 0;
 
@@ -323,8 +317,8 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
                         for (int i = 1; i < pts.Count; i++)
                         {
-                            vertices.Add(new Vector2(pts[i - 1].X + penX, pts[i - 1].Y));
-                            vertices.Add(new Vector2(pts[i].X + penX, pts[i].Y));
+                            vertices.Add(new Vector2d(pts[i - 1].X + penX, pts[i - 1].Y));
+                            vertices.Add(new Vector2d(pts[i].X + penX, pts[i].Y));
                         }
                     }
                 }
@@ -335,42 +329,42 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             return vertices;
         }
 
-        private Vector2 UpdateAttachmentOffset()
+        private Vector2d UpdateAttachmentOffset()
         {
-            var xOffset = Bounds.Width.ToFloat();
+            var xOffset = Bounds.Width;
             var yOffset = TextHeight / TextHeightScaleFactor;
-            var bottomOffset = Bounds.Height.ToFloat() - yOffset;
+            var bottomOffset = Bounds.Height - yOffset;
 
             return AttachmentPoint switch
             {
                 TextAttachmentPoint.TopLeft =>
-                    new Vector2(0, -yOffset),
+                    new Vector2d(0, -yOffset),
 
                 TextAttachmentPoint.TopCenter =>
-                    new Vector2(-(xOffset / 2), -yOffset),
+                    new Vector2d(-(xOffset / 2), -yOffset),
 
                 TextAttachmentPoint.TopRight =>
-                    new Vector2(-xOffset, -yOffset),
+                    new Vector2d(-xOffset, -yOffset),
 
                 TextAttachmentPoint.MiddleLeft =>
-                    new Vector2(0, -yOffset / 2),
+                    new Vector2d(0, -yOffset / 2),
 
                 TextAttachmentPoint.MiddleCenter =>
-                    new Vector2(-(xOffset / 2), -yOffset / 2),
+                    new Vector2d(-(xOffset / 2), -yOffset / 2),
 
                 TextAttachmentPoint.MiddleRight =>
-                    new Vector2(-xOffset, -yOffset / 2),
+                    new Vector2d(-xOffset, -yOffset / 2),
 
                 TextAttachmentPoint.BottomLeft =>
-                    new Vector2(0, bottomOffset),
+                    new Vector2d(0, bottomOffset),
 
                 TextAttachmentPoint.BottomCenter =>
-                    new Vector2(-(xOffset / 2), bottomOffset),
+                    new Vector2d(-(xOffset / 2), bottomOffset),
 
                 TextAttachmentPoint.BottomRight =>
-                    new Vector2(-xOffset, bottomOffset),
+                    new Vector2d(-xOffset, bottomOffset),
 
-                _ => Vector2.Zero
+                _ => Vector2d.Zero
             };
         }
         #endregion

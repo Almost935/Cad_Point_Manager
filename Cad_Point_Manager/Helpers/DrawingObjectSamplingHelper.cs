@@ -6,17 +6,17 @@ namespace Cad_Point_Manager.Helpers
 {
     public static class DrawingObjectSamplingHelper
     {
-        public static IReadOnlyList<Vector2> SampleDrawingObject(DrawingObject drawingObject, int intermediates = 0)
-        {
-            return drawingObject switch
-            {
-                DrawingLine line => SampleDrawingLine(line, intermediates),
-                DrawingArc arc => SampleDrawingArc(arc, intermediates),
-                DrawingCircle circle => SampleDrawingCircle(circle, intermediates),
-                DrawingPolyline polyline => SampleDrawingPolyline(polyline, intermediates),
-                _ => throw new NotSupportedException($"Sampling not supported for {drawingObject.GetType().Name}"),
-            };
-        }
+        //public static IReadOnlyList<Vector2> SampleDrawingObject(DrawingObject drawingObject, int intermediates = 0)
+        //{
+        //    return drawingObject switch
+        //    {
+        //        DrawingLine line => SampleDrawingLine(line, intermediates),
+        //        DrawingArc arc => SampleDrawingArc(arc, intermediates),
+        //        DrawingCircle circle => SampleDrawingCircle(circle, intermediates),
+        //        DrawingPolyline polyline => SampleDrawingPolyline(polyline, intermediates),
+        //        _ => throw new NotSupportedException($"Sampling not supported for {drawingObject.GetType().Name}"),
+        //    };
+        //}
 
         public static IReadOnlyList<Vector2> SampleDrawingLine(DrawingLine drawingLine, int intermediates)
         {

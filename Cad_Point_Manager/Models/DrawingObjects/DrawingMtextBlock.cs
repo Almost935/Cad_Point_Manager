@@ -20,20 +20,22 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
         #region Properties
         public List<DrawingMtextRow> Rows => _rows;
-        public float Height { get; set; } = 0;
-        public float Width => _rows.Max(row => row.Width);
-        public float MaxWidth { get; set; }
-        public Vector3 BasePosition { get; set; } = Vector3.Zero;
-        public float Rotation { get; set; } = 0;
+        public double Height { get; set; } = 0;
+        public double Width => _rows.Max(row => row.Width);
+        public double MaxWidth { get; set; }
+        public Vector2d BasePosition { get; set; } = Vector2d.Zero;
+        public double Rotation { get; set; } = 0;
         public int NumberOfRows => Rows.Count;
         public TextBox TextBox { get; set; } = TextBox.Empty;
         public TextAttachmentPoint AttachmentPoint { get; set; }
-        public Vector3 AttachmentOffset { get; set; } = Vector3.Zero; // This will be used to offset the attachment point from the base position
+        public Vector2d AttachmentOffset { get; set; } = Vector2d.Zero; // This will be used to offset the attachment point from the base position
         public bool AllowsWrapping { get; set; } // This can be used to determine whether to allow text wrapping when adding segments
         #endregion
 
         #region Constructors
-        public DrawingMtextBlock(float maxWidth, Vector3 basePosition, MTextAttachmentPoint attachmentPoint, float rotation, bool allowsWrapping)
+        public DrawingMtextBlock(
+            double maxWidth, Vector2d basePosition, MTextAttachmentPoint attachmentPoint,
+            double rotation, bool allowsWrapping)
         {
             MaxWidth = maxWidth;
             BasePosition = basePosition;
@@ -57,7 +59,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             _rows.ForEach(row => row.Dispose());
             _rows.Clear();
             Height = 0;
-            AttachmentOffset = Vector3.Zero;
+            AttachmentOffset = Vector2d.Zero;
         }
 
         public void SetTextPositions()
@@ -81,35 +83,35 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         {
             if (NumberOfRows > 0)
             {
-                var firstRowHeight = _rows.First().Height; // Get the height of the first row to use as a reference for the attachment point calculation
-                float width = (float)textBox.Width; // Get the width of the textbox to use for alignment calculations
+                double firstRowHeight = _rows.First().Height; // Get the height of the first row to use as a reference for the attachment point calculation
+                double width = textBox.Width; // Get the width of the textbox to use for alignment calculations
 
                 switch (AttachmentPoint)
                 {
                     case TextAttachmentPoint.TopLeft:
                         {
-                            AttachmentOffset = new(0, -firstRowHeight, 0);
+                            AttachmentOffset = new(0, -firstRowHeight);
                             break;
                         }
                     case TextAttachmentPoint.TopCenter:
                         {
-                            AttachmentOffset = new(-width / 2, -firstRowHeight, 0);
+                            AttachmentOffset = new(-width / 2, -firstRowHeight);
                             break;
                         }
                     case TextAttachmentPoint.TopRight:
                         {
-                            AttachmentOffset = new(-width, -firstRowHeight, 0);
+                            AttachmentOffset = new(-width, -firstRowHeight);
                             break;
                         }
                     case TextAttachmentPoint.MiddleLeft:
                         {
                             if (_rows.Count > 1)
                             {
-                                AttachmentOffset = new(0, firstRowHeight / 2, 0);  // For multiple rows, align to the middle of the first row instead of the top
+                                AttachmentOffset = new(0, firstRowHeight / 2);  // For multiple rows, align to the middle of the first row instead of the top
                             }
                             else
                             {
-                                AttachmentOffset = new(0, -firstRowHeight / 2, 0); // For single row, keep it centered vertically
+                                AttachmentOffset = new(0, -firstRowHeight / 2); // For single row, keep it centered vertically
                             }
                             break;
                         }
@@ -117,11 +119,11 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                         {
                             if (_rows.Count > 1)
                             {
-                                AttachmentOffset = new(-width / 2, firstRowHeight / 2, 0);  // For multiple rows, align to the middle of the first row instead of the top
+                                AttachmentOffset = new(-width / 2, firstRowHeight / 2);  // For multiple rows, align to the middle of the first row instead of the top
                             }
                             else
                             {
-                                AttachmentOffset = new(-width / 2, -firstRowHeight / 2, 0); // For single row, keep it centered vertically
+                                AttachmentOffset = new(-width / 2, -firstRowHeight / 2); // For single row, keep it centered vertically
                             }
                             break;
                         }
@@ -129,11 +131,11 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                         {
                             if (_rows.Count > 1)
                             {
-                                AttachmentOffset = new(-width, firstRowHeight / 2, 0);  // For multiple rows, align to the middle of the first row instead of the top
+                                AttachmentOffset = new(-width, firstRowHeight / 2);  // For multiple rows, align to the middle of the first row instead of the top
                             }
                             else
                             {
-                                AttachmentOffset = new(-width, -firstRowHeight / 2, 0); // For single row, keep it centered vertically
+                                AttachmentOffset = new(-width, -firstRowHeight / 2); // For single row, keep it centered vertically
                             }
                             break;
                         }
@@ -141,11 +143,11 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                         {
                             if (_rows.Count > 1)
                             {
-                                AttachmentOffset = new(0, firstRowHeight * 2, 0);  // For multiple rows, align to the middle of the first row instead of the top
+                                AttachmentOffset = new(0, firstRowHeight * 2);  // For multiple rows, align to the middle of the first row instead of the top
                             }
                             else
                             {
-                                AttachmentOffset = new(0, 0, 0); // For single row, keep it centered vertically
+                                AttachmentOffset = new(0, 0); // For single row, keep it centered vertically
                             }
                             break;
                         }
@@ -153,11 +155,11 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                         {
                             if (_rows.Count > 1)
                             {
-                                AttachmentOffset = new(-width / 2, firstRowHeight * 2, 0);  // For multiple rows, align to the middle of the first row instead of the top
+                                AttachmentOffset = new(-width / 2, firstRowHeight * 2);  // For multiple rows, align to the middle of the first row instead of the top
                             }
                             else
                             {
-                                AttachmentOffset = new(-width / 2, 0, 0); // For single row, keep it centered vertically
+                                AttachmentOffset = new(-width / 2, 0); // For single row, keep it centered vertically
                             }
                             break;
                         }
@@ -165,11 +167,11 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                         {
                             if (_rows.Count > 1)
                             {
-                                AttachmentOffset = new(-width, firstRowHeight * 2, 0);  // For multiple rows, align to the middle of the first row instead of the top
+                                AttachmentOffset = new(-width, firstRowHeight * 2);  // For multiple rows, align to the middle of the first row instead of the top
                             }
                             else
                             {
-                                AttachmentOffset = new(-width, 0, 0); // For single row, keep it centered vertically
+                                AttachmentOffset = new(-width, 0); // For single row, keep it centered vertically
                             }
                             break;
                         }
@@ -181,63 +183,79 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 {
                     if (row.TextAlignment == TextAlignment.Right)
                     {
-                        row.UpdateTranslate(new Vector3((TextBox.Width - row.Width).ToFloat(), 0, 0));
+                        row.UpdateTranslate(new Vector2d((TextBox.Width - row.Width), 0));
                     }
                     if (row.TextAlignment == TextAlignment.Center)
                     {
-                        row.UpdateTranslate(new Vector3((TextBox.Width - row.Width).ToFloat() / 2, 0, 0));
+                        row.UpdateTranslate(new Vector2d((TextBox.Width - row.Width) / 2, 0));
                     }
                     row.UpdateTranslate(AttachmentOffset);
                 }
             }
         }
-        public void GetTextBox(float textBoxHeight)
+        public void GetTextBox(double textBoxHeight)
         {
             switch (AttachmentPoint)
             {
                 case TextAttachmentPoint.TopLeft:
-                    TextBox = new TextBox(new Point(BasePosition.X, BasePosition.Y), new Point(BasePosition.X, BasePosition.Y),
-                        new Point(BasePosition.X + MaxWidth, BasePosition.Y - textBoxHeight));
+                    TextBox = new TextBox(
+                        BasePosition,
+                        BasePosition,
+                        new Vector2d(BasePosition.X + MaxWidth, BasePosition.Y - textBoxHeight));
                     break;
 
                 case TextAttachmentPoint.TopCenter:
-                    TextBox = new TextBox(new Point(BasePosition.X, BasePosition.Y), new Point(BasePosition.X - MaxWidth * 0.5f, BasePosition.Y),
-                        new Point(BasePosition.X + MaxWidth * 0.5f, BasePosition.Y - textBoxHeight));
+                    TextBox = new TextBox(
+                        BasePosition,
+                        new Vector2d(BasePosition.X - MaxWidth * 0.5f, BasePosition.Y),
+                        new Vector2d(BasePosition.X + MaxWidth * 0.5f, BasePosition.Y - textBoxHeight));
                     break;
 
                 case TextAttachmentPoint.TopRight:
-                    TextBox = new TextBox(new Point(BasePosition.X, BasePosition.Y), new Point(BasePosition.X - MaxWidth, BasePosition.Y),
-                        new Point(BasePosition.X, BasePosition.Y - textBoxHeight));
+                    TextBox = new TextBox(
+                        BasePosition,
+                        new Vector2d(BasePosition.X - MaxWidth, BasePosition.Y),
+                        new Vector2d(BasePosition.X, BasePosition.Y - textBoxHeight));
                     break;
 
                 case TextAttachmentPoint.MiddleLeft:
-                    TextBox = new TextBox(new Point(BasePosition.X, BasePosition.Y), new Point(BasePosition.X, BasePosition.Y + textBoxHeight * 0.5f),
-                        new Point(BasePosition.X + MaxWidth, BasePosition.Y - textBoxHeight * 0.5f));
+                    TextBox = new TextBox(
+                        BasePosition,
+                        new Vector2d(BasePosition.X, BasePosition.Y + textBoxHeight * 0.5f),
+                        new Vector2d(BasePosition.X + MaxWidth, BasePosition.Y - textBoxHeight * 0.5f));
                     break;
 
                 case TextAttachmentPoint.MiddleCenter:
-                    TextBox = new TextBox(new Point(BasePosition.X, BasePosition.Y), new Point(BasePosition.X - MaxWidth * 0.5f, BasePosition.Y + textBoxHeight * 0.5f),
-                        new Point(BasePosition.X + MaxWidth * 0.5f, BasePosition.Y - textBoxHeight * 0.5f));
+                    TextBox = new TextBox(
+                        BasePosition,
+                        new Vector2d(BasePosition.X - MaxWidth * 0.5f, BasePosition.Y + textBoxHeight * 0.5f),
+                        new Vector2d(BasePosition.X + MaxWidth * 0.5f, BasePosition.Y - textBoxHeight * 0.5f));
                     break;
 
                 case TextAttachmentPoint.MiddleRight:
-                    TextBox = new TextBox(new Point(BasePosition.X, BasePosition.Y), new Point(BasePosition.X - MaxWidth, BasePosition.Y + textBoxHeight * 0.5f),
-                        new Point(BasePosition.X, BasePosition.Y - textBoxHeight * 0.5f));
+                    TextBox = new TextBox(
+                        BasePosition,
+                        new Vector2d(BasePosition.X - MaxWidth, BasePosition.Y + textBoxHeight * 0.5f),
+                        new Vector2d(BasePosition.X, BasePosition.Y - textBoxHeight * 0.5f));
                     break;
 
                 case TextAttachmentPoint.BottomLeft:
-                    TextBox = new TextBox(new Point(BasePosition.X, BasePosition.Y), new Point(BasePosition.X, BasePosition.Y + textBoxHeight),
-                        new Point(BasePosition.X + MaxWidth, BasePosition.Y));
+                    TextBox = new TextBox(BasePosition, new Vector2d(BasePosition.X, BasePosition.Y + textBoxHeight),
+                        new Vector2d(BasePosition.X + MaxWidth, BasePosition.Y));
                     break;
 
                 case TextAttachmentPoint.BottomCenter:
-                    TextBox = new TextBox(new Point(BasePosition.X, BasePosition.Y), new Point(BasePosition.X - MaxWidth * 0.5f, BasePosition.Y + textBoxHeight),
-                        new Point(BasePosition.X + MaxWidth * 0.5f, BasePosition.Y));
+                    TextBox = new TextBox(
+                        BasePosition, 
+                        new Vector2d(BasePosition.X - MaxWidth * 0.5f, BasePosition.Y + textBoxHeight),
+                        new Vector2d(BasePosition.X + MaxWidth * 0.5f, BasePosition.Y));
                     break;
 
                 case TextAttachmentPoint.BottomRight:
-                    TextBox = new TextBox(new Point(BasePosition.X, BasePosition.Y), new Point(BasePosition.X - MaxWidth, BasePosition.Y + textBoxHeight),
-                        new Point(BasePosition.X, BasePosition.Y));
+                    TextBox = new TextBox(
+                        BasePosition, 
+                        new Vector2d(BasePosition.X - MaxWidth, BasePosition.Y + textBoxHeight),
+                        new Vector2d(BasePosition.X, BasePosition.Y));
                     break;
 
                 default:
@@ -255,7 +273,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         }
         private void SetRowYOffsets()
         {
-            float currentYOffset = 0;
+            double currentYOffset = 0;
             Height = 0;
             DrawingMtextRow currentRow;
             DrawingMtextRow prevRow;
@@ -263,7 +281,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             if (_rows.Count == 1)
             {
                 currentRow = _rows[0];
-                float y = currentRow.Height + 2 * (currentRow.Height * _mtextLineSpacingFactor);
+                double y = currentRow.Height + 2 * (currentRow.Height * _mtextLineSpacingFactor);
                 Height += y;
 
                 return;
@@ -274,7 +292,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 if (i == 0)
                 {
                     currentRow = _rows[i];
-                    float y = currentRow.Height + (currentRow.Height * _mtextLineSpacingFactor);
+                    double y = currentRow.Height + (currentRow.Height * _mtextLineSpacingFactor);
                     Height += y;
 
                     continue;
@@ -285,19 +303,18 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
                 if (i - 1 == _rows.Count)
                 {
-                    float y = currentRow.Height + (currentRow.Height * _mtextLineSpacingFactor) + (prevRow.Height * _mtextLineSpacingFactor);
+                    double y = currentRow.Height + (currentRow.Height * _mtextLineSpacingFactor) + (prevRow.Height * _mtextLineSpacingFactor);
                     currentYOffset -= y;
                     Height += y;
                 }
                 else
                 {
-                    float y = currentRow.Height + 2 * (currentRow.Height * _mtextLineSpacingFactor) + 2 * (prevRow.Height * _mtextLineSpacingFactor);
-
+                    double y = currentRow.Height + 2 * (currentRow.Height * _mtextLineSpacingFactor) + 2 * (prevRow.Height * _mtextLineSpacingFactor);
                     currentYOffset -= y;
                     Height += y;
                 }
 
-                currentRow.UpdateTranslate(new Vector3(0, currentYOffset, 0));
+                currentRow.UpdateTranslate(new Vector2d(0, currentYOffset));
             }
         }
 
@@ -324,7 +341,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 var lastRow = _rows.Last();
 
                 bool shouldWrap =
-                    AllowsWrapping && 
+                    AllowsWrapping &&
                     MaxWidth > 0 &&
                     lastRow.Width +
                     segment.SpaceWidth +

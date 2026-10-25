@@ -1,5 +1,6 @@
 ﻿
 // Rendering/D3D/D3dStateBuffers.cs
+using Cad_Point_Manager.Common;
 using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Models.DrawingObjects;
 using Cad_Point_Manager.Models.DrawingObjects.HelperClasses;
@@ -127,7 +128,7 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Helpers
 
             LabelSpan[(int)lId] = new LabelState { Offset = offset, Flags = baseFlags };
         }
-        public void InitializePointState(int count, CogoPoint cp, uint pId, uint gId)
+        public void InitializePointState(int count, CogoPoint cp, uint pId, uint gId, Vector2d renderOrigin)
         {
             EnsurePointCapacity(count);
 
@@ -139,8 +140,8 @@ namespace Cad_Point_Manager.Controls.D3DControl.Rendering.Helpers
 
             PointSpan[(int)pId] = new PointState
             {
-                Offset = cp.Position.ToSharpDXVector2(),
-                PointInfoOffset = cp.TextInfoOffset,
+                Offset = cp.Position.ToGpuRelative(renderOrigin),
+                PointInfoOffset = cp.TextInfoOffset.ToSharpDXVector2(),
                 GroupId = gId,
                 Flags = baseFlags,
                 LabelQuadrant = (uint)cp.LabelQuadrant

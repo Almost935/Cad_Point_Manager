@@ -1,452 +1,258 @@
 ﻿using Cad_Point_Manager.Common;
 using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Models.DrawingObjects;
+using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using System.Windows;
 
 namespace Cad_Point_Manager.Helpers
 {
     public static class GeometryHelpers
     {
-        public static List<(SignificantPointType pointType, Vector position)> GetSignificantPointsList(List<DrawingSegment> segments)
+        private const double TwoPi = Math.PI * 2;
+        public static bool RectsIntersect(Rect a, Rect b) => a.IntersectsWith(b);
+
+        public static List<(SignificantPointType pointType, Vector2d position)> GetSignificantPointsList(
+            List<DrawingSegment> segments)
         {
-            var allPoints = new ConcurrentBag<(SignificantPointType, Vector)>();
-
-            Parallel.ForEach(Enumerable.Range(0, segments.Count), () => new List<(SignificantPointType, Vector)>(),
-                (i, state, localList) =>
+            var results = new ConcurrentBag<List<(SignificantPointType pointType, Vector2d position)>>();
+            Parallel.For(0, segments.Count,
+                () => new List<(SignificantPointType pointType, Vector2d position)>(),
+                (i, _, local) =>
                 {
-                    var segment1 = segments[i];
-
-                    switch (segment1)
+                    var a = segments[i];
+                    switch (a)
                     {
                         case DrawingLine line:
-                            localList.AddRange(new[] {
-                                (SignificantPointType.EndPoint, line.Start.ToVector()),
-                                (SignificantPointType.EndPoint, line.End.ToVector()),
-                                (SignificantPointType.MidPoint, line.MidPoint.ToVector()) });
+                            local.Add((SignificantPointType.EndPoint, line.Start));
+                            local.Add((SignificantPointType.EndPoint, line.End));
+                            local.Add((SignificantPointType.MidPoint, line.MidPoint));
                             break;
                         case DrawingArc arc:
-                            localList.AddRange(new[] {
-                                (SignificantPointType.EndPoint, arc.Start.ToVector()),
-                                (SignificantPointType.EndPoint, arc.End.ToVector()),
-                                (SignificantPointType.MidPoint, arc.MidPoint.ToVector()) });
+                            local.Add((SignificantPointType.EndPoint, arc.Start));
+                            local.Add((SignificantPointType.EndPoint, arc.End));
+                            local.Add((SignificantPointType.MidPoint, arc.MidPoint));
                             break;
                     }
-
                     for (int j = i + 1; j < segments.Count; j++)
                     {
-                        var segment2 = segments[j];
-                        var intersectionsExists = GeometryHelpers.IntersectGeometries(segment1, segment2, out var intersectionPoints);
-
-                        if (intersectionsExists)
-                        {
-                            foreach (var vector in intersectionPoints)
-                            {
-                                localList.Add((SignificantPointType.Intersection, vector));
-                            }
-                        }
+                        if (!IntersectGeometries(a, segments[j], out var hits)) continue;
+                        foreach (var p in hits) local.Add((SignificantPointType.Intersection, p));
                     }
-
-                    return localList;
+                    return local;
                 },
-                localList => { foreach (var pt in localList) allPoints.Add(pt); });
-
-            return allPoints.ToList();
+                local => results.Add(local));
+            var output = new List<(SignificantPointType pointType, Vector2d position)>();
+            foreach (var local in results) output.AddRange(local);
+            return output;
         }
 
-        public static Vector GetNearestPointOnGeometry(DrawingGeometry geometry, Vector point)
-        {
-            return geometry switch
+        public static Vector2d GetNearestPointOnGeometry(DrawingGeometry geometry, Vector2d point)
+            => geometry switch
             {
-                DrawingLine line => NearestPointOnLine(point, line.Start.ToVector(), line.End.ToVector()),
-                DrawingArc arc => NearestPointOnLine(point, arc.Start.ToVector(), arc.End.ToVector()),
-                DrawingCircle circle => NearestPointOnCircle(point, circle.RadiusPoint.ToVector(), circle.Radius),
+                DrawingLine line => NearestPointOnLine(point, line.Start, line.End),
+                DrawingArc arc => NearestPointOnArc(point, arc.RadiusPoint, arc.Radius,
+                    DegreeToRadian(arc.StartAngle), DegreeToRadian(arc.EndAngle)),
+                DrawingCircle circle => NearestPointOnCircle(point, circle.RadiusPoint, circle.Radius),
                 _ => throw new NotImplementedException()
             };
-        }
-        public static Vector NearestPointOnLine(Vector p, Vector a, Vector b)
+
+        public static Vector2d NearestPointOnLine(Vector2d p, Vector2d a, Vector2d b)
+            => Vector2d.GetClosestPointOnLine(a, b, p);
+
+        // Angles in radians; increasing counterclockwise, wrapping through 2*pi.
+        public static Vector2d NearestPointOnArc(Vector2d p, Vector2d center, double radius,
+            double startAngle, double endAngle)
         {
-            Vector ap = new((p.X - a.X), (p.Y - a.Y));
-            Vector ab = new((b.X - a.X), (b.Y - a.Y));
-
-            double abLengthSquared = ab.LengthSquared;
-            if (abLengthSquared == 0) { return a; }
-
-            double t = Vector.Multiply(ap, ab) / abLengthSquared;
-            t = Math.Clamp(t, 0, 1);
-
-            return new(a.X + t * ab.X, a.Y + t * ab.Y);
-        }
-        public static Vector NearestPointOnArc(Vector p, Vector center, double radius, double startAngle, double endAngle)
-        {
-            // Vector from center to point
-            double dx = p.X - center.X;
-            double dy = p.Y - center.Y;
-
-            double angleToPoint = Math.Atan2(dy, dx);
-            double clampedAngle = ClampAngle(angleToPoint, startAngle, endAngle);
-
-            double nearestX = center.X + radius * Math.Cos(clampedAngle);
-            double nearestY = center.Y + radius * Math.Sin(clampedAngle);
-
-            return new(nearestX, nearestY);
-        }
-        public static Vector NearestPointOnCircle(Vector p, Vector center, double radius)
-        {
-            double dx = p.X - center.X;
-            double dy = p.Y - center.Y;
-            double length = Math.Sqrt(dx * dx + dy * dy);
-
-            if (length == 0) { return new(center.X + radius, center.Y); }
-
-            double scale = radius / length;
-
-            return new(center.X + dx * scale, center.Y + dy * scale);
+            double angle = Math.Atan2(p.Y - center.Y, p.X - center.X);
+            angle = ClampAngle(angle, startAngle, endAngle);
+            return center + new Vector2d(radius * Math.Cos(angle), radius * Math.Sin(angle));
         }
 
-
-        public static bool IntersectGeometries(DrawingGeometry geometry1, DrawingGeometry geometry2, out List<Vector> intersections)
+        public static Vector2d NearestPointOnCircle(Vector2d p, Vector2d center, double radius)
         {
-            intersections = [];
+            Vector2d d = p - center;
+            double squared = d.LengthSquared();
+            if (squared == 0) return new Vector2d(center.X + radius, center.Y);
+            return center + d * (radius / Math.Sqrt(squared));
+        }
 
-            if (geometry1 is DrawingLine line1)
+        public static bool IntersectGeometries(DrawingGeometry a, DrawingGeometry b,
+            out List<Vector2d> intersections)
+        {
+            if (a is DrawingLine lineA)
             {
-                if (geometry2 is DrawingLine line2)
+                if (b is DrawingLine lineB)
                 {
-                    if (TryIntersectLineLine(line1, line2, out Vector intersection))
-                    {
-                        intersections.Add(intersection);
-                        return true;
-                    }
-                    return false;
+                    intersections = new List<Vector2d>(1);
+                    if (!TryIntersectLineLine(lineA, lineB, out Vector2d hit)) return false;
+                    intersections.Add(hit);
+                    return true;
                 }
-                if (geometry2 is DrawingArc arc2)
-                {
-                    if (TryIntersectLineArc(line1, arc2, out intersections))
-                    {
-                        return true;
-                    }
-                    return false;
-                }
-                if (geometry2 is DrawingCircle circle2)
-                {
-                    if (TryIntersectLineCircle(line1, circle2, out intersections))
-                    {
-                        return true;
-                    }
-                    return false;
-                }
+                if (b is DrawingArc arcB) return TryIntersectLineArc(lineA, arcB, out intersections);
+                if (b is DrawingCircle circleB) return TryIntersectLineCircle(lineA, circleB, out intersections);
             }
-
-            if (geometry1 is DrawingArc arc1)
+            else if (a is DrawingArc arcA)
             {
-                if (geometry2 is DrawingLine line2)
-                {
-                    if (TryIntersectLineArc(line2, arc1, out intersections))
-                    {
-                        return true;
-                    }
-                    return false;
-                }
-                if (geometry2 is DrawingArc arc2)
-                {
-                    if (TryIntersectArcArc(arc1, arc2, out intersections))
-                    {
-                        return true;
-                    }
-                    return false;
-                }
-                if (geometry2 is DrawingCircle circle2)
-                {
-                    if (TryIntersectArcCircle(arc1, circle2, out intersections))
-                    {
-                        return true;
-                    }
-                    return false;
-                }
+                if (b is DrawingLine lineB) return TryIntersectLineArc(lineB, arcA, out intersections);
+                if (b is DrawingArc arcB) return TryIntersectArcArc(arcA, arcB, out intersections);
+                if (b is DrawingCircle circleB) return TryIntersectArcCircle(arcA, circleB, out intersections);
             }
-
-            if (geometry1 is DrawingCircle circle1)
+            else if (a is DrawingCircle circleA)
             {
-                if (geometry2 is DrawingLine line2)
-                {
-                    if (TryIntersectLineCircle(line2, circle1, out intersections))
-                    {
-                        return true;
-                    }
-                    return false;
-                }
-                if (geometry2 is DrawingArc arc2)
-                {
-                    if (TryIntersectArcCircle(arc2, circle1, out intersections))
-                    {
-                        return true;
-                    }
-                    return false;
-                }
-                if (geometry2 is DrawingCircle circle2)
-                {
-                    if (TryIntersectCircleCircle(circle1, circle2, out intersections))
-                    {
-                        return true;
-                    }
-                    return false;
-                }
+                if (b is DrawingLine lineB) return TryIntersectLineCircle(lineB, circleA, out intersections);
+                if (b is DrawingArc arcB) return TryIntersectArcCircle(arcB, circleA, out intersections);
+                if (b is DrawingCircle circleB) return TryIntersectCircleCircle(circleA, circleB, out intersections);
             }
-
+            intersections = new List<Vector2d>(0);
             return false;
         }
-        public static bool TryIntersectLineLine(DrawingLine line1, DrawingLine line2, out Vector intersection)
+
+        public static bool TryIntersectLineLine(DrawingLine a, DrawingLine b, out Vector2d intersection)
         {
             intersection = default;
-
-            Vector p1 = line1.Start.ToVector();
-            Vector p2 = line1.End.ToVector();
-            Vector p3 = line2.Start.ToVector();
-            Vector p4 = line2.End.ToVector();
-
-            double A1 = p2.Y - p1.Y;
-            double B1 = p1.X - p2.X;
-            double C1 = A1 * p1.X + B1 * p1.Y;
-
-            double A2 = p4.Y - p3.Y;
-            double B2 = p3.X - p4.X;
-            double C2 = A2 * p3.X + B2 * p3.Y;
-
-            double det = A1 * B2 - A2 * B1;
-            if (Math.Abs(det) < 1e-6f) { return false; } // Lines are parallel or coincident
-
-            intersection = new Vector(
-                (B2 * C1 - B1 * C2) / det,
-                (A1 * C2 - A2 * C1) / det
-            );
-
-            // Check that intersection lies on both segments (not just the lines)
-            bool pointOnSegment1 = IsPointOnSegment(p1, p2, intersection);
-            bool pointOnSegment2 = IsPointOnSegment(p3, p4, intersection);
-
-            return pointOnSegment1 && pointOnSegment2;
-        }
-
-        public static bool TryIntersectLineCircle(DrawingLine line, DrawingCircle circle, out List<Vector> intersections)
-        {
-            intersections = [];
-
-            Vector d = line.End.ToVector() - line.Start.ToVector();
-            Vector f = line.Start.ToVector() - circle.RadiusPoint.ToVector();
-
-            double a = Vector.Multiply(d, d);
-            double b = 2 * Vector.Multiply(f, d);
-            double c = Vector.Multiply(f, f) - circle.Radius * circle.Radius;
-
-            double discriminant = b * b - 4 * a * c;
-            if (discriminant < 0) { return false; }
-
-            discriminant = Math.Sqrt(discriminant);
-
-            double t1 = (-b - discriminant) / (2 * a);
-            double t2 = (-b + discriminant) / (2 * a);
-
-            bool found = false;
-
-            if (t1 >= 0 && t1 <= 1)
-            {
-                intersections.Add(line.Start.ToVector() + t1 * d);
-                found = true;
-            }
-
-            if (t2 >= 0 && t2 <= 1 && t2 != t1)
-            {
-                intersections.Add(line.Start.ToVector() + t2 * d);
-                found = true;
-            }
-
-            return found;
-        }
-
-        public static bool TryIntersectLineArc(DrawingLine line, DrawingArc arc, out List<Vector> intersections)
-        {
-            intersections = [];
-            if (!GetLineCircleIntersection(line.Start.ToVector(), line.End.ToVector(), arc.RadiusPoint.ToVector(), arc.Radius, out var circlePoints))
-            { return false; }
-
-            double startRad = DegreeToRadian(arc.StartAngle);
-            double endRad = DegreeToRadian(arc.EndAngle);
-
-            foreach (var pt in circlePoints)
-            {
-                Vector dir = pt - arc.RadiusPoint.ToVector();
-                double angle = Math.Atan2(dir.Y, dir.X);
-                if (angle < 0) { angle += 2 * Math.PI; }
-
-                if (IsAngleBetween(angle, startRad, endRad))
-                { intersections.Add(pt); }
-            }
-
-            return intersections.Count > 0;
-        }
-
-        public static bool TryIntersectCircleCircle(DrawingCircle circle1, DrawingCircle circle2, out List<Vector> intersections)
-        {
-            bool intersects = GetCircleCircleIntersection(circle1.RadiusPoint.ToVector(), circle1.Radius, circle2.RadiusPoint.ToVector(),
-                circle2.Radius, out intersections);
-
-            return intersects;
-        }
-
-        public static bool TryIntersectArcCircle(DrawingArc arc, DrawingCircle circle, out List<Vector> intersections)
-        {
-            intersections = [];
-            if (!GetCircleCircleIntersection(arc.RadiusPoint.ToVector(), arc.Radius, circle.RadiusPoint.ToVector(), circle.Radius, out var points))
-            { return false; }
-
-            double startRad = DegreeToRadian(arc.StartAngle);
-            double endRad = DegreeToRadian(arc.EndAngle);
-
-            foreach (var pt in points)
-            {
-                Vector dir = pt - arc.RadiusPoint.ToVector();
-                double angle = Math.Atan2(dir.Y, dir.X);
-                if (angle < 0) { angle += 2 * Math.PI; }
-
-                if (IsAngleBetween(angle, startRad, endRad)) { intersections.Add(pt); }
-            }
-            return intersections.Count > 0;
-        }
-
-        public static bool TryIntersectArcArc(DrawingArc arc1, DrawingArc arc2, out List<Vector> intersections)
-        {
-            intersections = [];
-            if (!GetCircleCircleIntersection(arc1.RadiusPoint.ToVector(), arc1.Radius, arc2.RadiusPoint.ToVector(), arc2.Radius,
-                out var circleIntersections)) { return false; }
-
-            double start0 = DegreeToRadian(arc1.StartAngle);
-            double end0 = DegreeToRadian(arc1.EndAngle);
-            double start1 = DegreeToRadian(arc2.StartAngle);
-            double end1 = DegreeToRadian(arc2.EndAngle);
-
-            foreach (var pt in circleIntersections)
-            {
-                double a0 = GetAngle(arc1.RadiusPoint.ToVector(), pt);
-                double a1 = GetAngle(arc2.RadiusPoint.ToVector(), pt);
-
-                if (IsAngleBetween(a0, start0, end0) && IsAngleBetween(a1, start1, end1))
-                { intersections.Add(pt); }
-            }
-
-            return intersections.Count > 0;
-        }
-
-
-        // Helpers
-        private static double ClampAngle(double angle, double min, double max)
-        {
-            // Normalize angle to [0, 2π)
-            double twoPi = Math.PI * 2;
-            angle = (angle % twoPi + twoPi) % twoPi;
-            min = (min % twoPi + twoPi) % twoPi;
-            max = (max % twoPi + twoPi) % twoPi;
-
-            if (min <= max) { return Math.Clamp(angle, min, max); }
-            else
-            {
-                // Handle arcs that wrap around 2π
-                return (angle >= min || angle <= max) ? angle :
-                       (GetAngleDistance(angle, min) < GetAngleDistance(angle, max) ? min : max);
-            }
-        }
-        private static double GetAngleDistance(double a, double b)
-        {
-            return Math.Min(Math.Abs(a - b), 2 * Math.PI - Math.Abs(a - b));
-        }
-        public static bool GetLineCircleIntersection(Vector lineStart, Vector lineEnd, Vector circleCenter, double radius, out List<Vector> intersections)
-        {
-            intersections = [];
-
-            Vector d = lineEnd - lineStart;
-            Vector f = lineStart - circleCenter;
-
-            double a = Vector.Multiply(d, d);
-            double b = 2 * Vector.Multiply(f, d);
-            double c = Vector.Multiply(f, f) - radius * radius;
-
-            double discriminant = b * b - 4 * a * c;
-            if (discriminant < 0) { return false; }
-
-            discriminant = Math.Sqrt(discriminant);
-
-            double t1 = (-b - discriminant) / (2 * a);
-            double t2 = (-b + discriminant) / (2 * a);
-
-            bool found = false;
-
-            if (t1 >= 0 && t1 <= 1)
-            {
-                intersections.Add(lineStart + t1 * d);
-                found = true;
-            }
-
-            if (t2 >= 0 && t2 <= 1 && t2 != t1)
-            {
-                intersections.Add(lineStart + t2 * d);
-                found = true;
-            }
-
-            return found;
-        }
-
-        public static bool GetCircleCircleIntersection(Vector c0, double r0, Vector c1, double r1, out List<Vector> intersections)
-        {
-            intersections = [];
-
-            Vector d = c1 - c0;
-            double dist = d.Length;
-
-            if (dist > r0 + r1 || dist < Math.Abs(r0 - r1) || dist == 0f)
-            { return false; } // No intersection or coincident
-
-            double a = (r0 * r0 - r1 * r1 + dist * dist) / (2 * dist);
-            double h = Math.Sqrt(r0 * r0 - a * a);
-
-            Vector p2 = c0 + a / dist * d;
-            Vector offset = h / dist * new Vector(-d.Y, d.X); // Perpendicular vector
-
-            intersections.Add(p2 + offset);
-            if (h > 1e-5f) // Avoid duplicate points
-            { intersections.Add(p2 - offset); }
-
-            return true;
-        }
-        private static bool IsPointOnSegment(Vector a, Vector b, Vector p, double epsilon = 0.0001)
-        {
-            Vector ab = b - a;
-            Vector ap = p - a;
-
-            // 1. Collinearity check via cross product
-            double cross = ab.X * ap.Y - ab.Y * ap.X;
-            if (Math.Abs(cross) > epsilon) { return false; }
-
-            // 2. Bounds check via dot product
-            double dot = Vector.Multiply(ap, ab);
-            if (dot < -epsilon) { return false; } // Before 'a'
-            if (dot > Vector.Multiply(ab, ab) + epsilon) { return false; } // Beyond 'b'
-
+            Vector2d p = a.Start, r = a.End - a.Start;
+            Vector2d q = b.Start, s = b.End - b.Start;
+            double denominator = Vector2d.Cross(r, s);
+            // Relative tolerance in the cross product; collinear overlaps aren't returned.
+            double scale = Math.Sqrt(r.LengthSquared() * s.LengthSquared());
+            if (scale == 0 || Math.Abs(denominator) <= 1e-12 * scale) return false;
+            Vector2d qp = q - p;
+            double t = Vector2d.Cross(qp, s) / denominator;
+            double u = Vector2d.Cross(qp, r) / denominator;
+            if (t < 0 || t > 1 || u < 0 || u > 1) return false;
+            intersection = p + t * r;
             return true;
         }
 
-        private static double DegreeToRadian(double degrees) => degrees * Math.PI / 180;
+        public static bool TryIntersectLineCircle(DrawingLine line, DrawingCircle circle,
+            out List<Vector2d> intersections)
+            => GetLineCircleIntersection(line.Start, line.End, circle.RadiusPoint,
+                circle.Radius, out intersections);
 
+        public static bool TryIntersectLineArc(DrawingLine line, DrawingArc arc,
+            out List<Vector2d> intersections)
+        {
+            GetLineCircleIntersection(line.Start, line.End, arc.RadiusPoint, arc.Radius,
+                out var candidates);
+            intersections = new List<Vector2d>(2);
+            double start = DegreeToRadian(arc.StartAngle), end = DegreeToRadian(arc.EndAngle);
+            foreach (var p in candidates)
+                if (IsAngleBetween(GetAngle(arc.RadiusPoint, p), start, end)) intersections.Add(p);
+            return intersections.Count != 0;
+        }
+
+        public static bool TryIntersectCircleCircle(DrawingCircle a, DrawingCircle b,
+            out List<Vector2d> intersections)
+            => GetCircleCircleIntersection(a.RadiusPoint, a.Radius, b.RadiusPoint, b.Radius,
+                out intersections);
+
+        public static bool TryIntersectArcCircle(DrawingArc arc, DrawingCircle circle,
+            out List<Vector2d> intersections)
+        {
+            GetCircleCircleIntersection(arc.RadiusPoint, arc.Radius, circle.RadiusPoint,
+                circle.Radius, out var candidates);
+            intersections = new List<Vector2d>(2);
+            double start = DegreeToRadian(arc.StartAngle), end = DegreeToRadian(arc.EndAngle);
+            foreach (var p in candidates)
+                if (IsAngleBetween(GetAngle(arc.RadiusPoint, p), start, end)) intersections.Add(p);
+            return intersections.Count != 0;
+        }
+
+        public static bool TryIntersectArcArc(DrawingArc a, DrawingArc b,
+            out List<Vector2d> intersections)
+        {
+            GetCircleCircleIntersection(a.RadiusPoint, a.Radius, b.RadiusPoint, b.Radius,
+                out var candidates);
+            intersections = new List<Vector2d>(2);
+            double aStart = DegreeToRadian(a.StartAngle), aEnd = DegreeToRadian(a.EndAngle);
+            double bStart = DegreeToRadian(b.StartAngle), bEnd = DegreeToRadian(b.EndAngle);
+            foreach (var p in candidates)
+                if (IsAngleBetween(GetAngle(a.RadiusPoint, p), aStart, aEnd) &&
+                    IsAngleBetween(GetAngle(b.RadiusPoint, p), bStart, bEnd)) intersections.Add(p);
+            return intersections.Count != 0;
+        }
+
+        public static bool GetLineCircleIntersection(Vector2d start, Vector2d end,
+            Vector2d center, double radius, out List<Vector2d> intersections)
+        {
+            intersections = new List<Vector2d>(2);
+            if (radius < 0) return false;
+            Vector2d d = end - start, f = start - center;
+            double a = Vector2d.Dot(d, d);
+            if (a == 0)
+            {
+                if (Math.Abs(f.LengthSquared() - radius * radius) <= 1e-12 * Math.Max(1, radius * radius))
+                    intersections.Add(start);
+                return intersections.Count != 0;
+            }
+            double b = 2 * Vector2d.Dot(f, d);
+            double c = Vector2d.Dot(f, f) - radius * radius;
+            double determinant = b * b - 4 * a * c;
+            if (determinant < 0) return false;
+            double sqrt = Math.Sqrt(determinant);
+            double t1 = (-b - sqrt) / (2 * a);
+            double t2 = (-b + sqrt) / (2 * a);
+            if (t1 >= 0 && t1 <= 1) intersections.Add(start + d * t1);
+            if (sqrt > 0 && t2 >= 0 && t2 <= 1) intersections.Add(start + d * t2);
+            return intersections.Count != 0;
+        }
+
+        public static bool GetCircleCircleIntersection(Vector2d c0, double r0,
+            Vector2d c1, double r1, out List<Vector2d> intersections)
+        {
+            intersections = new List<Vector2d>(2);
+            if (r0 < 0 || r1 < 0) return false;
+            Vector2d d = c1 - c0;
+            double distanceSquared = d.LengthSquared();
+            if (distanceSquared == 0) return false; // Coincident circles not represented as finite points.
+            double sum = r0 + r1, diff = Math.Abs(r0 - r1);
+            if (distanceSquared > sum * sum || distanceSquared < diff * diff) return false;
+            double distance = Math.Sqrt(distanceSquared);
+            double a = (r0 * r0 - r1 * r1 + distanceSquared) / (2 * distance);
+            double hSquared = r0 * r0 - a * a;
+            if (hSquared < 0)
+            {
+                if (hSquared < -1e-12 * Math.Max(1, r0 * r0)) return false;
+                hSquared = 0; // Floating-point roundoff near tangency.
+            }
+            Vector2d middle = c0 + d * (a / distance);
+            Vector2d offset = d.Perpendicular() * (Math.Sqrt(hSquared) / distance);
+            intersections.Add(middle + offset);
+            if (hSquared > 0) intersections.Add(middle - offset);
+            return true;
+        }
+
+        private static double DegreeToRadian(double degrees) => degrees * (Math.PI / 180.0);
+        private static double NormalizeAngle(double angle)
+        {
+            angle %= TwoPi;
+            return angle < 0 ? angle + TwoPi : angle;
+        }
         private static bool IsAngleBetween(double angle, double start, double end)
         {
-            if (start <= end) { return angle >= start && angle <= end; }
-            else { return angle >= start || angle <= end; }
+            angle = NormalizeAngle(angle);
+            start = NormalizeAngle(start);
+            end = NormalizeAngle(end);
+            return start <= end ? angle >= start && angle <= end : angle >= start || angle <= end;
         }
-
-        private static double GetAngle(Vector center, Vector point)
+        private static double GetAngle(Vector2d center, Vector2d point)
+            => NormalizeAngle(Math.Atan2(point.Y - center.Y, point.X - center.X));
+        private static double GetAngleDistance(double a, double b)
         {
-            double angle = Math.Atan2(point.Y - center.Y, point.X - center.X);
-            if (angle < 0) angle += 2 * Math.PI;
-            return angle;
+            double d = Math.Abs(NormalizeAngle(a) - NormalizeAngle(b));
+            return Math.Min(d, TwoPi - d);
+        }
+        private static double ClampAngle(double angle, double start, double end)
+        {
+            angle = NormalizeAngle(angle);
+            start = NormalizeAngle(start);
+            end = NormalizeAngle(end);
+            if (IsAngleBetween(angle, start, end)) return angle;
+            return GetAngleDistance(angle, start) <= GetAngleDistance(angle, end) ? start : end;
         }
     }
 }
