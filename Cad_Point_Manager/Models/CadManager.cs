@@ -383,9 +383,34 @@ namespace Cad_Point_Manager.Models
                 if (e is MText mtext && string.IsNullOrWhiteSpace(mtext.Value)) { continue; }
                 if (e is Text text && string.IsNullOrWhiteSpace(text.Value)) { continue; }
 
-                var layer = GetLayer(e.Layer);
+                if (e is Insert insert)
+                {
+                    var objs = insert.Explode();
 
-                var drawingObj = DxfHelpers.GetDrawingObject(
+                    foreach (var obj in objs)
+                    {
+                        var layer = GetLayer(obj.Layer);
+
+                        var drawingObj = DxfHelpers.GetDrawingObject(
+                            obj, layer,
+                            DxfHelpers.GetEntityObjectColor(obj),
+                            DxfHelpers.GetColorType(obj),
+                            obj is MText or Text
+                            ? _lineTypeCache.Continuous
+                            : _lineTypeCache.GetLineTypeOrContinuous(
+                                DxfHelpers.GetLineType(obj, dxfImportResult.DxfDocument)));
+
+                        if (layer is not null && drawingObj is not null)
+                        {
+                            layer.AddDrawingObject(drawingObj);
+                        }
+                    }
+                }
+                else
+                {
+                    var layer = GetLayer(e.Layer);
+
+                    var drawingObj = DxfHelpers.GetDrawingObject(
                     e, layer,
                     DxfHelpers.GetEntityObjectColor(e),
                     DxfHelpers.GetColorType(e),
@@ -393,9 +418,10 @@ namespace Cad_Point_Manager.Models
                         ? _lineTypeCache.Continuous
                         : _lineTypeCache.GetLineTypeOrContinuous(DxfHelpers.GetLineType(e, dxfImportResult.DxfDocument)));
 
-                if (layer is not null && drawingObj is not null)
-                {
-                    layer.AddDrawingObject(drawingObj);
+                    if (layer is not null && drawingObj is not null)
+                    {
+                        layer.AddDrawingObject(drawingObj);
+                    }
                 }
             }
 
@@ -1444,6 +1470,10 @@ namespace Cad_Point_Manager.Models
 
                 instances.AddRange(_cogoPointBoundsLines);
 
+                //// Testing
+                //var boundsLines = GetObjectBoundLines<DrawingBlock>();
+                //instances.AddRange(boundsLines);
+
                 LineVerticesDirty = false;
             }
         }
@@ -1590,7 +1620,7 @@ namespace Cad_Point_Manager.Models
             ClearDxfPoints();
 
             var inflatedExtents = Rect.Inflate(Extents, Extents.Width * 0.1, Extents.Height * 0.1);
-            int maxPoints = 10;
+            int maxPoints = 1000;
             double rows = 15;
             double cols = 15;
             double yIncrement = inflatedExtents.Height / (rows - 1);
@@ -1760,6 +1790,37 @@ namespace Cad_Point_Manager.Models
 
             lineType = null;
             return false;
+        }
+
+        // Testing
+        public List<LineInstance> GetObjectBoundLines<T>() where T : DrawingObject
+        {
+            List<LineInstance> lines = [];
+
+            foreach (var kvp in Layers)
+            {
+                var layer = kvp.Value;
+                foreach (var obj in layer.DrawingObjects)
+                {
+                    if (obj.GetType() == typeof(T))
+                    {
+                        var bounds = obj.Bounds;
+
+                        LineInstance top = new(
+                            bounds.TopLeft.ToGpuRelative(RenderOrigin), bounds.TopRight.ToGpuRelative(RenderOrigin), 0, 0, 0, 0, 0);
+                        LineInstance bottom = new(
+                            bounds.BottomLeft.ToGpuRelative(RenderOrigin), bounds.BottomRight.ToGpuRelative(RenderOrigin), 0, 0, 0, 0, 0);
+                        LineInstance right = new(
+                            bounds.TopRight.ToGpuRelative(RenderOrigin), bounds.BottomRight.ToGpuRelative(RenderOrigin), 0, 0, 0, 0, 0);
+                        LineInstance left = new(
+                            bounds.TopLeft.ToGpuRelative(RenderOrigin), bounds.BottomLeft.ToGpuRelative(RenderOrigin), 0, 0, 0, 0, 0);
+
+                        lines.AddRange(new[] { top, bottom, right, left }); 
+                    }
+                }
+            }
+
+            return lines;
         }
         #endregion
     }

@@ -4283,7 +4283,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             {
                 if (sender is CogoPoint cp)
                 {
-                    StateController.SetPointOffset(cp, cp.Position.ToSharpDXVector2());
+                    StateController.SetPointOffset(cp, cp.Position.ToGpuRelative(CadManager.RenderOrigin));
                     StateController.FlushPointUpdates();
                     UpdateCogoPointBounds(cp);
 
@@ -4315,7 +4315,21 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 e.PropertyName == nameof(CogoPoint.Elevation) ||
                 e.PropertyName == nameof(CogoPoint.Description))
             {
-                _cogoTextVerticesDirty = true;
+                if (sender is not CogoPoint cp)
+                    return;
+
+                cp.UpdateOffsetOrientation();
+
+                StateController.SetLabelOffsets(
+                    cp,
+                    cp.PointNumberOffset.ToSharpDXVector2(),
+                    cp.ElevationOffset.ToSharpDXVector2(),
+                    cp.DescriptionOffset.ToSharpDXVector2());
+
+                StateController.FlushLabelUpdates();
+                UpdateCogoPointBounds(cp);
+
+                _cogoTextVerticesDirty = _baseSceneDirty = _interactionDirty = true;
             }
         }
 

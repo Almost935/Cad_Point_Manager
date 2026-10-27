@@ -143,6 +143,7 @@
                                        IsColumnHeaderHitTestVisible="False"
                                        SelectionMode="Extended"
                                        Loaded="PointsListView_Loaded"
+                                       SizeChanged="PointsListView_SizeChanged"
                                        SelectionChanged="PointsListView_SelectionChanged"
                                        VirtualizingPanel.IsVirtualizingWhenGrouping="True"
                                        VirtualizingPanel.ScrollUnit="Item"
@@ -419,6 +420,13 @@
                                             <Setter TargetName="pointDescriptionEdit"
                                                     Property="Visibility"
                                                     Value="Visible" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ScrollViewer},
+                                               Path=ComputedVerticalScrollBarVisibility}"
+                                                     Value="Visible">
+                                            <Setter TargetName="description"
+                                                    Property="Margin"
+                                                    Value="0,0,20,0" />
                                         </DataTrigger>
                                     </DataTemplate.Triggers>
                                 </DataTemplate>

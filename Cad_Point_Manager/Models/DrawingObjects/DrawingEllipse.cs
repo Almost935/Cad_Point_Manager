@@ -51,7 +51,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             RadiusPoint = ellipse.Center.ToVector2d();
             Rotation = ellipse.Rotation;
             MajorAxis = ellipse.MajorAxis;
-            MinorAxis = ellipse.MinorAxis * ellipse.MajorAxis;
+            MinorAxis = ellipse.MinorAxis;
             StartAngle = ellipse.StartAngle;
             EndAngle = ellipse.EndAngle;
             Sweep = EndAngle - StartAngle;
@@ -222,14 +222,77 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
             return Math.Sqrt(distX * distX + distY * distY);
         }
+
         public override void UpdateBounds()
         {
-            Rect bounds = Rect.Empty;
+            double a = MajorAxis * 0.5;
+            double b = MinorAxis * 0.5;
 
-            foreach (var p in SamplePoints)
+            double rotation = Rotation * Math.PI / 180.0;
+            double cosR = Math.Cos(rotation);
+            double sinR = Math.Sin(rotation);
+
+            const double TwoPi = 2.0 * Math.PI;
+
+            // Convert netDxf polar angles to ellipse parameter angles.
+            double ToParameter(double degrees)
             {
-                bounds.Union(p);
+                double angle = degrees * Math.PI / 180.0;
+
+                double t = Math.Atan2(
+                    a * Math.Sin(angle),
+                    b * Math.Cos(angle));
+
+                return (t + TwoPi) % TwoPi;
             }
+
+            double start = ToParameter(StartAngle);
+            double end = ToParameter(EndAngle);
+
+            double sweep = (end - start + TwoPi) % TwoPi;
+            bool closed = Math.Abs(Sweep - 360.0) < 1e-6;
+
+            Vector2d PointAt(double t)
+            {
+                double x = a * Math.Cos(t);
+                double y = b * Math.Sin(t);
+
+                return new Vector2d(
+                    RadiusPoint.X + x * cosR - y * sinR,
+                    RadiusPoint.Y + x * sinR + y * cosR);
+            }
+
+            bool WithinSweep(double t)
+            {
+                if (closed)
+                    return true;
+
+                double delta = (t - start + TwoPi) % TwoPi;
+                return delta <= sweep + 1e-10;
+            }
+
+            // Initialize using the actual DXF-derived endpoints.
+            Rect bounds = new(Start.ToPoint(), End.ToPoint());
+
+            // Parameters of the X and Y extrema.
+            double tx = Math.Atan2(-b * sinR, a * cosR);
+            double ty = Math.Atan2(b * cosR, a * sinR);
+
+            void Include(double t)
+            {
+                if (WithinSweep(t))
+                    bounds.Union(PointAt(t));
+            }
+
+            Include(tx);
+            Include(tx + Math.PI);
+            Include(ty);
+            Include(ty + Math.PI);
+
+            bounds.Inflate(
+                bounds.Width * GlobalHelperProperties.GeometryBoundsInflationFactor,
+                bounds.Height * GlobalHelperProperties.GeometryBoundsInflationFactor);
+
             Bounds = bounds;
         }
         public override bool GeometryInRect(Rect rect)

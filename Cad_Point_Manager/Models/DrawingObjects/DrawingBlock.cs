@@ -41,7 +41,8 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         #endregion
 
         #region Constructors
-        public DrawingBlock(Insert insert, ObjectLayer layer, Vector4 objectColor, ColorType colorType, LineType lineType, 
+        public DrawingBlock(
+            Insert insert, ObjectLayer layer, Vector4 objectColor, ColorType colorType, LineType lineType, 
             bool isPartOfBlock = false, DrawingBlock block = null, bool isPartOfDimension = false)
         {
             Type = DrawingObjectType.DrawingBlock;

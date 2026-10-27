@@ -26,5 +26,8 @@ namespace Cad_Point_Manager.Extensions
         {
             return new Vector2d(p.X, p.Y);
         }
+
+        public static Vector2 ToGpuRelative(this Point p, Vector2d origin) => 
+            new((float)(p.X - origin.X), (float)(p.Y - origin.Y));
     }
 }

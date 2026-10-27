@@ -22,6 +22,7 @@ namespace Cad_Point_Manager.Extensions
             var top = Math.Min(y1, y2);
             var right = Math.Max(x1, x2);
             var bottom = Math.Max(y1, y2);
+
             return new Rect(new Point(left, top), new Point(right, bottom));
         }
         public static bool Touches(this Rect a, Rect b)
@@ -49,8 +50,12 @@ namespace Cad_Point_Manager.Extensions
                 return;
             }
 
-            if (point.X < rect.X)
-                rect.Width += rect.X - point.X;
+            double left = Math.Min(rect.Left, point.X);
+            double top = Math.Min(rect.Top, point.Y);
+            double right = Math.Max(rect.Right, point.X);
+            double bottom = Math.Max(rect.Bottom, point.Y);
+
+            rect = new Rect(left, top, right - left, bottom - top);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

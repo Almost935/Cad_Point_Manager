@@ -292,37 +292,14 @@ namespace Cad_Point_Manager.Controls.D3DControl
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct LineVertex(Vector2 position, uint layerId, uint objectId)
-    {
-        public Vector2 Position = position;
-        public uint LayerId = layerId;   // Layer index
-        public uint ObjectId = objectId;  // Object index
-        public uint LinetypeId; // Line type index
-
-        public readonly LineVertex Translate(Vector2 offset)
-        {
-            return new LineVertex(Position + offset, LayerId, ObjectId);
-        }
-
-        public readonly LineVertex Transform(Matrix transform)
-        {
-            Vector2 transformedPosition = Vector2.TransformCoordinate(Position, transform);
-            return new LineVertex(transformedPosition, LayerId, ObjectId);
-        }
-
-        public static implicit operator System.Windows.Point(LineVertex v)
-        {
-            return new System.Windows.Point(v.Position.X, v.Position.Y);
-        }
-    }
-    [StructLayout(LayoutKind.Sequential)]
     public struct LineCornerVertex(float side, float along)
     {
         public Vector2 Corner = new(side, along);
     }
     [StructLayout(LayoutKind.Sequential)]
     public struct LineInstance(
-        Vector2 start, Vector2 end, uint layerId, uint objectId, float startDistance, uint flags, float parentSegmentLength)
+        Vector2 start, Vector2 end, uint layerId, uint objectId, 
+        float startDistance, uint flags, float parentSegmentLength)
     {
         public Vector2 Start = start;
         public Vector2 End = end;

@@ -166,25 +166,13 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 return Math.Min(distanceToStart, distanceToEnd);
             }
         }
-        //public override void UpdateBounds()
-        //{
-        //    if (DxfArc is not null)
-        //    {
-        //        Rect bounds = Rect.Empty;
-        //        foreach (var point in SamplePoints)
-        //        {
-        //            bounds.Union(point);
-        //        }
-        //        Bounds = bounds;
-        //    }
-        //}
+
         public override void UpdateBounds()
         {
-            Rect bounds = Rect.Empty;
+            // Initialize bounds from the arc endpoints.
+            Rect bounds = new Rect(Start.ToPoint(), End.ToPoint());
 
-            bounds.Union(Start);
-            bounds.Union(End);
-
+            // Include cardinal points that lie within the arc sweep.
             for (int i = 0; i < 4; i++)
             {
                 double angle = i * 90.0;
@@ -196,14 +184,20 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 {
                     double radians = angle * Math.PI / 180.0;
 
-                    bounds.Union(new Vector2d(
-                        RadiusPoint.X + Radius * Math.Cos(radians),
-                        RadiusPoint.Y + Radius * Math.Sin(radians)));
+                    double x = RadiusPoint.X + Radius * Math.Cos(radians);
+                    double y = RadiusPoint.Y + Radius * Math.Sin(radians);
+
+                    bounds.Union(new System.Windows.Point(x, y));
                 }
             }
 
+            bounds.Inflate(
+                bounds.Width * GlobalHelperProperties.GeometryBoundsInflationFactor,
+                bounds.Height * GlobalHelperProperties.GeometryBoundsInflationFactor);
+
             Bounds = bounds;
         }
+
         public override bool GeometryInRect(Rect rect)
         {
             if (rect.Contains(Bounds))

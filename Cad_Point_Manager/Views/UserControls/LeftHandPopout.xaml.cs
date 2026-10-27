@@ -348,22 +348,6 @@ namespace Cad_Point_Manager.Views.UserControls
         // ------------------------------------------------------------------------
         // ------------------------------------------------------------------------
         #region Points ListView Methods
-        private void PointsListView_Loaded(object sender, RoutedEventArgs e)
-        {
-            ListView listview = sender as ListView;
-
-            GridView pointsGridView = listview.View as GridView;
-            double pointsListTotalWidth = mainPanel.ActualWidth;
-            double pointsListColumnWidth = pointsListTotalWidth / pointsGridView.Columns.Count;
-            if (pointsListColumnWidth > 0)
-            {
-                pointsGridView.Columns[0].Width = pointsListColumnWidth * 0.75;
-                pointsGridView.Columns[1].Width = pointsListColumnWidth * 1.0;
-                pointsGridView.Columns[2].Width = pointsListColumnWidth * 1.0;
-                pointsGridView.Columns[3].Width = pointsListColumnWidth * 1.0;
-                pointsGridView.Columns[4].Width = pointsListColumnWidth * 1.25;
-            }
-        }
         private void PointsListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             _selectedPoints.Clear();
@@ -778,6 +762,29 @@ namespace Cad_Point_Manager.Views.UserControls
             }));
 
             return true;
+        }
+
+        private void PointsListView_Loaded(object sender, RoutedEventArgs e)
+            => UpdatePointsListColumnWidths();
+        private void PointsListView_SizeChanged(object sender, SizeChangedEventArgs e)
+            => UpdatePointsListColumnWidths();
+        private void UpdatePointsListColumnWidths()
+        {
+            if (pointsListView.View is not GridView gridView)
+                return;
+
+            double availableWidth = pointsListView.ActualWidth;
+
+            if (availableWidth <= 0)
+                return;
+
+            double columnWidth = availableWidth / 5.0;
+
+            gridView.Columns[0].Width = columnWidth * 0.75;
+            gridView.Columns[1].Width = columnWidth;
+            gridView.Columns[2].Width = columnWidth;
+            gridView.Columns[3].Width = columnWidth;
+            gridView.Columns[4].Width = columnWidth * 1.25;
         }
         #endregion
 

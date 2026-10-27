@@ -132,16 +132,15 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
         public override void UpdateBounds()
         {
-            Bounds = Rect.Empty;
+            Bounds = new Rect(
+                RadiusPoint.X - Radius,
+                RadiusPoint.Y - Radius,
+                Radius * 2,
+                Radius * 2);
 
-            if (_dxfCircle is not null)
-            {
-                var samplePoints = _dxfCircle.ToPolyline2D(4).Vertexes;
-                foreach (var vertex in samplePoints)
-                {
-                    Bounds = Rect.Union(Bounds, new System.Windows.Point(vertex.Position.X, vertex.Position.Y));
-                }
-            }
+            Bounds.Inflate(
+                Bounds.Width * GlobalHelperProperties.GeometryBoundsInflationFactor,
+                Bounds.Height * GlobalHelperProperties.GeometryBoundsInflationFactor);
         }
 
         public override double DistanceToPoint(Vector2d point, MsdfAtlas atlas = null)

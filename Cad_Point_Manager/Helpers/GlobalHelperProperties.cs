@@ -7,6 +7,8 @@ namespace Cad_Point_Manager.Helpers
 {
     public static class GlobalHelperProperties
     {
+        public static readonly double GeometryBoundsInflationFactor = 0.05;
+
         public static readonly int PopOutCloseDelay = 700;
 
         public const double ZoomFactor = 1.3;
