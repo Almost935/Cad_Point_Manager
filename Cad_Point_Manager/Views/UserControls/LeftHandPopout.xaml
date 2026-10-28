@@ -277,6 +277,8 @@
                                 Value="22" />
                         <Setter Property="VerticalContentAlignment"
                                 Value="Stretch" />
+                        <EventSetter Event="PreviewMouseLeftButtonDown"
+                                     Handler="PointsListItem_PreviewMouseLeftButtonDown" />
                     </Style>
                 </controls:SortableListView.ItemContainerStyle>
                 <controls:SortableListView.View>

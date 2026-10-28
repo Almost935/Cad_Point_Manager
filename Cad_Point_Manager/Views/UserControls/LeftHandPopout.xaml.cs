@@ -42,6 +42,8 @@ namespace Cad_Point_Manager.Views.UserControls
         private ScaleTransform _mainPanelTransform = new();
 
         // Points related fields
+        private List<CogoPoint> _pointsEditTargets = [];
+        private TextBox? _activePointsEditBox;
         private readonly List<CogoPoint> _selectedPoints = [];
         private bool _pointsTabVisible = true;
         private double _pointsTabOpacity = 0;
@@ -317,28 +319,61 @@ namespace Cad_Point_Manager.Views.UserControls
 
         private void InlineEditBox_LostFocus(object sender, RoutedEventArgs e)
         {
-            if (sender is not TextBox tb) { return; }
+            if (sender is not TextBox tb)
+                return;
 
             var lvi = VisualTreeHelpers.FindAncestor<ListViewItem>(tb);
-            if (lvi == null) { return; }
+            if (lvi == null)
+                return;
 
             var binding = tb.GetBindingExpression(TextBox.TextProperty);
-            if (!Validation.GetHasError(tb))
-            {
-                binding?.UpdateSource();
-            }
 
-            string? currentField = PointsInferFieldNameFromDisplayElement(tb);
-            string? editingField = InlineEdit.GetEditingField(lvi);
-
-            if (!string.IsNullOrEmpty(editingField) &&
-                currentField != null &&
-                !string.Equals(editingField, currentField, StringComparison.Ordinal))
+            // POINTS LISTVIEW
+            if (lvi.DataContext is CogoPoint cp)
             {
+                if (!ReferenceEquals(tb, _activePointsEditBox))
+                    return;
+
+                if (_isCreatingNewPoint)
+                {
+                    _activePointsEditBox = null;
+                    _pointsEditTargets.Clear();
+
+                    InlineEdit.SetEditingField(lvi, null);
+
+                    _isCreatingNewPoint = false;
+                    _newPoint = null;
+                    _newPointFieldIndex = -1;
+                }
+
+                string? field = InlineEdit.GetEditingField(lvi);
+
+                if (string.IsNullOrEmpty(field))
+                    return;
+
+                if (!CommitPointsListCellEdit(tb, cp, field))
+                {
+                    binding?.UpdateTarget();
+
+                    if (binding != null)
+                        Validation.ClearInvalid(binding);
+                }
+
+                _activePointsEditBox = null;
+                _pointsEditTargets.Clear();
+
+                InlineEdit.SetEditingField(lvi, null);
                 return;
             }
 
-            InlineEdit.SetEditingField(lvi, null);
+            // SCENES LISTVIEW
+            if (lvi.DataContext is Scene)
+            {
+                if (!Validation.GetHasError(tb))
+                    binding?.UpdateSource();
+
+                InlineEdit.SetEditingField(lvi, null);
+            }
         }
         #endregion
 
@@ -510,139 +545,122 @@ namespace Cad_Point_Manager.Views.UserControls
             if (lvi == null) { return; }
             if (lvi.DataContext is not CogoPoint cp) { return; }
 
-            string field = InlineEdit.GetEditingField(lvi);
+            string? field = InlineEdit.GetEditingField(lvi);
+            if (string.IsNullOrEmpty(field)) { return; }
+
             var binding = tb.GetBindingExpression(TextBox.TextProperty);
 
-            // Helper: are we in "new point wizard" mode on this row?
-            bool isNewPointRow = _isCreatingNewPoint && ReferenceEquals(cp, _newPoint);
+            // Determine whether we're editing a newly created point.
+            bool isNewPointRow = _isCreatingNewPoint &&
+                                 ReferenceEquals(cp, _newPoint);
 
             if (e.Key == Key.Enter)
             {
-                string text = tb.Text;
-                string? errorMessage = null;
+                e.Handled = true;
 
-                switch (field)
+                if (!CommitPointsListCellEdit(tb, cp, field))
                 {
-                    case "PointNumber":
-                        {
-                            if (!ValidationService.ValidatePointNumberChange(text, cp, CadManager, out string svcError))
-                            {
-                                errorMessage = svcError;
-                            }
-                            break;
-                        }
-                    case "Northing":
-                    case "Easting":
-                    case "Elevation":
-                        {
-                            if (!double.TryParse(text, out _))
-                            {
-                                errorMessage = $"{field} must be a valid number.";
-                            }
-                            break;
-                        }
-                    case "Description":
-                        {
-                            if (!ValidationService.ValidateString(text, out string svcError))
-                            {
-                                errorMessage = svcError;
-                            }
-                            break;
-                        }
-                    default:
-                        break;
-                }
-
-                if (errorMessage != null)
-                {
-                    if (binding != null)
-                    {
-                        Validation.MarkInvalid(
-                            binding,
-                            new ValidationError(
-                                new DataErrorValidationRule(),
-                                binding,
-                                errorMessage,
-                                null));
-                    }
-
-                    e.Handled = true;
                     return;
                 }
-                else
+
+                if (isNewPointRow)
                 {
-                    // Valid: commit the value
-                    if (binding != null)
-                    {
-                        Validation.ClearInvalid(binding);
-                        binding.UpdateSource();
-                    }
+                    // --------------------------------------------------
+                    // NEW POINT MODE
+                    // --------------------------------------------------
 
-                    if (field == "Northing" ||
-                        field == "Easting")
-                    {
-                        CadManager.UpdateCogoPointTree();
-                    }
+                    int idx = Array.IndexOf(_newPointFieldOrder, field);
 
-                    e.Handled = true;
-
-                    if (isNewPointRow)
+                    if (idx >= 0 && idx < _newPointFieldOrder.Length - 1)
                     {
-                        // ------- NEW POINT MODE: go to next field or finish -------
-                        int idx = Array.IndexOf(_newPointFieldOrder, field);
-                        if (idx >= 0 && idx < _newPointFieldOrder.Length - 1)
+                        // Advance to the next property.
+                        _newPointFieldIndex = idx + 1;
+
+                        string nextField = _newPointFieldOrder[_newPointFieldIndex];
+
+                        // The previous TextBox is no longer active.
+                        _activePointsEditBox = null;
+                        _pointsEditTargets.Clear();
+
+                        // Switch the editable field.
+                        InlineEdit.SetEditingField(lvi, nextField);
+
+                        lvi.Dispatcher.BeginInvoke(new Action(() =>
                         {
-                            // Next field in the wizard
-                            _newPointFieldIndex = idx + 1;
-                            string nextField = _newPointFieldOrder[_newPointFieldIndex];
+                            string? tboxName = GetPointsPropertyFromTBox(nextField);
 
-                            InlineEdit.SetEditingField(lvi, nextField);
-
-                            lvi.Dispatcher.BeginInvoke(new Action(() =>
+                            if (tboxName != null &&
+                                VisualTreeHelpers.FindByName(lvi, tboxName) is TextBox nextTb)
                             {
-                                string tboxName = GetPointsPropertyFromTBox(nextField);
-                                if (tboxName != null &&
-                                    VisualTreeHelpers.FindByName(lvi, tboxName) is TextBox nextTb)
-                                {
-                                    nextTb.Focus();
-                                    nextTb.SelectAll();
-                                }
-                            }), DispatcherPriority.Input);
-                        }
-                        else
-                        {
-                            // Last field ("Description") just finished — end wizard mode
-                            InlineEdit.SetEditingField(lvi, null);
-                            _isCreatingNewPoint = false;
-                            _newPoint = null;
-                            _newPointFieldIndex = -1;
+                                _activePointsEditBox = nextTb;
+                                _pointsEditTargets = [cp];
 
-                            CadManager.CogoPointCircleVerticesDirty = true;
-                            CadManager.CogoPointTextVerticesDirty = true;
-                        }
+                                nextTb.Focus();
+                                nextTb.SelectAll();
+                            }
 
-                        return;
+                        }), DispatcherPriority.Input);
                     }
                     else
                     {
-                        // ------- NORMAL EDIT MODE (existing points) -------
+                        _activePointsEditBox = null;
+                        _pointsEditTargets.Clear();
+
                         InlineEdit.SetEditingField(lvi, null);
 
-                        // Your old behavior: move focus to next control
-                        (tb as UIElement)?.MoveFocus(new TraversalRequest(FocusNavigationDirection.Next));
-                        return;
+                        _isCreatingNewPoint = false;
+                        _newPoint = null;
+                        _newPointFieldIndex = -1;
+
+                        CadManager.CogoPointCircleVerticesDirty = true;
+                        CadManager.CogoPointTextVerticesDirty = true;
                     }
+
+                    return;
                 }
+
+                // --------------------------------------------------
+                // NORMAL EDIT MODE (INCLUDING BULK EDITING)
+                // --------------------------------------------------
+
+                _activePointsEditBox = null;
+                _pointsEditTargets.Clear();
+
+                InlineEdit.SetEditingField(lvi, null);
+
+                // Move keyboard focus away from the completed edit.
+                tb.MoveFocus(
+                    new TraversalRequest(FocusNavigationDirection.Next));
+
+                return;
             }
 
             if (e.Key == Key.Escape)
             {
+                e.Handled = true;
+
+                // Restore the original value.
+                binding?.UpdateTarget();
+
+                if (binding != null)
+                {
+                    Validation.ClearInvalid(binding);
+                }
+
+                // Clear the active edit session.
+                _activePointsEditBox = null;
+                _pointsEditTargets.Clear();
+
                 if (isNewPointRow)
                 {
-                    // Cancel creation of this new point completely
+                    // --------------------------------------------------
+                    // CANCEL NEW POINT CREATION
+                    // --------------------------------------------------
+
                     if (CadManager != null && _newPoint != null)
                     {
                         CadManager.TryDeletePoint(_newPoint);
+
                         CadManager.CogoPointCircleVerticesDirty = true;
                         CadManager.CogoPointTextVerticesDirty = true;
                     }
@@ -652,38 +670,160 @@ namespace Cad_Point_Manager.Views.UserControls
                     _newPointFieldIndex = -1;
 
                     InlineEdit.SetEditingField(lvi, null);
+
                     pointsListView.SelectedItem = null;
 
-                    e.Handled = true;
                     return;
                 }
-                else
-                {
-                    // Existing behavior: revert / exit edit for existing points
-                    binding?.UpdateTarget();
-                    InlineEdit.SetEditingField(lvi, null);
-                    e.Handled = true;
-                    return;
-                }
+
+                // --------------------------------------------------
+                // CANCEL NORMAL / BULK EDIT
+                // --------------------------------------------------
+
+                InlineEdit.SetEditingField(lvi, null);
+
+                return;
             }
         }
 
         private void BeginPointsListCellEdit(ListViewItem lvi, string field)
         {
-            if (lvi == null) { return; }
+            if (lvi.DataContext is not CogoPoint cp)
+                return;
+
+            string? tboxName = GetPointsPropertyFromTBox(field);
+            if (tboxName is null)
+                return;
+
+            // Point numbers must always be edited individually.
+            if (field == nameof(CogoPoint.PointNumber))
+            {
+                _pointsEditTargets = [cp];
+            }
+            else
+            {
+                // Only bulk-edit if the clicked point belongs
+                // to the current multi-selection.
+                _pointsEditTargets =
+                    lvi.IsSelected ? pointsListView.SelectedItems.OfType<CogoPoint>().ToList() : [cp];
+            }
 
             InlineEdit.SetEditingField(lvi, field);
-            string tboxName = GetPointsPropertyFromTBox(field);
-            if (tboxName is null) { return; }
 
             lvi.Dispatcher.BeginInvoke(new Action(() =>
             {
                 if (VisualTreeHelpers.FindByName(lvi, tboxName) is TextBox editBox)
                 {
+                    _activePointsEditBox = editBox;
+
                     editBox.Focus();
                     editBox.SelectAll();
                 }
             }), DispatcherPriority.Input);
+        }
+        private bool CommitPointsListCellEdit(TextBox tb, CogoPoint cp, string field)
+        {
+            var binding = tb.GetBindingExpression(TextBox.TextProperty);
+
+            string text = tb.Text;
+
+            string? errorMessage = null;
+            double number = 0;
+
+            switch (field)
+            {
+                case nameof(CogoPoint.PointNumber):
+                    if (!ValidationService.ValidatePointNumberChange(
+                            text, cp, CadManager, out string pointError))
+                    {
+                        errorMessage = pointError;
+                    }
+                    break;
+
+                case nameof(CogoPoint.Northing):
+                case nameof(CogoPoint.Easting):
+                case nameof(CogoPoint.Elevation):
+                    if (!double.TryParse(
+                            text,
+                            NumberStyles.Float | NumberStyles.AllowThousands,
+                            CultureInfo.CurrentCulture,
+                            out number) ||
+                        !double.IsFinite(number))
+                    {
+                        errorMessage = $"{field} must be a valid number.";
+                    }
+                    break;
+
+                case nameof(CogoPoint.Description):
+                    if (!ValidationService.ValidateString(
+                            text, out string descriptionError))
+                    {
+                        errorMessage = descriptionError;
+                    }
+                    break;
+
+                default:
+                    return false;
+            }
+
+            if (errorMessage != null)
+            {
+                if (binding != null)
+                {
+                    Validation.MarkInvalid(
+                        binding,
+                        new ValidationError(
+                            new DataErrorValidationRule(),
+                            binding,
+                            errorMessage,
+                            null));
+                }
+
+                return false;
+            }
+
+            if (binding != null)
+                Validation.ClearInvalid(binding);
+
+            binding?.UpdateSource();
+
+            if (Validation.GetHasError(tb))
+                return false;
+
+            if (field != nameof(CogoPoint.PointNumber))
+            {
+                foreach (CogoPoint point in _pointsEditTargets)
+                {
+                    if (ReferenceEquals(point, cp))
+                        continue;
+
+                    switch (field)
+                    {
+                        case nameof(CogoPoint.Northing):
+                            point.Northing = number;
+                            break;
+
+                        case nameof(CogoPoint.Easting):
+                            point.Easting = number;
+                            break;
+
+                        case nameof(CogoPoint.Elevation):
+                            point.Elevation = number;
+                            break;
+
+                        case nameof(CogoPoint.Description):
+                            point.Description = text;
+                            break;
+                    }
+                }
+            }
+
+            if (field is nameof(CogoPoint.Northing) or nameof(CogoPoint.Easting))
+            {
+                CadManager.UpdateCogoPointTree();
+            }
+
+            return true;
         }
         private string GetPointsPropertyFromTBox(string tboxName)
         {
@@ -697,7 +837,8 @@ namespace Cad_Point_Manager.Views.UserControls
                 _ => null
             };
         }
-        private bool TryCreateNewPoint(int num, Vector2d pos, PointGroup pg, float elevation, string description)
+        private bool TryCreateNewPoint(
+            int num, Vector2d pos, PointGroup pg, float elevation, string description)
         {
             if (!CadManager.TryCreatePoint(num, pos, pg, out CogoPoint p, elevation, description))
                 return false;
@@ -762,6 +903,42 @@ namespace Cad_Point_Manager.Views.UserControls
             }));
 
             return true;
+        }
+        private void EndNewPointCreation()
+        {
+            _isCreatingNewPoint = false;
+            _newPoint = null;
+            _newPointFieldIndex = -1;
+        }
+
+        private void PointsListItem_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (sender is not ListViewItem lvi ||
+                lvi.DataContext is not CogoPoint ||
+                !lvi.IsSelected ||
+                pointsListView.SelectedItems.Count <= 1 ||
+                Keyboard.Modifiers != ModifierKeys.None)
+            {
+                return;
+            }
+
+            // Keep normal editing controls interactive.
+            if (e.OriginalSource is DependencyObject source &&
+                (source is TextBox ||
+                 VisualTreeHelpers.FindAncestor<TextBox>(source) != null))
+            {
+                return;
+            }
+
+            if (e.ClickCount == 2)
+            {
+                string? field = GetFieldFromMousePosition(lvi);
+
+                if (!string.IsNullOrEmpty(field))
+                    BeginPointsListCellEdit(lvi, field);
+            }
+
+            e.Handled = true;
         }
 
         private void PointsListView_Loaded(object sender, RoutedEventArgs e)

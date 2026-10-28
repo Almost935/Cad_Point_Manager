@@ -65,6 +65,8 @@ namespace Cad_Point_Manager.ViewModels
         private int _newCogoPointsIntermediatePointsCount = 0;
         private string _newCogoPointsIntermediatePointsCountText = 0.ToString();
 
+        private bool _highlightActivePointGroup;
+
         // Models + Layouts Mode Fields
         private bool _layoutsVisible = false;
         private bool _modelVisible = true;
@@ -318,6 +320,7 @@ namespace Cad_Point_Manager.ViewModels
             get => _activePointGroup;
             set
             {
+
                 _activePointGroup = value;
                 OnPropertyChanged(nameof(ActivePointGroup));
             }
@@ -355,6 +358,19 @@ namespace Cad_Point_Manager.ViewModels
                 }
 
                 OnPropertyChanged(nameof(NewCogoPointsIntermediatePointsCountText));
+            }
+        }
+
+        public bool HighlightActivePointGroup
+        {
+            get => _highlightActivePointGroup;
+            set
+            {
+                if (_highlightActivePointGroup == value)
+                    return;
+
+                _highlightActivePointGroup = value;
+                OnPropertyChanged(nameof(HighlightActivePointGroup));
             }
         }
 
@@ -673,7 +689,7 @@ namespace Cad_Point_Manager.ViewModels
                     {
                         if (ActivePointGroup == null)
                         {
-                            MessageBox.Show("You must select an active point group to create new points.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                            ShowActivePointGroupError();
                         }
                         if (startNumberErrors is not null || elevErrors is not null || descErrors is not null)
                         {
@@ -725,7 +741,7 @@ namespace Cad_Point_Manager.ViewModels
                     {
                         if (ActivePointGroup == null)
                         {
-                            MessageBox.Show("You must select an active point group to create new points.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                            ShowActivePointGroupError();
                         }
                         if (startNumberErrors is not null || elevErrors is not null || descErrors is not null)
                         {
@@ -809,6 +825,31 @@ namespace Cad_Point_Manager.ViewModels
         {
             var tb = e.Source as TextBox ?? e.OriginalSource as TextBox;
             tb.SelectAll();
+        }
+
+        private void ShowActivePointGroupError()
+        {
+            HighlightActivePointGroup = true;
+
+            try
+            {
+                // Allow WPF to render the highlight before showing
+                // the modal MessageBox.
+                Application.Current.Dispatcher.Invoke(
+                    new Action(() => { }),
+                    System.Windows.Threading.DispatcherPriority.Render);
+
+                MessageBox.Show(
+                    Application.Current.MainWindow,
+                    "You must select an active point group to create new points.",
+                    "Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+            }
+            finally
+            {
+                HighlightActivePointGroup = false;
+            }
         }
 
         // Geometry Chain Methods

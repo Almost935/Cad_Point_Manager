@@ -546,11 +546,12 @@
                                VerticalAlignment="Center"
                                HorizontalAlignment="Center"
                                Text="Active Point Group:" />
+
                     <ComboBox Grid.Column="1"
                               Margin="10 5 10 5"
                               Width="150"
                               Background="White"
-                              Style="{StaticResource ValidationComboBox}"
+                              Style="{StaticResource UpwardPopupValidationComboBox}"
                               ItemsSource="{Binding JobFileManager.CadManager.PointGroupsView}"
                               DisplayMemberPath="Name"
                               SelectedValue="{Binding ActivePointGroup}" />
