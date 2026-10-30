@@ -530,32 +530,144 @@
                            Margin="0 5 0 5"
                            Text="{Binding ElementName=d3dDxfControl, Path=DxfCoordsString}"
                            Visibility="{Binding ModelsVisible, Converter={StaticResource BoolToVisibilityConverter}}" />
+
                 <Grid Grid.Column="1"
                       HorizontalAlignment="Center">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
-                    <Grid.ToolTip>
-                        <TextBlock Text="The currently active point group. &#10;All created cogo points will be set to this point group."
-                                   FontSize="{StaticResource ToolTipFontSize}" />
-                    </Grid.ToolTip>
-                    <TextBlock Foreground="White"
-                               Margin="10 5 10 5"
-                               FontSize="12"
-                               VerticalAlignment="Center"
-                               HorizontalAlignment="Center"
-                               Text="Active Point Group:" />
+                    <ContentControl>
+                        <ContentControl.Template>
+                            <ControlTemplate TargetType="ContentControl">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="30" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
 
-                    <ComboBox Grid.Column="1"
-                              Margin="10 5 10 5"
-                              Width="150"
-                              Background="White"
-                              Style="{StaticResource UpwardPopupValidationComboBox}"
-                              ItemsSource="{Binding JobFileManager.CadManager.PointGroupsView}"
-                              DisplayMemberPath="Name"
-                              SelectedValue="{Binding ActivePointGroup}" />
+                                    <!-- ACTIVE POINT GROUP LABEL -->
+                                    <TextBlock x:Name="ActivePointGroupLabel"
+                                               Grid.Column="0"
+                                               Text="Active Point Group:"
+                                               VerticalAlignment="Center"
+                                               Margin="10 5">
+
+                                        <TextBlock.Foreground>
+                                            <SolidColorBrush Color="White" />
+                                        </TextBlock.Foreground>
+                                    </TextBlock>
+
+                                    <!-- ANIMATED ARROW -->
+                                    <TextBlock x:Name="ActivePointGroupArrow"
+                                               Grid.Column="1"
+                                               Text="➜"
+                                               FontSize="25"
+                                               FontWeight="Bold"
+                                               Foreground="#FFFFB347"
+                                               VerticalAlignment="Center"
+                                               HorizontalAlignment="Center"
+                                               IsHitTestVisible="False"
+                                               Opacity="0">
+
+                                        <TextBlock.RenderTransform>
+                                            <TranslateTransform X="0"
+                                                                Y="0" />
+                                        </TextBlock.RenderTransform>
+
+                                    </TextBlock>
+
+                                    <!-- COMBOBOX AND GLOW -->
+                                    <Grid Grid.Column="2"
+                                          Margin="10 5">
+
+                                        <!-- EXISTING COMBOBOX -->
+                                        <ComboBox x:Name="activePointGroupComboBox"
+                                                  Width="150"
+                                                  Background="White"
+                                                  Style="{StaticResource UpwardPopupValidationComboBox}"
+                                                  ItemsSource="{Binding JobFileManager.CadManager.PointGroupsView}"
+                                                  DisplayMemberPath="Name"
+                                                  SelectedItem="{Binding ActivePointGroup,
+                                                     Mode=TwoWay}" />
+
+                                        <!-- ANIMATED GLOW -->
+                                        <Border x:Name="ActivePointGroupGlow"
+                                                Margin="-2.7"
+                                                CornerRadius="3"
+                                                BorderBrush="#FFFFB347"
+                                                BorderThickness="3"
+                                                Opacity="0"
+                                                IsHitTestVisible="False">
+
+                                            <Border.Effect>
+                                                <DropShadowEffect Color="#FFFFB347"
+                                                                  BlurRadius="16"
+                                                                  ShadowDepth="0"
+                                                                  Opacity="0.9" />
+                                            </Border.Effect>
+
+                                        </Border>
+
+                                    </Grid>
+
+                                </Grid>
+
+                                <!-- ONE SHARED ANIMATION -->
+                                <ControlTemplate.Triggers>
+
+                                    <DataTrigger Binding="{Binding HighlightActivePointGroup}"
+                                                 Value="True">
+
+                                        <DataTrigger.EnterActions>
+                                            <BeginStoryboard Name="ActivePointGroupAnimation">
+
+                                                <Storyboard RepeatBehavior="Forever"
+                                                            AutoReverse="True">
+
+                                                    <!-- LABEL COLOR -->
+                                                    <ColorAnimation Storyboard.TargetName="ActivePointGroupLabel"
+                                                                    Storyboard.TargetProperty="(TextBlock.Foreground).(SolidColorBrush.Color)"
+                                                                    From="White"
+                                                                    To="#FFFFB347"
+                                                                    Duration="0:0:0.6" />
+
+                                                    <!-- ARROW OPACITY -->
+                                                    <DoubleAnimation Storyboard.TargetName="ActivePointGroupArrow"
+                                                                     Storyboard.TargetProperty="Opacity"
+                                                                     From="0.25"
+                                                                     To="1"
+                                                                     Duration="0:0:0.6" />
+
+                                                    <!-- ARROW MOVEMENT -->
+                                                    <DoubleAnimation Storyboard.TargetName="ActivePointGroupArrow"
+                                                                     Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)"
+                                                                     From="-6"
+                                                                     To="2"
+                                                                     Duration="0:0:0.6" />
+
+                                                    <!-- GLOW OPACITY -->
+                                                    <DoubleAnimation Storyboard.TargetName="ActivePointGroupGlow"
+                                                                     Storyboard.TargetProperty="Opacity"
+                                                                     From="0.25"
+                                                                     To="1"
+                                                                     Duration="0:0:0.6" />
+
+                                                </Storyboard>
+
+                                            </BeginStoryboard>
+                                        </DataTrigger.EnterActions>
+
+                                        <DataTrigger.ExitActions>
+                                            <StopStoryboard BeginStoryboardName="ActivePointGroupAnimation" />
+                                        </DataTrigger.ExitActions>
+
+                                    </DataTrigger>
+
+                                </ControlTemplate.Triggers>
+
+                            </ControlTemplate>
+                        </ContentControl.Template>
+                    </ContentControl>
                 </Grid>
+
                 <WrapPanel Grid.Column="2"
                            Margin="0 5 0 5"
                            HorizontalAlignment="Right">

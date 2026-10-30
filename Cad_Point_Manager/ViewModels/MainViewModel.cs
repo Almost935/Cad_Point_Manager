@@ -827,14 +827,12 @@ namespace Cad_Point_Manager.ViewModels
             tb.SelectAll();
         }
 
-        private void ShowActivePointGroupError()
+        public void ShowActivePointGroupError()
         {
             HighlightActivePointGroup = true;
 
             try
             {
-                // Allow WPF to render the highlight before showing
-                // the modal MessageBox.
                 Application.Current.Dispatcher.Invoke(
                     new Action(() => { }),
                     System.Windows.Threading.DispatcherPriority.Render);

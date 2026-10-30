@@ -77,6 +77,31 @@ static const uint POINT_HAS_LEADER = 1u << 3;
 
 static const uint GROUP_VISIBLE = 1u << 0;
 
+
+float GetSeparationStrength(float3 glyphColor)
+{
+    float brightness = max(
+        glyphColor.r,
+        max(glyphColor.g, glyphColor.b)
+    );
+
+    float minChannel = min(
+        glyphColor.r,
+        min(glyphColor.g, glyphColor.b)
+    );
+
+    float saturation = brightness - minChannel;
+
+    float darkness = 1.0f -
+        smoothstep(0.15f, 0.35f, brightness);
+
+    float grayscale = 1.0f -
+        smoothstep(0.05f, 0.15f, saturation);
+
+    return darkness * grayscale;
+}
+
+
 //-----------------------------------------------------------------------------
 // Vertex shader
 //-----------------------------------------------------------------------------
@@ -284,19 +309,37 @@ float4 PSMain(PSInput input) : SV_TARGET
         return float4(selectionColor, glowAlpha);
     }
 
+
     //--------------------------------------------
     // Mouseover only
     //--------------------------------------------
 
+    float separationStrength = GetSeparationStrength(gs.Color.rgb);
+
+    float3 glowColor = lerp(
+        float3(0.0f, 0.0f, 0.0f),
+        float3(0.45f, 0.45f, 0.45f),
+        separationStrength);
+
+    float glowOpacity = lerp(
+        0.55f, 0.90f, separationStrength);
+
+    float fillOpacity = lerp(
+        0.20f, 0.65f, separationStrength);
+
     if (insideStroke)
-        discard;
+        return float4(glowColor, fillOpacity);
 
     if (glowDistance >= mouseOverGlowRadius)
         discard;
 
-    float glowT = saturate(glowDistance / mouseOverGlowRadius);
-    float glowAlpha = 1.0 - smoothstep(0.0, 1.0, glowT);
-    glowAlpha *= 0.45f;
+    float glowT = saturate(
+        glowDistance / max(mouseOverGlowRadius, 1e-6f));
 
-    return float4(0.0, 0.0, 0.0, glowAlpha);
+    float halo = 1.0f -
+        smoothstep(0.0f, 1.0f, glowT);
+
+    return float4(
+        glowColor,
+        saturate(halo * glowOpacity));
 }

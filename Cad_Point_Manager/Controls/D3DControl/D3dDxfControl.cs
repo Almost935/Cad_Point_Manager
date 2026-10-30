@@ -4305,7 +4305,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     }
 
                     StateController.SetPointGroupId(cp, gId);
-                    StateController.FlushGroupUpdates();
+                    StateController.FlushPointUpdates();
 
                     _baseSceneDirty = _interactionDirty = true;
                 }

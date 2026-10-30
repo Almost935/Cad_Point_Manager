@@ -642,7 +642,8 @@
                                                        IsEditable="False"
                                                        Tag="UseDisplayText"
                                                        controls:NoRevertComboBox.DisplayText="{Binding PointGroupDisplay}"
-                                                       SelectionChanged="PropertiesPointGroupComboBox_SelectionChanged" />
+                                                       SelectionChanged="PropertiesPointGroupComboBox_SelectionChanged"
+                                                       IsSynchronizedWithCurrentItem="False" />
                         </Grid>
                     </StackPanel>
                 </Grid>

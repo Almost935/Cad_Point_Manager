@@ -418,7 +418,9 @@ namespace Cad_Point_Manager.Views.UserControls
 
             if (ActivePointGroup is null)
             {
-                MessageBox.Show("You must select an active point group to create new points.");
+                if (DataContext is MainViewModel vm)
+                    vm.ShowActivePointGroupError();
+
                 return;
             }
 
@@ -449,7 +451,11 @@ namespace Cad_Point_Manager.Views.UserControls
         }
         private void PointsListViewZoomPoint_Click(object sender, RoutedEventArgs e)
         {
-            if (Camera is null || _lastPointsListItem is null || _lastPointsListItem.DataContext is not CogoPoint p) { return; }
+            if (Camera is null ||
+                _lastPointsListItem is null ||
+                _lastPointsListItem.DataContext is not CogoPoint p)
+                return;
+
             CadManager.ZoomToPoint(p, _zoomToPointPaddingFactor);
         }
         private void PointsListView_ContextMenuOpening(object sender, ContextMenuEventArgs e)
@@ -903,12 +909,6 @@ namespace Cad_Point_Manager.Views.UserControls
             }));
 
             return true;
-        }
-        private void EndNewPointCreation()
-        {
-            _isCreatingNewPoint = false;
-            _newPoint = null;
-            _newPointFieldIndex = -1;
         }
 
         private void PointsListItem_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)

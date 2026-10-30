@@ -41,17 +41,14 @@ namespace Cad_Point_Manager.Views
         {
             LayoutsViewControl.ResetView();
         }
-
         private void OnRebuildLayoutsView(object? sender, EventArgs e)
         {
             LayoutsViewControl.ReloadPreview();
         }
-
         private void Vm_ResetSelectionRequested(object? sender, EventArgs e)
         {
             d3dDxfControl?.ResetSelectedObjectsWithFlush();
         }
-
         private void DxfGrid_SizeChanged(object sender, SizeChangedEventArgs e)
         {
             if (DataContext is MainViewModel mainViewModel)
@@ -59,7 +56,6 @@ namespace Cad_Point_Manager.Views
                 mainViewModel.ViewportSize = new Size((float)e.NewSize.Width, (float)e.NewSize.Height);
             }
         }
-
         private void SelectedPointButtonsItemsControl_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
         {
             // Forward the mouse wheel event to the D3dDxfControl manually
@@ -74,7 +70,6 @@ namespace Cad_Point_Manager.Views
                 e.Handled = true;
             }
         }
-
         private void SelectedPointButtonsItemsControl_PreviewMouseMove(object sender, MouseEventArgs e)
         {
             if (d3dDxfControl != null)
@@ -88,7 +83,6 @@ namespace Cad_Point_Manager.Views
                 d3dDxfControl.RaiseEvent(args);
             }
         }
-
         private void TextBox_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
             if (sender is TextBox textBox)
@@ -99,7 +93,6 @@ namespace Cad_Point_Manager.Views
                 }), DispatcherPriority.Input);
             }
         }
-
         private void LayoutsModeRadioButton_Click(object sender, RoutedEventArgs e)
         {
             LayoutsViewControl.ReloadPreview();

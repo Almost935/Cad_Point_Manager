@@ -179,6 +179,18 @@ void GSMain(point VS_INPUT input[1], inout TriangleStream<GS_OUTPUT> output)
 // Pixel shader
 //--------------------------------------------
 
+float GetSeparationStrength(float3 glyphColor)
+{
+    float brightness = max(glyphColor.r, max(glyphColor.g, glyphColor.b));
+    float minChannel = min(glyphColor.r, min(glyphColor.g, glyphColor.b));
+    float saturation = brightness - minChannel;
+
+    float darkness = 1.0f - smoothstep(0.15f, 0.35f, brightness);
+    float grayscale = 1.0f - smoothstep(0.05f, 0.15f, saturation);
+
+    return darkness * grayscale;
+}
+
 float4 PSMain(GS_OUTPUT input) : SV_TARGET
 {
     PointState ps = PointStates[input.pointId];
@@ -277,15 +289,21 @@ float4 PSMain(GS_OUTPUT input) : SV_TARGET
     }
 
     //--------------------------------------------
-    // Mouseover only
+    // Mouseover only: match MSDF glow appearance
     //--------------------------------------------
 
+    float separationStrength = GetSeparationStrength(gs.Color.rgb);
+    float3 glowColor = lerp(float3(0.0f, 0.0f, 0.0f),
+                            float3(0.45f, 0.45f, 0.45f),
+                            separationStrength);
+    float glowOpacity = lerp(0.55f, 0.90f, separationStrength);
+    float fillOpacity = lerp(0.20f, 0.65f, separationStrength);
+
     if (insideMarker)
-        discard;
+        return float4(glowColor, fillOpacity);
 
-    float glowAlpha = 1.0f - smoothstep(0.0f, 1.0f, glowT);
-    glowAlpha = pow(glowAlpha, 0.5f);
-    glowAlpha *= 0.4f;
+    float halo = 1.0f - smoothstep(0.0f, 1.0f, glowT);
+    halo = pow(halo, 0.5f); // Preserve the circle's existing softer falloff.
 
-    return float4(0.0f, 0.0f, 0.0f, glowAlpha);
+    return float4(glowColor, saturate(halo * glowOpacity));
 }

@@ -340,26 +340,6 @@
                                     </GridViewColumn>
                                     <GridViewColumn>
                                         <GridViewColumn.Header>
-                                            <TextBlock Text="Visibility"
-                                                       Style="{StaticResource HeaderTextBlockStyle}" />
-                                        </GridViewColumn.Header>
-                                        <GridViewColumn.CellTemplate>
-                                            <DataTemplate>
-                                                <Border>
-                                                    <CheckBox IsChecked="{Binding Path=IsVisible, Mode=TwoWay}"
-                                                              HorizontalAlignment="Left"
-                                                              HorizontalContentAlignment="Center"
-                                                              VerticalAlignment="Center"
-                                                              VerticalContentAlignment="Center"
-                                                              Unchecked="PointGroupsVisibilityCheckBox_Unchecked"
-                                                              Checked="PointGroupsVisibilityCheckBox_Checked"
-                                                              PreviewMouseLeftButtonDown="PointGroupsVisibilityCheckBox_PreviewMouseLeftButtonDown" />
-                                                </Border>
-                                            </DataTemplate>
-                                        </GridViewColumn.CellTemplate>
-                                    </GridViewColumn>
-                                    <GridViewColumn>
-                                        <GridViewColumn.Header>
                                             <TextBlock Text="Scale"
                                                        Style="{StaticResource HeaderTextBlockStyle}" />
                                         </GridViewColumn.Header>
@@ -386,6 +366,26 @@
                                                                 Value="Visible" />
                                                     </DataTrigger>
                                                 </DataTemplate.Triggers>
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                    <GridViewColumn>
+                                        <GridViewColumn.Header>
+                                            <TextBlock Text="Visibility"
+                                                       Style="{StaticResource HeaderTextBlockStyle}" />
+                                        </GridViewColumn.Header>
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <Border>
+                                                    <CheckBox IsChecked="{Binding Path=IsVisible, Mode=TwoWay}"
+                                                              HorizontalAlignment="Left"
+                                                              HorizontalContentAlignment="Center"
+                                                              VerticalAlignment="Center"
+                                                              VerticalContentAlignment="Center"
+                                                              Unchecked="PointGroupsVisibilityCheckBox_Unchecked"
+                                                              Checked="PointGroupsVisibilityCheckBox_Checked"
+                                                              PreviewMouseLeftButtonDown="PointGroupsVisibilityCheckBox_PreviewMouseLeftButtonDown" />
+                                                </Border>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>

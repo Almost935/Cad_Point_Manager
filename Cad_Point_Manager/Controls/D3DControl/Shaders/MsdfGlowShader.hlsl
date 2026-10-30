@@ -82,17 +82,50 @@ struct VSOut
     float4 Color : COLOR;
     nointerpolation float Visible : TEXCOORD1;
     nointerpolation uint PointFlags : TEXCOORD2;
+    nointerpolation float GroupScale : TEXCOORD3;
 };
 
 float Median(float r, float g, float b)
 {
     return max(min(r, g), min(max(r, g), b));
 }
-
 float4 ScreenPxRange(float2 uv)
 {
     float2 fw = fwidth(uv);
     return float4(fw.x * 1000, fw.y * 1000, 0, 1);
+}
+float3 GetContrastingGlowColor(float3 glyphColor)
+{
+    float luminance = dot(glyphColor, float3(0.2126f, 0.7152f, 0.0722f));
+    float brightness = 1.0f - smoothstep(0.25f, 0.65f, luminance);
+
+    return float3(brightness, brightness, brightness);
+}
+float GetSeparationStrength(float3 glyphColor)
+{
+    // Detect how dark the color is
+    float brightness = max(
+        glyphColor.r,
+        max(glyphColor.g, glyphColor.b)
+    );
+
+    // Detect how close the color is to grayscale
+    float minChannel = min(
+        glyphColor.r,
+        min(glyphColor.g, glyphColor.b)
+    );
+
+    float saturation = brightness - minChannel;
+
+    // Only very dark colors should receive separation
+    float darkness = 1.0f -
+        smoothstep(0.15f, 0.35f, brightness);
+
+    // Suppress separation for saturated colors
+    float grayscale = 1.0f -
+        smoothstep(0.05f, 0.15f, saturation);
+
+    return darkness * grayscale;
 }
 
 // Bit masks for flags (keep in sync with CPU)
@@ -131,11 +164,13 @@ VSOut VSMain(VSVertex v, VSInstance inst)
         o.UV = 0;
         o.Color = 0;
         o.Visible = 0;
+        o.GroupScale = 0;
         return o;
     }
 
     o.Visible = visible;
     o.PointFlags = ps.Flags;
+    o.GroupScale = gs.Scale;
 
     float isLabelLeft = (ps.LabelQuadrant == QUADRANT_UPPER_LEFT || ps.LabelQuadrant == QUADRANT_LOWER_LEFT) ? -1.0f : 1.0f;
 
@@ -162,6 +197,7 @@ VSOut VSMain(VSVertex v, VSInstance inst)
     return o;
 }
 
+
 float4 PSMain(VSOut input) : SV_Target
 {
     if (input.Visible < 0.5f)
@@ -172,7 +208,7 @@ float4 PSMain(VSOut input) : SV_Target
     float3 msd = FontAtlas.Sample(FontSampler, input.UV).rgb;
     float sd = Median(msd.r, msd.g, msd.b);
     float d = (sd - 0.5f) * DistanceRange;
-    
+
     bool selected = (input.PointFlags & POINT_SELECTED) != 0u;
     bool mouseOver = (input.PointFlags & POINT_MOUSEOVER) != 0u;
 
@@ -182,17 +218,32 @@ float4 PSMain(VSOut input) : SV_Target
     }
 
     float fill = smoothstep(-0.25f, 0.5f, d);
-    
-    float mouseOverGlowRadius = clamp(120.0f / CameraZoom, 0.01f, DistanceRange * 0.5f);
-    float selectionGlowRadius = mouseOverGlowRadius * 0.5f;
 
+    //---------------------------------------
+    // Glow radius
+    //---------------------------------------
+
+    float effectiveScale = max(input.GroupScale, 0.01f);
+    float mouseOverGlowRadius = clamp(
+        120.0f / (CameraZoom * effectiveScale),
+        0.01f, DistanceRange * 0.5f);
+
+    float selectionGlowRadius = mouseOverGlowRadius * 0.5f;
     float glowRadius = mouseOver ? mouseOverGlowRadius : selectionGlowRadius;
-    
+
+    //---------------------------------------
+    // Original glow falloff
+    //---------------------------------------
+
     float outsideDistance = max(-d, 0.0f);
     float halo = 1.0f - smoothstep(0.0f, glowRadius, outsideDistance);
     float outsideMask = 1.0f - smoothstep(-0.25f, 0.25f, d);
 
     halo *= outsideMask;
+
+    //---------------------------------------
+    // Selected point
+    //---------------------------------------
 
     if (selected)
     {
@@ -205,18 +256,48 @@ float4 PSMain(VSOut input) : SV_Target
 
         float tintAlpha = fill * SelectedColor.a;
         float glowAlpha = halo * SelectedColor.a;
+
         float alpha = max(tintAlpha, glowAlpha);
 
         return float4(selectionColor, alpha);
     }
 
-
+   
     //---------------------------------------
     // Unselected mouseover
     //---------------------------------------
 
-    float alpha = halo * 0.55f + fill * 0.20f;
+    float separationStrength =
+        GetSeparationStrength(input.Color.rgb);
+
+    // Black for most colors, dark gray for
+    // black and very dark gray glyphs.
+    float3 glowColor = lerp(
+        float3(0.0f, 0.0f, 0.0f),
+        float3(0.45f, 0.45f, 0.45f),
+        separationStrength
+    );
+
+    // Increase glow opacity for dark grayscale glyphs.
+    float glowOpacity = lerp(
+        0.55f,
+        0.90f,
+        separationStrength
+    );
+
+    // Increase the interior tint for dark glyphs.
+    float fillOpacity = lerp(
+        0.20f,
+        0.65f,
+        separationStrength
+    );
+
+    // Preserve original glow geometry and falloff.
+    float alpha = halo * glowOpacity
+                + fill * fillOpacity;
+
     alpha = saturate(alpha);
 
-    return float4(0, 0, 0, alpha);
+    return float4(glowColor, alpha);
+
 }

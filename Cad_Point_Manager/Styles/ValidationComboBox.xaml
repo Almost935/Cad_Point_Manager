@@ -108,10 +108,28 @@
                                 SnapsToDevicePixels="true"
                                 Width="{DynamicResource {x:Static SystemParameters.VerticalScrollBarWidthKey}}">
                             <Path x:Name="arrow"
-                                  Data="F1 M 0,0 L 2.667,2.66665 L 5.3334,0 L 5.3334,-1.78168 L 2.6667,0.88501 L0,-1.78168 L0,0 Z"
+                                  Data="
+                                  F1
+                                  M 0,0
+                                  L 2.667,2.66665
+                                  L 5.3334,0
+                                  L 5.3334,-1.78168
+                                  L 2.6667,0.88501
+                                  L 0,-1.78168
+                                  L 0,0
+                                  Z"
                                   Fill="{DynamicResource ComboBox.Static.Glyph}"
                                   HorizontalAlignment="Center"
-                                  VerticalAlignment="Center" />
+                                  VerticalAlignment="Center">
+                                <Path.RenderTransform>
+                                    <TransformGroup>
+                                        <ScaleTransform ScaleX="1.5"
+                                                        ScaleY="1.25" />
+                                        <TranslateTransform X="-2.5"
+                                                            Y="1.3" />
+                                    </TransformGroup>
+                                </Path.RenderTransform>
+                            </Path>
                         </Border>
                     </Border>
                     <ControlTemplate.Triggers>
