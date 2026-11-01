@@ -76,13 +76,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
             SetRotation();
 
-            Bounds = Rect.Empty;
-
-            foreach (var segment in Segments)
-            {
-                segment.GetMtextBounds(renderOrigin);
-                Bounds.Union(segment.Bounds);
-            }
+            UpdateBounds(renderOrigin);
 
             TextVertices = Segments.SelectMany(s => s.TextVertices).ToList();
             LineInstances = Segments.SelectMany(s => s.LineInstances).ToList();
@@ -209,15 +203,25 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
         public override void UpdateBounds()
         {
-            if (MtextBlock is null) { return; } // No text to update bounds for.
-
-            Bounds = Rect.Empty;
+            Rect bounds = Rect.Empty;
 
             foreach (var segment in Segments)
             {
-                segment.UpdateBounds();
-                Bounds = Rect.Union(Bounds, segment.Bounds);
+                bounds.Union(segment.Bounds);
             }
+
+            Bounds = bounds;
+        }
+        public void UpdateBounds(Vector2d renderOrigin)
+        {
+            Rect bounds = Rect.Empty;
+
+            foreach (var segment in Segments)
+            {
+                bounds.Union(segment.GetMtextBounds(renderOrigin));
+            }
+
+            Bounds = bounds;
         }
 
         public void UpdateMtextBlock(

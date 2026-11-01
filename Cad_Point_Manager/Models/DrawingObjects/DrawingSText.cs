@@ -98,7 +98,8 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 throw new ArgumentException("EntityObject must be of type MText or Text");
             }
         }
-        public override void DrawToPdf(XGraphics gfx, System.Windows.Media.Matrix worldToPdf, XPen pen)
+        public override void DrawToPdf(
+            XGraphics gfx, System.Windows.Media.Matrix worldToPdf, XPen pen)
         {
             if (TextRenderStyle is TextRenderStyle.Stroke)
             {
@@ -146,6 +147,8 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             {
                 List<Vector2d> vertices = GetLffVertices();
                 LineInstances = GetLineVertices(vertices, layerId, objectId, lineTypeId, renderOrigin);
+                GetTextBounds(renderOrigin);
+
                 TextVertices = [];
             }
             else
@@ -155,6 +158,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                     TextRenderingHelpers.TesselateTextLayout(resCache, TextLayout, Text, _fontFace);
                 Bounds = bounds.ToRect();
                 TextVertices = GetTextVertices(vertices, layerId, objectId, renderOrigin);
+                GetTextBounds(renderOrigin);
 
                 LineInstances = [];
             }
@@ -215,38 +219,68 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             //}
         }
 
-        private void GetBounds(Vector2d renderOrigin)
+        public Rect GetTextBounds(Vector2d renderOrigin)
         {
-            Rect bounds = Rect.Empty;
-
             if (TextRenderStyle == TextRenderStyle.Stroke)
             {
+                double minX = double.PositiveInfinity;
+                double minY = double.PositiveInfinity;
+                double maxX = double.NegativeInfinity;
+                double maxY = double.NegativeInfinity;
+
                 foreach (var line in LineInstances)
                 {
-                    bounds.Union(new Point(
-                        line.Start.X + renderOrigin.X,
-                        line.Start.Y + renderOrigin.Y));
+                    minX = Math.Min(minX, Math.Min(line.Start.X, line.End.X));
+                    minY = Math.Min(minY, Math.Min(line.Start.Y, line.End.Y));
 
-                    bounds.Union(new Point(
-                        line.End.X + renderOrigin.X,
-                        line.End.Y + renderOrigin.Y));
+                    maxX = Math.Max(maxX, Math.Max(line.Start.X, line.End.X));
+                    maxY = Math.Max(maxY, Math.Max(line.Start.Y, line.End.Y));
+                }
+
+                if (minX <= maxX && minY <= maxY)
+                {
+                    Bounds = new Rect(
+                        minX + renderOrigin.X,
+                        minY + renderOrigin.Y,
+                        maxX - minX,
+                        maxY - minY);
+                }
+                else
+                {
+                    Bounds = Rect.Empty;
                 }
             }
             else
             {
+                double minX = double.PositiveInfinity;
+                double minY = double.PositiveInfinity;
+                double maxX = double.NegativeInfinity;
+                double maxY = double.NegativeInfinity;
+
                 foreach (var vertex in TextVertices)
                 {
-                    var vertexPoint = new Point(
-                        vertex.Position.X + renderOrigin.X, vertex.Position.Y + renderOrigin.Y);
-                    bounds.Union(vertexPoint);
+                    minX = Math.Min(minX, Math.Min(vertex.Position.X, vertex.Position.X));
+                    minY = Math.Min(minY, Math.Min(vertex.Position.Y, vertex.Position.Y));
 
-                    //bounds.Union(new Point(
-                    //    vertex.Position.X + renderOrigin.X,
-                    //    vertex.Position.Y + renderOrigin.Y));
+                    maxX = Math.Max(maxX, Math.Max(vertex.Position.X, vertex.Position.X));
+                    maxY = Math.Max(maxY, Math.Max(vertex.Position.Y, vertex.Position.Y));
+                }
+
+                if (minX <= maxX && minY <= maxY)
+                {
+                    Bounds = new Rect(
+                        minX + renderOrigin.X,
+                        minY + renderOrigin.Y,
+                        maxX - minX,
+                        maxY - minY);
+                }
+                else
+                {
+                    Bounds = Rect.Empty;
                 }
             }
 
-            Bounds = bounds;
+            return Bounds;
         }
 
         public void GetTextFormat(SharpDX.DirectWrite.Factory1 factory)
@@ -292,8 +326,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 lineInstances.Add(lineInstance);
             }
 
-            GetBounds(renderOrigin);
-
             return lineInstances;
         }
         public List<TextVertex> GetTextVertices(
@@ -323,8 +355,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
                 textVertices.AddRange([textVertex1, textVertex2, textVertex3]);
             }
-
-            GetBounds(renderOrigin);
 
             return textVertices;
         }

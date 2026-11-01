@@ -533,6 +533,10 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     CadManager.Extents,
                     CadManager.DxfExtents);
 
+                // For testing only. Delete when bounds issue is gone.
+                CadManager.LineVerticesDirty = true;
+                // End testing
+
                 TransformationBufferDirty = true;
                 HitTestableObjectTreeDirty = true;
             }

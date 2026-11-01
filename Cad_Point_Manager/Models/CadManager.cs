@@ -14,6 +14,7 @@ using Cad_Point_Manager.Models.HitTesting;
 using Cad_Point_Manager.Models.Importing;
 using Cad_Point_Manager.Models.PointRendering;
 using Cad_Point_Manager.Models.Printing;
+using netDxf;
 using netDxf.Entities;
 using netDxf.Tables;
 using SharpDX;
@@ -365,9 +366,7 @@ namespace Cad_Point_Manager.Models
             DxfExtents = DxfHelpers.GetBoundsFromHeader(DxfImportResult.DxfDocument);
             Extents = DxfExtents;
 
-            RenderOrigin = new Vector2d(
-                DxfExtents.X + DxfExtents.Width / 2.0,
-                DxfExtents.Y + DxfExtents.Height / 2.0);
+            RenderOrigin = ChooseRenderOrigin(DxfImportResult.DxfDocument);
 
             _lineTypeCache = new(DxfImportResult.DxfDocument);
             GetPointScale();
@@ -481,6 +480,58 @@ namespace Cad_Point_Manager.Models
             CogoPointCircleVerticesDirty = true;
             HitTestableObjectTreeDirty = true;
             DxfNeedsReload = true;
+        }
+        private Vector2d ChooseRenderOrigin(DxfDocument doc)
+        {
+            foreach (var e in doc.Entities.All)
+            {
+                if (e is Line line)
+                {
+                    return new Vector2d(
+                        (line.StartPoint.X + line.EndPoint.X) / 2.0,
+                        (line.StartPoint.Y + line.EndPoint.Y) / 2.0);
+                }
+                else if (e is Circle circle)
+                {
+                    return new Vector2d(circle.Center.X, circle.Center.Y);
+                }
+                else if (e is Arc arc)
+                {
+                    return new Vector2d(arc.Center.X, arc.Center.Y);
+                }
+                else if (e is Polyline2D polyline && polyline.Vertexes.Count > 0)
+                {
+                    double sumX = 0;
+                    double sumY = 0;
+                    foreach (var vertex in polyline.Vertexes)
+                    {
+                        sumX += vertex.Position.X;
+                        sumY += vertex.Position.Y;
+                    }
+                    return new Vector2d(sumX / polyline.Vertexes.Count, sumY / polyline.Vertexes.Count);
+                }
+                else if (e is Polyline3D polyline3D && polyline3D.Vertexes.Count > 0)
+                {
+                    double sumX = 0;
+                    double sumY = 0;
+                    foreach (var vertex in polyline3D.Vertexes)
+                    {
+                        sumX += vertex.X;
+                        sumY += vertex.Y;
+                    }
+                    return new Vector2d(sumX / polyline3D.Vertexes.Count, sumY / polyline3D.Vertexes.Count);
+                }
+                else if (e is MText mText)
+                {
+                    return new Vector2d(mText.Position.X, mText.Position.Y);
+                }
+                else if (e is Text text)
+                {
+                    return new Vector2d(text.Position.X, text.Position.Y);
+                }
+            }
+
+            return Vector2d.Zero;
         }
 
         #region CogoPoint related methods
@@ -1432,14 +1483,16 @@ namespace Cad_Point_Manager.Models
                             instances.AddRange(drawingGeometry.LineInstances);
                             drawingGeometry.EndVertexIndex = instances.Count - 1;
                         }
-                        if (obj is DrawingMtext drawingMtext)
+                        if (obj is DrawingMtext drawingMtext &&
+                            drawingMtext.TextRenderStyle == TextRenderStyle.Stroke)
                         {
                             drawingMtext.UpdateVertices(resCache, lId, ltId, sceneIdMap, stateBuffers, RenderOrigin);
                             drawingMtext.StartLineVertexIndex = instances.Count;
                             instances.AddRange(drawingMtext.LineInstances);
                             drawingMtext.EndLineVertexIndex = instances.Count - 1;
                         }
-                        if (obj is DrawingSText drawingSText)
+                        if (obj is DrawingSText drawingSText &&
+                             drawingSText.TextRenderStyle == TextRenderStyle.Stroke)
                         {
                             drawingSText.UpdateVertices(resCache, lId, ltId, sceneIdMap, stateBuffers, RenderOrigin);
                             drawingSText.StartLineVertexIndex = instances.Count;
@@ -1470,12 +1523,15 @@ namespace Cad_Point_Manager.Models
                     }
                 }
 
-                //// Object bounds testing
-                //var boundsLines = GetObjectBoundLines<DrawingBlock>();
-                //instances.AddRange(boundsLines);
+                // Object bounds testing
+                var objectBoundsLines = GetObjectBoundLines<DrawingMtext>();
+                instances.AddRange(objectBoundsLines);
+                // End object bounds testing
 
                 // Scene bounds testing 
-                instances.AddRange(GetOverviewSceneBoundLines());
+                var overviewSceneBoundsLines = GetOverviewSceneBoundLines();
+                instances.AddRange(overviewSceneBoundsLines);
+                // End scene bounds testing
 
                 LineVerticesDirty = false;
             }
@@ -1497,14 +1553,16 @@ namespace Cad_Point_Manager.Models
                     uint ltId = sceneIdMap.GetOrAddLineTypeId(obj.LineType, out var isNewLtype);
                     if (isNewLtype) { stateBuffers.InitializeLineTypeState(sceneIdMap.MaxLineTypeId, obj.LineType, ltId); }
 
-                    if (obj is DrawingSText text)
+                    if (obj is DrawingSText text &&
+                        text.TextRenderStyle == TextRenderStyle.Triangle)
                     {
                         text.UpdateVertices(resCache, lid, ltId, sceneIdMap, stateBuffers, RenderOrigin);
                         text.StartTextVertexIndex = vertices.Count;
                         vertices.AddRange(text.TextVertices);
                         text.EndTextVertexIndex = vertices.Count - 1;
                     }
-                    if (obj is DrawingMtext mtext)
+                    if (obj is DrawingMtext mtext &&
+                         mtext.TextRenderStyle == TextRenderStyle.Triangle)
                     {
                         mtext.UpdateVertices(resCache, lid, ltId, sceneIdMap, stateBuffers, RenderOrigin);
                         mtext.StartTextVertexIndex = vertices.Count;
@@ -1721,9 +1779,9 @@ namespace Cad_Point_Manager.Models
                 var layer = keyValuePair.Value;
                 foreach (var obj in layer.DrawingObjects)
                 {
-                    Debug.WriteLine($"\nobj.GetType().Name: {obj.GetType().Name}, Bounds: {obj.Bounds.GetAllSides()}");
+                    //Debug.WriteLine($"\nobj.GetType().Name: {obj.GetType().Name}, Bounds: {obj.Bounds.GetAllSides()}");
                     DxfExtents = Rect.Union(obj.Bounds, DxfExtents);
-                    Debug.WriteLine($"DxfExtents: {DxfExtents.GetAllSides()}");
+                    //Debug.WriteLine($"DxfExtents: {DxfExtents.GetAllSides()}");
                 }
             }
         }

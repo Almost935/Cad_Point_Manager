@@ -25,22 +25,22 @@ namespace Cad_Point_Manager.Services.Exporting
 
         public Task ExportAsync(
             Layout layout,
-            CadManager cadManager3D,
+            CadManager cadManager,
             Scene scene,
             List<TbPrimitive> templatePrims, string outputPath,
             bool openAfterExport = false)
         {
             return Application.Current.Dispatcher.InvokeAsync(() =>
             {
-                var viewSize = new Size(cadManager3D.ViewportSize.Width, cadManager3D.ViewportSize.Height);
+                var viewSize = new Size(cadManager.ViewportSize.Width, cadManager.ViewportSize.Height);
                 double pageWpts = layout.PageWidth * PdfPointsPerInch;
                 double pageHpts = layout.PageHeight * PdfPointsPerInch;
 
-                Matrix worldToPdf = BuildWorldToPdfFromCamera(layout, cadManager3D, scene.Bounds);
+                Matrix worldToPdf = BuildWorldToPdfFromCamera(layout, cadManager, scene.Bounds);
 
                 LayoutPdfVectorExporter.Export(
                     layout,
-                    cadManager3D,
+                    cadManager,
                     templatePrims,
                     worldToPdf,
                     outputPath,

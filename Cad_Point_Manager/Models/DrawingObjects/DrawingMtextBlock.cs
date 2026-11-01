@@ -328,8 +328,6 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
         public void AddSegment(DrawingMtextSegment segment)
         {
-            segment.UpdateBounds();
-
             if (NumberOfRows == 0)
             {
                 DrawingMtextRow newRow = new([segment], BasePosition, MaxWidth);
