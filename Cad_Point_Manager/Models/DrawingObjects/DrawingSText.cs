@@ -14,6 +14,10 @@ using SharpDX.Direct2D1;
 using SharpDX.DirectWrite;
 using SharpDX.Mathematics.Interop;
 using System.Diagnostics;
+using System.Windows;
+using FontStretch = SharpDX.DirectWrite.FontStretch;
+using FontStyle = SharpDX.DirectWrite.FontStyle;
+using FontWeight = SharpDX.DirectWrite.FontWeight;
 using Point = System.Windows.Point;
 
 namespace Cad_Point_Manager.Models.DrawingObjects
@@ -179,36 +183,70 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         }
         public override void UpdateBounds()
         {
+            //if (TextRenderStyle == TextRenderStyle.Stroke)
+            //{
+            //    if (LineInstances.Count == 0)
+            //    {
+            //        Bounds = System.Windows.Rect.Empty;
+            //        return;
+            //    }
+
+            //    float minX = Math.Min(LineInstances.Min(v => v.Start.X), LineInstances.Min(v => v.End.X));
+            //    float maxX = Math.Max(LineInstances.Max(v => v.Start.X), LineInstances.Max(v => v.End.X));
+            //    float minY = Math.Min(LineInstances.Min(v => v.Start.Y), LineInstances.Min(v => v.End.Y));
+            //    float maxY = Math.Max(LineInstances.Max(v => v.Start.Y), LineInstances.Max(v => v.End.Y));
+
+            //    Bounds = new System.Windows.Rect(minX, minY, maxX - minX, maxY - minY);
+            //}
+            //else
+            //{
+            //    if (TextVertices.Count == 0)
+            //    {
+            //        Bounds = System.Windows.Rect.Empty;
+            //        return;
+            //    }
+
+            //    float minX = TextVertices.Min(v => v.Position.X);
+            //    float maxX = TextVertices.Max(v => v.Position.X);
+            //    float minY = TextVertices.Min(v => v.Position.Y);
+            //    float maxY = TextVertices.Max(v => v.Position.Y);
+
+            //    Bounds = new System.Windows.Rect(minX, minY, maxX - minX, maxY - minY);
+            //}
+        }
+
+        private void GetBounds(Vector2d renderOrigin)
+        {
+            Rect bounds = Rect.Empty;
+
             if (TextRenderStyle == TextRenderStyle.Stroke)
             {
-                if (LineInstances.Count == 0)
+                foreach (var line in LineInstances)
                 {
-                    Bounds = System.Windows.Rect.Empty;
-                    return;
+                    bounds.Union(new Point(
+                        line.Start.X + renderOrigin.X,
+                        line.Start.Y + renderOrigin.Y));
+
+                    bounds.Union(new Point(
+                        line.End.X + renderOrigin.X,
+                        line.End.Y + renderOrigin.Y));
                 }
-
-                float minX = Math.Min(LineInstances.Min(v => v.Start.X), LineInstances.Min(v => v.End.X));
-                float maxX = Math.Max(LineInstances.Max(v => v.Start.X), LineInstances.Max(v => v.End.X));
-                float minY = Math.Min(LineInstances.Min(v => v.Start.Y), LineInstances.Min(v => v.End.Y));
-                float maxY = Math.Max(LineInstances.Max(v => v.Start.Y), LineInstances.Max(v => v.End.Y));
-
-                Bounds = new System.Windows.Rect(minX, minY, maxX - minX, maxY - minY);
             }
             else
             {
-                if (TextVertices.Count == 0)
+                foreach (var vertex in TextVertices)
                 {
-                    Bounds = System.Windows.Rect.Empty;
-                    return;
+                    var vertexPoint = new Point(
+                        vertex.Position.X + renderOrigin.X, vertex.Position.Y + renderOrigin.Y);
+                    bounds.Union(vertexPoint);
+
+                    //bounds.Union(new Point(
+                    //    vertex.Position.X + renderOrigin.X,
+                    //    vertex.Position.Y + renderOrigin.Y));
                 }
-
-                float minX = TextVertices.Min(v => v.Position.X);
-                float maxX = TextVertices.Max(v => v.Position.X);
-                float minY = TextVertices.Min(v => v.Position.Y);
-                float maxY = TextVertices.Max(v => v.Position.Y);
-
-                Bounds = new System.Windows.Rect(minX, minY, maxX - minX, maxY - minY);
             }
+
+            Bounds = bounds;
         }
 
         public void GetTextFormat(SharpDX.DirectWrite.Factory1 factory)
@@ -217,7 +255,10 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         }
         public void GetTextLayout(SharpDX.DirectWrite.Factory1 factory)
         {
-            TextLayout = new(factory, Text, _textFormat, (float)Bounds.Width, (float)Bounds.Height, 96, true);
+            double widthPerCharacter = 0.6 * DxfText.Height;
+            double textWidth = widthPerCharacter * Text.Length * WidthFactor;
+            Rect bounds = new(DxfText.Position.X, DxfText.Position.Y, textWidth * 2, DxfText.Height * 2);
+            TextLayout = new(factory, Text, _textFormat, (float)bounds.Width, (float)bounds.Height, 96, true);
         }
 
         public List<LineInstance> GetLineVertices(
@@ -232,7 +273,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 throw new Exception("LffFont is null.");
             }
 
-            Bounds = MathHelpers.GetLocalBounds(vertices);
+            Bounds = MathHelpers.GetLocalBounds(vertices); 
             TextHeightScaleFactor = TextHeight / LffFont.DesignHeight;
             AttachmentOffset = UpdateAttachmentOffset();
 
@@ -250,6 +291,9 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
                 lineInstances.Add(lineInstance);
             }
+
+            GetBounds(renderOrigin);
+
             return lineInstances;
         }
         public List<TextVertex> GetTextVertices(
@@ -271,14 +315,16 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 var v3 = vertices[i + 2].ToGpuRelative(renderOrigin);
 
                 var scaledVector1 = Vector2.TransformCoordinate(v1, transform);
-                TextVertex textVertex1 = new(v1, layerId, objectId);
+                TextVertex textVertex1 = new(scaledVector1, layerId, objectId);
                 var scaledVector2 = Vector2.TransformCoordinate(v2, transform);
-                TextVertex textVertex2 = new(v2, layerId, objectId);
+                TextVertex textVertex2 = new(scaledVector2, layerId, objectId);
                 var scaledVector3 = Vector2.TransformCoordinate(v3, transform);
-                TextVertex textVertex3 = new(v3, layerId, objectId);
+                TextVertex textVertex3 = new(scaledVector3, layerId, objectId);
 
                 textVertices.AddRange([textVertex1, textVertex2, textVertex3]);
             }
+
+            GetBounds(renderOrigin);
 
             return textVertices;
         }

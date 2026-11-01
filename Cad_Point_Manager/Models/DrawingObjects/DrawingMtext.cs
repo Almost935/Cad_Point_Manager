@@ -62,16 +62,27 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
         #region Methods
         public override void UpdateVertices(
-            ResCache resCache, uint layerId, uint lineTypeId, SceneIdMap sceneIdMap,
-            D3dStateBuffers stateBuffers, Vector2d renderOrigin)
+            ResCache resCache, uint layerId, uint lineTypeId,
+            SceneIdMap sceneIdMap, D3dStateBuffers stateBuffers,
+            Vector2d renderOrigin)
         {
             if (DxfMtext is null) { return; }
 
-            UpdateMtextBlock(resCache, layerId, lineTypeId, sceneIdMap, stateBuffers, renderOrigin);
+            UpdateMtextBlock(resCache, layerId, lineTypeId,
+                sceneIdMap, stateBuffers, renderOrigin);
+
             MtextBlock.SetTextPositions();
             MtextBlock.GetTextBox(MtextBlock.Height);
+
             SetRotation();
-            UpdateBounds();
+
+            Bounds = Rect.Empty;
+
+            foreach (var segment in Segments)
+            {
+                segment.GetMtextBounds(renderOrigin);
+                Bounds.Union(segment.Bounds);
+            }
 
             TextVertices = Segments.SelectMany(s => s.TextVertices).ToList();
             LineInstances = Segments.SelectMany(s => s.LineInstances).ToList();

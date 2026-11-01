@@ -7,12 +7,14 @@
              mc:Ignorable="d"
              d:DesignHeight="450"
              d:DesignWidth="800">
+
     <Viewbox x:Name="FitViewbox"
              Stretch="Uniform"
              StretchDirection="DownOnly">
         <Image x:Name="LayoutPreviewImage"
                RenderOptions.BitmapScalingMode="HighQuality"
-               SnapsToDevicePixels="True" 
+               SnapsToDevicePixels="True"
                UseLayoutRounding="True" />
     </Viewbox>
+
 </UserControl>

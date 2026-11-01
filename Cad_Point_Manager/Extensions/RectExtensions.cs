@@ -35,6 +35,10 @@ namespace Cad_Point_Manager.Extensions
             if (a.IsEmpty || b.IsEmpty) return false;
             return a.Contains(b);
         }
+        public static string GetAllSides(this Rect rect)
+        {
+            return $"Left: {rect.Left}, Right: {rect.Right}, Top: {rect.Top}, Bottom: {rect.Bottom}";
+        }
 
         public static SharpDX.RectangleF ToRectangeF(this Rect rect)
         {

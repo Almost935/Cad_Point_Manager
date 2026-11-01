@@ -362,14 +362,17 @@ namespace Cad_Point_Manager.Models
 
             DxfImportResult = dxfImportResult;
 
-            Extents = DxfHelpers.GetBoundsFromHeader(DxfImportResult.DxfDocument);
+            DxfExtents = DxfHelpers.GetBoundsFromHeader(DxfImportResult.DxfDocument);
+            Extents = DxfExtents;
+
             RenderOrigin = new Vector2d(
-                Extents.X + Extents.Width / 2.0, Extents.Y + Extents.Height / 2.0);
+                DxfExtents.X + DxfExtents.Width / 2.0,
+                DxfExtents.Y + DxfExtents.Height / 2.0);
 
             _lineTypeCache = new(DxfImportResult.DxfDocument);
             GetPointScale();
 
-            GetTestDxfPoints();
+            //GetTestDxfPoints();
 
             OverallDrawingLineTypeScale = DxfImportResult.DxfDocument.DrawingVariables.LtScale;
 
@@ -468,7 +471,6 @@ namespace Cad_Point_Manager.Models
                 }
             }
 
-            UpdateDxfExtents();
             UpdateExtents();
 
             DxfLoaded = true;
@@ -1230,7 +1232,7 @@ namespace Cad_Point_Manager.Models
             Layouts.Clear();
 
             Rect viewportBounds = new(0.5, 0.5, 28.938, 23);
-            LayoutViewport viewport = new(viewportBounds, Camera.OverviewScene);
+            LayoutViewport viewport = new(viewportBounds, Camera.DxfOverviewScene);
             TryCreateLayout(GetNextAvailableLayoutName(), viewport, out _);
         }
 
@@ -1330,7 +1332,7 @@ namespace Cad_Point_Manager.Models
             return hits;
         }
 
-        public List<CogoPoint> HitTestDragCogoPoints(Rect rect, MsdfAtlas atlas)
+        public List<CogoPoint> HitTestDragCogoPoints(Rect rect)
         {
             List<CogoPoint> points = [];
 
@@ -1468,11 +1470,12 @@ namespace Cad_Point_Manager.Models
                     }
                 }
 
-                instances.AddRange(_cogoPointBoundsLines);
-
-                //// Testing
+                //// Object bounds testing
                 //var boundsLines = GetObjectBoundLines<DrawingBlock>();
                 //instances.AddRange(boundsLines);
+
+                // Scene bounds testing 
+                instances.AddRange(GetOverviewSceneBoundLines());
 
                 LineVerticesDirty = false;
             }
@@ -1702,37 +1705,29 @@ namespace Cad_Point_Manager.Models
         // End CogoPoint Test Methods
 
         // Hit testing tree related methods
+
         public void UpdateExtents()
         {
-            DxfExtents = DxfHelpers.GetBoundsFromHeader(DxfImportResult.DxfDocument);
+            //DxfExtents = DxfHelpers.GetBoundsFromHeader(DxfImportResult.DxfDocument);
+            UpdateDxfExtents();
             UpdatePointExtents();
             Extents = Rect.Union(DxfExtents, PointExtents);
         }
-        public void UpdateHitTestableObjectTree()
+        private void UpdateDxfExtents()
         {
-            HitTestableObjectTree = new(this, Extents, 5);
-            HitTestableObjectTreeDirty = false;
-        }
-        public void UpdateCogoPointTree()
-        {
-            UpdatePointExtents();
-            CogoPointTree = new(this, Extents, 5);
-        }
-        public void UpdateDxfExtents()
-        {
-            //var testExtents = DxfHelpers.GetBoundsFromHeader(DxfDocument);
-
             DxfExtents = Rect.Empty;
             foreach (var keyValuePair in Layers)
             {
                 var layer = keyValuePair.Value;
                 foreach (var obj in layer.DrawingObjects)
                 {
+                    Debug.WriteLine($"\nobj.GetType().Name: {obj.GetType().Name}, Bounds: {obj.Bounds.GetAllSides()}");
                     DxfExtents = Rect.Union(obj.Bounds, DxfExtents);
+                    Debug.WriteLine($"DxfExtents: {DxfExtents.GetAllSides()}");
                 }
             }
         }
-        public void UpdatePointExtents()
+        private void UpdatePointExtents()
         {
             if (PointGroups == null || PointGroups.Count == 0) { PointExtents = Rect.Empty; }
 
@@ -1743,7 +1738,6 @@ namespace Cad_Point_Manager.Models
             {
                 Rect localUnion = Rect.Empty;
 
-                // Use stride to balance uneven group sizes
                 for (int g = i; g < PointGroups.Count; g += processorCount)
                 {
                     var group = PointGroups[g];
@@ -1764,6 +1758,16 @@ namespace Cad_Point_Manager.Models
             }
 
             PointExtents = finalUnion;
+        }
+        public void UpdateHitTestableObjectTree()
+        {
+            HitTestableObjectTree = new(this, Extents, 5);
+            HitTestableObjectTreeDirty = false;
+        }
+        public void UpdateCogoPointTree()
+        {
+            UpdatePointExtents();
+            CogoPointTree = new(this, Extents, 5);
         }
 
         // Helper methods
@@ -1815,10 +1819,49 @@ namespace Cad_Point_Manager.Models
                         LineInstance left = new(
                             bounds.TopLeft.ToGpuRelative(RenderOrigin), bounds.BottomLeft.ToGpuRelative(RenderOrigin), 0, 0, 0, 0, 0);
 
-                        lines.AddRange(new[] { top, bottom, right, left }); 
+                        lines.AddRange(new[] { top, bottom, right, left });
                     }
                 }
             }
+
+            return lines;
+        }
+        public List<LineInstance> GetOverviewSceneBoundLines()
+        {
+            List<LineInstance> lines = [];
+
+            var bounds = Camera.DxfOverviewScene.Bounds;
+
+            lines.Add(new LineInstance(
+                bounds.TopLeft.ToGpuRelative(RenderOrigin), bounds.TopRight.ToGpuRelative(RenderOrigin), 0, 0, 0, 0, 0));
+            lines.Add(new LineInstance(
+                bounds.BottomLeft.ToGpuRelative(RenderOrigin), bounds.BottomRight.ToGpuRelative(RenderOrigin), 0, 0, 0, 0, 0));
+            lines.Add(new LineInstance(
+                bounds.TopRight.ToGpuRelative(RenderOrigin), bounds.BottomRight.ToGpuRelative(RenderOrigin), 0, 0, 0, 0, 0));
+            lines.Add(new LineInstance(
+                bounds.TopLeft.ToGpuRelative(RenderOrigin), bounds.BottomLeft.ToGpuRelative(RenderOrigin), 0, 0, 0, 0, 0));
+
+            bounds = Extents;
+
+            lines.Add(new LineInstance(
+                bounds.TopLeft.ToGpuRelative(RenderOrigin), bounds.TopRight.ToGpuRelative(RenderOrigin), 0, 0, 0, 0, 0));
+            lines.Add(new LineInstance(
+                bounds.BottomLeft.ToGpuRelative(RenderOrigin), bounds.BottomRight.ToGpuRelative(RenderOrigin), 0, 0, 0, 0, 0));
+            lines.Add(new LineInstance(
+                bounds.TopRight.ToGpuRelative(RenderOrigin), bounds.BottomRight.ToGpuRelative(RenderOrigin), 0, 0, 0, 0, 0));
+            lines.Add(new LineInstance(
+                bounds.TopLeft.ToGpuRelative(RenderOrigin), bounds.BottomLeft.ToGpuRelative(RenderOrigin), 0, 0, 0, 0, 0));
+
+            bounds = DxfExtents;
+
+            lines.Add(new LineInstance(
+                bounds.TopLeft.ToGpuRelative(RenderOrigin), bounds.TopRight.ToGpuRelative(RenderOrigin), 0, 0, 0, 0, 0));
+            lines.Add(new LineInstance(
+                bounds.BottomLeft.ToGpuRelative(RenderOrigin), bounds.BottomRight.ToGpuRelative(RenderOrigin), 0, 0, 0, 0, 0));
+            lines.Add(new LineInstance(
+                bounds.TopRight.ToGpuRelative(RenderOrigin), bounds.BottomRight.ToGpuRelative(RenderOrigin), 0, 0, 0, 0, 0));
+            lines.Add(new LineInstance(
+                bounds.TopLeft.ToGpuRelative(RenderOrigin), bounds.BottomLeft.ToGpuRelative(RenderOrigin), 0, 0, 0, 0, 0));
 
             return lines;
         }

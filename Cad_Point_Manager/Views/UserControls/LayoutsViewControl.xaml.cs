@@ -175,7 +175,7 @@ namespace Cad_Point_Manager.Views.UserControls
         private void NewLayout_Click(object sender, RoutedEventArgs e)
         {
             Rect viewportBounds = new(0.5, 0.5, 28.938, 23);
-            LayoutViewport viewport = new(viewportBounds, CadManager.Camera.OverviewScene);
+            LayoutViewport viewport = new(viewportBounds, CadManager.Camera.DxfOverviewScene);
 
             if (!CadManager.TryCreateLayout(CadManager.GetNextAvailableLayoutName(), viewport, out var newLayout))
             {

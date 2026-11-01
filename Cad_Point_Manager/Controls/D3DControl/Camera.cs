@@ -19,8 +19,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
         private readonly double _zoomFactor;
         private bool HasValidViewport => Viewport.Width > 0 && Viewport.Height > 0;
 
-        private Matrix _scaledViewMatrix = Matrix.Identity;
-
         private Matrix _windowsMatrix = Matrix.Identity;
         private bool _isDirty = true;
         private ObservableCollection<Scene> _scenes = [];
@@ -74,7 +72,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
         public double CurrentZoomStep { get; set; } = 0.0;
         public double CurrentZoom => Math.Pow(_zoomFactor, CurrentZoomStep);
         public Rect Extents { get; set; } = RectExtensions.Zero;
-        public Scene OverviewScene { get; set; }
+        public Rect DxfExtents { get; set; } = RectExtensions.Zero;
+        public Scene DxfOverviewScene { get; set; }
         #endregion
 
         #region Constructors
@@ -84,14 +83,14 @@ namespace Cad_Point_Manager.Controls.D3DControl
             _zoomFactor = zoomFactor;
             Extents = extents;
 
-            OverviewScene = new Scene()
+            DxfOverviewScene = new Scene()
             {
-                Name = "Default",
+                Name = "Dxf Overview",
                 ZoomStep = 0,
                 Translation = Vector2d.Zero,
                 Bounds = GetCurrentViewportBounds()
             };
-            Scenes.Add(OverviewScene);
+            Scenes.Add(DxfOverviewScene);
 
             ResetToDefaults();
         }
@@ -126,20 +125,21 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 scaleX, 0, 0, scaleY, -centerX * scaleX, -centerY * scaleY);
         }
 
-        public void UpdateInitialView(Matrix newInitialView, Rect newExtents)
+        public void UpdateInitialView(Matrix newInitialView, Rect newExtents, Rect newDxfExtents)
         {
             Extents = newExtents;
+            DxfExtents = newDxfExtents;
             InitialViewMatrix = newInitialView;
 
             UpdateProjection();
             UpdateViewProjection();
-            UpdateDefaultScene();
+            UpdateDxfOverviewScene();
         }
 
-        public void ResetView(Matrix newInitialView, Rect newExtents)
+        public void ResetView(Matrix newInitialView, Rect newExtents, Rect newDxfExtents)
         {
             ZeroViews();
-            UpdateInitialView(newInitialView, newExtents);
+            UpdateInitialView(newInitialView, newExtents, newDxfExtents);
         }
         public void ZeroViews()
         {
@@ -148,7 +148,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             ProjectionMatrix = Matrix.Identity;
             ViewProjectionMatrix = Matrix.Identity;
             InverseViewProjectionMatrix = Matrix.Identity;
-            _scaledViewMatrix = Matrix.Identity;
             CurrentZoomStep = 0;
             Translate = Vector2d.Zero;
         }
@@ -163,8 +162,6 @@ namespace Cad_Point_Manager.Controls.D3DControl
             ViewMatrix = new Matrix(
                 zoom, 0, 0, zoom, (1.0 - zoom) * centerX + zoom * Translate.X,
                 (1.0 - zoom) * centerY + zoom * Translate.Y);
-
-            _scaledViewMatrix = ViewMatrix;
         }
 
         public void UpdateViewProjection()
@@ -490,9 +487,9 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 topRight.X - bottomLeft.X,
                 topRight.Y - bottomLeft.Y);
         }
-        public void UpdateDefaultScene()
+        public void UpdateDxfOverviewScene()
         {
-            var defaultScene = Scenes.FirstOrDefault(s => s.Name == "Default");
+            var defaultScene = DxfOverviewScene;
             if (defaultScene != null)
             {
                 defaultScene.ZoomStep = 0;

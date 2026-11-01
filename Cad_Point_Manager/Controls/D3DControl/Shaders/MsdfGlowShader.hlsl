@@ -267,34 +267,20 @@ float4 PSMain(VSOut input) : SV_Target
     // Unselected mouseover
     //---------------------------------------
 
-    float separationStrength =
-        GetSeparationStrength(input.Color.rgb);
+    float separationStrength = GetSeparationStrength(input.Color.rgb);
 
-    // Black for most colors, dark gray for
-    // black and very dark gray glyphs.
     float3 glowColor = lerp(
         float3(0.0f, 0.0f, 0.0f),
         float3(0.45f, 0.45f, 0.45f),
-        separationStrength
-    );
+        separationStrength);
 
-    // Increase glow opacity for dark grayscale glyphs.
     float glowOpacity = lerp(
-        0.55f,
-        0.90f,
-        separationStrength
-    );
+        0.55f, 0.90f, separationStrength);
 
-    // Increase the interior tint for dark glyphs.
     float fillOpacity = lerp(
-        0.20f,
-        0.65f,
-        separationStrength
-    );
+        0.20f, 0.65f, separationStrength);
 
-    // Preserve original glow geometry and falloff.
-    float alpha = halo * glowOpacity
-                + fill * fillOpacity;
+    float alpha = halo * glowOpacity + fill * fillOpacity;
 
     alpha = saturate(alpha);
 

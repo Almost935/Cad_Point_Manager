@@ -42,6 +42,9 @@ namespace Cad_Point_Manager.Extensions
             return new Vector2d(v.X, v.Y);
         }
 
+        public static Vector2d ToCpu(this Vector2 p, Vector2d origin) =>
+            new((p.X + origin.X), (p.Y + origin.Y));
+
         public static bool EqualsWithTolerance(this Vector2 v1, Vector2 v2, float tolerance)
         {
             return Math.Abs(v1.X - v2.X) <= tolerance &&

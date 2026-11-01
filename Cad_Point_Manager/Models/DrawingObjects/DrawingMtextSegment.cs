@@ -17,6 +17,7 @@ using System.Windows;
 using FontStretch = SharpDX.DirectWrite.FontStretch;
 using FontStyle = SharpDX.DirectWrite.FontStyle;
 using FontWeight = SharpDX.DirectWrite.FontWeight;
+using Point = System.Windows.Point;
 using TextAlignment = Cad_Point_Manager.Common.TextAlignment;
 
 namespace Cad_Point_Manager.Models.DrawingObjects
@@ -176,28 +177,57 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         }
         public override void UpdateBounds()
         {
+            //if (TextRenderStyle == TextRenderStyle.Stroke)
+            //{
+            //    if (LineInstances.Count == 0)
+            //    {
+            //        Bounds = Rect.Empty;
+            //        return;
+            //    }
+
+            //    float minX = Math.Min(LineInstances.Min(v => v.Start.X), LineInstances.Min(v => v.End.X));
+            //    float maxX = Math.Max(LineInstances.Max(v => v.Start.X), LineInstances.Max(v => v.End.X));
+            //    float minY = Math.Min(LineInstances.Min(v => v.Start.Y), LineInstances.Min(v => v.End.Y));
+            //    float maxY = Math.Max(LineInstances.Max(v => v.Start.Y), LineInstances.Max(v => v.End.Y));
+
+            //    Bounds = new Rect(minX, minY, maxX - minX, maxY - minY);
+            //}
+            //else
+            //{
+            //    Bounds = Rect.Empty;
+
+            //    foreach (var vertex in TextVertices)
+            //    {
+            //        Bounds.Union((System.Windows.Point)vertex);
+            //    }
+            //}
+        }
+        public void GetMtextBounds(Vector2d renderOrigin)
+        {
+            Rect bounds = Rect.Empty;
+
             if (TextRenderStyle == TextRenderStyle.Stroke)
             {
-                if (LineInstances.Count == 0)
+                foreach (var line in LineInstances)
                 {
-                    Bounds = Rect.Empty;
-                    return;
+                    var startPoint = new Point(line.Start.X + renderOrigin.X, line.Start.Y + renderOrigin.Y);
+                    var endPoint = new Point(line.End.X + renderOrigin.X, line.End.Y + renderOrigin.Y);
+
+                    bounds.Union(startPoint);
+                    bounds.Union(endPoint);
                 }
-
-                float minX = Math.Min(LineInstances.Min(v => v.Start.X), LineInstances.Min(v => v.End.X));
-                float maxX = Math.Max(LineInstances.Max(v => v.Start.X), LineInstances.Max(v => v.End.X));
-                float minY = Math.Min(LineInstances.Min(v => v.Start.Y), LineInstances.Min(v => v.End.Y));
-                float maxY = Math.Max(LineInstances.Max(v => v.Start.Y), LineInstances.Max(v => v.End.Y));
-
-                Bounds = new Rect(minX, minY, maxX - minX, maxY - minY);
             }
             else
             {
-                for (int i = 0; i < TextVertices.Count; i++)
+                foreach (var vertex in TextVertices)
                 {
-                    Bounds = Rect.Union(Bounds, (System.Windows.Point)TextVertices[i]);
+                    var vertexPoint = new Point(
+                        vertex.Position.X + renderOrigin.X, vertex.Position.Y + renderOrigin.Y);
+                    bounds.Union(vertexPoint);
                 }
             }
+
+            Bounds = bounds;
         }
 
         public void GetTextLayout(Factory1 factory)
@@ -215,7 +245,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         }
 
         public override void UpdateVertices(
-            ResCache resCache, uint layerId, uint lineTypeId, SceneIdMap sceneIdMap, 
+            ResCache resCache, uint layerId, uint lineTypeId, SceneIdMap sceneIdMap,
             D3dStateBuffers stateBuffers, Vector2d renderOrigin)
         {
             var objectId = sceneIdMap.GetOrAddObjectId(this, out var isNewObj);
@@ -224,9 +254,9 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             if (TextRenderStyle == TextRenderStyle.Stroke)
             {
                 List<Vector2d> vertices = GetLffVertices();
+
                 LineInstances = GetLineVertices(vertices, layerId, objectId, renderOrigin);
 
-                UpdateBounds();
                 SpaceWidth = LffFont.WordSpacing * TextHeightScaleFactor;
                 AdvanceWidth = (float)SpaceWidth + (float)Bounds.Width;
 
@@ -239,9 +269,9 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 FontSizeFactor = TextRenderingHelpers.GetFontSizeFactor(resCache, TextLayout, _fontFace);
                 AdvanceWidth = TextLayout.Metrics.WidthIncludingTrailingWhitespace * FontSizeFactor;
 
-                (List<Vector2d> vertices, RawRectangleF bounds)
-                    = TextRenderingHelpers.TesselateTextLayout(resCache, TextLayout, Text, _fontFace);
-                UpdateBounds();
+                (List<Vector2d> vertices, RawRectangleF bounds) = 
+                    TextRenderingHelpers.TesselateTextLayout(resCache, TextLayout, Text, _fontFace);
+
                 TextVertices = GetTextVertices(vertices, layerId, objectId, renderOrigin);
 
                 LineInstances = [];
@@ -298,9 +328,11 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 var v2 = vertices[i + 1];
                 var scaledVector1 = Vector2d.TransformCoordinate(v1, transform);
                 var scaledVector2 = Vector2d.TransformCoordinate(v2, transform);
+
                 LineInstance lineInstance = new(
-                    scaledVector1.ToGpuRelative(renderOrigin), scaledVector2.ToGpuRelative(renderOrigin), 
+                    scaledVector1.ToGpuRelative(renderOrigin), scaledVector2.ToGpuRelative(renderOrigin),
                     layerId, objectId, (float)accumulatedDistance, (uint)flags, 0);
+
                 lineInstances.Add(lineInstance);
 
                 double segmentLength = Vector2d.Distance(scaledVector1, scaledVector2);

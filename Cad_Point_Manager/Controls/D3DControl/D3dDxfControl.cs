@@ -492,10 +492,13 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 CadManager.Camera = new(Viewport, GlobalHelperProperties.ZoomFactor, new Rect(0, 0, Viewport.Width, Viewport.Height));
                 CadManager.ResetTemplates();
             }
+
+            bool initialDxfBuild = DxfNeedsReload;
+
             if (DxfNeedsReload)
             {
                 SetInitialMatrix();
-                CadManager.Camera.ResetView(_dxfInitialMatrix, CadManager.Extents);
+                CadManager.Camera.ResetView(_dxfInitialMatrix, CadManager.Extents, CadManager.DxfExtents);
                 CadManager.ResetTemplates();
 
                 ConstantBuffersDirty = true;
@@ -503,6 +506,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
                 DxfNeedsReload = false;
                 CadManager.DxfNeedsReload = false;
             }
+
             if (!_buffersInitialized) { InitializeBuffers(); }
 
             if (_lineVerticesDirty) { UpdateLineVertices(); }
@@ -515,6 +519,23 @@ namespace Cad_Point_Manager.Controls.D3DControl
             if (_leaderLineVerticesDirty) { UpdateLeaderLineVertices(); }
             if (_sigPointVerticesDirty) { UpdateSignificantPointVertices(); }
             if (_dragOverlayDirty) { UpdateDragOverlay(DragRect); }
+
+            // DrawingMtext and DrawingSText bounds cannot be calculated until after vertices are generated
+            if (initialDxfBuild)
+            {
+                CadManager.UpdateExtents();
+
+                _dxfInitialMatrix = GetExtentsFittingMatrix(
+                    Viewport, CadManager.Extents);
+
+                CadManager.Camera.ResetView(
+                    _dxfInitialMatrix,
+                    CadManager.Extents,
+                    CadManager.DxfExtents);
+
+                TransformationBufferDirty = true;
+                HitTestableObjectTreeDirty = true;
+            }
 
             if (!_lineShadersLoaded) { InitializeLineShaders(); }
             if (!_lineGlowShadersLoaded) { InitializeLineGlowShaders(); }
@@ -2566,7 +2587,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
                 if (CadManager.Camera is not null)
                 {
-                    CadManager.Camera.ResetView(_dxfInitialMatrix, CadManager.Extents);
+                    CadManager.Camera.ResetView(_dxfInitialMatrix, CadManager.Extents, CadManager.DxfExtents);
                     _hittestStrokeThickness = 7.0f / (CadManager.Camera.InitialViewMatrix.M11 * CadManager.Camera.CurrentZoom);
                     UpdateToggleAnchorDimensions();
 
@@ -3183,7 +3204,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
         {
             if (CadManager.Camera is null) { return; }
 
-            CadManager.Camera.ResetView(_dxfInitialMatrix, CadManager.Extents);
+            CadManager.Camera.ResetView(_dxfInitialMatrix, CadManager.Extents, CadManager.DxfExtents);
             ResetHoverObjectsWithFlush();
             UpdateToggleAnchorDimensions();
 
@@ -3446,7 +3467,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
             if (currentRect.IsEmpty || currentRect.Width <= 0 || currentRect.Height <= 0) { return; }
 
             var newSet = CadManager
-                .HitTestDragCogoPoints(currentRect, ResCache.CogoPointMsdfAtlas)
+                .HitTestDragCogoPoints(currentRect)
                 .Where(p => currentRect.Contains(p.Bounds))
                 .ToHashSet();
 
@@ -3969,7 +3990,7 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
         private void ClearDxf()
         {
-            CadManager.Camera.ResetView(MatrixD.Identity, CadManager.Extents);
+            CadManager.Camera.ResetView(MatrixD.Identity, CadManager.Extents, CadManager.DxfExtents);
             ResetHoverObjectsWithoutFlush();
 
             StateController.FlushObjectUpdates();
@@ -4103,6 +4124,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
                     StateController.EnsurePointRegistered(cp, CadManager.RenderOrigin);
                 }
+
+                CadManager.UpdateExtents();
             }
             if (e.Action == NotifyCollectionChangedAction.Remove)
             {
@@ -4111,6 +4134,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     if (obj is not CogoPoint cogoPoint) { continue; }
                     cogoPoint.PropertyChanged -= CogoPoint_PropertyChanged;
                 }
+
+                CadManager.UpdateExtents();
             }
             if (e.Action == NotifyCollectionChangedAction.Reset)
             {
@@ -4121,6 +4146,8 @@ namespace Cad_Point_Manager.Controls.D3DControl
 
                     StateController.EnsurePointRegistered(cp, CadManager.RenderOrigin);
                 }
+
+                CadManager.UpdateExtents();
             }
         }
         private void Layers_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)

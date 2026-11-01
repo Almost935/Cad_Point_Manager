@@ -292,6 +292,7 @@
 
         </ControlTemplate.Triggers>
     </ControlTemplate>
+
     <ControlTemplate x:Key="ComboBoxTemplate"
                      TargetType="{x:Type ComboBox}">
         <Grid x:Name="templateRoot"
@@ -429,6 +430,8 @@
         <Setter Property="Template"
                 Value="{StaticResource ComboBoxTemplate}" />
         <Setter Property="Validation.ErrorTemplate"
+                Value="{x:Null}" />
+        <Setter Property="FocusVisualStyle"
                 Value="{x:Null}" />
         <Style.Triggers>
             <Trigger Property="IsEnabled"
@@ -684,6 +687,8 @@
                 Value="Both" />
         <Setter Property="Stylus.IsFlicksEnabled"
                 Value="False" />
+        <Setter Property="FocusVisualStyle"
+                Value="{x:Null}" />
         <Setter Property="Template"
                 Value="{StaticResource UpwardPopupComboBoxTemplate}" />
         <Setter Property="Validation.ErrorTemplate"

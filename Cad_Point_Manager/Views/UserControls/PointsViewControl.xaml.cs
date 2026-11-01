@@ -224,7 +224,7 @@ namespace Cad_Point_Manager.Views.UserControls
                     {
                         CadManager.UpdateCogoPointTree();
                         CadManager.UpdateExtents();
-                        CadManager.Camera.UpdateDefaultScene();
+                        CadManager.Camera.UpdateDxfOverviewScene();
                     }
 
                     e.Handled = true;
