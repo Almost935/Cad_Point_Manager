@@ -6,6 +6,7 @@ using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Helpers;
 using Cad_Point_Manager.Models.DrawingObjects.HelperClasses;
 using Cad_Point_Manager.Models.DxfImport;
+using Cad_Point_Manager.Services.Exporting;
 using netDxf.Entities;
 using netDxf.Tables;
 using PdfSharpCore.Drawing;
@@ -14,7 +15,7 @@ using SharpDX.Direct2D1;
 using System.Diagnostics;
 using System.Windows;
 using Brush = SharpDX.Direct2D1.Brush;
-using TextAlignment = Cad_Point_Manager.Common.TextAlignment;
+using MTextAlignment = Cad_Point_Manager.Common.MTextAlignment;
 
 namespace Cad_Point_Manager.Models.DrawingObjects
 {
@@ -140,12 +141,12 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
         }
 
-        public override void DrawToPdf(XGraphics gfx, System.Windows.Media.Matrix worldToPdf, XPen pen)
+        public override void DrawToPdf(PdfRenderContext context, XPen pen)
         {
             var copy = DrawingObjects.ToList();
             foreach (var obj in copy)
             {
-                obj.DrawToPdf(gfx, worldToPdf, pen);
+                obj.DrawToPdf(context, pen);
             }
         }
         public void UpdateGeometryVertices(
@@ -360,14 +361,14 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             }
         }
 
-        public static TextAlignment GetTextAlignment(TextAlignmentType side)
+        public static MTextAlignment GetTextAlignment(TextAlignmentType side)
         {
             return side switch
             {
-                TextAlignmentType.Left => TextAlignment.Left,
-                TextAlignmentType.Right => TextAlignment.Right,
-                TextAlignmentType.Center => TextAlignment.Center,
-                _ => TextAlignment.Left,
+                TextAlignmentType.Left => MTextAlignment.Left,
+                TextAlignmentType.Right => MTextAlignment.Right,
+                TextAlignmentType.Center => MTextAlignment.Center,
+                _ => MTextAlignment.Left,
             };
         }
         #endregion

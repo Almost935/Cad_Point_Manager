@@ -11,10 +11,7 @@ namespace Cad_Point_Manager.Services.Exporting
     public class LayoutPreviewService
     {
         public BitmapSource RenderPreview(
-            MemoryStream pdfStream,
-            int width,
-            int height,
-            float dpi = 72)
+            MemoryStream pdfStream, int width, int height, float dpi = 72)
         {
             using var document = PdfDocument.Load(pdfStream);
 
@@ -31,10 +28,7 @@ namespace Cad_Point_Manager.Services.Exporting
             try
             {
                 var source = Imaging.CreateBitmapSourceFromHBitmap(
-                    hBitmap,
-                    IntPtr.Zero,
-                    Int32Rect.Empty,
-                    BitmapSizeOptions.FromEmptyOptions());
+                    hBitmap, IntPtr.Zero, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
 
                 source.Freeze();
 

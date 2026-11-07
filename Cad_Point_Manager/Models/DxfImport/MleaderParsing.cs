@@ -153,14 +153,14 @@ namespace Cad_Point_Manager.Models.DxfImport
             }
         }
 
-        public TextAttachmentPoint TextAttachment
+        public MTextAttachment TextAttachment
         {
             get
             {
                 var leader = Context.Leaders.FirstOrDefault();
                 if (leader == null)
                 {
-                    return TextAttachmentPoint.MiddleLeft;
+                    return MTextAttachment.MiddleLeft;
                 }
 
                 var textAttachmentSide = TextAttachmentSide;
@@ -172,78 +172,78 @@ namespace Cad_Point_Manager.Models.DxfImport
                     {
                         case TextAttachmentType.TopOfTopLine:
                             if (textAlignmentType == TextAlignmentType.Left)
-                                return TextAttachmentPoint.TopLeft;
+                                return MTextAttachment.TopLeft;
                             else if (textAlignmentType == TextAlignmentType.Center)
-                                return TextAttachmentPoint.TopCenter;
+                                return MTextAttachment.TopCenter;
                             else
-                                return TextAttachmentPoint.TopRight;
+                                return MTextAttachment.TopRight;
 
                         case TextAttachmentType.MiddleOfTopLine:
                             if (textAlignmentType == TextAlignmentType.Left)
-                                return TextAttachmentPoint.TopLeft;
+                                return MTextAttachment.TopLeft;
                             else if (textAlignmentType == TextAlignmentType.Center)
-                                return TextAttachmentPoint.TopCenter;
+                                return MTextAttachment.TopCenter;
                             else
-                                return TextAttachmentPoint.TopRight;
+                                return MTextAttachment.TopRight;
 
                         case TextAttachmentType.BottomOfTopLine:
                             if (textAlignmentType == TextAlignmentType.Left)
-                                return TextAttachmentPoint.TopLeft;
+                                return MTextAttachment.TopLeft;
                             else if (textAlignmentType == TextAlignmentType.Center)
-                                return TextAttachmentPoint.TopCenter;
+                                return MTextAttachment.TopCenter;
                             else
-                                return TextAttachmentPoint.TopRight;
+                                return MTextAttachment.TopRight;
 
                         case TextAttachmentType.UnderlineTopLine:
                             if (textAlignmentType == TextAlignmentType.Left)
-                                return TextAttachmentPoint.TopLeft;
+                                return MTextAttachment.TopLeft;
                             else if (textAlignmentType == TextAlignmentType.Center)
-                                return TextAttachmentPoint.TopCenter;
+                                return MTextAttachment.TopCenter;
                             else
-                                return TextAttachmentPoint.TopRight;
+                                return MTextAttachment.TopRight;
 
                         case TextAttachmentType.MiddleOfText:
                             if (textAlignmentType == TextAlignmentType.Left)
-                                return TextAttachmentPoint.MiddleLeft;
+                                return MTextAttachment.MiddleLeft;
                             else if (textAlignmentType == TextAlignmentType.Center)
-                                return TextAttachmentPoint.MiddleCenter;
+                                return MTextAttachment.MiddleCenter;
                             else
-                                return TextAttachmentPoint.MiddleRight;
+                                return MTextAttachment.MiddleRight;
 
                         case TextAttachmentType.MiddleOfBottomLine:
                             if (textAlignmentType == TextAlignmentType.Left)
-                                return TextAttachmentPoint.BottomLeft;
+                                return MTextAttachment.BottomLeft;
                             else if (textAlignmentType == TextAlignmentType.Center)
-                                return TextAttachmentPoint.BottomCenter;
+                                return MTextAttachment.BottomCenter;
                             else
-                                return TextAttachmentPoint.BottomRight;
+                                return MTextAttachment.BottomRight;
 
                         case TextAttachmentType.BottomOfBottomLine:
                             if (textAlignmentType == TextAlignmentType.Left)
-                                return TextAttachmentPoint.BottomLeft;
+                                return MTextAttachment.BottomLeft;
                             else if (textAlignmentType == TextAlignmentType.Center)
-                                return TextAttachmentPoint.BottomCenter;
+                                return MTextAttachment.BottomCenter;
                             else
-                                return TextAttachmentPoint.BottomRight;
+                                return MTextAttachment.BottomRight;
 
                         case TextAttachmentType.UnderlineBottomLine:
                             if (textAlignmentType == TextAlignmentType.Left)
-                                return TextAttachmentPoint.BottomLeft;
+                                return MTextAttachment.BottomLeft;
                             else if (textAlignmentType == TextAlignmentType.Center)
-                                return TextAttachmentPoint.BottomCenter;
+                                return MTextAttachment.BottomCenter;
                             else
-                                return TextAttachmentPoint.BottomRight;
+                                return MTextAttachment.BottomRight;
 
                         case TextAttachmentType.UnderlineAllText:
                             if (textAlignmentType == TextAlignmentType.Left)
-                                return TextAttachmentPoint.MiddleLeft;
+                                return MTextAttachment.MiddleLeft;
                             else if (textAlignmentType == TextAlignmentType.Center)
-                                return TextAttachmentPoint.MiddleCenter;
+                                return MTextAttachment.MiddleCenter;
                             else
-                                return TextAttachmentPoint.MiddleRight;
+                                return MTextAttachment.MiddleRight;
 
                         default:
-                            return TextAttachmentPoint.MiddleLeft;
+                            return MTextAttachment.MiddleLeft;
                     }
                 }
                 else
@@ -252,78 +252,78 @@ namespace Cad_Point_Manager.Models.DxfImport
                     {
                         case TextAttachmentType.TopOfTopLine:
                             if (textAlignmentType == TextAlignmentType.Left)
-                                return TextAttachmentPoint.TopLeft;
+                                return MTextAttachment.TopLeft;
                             else if (textAlignmentType == TextAlignmentType.Center)
-                                return TextAttachmentPoint.TopCenter;
+                                return MTextAttachment.TopCenter;
                             else
-                                return TextAttachmentPoint.TopRight;
+                                return MTextAttachment.TopRight;
 
                         case TextAttachmentType.MiddleOfTopLine:
                             if (textAlignmentType == TextAlignmentType.Left)
-                                return TextAttachmentPoint.TopLeft;
+                                return MTextAttachment.TopLeft;
                             else if (textAlignmentType == TextAlignmentType.Center)
-                                return TextAttachmentPoint.TopCenter;
+                                return MTextAttachment.TopCenter;
                             else
-                                return TextAttachmentPoint.TopRight;
+                                return MTextAttachment.TopRight;
 
                         case TextAttachmentType.BottomOfTopLine:
                             if (textAlignmentType == TextAlignmentType.Left)
-                                return TextAttachmentPoint.TopLeft;
+                                return MTextAttachment.TopLeft;
                             else if (textAlignmentType == TextAlignmentType.Center)
-                                return TextAttachmentPoint.TopCenter;
+                                return MTextAttachment.TopCenter;
                             else
-                                return TextAttachmentPoint.TopRight;
+                                return MTextAttachment.TopRight;
 
                         case TextAttachmentType.UnderlineTopLine:
                             if (textAlignmentType == TextAlignmentType.Left)
-                                return TextAttachmentPoint.TopLeft;
+                                return MTextAttachment.TopLeft;
                             else if (textAlignmentType == TextAlignmentType.Center)
-                                return TextAttachmentPoint.TopCenter;
+                                return MTextAttachment.TopCenter;
                             else
-                                return TextAttachmentPoint.TopRight;
+                                return MTextAttachment.TopRight;
 
                         case TextAttachmentType.MiddleOfText:
                             if (textAlignmentType == TextAlignmentType.Left)
-                                return TextAttachmentPoint.MiddleLeft;
+                                return MTextAttachment.MiddleLeft;
                             else if (textAlignmentType == TextAlignmentType.Center)
-                                return TextAttachmentPoint.MiddleCenter;
+                                return MTextAttachment.MiddleCenter;
                             else
-                                return TextAttachmentPoint.MiddleRight;
+                                return MTextAttachment.MiddleRight;
 
                         case TextAttachmentType.MiddleOfBottomLine:
                             if (textAlignmentType == TextAlignmentType.Left)
-                                return TextAttachmentPoint.BottomLeft;
+                                return MTextAttachment.BottomLeft;
                             else if (textAlignmentType == TextAlignmentType.Center)
-                                return TextAttachmentPoint.BottomCenter;
+                                return MTextAttachment.BottomCenter;
                             else
-                                return TextAttachmentPoint.BottomRight;
+                                return MTextAttachment.BottomRight;
 
                         case TextAttachmentType.BottomOfBottomLine:
                             if (textAlignmentType == TextAlignmentType.Left)
-                                return TextAttachmentPoint.BottomLeft;
+                                return MTextAttachment.BottomLeft;
                             else if (textAlignmentType == TextAlignmentType.Center)
-                                return TextAttachmentPoint.BottomCenter;
+                                return MTextAttachment.BottomCenter;
                             else
-                                return TextAttachmentPoint.BottomRight;
+                                return MTextAttachment.BottomRight;
 
                         case TextAttachmentType.UnderlineBottomLine:
                             if (textAlignmentType == TextAlignmentType.Left)
-                                return TextAttachmentPoint.BottomLeft;
+                                return MTextAttachment.BottomLeft;
                             else if (textAlignmentType == TextAlignmentType.Center)
-                                return TextAttachmentPoint.BottomCenter;
+                                return MTextAttachment.BottomCenter;
                             else
-                                return TextAttachmentPoint.BottomRight;
+                                return MTextAttachment.BottomRight;
 
                         case TextAttachmentType.UnderlineAllText:
                             if (textAlignmentType == TextAlignmentType.Left)
-                                return TextAttachmentPoint.MiddleLeft;
+                                return MTextAttachment.MiddleLeft;
                             else if (textAlignmentType == TextAlignmentType.Center)
-                                return TextAttachmentPoint.MiddleCenter;
+                                return MTextAttachment.MiddleCenter;
                             else
-                                return TextAttachmentPoint.MiddleRight;
+                                return MTextAttachment.MiddleRight;
 
                         default:
-                            return TextAttachmentPoint.MiddleLeft;
+                            return MTextAttachment.MiddleLeft;
                     }
                 }
             }

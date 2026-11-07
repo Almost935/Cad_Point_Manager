@@ -1,5 +1,6 @@
 ﻿using Cad_Point_Manager.Models.DrawingObjects.HelperClasses;
 using Cad_Point_Manager.Models.HitTesting;
+using Cad_Point_Manager.Services.Exporting;
 using netDxf.Entities;
 using PdfSharpCore.Drawing;
 using SharpDX;
@@ -28,10 +29,11 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         }
 
         public abstract void UpdateData();
+
         public abstract void DrawToPdf(
-            XGraphics gfx,
-            System.Windows.Media.Matrix worldToPdf,
+            PdfRenderContext context,
             XPen pen);
+
 
         public void UpdateColor()
         {

@@ -4,6 +4,7 @@ using Cad_Point_Manager.Controls.D3DControl.Rendering.Msdf;
 using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Helpers;
 using Cad_Point_Manager.Models.DrawingObjects.HelperClasses;
+using Cad_Point_Manager.Services.Exporting;
 using netDxf.Entities;
 using PdfSharpCore.Drawing;
 using SharpDX;
@@ -59,9 +60,20 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 throw new ArgumentException("entity must be of type Solid");
             }
         }
-        public override void DrawToPdf(XGraphics gfx, System.Windows.Media.Matrix worldToPdf, XPen pen)
+        public override void DrawToPdf(PdfRenderContext context, XPen pen)
         {
+            XBrush brush = new XSolidBrush(pen.Color);
 
+            context.Graphics.DrawPolygon(
+                brush,
+                new XPoint[]
+            {
+                    Point1.ToXPoint(),
+                    Point2.ToXPoint(),
+                    Point3.ToXPoint(),
+                    Point4.ToXPoint()
+            },
+            XFillMode.Winding);
         }
         public override double DistanceToPoint(Vector2d point, MsdfAtlas atlas = null)
         {

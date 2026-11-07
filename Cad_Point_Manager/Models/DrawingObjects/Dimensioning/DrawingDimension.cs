@@ -4,6 +4,7 @@ using Cad_Point_Manager.Controls.D3DControl.Rendering.Helpers;
 using Cad_Point_Manager.Controls.D3DControl.Rendering.Msdf;
 using Cad_Point_Manager.Helpers;
 using Cad_Point_Manager.Models.DrawingObjects.HelperClasses;
+using Cad_Point_Manager.Services.Exporting;
 using netDxf.Entities;
 using PdfSharpCore.Drawing;
 using SharpDX;
@@ -74,9 +75,9 @@ namespace Cad_Point_Manager.Models.DrawingObjects.Dimensioning
             throw new NotImplementedException();
         }
 
-        public override void DrawToPdf(XGraphics gfx, System.Windows.Media.Matrix worldToPdf, XPen pen)
-        {
-            DimensionBlock.DrawToPdf(gfx, worldToPdf, pen);
+        public override void DrawToPdf(PdfRenderContext context, XPen pen)
+        { 
+            DimensionBlock.DrawToPdf(context, pen);
         }
 
         public override void MouseEnter()

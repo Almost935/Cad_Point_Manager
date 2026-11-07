@@ -10,15 +10,17 @@ using Cad_Point_Manager.Services.Exporting;
 using netDxf.Entities;
 using PdfSharpCore.Drawing;
 using SharpDX;
-using SharpDX.Direct2D1;
 using SharpDX.DirectWrite;
 using SharpDX.Mathematics.Interop;
 using System.Diagnostics;
+using System.Text;
 using System.Windows;
+
 using FontStretch = SharpDX.DirectWrite.FontStretch;
 using FontStyle = SharpDX.DirectWrite.FontStyle;
 using FontWeight = SharpDX.DirectWrite.FontWeight;
 using Point = System.Windows.Point;
+using TextAlignment = Cad_Point_Manager.Common.TextAlignment;
 
 namespace Cad_Point_Manager.Models.DrawingObjects
 {
@@ -32,12 +34,13 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         #region Properties
         public Text DxfText { get; set; }
         public string FontFamilyName { get; set; }
-        public double WidthFactor { get; set; } = 1.0;
         public bool IsBold { get; set; }
         public bool IsItalic { get; set; }
         public TextLayout TextLayout { get; set; }
         public double FontSizeFactor { get; set; } = 1;
         public LffFont LffFont { get; set; }
+        public List<TextSegmentInformation> TextSegments { get; private set; } = [];
+        public TextAlignment TextAlignment { get; private set; } = TextAlignment.BottomLeft;
 
         public bool TextFormatCreated => _textFormat != null;
         public bool TextLayoutCreated => TextLayout != null;
@@ -67,30 +70,33 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         {
             if (EntityObject is Text text)
             {
-                Text = text.Value;
-                WidthFactor = (float)text.WidthFactor;
-
-                double widthPerCharacter = 0.6 * text.Height;
-                double textWidth = widthPerCharacter * Text.Length * WidthFactor;
-
-                Bounds = new(text.Position.X, text.Position.Y, textWidth * 2, text.Height * 2);
+                TextWidthScaleFactor = text.WidthFactor;
                 Rotation = (float)text.Rotation;
-                AttachmentPoint = TextRenderingHelpers.GetAttachmentPoint(text.Alignment);
+                TextAlignment = TextRenderingHelpers.GetTextAlignment(text.Alignment);
                 Position = text.Position.ToVector2d();
                 TextHeight = (float)text.Height;
                 FontFamilyName = text.Style.FontFamilyName;
 
                 var dxfFontFamilyName = text.Style.FontFamilyName;
+
                 if (string.IsNullOrWhiteSpace(dxfFontFamilyName))
                 {
                     dxfFontFamilyName = text.Style.FontFile;
                 }
 
                 (FontFamilyName, TextRenderStyle) = AutoCadFontResolver.Resolve(dxfFontFamilyName);
+
+                TextSegments = ParseFormattingCodes(text.Value);
+                Text = string.Concat(TextSegments.Select(s => s.Text));
+
+                double widthPerCharacter = 0.6 * text.Height;
+                double textWidth = widthPerCharacter * Text.Length * TextWidthScaleFactor;
+
+                Bounds = new(text.Position.X, text.Position.Y, textWidth * 2, text.Height * 2);
+
                 if (TextRenderStyle == TextRenderStyle.Stroke)
                 {
                     LffFont = LffFontManager.GetFont(FontFamilyName);
-
                 }
             }
             else
@@ -98,37 +104,77 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 throw new ArgumentException("EntityObject must be of type MText or Text");
             }
         }
-        public override void DrawToPdf(
-            XGraphics gfx, System.Windows.Media.Matrix worldToPdf, XPen pen)
+        public override void DrawToPdf(PdfRenderContext context, XPen pen)
         {
-            if (TextRenderStyle is TextRenderStyle.Stroke)
-            {
-                for (int i = 0; i < LineInstances.Count; i++)
-                {
-                    var v = LineInstances[i];
-                    var p1Pdf = PdfDrawingHelpers.WorldToPdf(new Vector2d(v.Start.X, v.Start.Y), worldToPdf);
-                    var p2Pdf = PdfDrawingHelpers.WorldToPdf(new Vector2d(v.End.X, v.End.Y), worldToPdf);
+            XFontStyle style = XFontStyle.Regular;
+            if (IsBold) { style |= XFontStyle.Bold; }
+            if (IsItalic) { style |= XFontStyle.Italic; }
 
-                    gfx.DrawLine(pen, new XPoint(p1Pdf.X, p1Pdf.Y), new XPoint(p2Pdf.X, p2Pdf.Y));
+            var brush = new XSolidBrush(PdfTransform.ToXColor(GetColor().ToVector4()));
+
+            var fontFamily = PdfDrawingHelpers.GetFontFamily(FontFamilyName);
+            var fontSizePts = TextHeight * FontSizeFactor * context.WorldToPdf.M11;
+            var font = new XFont(fontFamily, fontSizePts, style);
+
+            var pPdf = PdfDrawingHelpers.WorldToPdf(Position, context.WorldToPdf);
+            var size = context.Graphics.MeasureString(Text, font);
+
+            double x = pPdf.X;
+            double y = pPdf.Y;
+
+            if (TextRenderStyle == TextRenderStyle.Stroke)
+            {
+                foreach (var line in LineInstances)
+                {
+                    Vector2d start = new(
+                        line.Start.X + context.RenderOrigin.X,
+                        line.Start.Y + context.RenderOrigin.Y);
+                    Vector2d end = new(
+                        line.End.X + context.RenderOrigin.X,
+                        line.End.Y + context.RenderOrigin.Y);
+
+                    XPoint p1 = PdfTransform.WorldToPdf(
+                        start, context.WorldToPdf);
+                    XPoint p2 = PdfTransform.WorldToPdf(
+                        end, context.WorldToPdf);
+
+                    context.Graphics.DrawLine(pen, p1, p2);
                 }
             }
             else
             {
-                var verts = TextVertices;
-                if (verts == null || verts.Count < 3) { return; }
+                //context.Graphics.DrawString(Text, font, brush, new XPoint(x, y));
+                var stringFormat = TextRenderingHelpers.TextAlignmentToStringFormat(TextAlignment);
+                context.Graphics.DrawString(Text, font, brush, new XPoint(pPdf.X, pPdf.Y), stringFormat);
+            }
 
-                var brush = new XSolidBrush(PdfTransform.ToXColor(ObjectColor.ToVector4()));
-                var path = new XGraphicsPath();
+            if (IsUnderlined || IsStrikeOut || IsOverStrike)
+            {
+                var linePen = new XPen(brush.Color, fontSizePts * 0.01);
 
-                for (int i = 0; i + 2 < verts.Count; i += 3)
+                var m = font.Metrics;
+                double em = m.UnitsPerEm;
+
+                double ascentPt = fontSizePts * (m.Ascent / em);
+                double descentPt = fontSizePts * (m.Descent / em);
+                double baselineY = y;
+
+                double underlineY = baselineY + descentPt * 0.95;
+                double strikeY = baselineY - ascentPt * 0.35;
+                double overstrikeY = baselineY - ascentPt * 0.95;
+
+                if (IsUnderlined)
                 {
-                    var p0 = PdfTransform.WorldToPdf(verts[i].Position.ToVector2d(), worldToPdf);
-                    var p1 = PdfTransform.WorldToPdf(verts[i + 1].Position.ToVector2d(), worldToPdf);
-                    var p2 = PdfTransform.WorldToPdf(verts[i + 2].Position.ToVector2d(), worldToPdf);
-                    path.AddPolygon(new[] { p0, p1, p2 });
+                    context.Graphics.DrawLine(linePen, x, underlineY, x + size.Width, underlineY);
                 }
-
-                gfx.DrawPath(brush, path);
+                if (IsStrikeOut)
+                {
+                    context.Graphics.DrawLine(linePen, x, strikeY, x + size.Width, strikeY);
+                }
+                if (IsOverStrike)
+                {
+                    context.Graphics.DrawLine(linePen, x, overstrikeY, x + size.Width, overstrikeY);
+                }
             }
         }
 
@@ -143,26 +189,104 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             var objectId = sceneIdMap.GetOrAddObjectId(this, out var isNewObj);
             if (isNewObj) { stateBuffers.InitializeObjectState(sceneIdMap.MaxObjectId, this, objectId); }
 
+
             if (TextRenderStyle == TextRenderStyle.Stroke)
             {
                 List<Vector2d> vertices = GetLffVertices();
-                LineInstances = GetLineVertices(vertices, layerId, objectId, lineTypeId, renderOrigin);
-                GetTextBounds(renderOrigin);
+
+                LineInstances = GetLineVertices(
+                    vertices, layerId, objectId, renderOrigin);
 
                 TextVertices = [];
             }
             else
             {
-                FontSizeFactor = TextRenderingHelpers.GetFontSizeFactor(resCache, TextLayout, _fontFace);
-                (List<Vector2d> vertices, RawRectangleF bounds) = 
+                FontSizeFactor = TextRenderingHelpers.GetFontSizeFactor(
+                    resCache, TextLayout, _fontFace);
+
+                (List<Vector2d> vertices, RawRectangleF bounds) =
                     TextRenderingHelpers.TesselateTextLayout(resCache, TextLayout, Text, _fontFace);
+
                 Bounds = bounds.ToRect();
-                TextVertices = GetTextVertices(vertices, layerId, objectId, renderOrigin);
-                GetTextBounds(renderOrigin);
+
+                TextVertices = GetTextVertices(
+                    vertices, layerId, objectId, renderOrigin);
 
                 LineInstances = [];
             }
+
+            GenerateDecorations(layerId, objectId, renderOrigin);
+            ApplyRotation(renderOrigin, [this]);
+            GetTextBounds(renderOrigin);
+
         }
+        public List<LineInstance> GetLineVertices(
+            List<Vector2d> vertices, uint layerId, uint objectId, Vector2d renderOrigin)
+        {
+            List<LineInstance> lineInstances = [];
+
+            if (TextRenderStyle == TextRenderStyle.Triangle) { return lineInstances; }
+
+            if (LffFont is null)
+            {
+                throw new Exception("LffFont is null.");
+            }
+
+            Bounds = MathHelpers.GetLocalBounds(vertices);
+            TextHeightScaleFactor = TextHeight / LffFont.DesignHeight;
+            AttachmentOffset = GetAlignmentOffset();
+
+            var transform = UnrotatedTransform;
+
+            for (int i = 0; i < vertices.Count; i += 2)
+            {
+                var s = Vector2d.TransformCoordinate(vertices[i], transform);
+                var scaledStart = s.ToGpuRelative(renderOrigin);
+
+                var e = Vector2d.TransformCoordinate(vertices[i + 1], transform);
+                var scaledEnd = e.ToGpuRelative(renderOrigin);
+
+                LineInstance lineInstance = new(
+                    scaledStart, scaledEnd, layerId, objectId, 0, (uint)LineInstanceFlags.None, 0);
+
+                lineInstances.Add(lineInstance);
+            }
+
+            return lineInstances;
+        }
+        public List<TextVertex> GetTextVertices(
+            List<Vector2d> vertices, uint layerId, uint objectId, Vector2d renderOrigin)
+        {
+            List<TextVertex> textVertices = [];
+
+            if (TextRenderStyle == TextRenderStyle.Stroke) { return textVertices; }
+
+            AttachmentOffset = GetAlignmentOffset();
+
+            TextHeightScaleFactor = 1;
+
+            var transform = UnrotatedTransform;
+
+            for (int i = 0; i < vertices.Count; i += 3)
+            {
+                var v1 = Vector2d.TransformCoordinate(vertices[i], transform);
+                var scaledVector1 = v1.ToGpuRelative(renderOrigin);
+                TextVertex textVertex1 = new(scaledVector1, layerId, objectId);
+
+                var v2 = Vector2d.TransformCoordinate(vertices[i + 1], transform);
+                var scaledVector2 = v2.ToGpuRelative(renderOrigin);
+                TextVertex textVertex2 = new(scaledVector2, layerId, objectId);
+
+                var v3 = Vector2d.TransformCoordinate(vertices[i + 2], transform);
+                var scaledVector3 = v3.ToGpuRelative(renderOrigin);
+                TextVertex textVertex3 = new(scaledVector3, layerId, objectId);
+
+                textVertices.AddRange([textVertex1, textVertex2, textVertex3]);
+            }
+
+            return textVertices;
+        }
+
         public override void MouseEnter()
         {
             this.IsMouseOver = true;
@@ -221,142 +345,24 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
         public Rect GetTextBounds(Vector2d renderOrigin)
         {
-            if (TextRenderStyle == TextRenderStyle.Stroke)
-            {
-                double minX = double.PositiveInfinity;
-                double minY = double.PositiveInfinity;
-                double maxX = double.NegativeInfinity;
-                double maxY = double.NegativeInfinity;
-
-                foreach (var line in LineInstances)
-                {
-                    minX = Math.Min(minX, Math.Min(line.Start.X, line.End.X));
-                    minY = Math.Min(minY, Math.Min(line.Start.Y, line.End.Y));
-
-                    maxX = Math.Max(maxX, Math.Max(line.Start.X, line.End.X));
-                    maxY = Math.Max(maxY, Math.Max(line.Start.Y, line.End.Y));
-                }
-
-                if (minX <= maxX && minY <= maxY)
-                {
-                    Bounds = new Rect(
-                        minX + renderOrigin.X,
-                        minY + renderOrigin.Y,
-                        maxX - minX,
-                        maxY - minY);
-                }
-                else
-                {
-                    Bounds = Rect.Empty;
-                }
-            }
-            else
-            {
-                double minX = double.PositiveInfinity;
-                double minY = double.PositiveInfinity;
-                double maxX = double.NegativeInfinity;
-                double maxY = double.NegativeInfinity;
-
-                foreach (var vertex in TextVertices)
-                {
-                    minX = Math.Min(minX, Math.Min(vertex.Position.X, vertex.Position.X));
-                    minY = Math.Min(minY, Math.Min(vertex.Position.Y, vertex.Position.Y));
-
-                    maxX = Math.Max(maxX, Math.Max(vertex.Position.X, vertex.Position.X));
-                    maxY = Math.Max(maxY, Math.Max(vertex.Position.Y, vertex.Position.Y));
-                }
-
-                if (minX <= maxX && minY <= maxY)
-                {
-                    Bounds = new Rect(
-                        minX + renderOrigin.X,
-                        minY + renderOrigin.Y,
-                        maxX - minX,
-                        maxY - minY);
-                }
-                else
-                {
-                    Bounds = Rect.Empty;
-                }
-            }
-
+            Bounds = GetGeometryBounds(renderOrigin);
             return Bounds;
         }
 
-        public void GetTextFormat(SharpDX.DirectWrite.Factory1 factory)
+        public void GetTextFormat(Factory1 factory)
         {
             _textFormat = new(factory, FontFamilyName, (float)TextHeight);
         }
-        public void GetTextLayout(SharpDX.DirectWrite.Factory1 factory)
+        public void GetTextLayout(Factory1 factory)
         {
             double widthPerCharacter = 0.6 * DxfText.Height;
-            double textWidth = widthPerCharacter * Text.Length * WidthFactor;
-            Rect bounds = new(DxfText.Position.X, DxfText.Position.Y, textWidth * 2, DxfText.Height * 2);
-            TextLayout = new(factory, Text, _textFormat, (float)bounds.Width, (float)bounds.Height, 96, true);
-        }
+            double textWidth = widthPerCharacter * Text.Length * TextWidthScaleFactor;
 
-        public List<LineInstance> GetLineVertices(
-            List<Vector2d> vertices, uint layerId, uint objectId, uint lineTypeId, Vector2d renderOrigin)
-        {
-            List<LineInstance> lineInstances = [];
+            Rect bounds = new(
+                DxfText.Position.X, DxfText.Position.Y, textWidth * 2, DxfText.Height * 2);
 
-            if (TextRenderStyle == TextRenderStyle.Triangle) { return lineInstances; }
-
-            if (LffFont is null)
-            {
-                throw new Exception("LffFont is null.");
-            }
-
-            Bounds = MathHelpers.GetLocalBounds(vertices); 
-            TextHeightScaleFactor = TextHeight / LffFont.DesignHeight;
-            AttachmentOffset = UpdateAttachmentOffset();
-
-            var transform = Transform.ToSharpDxMatrix();
-
-            for (int i = 0; i < vertices.Count; i += 2)
-            {
-                var s = vertices[i].ToGpuRelative(renderOrigin);
-                var e = vertices[i + 1].ToGpuRelative(renderOrigin);
-
-                LineInstance lineInstance = new(
-                    Vector2.TransformCoordinate(s, transform),
-                    Vector2.TransformCoordinate(e, transform),
-                    layerId, objectId, 0, (uint)LineInstanceFlags.None, 0);
-
-                lineInstances.Add(lineInstance);
-            }
-
-            return lineInstances;
-        }
-        public List<TextVertex> GetTextVertices(
-            List<Vector2d> vertices, uint layerId, uint objectId, Vector2d renderOrigin)
-        {
-            List<TextVertex> textVertices = [];
-
-            if (TextRenderStyle == TextRenderStyle.Stroke) { return textVertices; }
-
-            AttachmentOffset = TextRenderingHelpers.GetAttachmentOffset(Bounds.ToRectangeF(), AttachmentPoint).ToVector2d();
-            TextHeightScaleFactor = 1;
-
-            var transform = Transform.ToSharpDxMatrix();
-
-            for (int i = 0; i < vertices.Count; i += 3)
-            {
-                var v1 = vertices[i].ToGpuRelative(renderOrigin);
-                var v2 = vertices[i + 1].ToGpuRelative(renderOrigin);
-                var v3 = vertices[i + 2].ToGpuRelative(renderOrigin);
-
-                var scaledVector1 = Vector2.TransformCoordinate(v1, transform);
-                TextVertex textVertex1 = new(scaledVector1, layerId, objectId);
-                var scaledVector2 = Vector2.TransformCoordinate(v2, transform);
-                TextVertex textVertex2 = new(scaledVector2, layerId, objectId);
-                var scaledVector3 = Vector2.TransformCoordinate(v3, transform);
-                TextVertex textVertex3 = new(scaledVector3, layerId, objectId);
-
-                textVertices.AddRange([textVertex1, textVertex2, textVertex3]);
-            }
-
-            return textVertices;
+            TextLayout = new(
+                factory, Text, _textFormat, (float)bounds.Width, (float)bounds.Height, 96, true);
         }
 
         private void UpdateFontFace(ResCache resCache)
@@ -405,43 +411,315 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             return vertices;
         }
 
-        private Vector2d UpdateAttachmentOffset()
+        private Vector2d GetAlignmentOffset()
         {
-            var xOffset = Bounds.Width;
-            var yOffset = TextHeight / TextHeightScaleFactor;
-            var bottomOffset = Bounds.Height - yOffset;
+            double left = Bounds.Left;
+            double centerX = Bounds.Left + Bounds.Width / 2;
+            double right = Bounds.Right;
 
-            return AttachmentPoint switch
+            double bottom = Bounds.Top;
+            double centerY = Bounds.Top + Bounds.Height / 2;
+            double top = Bounds.Bottom;
+
+            double nominalHeight = TextHeight / TextHeightScaleFactor;
+            double nominalMiddleY = nominalHeight / 2; // Baseline center is not actual center of text bounds
+
+            Vector2d anchor = TextAlignment switch
             {
-                TextAttachmentPoint.TopLeft =>
-                    new Vector2d(0, -yOffset),
+                TextAlignment.TopLeft =>
+                    new(left, top),
 
-                TextAttachmentPoint.TopCenter =>
-                    new Vector2d(-(xOffset / 2), -yOffset),
+                TextAlignment.TopCenter =>
+                    new(centerX, top),
 
-                TextAttachmentPoint.TopRight =>
-                    new Vector2d(-xOffset, -yOffset),
+                TextAlignment.TopRight =>
+                    new(right, top),
 
-                TextAttachmentPoint.MiddleLeft =>
-                    new Vector2d(0, -yOffset / 2),
+                TextAlignment.MiddleLeft =>
+                    new(left, nominalMiddleY),
 
-                TextAttachmentPoint.MiddleCenter =>
-                    new Vector2d(-(xOffset / 2), -yOffset / 2),
+                TextAlignment.MiddleCenter =>
+                    new(centerX, nominalMiddleY),
 
-                TextAttachmentPoint.MiddleRight =>
-                    new Vector2d(-xOffset, -yOffset / 2),
+                TextAlignment.MiddleRight =>
+                    new(right, nominalMiddleY),
 
-                TextAttachmentPoint.BottomLeft =>
-                    new Vector2d(0, bottomOffset),
+                TextAlignment.BottomLeft =>
+                    new(left, bottom),
 
-                TextAttachmentPoint.BottomCenter =>
-                    new Vector2d(-(xOffset / 2), bottomOffset),
+                TextAlignment.BottomCenter =>
+                    new(centerX, bottom),
 
-                TextAttachmentPoint.BottomRight =>
-                    new Vector2d(-xOffset, bottomOffset),
+                TextAlignment.BottomRight =>
+                    new(right, bottom),
+
+                TextAlignment.BaselineLeft =>
+                    new(left, 0),
+
+                TextAlignment.BaselineCenter =>
+                    new(centerX, 0),
+
+                TextAlignment.BaselineRight =>
+                    new(right, 0),
+
+                TextAlignment.Aligned =>
+                    new(left, 0),
+
+                TextAlignment.Middle =>
+                    new(centerX, centerY),
+
+                TextAlignment.Fit =>
+                    new(left, 0),
 
                 _ => Vector2d.Zero
             };
+
+            return -anchor;
+        }
+
+        private List<TextSegmentInformation> ParseFormattingCodes(string rawText)
+        {
+            List<TextSegmentInformation> segments = [];
+            StringBuilder currentText = new();
+
+            bool isUnderlined = false;
+            bool isOverstriked = false;
+            bool isStrikethrough = false;
+
+            void AddSegment()
+            {
+                if (currentText.Length == 0) { return; }
+
+                segments.Add(new TextSegmentInformation(
+                    currentText.ToString(),
+                    ObjectColor,
+                    ColorType,
+                    FontFamilyName,
+                    TextHeight,
+                    IsBold,
+                    IsItalic,
+                    isUnderlined,
+                    isOverstriked,
+                    isStrikethrough));
+
+                currentText.Clear();
+            }
+
+            for (int i = 0; i < rawText.Length; i++)
+            {
+                if (i + 2 >= rawText.Length ||
+                    rawText[i] != '%' ||
+                    rawText[i + 1] != '%')
+                {
+                    currentText.Append(rawText[i]);
+                    continue;
+                }
+
+                char code = char.ToLowerInvariant(rawText[i + 2]);
+
+                switch (code)
+                {
+                    case 'u':
+                        AddSegment();
+                        isUnderlined = !isUnderlined;
+                        i += 2;
+                        break;
+
+                    case 'o':
+                        AddSegment();
+                        isOverstriked = !isOverstriked;
+                        i += 2;
+                        break;
+
+                    case 'k':
+                        AddSegment();
+                        isStrikethrough = !isStrikethrough;
+                        i += 2;
+                        break;
+
+                    case 'd':
+                        currentText.Append('°');
+                        i += 2;
+                        break;
+
+                    case 'p':
+                        currentText.Append('±');
+                        i += 2;
+                        break;
+
+                    case 'c':
+                        currentText.Append('⌀');
+                        i += 2;
+                        break;
+
+                    case '%':
+                        currentText.Append('%');
+                        i += 2;
+                        break;
+
+                    default:
+                        if (char.IsAsciiDigit(code))
+                        {
+                            int start = i + 2;
+                            int count = 0;
+
+                            while (start + count < rawText.Length &&
+                                   count < 3 &&
+                                   char.IsAsciiDigit(rawText[start + count]))
+                            {
+                                count++;
+                            }
+
+                            int characterCode = int.Parse(
+                                rawText.Substring(start, count));
+
+                            currentText.Append((char)characterCode);
+                            i = start + count - 1;
+                        }
+                        else
+                        {
+                            // Preserve unrecognized codes.
+                            currentText.Append("%%");
+                            currentText.Append(rawText[i + 2]);
+                            i += 2;
+                        }
+                        break;
+                }
+            }
+
+            AddSegment();
+
+            return segments;
+        }
+
+        private void GenerateDecorations(
+            uint layerId, uint objectId, Vector2d renderOrigin)
+        {
+            if (TextRenderStyle == TextRenderStyle.Stroke)
+            {
+                GenerateLffDecorations(layerId, objectId, renderOrigin);
+                return;
+            }
+
+            if (TextLayout is null || _fontFace is null || TextSegments.Count == 0)
+                return;
+
+            var metrics = _fontFace.Metrics;
+
+            double fontScale = TextLayout.FontSize * FontSizeFactor / metrics.DesignUnitsPerEm;
+
+            double capHeight = metrics.CapHeight * fontScale;
+
+            double underlineY = -capHeight * UnderlineFactor;
+            double overlineY = capHeight * OverlineFactor;
+            double strikeY = capHeight * StrikethroughFactor;
+
+            var transform = UnrotatedTransform;
+            int startIndex = 0;
+
+            foreach (var segment in TextSegments)
+            {
+                int length = segment.Text.Length;
+
+                if (length == 0)
+                    continue;
+
+                if (!segment.IsUnderlined &&
+                    !segment.IsOverstriked &&
+                    !segment.IsStrikethrough)
+                {
+                    startIndex += length;
+                    continue;
+                }
+
+                var ranges = TextLayout.HitTestTextRange(
+                    startIndex, length, 0, 0);
+
+                foreach (var range in ranges)
+                {
+                    double x1 = range.Left * FontSizeFactor;
+                    double x2 = (range.Left + range.Width) * FontSizeFactor;
+
+                    if (x2 <= x1)
+                        continue;
+
+                    void AddLine(double y)
+                    {
+                        var start = Vector2d.TransformCoordinate(
+                            new Vector2d(x1, y), transform);
+
+                        var end = Vector2d.TransformCoordinate(
+                            new Vector2d(x2, y), transform);
+
+                        AddDecorationLine(
+                            start, end,
+                            layerId, objectId, renderOrigin);
+                    }
+
+                    if (segment.IsUnderlined)
+                        AddLine(underlineY);
+
+                    if (segment.IsOverstriked)
+                        AddLine(overlineY);
+
+                    if (segment.IsStrikethrough)
+                        AddLine(strikeY);
+                }
+
+                startIndex += length;
+            }
+        }
+
+        private void GenerateLffDecorations(
+            uint layerId, uint objectId, Vector2d renderOrigin)
+        {
+            if (LffFont is null)
+                return;
+
+            var transform = UnrotatedTransform;
+            double penX = 0;
+
+            foreach (var segment in TextSegments)
+            {
+                double startX = penX;
+
+                foreach (char c in segment.Text)
+                {
+                    penX += LffFont.Glyphs.TryGetValue(c, out var glyph)
+                        ? glyph.AdvanceWidth
+                        : LffFont.WordSpacing;
+                }
+
+                if (!segment.IsUnderlined &&
+                    !segment.IsOverstriked &&
+                    !segment.IsStrikethrough)
+                    continue;
+
+                void AddLine(double y)
+                {
+                    double xOffset = Bounds.Left;
+
+                    var start = Vector2d.TransformCoordinate(
+                        new Vector2d(startX + xOffset, y), transform);
+
+                    var end = Vector2d.TransformCoordinate(
+                        new Vector2d(penX + xOffset, y), transform);
+
+                    AddDecorationLine(
+                        start, end, layerId, objectId, renderOrigin);
+                }
+
+                double height = LffFont.DesignHeight;
+
+                if (segment.IsUnderlined)
+                    AddLine(-height * UnderlineFactor);
+
+                if (segment.IsOverstriked)
+                    AddLine(height * OverlineFactor);
+
+                if (segment.IsStrikethrough)
+                    AddLine(height * StrikethroughFactor);
+            }
         }
         #endregion
 

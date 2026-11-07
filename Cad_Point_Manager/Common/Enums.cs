@@ -50,7 +50,7 @@ namespace Cad_Point_Manager.Common
         Arc
     }
 
-    public enum TextAttachmentPoint
+    public enum MTextAttachment
     {
         TopLeft,
         TopCenter,
@@ -63,12 +63,31 @@ namespace Cad_Point_Manager.Common
         BottomRight
     }
 
-    public enum TextAlignment
+    public enum MTextAlignment
     {
         Left,
         Center,
         Right,
         Justified,
         Distributed
+    }
+
+    public enum TextAlignment
+    {
+        TopLeft,
+        TopCenter,
+        TopRight,
+        MiddleLeft,
+        MiddleCenter,
+        MiddleRight,
+        BottomLeft,
+        BottomCenter,
+        BottomRight,
+        BaselineLeft,
+        BaselineCenter,
+        BaselineRight,
+        Aligned,
+        Middle,
+        Fit
     }
 }

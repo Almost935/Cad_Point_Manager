@@ -4,6 +4,7 @@ using Cad_Point_Manager.Controls.D3DControl.Rendering.Msdf;
 using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Helpers;
 using Cad_Point_Manager.Models.DrawingObjects.HelperClasses;
+using Cad_Point_Manager.Services.Exporting;
 using netDxf.Entities;
 using PdfSharpCore.Drawing;
 using SharpDX;
@@ -72,27 +73,44 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
             UpdateBounds();
         }
-        public override void DrawToPdf(
-            XGraphics gfx, System.Windows.Media.Matrix worldToPdf, XPen pen)
+
+        public override void DrawToPdf(PdfRenderContext context, XPen pen)
         {
-            var cPdf = PdfDrawingHelpers.WorldToPdf(RadiusPoint, worldToPdf);
+            if (EntityObject is not Ellipse ellipse)
+                return;
 
-            var rWorldPt = new Vector2d(RadiusPoint.X + Radius, RadiusPoint.Y);
-            var rPdfPt = PdfDrawingHelpers.WorldToPdf(rWorldPt, worldToPdf);
+            double effectiveRadius = Math.Min(MajorAxis, MinorAxis);
 
-            double rPts = Math.Sqrt(
-                (rPdfPt.X - cPdf.X) * (rPdfPt.X - cPdf.X) +
-                (rPdfPt.Y - cPdf.Y) * (rPdfPt.Y - cPdf.Y));
+            if (effectiveRadius <= 0)
+                return;
 
-            if (rPts <= 0.00001) { return; }
+            int count = CalculateSegments(effectiveRadius, Sweep);
 
-            var rect = new XRect(cPdf.X - rPts, cPdf.Y - rPts, 2 * rPts, 2 * rPts);
+            var points = ellipse.ToPolyline2D(count)
+                .Vertexes.Select(v => v.Position.ToVector2d()).ToList();
 
-            double start = PdfDrawingHelpers.NormalizeDeg(360.0 - StartAngle);
-            double sweep = -Sweep;
+            if (points.Count < 2)
+                return;
 
-            gfx.DrawArc(pen, rect, start, sweep);
+            bool closed = Math.Abs(Sweep - 360.0) < 0.001;
+
+            if (closed &&
+                Vector2d.DistanceTo(points[0], points[^1]) < 1e-9)
+            {
+                points.RemoveAt(points.Count - 1);
+            }
+
+            PdfLineTypeRenderer.DrawPath(
+                context.Graphics,
+                context.WorldToPdf,
+                pen,
+                points,
+                LineType,
+                context.GlobalLineTypeScale,
+                closed: closed,
+                parentSegmentLength: Length);
         }
+
         public override void UpdateVertices(
             ResCache resCache, uint layerId, uint objectId, uint lineTypeId, Vector2d renderOrigin)
         {
@@ -306,7 +324,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         public void UpdateArcMidpoint()
         {
             double midAngle = StartAngle + (Sweep / 2);
-            double midAngleRadians = midAngle * Math.PI / 180; 
+            double midAngleRadians = midAngle * Math.PI / 180;
 
             double midX = RadiusPoint.X + (Radius * Math.Cos(midAngleRadians));
             double midY = RadiusPoint.Y + (Radius * Math.Sin(midAngleRadians));

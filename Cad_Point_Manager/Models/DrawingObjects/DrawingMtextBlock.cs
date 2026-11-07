@@ -6,7 +6,7 @@ using netDxf.Entities;
 using SharpDX;
 using System.Diagnostics;
 using Point = System.Windows.Point;
-using TextAlignment = Cad_Point_Manager.Common.TextAlignment;
+using MTextAlignment = Cad_Point_Manager.Common.MTextAlignment;
 
 namespace Cad_Point_Manager.Models.DrawingObjects
 {
@@ -27,19 +27,19 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         public double Rotation { get; set; } = 0;
         public int NumberOfRows => Rows.Count;
         public TextBox TextBox { get; set; } = TextBox.Empty;
-        public TextAttachmentPoint AttachmentPoint { get; set; }
+        public Common.MTextAttachment AttachmentPoint { get; set; }
         public Vector2d AttachmentOffset { get; set; } = Vector2d.Zero; // This will be used to offset the attachment point from the base position
         public bool AllowsWrapping { get; set; } // This can be used to determine whether to allow text wrapping when adding segments
         #endregion
 
         #region Constructors
         public DrawingMtextBlock(
-            double maxWidth, Vector2d basePosition, MTextAttachmentPoint attachmentPoint,
+            double maxWidth, Vector2d basePosition, netDxf.Entities.MTextAttachmentPoint attachmentPoint,
             double rotation, bool allowsWrapping)
         {
             MaxWidth = maxWidth;
             BasePosition = basePosition;
-            AttachmentPoint = TextRenderingHelpers.GetAttachmentPoint(attachmentPoint);
+            AttachmentPoint = TextRenderingHelpers.GetMtextAttachmentPoint(attachmentPoint);
             Rotation = rotation;
             AllowsWrapping = allowsWrapping;
         }
@@ -88,22 +88,22 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
                 switch (AttachmentPoint)
                 {
-                    case TextAttachmentPoint.TopLeft:
+                    case Common.MTextAttachment.TopLeft:
                         {
                             AttachmentOffset = new(0, -firstRowHeight);
                             break;
                         }
-                    case TextAttachmentPoint.TopCenter:
+                    case Common.MTextAttachment.TopCenter:
                         {
                             AttachmentOffset = new(-width / 2, -firstRowHeight);
                             break;
                         }
-                    case TextAttachmentPoint.TopRight:
+                    case Common.MTextAttachment.TopRight:
                         {
                             AttachmentOffset = new(-width, -firstRowHeight);
                             break;
                         }
-                    case TextAttachmentPoint.MiddleLeft:
+                    case Common.MTextAttachment.MiddleLeft:
                         {
                             if (_rows.Count > 1)
                             {
@@ -115,7 +115,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                             }
                             break;
                         }
-                    case TextAttachmentPoint.MiddleCenter:
+                    case Common.MTextAttachment.MiddleCenter:
                         {
                             if (_rows.Count > 1)
                             {
@@ -127,7 +127,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                             }
                             break;
                         }
-                    case TextAttachmentPoint.MiddleRight:
+                    case Common.MTextAttachment.MiddleRight:
                         {
                             if (_rows.Count > 1)
                             {
@@ -139,7 +139,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                             }
                             break;
                         }
-                    case TextAttachmentPoint.BottomLeft:
+                    case Common.MTextAttachment.BottomLeft:
                         {
                             if (_rows.Count > 1)
                             {
@@ -151,7 +151,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                             }
                             break;
                         }
-                    case TextAttachmentPoint.BottomCenter:
+                    case Common.MTextAttachment.BottomCenter:
                         {
                             if (_rows.Count > 1)
                             {
@@ -163,7 +163,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                             }
                             break;
                         }
-                    case TextAttachmentPoint.BottomRight:
+                    case Common.MTextAttachment.BottomRight:
                         {
                             if (_rows.Count > 1)
                             {
@@ -181,11 +181,11 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
                 foreach (var row in _rows)
                 {
-                    if (row.TextAlignment == TextAlignment.Right)
+                    if (row.TextAlignment == MTextAlignment.Right)
                     {
                         row.UpdateTranslate(new Vector2d((TextBox.Width - row.Width), 0));
                     }
-                    if (row.TextAlignment == TextAlignment.Center)
+                    if (row.TextAlignment == MTextAlignment.Center)
                     {
                         row.UpdateTranslate(new Vector2d((TextBox.Width - row.Width) / 2, 0));
                     }
@@ -197,61 +197,61 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         {
             switch (AttachmentPoint)
             {
-                case TextAttachmentPoint.TopLeft:
+                case Common.MTextAttachment.TopLeft:
                     TextBox = new TextBox(
                         BasePosition,
                         BasePosition,
                         new Vector2d(BasePosition.X + MaxWidth, BasePosition.Y - textBoxHeight));
                     break;
 
-                case TextAttachmentPoint.TopCenter:
+                case Common.MTextAttachment.TopCenter:
                     TextBox = new TextBox(
                         BasePosition,
                         new Vector2d(BasePosition.X - MaxWidth * 0.5f, BasePosition.Y),
                         new Vector2d(BasePosition.X + MaxWidth * 0.5f, BasePosition.Y - textBoxHeight));
                     break;
 
-                case TextAttachmentPoint.TopRight:
+                case Common.MTextAttachment.TopRight:
                     TextBox = new TextBox(
                         BasePosition,
                         new Vector2d(BasePosition.X - MaxWidth, BasePosition.Y),
                         new Vector2d(BasePosition.X, BasePosition.Y - textBoxHeight));
                     break;
 
-                case TextAttachmentPoint.MiddleLeft:
+                case Common.MTextAttachment.MiddleLeft:
                     TextBox = new TextBox(
                         BasePosition,
                         new Vector2d(BasePosition.X, BasePosition.Y + textBoxHeight * 0.5f),
                         new Vector2d(BasePosition.X + MaxWidth, BasePosition.Y - textBoxHeight * 0.5f));
                     break;
 
-                case TextAttachmentPoint.MiddleCenter:
+                case Common.MTextAttachment.MiddleCenter:
                     TextBox = new TextBox(
                         BasePosition,
                         new Vector2d(BasePosition.X - MaxWidth * 0.5f, BasePosition.Y + textBoxHeight * 0.5f),
                         new Vector2d(BasePosition.X + MaxWidth * 0.5f, BasePosition.Y - textBoxHeight * 0.5f));
                     break;
 
-                case TextAttachmentPoint.MiddleRight:
+                case Common.MTextAttachment.MiddleRight:
                     TextBox = new TextBox(
                         BasePosition,
                         new Vector2d(BasePosition.X - MaxWidth, BasePosition.Y + textBoxHeight * 0.5f),
                         new Vector2d(BasePosition.X, BasePosition.Y - textBoxHeight * 0.5f));
                     break;
 
-                case TextAttachmentPoint.BottomLeft:
+                case Common.MTextAttachment.BottomLeft:
                     TextBox = new TextBox(BasePosition, new Vector2d(BasePosition.X, BasePosition.Y + textBoxHeight),
                         new Vector2d(BasePosition.X + MaxWidth, BasePosition.Y));
                     break;
 
-                case TextAttachmentPoint.BottomCenter:
+                case Common.MTextAttachment.BottomCenter:
                     TextBox = new TextBox(
                         BasePosition, 
                         new Vector2d(BasePosition.X - MaxWidth * 0.5f, BasePosition.Y + textBoxHeight),
                         new Vector2d(BasePosition.X + MaxWidth * 0.5f, BasePosition.Y));
                     break;
 
-                case TextAttachmentPoint.BottomRight:
+                case Common.MTextAttachment.BottomRight:
                     TextBox = new TextBox(
                         BasePosition, 
                         new Vector2d(BasePosition.X - MaxWidth, BasePosition.Y + textBoxHeight),

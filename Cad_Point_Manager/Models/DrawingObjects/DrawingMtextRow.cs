@@ -14,7 +14,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         #region Properties
         public double Height { get; set; } = 0;
         public double MaxWidth { get; set; }
-        public TextAlignment TextAlignment { get; set; }
+        public MTextAlignment TextAlignment { get; set; }
         public Vector2d BaseRowPosition { get; set; } = Vector2d.Zero;
 
         public List<DrawingMtextSegment> Segments => _segments;

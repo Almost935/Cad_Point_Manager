@@ -100,45 +100,6 @@ namespace Cad_Point_Manager.Views.UserControls
         #endregion
 
         #region Methods
-        //public void Rebuild()
-        //{
-        //    if (ActiveLayout == null ||
-        //       CadManager == null ||
-        //       Renderer == null ||
-        //       Renderer.StateController == null ||
-        //       Renderer.SceneIdMap == null ||
-        //       Renderer.ResCache == null)
-        //    {
-        //        return;
-        //    }
-
-        //    int renderWidth =
-        //        (int)Math.Round(ActiveLayout.Viewport.LocalRectIn.Width * GlobalHelperProperties.PdfPreviewDpi);
-        //    int renderHeight =
-        //        (int)Math.Round(ActiveLayout.Viewport.LocalRectIn.Height * GlobalHelperProperties.PdfPreviewDpi);
-
-        //    if (ActiveLayout.Viewport.Scene.Bounds.Width <= 0 ||
-        //        ActiveLayout.Viewport.Scene.Bounds.Height <= 0)
-        //    {
-        //        return;
-        //    }
-
-        //    var worldToPdf =
-        //           LayoutPdfVectorExporter.BuildWorldToPdfFromCamera(
-        //               ActiveLayout, CadManager, ActiveLayout.Viewport.Scene.Bounds);
-
-        //    using var pdf =
-        //        LayoutPdfVectorExporter.ExportViewportPreviewToStream(
-        //            ActiveLayout, CadManager, worldToPdf);
-
-        //    pdf.Position = 0;
-
-        //    var bmp = _previewService.RenderPreview(
-        //        pdf, renderWidth, renderHeight, GlobalHelperProperties.PdfPreviewDpi);
-
-        //    LayoutPreviewImage.Source = bmp;
-        //}
-
         public void Rebuild()
         {
             if (ActiveLayout == null ||
@@ -157,17 +118,9 @@ namespace Cad_Point_Manager.Views.UserControls
             int renderHeight =
                 (int)Math.Round(ActiveLayout.PageHeight * GlobalHelperProperties.PdfPreviewDpi);
 
-            var worldToPdf =
-                LayoutPdfVectorExporter.BuildWorldToPdfFromCamera(
-                    ActiveLayout,
-                    CadManager,
-                    ActiveLayout.Viewport.Scene.Bounds);
-
-            using var pdf =
-                LayoutPdfVectorExporter.ExportToStream(
-                    ActiveLayout,
-                    CadManager,
-                    worldToPdf);
+            var worldToPdf = LayoutPdfVectorExporter.BuildWorldToPdfFromCamera(
+                ActiveLayout, CadManager, ActiveLayout.Viewport.Scene.Bounds);
+            using var pdf = LayoutPdfVectorExporter.ExportToStream(ActiveLayout, CadManager, worldToPdf);
 
             pdf.Position = 0;
 

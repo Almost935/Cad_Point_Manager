@@ -533,9 +533,13 @@ namespace Cad_Point_Manager.Controls.D3DControl
                     CadManager.Extents,
                     CadManager.DxfExtents);
 
-                // For testing only. Delete when bounds issue is gone.
-                CadManager.LineVerticesDirty = true;
-                // End testing
+                //Debug.WriteLine($"\nIn D3dDxfControl:");
+                //Debug.WriteLine($"CadManager.RenderOrigin: {CadManager.RenderOrigin}");
+                //Debug.WriteLine($"CadManager.DxfExtents: {CadManager.DxfExtents}");
+
+                //// For testing only. Delete when bounds issue is gone.
+                //CadManager.LineVerticesDirty = true;
+                //// End testing
 
                 TransformationBufferDirty = true;
                 HitTestableObjectTreeDirty = true;

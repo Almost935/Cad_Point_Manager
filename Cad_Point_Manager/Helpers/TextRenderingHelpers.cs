@@ -3,6 +3,7 @@ using Cad_Point_Manager.Controls.D3DControl;
 using Cad_Point_Manager.Controls.D3DControl.Rendering.Helpers;
 using Cad_Point_Manager.Extensions;
 using netDxf.Entities;
+using PdfSharpCore.Drawing;
 using SharpDX;
 using SharpDX.Direct2D1;
 using SharpDX.DirectWrite;
@@ -168,71 +169,115 @@ namespace Cad_Point_Manager.Helpers
             return vertices;
         }
 
-        public static TextAttachmentPoint GetAttachmentPoint(MTextAttachmentPoint mTextAttachment)
+        public static MTextAttachment GetMtextAttachmentPoint(MTextAttachmentPoint mTextAttachment)
         {
             return mTextAttachment switch
             {
-                MTextAttachmentPoint.TopLeft => TextAttachmentPoint.TopLeft,
-                MTextAttachmentPoint.TopCenter => TextAttachmentPoint.TopCenter,
-                MTextAttachmentPoint.TopRight => TextAttachmentPoint.TopRight,
-                MTextAttachmentPoint.MiddleLeft => TextAttachmentPoint.MiddleLeft,
-                MTextAttachmentPoint.MiddleCenter => TextAttachmentPoint.MiddleCenter,
-                MTextAttachmentPoint.MiddleRight => TextAttachmentPoint.MiddleRight,
-                MTextAttachmentPoint.BottomLeft => TextAttachmentPoint.BottomLeft,
-                MTextAttachmentPoint.BottomCenter => TextAttachmentPoint.BottomCenter,
-                MTextAttachmentPoint.BottomRight => TextAttachmentPoint.BottomRight,
-                _ => TextAttachmentPoint.MiddleCenter,
+                netDxf.Entities.MTextAttachmentPoint.TopLeft => Common.MTextAttachment.TopLeft,
+                netDxf.Entities.MTextAttachmentPoint.TopCenter => Common.MTextAttachment.TopCenter,
+                netDxf.Entities.MTextAttachmentPoint.TopRight => Common.MTextAttachment.TopRight,
+                netDxf.Entities.MTextAttachmentPoint.MiddleLeft => Common.MTextAttachment.MiddleLeft,
+                netDxf.Entities.MTextAttachmentPoint.MiddleCenter => Common.MTextAttachment.MiddleCenter,
+                netDxf.Entities.MTextAttachmentPoint.MiddleRight => Common.MTextAttachment.MiddleRight,
+                netDxf.Entities.MTextAttachmentPoint.BottomLeft => Common.MTextAttachment.BottomLeft,
+                netDxf.Entities.MTextAttachmentPoint.BottomCenter => Common.MTextAttachment.BottomCenter,
+                netDxf.Entities.MTextAttachmentPoint.BottomRight => Common.MTextAttachment.BottomRight,
+                _ => Common.MTextAttachment.MiddleCenter,
             };
         }
-        public static TextAttachmentPoint GetAttachmentPoint(netDxf.Entities.TextAlignment mTextAttachment)
+        public static Common.TextAlignment GetTextAlignment(netDxf.Entities.TextAlignment mTextAttachment)
         {
             return mTextAttachment switch
             {
-                netDxf.Entities.TextAlignment.TopLeft => TextAttachmentPoint.TopLeft,
-                netDxf.Entities.TextAlignment.TopCenter => TextAttachmentPoint.TopCenter,
-                netDxf.Entities.TextAlignment.TopRight => TextAttachmentPoint.TopRight,
-                netDxf.Entities.TextAlignment.MiddleLeft => TextAttachmentPoint.MiddleLeft,
-                netDxf.Entities.TextAlignment.MiddleCenter => TextAttachmentPoint.MiddleCenter,
-                netDxf.Entities.TextAlignment.MiddleRight => TextAttachmentPoint.MiddleRight,
-                netDxf.Entities.TextAlignment.BottomLeft => TextAttachmentPoint.BottomLeft,
-                netDxf.Entities.TextAlignment.BottomCenter => TextAttachmentPoint.BottomCenter,
-                netDxf.Entities.TextAlignment.BottomRight => TextAttachmentPoint.BottomRight,
-                _ => TextAttachmentPoint.MiddleCenter,
+                netDxf.Entities.TextAlignment.TopLeft => Common.TextAlignment.TopLeft,
+                netDxf.Entities.TextAlignment.TopCenter => Common.TextAlignment.TopCenter,
+                netDxf.Entities.TextAlignment.TopRight => Common.TextAlignment.TopRight,
+                netDxf.Entities.TextAlignment.MiddleLeft => Common.TextAlignment.MiddleLeft,
+                netDxf.Entities.TextAlignment.MiddleCenter => Common.TextAlignment.MiddleCenter,
+                netDxf.Entities.TextAlignment.MiddleRight => Common.TextAlignment.MiddleRight,
+                netDxf.Entities.TextAlignment.BottomLeft => Common.TextAlignment.BottomLeft,
+                netDxf.Entities.TextAlignment.BottomCenter => Common.TextAlignment.BottomCenter,
+                netDxf.Entities.TextAlignment.BottomRight => Common.TextAlignment.BottomRight,
+                netDxf.Entities.TextAlignment.BaselineLeft => Common.TextAlignment.BaselineLeft,
+                netDxf.Entities.TextAlignment.BaselineCenter => Common.TextAlignment.BaselineCenter,
+                netDxf.Entities.TextAlignment.BaselineRight => Common.TextAlignment.BaselineRight,
+                netDxf.Entities.TextAlignment.Aligned => Common.TextAlignment.Aligned,
+                netDxf.Entities.TextAlignment.Middle => Common.TextAlignment.Middle,
+                netDxf.Entities.TextAlignment.Fit => Common.TextAlignment.Fit,
+                _ => Common.TextAlignment.BottomLeft,
+            };
+        }
+        public static XStringFormat MtextAttachmentToStringFormat(Common.MTextAttachment mTextAttachment)
+        {
+            return mTextAttachment switch
+            {
+                Common.MTextAttachment.TopLeft => XStringFormats.TopLeft,
+                Common.MTextAttachment.TopCenter => XStringFormats.TopCenter,
+                Common.MTextAttachment.TopRight => XStringFormats.TopRight,
+                Common.MTextAttachment.MiddleLeft => XStringFormats.CenterLeft,
+                Common.MTextAttachment.MiddleCenter => XStringFormats.Center,
+                Common.MTextAttachment.MiddleRight => XStringFormats.CenterRight,
+                Common.MTextAttachment.BottomLeft => XStringFormats.BottomLeft,
+                Common.MTextAttachment.BottomCenter => XStringFormats.BottomCenter,
+                Common.MTextAttachment.BottomRight => XStringFormats.BottomRight,
+                _ => XStringFormats.Default
+            };
+        }
+        public static XStringFormat TextAlignmentToStringFormat(Common.TextAlignment textAlignment)
+        {
+            return textAlignment switch
+            {
+                Common.TextAlignment.TopLeft => XStringFormats.TopLeft,
+                Common.TextAlignment.TopCenter => XStringFormats.TopCenter,
+                Common.TextAlignment.TopRight => XStringFormats.TopRight,
+                Common.TextAlignment.MiddleLeft => XStringFormats.CenterLeft,
+                Common.TextAlignment.MiddleCenter => XStringFormats.Center,
+                Common.TextAlignment.MiddleRight => XStringFormats.CenterRight,
+                Common.TextAlignment.BottomLeft => XStringFormats.BottomLeft,
+                Common.TextAlignment.BottomCenter => XStringFormats.BottomCenter,
+                Common.TextAlignment.BottomRight => XStringFormats.BottomRight,
+                Common.TextAlignment.BaselineLeft => XStringFormats.BaseLineLeft,
+                Common.TextAlignment.BaselineCenter => XStringFormats.BaseLineCenter,
+                Common.TextAlignment.BaselineRight => XStringFormats.BaseLineRight,
+                Common.TextAlignment.Aligned => XStringFormats.BottomLeft,
+                Common.TextAlignment.Middle => XStringFormats.Center,
+                Common.TextAlignment.Fit => XStringFormats.BottomLeft,
+                _ => XStringFormats.Default
             };
         }
 
-        public static Vector2 GetAttachmentOffset(RectangleF bounds, TextAttachmentPoint attachmentPoint)
+        public static Vector2 GetAttachmentOffset(RectangleF bounds, MTextAttachment attachmentPoint)
         {
             var xOffset = bounds.Width;
             var yOffset = bounds.Height;
 
             return attachmentPoint switch
             {
-                TextAttachmentPoint.TopLeft =>
+                Common.MTextAttachment.TopLeft =>
                     new Vector2(0, -yOffset),
 
-                TextAttachmentPoint.TopCenter =>
+                Common.MTextAttachment.TopCenter =>
                     new Vector2(-(xOffset / 2), -yOffset),
 
-                TextAttachmentPoint.TopRight =>
+                Common.MTextAttachment.TopRight =>
                     new Vector2(-xOffset, -yOffset),
 
-                TextAttachmentPoint.MiddleLeft =>
+                Common.MTextAttachment.MiddleLeft =>
                     new Vector2(0, -yOffset / 2),
 
-                TextAttachmentPoint.MiddleCenter =>
+                Common.MTextAttachment.MiddleCenter =>
                     new Vector2(-(xOffset / 2), -yOffset / 2),
 
-                TextAttachmentPoint.MiddleRight =>
+                Common.MTextAttachment.MiddleRight =>
                     new Vector2(-xOffset, -yOffset / 2),
 
-                TextAttachmentPoint.BottomLeft =>
+                Common.MTextAttachment.BottomLeft =>
                     new Vector2(0, 0),
 
-                TextAttachmentPoint.BottomCenter =>
+                Common.MTextAttachment.BottomCenter =>
                     new Vector2(-(xOffset / 2), 0),
 
-                TextAttachmentPoint.BottomRight =>
+                Common.MTextAttachment.BottomRight =>
                     new Vector2(-xOffset, 0),
 
                 _ => Vector2.Zero

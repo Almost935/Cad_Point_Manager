@@ -326,7 +326,7 @@ namespace Cad_Point_Manager.Models
         public UndoRedoManager UndoRedoManager { get; } = new();
         public CogoPointTree CogoPointTree { get; set; }
         public double OverallDrawingLineTypeScale { get; set; }
-        public Vector2d RenderOrigin { get; private set; }
+        public Vector2d RenderOrigin { get; private set; } = Vector2d.Zero;
 
         public List<int> UsedPointNumbers => PointGroups.SelectMany(pg => GetPoints(pg)).Select(p => p.PointNumber).ToList();
         #endregion
@@ -471,6 +471,9 @@ namespace Cad_Point_Manager.Models
             }
 
             UpdateExtents();
+
+            //Debug.WriteLine($"RenderOrigin: {RenderOrigin}");
+            //Debug.WriteLine($"DxfExtents: {DxfExtents}");
 
             DxfLoaded = true;
             LineVerticesDirty = true;
@@ -1483,20 +1486,29 @@ namespace Cad_Point_Manager.Models
                             instances.AddRange(drawingGeometry.LineInstances);
                             drawingGeometry.EndVertexIndex = instances.Count - 1;
                         }
-                        if (obj is DrawingMtext drawingMtext &&
-                            drawingMtext.TextRenderStyle == TextRenderStyle.Stroke)
+                        if (obj is DrawingMtext drawingMtext)
                         {
-                            drawingMtext.UpdateVertices(resCache, lId, ltId, sceneIdMap, stateBuffers, RenderOrigin);
+                            drawingMtext.UpdateVertices(
+                                resCache, lId, ltId,
+                                sceneIdMap, stateBuffers, RenderOrigin);
+
                             drawingMtext.StartLineVertexIndex = instances.Count;
+
                             instances.AddRange(drawingMtext.LineInstances);
+
                             drawingMtext.EndLineVertexIndex = instances.Count - 1;
                         }
-                        if (obj is DrawingSText drawingSText &&
-                             drawingSText.TextRenderStyle == TextRenderStyle.Stroke)
+
+                        if (obj is DrawingSText drawingSText)
                         {
-                            drawingSText.UpdateVertices(resCache, lId, ltId, sceneIdMap, stateBuffers, RenderOrigin);
+                            drawingSText.UpdateVertices(
+                                resCache, lId, ltId,
+                                sceneIdMap, stateBuffers, RenderOrigin);
+
                             drawingSText.StartLineVertexIndex = instances.Count;
+
                             instances.AddRange(drawingSText.LineInstances);
+
                             drawingSText.EndLineVertexIndex = instances.Count - 1;
                         }
                         if (obj is DrawingBlock drawingBlock)
@@ -1524,8 +1536,10 @@ namespace Cad_Point_Manager.Models
                 }
 
                 // Object bounds testing
-                var objectBoundsLines = GetObjectBoundLines<DrawingMtext>();
-                instances.AddRange(objectBoundsLines);
+                //var mtextBoundsLines = GetObjectBoundLines<DrawingMtext>();
+                //var textBoundsLines = GetObjectBoundLines<DrawingSText>();
+                //instances.AddRange(mtextBoundsLines);
+                //instances.AddRange(textBoundsLines);
                 // End object bounds testing
 
                 // Scene bounds testing 

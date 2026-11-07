@@ -4,6 +4,7 @@ using Cad_Point_Manager.Controls.D3DControl.Rendering.Msdf;
 using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Helpers;
 using Cad_Point_Manager.Models.DrawingObjects.HelperClasses;
+using Cad_Point_Manager.Services.Exporting;
 using netDxf.Entities;
 using PdfSharpCore.Drawing;
 using SharpDX;
@@ -87,16 +88,13 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             }
         }
 
-        public override void DrawToPdf(
-           XGraphics gfx,
-           System.Windows.Media.Matrix worldToPdf,
-           XPen pen)
+        public override void DrawToPdf(PdfRenderContext context, XPen pen)
         {
             var segments = DrawingSegments.ToArray();
 
             foreach (var segment in segments)
             {
-                segment.DrawToPdf(gfx, worldToPdf, pen);
+                segment.DrawToPdf(context, pen);
             }
         }
 
@@ -144,101 +142,144 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             return false;
         }
 
+
         public override void UpdateVertices(
-            ResCache resCache, uint layerId, uint objectId, uint lineTypeId, Vector2d renderOrigin)
+            ResCache resCache, uint layerId, uint objectId, 
+            uint lineTypeId, Vector2d renderOrigin)
         {
+            DrawingSegments.Clear();
+            LineInstances = [];
+
             if (EntityObject is Polyline2D polyline2D)
             {
-                var start = polyline2D.Vertexes.First();
-                var end = polyline2D.Vertexes.Last();
+                IsClosed = polyline2D.IsClosed;
 
-                Start = start.Position.ToVector2d();
-                End = end.Position.ToVector2d();
+                var vertices = polyline2D.Vertexes;
+
+                if (vertices.Count == 0)
+                    return;
+
+                Start = vertices.First().Position.ToVector2d();
+                End = vertices.Last().Position.ToVector2d();
 
                 var entities = polyline2D.Explode();
-                var vertices = polyline2D.Vertexes;
 
                 foreach (var e in entities)
                 {
                     var colorType = DxfHelpers.GetColorType(e);
                     Vector4 color = DxfHelpers.GetEntityObjectColor(e, DrawingBlock?.DxfInsert);
-                    var obj = DxfHelpers.GetDrawingSegment(e, Layer, color, colorType, LineType, DrawingBlock);
 
-                    if (obj is not null)
-                    {
-                        obj.UpdateVertices(resCache, layerId, objectId, lineTypeId, renderOrigin);
-                        DrawingSegments.Add(obj);
-                    }
+                    var obj = DxfHelpers.GetDrawingSegment(
+                        e, Layer, color, colorType, LineType, DrawingBlock);
+
+                    if (obj is null)
+                        continue;
+
+                    obj.UpdateVertices(resCache, layerId, objectId, lineTypeId, renderOrigin);
+                    DrawingSegments.Add(obj);
                 }
 
-                for (int i = 0; i < vertices.Count - 1; i++)
+                for (int i = 0; i < DrawingSegments.Count; i++)
                 {
-                    var segment = DrawingSegments[i];
-                    if (segment is DrawingArc arc)
-                    {
-                        var startArcVertex = arc.LineInstances.First().Start.ToSharpDXVector3();
-                        Vector3 dxfStartVertex = new((float)vertices[i].Position.X, (float)vertices[i].Position.Y, 0);
-                        var d = Vector3.Distance(startArcVertex, dxfStartVertex);
+                    if (DrawingSegments[i] is not DrawingArc arc)
+                        continue;
 
-                        if (d > 0)
-                        {
-                            arc.LineInstances.Reverse();
-                        }
-                    }
+                    if (i >= vertices.Count)
+                        break;
+
+                    Vector2d vertexStart = vertices[i].Position.ToVector2d();
+                    OrientArc(arc, vertexStart);
                 }
-
-                PrepareLineTypeDistances();
-
-                LineInstances = DrawingSegments.SelectMany(s => s.LineInstances).ToArray();
-                UpdateBounds();
             }
-
             else if (EntityObject is Polyline3D polyline3D)
             {
-                var start = polyline3D.Vertexes.First();
-                var end = polyline3D.Vertexes.Last();
-                Start = start.ToVector2d();
-                End = end.ToVector2d();
+                IsClosed = polyline3D.IsClosed;
+
+                var vertices = polyline3D.Vertexes;
+
+                if (vertices.Count == 0)
+                    return;
+
+                Start = vertices.First().ToVector2d();
+                End = vertices.Last().ToVector2d();
 
                 var entities = polyline3D.Explode();
-                var vertices = polyline3D.Vertexes;
 
                 foreach (var e in entities)
                 {
                     var colorType = DxfHelpers.GetColorType(e);
-                    Vector4 color = DxfHelpers.GetEntityObjectColor(e, DrawingBlock.DxfInsert);
+
+                    Vector4 color = DxfHelpers.GetEntityObjectColor(e, DrawingBlock?.DxfInsert);
                     var obj = DxfHelpers.GetDrawingSegment(e, Layer, color, colorType, LineType, DrawingBlock);
 
-                    if (obj is not null)
-                    {
-                        obj.UpdateVertices(resCache, layerId, objectId, lineTypeId, renderOrigin);
-                        DrawingSegments.Add(obj);
-                    }
+                    if (obj is null)
+                        continue;
+
+                    obj.UpdateVertices(resCache, layerId, objectId, lineTypeId, renderOrigin);
+                    DrawingSegments.Add(obj);
                 }
 
-                for (int i = 0; i < vertices.Count - 1; i++)
+                // Same orientation handling as Polyline2D.
+                for (int i = 0; i < DrawingSegments.Count; i++)
                 {
-                    var segment = DrawingSegments[i];
-                    if (segment is DrawingArc arc)
-                    {
-                        var startArcVertex = arc.LineInstances.First().Start.ToSharpDXVector3();
-                        Vector3 dxfStartVertex = new((float)vertices[i].X, (float)vertices[i].Y, 0);
-                        var d = Vector3.Distance(startArcVertex, dxfStartVertex);
+                    if (DrawingSegments[i] is not DrawingArc arc)
+                        continue;
 
-                        if (d > 0)
-                        {
-                            arc.LineInstances.Reverse();
-                        }
-                    }
+                    if (i >= vertices.Count)
+                        break;
+
+                    Vector2d vertexStart = vertices[i].ToVector2d();
+                    OrientArc(arc, vertexStart);
                 }
-                LineInstances = DrawingSegments.SelectMany(s => s.LineInstances).ToArray();
-                UpdateBounds();
             }
             else
             {
-                throw new ArgumentException("entity must be of type Polyline2D or Polyline3D");
+                throw new ArgumentException("Entity must be of type Polyline2D or Polyline3D");
+            }
+
+            // Recalculate distances after all arc orientations
+            // have been corrected.
+            PrepareLineTypeDistances();
+
+            // Combine the prepared geometry for Direct3D.
+            LineInstances = DrawingSegments
+                .SelectMany(s => s.LineInstances)
+                .ToArray();
+
+            Length = DrawingSegments.Sum(s => s.Length);
+
+            UpdateBounds();
+
+            // Local helper: orient an arc using world coordinates.
+            void OrientArc(DrawingArc arc, Vector2d vertexStart)
+            {
+                if (arc.LineInstances is null || arc.LineInstances.Length == 0)
+                {
+                    return;
+                }
+
+                double startDistance = Vector2d.DistanceTo(arc.Start, vertexStart);
+                double endDistance = Vector2d.DistanceTo(arc.End, vertexStart);
+
+                if (endDistance >= startDistance)
+                    return;
+
+                // Reverse the instance sequence.
+                Array.Reverse(arc.LineInstances);
+
+                // Reverse the direction of every instance.
+                for (int j = 0; j < arc.LineInstances.Length; j++)
+                {
+                    var instance = arc.LineInstances[j];
+
+                    (instance.Start, instance.End) = (instance.End, instance.Start);
+
+                    instance.StartDistance = 0;
+                    arc.LineInstances[j] = instance;
+                }
             }
         }
+
 
         private void PrepareLineTypeDistances()
         {

@@ -56,13 +56,21 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 throw new ArgumentException("entity must be of type Line");
             }
         }
-        public override void DrawToPdf(
-            XGraphics gfx, System.Windows.Media.Matrix worldToPdf, XPen pen)
+
+        public override void DrawToPdf(PdfRenderContext context, XPen pen)
         {
-            var p0 = PdfTransform.WorldToPdf(Start, worldToPdf);
-            var p1 = PdfTransform.WorldToPdf(End, worldToPdf);
-            gfx.DrawLine(pen, p0, p1);
+            PdfLineTypeRenderer.DrawLine(
+                context.Graphics,
+                context.WorldToPdf,
+                pen,
+                Start,
+                End,
+                LineType,
+                context.GlobalLineTypeScale,
+                0,
+                Length);
         }
+
 
         public override void UpdateVertices(
             ResCache resCache, uint layerId, uint objectId, uint lineTypeId, Vector2d renderOrigin)

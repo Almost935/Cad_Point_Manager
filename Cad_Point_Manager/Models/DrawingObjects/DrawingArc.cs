@@ -4,6 +4,7 @@ using Cad_Point_Manager.Controls.D3DControl.Rendering.Msdf;
 using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Helpers;
 using Cad_Point_Manager.Models.DrawingObjects.HelperClasses;
+using Cad_Point_Manager.Services.Exporting;
 using netDxf.Entities;
 using PdfSharpCore.Drawing;
 using SharpDX;
@@ -71,25 +72,59 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 throw new ArgumentException("entity must be of type Arc");
             }
         }
-        public override void DrawToPdf(XGraphics gfx, System.Windows.Media.Matrix worldToPdf, XPen pen)
+
+        public override void DrawToPdf(
+            PdfRenderContext context,
+            XPen pen)
         {
-            var cPdf = PdfDrawingHelpers.WorldToPdf(new Vector2d(RadiusPoint.X, RadiusPoint.Y), worldToPdf);
+            if (EntityObject is not Arc arc)
+                return;
 
-            var rWorldPt = new Vector2d(RadiusPoint.X + Radius, RadiusPoint.Y);
-            var rPdfPt = PdfDrawingHelpers.WorldToPdf(rWorldPt, worldToPdf);
+            // Preserve native PDF arcs for continuous linetypes.
+            if (LineType == null ||
+                LineType.Pattern.Count == 0)
+            {
+                var cPdf = PdfDrawingHelpers.WorldToPdf(
+                    RadiusPoint, context.WorldToPdf);
 
-            double rPts = Math.Sqrt(
-                (rPdfPt.X - cPdf.X) * (rPdfPt.X - cPdf.X) +
-                (rPdfPt.Y - cPdf.Y) * (rPdfPt.Y - cPdf.Y));
+                var rWorldPt = new Vector2d(RadiusPoint.X + Radius, RadiusPoint.Y);
+                var rPdfPt = PdfDrawingHelpers.WorldToPdf(rWorldPt, context.WorldToPdf);
 
-            if (rPts <= 0.00001) { return; }
+                double rPts = Math.Sqrt(
+                    Math.Pow(rPdfPt.X - cPdf.X, 2) +
+                    Math.Pow(rPdfPt.Y - cPdf.Y, 2));
 
-            var rect = new XRect(cPdf.X - rPts, cPdf.Y - rPts, 2 * rPts, 2 * rPts);
-            double start = PdfDrawingHelpers.NormalizeDeg(360.0 - StartAngle);
-            double sweep = -Sweep;
+                if (rPts <= 0.00001)
+                    return;
 
-            gfx.DrawArc(pen, rect, start, sweep);
+                var rect = new XRect(cPdf.X - rPts, cPdf.Y - rPts, 2 * rPts, 2 * rPts);
+
+                double start = PdfDrawingHelpers.NormalizeDeg(360.0 - StartAngle);
+
+                context.Graphics.DrawArc(pen, rect, start, -Sweep);
+
+                return;
+            }
+
+            // Match the Direct3D tessellation resolution.
+            int count = CalculateSegments(Radius, Sweep);
+
+            var points = arc.ToPolyline2D(count)
+                .Vertexes
+                .Select(v => v.Position.ToVector2d())
+                .ToList();
+
+            PdfLineTypeRenderer.DrawPath(
+                context.Graphics,
+                context.WorldToPdf,
+                pen,
+                points,
+                LineType,
+                context.GlobalLineTypeScale,
+                closed: false,
+                parentSegmentLength: Length);
         }
+
         public override void UpdateVertices(
             ResCache resCache, uint layerId, uint objectId, uint lineTypeId, Vector2d renderOrigin)
         {

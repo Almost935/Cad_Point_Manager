@@ -18,7 +18,7 @@ using FontStretch = SharpDX.DirectWrite.FontStretch;
 using FontStyle = SharpDX.DirectWrite.FontStyle;
 using FontWeight = SharpDX.DirectWrite.FontWeight;
 using Point = System.Windows.Point;
-using TextAlignment = Cad_Point_Manager.Common.TextAlignment;
+using MTextAlignment = Cad_Point_Manager.Common.MTextAlignment;
 
 namespace Cad_Point_Manager.Models.DrawingObjects
 {
@@ -35,11 +35,8 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         public TextLayout TextLayout { get; set; }
         public bool IsItalic { get; set; } = false;
         public bool IsBold { get; set; } = false;
-        public bool IsUnderlined { get; set; } = false;
-        public bool IsStrikeOut { get; set; } = false;
-        public bool IsOverStrike { get; set; } = false;
         public bool IsNewLine { get; set; } = false;
-        public TextAlignment TextAlignment { get; set; }
+        public MTextAlignment TextAlignment { get; set; }
         public double SpaceWidth { get; set; }
         public double XOffset { get; set; } = 0;
         public double YOffset { get; set; } = 0;
@@ -53,7 +50,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         public DrawingMtextSegment(DrawingMtext drawingMtext, ObjectLayer layer, string text, Vector4 objectColor, ColorType colorType,
             LineType lineType, Vector2d position, double rotation, double fontHeight, string fontFamilyName, bool isItalic, bool isBold,
             bool isUnderlined, bool isStrikeOut, bool isOverStrike, bool isNewLine, double maxWidth, TextRenderStyle textRenderStyle,
-            TextAlignment textAlignment = TextAlignment.Left, bool isPartOfBlock = false, DrawingBlock block = null)
+            MTextAlignment textAlignment = MTextAlignment.Left, bool isPartOfBlock = false, DrawingBlock block = null)
         {
             Type = DrawingObjectType.DrawingMtextSegment;
             DrawingMtext = drawingMtext;
@@ -87,68 +84,74 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         #region Methods
         public override void UpdateData() { }
 
-        public override void DrawToPdf(XGraphics gfx, System.Windows.Media.Matrix worldToPdf, XPen pen)
+        public override void DrawToPdf(PdfRenderContext context, XPen pen)
         {
-            if (string.IsNullOrWhiteSpace(Text)) { return; }
+            var fontFamily = PdfDrawingHelpers.GetFontFamily(FontFamilyName);
 
-            if (TextRenderStyle is TextRenderStyle.Stroke)
+            XFontStyle style = XFontStyle.Regular;
+            if (IsBold) { style |= XFontStyle.Bold; }
+            if (IsItalic) { style |= XFontStyle.Italic; }
+
+            var fontSizePts = TextHeight * FontSizeFactor * context.WorldToPdf.M11;
+            var font = new XFont(fontFamily, fontSizePts, style);
+            var brush = new XSolidBrush(PdfTransform.ToXColor(GetColor().ToVector4()));
+
+            var pPdf = PdfDrawingHelpers.WorldToPdf(Position, context.WorldToPdf);
+            var size = context.Graphics.MeasureString(Text, font);
+
+            double x = pPdf.X;
+            double y = pPdf.Y;
+
+            if (TextRenderStyle == TextRenderStyle.Stroke)
             {
-                for (int i = 0; i < LineInstances.Count; i++)
+                foreach (var line in LineInstances)
                 {
-                    var v = LineInstances[i];
-                    var p1Pdf = PdfDrawingHelpers.WorldToPdf(new Vector2d(v.Start.X, v.Start.Y), worldToPdf);
-                    var p2Pdf = PdfDrawingHelpers.WorldToPdf(new Vector2d(v.End.X, v.End.Y), worldToPdf);
+                    Vector2d start = new(
+                        line.Start.X + context.RenderOrigin.X,
+                        line.Start.Y + context.RenderOrigin.Y);
+                    Vector2d end = new(
+                        line.End.X + context.RenderOrigin.X,
+                        line.End.Y + context.RenderOrigin.Y);
 
-                    gfx.DrawLine(pen, new XPoint(p1Pdf.X, p1Pdf.Y), new XPoint(p2Pdf.X, p2Pdf.Y));
+                    XPoint p1 = PdfTransform.WorldToPdf(
+                        start, context.WorldToPdf);
+                    XPoint p2 = PdfTransform.WorldToPdf(
+                        end, context.WorldToPdf);
+
+                    context.Graphics.DrawLine(pen, p1, p2);
                 }
             }
             else
             {
-                var fontFamily = PdfDrawingHelpers.GetFontFamily(FontFamilyName);
+                context.Graphics.DrawString(Text, font, brush, new XPoint(x, y));
+            }
 
-                XFontStyle style = XFontStyle.Regular;
-                if (IsBold) { style |= XFontStyle.Bold; }
-                if (IsItalic) { style |= XFontStyle.Italic; }
+            if (IsUnderlined || IsStrikeOut || IsOverStrike)
+            {
+                var linePen = new XPen(brush.Color, fontSizePts * 0.01);
 
-                var fontSizePts = TextHeight * FontSizeFactor * worldToPdf.M11;
-                var font = new XFont(fontFamily, fontSizePts, style);
-                var brush = new XSolidBrush(PdfTransform.ToXColor(GetColor().ToVector4()));
+                var m = font.Metrics;
+                double em = m.UnitsPerEm;
 
-                var pPdf = PdfDrawingHelpers.WorldToPdf(Position, worldToPdf);
-                var size = gfx.MeasureString(Text, font);
+                double ascentPt = fontSizePts * (m.Ascent / em);
+                double descentPt = fontSizePts * (m.Descent / em);
+                double baselineY = y;
 
-                double x = pPdf.X;
-                double y = pPdf.Y;
+                double underlineY = baselineY + descentPt * 0.95;
+                double strikeY = baselineY - ascentPt * 0.35;
+                double overstrikeY = baselineY - ascentPt * 0.95;
 
-                gfx.DrawString(Text, font, brush, new XPoint(x, y));
-
-                if (IsUnderlined || IsStrikeOut || IsOverStrike)
+                if (IsUnderlined)
                 {
-                    var linePen = new XPen(brush.Color, fontSizePts * 0.01);
-
-                    var m = font.Metrics;
-                    double em = m.UnitsPerEm;
-
-                    double ascentPt = fontSizePts * (m.Ascent / em);
-                    double descentPt = fontSizePts * (m.Descent / em);
-                    double baselineY = y;
-
-                    double underlineY = baselineY + descentPt * 0.95;
-                    double strikeY = baselineY - ascentPt * 0.35;
-                    double overstrikeY = baselineY - ascentPt * 0.95;
-
-                    if (IsUnderlined)
-                    {
-                        gfx.DrawLine(linePen, x, underlineY, x + size.Width, underlineY);
-                    }
-                    if (IsStrikeOut)
-                    {
-                        gfx.DrawLine(linePen, x, strikeY, x + size.Width, strikeY);
-                    }
-                    if (IsOverStrike)
-                    {
-                        gfx.DrawLine(linePen, x, overstrikeY, x + size.Width, overstrikeY);
-                    }
+                    context.Graphics.DrawLine(linePen, x, underlineY, x + size.Width, underlineY);
+                }
+                if (IsStrikeOut)
+                {
+                    context.Graphics.DrawLine(linePen, x, strikeY, x + size.Width, strikeY);
+                }
+                if (IsOverStrike)
+                {
+                    context.Graphics.DrawLine(linePen, x, overstrikeY, x + size.Width, overstrikeY);
                 }
             }
         }
@@ -204,65 +207,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         }
         public Rect GetMtextBounds(Vector2d renderOrigin)
         {
-            if (TextRenderStyle == TextRenderStyle.Stroke)
-            {
-                double minX = double.PositiveInfinity;
-                double minY = double.PositiveInfinity;
-                double maxX = double.NegativeInfinity;
-                double maxY = double.NegativeInfinity;
-
-                foreach (var line in LineInstances)
-                {
-                    minX = Math.Min(minX, Math.Min(line.Start.X, line.End.X));
-                    minY = Math.Min(minY, Math.Min(line.Start.Y, line.End.Y));
-
-                    maxX = Math.Max(maxX, Math.Max(line.Start.X, line.End.X));
-                    maxY = Math.Max(maxY, Math.Max(line.Start.Y, line.End.Y));
-                }
-
-                if (minX <= maxX && minY <= maxY)
-                {
-                    Bounds = new Rect(
-                        minX + renderOrigin.X,
-                        minY + renderOrigin.Y,
-                        maxX - minX,
-                        maxY - minY);
-                }
-                else
-                {
-                    Bounds = Rect.Empty;
-                }
-            }
-            else
-            {
-                double minX = double.PositiveInfinity;
-                double minY = double.PositiveInfinity;
-                double maxX = double.NegativeInfinity;
-                double maxY = double.NegativeInfinity;
-
-                foreach (var vertex in TextVertices)
-                {
-                    minX = Math.Min(minX, Math.Min(vertex.Position.X, vertex.Position.X));
-                    minY = Math.Min(minY, Math.Min(vertex.Position.Y, vertex.Position.Y));
-
-                    maxX = Math.Max(maxX, Math.Max(vertex.Position.X, vertex.Position.X));
-                    maxY = Math.Max(maxY, Math.Max(vertex.Position.Y, vertex.Position.Y));
-                }
-
-                if (minX <= maxX && minY <= maxY)
-                {
-                    Bounds = new Rect(
-                        minX + renderOrigin.X,
-                        minY + renderOrigin.Y,
-                        maxX - minX,
-                        maxY - minY);
-                }
-                else
-                {
-                    Bounds = Rect.Empty;
-                }
-            }
-
+            Bounds = GetGeometryBounds(renderOrigin);
             return Bounds;
         }
 
@@ -307,7 +252,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 FontSizeFactor = TextRenderingHelpers.GetFontSizeFactor(resCache, TextLayout, _fontFace);
                 AdvanceWidth = TextLayout.Metrics.WidthIncludingTrailingWhitespace * FontSizeFactor;
 
-                (List<Vector2d> vertices, RawRectangleF bounds) = 
+                (List<Vector2d> vertices, RawRectangleF bounds) =
                     TextRenderingHelpers.TesselateTextLayout(resCache, TextLayout, Text, _fontFace);
 
                 TextVertices = GetTextVertices(vertices, layerId, objectId, renderOrigin);
@@ -351,7 +296,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
             TextHeightScaleFactor = TextHeight / LffFont.DesignHeight;
 
-            var transform = Transform;
+            var transform = UnrotatedTransform;
             double accumulatedDistance = 0.0;
 
             for (int i = 0; i < vertices.Count; i += 2)
@@ -446,6 +391,25 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             }
 
             return vertices;
+        }
+
+        public void GenerateDecorations(
+            uint layerId, uint objectId, Vector2d renderOrigin)
+        {
+            if (!IsUnderlined && !IsOverStrike && !IsStrikeOut)
+                return;
+
+            AddTextDecorations(
+                Position.X,
+                Position.Y,
+                AdvanceWidth,
+                TextHeight,
+                IsUnderlined,
+                IsOverStrike,
+                IsStrikeOut,
+                layerId,
+                objectId,
+                renderOrigin);
         }
         #endregion
 

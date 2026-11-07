@@ -1,4 +1,5 @@
-﻿using SharpDX;
+﻿using PdfSharpCore.Drawing;
+using SharpDX;
 using System;
 using System.Runtime.CompilerServices;
 using System.Windows;
@@ -72,5 +73,8 @@ namespace Cad_Point_Manager.Common
         public System.Windows.Point ToPoint() => new(X, Y);
         public Vector2 ToSharpDXVector2() => new((float)X, (float)Y);
         public Vector2 ToGpuRelative(Vector2d origin) => new((float)(X - origin.X), (float)(Y - origin.Y));
+        public XPoint ToXPoint() => new(X, Y);
+
+        public override string ToString() => $"({X}, {Y})";
     }
 }

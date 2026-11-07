@@ -4,6 +4,7 @@ using Cad_Point_Manager.Controls.D3DControl.Rendering.Msdf;
 using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Helpers;
 using Cad_Point_Manager.Models.DrawingObjects.HelperClasses;
+using Cad_Point_Manager.Services.Exporting;
 using netDxf.Entities;
 using PdfSharpCore.Drawing;
 using SharpDX;
@@ -14,6 +15,10 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 {
     public class DrawingWidePolyline : DrawingGeometry
     {
+        #region Fields
+        private Vector2d _renderOrigin;
+        #endregion
+
         #region Properties
         public Polyline2D Polyline2D => EntityObject as Polyline2D;
         public List<SolidVertex> SolidVertices { get; } = [];
@@ -120,16 +125,39 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         }
 
 
-        public override void DrawToPdf(XGraphics gfx, System.Windows.Media.Matrix worldToPdf, XPen pen)
+        public override void DrawToPdf(PdfRenderContext context, XPen pen)
         {
+            if (SolidVertices.Count == 0)
+                return;
+
+            XBrush brush = new XSolidBrush(pen.Color);
+
+            for (int i = 0; i + 2 < SolidVertices.Count; i += 3)
+            {
+                var a = SolidVertices[i].Position;
+                var b = SolidVertices[i + 1].Position;
+                var c = SolidVertices[i + 2].Position;
+
+                XPoint[] points =
+                    [
+                    new XPoint(a.X + _renderOrigin.X,a.Y + _renderOrigin.Y),
+                    new XPoint(b.X + _renderOrigin.X,b.Y + _renderOrigin.Y),
+                    new XPoint(c.X + _renderOrigin.X, c.Y + _renderOrigin.Y)
+                    ];
+
+                context.Graphics.DrawPolygon(brush, points, XFillMode.Winding);
+            }
         }
         public override bool GeometryInRect(Rect rect)
         {
             return false;
         }
         public override void UpdateVertices(
-            ResCache resCache, uint layerId, uint objectId, uint lineTypeId, Vector2d renderOrigin)
+            ResCache resCache, uint layerId, uint objectId,
+            uint lineTypeId, Vector2d renderOrigin)
         {
+            _renderOrigin = renderOrigin;
+
             SolidVertices.Clear();
 
             var vertices =

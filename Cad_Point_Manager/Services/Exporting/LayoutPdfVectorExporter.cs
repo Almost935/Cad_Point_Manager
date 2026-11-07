@@ -44,6 +44,7 @@ namespace Cad_Point_Manager.Services.Exporting
                     templatePrims,
                     worldToPdf,
                     outputPath,
+                    cadManager.RenderOrigin,
                     openAfterExport);
             }).Task;
         }
@@ -54,6 +55,7 @@ namespace Cad_Point_Manager.Services.Exporting
             List<TbPrimitive> templatePrims,
             Matrix worldToPdf,
             string outputPdfPath,
+            Vector2d renderOrigin,
             bool openAfterExport = false)
         {
             Directory.CreateDirectory(Path.GetDirectoryName(outputPdfPath)!);
@@ -80,17 +82,26 @@ namespace Cad_Point_Manager.Services.Exporting
             XGraphicsState cadClipState = gfx.Save();
             gfx.IntersectClip(viewportClip);
 
+            var context = new PdfRenderContext(
+                gfx, worldToPdf, cadManager.OverallDrawingLineTypeScale, 1.0, cadManager.RenderOrigin);
+
             foreach (var kv in cadManager.Layers)
             {
                 var layer = kv.Value;
-                if (!layer.IsVisible) { continue; }
+
+                if (!layer.IsVisible)
+                    continue;
 
                 foreach (var obj in layer.DrawingObjects)
                 {
-                    var pen = new XPen(PdfTransform.ToXColor(obj.GetColor().ToVector4()), 0.0);
-                    obj.DrawToPdf(gfx, worldToPdf, pen);
+                    var pen = new XPen(
+                        PdfTransform.ToXColor(obj.GetColor().ToVector4()),
+                        0.0);
+
+                    obj.DrawToPdf(context, pen);
                 }
             }
+
 
             DrawCogoPointStrings(gfx, cadManager, worldToPdf);
 
@@ -131,17 +142,25 @@ namespace Cad_Point_Manager.Services.Exporting
 
             gfx.IntersectClip(viewportClip);
 
+            PdfRenderContext context = new(gfx, worldToPdf, cadManager.OverallDrawingLineTypeScale, 1.0, cadManager.RenderOrigin);
+
             foreach (var kv in cadManager.Layers)
             {
                 var layer = kv.Value;
-                if (!layer.IsVisible) { continue; }
+
+                if (!layer.IsVisible)
+                    continue;
 
                 foreach (var obj in layer.DrawingObjects)
                 {
-                    var pen = new XPen(PdfTransform.ToXColor(obj.GetColor().ToVector4()), 0.0);
-                    obj.DrawToPdf(gfx, worldToPdf, pen);
+                    var pen = new XPen(
+                        PdfTransform.ToXColor(obj.GetColor().ToVector4()),
+                        0.0);
+
+                    obj.DrawToPdf(context, pen);
                 }
             }
+
 
             DrawCogoPointStrings(gfx, cadManager, worldToPdf);
 
@@ -171,19 +190,25 @@ namespace Cad_Point_Manager.Services.Exporting
 
             using var gfx = XGraphics.FromPdfPage(page);
 
-            gfx.DrawRectangle(XBrushes.White, 0, 0, vpWpts, vpHpts);
+            PdfRenderContext context = new(gfx, worldToPdf, cadManager.OverallDrawingLineTypeScale, 1.0, cadManager.RenderOrigin);
 
             foreach (var kv in cadManager.Layers)
             {
                 var layer = kv.Value;
-                if (!layer.IsVisible) { continue; }
+
+                if (!layer.IsVisible)
+                    continue;
 
                 foreach (var obj in layer.DrawingObjects)
                 {
-                    var pen = new XPen(PdfTransform.ToXColor(obj.GetColor().ToVector4()), 0.0);
-                    obj.DrawToPdf(gfx, worldToPdf, pen);
+                    var pen = new XPen(
+                        PdfTransform.ToXColor(obj.GetColor().ToVector4()),
+                        0.0);
+
+                    obj.DrawToPdf(context, pen);
                 }
             }
+
 
             DrawCogoPointStrings(gfx, cadManager, worldToPdf);
 

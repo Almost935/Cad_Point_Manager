@@ -4,6 +4,7 @@ using Cad_Point_Manager.Controls.D3DControl.Rendering.Msdf;
 using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Helpers;
 using Cad_Point_Manager.Models.DrawingObjects.HelperClasses;
+using Cad_Point_Manager.Services.Exporting;
 using netDxf.Entities;
 using PdfSharpCore.Drawing;
 using SharpDX;
@@ -58,26 +59,57 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             }
         }
 
-        public override void DrawToPdf(
-            XGraphics gfx, System.Windows.Media.Matrix worldToPdf, XPen pen)
+
+        public override void DrawToPdf(PdfRenderContext context, XPen pen)
         {
-            var cWorld = new Vector2d(RadiusPoint.X, RadiusPoint.Y);
+            if (EntityObject is not Circle circle)
+                return;
 
-            var cPdf = PdfDrawingHelpers.WorldToPdf(cWorld, worldToPdf);
+            if (LineType == null || LineType.Pattern.Count == 0)
+            {
+                var cWorld = RadiusPoint;
 
-            var rWorldPt = new Vector2d(RadiusPoint.X + Radius, RadiusPoint.Y);
-            var rPdfPt = PdfDrawingHelpers.WorldToPdf(rWorldPt, worldToPdf);
+                var cPdf = PdfDrawingHelpers.WorldToPdf(
+                    cWorld, context.WorldToPdf);
 
-            double rPts = Math.Sqrt(
-                (rPdfPt.X - cPdf.X) * (rPdfPt.X - cPdf.X) +
-                (rPdfPt.Y - cPdf.Y) * (rPdfPt.Y - cPdf.Y));
+                var rWorldPt = new Vector2d(
+                    RadiusPoint.X + Radius,
+                    RadiusPoint.Y);
 
-            if (rPts <= 1e-6) { return; }
+                var rPdfPt = PdfDrawingHelpers.WorldToPdf(
+                    rWorldPt, context.WorldToPdf);
 
-            var rect = new XRect(cPdf.X - rPts, cPdf.Y - rPts, 2 * rPts, 2 * rPts);
+                double rPts = Math.Sqrt(
+                    Math.Pow(rPdfPt.X - cPdf.X, 2) +
+                    Math.Pow(rPdfPt.Y - cPdf.Y, 2));
 
-            gfx.DrawEllipse(pen, rect);
+                if (rPts <= 1e-6)
+                    return;
+
+                var rect = new XRect(cPdf.X - rPts, cPdf.Y - rPts, 2 * rPts, 2 * rPts);
+
+                context.Graphics.DrawEllipse(pen, rect);
+                return;
+            }
+
+            int count = CalculateSegments(Radius, Sweep);
+
+            var points = circle.ToPolyline2D(count)
+                .Vertexes
+                .Select(v => v.Position.ToVector2d())
+                .ToList();
+
+            PdfLineTypeRenderer.DrawPath(
+                context.Graphics,
+                context.WorldToPdf,
+                pen,
+                points,
+                LineType,
+                context.GlobalLineTypeScale,
+                closed: true,
+                parentSegmentLength: Length);
         }
+
 
         public override void UpdateVertices(
             ResCache resCache, uint layerId, uint objectId, uint lineTypeId, Vector2d renderOrigin)
@@ -111,7 +143,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                     var end = vertices[next].Position.ToVector2d().ToGpuRelative(renderOrigin);
 
                     lineInstances.Add(new LineInstance(
-                        start, end, layerId, objectId, (float)accumulatedDistance, 
+                        start, end, layerId, objectId, (float)accumulatedDistance,
                         (uint)flags, (float)Length));
 
                     double segmentLength = Vector2.Distance(end, start);

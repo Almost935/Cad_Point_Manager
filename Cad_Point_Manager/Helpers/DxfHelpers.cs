@@ -66,8 +66,8 @@ namespace Cad_Point_Manager.Helpers
                     block, layer, color, colorType, lineType, ownerBlock is not null, ownerBlock, isPartOfDimension: isPartOfDimension),
                 MText mtext => new DrawingMtext(
                     mtext, layer, color, colorType, lineType, !isPartOfDimension,
-                    TextRenderingHelpers.GetAttachmentPoint(mtext.AttachmentPoint),
-                    Common.TextAlignment.Left, ownerBlock is not null, ownerBlock),
+                    TextRenderingHelpers.GetMtextAttachmentPoint(mtext.AttachmentPoint),
+                    Common.MTextAlignment.Left, ownerBlock is not null, ownerBlock),
                 Text text => new DrawingSText(
                     text, layer, color, colorType, lineType, ownerBlock is not null, ownerBlock),
                 Spline spline => new DrawingSpline(

@@ -6,17 +6,17 @@ using Cad_Point_Manager.Extensions;
 using Cad_Point_Manager.Helpers;
 using Cad_Point_Manager.Models.DrawingObjects.HelperClasses;
 using Cad_Point_Manager.Models.LffFontRendering;
+using Cad_Point_Manager.Services.Exporting;
 using netDxf;
 using netDxf.Entities;
 using PdfSharpCore.Drawing;
 using SharpDX.Direct2D1;
 using System.Text.RegularExpressions;
 using System.Windows;
-
 using Brush = SharpDX.Direct2D1.Brush;
 using FontStyle = netDxf.Tables.FontStyle;
+using MTextAlignment = Cad_Point_Manager.Common.MTextAlignment;
 using Point = System.Windows.Point;
-using TextAlignment = Cad_Point_Manager.Common.TextAlignment;
 using Vector2 = SharpDX.Vector2;
 using Vector3 = SharpDX.Vector3;
 using Vector4 = SharpDX.Vector4;
@@ -32,6 +32,8 @@ namespace Cad_Point_Manager.Models.DrawingObjects
         public bool IsItalic { get; set; }
         public DrawingMtextBlock MtextBlock { get; set; }
         public bool AllowsWrapping { get; set; }
+        public MTextAttachment AttachmentPoint { get; set; }
+        public MTextAlignment TextAlignment { get; set; } = MTextAlignment.Left;
 
         public IEnumerable<DrawingMtextSegment> Segments =>
             MtextBlock?.Rows.SelectMany(r => r.Segments) ?? Enumerable.Empty<DrawingMtextSegment>();
@@ -39,7 +41,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
         #region Constructor
         public DrawingMtext(MText mtext, ObjectLayer layer, Vector4 objectColor, ColorType colorType, LineType lineType,
-            bool allowsWrapping, TextAttachmentPoint attachmentPoint, TextAlignment textAlignment = TextAlignment.Left,
+            bool allowsWrapping, Common.MTextAttachment attachmentPoint, MTextAlignment textAlignment = MTextAlignment.Left,
             bool isPartOfBlock = false, DrawingBlock block = null)
         {
             Type = DrawingObjectType.DrawingMtext;
@@ -66,7 +68,8 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             SceneIdMap sceneIdMap, D3dStateBuffers stateBuffers,
             Vector2d renderOrigin)
         {
-            if (DxfMtext is null) { return; }
+            if (DxfMtext is null)
+                return;
 
             UpdateMtextBlock(resCache, layerId, lineTypeId,
                 sceneIdMap, stateBuffers, renderOrigin);
@@ -74,7 +77,16 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             MtextBlock.SetTextPositions();
             MtextBlock.GetTextBox(MtextBlock.Height);
 
-            SetRotation();
+            foreach (var segment in Segments)
+            {
+                uint objectId = sceneIdMap.GetOrAddObjectId(
+                    segment, out _);
+
+                segment.GenerateDecorations(
+                    layerId, objectId, renderOrigin);
+            }
+
+            ApplyRotation(renderOrigin, Segments);
 
             UpdateBounds(renderOrigin);
 
@@ -174,18 +186,18 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             }
         }
 
-        public override void DrawToPdf(XGraphics gfx, System.Windows.Media.Matrix worldToPdf, XPen pen)
+        public override void DrawToPdf(PdfRenderContext context, XPen pen)
         {
             if (MtextBlock is null || MtextBlock.Rows.Count == 0) { return; }
 
-            double ptsPerWorld = PdfDrawingHelpers.WorldToPdfScale(worldToPdf);
+            double ptsPerWorld = PdfDrawingHelpers.WorldToPdfScale(context.WorldToPdf);
             if (ptsPerWorld <= 0.000001) { return; }
 
             double rotDeg = -Rotation;
-            var basePdf = PdfDrawingHelpers.WorldToPdf(Position, worldToPdf);
+            var basePdf = PdfDrawingHelpers.WorldToPdf(Position, context.WorldToPdf);
 
-            var state = gfx.Save();
-            if (Math.Abs(rotDeg) > 0.0001) { gfx.RotateAtTransform(rotDeg, basePdf); }
+            var state = context.Graphics.Save();
+            if (Math.Abs(rotDeg) > 0.0001) { context.Graphics.RotateAtTransform(rotDeg, basePdf); }
 
             var rows = MtextBlock.Rows.ToList();
 
@@ -195,10 +207,10 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
                 foreach (var seg in segments)
                 {
-                    seg.DrawToPdf(gfx, worldToPdf, pen);
+                    seg.DrawToPdf(context, pen);
                 }
             }
-            gfx.Restore(state);
+            context.Graphics.Restore(state);
         }
 
         public override void UpdateBounds()
@@ -231,10 +243,12 @@ namespace Cad_Point_Manager.Models.DrawingObjects
             MtextBlock?.Dispose();
             MtextBlock = new(MaxWidth, Position, DxfMtext.AttachmentPoint, Rotation, AllowsWrapping);
 
-            string rawText = DxfMtext.Value;
+            string rawText = DecodeSpecialCharacters(DxfMtext.Value);
             Vector4 baseColor = ObjectColor;
 
-            var texts = rawText.Split(new[] { '{', '}' }, StringSplitOptions.RemoveEmptyEntries);
+            var texts = rawText.Split(
+                new[] { '{', '}' },
+                StringSplitOptions.RemoveEmptyEntries);
 
             // Regex patterns for DXF formatting
             string aciColorPattern = @"\\[C](\d+);";
@@ -259,17 +273,17 @@ namespace Cad_Point_Manager.Models.DrawingObjects
 
             string pattern = $@"((\\[LOkoK])|{aciColorPattern}|{trueTypeColorPattern}|{fontPattern}|{heightPattern}|{lineBreakPattern}|{paragraphIndentPattern}|{underlineStartPattern}|{underlineEndPattern}|{overstrikeStartPattern}|{overstrikeEndPattern}|{strikethroughStartPattern}|{strikethroughEndPattern}|{paraAlignLeftPattern}|{paraAlignCenterPattern}|{paraAlignRightPattern}|{paraAlignJustifyPattern}|{paraAlignDistributedPattern}|{alignmentPattern}|{paragraphPropertiesPattern}|[^{{}}\\]+)";
 
-            TextAlignment baseAlignment;
-            if (AttachmentPoint == TextAttachmentPoint.TopRight ||
-                AttachmentPoint == TextAttachmentPoint.MiddleRight ||
-                AttachmentPoint == TextAttachmentPoint.BottomRight)
-            { baseAlignment = TextAlignment.Right; }
-            else if (AttachmentPoint == TextAttachmentPoint.TopCenter ||
+            MTextAlignment baseAlignment;
+            if (AttachmentPoint == Common.MTextAttachment.TopRight ||
+                AttachmentPoint == Common.MTextAttachment.MiddleRight ||
+                AttachmentPoint == Common.MTextAttachment.BottomRight)
+            { baseAlignment = MTextAlignment.Right; }
+            else if (AttachmentPoint == Common.MTextAttachment.TopCenter ||
 
-                AttachmentPoint == TextAttachmentPoint.MiddleCenter ||
-                AttachmentPoint == TextAttachmentPoint.BottomCenter)
-            { baseAlignment = TextAlignment.Center; }
-            else { baseAlignment = TextAlignment.Left; }
+                AttachmentPoint == Common.MTextAttachment.MiddleCenter ||
+                AttachmentPoint == Common.MTextAttachment.BottomCenter)
+            { baseAlignment = MTextAlignment.Center; }
+            else { baseAlignment = MTextAlignment.Left; }
 
             foreach (var text in texts)
             {
@@ -375,23 +389,23 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                     }
                     else if (Regex.IsMatch(value, paraAlignLeftPattern))
                     {
-                        currentSegment.TextAlignment = TextAlignment.Left;
+                        currentSegment.TextAlignment = MTextAlignment.Left;
                     }
                     else if (Regex.IsMatch(value, paraAlignCenterPattern))
                     {
-                        currentSegment.TextAlignment = TextAlignment.Center;
+                        currentSegment.TextAlignment = MTextAlignment.Center;
                     }
                     else if (Regex.IsMatch(value, paraAlignRightPattern))
                     {
-                        currentSegment.TextAlignment = TextAlignment.Right;
+                        currentSegment.TextAlignment = MTextAlignment.Right;
                     }
                     else if (Regex.IsMatch(value, paraAlignJustifyPattern))
                     {
-                        currentSegment.TextAlignment = TextAlignment.Justified;
+                        currentSegment.TextAlignment = MTextAlignment.Justified;
                     }
                     else if (Regex.IsMatch(value, paraAlignDistributedPattern))
                     {
-                        currentSegment.TextAlignment = TextAlignment.Distributed;
+                        currentSegment.TextAlignment = MTextAlignment.Distributed;
                     }
                     else if (Regex.IsMatch(value, alignmentPattern))
                     {
@@ -457,17 +471,7 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 }
             }
         }
-        private void SetRotation()
-        {
-            foreach (var segment in Segments)
-            {
-                for (int i = 0; i < segment.TextVertices.Count; i++)
-                {
-                    segment.TextVertices[i] = TextVertex.RotateAroundPoint(
-                        segment.TextVertices[i], Position.ToSharpDXVector2(), (float)(MathHelper.DegToRad * Rotation));
-                }
-            }
-        }
+
         private DrawingMtextSegment CreateMtextSegment(
             TextSegmentInformation segmentInfo,
             ResCache resCache,
@@ -495,52 +499,39 @@ namespace Cad_Point_Manager.Models.DrawingObjects
                 .Cast<Match>()
                 .Select(m => m.Value);
         }
-        #endregion
-    }
 
-    public class TextSegmentInformation
-    {
-        #region Properties
-        public string Text { get; set; }
-        public Vector4 ObjectColor { get; set; }
-        public ColorType ColorType { get; set; }
-        public string Font { get; set; }
-        public double TextHeight { get; set; }
-        public bool IsBold { get; set; }
-        public bool IsItalic { get; set; }
-        public bool IsOverstriked { get; set; }
-        public bool IsStrikethrough { get; set; }
-        public bool IsUnderlined { get; set; }
-        public bool IsNewLine { get; set; }
-        public TextAlignment TextAlignment { get; set; }
-
-        public bool HasValue => !string.IsNullOrEmpty(Text);
-        #endregion
-
-        #region Constructors
-        public TextSegmentInformation(string text = "", Vector4? objectColor = null, ColorType colorType = ColorType.ByObject, string font = "Arial",
-            double textHeight = 0, bool isBold = false, bool isItalic = false, bool isUnderlined = false, bool isOverstrike = false,
-            bool isStrikethrough = false, bool isNewLine = false, TextAlignment textAlignment = TextAlignment.Left)
+        private static string DecodeSpecialCharacters(string text)
         {
-            Text = text;
-            ObjectColor = objectColor ?? new Vector4(0, 0, 0, 1);
-            ColorType = colorType;
-            Font = font;
-            TextHeight = textHeight;
-            IsBold = isBold;
-            IsItalic = isItalic;
-            IsUnderlined = isUnderlined;
-            IsOverstriked = isOverstrike;
-            IsStrikethrough = isStrikethrough;
-            IsNewLine = isNewLine;
-            TextAlignment = textAlignment;
-        }
-        #endregion
+            if (string.IsNullOrEmpty(text))
+                return text;
 
-        #region Methods
-        public static TextSegmentInformation GetLineBreak()
-        {
-            return new TextSegmentInformation("\n");
+            // Unicode escape sequences (\U+XXXX)
+            text = Regex.Replace(
+                text,
+                @"\\U\+([0-9A-Fa-f]{4})",
+                match =>
+                {
+                    int codePoint = Convert.ToInt32(
+                        match.Groups[1].Value, 16);
+
+                    return char.ConvertFromUtf32(codePoint);
+                });
+
+            // Legacy AutoCAD symbols
+            text = Regex.Replace(
+                text,
+                @"%%([dpc%])",
+                match => match.Groups[1].Value.ToLowerInvariant() switch
+                {
+                    "d" => "\u00B0",  // Degree
+                    "p" => "\u00B1",  // Plus/minus
+                    "c" => "\u2205",  // Diameter
+                    "%" => "%",       // Literal percent
+                    _ => match.Value
+                },
+                RegexOptions.IgnoreCase);
+
+            return text;
         }
         #endregion
     }
